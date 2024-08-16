@@ -6,11 +6,14 @@
 
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-sdk</artifactId>
+
     <version>0.1.0</version>
 
     <packaging>pom</packaging>
+    <description>ai4j-sdk</description>
 
     <url>https://github.com/LnYo-Cly/ai4j</url>
+
 
     <licenses>
         <license>
@@ -54,7 +57,9 @@
         <module>ai4j-spring-boot-stater</module>
     </modules>
 
+
     <build>
+        <defaultGoal>validate</defaultGoal>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -119,7 +124,11 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                </configuration>
                             </execution>
+
                         </executions>
                     </plugin>
 
