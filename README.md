@@ -1,3 +1,4 @@
+![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
 一款JavaSDK整合Openai、Zhipu等大平台的AI接口，将各个平台的请求与相应均转换为Openai格式，消除差异化。
 
@@ -18,8 +19,9 @@
 + 轻松使用Tool Calls
 + 内置向量数据库支持: Pinecone
 + 使用Tika读取文件
++ Token统计（待添加）
 
-
+# 快速开始
 ## 导入
 ### Gradle
 ```groovy
@@ -49,11 +51,10 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
     <version>0.2.0</version>
 </dependency>
 ```
-## 快速开始
 
-### 获取AI服务实例
+## 获取AI服务实例
 
-#### 非Spring获取
+### 非Spring获取
 ```java
     public void test_init(){
         OpenAiConfig openAiConfig = new OpenAiConfig();
@@ -97,9 +98,9 @@ ai:
 private AiService aiService;
 ```
 
-### Chat Completions
+## Chat服务
 
-#### 同步请求调用
+### 同步请求调用
 ```java
 
 public void test_chat() throws Exception {
@@ -120,7 +121,7 @@ public void test_chat() throws Exception {
 
 ```
 
-#### 流式调用
+### 流式调用
 ```java
 public void test_chat_stream() throws Exception {
     // 获取chat服务实例
@@ -152,7 +153,7 @@ public void test_chat_stream() throws Exception {
 }
 ```
 
-#### 图片识别
+### 图片识别
 
 ```java
 public void test_chat_image() throws Exception {
@@ -172,7 +173,7 @@ public void test_chat_image() throws Exception {
 }
 ```
 
-#### 函数调用
+### 函数调用
 
 ```java
 public void test_chat_tool_call() throws Exception {
@@ -192,7 +193,7 @@ public void test_chat_tool_call() throws Exception {
     System.out.println(response);
 }
 ```
-##### 定义函数
+#### 定义函数
 ```java
 @FunctionCall(name = "queryWeather", description = "查询目标地点的天气预报")
 public class QueryWeatherFunction implements Function<QueryWeatherFunction.Request, String> {
@@ -249,7 +250,7 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
 }
 ```
 
-### Embedding
+## Embedding服务
 
 ```java
 public void test_embed() throws Exception {
@@ -266,8 +267,8 @@ public void test_embed() throws Exception {
 }
 ```
 
-### RAG
-#### 配置向量数据库
+## RAG
+### 配置向量数据库
 ```yml
 ai:
   vector:
@@ -275,12 +276,12 @@ ai:
       url: ""
       key: ""
 ```
-#### 获取实例
+### 获取实例
 ```java
 @Autowired
 private PineconeService pineconeService;
 ```
-#### 插入
+### 插入向量数据库
 ```java
 public void test_insert_vector_store() throws Exception {
     // 获取embedding服务实例
@@ -309,7 +310,7 @@ public void test_insert_vector_store() throws Exception {
 
 }
 ```
-#### 查询
+### 从向量数据库查询
 ```java
 public void test_query_vector_store() throws Exception {
     // 获取embedding服务实例
@@ -336,7 +337,7 @@ public void test_query_vector_store() throws Exception {
 }
 ```
 
-#### 删除
+### 删除向量数据库数据
 ```java
 public void test_delete_vector_store() throws Exception {
     // 构建参数
@@ -348,3 +349,38 @@ public void test_delete_vector_store() throws Exception {
     Boolean res = pineconeService.delete(pineconeDelete);
 }
 ```
+
+
+
+# 为AI4J提供贡献
+欢迎您对AI4J提出建议、报告问题或贡献代码。您可以按照以下的方式为AI4J提供贡献: 
+
+## 问题反馈
+请使用GitHub Issue页面报告问题。尽可能具体地说明如何重现您的问题，包括操作系统、Java版本和任何相关日志跟踪等详细信息。
+
+## PR
+1. Fork 本仓库并创建您的分支。
+2. 如果您添加了应该进行测试的代码，请进行测试。
+3. 确保您的代码符合现有的样式。
+4. 为提交编写清晰的日志信息。对于小的改动，单行信息就可以了，但较大的改动应该有详细的描述。
+5. 完成拉取请求表单，链接到您的 PR 解决的问题。
+
+# 支持
+如果您觉得这个项目对您有帮助，请点一个star⭐。
+
+
+# 贡献者
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+<a href="https://github.com/LnYo-Cly/ai4j/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=LnYo-Cly/ai4j" />
+</a>
+
