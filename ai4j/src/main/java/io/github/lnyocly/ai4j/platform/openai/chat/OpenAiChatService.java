@@ -128,9 +128,9 @@ public class OpenAiChatService implements IChatService {
 
         eventSourceListener.getCountDownLatch().await();
 
-        log.info("第一批已经结束了");
+        //log.info("第一批已经结束了");
 
-        System.out.println(eventSourceListener.getToolCalls());
+        //System.out.println(eventSourceListener.getToolCalls());
         List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
         // 判断是否需要调用函数
         if(toolCalls.isEmpty()) return;
@@ -162,7 +162,7 @@ public class OpenAiChatService implements IChatService {
 
         eventSourceListener.getCountDownLatch().await();
 
-        log.info("第二批已经结束了");
+        //log.info("第二批已经结束了");
     }
 
     @Override

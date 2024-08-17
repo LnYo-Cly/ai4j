@@ -2,6 +2,7 @@ package io.github.lnyocly;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
+
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -15,7 +16,7 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.PineconeUtil;
+
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
@@ -175,7 +176,12 @@ public class OpenAiTest {
         System.out.println(chatCompletion);
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        chatService.chatCompletionStream(chatCompletion, new SseListener());
+        chatService.chatCompletionStream(chatCompletion, new SseListener() {
+            @Override
+            protected void send() {
+
+            }
+        });
 
         countDownLatch.await();
 
@@ -202,20 +208,29 @@ public class OpenAiTest {
 
     @Test
     public void test_chatCompletions_stream_function() throws Exception {
+
+        // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("查询洛阳明天的天气, 以及订单2024的火车信息"))
-                .functions("queryWeather", "queryTrainInfo")
+                .message(ChatMessage.withUser("查询北京明天的天气"))
+                .functions("queryWeather")
                 .build();
 
-        System.out.println("请求参数");
-        System.out.println(chatCompletion);
 
-        SseListener sseListener = new SseListener();
+        // 构造监听器
+        SseListener sseListener = new SseListener() {
+            @Override
+            protected void send() {
+                System.out.println(this.getCurrStr());
+            }
+        };
+        // 显示函数参数，默认不显示
+        sseListener.setShowToolArgs(true);
+
+        // 发送SSE请求
         chatService.chatCompletionStream(chatCompletion, sseListener);
-        sseListener.getCountDownLatch().await();
 
-        System.out.println("请求成功");
+        System.out.println(sseListener.getOutput());
     }
 
     @Test
@@ -276,9 +291,9 @@ public class OpenAiTest {
         PineconeInsert pineconeInsert = new PineconeInsert(pineconeVectors, "userId");
 
         // 执行插入
-        String res = PineconeUtil.insertEmbedding(pineconeInsert, "aa");
+        //String res = PineconeUtil.insertEmbedding(pineconeInsert, "aa");
 
-        log.info("插入结果{}" ,res);
+       //log.info("插入结果{}" ,res);
     }
 
     @Test
@@ -307,10 +322,10 @@ public class OpenAiTest {
                 .build();
 
         // 执行查询
-        PineconeQueryResponse response = PineconeUtil.queryEmbedding(pineconeQueryReq, "aa");
+       // PineconeQueryResponse response = PineconeUtil.queryEmbedding(pineconeQueryReq, "aa");
 
         // 从向量数据库拿出的数据, 拼接为一个String
-        String collect = response.getMatches().stream().map(match -> match.getMetadata().get("content")).collect(Collectors.joining(" "));
+        //String collect = response.getMatches().stream().map(match -> match.getMetadata().get("content")).collect(Collectors.joining(" "));
 
         // "You are an AI assistant providing helpful advice. You are given the following extracted parts of a long document and a part of the chat history, along with a current question. Provide a conversational answer based on the context and the chat histories provided (You can refer to the chat history to know what the user has asked and thus better answer the current question, but you are not allowed to reply to the previous question asked by the user again). If you can\'t find the answer in the context below, just say \"Hmm, I\'m not sure.\" Don\'t try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. \nContext information is below:\n=========\n%s\n=========\nChat history is below:\n=========\n%s\n=========\nCurrent Question: %s (Note: Remember, you only need to reply to me in Chinese and try to increase the content of the reply as much as possible to improve the user experience. I believe you can definitely)"
         // 上下文， 历史，原始消息
@@ -326,9 +341,9 @@ public class OpenAiTest {
                 .namespace("userId")
                 .build();
 
-        String res = String.valueOf(PineconeUtil.deleteEmbedding(request, "aa"));
+       // String res = String.valueOf(PineconeUtil.deleteEmbedding(request, "aa"));
 
-        System.out.println(res);
+       // System.out.println(res);
     }
 
     @Test
@@ -344,6 +359,10 @@ public class OpenAiTest {
         String s1 = TikaUtil.detectMimeType(file);
 
         System.out.println(s1);
+
+
+        //AbstractListener abstractListener = new AbstractListener();
+
     }
 
     // 生成每个向量的id

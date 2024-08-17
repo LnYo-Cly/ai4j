@@ -14,11 +14,22 @@
 ## 特性
 + 支持Spring以及普通Java应用、支持JDK1.8
 + 统一的输入输出
++ 支持流式输出。支持函数调用参数输出
 + 轻松使用Tool Calls
 + 内置向量数据库支持: Pinecone
++ 使用Tika读取文件
 
 
 ## 导入
+### Gradle
+```groovy
+implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '0.1.0'
+```
+
+```groovy
+implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '0.1.0'
+```
+
 
 ### Maven
 ```xml
@@ -26,7 +37,7 @@
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>${project.version}</version>
+    <version>0.2.0</version>
 </dependency>
 
 ```
@@ -35,19 +46,305 @@
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-stater</artifactId>
-    <version>${project.version}</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 ## 快速开始
 
-### 获取服务实例
+### 获取AI服务实例
 
 #### 非Spring获取
+```java
+    public void test_init(){
+        OpenAiConfig openAiConfig = new OpenAiConfig();
 
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
+        OkHttpClient okHttpClient = new OkHttpClient
+                .Builder()
+                .addInterceptor(httpLoggingInterceptor)
+                .connectTimeout(300, TimeUnit.SECONDS)
+                .writeTimeout(300, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
+                .build();
+        configuration.setOkHttpClient(okHttpClient);
+
+        AiService aiService = new AiService(configuration);
+
+        embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+        chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
+
+    }
+```
 #### Spring获取
+```yml
+# 国内访问默认需要代理
+ai:
+  openai:
+    api-key: "api-key"
+  okhttp:
+    proxy-port: 10809
+    proxy-url: "127.0.0.1"
+```
+
 ```java
 @Autowired
 private AiService aiService;
 ```
 
 ### Chat Completions
+
+#### 同步请求调用
+```java
+
+public void test_chat() throws Exception {
+    // 获取chat服务实例
+    IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+    // 构建请求参数
+    ChatCompletion chatCompletion = ChatCompletion.builder()
+            .model("gpt-4o-mini")
+            .message(ChatMessage.withUser("鲁迅为什么打周树人"))
+            .build();
+
+    // 发送对话请求
+    ChatCompletionResponse response = chatService.chatCompletion(chatCompletion);
+
+    System.out.println(response);
+}
+
+```
+
+#### 流式调用
+```java
+public void test_chat_stream() throws Exception {
+    // 获取chat服务实例
+    IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+    // 构造请求参数
+    ChatCompletion chatCompletion = ChatCompletion.builder()
+            .model("gpt-4o-mini")
+            .message(ChatMessage.withUser("查询北京明天的天气"))
+            .functions("queryWeather")
+            .build();
+
+
+    // 构造监听器
+    SseListener sseListener = new SseListener() {
+        @Override
+        protected void send() {
+            System.out.println(this.getCurrStr());
+        }
+    };
+    // 显示函数参数，默认不显示
+    sseListener.setShowToolArgs(true);
+
+    // 发送SSE请求
+    chatService.chatCompletionStream(chatCompletion, sseListener);
+
+    System.out.println(sseListener.getOutput());
+
+}
+```
+
+#### 图片识别
+
+```java
+public void test_chat_image() throws Exception {
+    // 获取chat服务实例
+    IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+    // 构建请求参数
+    ChatCompletion chatCompletion = ChatCompletion.builder()
+            .model("gpt-4o-mini")
+            .message(ChatMessage.withUser("图片中有什么东西", "https://cn.bing.com/images/search?view=detailV2&ccid=r0OnuYkv&id=9A07DE578F6ED50DB59DFEA5C675AC71845A6FC9&thid=OIP.r0OnuYkvsbqBrYk3kUT53AHaKX&mediaurl=https%3a%2f%2fimg.zcool.cn%2fcommunity%2f0104c15cd45b49a80121416816f1ec.jpg%401280w_1l_2o_100sh.jpg&exph=1792&expw=1280&q=%e5%b0%8f%e7%8c%ab%e5%9b%be%e7%89%87&simid=607987191780608963&FORM=IRPRST&ck=12127C1696CF374CB9D0F09AE99AFE69&selectedIndex=2&itb=0&qpvt=%e5%b0%8f%e7%8c%ab%e5%9b%be%e7%89%87"))
+            .build();
+
+    // 发送对话请求
+    ChatCompletionResponse response = chatService.chatCompletion(chatCompletion);
+
+    System.out.println(response);
+}
+```
+
+#### 函数调用
+
+```java
+public void test_chat_tool_call() throws Exception {
+    // 获取chat服务实例
+    IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+    // 构建请求参数
+    ChatCompletion chatCompletion = ChatCompletion.builder()
+            .model("gpt-4o-mini")
+            .message(ChatMessage.withUser("今天北京天气怎么样"))
+            .functions("queryWeather")
+            .build();
+
+    // 发送对话请求
+    ChatCompletionResponse response = chatService.chatCompletion(chatCompletion);
+
+    System.out.println(response);
+}
+```
+##### 定义函数
+```java
+@FunctionCall(name = "queryWeather", description = "查询目标地点的天气预报")
+public class QueryWeatherFunction implements Function<QueryWeatherFunction.Request, String> {
+
+    @Data
+    @FunctionRequest
+    public static class Request{
+        @FunctionParameter(description = "需要查询天气的目标位置, 可以是城市中文名、城市拼音/英文名、省市名称组合、IP 地址、经纬度")
+        private String location;
+        @FunctionParameter(description = "需要查询未来天气的天数, 最多15日")
+        private int days = 15;
+        @FunctionParameter(description = "预报的天气类型，daily表示预报多天天气、hourly表示预测当天24天气、now为当前天气实况")
+        private Type type;
+    }
+
+    public enum Type{
+        daily,
+        hourly,
+        now
+    }
+
+    @Override
+    public String apply(Request request) {
+        final String key = "";
+
+        String url = String.format("https://api.seniverse.com/v3/weather/%s.json?key=%s&location=%s&days=%d",
+                request.type.name(),
+                key,
+                request.location,
+                request.days);
+
+
+        OkHttpClient client = new OkHttpClient();
+
+        okhttp3.Request http = new okhttp3.Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        try (Response response = client.newCall(http).execute()) {
+            if (response.isSuccessful()) {
+                // 解析响应体
+                return response.body() != null ? response.body().string() : "";
+            } else {
+                return "获取天气失败 当前天气未知";
+            }
+        } catch (Exception e) {
+            // 处理异常
+            e.printStackTrace();
+            return "获取天气失败 当前天气未知";
+        }
+    }
+
+}
+```
+
+### Embedding
+
+```java
+public void test_embed() throws Exception {
+    // 获取embedding服务实例
+    IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+
+    // 构建请求参数
+    Embedding embeddingReq = Embedding.builder().input("1+1").build();
+
+    // 发送embedding请求
+    EmbeddingResponse embeddingResp = embeddingService.embedding(embeddingReq);
+
+    System.out.println(embeddingResp);
+}
+```
+
+### RAG
+#### 配置向量数据库
+```yml
+ai:
+  vector:
+    pinecone:
+      url: ""
+      key: ""
+```
+#### 获取实例
+```java
+@Autowired
+private PineconeService pineconeService;
+```
+#### 插入
+```java
+public void test_insert_vector_store() throws Exception {
+    // 获取embedding服务实例
+    IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+
+    // Tika读取file文件内容
+    String fileContent = TikaUtil.parseFile(new File("D:\\data\\test\\test.txt"));
+
+    // 分割文本内容
+    RecursiveCharacterTextSplitter recursiveCharacterTextSplitter = new RecursiveCharacterTextSplitter(1000, 200);
+    List<String> contentList = recursiveCharacterTextSplitter.splitText(fileContent);
+
+    // 转为向量
+    Embedding build = Embedding.builder()
+            .input(contentList)
+            .model("text-embedding-3-small")
+            .build();
+    EmbeddingResponse embedding = embeddingService.embedding(build);
+    List<List<Float>> vectors = embedding.getData().stream().map(EmbeddingObject::getEmbedding).collect(Collectors.toList());
+    VertorDataEntity vertorDataEntity = new VertorDataEntity();
+    vertorDataEntity.setVector(vectors);
+    vertorDataEntity.setContent(contentList);
+    
+    // 向量存储
+    Integer count = pineconeService.insert(vertorDataEntity, "userId");
+
+}
+```
+#### 查询
+```java
+public void test_query_vector_store() throws Exception {
+    // 获取embedding服务实例
+    IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+
+    // 构建要查询的问题，转为向量
+    Embedding build = Embedding.builder()
+            .input("question")
+            .model("text-embedding-3-small")
+            .build();
+    EmbeddingResponse embedding = embeddingService.embedding(build);
+    List<Float> question = embedding.getData().get(0).getEmbedding();
+
+    // 构建向量数据库的查询对象
+    PineconeQuery pineconeQueryReq = PineconeQuery.builder()
+            .namespace("userId")
+            .vector(question)
+            .build();
+
+    String result = pineconeService.query(pineconeQueryReq, " ");
+    
+    // 携带result，与chat服务进行对话
+    // ......
+}
+```
+
+#### 删除
+```java
+public void test_delete_vector_store() throws Exception {
+    // 构建参数
+    PineconeDelete pineconeDelete = PineconeDelete.builder()
+                                    .deleteAll(true)
+                                    .namespace("userId")
+                                    .build();
+    // 删除
+    Boolean res = pineconeService.delete(pineconeDelete);
+}
+```

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,24 +23,53 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * @Author cly
- * @Description TODO
+ * @Description SseListener
  * @Date 2024/8/13 23:25
  */
 
 @Slf4j
-public class SseListener extends EventSourceListener {
-
+public abstract class SseListener extends EventSourceListener {
+    protected abstract void send();
+    /**
+     * 最终的消息输出
+     */
     @Getter
     private final StringBuilder output = new StringBuilder();
 
+    /**
+     * 流式输出，当前消息的内容(回答消息、函数参数)
+     */
+    @Getter
+    private String currStr = "";
+
+    /**
+     * 记录当前所调用函数工具的名称
+     */
+    @Getter
+    private String currToolName = "";
+
+    /**
+     * 是否显示每个函数调用输出的参数文本
+     */
+    @Getter
+    @Setter
+    private boolean showToolArgs = false;
+
+    /**
+     * 花费token
+     */
     @Getter
     private Usage usage = null;
 
-    @Getter
     @Setter
+    @Getter
     private List<ToolCall> toolCalls = new ArrayList<>();
 
     private ToolCall toolCall;
+
+    /**
+     * 最终的函数调用参数
+     */
     private final StringBuilder argument = new StringBuilder();
     @Getter
     private CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -47,7 +77,8 @@ public class SseListener extends EventSourceListener {
 
     @Override
     public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-        log.error("调用 onFailure ");
+        log.error("流式输出异常 onFailure ");
+        countDownLatch.countDown();
     }
 
     @Override
@@ -60,24 +91,34 @@ public class SseListener extends EventSourceListener {
         ChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ChatCompletionResponse.class);
         ChatMessage responseMessage = chatCompletionResponse.getChoices().get(0).getDelta();
 
-        if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())){
+        if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
+                && StringUtils.isBlank(responseMessage.getContent())
+                && responseMessage.getToolCalls() == null){
             // 第一条消息
             return;
         }
 
 
         // tool_calls回答已经结束
-        if("tool_calls".equals(chatCompletionResponse.getChoices().get(0).getFinish_reason())  ){
+        if("tool_calls".equals(chatCompletionResponse.getChoices().get(0).getFinish_reason())){
             toolCall.getFunction().setArguments(argument.toString());
             toolCalls.add(toolCall);
             argument.setLength(0);
+            currToolName = "";
+            return;
+        }
+        // 消息回答完毕
+        if ("stop".equals(chatCompletionResponse.getChoices().get(0).getFinish_reason())) {
+
             return;
         }
 
 
         if(responseMessage.getToolCalls() == null) {
             // 普通响应回答
-
+            output.append(responseMessage.getContent());
+            currStr = responseMessage.getContent();
+            this.send();
 
 
         }else{
@@ -95,9 +136,15 @@ public class SseListener extends EventSourceListener {
                     toolCall = responseMessage.getToolCalls().get(0);
                 }
 
+                currToolName = responseMessage.getToolCalls().get(0).getFunction().getName();
+
 
             }else {
                 argument.append(responseMessage.getToolCalls().get(0).getFunction().getArguments());
+                if(showToolArgs){
+                    this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
+                    this.send();
+                }
             }
 
 

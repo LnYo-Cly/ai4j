@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PineconeConfig {
-    private String url = "https://chatgpt-hxm5j0y.svc.aped-4627-b74a.pinecone.io";
-    private String key = "c4e52c27-3fbb-462e-b0c7-a99753cb7b34";
+    private String url = "https://xxx.svc.xxx.pinecone.io";
+    private String key = "";
 
     private String upsert = "/vectors/upsert";
     private String query = "/query";
