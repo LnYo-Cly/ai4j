@@ -7,7 +7,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.1</version>
+    <version>0.2.0</version>
 
     <name>ai4j</name>
     <description>ai4j基础组件项目</description>
