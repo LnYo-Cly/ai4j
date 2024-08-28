@@ -5,22 +5,28 @@
 
 ## 支持的平台
 + OpenAi
-+ Zhipu（待实现）
++ Zhipu
 + 待添加
 
 ## 支持的服务
-+ Chat Completions
++ Chat Completions（流式与非流式）
 + Embedding
 + 待添加
 
 ## 特性
-+ 支持Spring以及普通Java应用、支持JDK1.8
++ 支持Spring以及普通Java应用、支持Java 8以上的应用
 + 统一的输入输出
 + 支持流式输出。支持函数调用参数输出
 + 轻松使用Tool Calls
++ 支持多个函数同时调用（智谱不支持）
 + 内置向量数据库支持: Pinecone
 + 使用Tika读取文件
-+ Token统计（待添加）
++ Token统计`TikTokensUtil.java`
+
+## 更新日志
++ [2024-08-29] 修改SseListener以兼容智谱函数调用
++ [2024-08-28] 添加token统计、添加智谱AI的Chat服务、优化函数调用可以支持多轮多函数。
++ [2024-08-17] 增强SseListener监听器功能。发布0.2.0版本。
 
 # 快速开始
 ## 导入

@@ -22,5 +22,5 @@ public class Choice {
     private Object logprobs;
 
     @JsonProperty("finish_reason")
-    private String finish_reason;
+    private String finishReason;
 }

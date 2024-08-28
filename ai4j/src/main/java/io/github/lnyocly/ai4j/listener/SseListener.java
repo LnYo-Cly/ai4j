@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,6 +66,7 @@ public abstract class SseListener extends EventSourceListener {
     @Getter
     private List<ToolCall> toolCalls = new ArrayList<>();
 
+    @Setter
     private ToolCall toolCall;
 
     /**
@@ -73,6 +75,9 @@ public abstract class SseListener extends EventSourceListener {
     private final StringBuilder argument = new StringBuilder();
     @Getter
     private CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    @Getter
+    private String finishReason = null;
 
 
     @Override
@@ -91,25 +96,39 @@ public abstract class SseListener extends EventSourceListener {
         ChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ChatCompletionResponse.class);
         ChatMessage responseMessage = chatCompletionResponse.getChoices().get(0).getDelta();
 
-        if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
-                && StringUtils.isBlank(responseMessage.getContent())
-                && responseMessage.getToolCalls() == null){
-            // 第一条消息
-            return;
-        }
 
+
+        finishReason = chatCompletionResponse.getChoices().get(0).getFinishReason();
 
         // tool_calls回答已经结束
-        if("tool_calls".equals(chatCompletionResponse.getChoices().get(0).getFinish_reason())){
-            toolCall.getFunction().setArguments(argument.toString());
-            toolCalls.add(toolCall);
+        if("tool_calls".equals(chatCompletionResponse.getChoices().get(0).getFinishReason())){
+            if(toolCall == null && responseMessage.getToolCalls()!=null) {
+                toolCalls = responseMessage.getToolCalls();
+                if(showToolArgs){
+                    this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
+                    this.send();
+                }
+                return;
+            }
+
+            if(toolCall != null) {
+                toolCall.getFunction().setArguments(argument.toString());
+                toolCalls.add(toolCall);
+            }
             argument.setLength(0);
             currToolName = "";
             return;
         }
         // 消息回答完毕
-        if ("stop".equals(chatCompletionResponse.getChoices().get(0).getFinish_reason())) {
+        if ("stop".equals(chatCompletionResponse.getChoices().get(0).getFinishReason())) {
 
+            return;
+        }
+
+        if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
+                && StringUtils.isBlank(responseMessage.getContent())
+                && responseMessage.getToolCalls() == null){
+            // OPENAI 第一条消息
             return;
         }
 

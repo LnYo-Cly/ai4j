@@ -1,66 +1,58 @@
-package io.github.lnyocly.ai4j.platform.openai.chat.entity;
+package io.github.lnyocly.ai4j.platform.zhipu.chat.entity;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @Author cly
- * @Description ChatCompletion 实体类
- * @Date 2024/8/3 18:00
+ * @Description 智谱对话实体类
+ * @Date 2024/8/27 17:39
  */
 @Data
 @Builder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor()
+@AllArgsConstructor()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatCompletion {
+public class ZhipuChatCompletion {
 
-    /**
-     * 对话模型
-     */
-    @NonNull
     private String model;
-
-    /**
-     * 消息内容
-     */
-    @NonNull
-    @Singular
     private List<ChatMessage> messages;
 
-    /**
-     * 流式输出
-     */
-    @Builder.Default
+    @JsonProperty("request_id")
+    private String requestId;
+
+    @JsonProperty("do_sample")
+    private Boolean doSample = true;
     private Boolean stream = false;
-
-    @JsonProperty("frequency_penalty")
-    private Float frequencyPenalty = 0f;
-
     /**
-     * [0.0, 2.0]
+     * 采样温度，控制输出的随机性，必须为正数。值越大，会使输出更随机
+     * [0.0, 1.0]
      */
-    private Float temperature = 1f;
-
+    private Float temperature = 0.95f;
     /**
+     * 核取样
      * [0.0, 1.0]
      */
     @JsonProperty("top_p")
-    private Float topP = 1f;
+    private Float topP = 0.7f;
 
     @JsonProperty("max_tokens")
     private Integer maxTokens;
+
+    private List<String> stop;
+
 
     private List<Tool> tools;
 
@@ -73,31 +65,13 @@ public class ChatCompletion {
     @JsonProperty("tool_choice")
     private String toolChoice;
 
-    @JsonProperty("parallel_tool_calls")
-    private Boolean parallelToolCalls = true;
+    @JsonProperty("user_id")
+    private String userId;
 
-    @JsonProperty("response_format")
-    private Object responseFormat;
-
-    private String user;
-
-    private Integer n = 1;
-
-    private List<String> stop;
-
-    @JsonProperty("logit_bias")
-    private Map logitBias;
-
-    private Boolean logprobs = false;
-
-    @JsonProperty("top_logprobs")
-    private Integer topLogprobs;
-
-
-    public static class ChatCompletionBuilder {
+    public static class ZhipuChatCompletionBuilder {
         private List<String> functions;
 
-        public ChatCompletion.ChatCompletionBuilder functions(String... functions){
+        public ZhipuChatCompletion.ZhipuChatCompletionBuilder functions(String... functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
@@ -105,7 +79,7 @@ public class ChatCompletion {
             return this;
         }
 
-        public ChatCompletion.ChatCompletionBuilder functions(List<String> functions){
+        public ZhipuChatCompletion.ZhipuChatCompletionBuilder functions(List<String> functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }

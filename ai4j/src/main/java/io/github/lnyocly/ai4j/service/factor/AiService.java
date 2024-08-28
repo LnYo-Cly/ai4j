@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service.factor;
 
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
+import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
@@ -35,6 +36,8 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiChatService(configuration);
+            case ZHIPU:
+                return new ZhipuChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

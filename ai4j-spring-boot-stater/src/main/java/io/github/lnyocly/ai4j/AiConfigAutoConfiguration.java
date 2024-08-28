@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j;
 
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.PineconeConfig;
+import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
@@ -22,19 +23,25 @@ import java.util.concurrent.TimeUnit;
  * @Date 2024/8/9 23:22
  */
 @Configuration
-@EnableConfigurationProperties({OpenAiConfigProperties.class, OkHttpConfigProperties.class, PineconeConfigProperties.class})
+@EnableConfigurationProperties({
+        OpenAiConfigProperties.class,
+        OkHttpConfigProperties.class,
+        PineconeConfigProperties.class,
+        ZhipuConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     private final OkHttpConfigProperties okHttpConfigProperties;
     private final OpenAiConfigProperties openAiConfigProperties;
     private final PineconeConfigProperties pineconeConfigProperties;
+    private final ZhipuConfigProperties zhipuConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
+        this.zhipuConfigProperties = zhipuConfigProperties;
     }
 
     @Bean
@@ -52,6 +59,7 @@ public class AiConfigAutoConfiguration {
         initOkHttp();
         initOpenAiConfig();
         initPineconeConfig();
+        initZhipuConfig();
     }
 
     private void initOkHttp() {
@@ -84,6 +92,16 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setV1_embeddings(openAiConfigProperties.getV1_embeddings());
 
         configuration.setOpenAiConfig(openAiConfig);
+    }
+
+    private void initZhipuConfig() {
+        ZhipuConfig zhipuConfig = new ZhipuConfig();
+        zhipuConfig.setApiHost(zhipuConfigProperties.getApiHost());
+        zhipuConfig.setApiKey(zhipuConfigProperties.getApiKey());
+        zhipuConfig.setChat_completion(zhipuConfigProperties.getChat_completion());
+        zhipuConfig.setEmbedding(zhipuConfigProperties.getEmbedding());
+
+        configuration.setZhipuConfig(zhipuConfig);
     }
 
     private void initPineconeConfig() {

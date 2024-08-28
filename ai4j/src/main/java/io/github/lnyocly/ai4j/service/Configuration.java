@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.service;
 
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.PineconeConfig;
+import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import lombok.Data;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -26,6 +27,7 @@ public class Configuration {
     }
 
     private OpenAiConfig openAiConfig;
+    private ZhipuConfig zhipuConfig;
 
     private PineconeConfig pineconeConfig;
 

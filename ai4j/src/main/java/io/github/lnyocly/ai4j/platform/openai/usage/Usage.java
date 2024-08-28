@@ -15,9 +15,9 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Usage implements Serializable {
     @JsonProperty("prompt_tokens")
-    private long promptTokens;
+    private long promptTokens = 0L;
     @JsonProperty("completion_tokens")
-    private long completionTokens;
+    private long completionTokens = 0L;
     @JsonProperty("total_tokens")
-    private long totalTokens;
+    private long totalTokens = 0L;
 }

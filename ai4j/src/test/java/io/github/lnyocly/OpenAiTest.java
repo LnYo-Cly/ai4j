@@ -3,6 +3,7 @@ package io.github.lnyocly;
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 
+import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -18,6 +19,7 @@ import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
+import io.github.lnyocly.ai4j.utils.TikTokensUtil;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
@@ -64,9 +66,11 @@ public class OpenAiTest {
     @Before
     public void test_init(){
         OpenAiConfig openAiConfig = new OpenAiConfig();
+        ZhipuConfig zhipuConfig = new ZhipuConfig();
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
+        configuration.setZhipuConfig(zhipuConfig);
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -84,7 +88,8 @@ public class OpenAiTest {
         AiService aiService = new AiService(configuration);
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
-        chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
+        //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
+        chatService = aiService.getChatService(PlatformType.ZHIPU);
 
     }
 
@@ -133,7 +138,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("glm-4-flash")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -141,8 +146,10 @@ public class OpenAiTest {
         System.out.println(chatCompletion);
 
         ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
+
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);
+
     }
 
     @Test
@@ -193,8 +200,8 @@ public class OpenAiTest {
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("查询洛阳明天的天气"))
-                .functions("queryWeather")
+                .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
+                .functions("queryWeather", "queryTrainInfo")
                 .build();
 
         System.out.println("请求参数");
@@ -204,6 +211,9 @@ public class OpenAiTest {
 
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);
+
+        System.out.println(chatCompletion);
+
     }
 
     @Test
@@ -211,9 +221,9 @@ public class OpenAiTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("查询北京明天的天气"))
-                .functions("queryWeather")
+                .model("glm-4-flash")
+                .message(ChatMessage.withUser("查询洛阳明天的天气"))
+                .functions("queryWeather", "queryTrainInfo")
                 .build();
 
 
@@ -229,7 +239,7 @@ public class OpenAiTest {
 
         // 发送SSE请求
         chatService.chatCompletionStream(chatCompletion, sseListener);
-
+        System.out.println("完整内容： ");
         System.out.println(sseListener.getOutput());
     }
 

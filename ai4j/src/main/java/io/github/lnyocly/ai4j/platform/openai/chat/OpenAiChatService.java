@@ -7,9 +7,12 @@ import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
+import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletionResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
@@ -50,51 +53,69 @@ public class OpenAiChatService implements IChatService {
             chatCompletion.setTools(tools);
         }
 
-        String jsonString = JSON.toJSONString(chatCompletion);
 
-        Request request = new Request.Builder()
-                .header("Authorization", "Bearer " + apiKey)
-                .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
-                .post(RequestBody.create(jsonString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
-                .build();
-        Response execute = okHttpClient.newCall(request).execute();
+        // 总token消耗
+        Usage allUsage = new Usage();
+        String finishReason = null;
 
+        while(finishReason == null  || "tool_calls".equals(finishReason)){
+            // 构造请求
+            String requestString = JSON.toJSONString(chatCompletion);
 
-        if (execute.isSuccessful() && execute.body() != null) {
-            ChatCompletionResponse chatCompletionResponse = JSON.parseObject(execute.body().string(), ChatCompletionResponse.class);
-
-            ChatMessage responseMessage = chatCompletionResponse.getChoices().get(0).getMessage();
-            List<ToolCall> toolCalls = responseMessage.getToolCalls();
-            if(toolCalls == null || toolCalls.isEmpty()) {
-                return chatCompletionResponse;
-            }
-
-            List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-            messages.add(responseMessage);
-
-            for (ToolCall toolCall : toolCalls) {
-                String functionName = toolCall.getFunction().getName();
-                String arguments = toolCall.getFunction().getArguments();
-                String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
-            }
-            chatCompletion.setMessages(messages);
-
-            jsonString = JSON.toJSONString(chatCompletion);
-            request = new Request.Builder()
+            Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
                     .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
-                    .post(RequestBody.create(jsonString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
+                    .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
                     .build();
-            execute = okHttpClient.newCall(request).execute();
-            if (execute.isSuccessful() && execute.body() != null) {
-                return JSON.parseObject(execute.body().string(), ChatCompletionResponse.class);
+
+            Response execute = okHttpClient.newCall(request).execute();
+            if (execute.isSuccessful() && execute.body() != null){
+                ChatCompletionResponse chatCompletionResponse = JSON.parseObject(execute.body().string(), ChatCompletionResponse.class);
+
+                Choice choice = chatCompletionResponse.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                System.out.println("finishReason: " + finishReason);
+                System.out.println(JSON.toJSONString(chatCompletionResponse));
+
+                Usage usage = chatCompletionResponse.getUsage();
+                allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
+                allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
+                allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
+
+                // 判断是否为函数调用返回
+                if("tool_calls".equals(finishReason)){
+                    ChatMessage message = choice.getMessage();
+                    List<ToolCall> toolCalls = message.getToolCalls();
+
+                    List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                    messages.add(message);
+
+                    // 添加 tool 消息
+                    for (ToolCall toolCall : toolCalls) {
+                        String functionName = toolCall.getFunction().getName();
+                        String arguments = toolCall.getFunction().getArguments();
+                        String functionResponse = ToolUtil.invoke(functionName, arguments);
+
+                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                    }
+                    chatCompletion.setMessages(messages);
+
+                }else{
+                    // 其他情况直接返回
+                    chatCompletionResponse.setUsage(allUsage);
+
+
+                    return chatCompletionResponse;
+
+                }
+
+            }else{
+                return null;
             }
 
-
         }
-        log.error("chat请求失败 {}", execute.message());
+
+
         return null;
     }
 
@@ -115,54 +136,47 @@ public class OpenAiChatService implements IChatService {
             chatCompletion.setTools(tools);
         }
 
+        String finishReason = null;
 
-        String jsonString = JSON.toJSONString(chatCompletion);
+        while(finishReason == null  || "tool_calls".equals(finishReason)){
 
-        Request request = new Request.Builder()
-                .header("Authorization", "Bearer " + apiKey)
-                .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
-                .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
-                .build();
+            String jsonString = JSON.toJSONString(chatCompletion);
 
-        factory.newEventSource(request, eventSourceListener);
+            Request request = new Request.Builder()
+                    .header("Authorization", "Bearer " + apiKey)
+                    .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
+                    .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
+                    .build();
 
-        eventSourceListener.getCountDownLatch().await();
+            factory.newEventSource(request, eventSourceListener);
+            eventSourceListener.getCountDownLatch().await();
 
-        //log.info("第一批已经结束了");
+            finishReason = eventSourceListener.getFinishReason();
+            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
-        //System.out.println(eventSourceListener.getToolCalls());
-        List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-        // 判断是否需要调用函数
-        if(toolCalls.isEmpty()) return;
+            // 需要调用函数
+            if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
+                // 创建tool响应消息
+                ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-        // 创建tool响应消息
-        ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
+                List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                messages.add(responseMessage);
 
-        List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-        messages.add(responseMessage);
+                // 封装tool结果消息
+                for (ToolCall toolCall : toolCalls) {
+                    String functionName = toolCall.getFunction().getName();
+                    String arguments = toolCall.getFunction().getArguments();
+                    String functionResponse = ToolUtil.invoke(functionName, arguments);
 
-        // 封装tool结果消息
-        for (ToolCall toolCall : toolCalls) {
-            String functionName = toolCall.getFunction().getName();
-            String arguments = toolCall.getFunction().getArguments();
-            String functionResponse = ToolUtil.invoke(functionName, arguments);
+                    messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                }
+                eventSourceListener.setToolCalls(new ArrayList<>());
+                eventSourceListener.setToolCall(null);
+                chatCompletion.setMessages(messages);
+            }
 
-            messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
         }
-        chatCompletion.setMessages(messages);
 
-        // 二次请求
-        jsonString = JSON.toJSONString(chatCompletion);
-        request = new Request.Builder()
-                .header("Authorization", "Bearer " + apiKey)
-                .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
-                .post(RequestBody.create(jsonString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
-                .build();
-        factory.newEventSource(request, eventSourceListener);
-
-        eventSourceListener.getCountDownLatch().await();
-
-        //log.info("第二批已经结束了");
     }
 
     @Override

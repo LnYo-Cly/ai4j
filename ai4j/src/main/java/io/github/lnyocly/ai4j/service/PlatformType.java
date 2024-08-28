@@ -12,6 +12,7 @@ import lombok.Getter;
 @Getter
 public enum PlatformType {
     OPENAI("openai"),
+    ZHIPU("zhipu"),
     ;
     private final String platform;
 
