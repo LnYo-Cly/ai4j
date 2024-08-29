@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service;
 
+import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.PineconeConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
@@ -28,6 +29,7 @@ public class Configuration {
 
     private OpenAiConfig openAiConfig;
     private ZhipuConfig zhipuConfig;
+    private DeepSeekConfig deepSeekConfig;
 
     private PineconeConfig pineconeConfig;
 

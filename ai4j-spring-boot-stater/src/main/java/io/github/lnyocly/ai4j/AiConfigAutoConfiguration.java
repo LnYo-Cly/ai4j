@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j;
 
+import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.PineconeConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
@@ -27,21 +29,24 @@ import java.util.concurrent.TimeUnit;
         OpenAiConfigProperties.class,
         OkHttpConfigProperties.class,
         PineconeConfigProperties.class,
-        ZhipuConfigProperties.class})
+        ZhipuConfigProperties.class,
+        DeepSeekConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     private final OkHttpConfigProperties okHttpConfigProperties;
     private final OpenAiConfigProperties openAiConfigProperties;
     private final PineconeConfigProperties pineconeConfigProperties;
     private final ZhipuConfigProperties zhipuConfigProperties;
+    private final DeepSeekConfigProperties deepSeekConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
+        this.deepSeekConfigProperties = deepSeekConfigProperties;
     }
 
     @Bean
@@ -60,6 +65,7 @@ public class AiConfigAutoConfiguration {
         initOpenAiConfig();
         initPineconeConfig();
         initZhipuConfig();
+        initDeepSeekConfig();
     }
 
     private void initOkHttp() {
@@ -75,6 +81,7 @@ public class AiConfigAutoConfiguration {
         OkHttpClient okHttpClient = new OkHttpClient
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
+                .addInterceptor(new ErrorInterceptor())
                 .connectTimeout(okHttpConfigProperties.getConnectTimeout(), okHttpConfigProperties.getTimeUnit())
                 .writeTimeout(okHttpConfigProperties.getWriteTimeout(), okHttpConfigProperties.getTimeUnit())
                 .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit())
@@ -115,6 +122,13 @@ public class AiConfigAutoConfiguration {
         configuration.setPineconeConfig(pineconeConfig);
     }
 
+    private void initDeepSeekConfig(){
+        DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
+        deepSeekConfig.setApiHost(deepSeekConfigProperties.getApiHost());
+        deepSeekConfig.setApiKey(deepSeekConfigProperties.getApiKey());
+        deepSeekConfig.setChat_completion(deepSeekConfigProperties.getChat_completion());
 
+        configuration.setDeepSeekConfig(deepSeekConfig);
+    }
 
 }

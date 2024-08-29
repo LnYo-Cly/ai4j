@@ -24,9 +24,9 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ZhipuChatCompletionResponse {
     private String id;
+    private String object;
     private Long created;
     private String model;
     private List<Choice> choices;
-
     private Usage usage;
 }

@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.factor;
 
+import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -38,6 +39,8 @@ public class AiService {
                 return new OpenAiChatService(configuration);
             case ZHIPU:
                 return new ZhipuChatService(configuration);
+            case DEEPSEEK:
+                return new DeepSeekChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

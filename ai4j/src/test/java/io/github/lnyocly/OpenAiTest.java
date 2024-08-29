@@ -1,9 +1,11 @@
 package io.github.lnyocly;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -67,10 +69,12 @@ public class OpenAiTest {
     public void test_init(){
         OpenAiConfig openAiConfig = new OpenAiConfig();
         ZhipuConfig zhipuConfig = new ZhipuConfig();
+        DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
         configuration.setZhipuConfig(zhipuConfig);
+        configuration.setDeepSeekConfig(deepSeekConfig);
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -78,6 +82,7 @@ public class OpenAiTest {
         OkHttpClient okHttpClient = new OkHttpClient
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
+                .addInterceptor(new ErrorInterceptor())
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
@@ -89,7 +94,7 @@ public class OpenAiTest {
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
-        chatService = aiService.getChatService(PlatformType.ZHIPU);
+        chatService = aiService.getChatService(PlatformType.DEEPSEEK);
 
     }
 
@@ -138,7 +143,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("glm-4-flash")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -174,32 +179,33 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
 
         System.out.println("请求参数");
         System.out.println(chatCompletion);
-        CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        chatService.chatCompletionStream(chatCompletion, new SseListener() {
+        // 构造监听器
+        SseListener sseListener = new SseListener() {
             @Override
             protected void send() {
-
+                System.out.println(this.getCurrStr());
             }
-        });
+        };
 
-        countDownLatch.await();
+        chatService.chatCompletionStream(chatCompletion, sseListener);
 
         System.out.println("请求成功");
+        System.out.println(sseListener.getOutput());
 
     }
 
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -221,7 +227,7 @@ public class OpenAiTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("glm-4-flash")
+                .model("deepseekaa-chat")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -241,6 +247,8 @@ public class OpenAiTest {
         chatService.chatCompletionStream(chatCompletion, sseListener);
         System.out.println("完整内容： ");
         System.out.println(sseListener.getOutput());
+        System.out.println("内容花费： ");
+        System.out.println(sseListener.getUsage());
     }
 
     @Test

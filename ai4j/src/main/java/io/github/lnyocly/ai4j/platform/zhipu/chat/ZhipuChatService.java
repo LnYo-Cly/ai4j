@@ -32,11 +32,11 @@ import java.util.List;
 
 /**
  * @Author cly
- * @Description TODO
+ * @Description 智谱chat服务
  * @Date 2024/8/27 17:29
  */
 @Slf4j
-public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuChatCompletion>, ResultConvert<ZhipuChatCompletionResponse> {
+public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuChatCompletion>, ResultConvert<ZhipuChatCompletionResponse> {
 
     private final ZhipuConfig zhipuConfig;
     private final OkHttpClient okHttpClient;
@@ -54,8 +54,8 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = zhipuConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = zhipuConfig.getApiKey();
         chatCompletion.setStream(false);
+        chatCompletion.setStreamOptions(null);
 
-        String finishReason = null;
 
         // 根据key获取token
         String token = BearerTokenUtils.getToken(apiKey);
@@ -72,8 +72,11 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
         // 总token消耗
         Usage allUsage = new Usage();
 
+        String finishReason = "first";
 
-        while(finishReason == null  || "tool_calls".equals(finishReason)){
+        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
+
+            finishReason = null;
             // 构造请求
             String requestString = JSON.toJSONString(zhipuChatCompletion);
 
@@ -89,8 +92,6 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
 
                 Choice choice = zhipuChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
-                System.out.println("finishReason: " + finishReason);
-                System.out.println(JSON.toJSONString(zhipuChatCompletionResponse));
 
                 Usage usage = zhipuChatCompletionResponse.getUsage();
                 allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
@@ -118,7 +119,7 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
                 }else{
                     // 其他情况直接返回
                     zhipuChatCompletionResponse.setUsage(allUsage);
-
+                    zhipuChatCompletionResponse.setObject("chat.completion");
                     // 恢复原始请求数据
                     chatCompletion.setMessages(zhipuChatCompletion.getMessages());
                     chatCompletion.setTools(zhipuChatCompletion.getTools());
@@ -146,7 +147,6 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
         if(apiKey == null || "".equals(apiKey)) apiKey = zhipuConfig.getApiKey();
         chatCompletion.setStream(true);
 
-        String finishReason = null;
 
         // 根据key获取token
         String token = BearerTokenUtils.getToken(apiKey);
@@ -160,8 +160,11 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
             zhipuChatCompletion.setTools(tools);
         }
 
-        while(finishReason == null  || "tool_calls".equals(finishReason)){
+        String finishReason = "first";
 
+        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
+
+            finishReason = null;
             String jsonString = JSON.toJSONString(zhipuChatCompletion);
 
             Request request = new Request.Builder()
@@ -216,7 +219,7 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
         zhipuChatCompletion.setModel(chatCompletion.getModel());
         zhipuChatCompletion.setMessages(chatCompletion.getMessages());
         zhipuChatCompletion.setStream(chatCompletion.getStream());
-        zhipuChatCompletion.setTemperature(chatCompletion.getTemperature());
+        zhipuChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
         zhipuChatCompletion.setTopP(chatCompletion.getTopP());
         zhipuChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
         zhipuChatCompletion.setStop(chatCompletion.getStop());
@@ -247,10 +250,8 @@ public class ZhipuChatService  implements IChatService, ParameterConvert<ZhipuCh
                 }
 
                 ZhipuChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ZhipuChatCompletionResponse.class);
+                chatCompletionResponse.setObject("chat.completion.chunk");
                 ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
-
-                // 把智谱的格式，转为OpenAi的格式传输给onEvent
-
 
                 eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
             }

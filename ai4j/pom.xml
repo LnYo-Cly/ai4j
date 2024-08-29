@@ -7,10 +7,10 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
     <packaging>jar</packaging>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 
     <name>ai4j</name>
-    <description>ai4j基础组件项目</description>
+    <description>整合多平台大模型，如OpenAi、Zhipu(ChatGLM)、DeepSeek等等，提供统一的输入输出(对齐OpenAi)，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。</description>
 
 
     <properties>
@@ -78,6 +78,20 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.30</version>
+            <!--            <scope>test</scope>-->
+        </dependency>
+
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>

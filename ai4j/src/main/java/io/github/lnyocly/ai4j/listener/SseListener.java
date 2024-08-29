@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j.listener;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.chat.enums.ChatMessageType;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
@@ -60,7 +62,7 @@ public abstract class SseListener extends EventSourceListener {
      * 花费token
      */
     @Getter
-    private Usage usage = null;
+    private final Usage usage = new Usage();
 
     @Setter
     @Getter
@@ -82,26 +84,38 @@ public abstract class SseListener extends EventSourceListener {
 
     @Override
     public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-        log.error("流式输出异常 onFailure ");
+
         countDownLatch.countDown();
     }
 
     @Override
     public void onEvent(@NotNull EventSource eventSource, @Nullable String id, @Nullable String type, @NotNull String data) {
         if ("[DONE]".equalsIgnoreCase(data)) {
-            log.info("模型会话 [DONE]");
+            //log.info("模型会话 [DONE]");
             return;
         }
 
         ChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ChatCompletionResponse.class);
-        ChatMessage responseMessage = chatCompletionResponse.getChoices().get(0).getDelta();
+        // 统计token，当设置include_usage = true时，最后一条消息会携带usage, 其他消息中usage为null
+        Usage currUsage = chatCompletionResponse.getUsage();
+        if(currUsage != null){
+            usage.setPromptTokens(usage.getPromptTokens() + currUsage.getPromptTokens());
+            usage.setCompletionTokens(usage.getCompletionTokens() + currUsage.getCompletionTokens());
+            usage.setTotalTokens(usage.getTotalTokens() + currUsage.getTotalTokens());
+        }
 
 
+        List<Choice> choices = chatCompletionResponse.getChoices();
 
-        finishReason = chatCompletionResponse.getChoices().get(0).getFinishReason();
+        if(choices == null || choices.isEmpty()){
+            return;
+        }
+        ChatMessage responseMessage = choices.get(0).getDelta();
+
+        finishReason = choices.get(0).getFinishReason();
 
         // tool_calls回答已经结束
-        if("tool_calls".equals(chatCompletionResponse.getChoices().get(0).getFinishReason())){
+        if("tool_calls".equals(choices.get(0).getFinishReason())){
             if(toolCall == null && responseMessage.getToolCalls()!=null) {
                 toolCalls = responseMessage.getToolCalls();
                 if(showToolArgs){
@@ -171,12 +185,11 @@ public abstract class SseListener extends EventSourceListener {
 
 
 
-        log.info("测试结果：{}", chatCompletionResponse);
+        //log.info("测试结果：{}", chatCompletionResponse);
     }
 
     @Override
     public void onClosed(@NotNull EventSource eventSource) {
-        log.info("调用 onClosed ");
         countDownLatch.countDown();
         countDownLatch = new CountDownLatch(1);
 

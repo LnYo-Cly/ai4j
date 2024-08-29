@@ -1,48 +1,79 @@
-package io.github.lnyocly.ai4j.platform.openai.chat.entity;
+package io.github.lnyocly.ai4j.platform.deepseek.chat.entity;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.StreamOptions;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
+import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletion;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @Author cly
- * @Description ChatCompletion 实体类
- * @Date 2024/8/3 18:00
+ * @Description DeepSeek对话请求实体
+ * @Date 2024/8/29 10:27
  */
 @Data
 @Builder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor()
+@AllArgsConstructor()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatCompletion {
+public class DeepSeekChatCompletion {
 
-    /**
-     * 对话模型
-     */
+
     @NonNull
     private String model;
 
-    /**
-     * 消息内容
-     */
     @NonNull
-    @Singular
     private List<ChatMessage> messages;
+
+    /**
+     * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其在已有文本中的出现频率受到相应的惩罚，降低模型重复相同内容的可能性。
+     */
+    @Builder.Default
+    @JsonProperty("frequency_penalty")
+    private Float frequencyPenalty = 0f;
+
+    /**
+     * 限制一次请求中模型生成 completion 的最大 token 数。输入 token 和输出 token 的总长度受模型的上下文长度的限制。
+     */
+    @JsonProperty("max_tokens")
+    private Integer maxTokens;
+
+    /**
+     * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。
+     */
+    @Builder.Default
+    @JsonProperty("presence_penalty")
+    private Float presencePenalty = 0f;
+
+    /**
+     * 一个 object，指定模型必须输出的格式。
+     *
+     * 设置为 { "type": "json_object" } 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
+     *
+     * 注意: 使用 JSON 模式时，你还必须通过系统或用户消息指示模型生成 JSON。
+     * 否则，模型可能会生成不断的空白字符，直到生成达到令牌限制，从而导致请求长时间运行并显得“卡住”。
+     * 此外，如果 finish_reason="length"，这表示生成超过了 max_tokens 或对话超过了最大上下文长度，消息内容可能会被部分截断。
+     */
+    @JsonProperty("response_format")
+    private Object responseFormat;
+
+    /**
+     * 在遇到这些词时，API 将停止生成更多的 token。
+     */
+    private List<String> stop;
 
     /**
      * 如果设置为 True，将会以 SSE（server-sent events）的形式以流式发送消息增量。消息流以 data: [DONE] 结尾
      */
-    @Builder.Default
     private Boolean stream = false;
 
     /**
@@ -51,13 +82,6 @@ public class ChatCompletion {
     @Builder.Default
     @JsonProperty("stream_options")
     private StreamOptions streamOptions = new StreamOptions();
-
-    /**
-     * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其在已有文本中的出现频率受到相应的惩罚，降低模型重复相同内容的可能性。
-     */
-    @Builder.Default
-    @JsonProperty("frequency_penalty")
-    private Float frequencyPenalty = 0f;
 
     /**
      * 采样温度，介于 0 和 2 之间。更高的值，如 0.8，会使输出更随机，而更低的值，如 0.2，会使其更加集中和确定。
@@ -73,12 +97,6 @@ public class ChatCompletion {
     @Builder.Default
     @JsonProperty("top_p")
     private Float topP = 1f;
-
-    /**
-     * 限制一次请求中模型生成 completion 的最大 token 数。输入 token 和输出 token 的总长度受模型的上下文长度的限制。
-     */
-    @JsonProperty("max_tokens")
-    private Integer maxTokens;
 
     /**
      * 模型可能会调用的 tool 的列表。目前，仅支持 function 作为工具。使用此参数来提供以 JSON 作为输入参数的 function 列表。
@@ -100,42 +118,6 @@ public class ChatCompletion {
     @JsonProperty("tool_choice")
     private String toolChoice;
 
-    @Builder.Default
-    @JsonProperty("parallel_tool_calls")
-    private Boolean parallelToolCalls = true;
-
-    /**
-     * 一个 object，指定模型必须输出的格式。
-     *
-     * 设置为 { "type": "json_object" } 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
-     *
-     * 注意: 使用 JSON 模式时，你还必须通过系统或用户消息指示模型生成 JSON。
-     * 否则，模型可能会生成不断的空白字符，直到生成达到令牌限制，从而导致请求长时间运行并显得“卡住”。
-     * 此外，如果 finish_reason="length"，这表示生成超过了 max_tokens 或对话超过了最大上下文长度，消息内容可能会被部分截断。
-     */
-    @JsonProperty("response_format")
-    private Object responseFormat;
-
-    private String user;
-
-    @Builder.Default
-    private Integer n = 1;
-
-    /**
-     * 在遇到这些词时，API 将停止生成更多的 token。
-     */
-    private List<String> stop;
-
-    /**
-     * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。
-     */
-    @Builder.Default
-    @JsonProperty("presence_penalty")
-    private Float presencePenalty = 0f;
-
-    @JsonProperty("logit_bias")
-    private Map logitBias;
-
     /**
      * 是否返回所输出 token 的对数概率。如果为 true，则在 message 的 content 中返回每个输出 token 的对数概率。
      */
@@ -148,11 +130,10 @@ public class ChatCompletion {
     @JsonProperty("top_logprobs")
     private Integer topLogprobs;
 
-
-    public static class ChatCompletionBuilder {
+    public static class DeepSeekChatCompletionBuilder {
         private List<String> functions;
 
-        public ChatCompletion.ChatCompletionBuilder functions(String... functions){
+        public DeepSeekChatCompletion.DeepSeekChatCompletionBuilder functions(String... functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
@@ -160,7 +141,7 @@ public class ChatCompletion {
             return this;
         }
 
-        public ChatCompletion.ChatCompletionBuilder functions(List<String> functions){
+        public DeepSeekChatCompletion.DeepSeekChatCompletionBuilder functions(List<String> functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }

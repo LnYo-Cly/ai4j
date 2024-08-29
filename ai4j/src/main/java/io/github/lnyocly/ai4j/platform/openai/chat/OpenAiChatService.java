@@ -48,6 +48,8 @@ public class OpenAiChatService implements IChatService {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
         chatCompletion.setStream(false);
+        chatCompletion.setStreamOptions(null);
+
         if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
             chatCompletion.setTools(tools);
@@ -56,9 +58,12 @@ public class OpenAiChatService implements IChatService {
 
         // 总token消耗
         Usage allUsage = new Usage();
-        String finishReason = null;
+        String finishReason = "first";
 
-        while(finishReason == null  || "tool_calls".equals(finishReason)){
+        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
+
+            finishReason = null;
+
             // 构造请求
             String requestString = JSON.toJSONString(chatCompletion);
 
@@ -74,8 +79,6 @@ public class OpenAiChatService implements IChatService {
 
                 Choice choice = chatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
-                System.out.println("finishReason: " + finishReason);
-                System.out.println(JSON.toJSONString(chatCompletionResponse));
 
                 Usage usage = chatCompletionResponse.getUsage();
                 allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
@@ -136,10 +139,11 @@ public class OpenAiChatService implements IChatService {
             chatCompletion.setTools(tools);
         }
 
-        String finishReason = null;
+        String finishReason = "first";
 
-        while(finishReason == null  || "tool_calls".equals(finishReason)){
+        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
+            finishReason = null;
             String jsonString = JSON.toJSONString(chatCompletion);
 
             Request request = new Request.Builder()
@@ -147,6 +151,7 @@ public class OpenAiChatService implements IChatService {
                     .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
                     .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
                     .build();
+
 
             factory.newEventSource(request, eventSourceListener);
             eventSourceListener.getCountDownLatch().await();

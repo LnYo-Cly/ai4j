@@ -1,10 +1,10 @@
-package io.github.lnyocly.ai4j.platform.openai.chat.entity;
+package io.github.lnyocly.ai4j.platform.deepseek.chat.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,8 +13,8 @@ import java.util.List;
 
 /**
  * @Author cly
- * @Description TODO
- * @Date 2024/8/11 19:45
+ * @Description DeepSeek对话响应实体
+ * @Date 2024/8/29 10:28
  */
 
 @Data
@@ -22,7 +22,7 @@ import java.util.List;
 @AllArgsConstructor()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatCompletionResponse {
+public class DeepSeekChatCompletionResponse {
     /**
      * 该对话的唯一标识符。
      */
@@ -44,12 +44,6 @@ public class ChatCompletionResponse {
     private String model;
 
     /**
-     * 该指纹代表模型运行时使用的后端配置。
-     */
-    @JsonProperty("system_fingerprint")
-    private String systemFingerprint;
-
-    /**
      * 模型生成的 completion 的选择列表。
      */
     private List<Choice> choices;
@@ -58,4 +52,10 @@ public class ChatCompletionResponse {
      * 该对话补全请求的用量信息。
      */
     private Usage usage;
+
+    /**
+     * 该指纹代表模型运行时使用的后端配置。
+     */
+    @JsonProperty("system_fingerprint")
+    private String systemFingerprint;
 }

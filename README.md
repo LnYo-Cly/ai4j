@@ -6,6 +6,7 @@
 ## 支持的平台
 + OpenAi
 + Zhipu
++ DeepSeek
 + 待添加
 
 ## 支持的服务
@@ -19,11 +20,13 @@
 + 支持流式输出。支持函数调用参数输出
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
++ 支持stream_options，流式输出直接获取token usage
 + 内置向量数据库支持: Pinecone
 + 使用Tika读取文件
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-08-29] 新增对DeepSeek平台的支持、新增stream_options可以直接统计usage、新增错误拦截器`ErrorInterceptor.java`、发布0.3.0版本.
 + [2024-08-29] 修改SseListener以兼容智谱函数调用
 + [2024-08-28] 添加token统计、添加智谱AI的Chat服务、优化函数调用可以支持多轮多函数。
 + [2024-08-17] 增强SseListener监听器功能。发布0.2.0版本。
@@ -32,11 +35,11 @@
 ## 导入
 ### Gradle
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '0.1.0'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '0.3.0'
 ```
 
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '0.1.0'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '0.3.0'
 ```
 
 
@@ -46,7 +49,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 
 ```
@@ -55,7 +58,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-stater</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -89,7 +92,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 
     }
 ```
-#### Spring获取
+### Spring获取
 ```yml
 # 国内访问默认需要代理
 ai:
@@ -98,11 +101,20 @@ ai:
   okhttp:
     proxy-port: 10809
     proxy-url: "127.0.0.1"
+  zhipu:
+    api-key: "xxx"
+  #other...
 ```
 
 ```java
+// 注入Ai服务
 @Autowired
 private AiService aiService;
+
+// 获取需要的服务实例
+IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+// ......
 ```
 
 ## Chat服务
