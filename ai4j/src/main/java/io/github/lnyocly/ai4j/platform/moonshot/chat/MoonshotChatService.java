@@ -1,13 +1,15 @@
-package io.github.lnyocly.ai4j.platform.deepseek.chat;
+package io.github.lnyocly.ai4j.platform.moonshot.chat;
 
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.config.DeepSeekConfig;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONPath;
+import io.github.lnyocly.ai4j.config.MoonshotConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.ResultConvert;
 import io.github.lnyocly.ai4j.listener.SseListener;
-import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletion;
-import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletion;
+import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -29,41 +31,37 @@ import java.util.List;
 
 /**
  * @Author cly
- * @Description DeepSeek Chat服务
- * @Date 2024/8/29 10:26
+ * @Description 月之暗面请求服务
+ * @Date 2024/8/29 23:12
  */
-public class DeepSeekChatService implements IChatService, ParameterConvert<DeepSeekChatCompletion>, ResultConvert<DeepSeekChatCompletionResponse> {
-    private final DeepSeekConfig deepSeekConfig;
+public class MoonshotChatService implements IChatService, ParameterConvert<MoonshotChatCompletion>, ResultConvert<MoonshotChatCompletionResponse> {
+    private final MoonshotConfig moonshotConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;
 
-    public DeepSeekChatService(Configuration configuration) {
-        this.deepSeekConfig = configuration.getDeepSeekConfig();
+    public MoonshotChatService(Configuration configuration) {
+        this.moonshotConfig = configuration.getMoonshotConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
     }
 
-
     @Override
-    public DeepSeekChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
-        DeepSeekChatCompletion deepSeekChatCompletion = new DeepSeekChatCompletion();
-        deepSeekChatCompletion.setModel(chatCompletion.getModel());
-        deepSeekChatCompletion.setMessages(chatCompletion.getMessages());
-        deepSeekChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
-        deepSeekChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
-        deepSeekChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
-        deepSeekChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
-        deepSeekChatCompletion.setStop(chatCompletion.getStop());
-        deepSeekChatCompletion.setStream(chatCompletion.getStream());
-        deepSeekChatCompletion.setStreamOptions(chatCompletion.getStreamOptions());
-        deepSeekChatCompletion.setTemperature(chatCompletion.getTemperature());
-        deepSeekChatCompletion.setTopP(chatCompletion.getTopP());
-        deepSeekChatCompletion.setTools(chatCompletion.getTools());
-        deepSeekChatCompletion.setFunctions(chatCompletion.getFunctions());
-        deepSeekChatCompletion.setToolChoice(chatCompletion.getToolChoice());
-        deepSeekChatCompletion.setLogprobs(chatCompletion.getLogprobs());
-        deepSeekChatCompletion.setTopLogprobs(chatCompletion.getTopLogprobs());
-        return deepSeekChatCompletion;
+    public MoonshotChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
+        MoonshotChatCompletion moonshotChatCompletion = new MoonshotChatCompletion();
+        moonshotChatCompletion.setModel(chatCompletion.getModel());
+        moonshotChatCompletion.setMessages(chatCompletion.getMessages());
+        moonshotChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
+        moonshotChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        moonshotChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
+        moonshotChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
+        moonshotChatCompletion.setStop(chatCompletion.getStop());
+        moonshotChatCompletion.setStream(chatCompletion.getStream());
+        moonshotChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
+        moonshotChatCompletion.setTopP(chatCompletion.getTopP());
+        moonshotChatCompletion.setTools(chatCompletion.getTools());
+        moonshotChatCompletion.setFunctions(chatCompletion.getFunctions());
+        moonshotChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        return moonshotChatCompletion;
     }
 
     @Override
@@ -86,8 +84,18 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
                     return;
                 }
 
-                DeepSeekChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, DeepSeekChatCompletionResponse.class);
+
+
+                MoonshotChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, MoonshotChatCompletionResponse.class);
                 ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+
+                // 适配moonshot的流式 usage格式
+                JSONObject object = (JSONObject)JSONPath.eval(data, "$.choices[0].usage");
+                if(object!=null){
+                    Usage usage = object.toJavaObject(Usage.class);
+                    response.setUsage(usage);
+                }
+
 
                 eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
             }
@@ -100,32 +108,29 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
     }
 
     @Override
-    public ChatCompletionResponse convertChatCompletionResponse(DeepSeekChatCompletionResponse deepSeekChatCompletionResponse) {
+    public ChatCompletionResponse convertChatCompletionResponse(MoonshotChatCompletionResponse moonshotChatCompletionResponse) {
         ChatCompletionResponse chatCompletionResponse = new ChatCompletionResponse();
-        chatCompletionResponse.setId(deepSeekChatCompletionResponse.getId());
-        chatCompletionResponse.setObject(deepSeekChatCompletionResponse.getObject());
-        chatCompletionResponse.setCreated(deepSeekChatCompletionResponse.getCreated());
-        chatCompletionResponse.setModel(deepSeekChatCompletionResponse.getModel());
-        chatCompletionResponse.setSystemFingerprint(deepSeekChatCompletionResponse.getSystemFingerprint());
-        chatCompletionResponse.setChoices(deepSeekChatCompletionResponse.getChoices());
-        chatCompletionResponse.setUsage(deepSeekChatCompletionResponse.getUsage());
+        chatCompletionResponse.setId(moonshotChatCompletionResponse.getId());
+        chatCompletionResponse.setObject(moonshotChatCompletionResponse.getObject());
+        chatCompletionResponse.setCreated(moonshotChatCompletionResponse.getCreated());
+        chatCompletionResponse.setModel(moonshotChatCompletionResponse.getModel());
+        chatCompletionResponse.setChoices(moonshotChatCompletionResponse.getChoices());
+        chatCompletionResponse.setUsage(moonshotChatCompletionResponse.getUsage());
         return chatCompletionResponse;
     }
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = deepSeekConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = deepSeekConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = moonshotConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = moonshotConfig.getApiKey();
         chatCompletion.setStream(false);
-        chatCompletion.setStreamOptions(null);
-
         // 转换 请求参数
-        DeepSeekChatCompletion deepSeekChatCompletion = this.convertChatCompletionObject(chatCompletion);
+        MoonshotChatCompletion moonshotChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 如含有function，则添加tool
-        if(deepSeekChatCompletion.getFunctions()!=null && !deepSeekChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(deepSeekChatCompletion.getFunctions());
-            deepSeekChatCompletion.setTools(tools);
+        if(moonshotChatCompletion.getFunctions()!=null && !moonshotChatCompletion.getFunctions().isEmpty()){
+            List<Tool> tools = ToolUtil.getAllFunctionTools(moonshotChatCompletion.getFunctions());
+            moonshotChatCompletion.setTools(tools);
         }
 
         // 总token消耗
@@ -138,22 +143,22 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(deepSeekChatCompletion);
+            String requestString = JSON.toJSONString(moonshotChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(deepSeekConfig.getChatCompletionUrl()))
+                    .url(baseUrl.concat(moonshotConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                DeepSeekChatCompletionResponse deepSeekChatCompletionResponse = JSON.parseObject(execute.body().string(), DeepSeekChatCompletionResponse.class);
+                MoonshotChatCompletionResponse moonshotChatCompletionResponse = JSON.parseObject(execute.body().string(), MoonshotChatCompletionResponse.class);
 
-                Choice choice = deepSeekChatCompletionResponse.getChoices().get(0);
+                Choice choice = moonshotChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
 
-                Usage usage = deepSeekChatCompletionResponse.getUsage();
+                Usage usage = moonshotChatCompletionResponse.getUsage();
                 allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
                 allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
                 allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
@@ -163,7 +168,7 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
                     ChatMessage message = choice.getMessage();
                     List<ToolCall> toolCalls = message.getToolCalls();
 
-                    List<ChatMessage> messages = new ArrayList<>(deepSeekChatCompletion.getMessages());
+                    List<ChatMessage> messages = new ArrayList<>(moonshotChatCompletion.getMessages());
                     messages.add(message);
 
                     // 添加 tool 消息
@@ -174,26 +179,25 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
 
                         messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
                     }
-                    deepSeekChatCompletion.setMessages(messages);
+                    moonshotChatCompletion.setMessages(messages);
 
                 }else{// 其他情况直接返回
 
                     // 设置包含tool的总token数
-                    deepSeekChatCompletionResponse.setUsage(allUsage);
-                    //deepSeekChatCompletionResponse.setObject("chat.completion");
+                    moonshotChatCompletionResponse.setUsage(allUsage);
+                    //moonshotChatCompletionResponse.setObject("chat.completion");
 
                     // 恢复原始请求数据
-                    chatCompletion.setMessages(deepSeekChatCompletion.getMessages());
-                    chatCompletion.setTools(deepSeekChatCompletion.getTools());
+                    chatCompletion.setMessages(moonshotChatCompletion.getMessages());
+                    chatCompletion.setTools(moonshotChatCompletion.getTools());
 
-                    return this.convertChatCompletionResponse(deepSeekChatCompletionResponse);
+                    return this.convertChatCompletionResponse(moonshotChatCompletionResponse);
 
                 }
 
             }
 
         }
-
 
         return null;
     }
@@ -205,17 +209,17 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = deepSeekConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = deepSeekConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = moonshotConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = moonshotConfig.getApiKey();
         chatCompletion.setStream(true);
 
         // 转换 请求参数
-        DeepSeekChatCompletion deepSeekChatCompletion = this.convertChatCompletionObject(chatCompletion);
+        MoonshotChatCompletion moonshotChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 如含有function，则添加tool
-        if(deepSeekChatCompletion.getFunctions()!=null && !deepSeekChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(deepSeekChatCompletion.getFunctions());
-            deepSeekChatCompletion.setTools(tools);
+        if(moonshotChatCompletion.getFunctions()!=null && !moonshotChatCompletion.getFunctions().isEmpty()){
+            List<Tool> tools = ToolUtil.getAllFunctionTools(moonshotChatCompletion.getFunctions());
+            moonshotChatCompletion.setTools(tools);
         }
 
         String finishReason = "first";
@@ -223,11 +227,11 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(deepSeekChatCompletion);
+            String jsonString = JSON.toJSONString(moonshotChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(deepSeekConfig.getChatCompletionUrl()))
+                    .url(baseUrl.concat(moonshotConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
                     .build();
 
@@ -243,7 +247,7 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-                List<ChatMessage> messages = new ArrayList<>(deepSeekChatCompletion.getMessages());
+                List<ChatMessage> messages = new ArrayList<>(moonshotChatCompletion.getMessages());
                 messages.add(responseMessage);
 
                 // 封装tool结果消息
@@ -256,14 +260,14 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
                 }
                 eventSourceListener.setToolCalls(new ArrayList<>());
                 eventSourceListener.setToolCall(null);
-                deepSeekChatCompletion.setMessages(messages);
+                moonshotChatCompletion.setMessages(messages);
             }
 
         }
 
         // 补全原始请求
-        chatCompletion.setMessages(deepSeekChatCompletion.getMessages());
-        chatCompletion.setTools(deepSeekChatCompletion.getTools());
+        chatCompletion.setMessages(moonshotChatCompletion.getMessages());
+        chatCompletion.setTools(moonshotChatCompletion.getTools());
     }
 
     @Override

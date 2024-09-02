@@ -1,12 +1,14 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
-一款JavaSDK整合Openai、Zhipu等大平台的AI接口，将各个平台的请求与相应均转换为Openai格式，消除差异化。
+一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
 
 
 ## 支持的平台
 + OpenAi
 + Zhipu
 + DeepSeek
++ Moonshot
++ Hunyuan
 + 待添加
 
 ## 支持的服务
@@ -16,18 +18,21 @@
 
 ## 特性
 + 支持Spring以及普通Java应用、支持Java 8以上的应用
++ 多平台、多服务
 + 统一的输入输出
-+ 支持流式输出。支持函数调用参数输出
++ 支持流式输出。支持函数调用参数流式输出
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
-+ 支持stream_options，流式输出直接获取token usage
++ 支持stream_options，流式输出直接获取统计token usage
 + 内置向量数据库支持: Pinecone
 + 使用Tika读取文件
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
-+ [2024-08-29] 新增对DeepSeek平台的支持、新增stream_options可以直接统计usage、新增错误拦截器`ErrorInterceptor.java`、发布0.3.0版本.
-+ [2024-08-29] 修改SseListener以兼容智谱函数调用
++ [2024-09-02] 新增腾讯混元Hunyuan平台支持（注意：所需apiKey 属于SecretId与SecretKey的拼接，格式为 {SecretId}.{SecretKey}），发布0.4.0版本。
++ [2024-08-30] 新增对Moonshot(Kimi)平台的支持，增加`OkHttpUtil.java`实现忽略SSL证书的校验。
++ [2024-08-29] 新增对DeepSeek平台的支持、新增stream_options可以直接统计usage、新增错误拦截器`ErrorInterceptor.java`、发布0.3.0版本。
++ [2024-08-29] 修改SseListener以兼容智谱函数调用。
 + [2024-08-28] 添加token统计、添加智谱AI的Chat服务、优化函数调用可以支持多轮多函数。
 + [2024-08-17] 增强SseListener监听器功能。发布0.2.0版本。
 
@@ -35,11 +40,11 @@
 ## 导入
 ### Gradle
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '0.3.0'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '${project.version}'
 ```
 
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '0.3.0'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '${project.version}'
 ```
 
 
@@ -49,7 +54,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>0.3.0</version>
+    <version>${project.version}</version>
 </dependency>
 
 ```
@@ -58,7 +63,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-stater</artifactId>
-    <version>0.3.0</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

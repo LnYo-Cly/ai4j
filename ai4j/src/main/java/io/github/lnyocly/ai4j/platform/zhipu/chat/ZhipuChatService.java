@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.platform.zhipu.chat;
 
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.ParameterConvert;
@@ -82,7 +81,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
-                    .url(baseUrl.concat(zhipuConfig.getChat_completion()))
+                    .url(baseUrl.concat(zhipuConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
                     .build();
 
@@ -169,7 +168,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
-                    .url(baseUrl.concat(zhipuConfig.getChat_completion()))
+                    .url(baseUrl.concat(zhipuConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
                     .build();
 
@@ -230,7 +229,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
     }
 
     @Override
-    public EventSourceListener convertEventSource(EventSourceListener eventSourceListener) {
+    public EventSourceListener convertEventSource(SseListener eventSourceListener) {
         return new EventSourceListener() {
             @Override
             public void onOpen(@NotNull EventSource eventSource, @NotNull Response response) {

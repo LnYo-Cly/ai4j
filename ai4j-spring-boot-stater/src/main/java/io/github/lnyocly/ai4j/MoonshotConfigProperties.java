@@ -4,20 +4,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @Author cly
- * @Description TODO
- * @Date 2024/8/9 23:17
+ * @Description Moonshot 配置文件
+ * @Date 2024/8/30 15:56
  */
-@ConfigurationProperties(prefix = "ai.openai")
-public class OpenAiConfigProperties {
-    private String apiHost = "https://api.openai.com/";
-
+@ConfigurationProperties(prefix = "ai.moonshot")
+public class MoonshotConfigProperties {
+    private String apiHost = "https://api.moonshot.cn/";
     private String apiKey = "";
-
     private String chatCompletionUrl = "v1/chat/completions";
-    private String embeddingUrl = "v1/embeddings";
-
-    public OpenAiConfigProperties() {
-    }
 
     public String getApiHost() {
         return apiHost;
@@ -25,14 +19,6 @@ public class OpenAiConfigProperties {
 
     public void setApiHost(String apiHost) {
         this.apiHost = apiHost;
-    }
-
-    public String getEmbeddingUrl() {
-        return embeddingUrl;
-    }
-
-    public void setEmbeddingUrl(String embeddingUrl) {
-        this.embeddingUrl = embeddingUrl;
     }
 
     public String getApiKey() {

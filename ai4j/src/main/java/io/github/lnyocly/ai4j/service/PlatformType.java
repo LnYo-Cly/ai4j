@@ -14,6 +14,8 @@ public enum PlatformType {
     OPENAI("openai"),
     ZHIPU("zhipu"),
     DEEPSEEK("deepseek"),
+    MOONSHOT("moonshot"),
+    HUNYUAN("hunyuan"),
     ;
     private final String platform;
 

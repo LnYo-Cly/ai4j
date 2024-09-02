@@ -33,7 +33,7 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
 
         Request request = new Request.Builder()
                 .header("Authorization", "Bearer " + apiKey)
-                .url(baseUrl.concat(openAiConfig.getV1_embeddings()))
+                .url(baseUrl.concat(openAiConfig.getEmbeddingUrl()))
                 .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
                 .build();
         Response execute = okHttpClient.newCall(request).execute();

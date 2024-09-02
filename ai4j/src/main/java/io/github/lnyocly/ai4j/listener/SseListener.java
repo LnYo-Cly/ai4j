@@ -69,6 +69,7 @@ public abstract class SseListener extends EventSourceListener {
     private List<ToolCall> toolCalls = new ArrayList<>();
 
     @Setter
+    @Getter
     private ToolCall toolCall;
 
     /**
@@ -149,6 +150,13 @@ public abstract class SseListener extends EventSourceListener {
 
         if(responseMessage.getToolCalls() == null) {
             // 普通响应回答
+
+            // 判断是否为混元的tool最后一条说明性content
+            // :{"Role":"assistant","Content":"计划使用get_current_weather工具来获取北京和深圳的当前天气。\n\t\n\t用户想要知道北京和深圳今天的天气情况。用户的请求是关于天气的查询，需要使用天气查询工具来获取信息。"}
+            if(toolCall !=null && StringUtils.isNotBlank(argument)&& "assistant".equals(responseMessage.getRole()) && StringUtils.isNotBlank(responseMessage.getContent()) ){
+                return;
+            }
+
             output.append(responseMessage.getContent());
             currStr = responseMessage.getContent();
             this.send();

@@ -6,10 +6,10 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-stater</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 
     <name>ai4j-spring-boot-stater</name>
-    <description>为aj4j所提供的spring-stater，便于接入spring项目。关于ai4j: 整合多平台大模型，如OpenAi、Zhipu(ChatGLM)、DeepSeek等等，提供统一的输入输出(对齐OpenAi)，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。</description>
+    <description>为aj4j所提供的spring-stater，便于接入spring项目。关于ai4j: 一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。</description>
 
     <licenses>
         <license>

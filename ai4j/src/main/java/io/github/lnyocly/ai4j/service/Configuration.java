@@ -1,16 +1,10 @@
 package io.github.lnyocly.ai4j.service;
 
-import io.github.lnyocly.ai4j.config.DeepSeekConfig;
-import io.github.lnyocly.ai4j.config.OpenAiConfig;
-import io.github.lnyocly.ai4j.config.PineconeConfig;
-import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.config.*;
 import lombok.Data;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSources;
-
-import java.net.Proxy;
 
 /**
  * @Author cly
@@ -30,6 +24,8 @@ public class Configuration {
     private OpenAiConfig openAiConfig;
     private ZhipuConfig zhipuConfig;
     private DeepSeekConfig deepSeekConfig;
+    private MoonshotConfig moonshotConfig;
+    private HunyuanConfig hunyuanConfig;
 
     private PineconeConfig pineconeConfig;
 

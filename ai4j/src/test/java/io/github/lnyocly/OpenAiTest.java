@@ -1,10 +1,7 @@
 package io.github.lnyocly;
 
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.config.DeepSeekConfig;
-import io.github.lnyocly.ai4j.config.OpenAiConfig;
-
-import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
@@ -19,17 +16,15 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
-
+import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
-import io.github.lnyocly.ai4j.utils.TikTokensUtil;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.vector.VertorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
-import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
-import io.github.lnyocly.ai4j.vector.VertorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
-import io.github.lnyocly.ai4j.vector.pinecone.PineconeQueryResponse;
+import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -48,8 +43,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -66,15 +65,20 @@ public class OpenAiTest {
     private IChatService chatService;
     Reflections reflections = new Reflections();
     @Before
-    public void test_init(){
+    public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         ZhipuConfig zhipuConfig = new ZhipuConfig();
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
+        MoonshotConfig moonshotConfig = new MoonshotConfig();
+        HunyuanConfig hunyuanConfig = new HunyuanConfig();
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
         configuration.setZhipuConfig(zhipuConfig);
         configuration.setDeepSeekConfig(deepSeekConfig);
+        configuration.setMoonshotConfig(moonshotConfig);
+        configuration.setHunyuanConfig(hunyuanConfig);
+
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -86,7 +90,9 @@ public class OpenAiTest {
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
+                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
@@ -94,10 +100,9 @@ public class OpenAiTest {
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
-        chatService = aiService.getChatService(PlatformType.DEEPSEEK);
+        chatService = aiService.getChatService(PlatformType.HUNYUAN);
 
     }
-
 
     @Test
     public void test_test(){
@@ -143,7 +148,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseek-chat")
+                .model("hunyuan-vision")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -160,10 +165,10 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_multimodal() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("这几张图片有什么动物, 并且是什么品种",
-                        "https://cn.bing.com/images/search?view=detailV2&ccid=r0OnuYkv&id=9A07DE578F6ED50DB59DFEA5C675AC71845A6FC9&thid=OIP.r0OnuYkvsbqBrYk3kUT53AHaKX&mediaurl=https%3a%2f%2fimg.zcool.cn%2fcommunity%2f0104c15cd45b49a80121416816f1ec.jpg%401280w_1l_2o_100sh.jpg&exph=1792&expw=1280&q=%e5%b0%8f%e7%8c%ab%e5%9b%be%e7%89%87&simid=607987191780608963&FORM=IRPRST&ck=12127C1696CF374CB9D0F09AE99AFE69&selectedIndex=2&itb=0&qpvt=%e5%b0%8f%e7%8c%ab%e5%9b%be%e7%89%87",
-                        "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7"))
+                .model("hunyuan-vision")
+                .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
+                        "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
+                        "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
                 .build();
 
         System.out.println("请求参数");
@@ -179,7 +184,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseek-chat")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -199,13 +204,14 @@ public class OpenAiTest {
 
         System.out.println("请求成功");
         System.out.println(sseListener.getOutput());
+        System.out.println(sseListener.getUsage());
 
     }
 
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseek-chat")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -227,7 +233,7 @@ public class OpenAiTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseekaa-chat")
+                .model("hunyuan-functioncall")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();

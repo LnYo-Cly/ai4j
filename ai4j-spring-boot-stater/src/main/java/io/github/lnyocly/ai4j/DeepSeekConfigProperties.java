@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @Author cly
- * @Description TODO
+ * @Description DeepSeek配置文件
  * @Date 2024/8/29 15:01
  */
 @ConfigurationProperties(prefix = "ai.deepseek")
@@ -12,7 +12,7 @@ public class DeepSeekConfigProperties {
 
     private String apiHost = "https://api.deepseek.com/";
     private String apiKey = "";
-    private String chat_completion = "chat/completions";
+    private String chatCompletionUrl = "chat/completions";
 
     public String getApiHost() {
         return apiHost;
@@ -22,12 +22,12 @@ public class DeepSeekConfigProperties {
         this.apiHost = apiHost;
     }
 
-    public String getChat_completion() {
-        return chat_completion;
+    public String getChatCompletionUrl() {
+        return chatCompletionUrl;
     }
 
-    public void setChat_completion(String chat_completion) {
-        this.chat_completion = chat_completion;
+    public void setChatCompletionUrl(String chatCompletionUrl) {
+        this.chatCompletionUrl = chatCompletionUrl;
     }
 
     public String getApiKey() {

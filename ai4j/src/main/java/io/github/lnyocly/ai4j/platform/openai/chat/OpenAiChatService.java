@@ -8,18 +8,15 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
-import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletionResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
-import okhttp3.sse.EventSourceListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +66,7 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
+                    .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
                     .build();
 
@@ -148,7 +145,7 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(openAiConfig.getV1_chat_completions()))
+                    .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
                     .build();
 

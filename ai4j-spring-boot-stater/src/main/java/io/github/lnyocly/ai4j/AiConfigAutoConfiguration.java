@@ -1,15 +1,13 @@
 package io.github.lnyocly.ai4j;
 
-import io.github.lnyocly.ai4j.config.DeepSeekConfig;
-import io.github.lnyocly.ai4j.config.OpenAiConfig;
-import io.github.lnyocly.ai4j.config.PineconeConfig;
-import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
-import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
+import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.concurrent.TimeUnit;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @Author cly
@@ -30,23 +29,34 @@ import java.util.concurrent.TimeUnit;
         OkHttpConfigProperties.class,
         PineconeConfigProperties.class,
         ZhipuConfigProperties.class,
-        DeepSeekConfigProperties.class})
+        DeepSeekConfigProperties.class,
+        MoonshotConfigProperties.class,
+        HunyuanConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
+    // okhttp配置
     private final OkHttpConfigProperties okHttpConfigProperties;
-    private final OpenAiConfigProperties openAiConfigProperties;
+
+    // 向量数据库配置
     private final PineconeConfigProperties pineconeConfigProperties;
+
+    // AI平台配置
+    private final OpenAiConfigProperties openAiConfigProperties;
     private final ZhipuConfigProperties zhipuConfigProperties;
     private final DeepSeekConfigProperties deepSeekConfigProperties;
+    private final MoonshotConfigProperties moonshotConfigProperties;
+    private final HunyuanConfigProperties hunyuanConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
         this.deepSeekConfigProperties = deepSeekConfigProperties;
+        this.moonshotConfigProperties = moonshotConfigProperties;
+        this.hunyuanConfigProperties = hunyuanConfigProperties;
     }
 
     @Bean
@@ -62,55 +72,85 @@ public class AiConfigAutoConfiguration {
     @PostConstruct
     private void init() {
         initOkHttp();
-        initOpenAiConfig();
+
         initPineconeConfig();
+
+        initOpenAiConfig();
         initZhipuConfig();
         initDeepSeekConfig();
+        initMoonshotConfig();
+        initHunyuanConfig();
     }
 
     private void initOkHttp() {
         //configuration.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)));
-
-        Proxy proxy = new Proxy(okHttpConfigProperties.getProxyType(), new InetSocketAddress(okHttpConfigProperties.getProxyUrl(), okHttpConfigProperties.getProxyPort()));
 
         // 日志配置
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(okHttpConfigProperties.getLog());
 
         // 开启 Http 客户端
-        OkHttpClient okHttpClient = new OkHttpClient
+        OkHttpClient.Builder okHttpBuilder = new OkHttpClient
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
                 .addInterceptor(new ErrorInterceptor())
                 .connectTimeout(okHttpConfigProperties.getConnectTimeout(), okHttpConfigProperties.getTimeUnit())
                 .writeTimeout(okHttpConfigProperties.getWriteTimeout(), okHttpConfigProperties.getTimeUnit())
-                .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit())
-                .proxy(proxy)
-                .build();
+                .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit());
+
+        // 是否开启Proxy代理
+        if(StringUtils.isNotBlank(okHttpConfigProperties.getProxyUrl())){
+            Proxy proxy = new Proxy(okHttpConfigProperties.getProxyType(), new InetSocketAddress(okHttpConfigProperties.getProxyUrl(), okHttpConfigProperties.getProxyPort()));
+            okHttpBuilder.proxy(proxy);
+        }
+
+        // 忽略SSL证书验证, 默认开启
+        if(okHttpConfigProperties.isIgnoreSsl()){
+            try {
+                okHttpBuilder
+                        .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                        .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier());
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            } catch (KeyManagementException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        OkHttpClient okHttpClient = okHttpBuilder.build();
 
         configuration.setOkHttpClient(okHttpClient);
     }
 
+    /**
+     * 初始化Openai 配置信息
+     */
     private void initOpenAiConfig() {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost(openAiConfigProperties.getApiHost());
         openAiConfig.setApiKey(openAiConfigProperties.getApiKey());
-        openAiConfig.setV1_chat_completions(openAiConfigProperties.getV1_chat_completions());
-        openAiConfig.setV1_embeddings(openAiConfigProperties.getV1_embeddings());
+        openAiConfig.setChatCompletionUrl(openAiConfigProperties.getChatCompletionUrl());
+        openAiConfig.setEmbeddingUrl(openAiConfigProperties.getEmbeddingUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }
 
+    /**
+     * 初始化Zhipu 配置信息
+     */
     private void initZhipuConfig() {
         ZhipuConfig zhipuConfig = new ZhipuConfig();
         zhipuConfig.setApiHost(zhipuConfigProperties.getApiHost());
         zhipuConfig.setApiKey(zhipuConfigProperties.getApiKey());
-        zhipuConfig.setChat_completion(zhipuConfigProperties.getChat_completion());
-        zhipuConfig.setEmbedding(zhipuConfigProperties.getEmbedding());
+        zhipuConfig.setChatCompletionUrl(zhipuConfigProperties.getChatCompletionUrl());
+        zhipuConfig.setEmbeddingUrl(zhipuConfigProperties.getEmbeddingUrl());
 
         configuration.setZhipuConfig(zhipuConfig);
     }
 
+    /**
+     * 初始化向量数据库 pinecone
+     */
     private void initPineconeConfig() {
         PineconeConfig pineconeConfig = new PineconeConfig();
         pineconeConfig.setUrl(pineconeConfigProperties.getUrl());
@@ -122,13 +162,39 @@ public class AiConfigAutoConfiguration {
         configuration.setPineconeConfig(pineconeConfig);
     }
 
+    /**
+     * 初始化DeepSeek 配置信息
+     */
     private void initDeepSeekConfig(){
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
         deepSeekConfig.setApiHost(deepSeekConfigProperties.getApiHost());
         deepSeekConfig.setApiKey(deepSeekConfigProperties.getApiKey());
-        deepSeekConfig.setChat_completion(deepSeekConfigProperties.getChat_completion());
+        deepSeekConfig.setChatCompletionUrl(deepSeekConfigProperties.getChatCompletionUrl());
 
         configuration.setDeepSeekConfig(deepSeekConfig);
+    }
+
+    /**
+     * 初始化Moonshot 配置信息
+     */
+    private void initMoonshotConfig() {
+        MoonshotConfig moonshotConfig = new MoonshotConfig();
+        moonshotConfig.setApiHost(moonshotConfigProperties.getApiHost());
+        moonshotConfig.setApiKey(moonshotConfigProperties.getApiKey());
+        moonshotConfig.setChatCompletionUrl(moonshotConfigProperties.getChatCompletionUrl());
+
+        configuration.setMoonshotConfig(moonshotConfig);
+    }
+
+    /**
+     * 初始化Hunyuan 配置信息
+     */
+    private void initHunyuanConfig() {
+        HunyuanConfig hunyuanConfig = new HunyuanConfig();
+        hunyuanConfig.setApiHost(hunyuanConfigProperties.getApiHost());
+        hunyuanConfig.setApiKey(hunyuanConfigProperties.getApiKey());
+
+        configuration.setHunyuanConfig(hunyuanConfig);
     }
 
 }

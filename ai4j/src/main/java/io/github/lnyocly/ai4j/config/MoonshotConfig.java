@@ -6,16 +6,15 @@ import lombok.NoArgsConstructor;
 
 /**
  * @Author cly
- * @Description DeepSeek 配置文件
- * @Date 2024/8/29 10:31
+ * @Description 月之暗面配置
+ * @Date 2024/8/29 23:00
  */
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeepSeekConfig {
-
-    private String apiHost = "https://api.deepseek.com/";
+public class MoonshotConfig {
+    private String apiHost = "https://api.moonshot.cn/";
     private String apiKey = "";
-    private String chatCompletionUrl = "chat/completions";
+    private String chatCompletionUrl = "v1/chat/completions";
 }

@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.convert;
 
+import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -10,6 +11,6 @@ import okhttp3.sse.EventSourceListener;
  * @Date 2024/8/12 1:05
  */
 public interface ResultConvert<T> {
-    EventSourceListener convertEventSource(EventSourceListener eventSourceListener);
+    EventSourceListener convertEventSource(SseListener eventSourceListener);
     ChatCompletionResponse convertChatCompletionResponse(T t);
 }

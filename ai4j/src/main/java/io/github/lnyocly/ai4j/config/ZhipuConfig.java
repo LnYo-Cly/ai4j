@@ -16,6 +16,6 @@ public class ZhipuConfig {
 
     private String apiHost = "https://open.bigmodel.cn/api/paas/";
     private String apiKey = "";
-    private String chat_completion = "v4/chat/completions";
-    private String embedding= "v4/embeddings";
+    private String chatCompletionUrl = "v4/chat/completions";
+    private String embeddingUrl= "v4/embeddings";
 }

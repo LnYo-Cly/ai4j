@@ -12,8 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ZhipuConfigProperties {
     private String apiHost = "https://open.bigmodel.cn/api/paas/";
     private String apiKey = "";
-    private String chat_completion = "v4/chat/completions";
-    private String embedding= "v4/embeddings";
+    private String chatCompletionUrl = "v4/chat/completions";
+    private String embeddingUrl= "v4/embeddings";
 
     public String getApiHost() {
         return apiHost;
@@ -23,27 +23,27 @@ public class ZhipuConfigProperties {
         this.apiHost = apiHost;
     }
 
-    public String getEmbedding() {
-        return embedding;
-    }
-
-    public void setEmbedding(String embedding) {
-        this.embedding = embedding;
-    }
-
-    public String getChat_completion() {
-        return chat_completion;
-    }
-
-    public void setChat_completion(String chat_completion) {
-        this.chat_completion = chat_completion;
-    }
-
     public String getApiKey() {
         return apiKey;
     }
 
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
+    }
+
+    public String getChatCompletionUrl() {
+        return chatCompletionUrl;
+    }
+
+    public void setChatCompletionUrl(String chatCompletionUrl) {
+        this.chatCompletionUrl = chatCompletionUrl;
+    }
+
+    public String getEmbeddingUrl() {
+        return embeddingUrl;
+    }
+
+    public void setEmbeddingUrl(String embeddingUrl) {
+        this.embeddingUrl = embeddingUrl;
     }
 }
