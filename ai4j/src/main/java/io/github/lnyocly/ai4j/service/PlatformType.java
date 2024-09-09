@@ -16,6 +16,7 @@ public enum PlatformType {
     DEEPSEEK("deepseek"),
     MOONSHOT("moonshot"),
     HUNYUAN("hunyuan"),
+    LINGYI("lingyi"),
     ;
     private final String platform;
 

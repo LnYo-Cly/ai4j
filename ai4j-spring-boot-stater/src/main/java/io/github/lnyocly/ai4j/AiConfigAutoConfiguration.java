@@ -31,7 +31,8 @@ import java.security.NoSuchAlgorithmException;
         ZhipuConfigProperties.class,
         DeepSeekConfigProperties.class,
         MoonshotConfigProperties.class,
-        HunyuanConfigProperties.class})
+        HunyuanConfigProperties.class,
+        LingyiConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     // okhttp配置
@@ -46,10 +47,11 @@ public class AiConfigAutoConfiguration {
     private final DeepSeekConfigProperties deepSeekConfigProperties;
     private final MoonshotConfigProperties moonshotConfigProperties;
     private final HunyuanConfigProperties hunyuanConfigProperties;
+    private final LingyiConfigProperties lingyiConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -57,6 +59,7 @@ public class AiConfigAutoConfiguration {
         this.deepSeekConfigProperties = deepSeekConfigProperties;
         this.moonshotConfigProperties = moonshotConfigProperties;
         this.hunyuanConfigProperties = hunyuanConfigProperties;
+        this.lingyiConfigProperties = lingyiConfigProperties;
     }
 
     @Bean
@@ -80,6 +83,7 @@ public class AiConfigAutoConfiguration {
         initDeepSeekConfig();
         initMoonshotConfig();
         initHunyuanConfig();
+        initLingyiConfig();
     }
 
     private void initOkHttp() {
@@ -195,6 +199,18 @@ public class AiConfigAutoConfiguration {
         hunyuanConfig.setApiKey(hunyuanConfigProperties.getApiKey());
 
         configuration.setHunyuanConfig(hunyuanConfig);
+    }
+
+    /**
+     * 初始化lingyi 配置信息
+     */
+    private void initLingyiConfig() {
+        LingyiConfig lingyiConfig = new LingyiConfig();
+        lingyiConfig.setApiHost(lingyiConfigProperties.getApiHost());
+        lingyiConfig.setApiKey(lingyiConfigProperties.getApiKey());
+        lingyiConfig.setChatCompletionUrl(lingyiConfigProperties.getChatCompletionUrl());
+
+        configuration.setLingyiConfig(lingyiConfig);
     }
 
 }

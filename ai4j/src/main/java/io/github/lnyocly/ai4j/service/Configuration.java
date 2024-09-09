@@ -26,6 +26,7 @@ public class Configuration {
     private DeepSeekConfig deepSeekConfig;
     private MoonshotConfig moonshotConfig;
     private HunyuanConfig hunyuanConfig;
+    private LingyiConfig lingyiConfig;
 
     private PineconeConfig pineconeConfig;
 

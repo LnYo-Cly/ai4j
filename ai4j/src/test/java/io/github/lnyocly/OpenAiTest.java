@@ -71,6 +71,7 @@ public class OpenAiTest {
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
         MoonshotConfig moonshotConfig = new MoonshotConfig();
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
+        LingyiConfig lingyiConfig = new LingyiConfig();
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
@@ -78,6 +79,7 @@ public class OpenAiTest {
         configuration.setDeepSeekConfig(deepSeekConfig);
         configuration.setMoonshotConfig(moonshotConfig);
         configuration.setHunyuanConfig(hunyuanConfig);
+        configuration.setLingyiConfig(lingyiConfig);
 
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
@@ -100,7 +102,7 @@ public class OpenAiTest {
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
-        chatService = aiService.getChatService(PlatformType.HUNYUAN);
+        chatService = aiService.getChatService(PlatformType.LINGYI);
 
     }
 
@@ -148,7 +150,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("hunyuan-vision")
+                .model("yi-large")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -165,7 +167,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_multimodal() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("hunyuan-vision")
+                .model("yi-vision")
                 .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
                         "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
                         "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
@@ -184,7 +186,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("hunyuan-lite")
+                .model("yi-medium")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -211,7 +213,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("hunyuan-lite")
+                .model("yi-large-fc")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -233,7 +235,7 @@ public class OpenAiTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("hunyuan-functioncall")
+                .model("yi-large-fc")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
