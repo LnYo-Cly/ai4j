@@ -214,7 +214,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     .header("X-TC-Version", HunyuanConstant.Version)
                     .header("X-TC-Timestamp", String.valueOf(System.currentTimeMillis() / 1000))
                     .url(baseUrl)
-                    .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
@@ -365,7 +365,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     .header("X-TC-Timestamp", String.valueOf(System.currentTimeMillis() / 1000))
                     .header("Accept", Constants.SSE_CONTENT_TYPE)
                     .url(baseUrl)
-                    .post(RequestBody.create(requestString, MediaType.parse(Constants.APPLICATION_JSON)))
+                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), requestString))
                     .build();
 
             factory.newEventSource(request, convertEventSource(eventSourceListener));

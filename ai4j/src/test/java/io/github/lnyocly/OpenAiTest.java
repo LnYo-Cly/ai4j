@@ -94,7 +94,7 @@ public class OpenAiTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
@@ -102,7 +102,7 @@ public class OpenAiTest {
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
-        chatService = aiService.getChatService(PlatformType.LINGYI);
+        chatService = aiService.getChatService(PlatformType.OPENAI);
 
     }
 
@@ -150,7 +150,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-large")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -213,7 +213,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-large-fc")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
