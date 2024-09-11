@@ -10,7 +10,7 @@
 + Moonshot(月之暗面)
 + Hunyuan(腾讯混元)
 + Lingyi(零一万物)
-+ 待添加
++ 待添加(Qwen Llama MiniMax...)
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
