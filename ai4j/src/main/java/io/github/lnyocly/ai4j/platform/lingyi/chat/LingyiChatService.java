@@ -140,7 +140,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
                     .url(baseUrl.concat(lingyiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
@@ -225,7 +225,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
                     .url(baseUrl.concat(lingyiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
+                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 
 

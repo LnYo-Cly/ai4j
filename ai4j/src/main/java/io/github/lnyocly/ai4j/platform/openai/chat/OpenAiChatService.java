@@ -67,7 +67,7 @@ public class OpenAiChatService implements IChatService {
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
                     .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(requestString, MediaType.parse(Constants.JSON_CONTENT_TYPE)))
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
@@ -146,7 +146,7 @@ public class OpenAiChatService implements IChatService {
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
                     .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(jsonString, MediaType.parse(Constants.APPLICATION_JSON)))
+                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 
 
