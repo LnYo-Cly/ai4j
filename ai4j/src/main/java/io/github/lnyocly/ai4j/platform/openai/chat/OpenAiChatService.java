@@ -50,6 +50,11 @@ public class OpenAiChatService implements IChatService {
         if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
             chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }else{
+            chatCompletion.setParallelToolCalls(null);
         }
 
 
