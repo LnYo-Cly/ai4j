@@ -134,11 +134,16 @@ public class OpenAiChatService implements IChatService {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
         chatCompletion.setStream(true);
+        chatCompletion.setStreamOptions(null);
 
-        // 获取函数调用
         if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
             chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }else{
+            chatCompletion.setParallelToolCalls(null);
         }
 
         String finishReason = "first";

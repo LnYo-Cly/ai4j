@@ -92,8 +92,8 @@ public class OpenAiTest {
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
-                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
-                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                //.sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                //.hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
                 .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
@@ -186,7 +186,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-medium")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
