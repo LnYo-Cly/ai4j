@@ -7,9 +7,10 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 /**
+ * OkHttpUtil 是一个用于处理 SSL/TLS 连接的工具类
+ * 主要功能是提供忽略 SSL 证书验证的能力（月之暗面Kimi大模型不忽略，无法发请求/或者本地配一个Kimi的SSL）
  *
  * @author Vania
- *
  */
 public class OkHttpUtil {
     /**
