@@ -6,11 +6,12 @@ import com.alibaba.fastjson2.JSONObject;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * @Author cly
+ * @Author isxuwl
  * @Description 用于JSON字符串驼峰转换的工具类
- * @Date 2024/8/30 23:12
+ * @Date 2024/9/13 11:50
  */
 public class JsonObjectUtil {
 
@@ -33,8 +34,7 @@ public class JsonObjectUtil {
 
     private static JSONObject processJsonObject(JSONObject jsonObject, boolean isCamelCase) {
         JSONObject newJsonObject = new JSONObject();
-        Set<Map.Entry<String, Object>> entries = jsonObject.entrySet();
-        for (Map.Entry<String, Object> entry : entries) {
+        for (Map.Entry<String, Object> entry : jsonObject.entrySet()) {
             String newKey = isCamelCase ? toCamelCaseWithUppercase(entry.getKey()) : toSnakeCase(entry.getKey());
             Object value = entry.getValue();
 
@@ -50,45 +50,32 @@ public class JsonObjectUtil {
     }
 
     private static JSONArray processJsonArray(JSONArray jsonArray, boolean isCamelCase) {
-        JSONArray newArray = new JSONArray();
-        for (Object element : jsonArray) {
-            if (element instanceof JSONObject) {
-                newArray.add(processJsonObject((JSONObject) element, isCamelCase));
-            } else if (element instanceof JSONArray) {
-                newArray.add(processJsonArray((JSONArray) element, isCamelCase));
-            } else {
-                newArray.add(element);
-            }
-        }
-        return newArray;
+        return jsonArray.stream()
+                .map(element -> {
+                    if (element instanceof JSONObject) {
+                        return processJsonObject((JSONObject) element, isCamelCase);
+                    } else if (element instanceof JSONArray) {
+                        return processJsonArray((JSONArray) element, isCamelCase);
+                    } else {
+                        return element;
+                    }
+                })
+                .collect(Collectors.toCollection(JSONArray::new));
     }
 
     private static String toCamelCaseWithUppercase(String key) {
-        String[] parts = key.split("_");
-        StringBuilder camelCaseKey = new StringBuilder();
-        for (String part : parts) {
-            if (part.length() > 0) {
-                camelCaseKey.append(part.substring(0, 1).toUpperCase())
-                        .append(part.substring(1).toLowerCase());
-            }
-        }
-        return camelCaseKey.toString();
+        return String.join("", key.split("_"))
+                .chars()
+                .mapToObj(c -> Character.isUpperCase(c) ? "_" + Character.toLowerCase(c) : String.valueOf((char) c))
+                .collect(Collectors.joining())
+                .replaceFirst("^_", "");
     }
 
     private static String toSnakeCase(String key) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < key.length(); i++) {
-            char c = key.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    result.append("_");
-                }
-                result.append(Character.toLowerCase(c));
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
+        return key.chars()
+                .mapToObj(c -> Character.isUpperCase(c) ? "_" + Character.toLowerCase(c) : String.valueOf((char) c))
+                .collect(Collectors.joining())
+                .replaceFirst("^_", "");
     }
 
     public static void main(String[] args) {
@@ -102,5 +89,4 @@ public class JsonObjectUtil {
         String snakeCaseJson = util.toSnakeCaseJson("{\"RequestId\":\"123\",\"CreatedTime\":456}");
         System.out.println(snakeCaseJson);
     }
-
 }
