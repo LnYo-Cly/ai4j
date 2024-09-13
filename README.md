@@ -30,6 +30,8 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-09-12] 修复上个问题OpenAi参数导致错误的遗漏，发布0.5.2版本
++ [2024-09-12] 修复SpringBoot 2.6以下导致OkHttp变为3.14版本的报错问题；修复OpenAi参数`parallel_tool_calls`在tools为null时的异常问题。发布0.5.1版本。
 + [2024-09-09] 新增零一万物大模型支持、发布0.5.0版本。
 + [2024-09-02] 新增腾讯混元Hunyuan平台支持（注意：所需apiKey 属于SecretId与SecretKey的拼接，格式为 {SecretId}.{SecretKey}），发布0.4.0版本。
 + [2024-08-30] 新增对Moonshot(Kimi)平台的支持，增加`OkHttpUtil.java`实现忽略SSL证书的校验。
@@ -37,6 +39,13 @@
 + [2024-08-29] 修改SseListener以兼容智谱函数调用。
 + [2024-08-28] 添加token统计、添加智谱AI的Chat服务、优化函数调用可以支持多轮多函数。
 + [2024-08-17] 增强SseListener监听器功能。发布0.2.0版本。
+
+## 教程文档
++ [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
+
+## 其它
++ [低价中转平台-低价ApiKey](https://api.trovebox.online/)
++ [临时GPT网站-免费|重构中](https://api.fukaluosi.online/)
 
 # 快速开始
 ## 导入
