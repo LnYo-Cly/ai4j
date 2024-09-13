@@ -43,6 +43,10 @@
 ## 教程文档
 + [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
 
+## 其它
++ [低价中转平台-低价ApiKey](https://api.trovebox.online/)
++ [临时GPT网站-免费|重构中](https://api.fukaluosi.online/)
+
 # 快速开始
 ## 导入
 ### Gradle
