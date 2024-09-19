@@ -1,7 +1,10 @@
 package io.github.lnyocly;
 
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.exception.chain.ErrorHandler;
+import io.github.lnyocly.ai4j.exception.error.Error;
+import io.github.lnyocly.ai4j.exception.error.OpenAiError;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
@@ -10,7 +13,6 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingObject;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
-import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
@@ -19,7 +21,6 @@ import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
 import io.github.lnyocly.ai4j.vector.VertorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
@@ -28,13 +29,11 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
 
 /**
  * @Author cly
- * @Description TODO
+ * @Description OpenAi测试类
  * @Date 2024/8/3 18:22
  */
 @Slf4j
@@ -64,23 +63,14 @@ public class OpenAiTest {
 
     private IChatService chatService;
     Reflections reflections = new Reflections();
+
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        ZhipuConfig zhipuConfig = new ZhipuConfig();
-        DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
-        MoonshotConfig moonshotConfig = new MoonshotConfig();
-        HunyuanConfig hunyuanConfig = new HunyuanConfig();
-        LingyiConfig lingyiConfig = new LingyiConfig();
+        openAiConfig.setApiKey("sk-123456789");
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
-        configuration.setZhipuConfig(zhipuConfig);
-        configuration.setDeepSeekConfig(deepSeekConfig);
-        configuration.setMoonshotConfig(moonshotConfig);
-        configuration.setHunyuanConfig(hunyuanConfig);
-        configuration.setLingyiConfig(lingyiConfig);
-
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -92,44 +82,21 @@ public class OpenAiTest {
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
-                //.sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
-                //.hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)))
+                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
         AiService aiService = new AiService(configuration);
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
         chatService = aiService.getChatService(PlatformType.OPENAI);
 
     }
 
-    @Test
-    public void test_test(){
-        //获取运行时间
-        long startTime = System.currentTimeMillis();
-
-        //Reflections reflections = new Reflections("io.github.lnyocly.ai4j.tools");
-
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .setUrls(ClasspathHelper.forPackage(""))
-                .setScanners(Scanners.TypesAnnotated));
-
-        System.out.println("时间：" + (System.currentTimeMillis() - startTime));
-
-        startTime = System.currentTimeMillis();
-
-        Tool test = ToolUtil.getToolEntity("queryTrainInfo");
-        System.out.println(JSON.toJSONString(test));
-
-        System.out.println("时间：" + (System.currentTimeMillis() - startTime));
-
-        String a = "aaa";
-        System.out.println(JSON.toJSONString(a));
-
-    }
 
     @Test
     public void test_embed() throws Exception {
@@ -311,7 +278,7 @@ public class OpenAiTest {
         List<String> ids = generateIDs(count); // 生成每个向量的id
         List<Map<String, String>> contents = generateContent(strings); // 生成每个向量对应的文本,元数据，kv
 
-        for(int i = 0;i < count; ++i){
+        for (int i = 0; i < count; ++i) {
             pineconeVectors.add(new PineconeVectors(ids.get(i), vectors.get(i), contents.get(i)));
         }
         PineconeInsert pineconeInsert = new PineconeInsert(pineconeVectors, "userId");
@@ -319,7 +286,7 @@ public class OpenAiTest {
         // 执行插入
         //String res = PineconeUtil.insertEmbedding(pineconeInsert, "aa");
 
-       //log.info("插入结果{}" ,res);
+        //log.info("插入结果{}" ,res);
     }
 
     @Test
@@ -348,7 +315,7 @@ public class OpenAiTest {
                 .build();
 
         // 执行查询
-       // PineconeQueryResponse response = PineconeUtil.queryEmbedding(pineconeQueryReq, "aa");
+        // PineconeQueryResponse response = PineconeUtil.queryEmbedding(pineconeQueryReq, "aa");
 
         // 从向量数据库拿出的数据, 拼接为一个String
         //String collect = response.getMatches().stream().map(match -> match.getMetadata().get("content")).collect(Collectors.joining(" "));
@@ -367,9 +334,9 @@ public class OpenAiTest {
                 .namespace("userId")
                 .build();
 
-       // String res = String.valueOf(PineconeUtil.deleteEmbedding(request, "aa"));
+        // String res = String.valueOf(PineconeUtil.deleteEmbedding(request, "aa"));
 
-       // System.out.println(res);
+        // System.out.println(res);
     }
 
     @Test
@@ -392,7 +359,7 @@ public class OpenAiTest {
     }
 
     // 生成每个向量的id
-    private List<String> generateIDs(int count){
+    private List<String> generateIDs(int count) {
         List<String> ids = new ArrayList<>();
         for (long i = 0L; i < count; ++i) {
             ids.add("id_" + i);
@@ -402,10 +369,10 @@ public class OpenAiTest {
 
 
     // 生成每个向量对应的文本
-    private List<Map<String, String>> generateContent(List<String> contents){
+    private List<Map<String, String>> generateContent(List<String> contents) {
         List<Map<String, String>> finalcontents = new ArrayList<>();
 
-        for(int i = 0; i < contents.size(); i++){
+        for (int i = 0; i < contents.size(); i++) {
             HashMap<String, String> map = new HashMap<>();
             map.put("content", contents.get(i));
             finalcontents.add(map);
