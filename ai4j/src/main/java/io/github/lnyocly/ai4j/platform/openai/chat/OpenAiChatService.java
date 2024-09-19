@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
@@ -71,7 +72,7 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
@@ -155,7 +156,7 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(openAiConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 

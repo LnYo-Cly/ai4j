@@ -40,6 +40,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -80,7 +82,7 @@ public class DeepSeekTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
@@ -93,7 +95,7 @@ public class DeepSeekTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -110,7 +112,7 @@ public class DeepSeekTest {
     @Test
     public void test_chatCompletions_multimodal() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-vision")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
                         "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
                         "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
@@ -129,7 +131,7 @@ public class DeepSeekTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -156,7 +158,7 @@ public class DeepSeekTest {
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -178,7 +180,7 @@ public class DeepSeekTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-large-fc")
+                .model("deepseek-chat")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();

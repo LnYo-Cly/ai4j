@@ -19,6 +19,7 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.BearerTokenUtils;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
@@ -81,7 +82,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
-                    .url(baseUrl.concat(zhipuConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, zhipuConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
@@ -168,7 +169,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
-                    .url(baseUrl.concat(zhipuConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, zhipuConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 

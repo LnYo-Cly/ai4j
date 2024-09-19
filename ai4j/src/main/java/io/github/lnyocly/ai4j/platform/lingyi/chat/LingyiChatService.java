@@ -21,6 +21,7 @@ import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -139,7 +140,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(lingyiConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, lingyiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
@@ -224,7 +225,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(baseUrl.concat(lingyiConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, lingyiConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 

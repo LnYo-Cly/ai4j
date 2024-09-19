@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -27,10 +28,9 @@ public class ErrorInterceptor implements Interceptor {
 
         Response response = chain.proceed(original);
 
-        if(!response.isSuccessful()){
-            //response.close();
-            String errorMsg = response.body().string();
+        String errorMsg = response.body().string();
 
+        if(!response.isSuccessful()){
             JSONObject object;
             try {
                 object = JSON.parseObject(errorMsg);
@@ -47,7 +47,7 @@ public class ErrorInterceptor implements Interceptor {
         }else{
             // 对混元特殊处理
             // {"Response":{"RequestId":"e4650694-f018-4490-b4d0-d5242cd68106","Error":{"Code":"InvalidParameterValue.Model","Message":"模型不存在"}}}
-            String errorMsg = response.body().string();
+
             if (errorMsg.contains("Response") && errorMsg.contains("Error")){
                 // 处理错误信息
                 ErrorHandler errorHandler = ErrorHandler.getInstance();
@@ -58,8 +58,10 @@ public class ErrorInterceptor implements Interceptor {
 
 
         }
+        ResponseBody newResponseBody = ResponseBody.create(response.body().contentType(), errorMsg);
 
-
-        return response;
+        return response.newBuilder()
+                .body(newResponseBody)
+                .build();
     }
 }

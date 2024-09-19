@@ -41,7 +41,7 @@ public class HunyuanTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
-        hunyuanConfig.setApiKey("sk-123456789");
+        hunyuanConfig.setApiKey("abc.123456");
 
         Configuration configuration = new Configuration();
         configuration.setHunyuanConfig(hunyuanConfig);
@@ -73,7 +73,7 @@ public class HunyuanTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
