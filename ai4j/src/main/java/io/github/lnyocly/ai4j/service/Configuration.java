@@ -27,6 +27,7 @@ public class Configuration {
     private MoonshotConfig moonshotConfig;
     private HunyuanConfig hunyuanConfig;
     private LingyiConfig lingyiConfig;
+    private OllamaConfig ollamaConfig;
 
     private PineconeConfig pineconeConfig;
 

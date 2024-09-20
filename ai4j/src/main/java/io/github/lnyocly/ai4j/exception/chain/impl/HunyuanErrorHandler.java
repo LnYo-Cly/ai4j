@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.exception.chain.impl;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.chain.AbstractErrorHandler;
 import io.github.lnyocly.ai4j.exception.error.Error;
 import io.github.lnyocly.ai4j.exception.error.HunyuanError;
@@ -16,21 +17,25 @@ public class HunyuanErrorHandler extends AbstractErrorHandler {
     @Override
     public Error parseError(String errorInfo) {
         // 解析json字符串
-        HunyuanError hunyuanError = JSON.parseObject(errorInfo, HunyuanError.class);
+        try{
+            HunyuanError hunyuanError = JSON.parseObject(errorInfo, HunyuanError.class);
 
-        HunyuanError.Response response = hunyuanError.getResponse();
+            HunyuanError.Response response = hunyuanError.getResponse();
 
-        if(ObjectUtils.isEmpty(response)){
-            // 交给下一个节点处理
-            return nextHandler.parseError(errorInfo);
+            if(ObjectUtils.isEmpty(response)){
+                // 交给下一个节点处理
+                return nextHandler.parseError(errorInfo);
+            }
+
+            HunyuanError.Response.Error error = response.getError();
+            if(ObjectUtils.isEmpty(error)){
+                // 交给下一个节点处理
+                return nextHandler.parseError(errorInfo);
+            }
+
+            return new Error(error.getMessage(),error.getCode(),null,error.getCode());
+        }catch (Exception e){
+            throw new CommonException(errorInfo);
         }
-
-        HunyuanError.Response.Error error = response.getError();
-        if(ObjectUtils.isEmpty(error)){
-            // 交给下一个节点处理
-            return nextHandler.parseError(errorInfo);
-        }
-
-        return new Error(error.getMessage(),error.getCode(),null,error.getCode());
     }
 }

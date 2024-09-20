@@ -83,6 +83,8 @@ public abstract class SseListener extends EventSourceListener {
     private String finishReason = null;
 
 
+    private boolean ollamaToolCall = false;
+
     @Override
     public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
 
@@ -115,8 +117,14 @@ public abstract class SseListener extends EventSourceListener {
 
         finishReason = choices.get(0).getFinishReason();
 
+        if("stop".equals(finishReason) && ollamaToolCall == true){
+            ollamaToolCall = false;
+            finishReason = "tool_calls";
+        }
+
+
         // tool_calls回答已经结束
-        if("tool_calls".equals(choices.get(0).getFinishReason())){
+        if("tool_calls".equals(finishReason)){
             if(toolCall == null && responseMessage.getToolCalls()!=null) {
                 toolCalls = responseMessage.getToolCalls();
                 if(showToolArgs){
@@ -135,7 +143,7 @@ public abstract class SseListener extends EventSourceListener {
             return;
         }
         // 消息回答完毕
-        if ("stop".equals(chatCompletionResponse.getChoices().get(0).getFinishReason())) {
+        if ("stop".equals(finishReason)) {
 
             return;
         }
@@ -148,8 +156,8 @@ public abstract class SseListener extends EventSourceListener {
         }
 
 
-        if(responseMessage.getToolCalls() == null) {
-            // 普通响应回答
+        if(responseMessage.getToolCalls() == null ) {
+
 
             // 判断是否为混元的tool最后一条说明性content
             // :{"Role":"assistant","Content":"计划使用get_current_weather工具来获取北京和深圳的当前天气。\n\t\n\t用户想要知道北京和深圳今天的天气情况。用户的请求是关于天气的查询，需要使用天气查询工具来获取信息。"}
@@ -157,6 +165,42 @@ public abstract class SseListener extends EventSourceListener {
                 return;
             }
 
+            if("<tool_call>".equals(responseMessage.getContent())){
+                // ollama的tool_call
+                ollamaToolCall = true;
+                return;
+            }
+
+
+            if(ollamaToolCall){
+
+                /**
+                 * <tool_call>{"name": "queryWeather", "arguments": {"location": "洛阳", "days":1, "type": "daily"}}
+                 * </tool_call>
+                 */
+
+                if("</tool_call>".equals(responseMessage.getContent())){
+                    // ollama的tool_call
+
+                    ToolCall.Function function = JSON.parseObject(argument.toString(), ToolCall.Function.class);
+                    toolCall = new ToolCall();
+                    toolCall.setFunction(function);
+                    currToolName = function.getName();
+                    argument.setLength(0);
+                    argument.append(function.getArguments());
+                    return;
+                }
+
+                argument.append(responseMessage.getContent());
+                if(showToolArgs){
+                    this.currStr = responseMessage.getContent();
+                    this.send();
+                }
+                return;
+            }
+
+
+            // 普通响应回答
             output.append(responseMessage.getContent());
             currStr = responseMessage.getContent();
             this.send();

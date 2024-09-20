@@ -34,6 +34,10 @@ public class ErrorInterceptor implements Interceptor {
             JSONObject object;
             try {
                 object = JSON.parseObject(errorMsg);
+                if(object == null){
+                    errorMsg = response.code() + " " + response.message();
+                    throw new CommonException(errorMsg);
+                }
             } catch (Exception e) {
                 throw new CommonException(errorMsg);
             }
