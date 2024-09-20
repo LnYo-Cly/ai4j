@@ -106,7 +106,7 @@ public class OllamaTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("qwen2.5:7b")
+                .model("qwen:0.5b")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 

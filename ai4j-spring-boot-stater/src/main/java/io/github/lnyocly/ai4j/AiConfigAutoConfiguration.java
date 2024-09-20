@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j;
 
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
@@ -102,6 +103,7 @@ public class AiConfigAutoConfiguration {
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
                 .addInterceptor(new ErrorInterceptor())
+                .addInterceptor(new ContentTypeInterceptor())
                 .connectTimeout(okHttpConfigProperties.getConnectTimeout(), okHttpConfigProperties.getTimeUnit())
                 .writeTimeout(okHttpConfigProperties.getWriteTimeout(), okHttpConfigProperties.getTimeUnit())
                 .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit());
