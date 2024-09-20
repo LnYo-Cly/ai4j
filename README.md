@@ -1,6 +1,6 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
-一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
+一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
 
 
 ## 支持的平台
@@ -10,6 +10,7 @@
 + Moonshot(月之暗面)
 + Hunyuan(腾讯混元)
 + Lingyi(零一万物)
++ Ollama
 + 待添加(Qwen Llama MiniMax...)
 
 ## 支持的服务
@@ -31,6 +32,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-09-20] 增加对Ollama平台的支持，并修复一些bug。发布0.6.0版本
 + [2024-09-19] 增加错误处理链，统一处理为openai错误类型; 修复部分情况下URL拼接问题，修复拦截器中response重复调用而导致的关闭问题。发布0.5.3版本
 + [2024-09-12] 修复上个问题OpenAi参数导致错误的遗漏，发布0.5.2版本
 + [2024-09-12] 修复SpringBoot 2.6以下导致OkHttp变为3.14版本的报错问题；修复OpenAi参数`parallel_tool_calls`在tools为null时的异常问题。发布0.5.1版本。
@@ -398,10 +400,10 @@ public void test_delete_vector_store() throws Exception {
 
 ## PR
 1. Fork 本仓库并创建您的分支。
-2. 如果您添加了应该进行测试的代码，请进行测试。
+2. 编写您的代码，并进行测试。
 3. 确保您的代码符合现有的样式。
-4. 为提交编写清晰的日志信息。对于小的改动，单行信息就可以了，但较大的改动应该有详细的描述。
-5. 完成拉取请求表单，链接到您的 PR 解决的问题。
+4. 提交时编写清晰的日志信息。对于小的改动，单行信息就可以了，但较大的改动应该有详细的描述。
+5. 完成拉取请求表单，确保在`dev`分支进行改动，链接到您的 PR 解决的问题。
 
 # 支持
 如果您觉得这个项目对您有帮助，请点一个star⭐。
