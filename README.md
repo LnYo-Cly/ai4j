@@ -46,6 +46,7 @@
 
 ## 教程文档
 + [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
++ [Java快速接入qwen2.5、llama3.1等Ollama平台开源大模型](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
 
 ## 其它
 + [低价中转平台-低价ApiKey](https://api.trovebox.online/)
