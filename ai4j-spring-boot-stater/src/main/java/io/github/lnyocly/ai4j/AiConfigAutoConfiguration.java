@@ -32,7 +32,8 @@ import java.security.NoSuchAlgorithmException;
         DeepSeekConfigProperties.class,
         MoonshotConfigProperties.class,
         HunyuanConfigProperties.class,
-        LingyiConfigProperties.class})
+        LingyiConfigProperties.class,
+        OllamaConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     // okhttp配置
@@ -48,10 +49,11 @@ public class AiConfigAutoConfiguration {
     private final MoonshotConfigProperties moonshotConfigProperties;
     private final HunyuanConfigProperties hunyuanConfigProperties;
     private final LingyiConfigProperties lingyiConfigProperties;
+    private final OllamaConfigProperties ollamaConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -60,6 +62,7 @@ public class AiConfigAutoConfiguration {
         this.moonshotConfigProperties = moonshotConfigProperties;
         this.hunyuanConfigProperties = hunyuanConfigProperties;
         this.lingyiConfigProperties = lingyiConfigProperties;
+        this.ollamaConfigProperties = ollamaConfigProperties;
     }
 
     @Bean
@@ -84,6 +87,7 @@ public class AiConfigAutoConfiguration {
         initMoonshotConfig();
         initHunyuanConfig();
         initLingyiConfig();
+        initOllamaConfig();
     }
 
     private void initOkHttp() {
@@ -211,6 +215,18 @@ public class AiConfigAutoConfiguration {
         lingyiConfig.setChatCompletionUrl(lingyiConfigProperties.getChatCompletionUrl());
 
         configuration.setLingyiConfig(lingyiConfig);
+    }
+
+    /**
+     * 初始化Ollama 配置信息
+     */
+    private void initOllamaConfig() {
+        OllamaConfig ollamaConfig = new OllamaConfig();
+        ollamaConfig.setApiHost(ollamaConfigProperties.getApiHost());
+        ollamaConfig.setChatCompletionUrl(ollamaConfigProperties.getChatCompletionUrl());
+        ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
+
+        configuration.setOllamaConfig(ollamaConfig);
     }
 
 }

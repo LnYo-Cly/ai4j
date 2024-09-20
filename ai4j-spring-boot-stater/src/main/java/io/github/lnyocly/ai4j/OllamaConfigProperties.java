@@ -1,19 +1,16 @@
-package io.github.lnyocly.ai4j.config;
+package io.github.lnyocly.ai4j;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @Author cly
  * @Description Ollama配置文件
- * @Date 2024/9/20 11:07
+ * @Date 2024/9/20 23:01
  */
-
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class OllamaConfig {
+@ConfigurationProperties(prefix = "ai.ollama")
+public class OllamaConfigProperties {
     private String apiHost = "http://localhost:11434/";
     private String chatCompletionUrl = "api/chat";
     private String embeddingUrl = "api/embed";
