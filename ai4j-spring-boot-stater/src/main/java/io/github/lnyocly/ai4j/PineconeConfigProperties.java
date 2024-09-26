@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "ai.vector.pinecone")
 public class PineconeConfigProperties {
-    private String url = "https://xxx.svc.xxx.pinecone.io";
+    private String host = "https://xxx.svc.xxx.pinecone.io";
     private String key = "";
 
     private String upsert = "/vectors/upsert";

@@ -163,7 +163,7 @@ public class AiConfigAutoConfiguration {
      */
     private void initPineconeConfig() {
         PineconeConfig pineconeConfig = new PineconeConfig();
-        pineconeConfig.setUrl(pineconeConfigProperties.getUrl());
+        pineconeConfig.setHost(pineconeConfigProperties.getHost());
         pineconeConfig.setKey(pineconeConfigProperties.getKey());
         pineconeConfig.setUpsert(pineconeConfigProperties.getUpsert());
         pineconeConfig.setQuery(pineconeConfigProperties.getQuery());
