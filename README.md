@@ -48,6 +48,7 @@
 ## 教程文档
 + [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
 + [Java快速接入qwen2.5、llama3.1等Ollama平台开源大模型](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
++ [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 0.7:1—支持最新o1模型](https://api.trovebox.online/)
