@@ -46,6 +46,12 @@ public abstract class SseListener extends EventSourceListener {
     private String currStr = "";
 
     /**
+     * 流式输出，当前单条SSE消息对象，即ChatCompletionResponse对象
+     */
+    @Getter
+    private String currData = "";
+
+    /**
      * 记录当前所调用函数工具的名称
      */
     @Getter
@@ -93,8 +99,14 @@ public abstract class SseListener extends EventSourceListener {
 
     @Override
     public void onEvent(@NotNull EventSource eventSource, @Nullable String id, @Nullable String type, @NotNull String data) {
+        // 封装SSE消息对象
+        currData = data;
+
         if ("[DONE]".equalsIgnoreCase(data)) {
-            //log.info("模型会话 [DONE]");
+            // 整个对话结束，结束前将SSE最后一条“DONE”消息发送出去
+            currStr = "";
+            this.send();
+
             return;
         }
 
