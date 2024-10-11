@@ -392,5 +392,5 @@ Please use the GitHub Issue page to report issues. Describe as specifically as p
 4. Write clear log information when submitting. For small changes, a single line of information is sufficient, but for larger changes, there should be a detailed description.
 5. Complete the pull request form and ensure that changes are made on the `dev` branch and link to the issue that your PR addresses.
 
-# 支持
+# Support
 If you find this project helpful to you, please give it a star⭐。
