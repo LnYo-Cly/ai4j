@@ -48,9 +48,8 @@ public class ChatCompletion {
     /**
      * 流式输出相关选项。只有在 stream 参数为 true 时，才可设置此参数。
      */
-    @Builder.Default
     @JsonProperty("stream_options")
-    private StreamOptions streamOptions = new StreamOptions();
+    private StreamOptions streamOptions;
 
     /**
      * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其在已有文本中的出现频率受到相应的惩罚，降低模型重复相同内容的可能性。
