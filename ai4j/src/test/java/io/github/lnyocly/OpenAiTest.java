@@ -1,24 +1,19 @@
 package io.github.lnyocly;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
-import io.github.lnyocly.ai4j.exception.chain.ErrorHandler;
-import io.github.lnyocly.ai4j.exception.error.Error;
-import io.github.lnyocly.ai4j.exception.error.OpenAiError;
+import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.platform.openai.audio.entity.*;
+import io.github.lnyocly.ai4j.platform.openai.audio.enums.AudioEnum;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingObject;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
-import io.github.lnyocly.ai4j.service.Configuration;
-import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.service.IEmbeddingService;
-import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.vector.VertorDataEntity;
@@ -29,7 +24,7 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,12 +57,15 @@ public class OpenAiTest {
     private IEmbeddingService embeddingService;
 
     private IChatService chatService;
+
+    private IAudioService audioService;
     Reflections reflections = new Reflections();
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiKey("sk-123456789");
+        openAiConfig.setApiHost("https://api.trovebox.online/");
+        openAiConfig.setApiKey("**************************");
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
@@ -78,12 +76,13 @@ public class OpenAiTest {
         OkHttpClient okHttpClient = new OkHttpClient
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
+                .addInterceptor(new ContentTypeInterceptor())
                 .addInterceptor(new ErrorInterceptor())
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
-                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
-                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                //.sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                //.hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
                 .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
@@ -94,6 +93,8 @@ public class OpenAiTest {
 
         //chatService = aiService.getChatService(PlatformType.getPlatform("OPENAI"));
         chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        audioService = aiService.getAudioService(PlatformType.OPENAI);
 
     }
 
@@ -134,7 +135,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_multimodal() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-vision")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
                         "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
                         "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
@@ -202,7 +203,7 @@ public class OpenAiTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-large-fc")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -225,6 +226,43 @@ public class OpenAiTest {
         System.out.println("内容花费： ");
         System.out.println(sseListener.getUsage());
     }
+
+
+    @Test
+    public void test_text_to_speech() throws IOException {
+        TextToSpeech speechRequest = TextToSpeech.builder()
+                .input("你好，有什么我可以帮助你的吗？")
+                .voice(AudioEnum.Voice.ECHO.getValue())
+                .build();
+        InputStream inputStream = audioService.textToSpeech(speechRequest);
+        FileUtils.copyToFile(inputStream, new File("C:\\Users\\1\\Desktop\\audio.mp3"));
+
+    }
+
+    @Test
+    public void test_transcription(){
+        Transcription request = Transcription.builder()
+                .file(new File("C:\\Users\\1\\Desktop\\audio.mp3"))
+                .model("whisper-1")
+                .build();
+
+        TranscriptionResponse transcription = audioService.transcription(request);
+        System.out.println(transcription);
+
+    }
+
+    @Test
+    public void test_translation(){
+        Translation request = Translation.builder()
+                .file(new File("C:\\Users\\1\\Desktop\\audio.mp3"))
+                .model("whisper-1")
+                .build();
+
+        TranslationResponse translation = audioService.translation(request);
+        System.out.println(translation);
+
+    }
+
 
     @Test
     public void test__() throws Exception {
