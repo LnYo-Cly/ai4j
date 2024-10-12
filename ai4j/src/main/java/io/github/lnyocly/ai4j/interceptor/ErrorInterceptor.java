@@ -28,7 +28,9 @@ public class ErrorInterceptor implements Interceptor {
 
         Response response = chain.proceed(original);
 
-        String errorMsg = response.body().string();
+        byte[] contentBytes = response.body().bytes();
+
+        String errorMsg = new String(contentBytes);
 
         if(!response.isSuccessful()){
             JSONObject object;
@@ -62,7 +64,7 @@ public class ErrorInterceptor implements Interceptor {
 
 
         }
-        ResponseBody newResponseBody = ResponseBody.create(response.body().contentType(), errorMsg);
+        ResponseBody newResponseBody = ResponseBody.create(response.body().contentType(), contentBytes);
 
         return response.newBuilder()
                 .body(newResponseBody)
