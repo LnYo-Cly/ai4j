@@ -4,10 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.listener.SseListener;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
@@ -135,7 +132,10 @@ public class OpenAiChatService implements IChatService {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
         chatCompletion.setStream(true);
-        chatCompletion.setStreamOptions(null);
+        StreamOptions streamOptions = chatCompletion.getStreamOptions();
+        if(streamOptions == null){
+            chatCompletion.setStreamOptions(new StreamOptions(true));
+        }
 
         if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());

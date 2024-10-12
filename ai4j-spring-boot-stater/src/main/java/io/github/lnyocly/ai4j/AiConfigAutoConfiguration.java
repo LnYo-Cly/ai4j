@@ -141,6 +141,9 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setApiKey(openAiConfigProperties.getApiKey());
         openAiConfig.setChatCompletionUrl(openAiConfigProperties.getChatCompletionUrl());
         openAiConfig.setEmbeddingUrl(openAiConfigProperties.getEmbeddingUrl());
+        openAiConfig.setSpeechUrl(openAiConfigProperties.getSpeechUrl());
+        openAiConfig.setTranscriptionUrl(openAiConfigProperties.getTranscriptionUrl());
+        openAiConfig.setTranslationUrl(openAiConfigProperties.getTranslationUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }

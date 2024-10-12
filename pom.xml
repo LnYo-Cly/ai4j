@@ -7,7 +7,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-sdk</artifactId>
 
-    <version>0.6.4</version>
+    <version>0.7.0</version>
 
     <packaging>pom</packaging>
 
