@@ -1,6 +1,6 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
-由于SpringAI需要使用JDK17和Spring Boot3，但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
+由于SpringAI需要使用JDK17和Spring Boot3， 但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
 一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
 
 

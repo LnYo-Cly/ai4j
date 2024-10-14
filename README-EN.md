@@ -1,6 +1,6 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
-Since SpringAI requires JDK 17 and Spring Boot 3, but many applications still use JDK 8 version at present, so AI4J that can support JDK 8 is used to access large models such as OpenAI.  
+Since SpringAI requires JDK 17 and Spring Boot 3,  but many applications still use JDK 8 version at present, so AI4J that can support JDK 8 is used to access large models such as OpenAI.  
 An Java SDK for quickly integrating AI large model applications. It integrates multiple platform large models such as OpenAI, Ollama, Zhipu (ChatGLM), DeepSeek, Moonshot (Kimi), Tencent Hunyuan, Lingyi (01), etc. It provides a unified input and output (aligned with OpenAI), eliminates differences, optimizes function calls (Tool Call), optimizes RAG calls, and supports vector databases (Pinecone). It also supports JDK 1.8, providing users with the ability to quickly integrate AI.
 
 ## Supported platforms
