@@ -1,14 +1,11 @@
 package io.github.lnyocly.ai4j.platform.lingyi.chat;
 
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.config.LingyiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.convert.ParameterConvert;
-import io.github.lnyocly.ai4j.convert.ResultConvert;
+import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
+import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.listener.SseListener;
-import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletion;
-import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.entity.LingyiChatCompletion;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.entity.LingyiChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
