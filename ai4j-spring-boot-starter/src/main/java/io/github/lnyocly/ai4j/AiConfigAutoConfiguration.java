@@ -138,12 +138,14 @@ public class AiConfigAutoConfiguration {
     private void initOpenAiConfig() {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost(openAiConfigProperties.getApiHost());
+        //openAiConfig.setWsHost(openAiConfigProperties.getWsHost());
         openAiConfig.setApiKey(openAiConfigProperties.getApiKey());
         openAiConfig.setChatCompletionUrl(openAiConfigProperties.getChatCompletionUrl());
         openAiConfig.setEmbeddingUrl(openAiConfigProperties.getEmbeddingUrl());
         openAiConfig.setSpeechUrl(openAiConfigProperties.getSpeechUrl());
         openAiConfig.setTranscriptionUrl(openAiConfigProperties.getTranscriptionUrl());
         openAiConfig.setTranslationUrl(openAiConfigProperties.getTranslationUrl());
+        openAiConfig.setRealtimeUrl(openAiConfigProperties.getRealtimeUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }

@@ -32,7 +32,7 @@ public class ErrorInterceptor implements Interceptor {
 
         String errorMsg = new String(contentBytes);
 
-        if(!response.isSuccessful()){
+        if(!response.isSuccessful() && (response.code() != 100 && response.code() != 101)){
             JSONObject object;
             try {
                 object = JSON.parseObject(errorMsg);
