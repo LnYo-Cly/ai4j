@@ -3,6 +3,7 @@ package io.github.lnyocly;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
+import io.github.lnyocly.ai4j.listener.RealtimeListener;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.audio.enums.AudioEnum;
@@ -14,6 +15,7 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingObject;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.service.factor.AiService;
+import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.vector.VertorDataEntity;
@@ -23,7 +25,9 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import okhttp3.WebSocket;
 import okhttp3.logging.HttpLoggingInterceptor;
+import okio.ByteString;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.Before;
@@ -43,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -59,13 +64,14 @@ public class OpenAiTest {
     private IChatService chatService;
 
     private IAudioService audioService;
+    private IRealtimeService realtimeService;
     Reflections reflections = new Reflections();
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiHost("https://api.trovebox.online/");
-        openAiConfig.setApiKey("**************************");
+        openAiConfig.setApiHost("https://api.openai.com/");
+        openAiConfig.setApiKey("**********************");
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
@@ -81,8 +87,8 @@ public class OpenAiTest {
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
-                //.sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
-                //.hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
                 .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
@@ -95,6 +101,8 @@ public class OpenAiTest {
         chatService = aiService.getChatService(PlatformType.OPENAI);
 
         audioService = aiService.getAudioService(PlatformType.OPENAI);
+
+        realtimeService = aiService.getRealtimeService(PlatformType.OPENAI);
 
     }
 
@@ -260,6 +268,51 @@ public class OpenAiTest {
 
         TranslationResponse translation = audioService.translation(request);
         System.out.println(translation);
+
+    }
+
+
+    @Test
+    public void test_create_websocket(){
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        WebSocket realtimeClient = realtimeService.createRealtimeClient("gpt-4o-realtime-preview", new RealtimeListener() {
+            @Override
+            protected void onOpen(WebSocket webSocket) {
+                log.info("OpenAi Realtime 连接成功");
+
+                log.info("准备发送消息");
+                webSocket.send("{\"type\":\"response.create\",\"response\":{\"modalities\":[\"text\"],\"instructions\":\"Please assist the user.\"}}");
+
+
+                webSocket.close(1000, "OpenAi realtime client 关闭");
+                //countDownLatch.countDown();
+
+            }
+
+            @Override
+            protected void onMessage(ByteString bytes) {
+                log.info("收到消息：{}", bytes.toString());
+            }
+
+            @Override
+            protected void onMessage(String text) {
+                log.info("收到消息：{}", text);
+            }
+
+            @Override
+            protected void onFailure() {
+                System.out.println("连接失败");
+            }
+        });
+
+        System.out.println(11111111);
+
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 

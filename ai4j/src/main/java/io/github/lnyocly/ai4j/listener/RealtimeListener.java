@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.listener;
 
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -13,23 +14,30 @@ import org.jetbrains.annotations.Nullable;
  * @Description RealtimeListener, 用于统一处理WebSocket的事件（Realtime客户端专用）
  * @Date 2024/10/12 16:33
  */
-public class RealtimeListener extends WebSocketListener {
-    private static final Logger log = Logger.getLogger(RealtimeListener.class);
+@Slf4j
+public abstract class RealtimeListener extends WebSocketListener {
+
+    protected abstract void onOpen(WebSocket webSocket);
+    protected abstract void onMessage(ByteString bytes);
+    protected abstract void onMessage(String text);
+    protected abstract void onFailure();
 
     @Override
     public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
         log.info("WebSocket Opened: " + response.message());
-
+        this.onOpen(webSocket);
     }
 
     @Override
     public void onMessage(@NotNull WebSocket webSocket, @NotNull ByteString bytes) {
         log.info("Receive Byte Message: " + bytes.toString());
+        this.onMessage(bytes);
     }
 
     @Override
     public void onMessage(@NotNull WebSocket webSocket, @NotNull String text) {
         log.info("Receive String Message: " + text);
+        this.onMessage(text);
     }
 
     @Override
@@ -39,11 +47,10 @@ public class RealtimeListener extends WebSocketListener {
 
     @Override
     public void onClosing(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
-        super.onClosing(webSocket, code, reason);
     }
 
     @Override
     public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
-        super.onClosed(webSocket, code, reason);
+        log.info("WebSocket Closed: " + reason);
     }
 }
