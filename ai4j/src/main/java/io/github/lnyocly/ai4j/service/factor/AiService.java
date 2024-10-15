@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.service.factor;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
+import io.github.lnyocly.ai4j.platform.minimax.chat.MinimaxChatService;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.MoonshotChatService;
 import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
@@ -51,6 +52,8 @@ public class AiService {
                 return new LingyiChatService(configuration);
             case OLLAMA:
                 return new OllamaAiChatService(configuration);
+            case MINIMAX:
+                return new MinimaxChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
