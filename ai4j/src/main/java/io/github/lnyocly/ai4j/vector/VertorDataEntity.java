@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j.vector;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -10,6 +12,8 @@ import java.util.List;
  * @Date 2024/8/14 18:23
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class VertorDataEntity {
 
     /**

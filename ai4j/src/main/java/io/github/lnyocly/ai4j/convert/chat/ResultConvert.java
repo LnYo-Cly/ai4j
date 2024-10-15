@@ -1,8 +1,7 @@
-package io.github.lnyocly.ai4j.convert;
+package io.github.lnyocly.ai4j.convert.chat;
 
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 
 /**

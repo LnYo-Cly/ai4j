@@ -44,6 +44,7 @@ public class PineconeQuery {
     /**
      *  指示响应中是否包含元数据以及id
      */
+    @Builder.Default
     private Boolean includeMetadata = true;
 
     /**

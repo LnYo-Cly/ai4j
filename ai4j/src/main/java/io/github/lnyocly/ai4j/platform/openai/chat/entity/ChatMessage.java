@@ -42,6 +42,10 @@ public class ChatMessage {
         this.role = role.getRole();
         this.content = message;
     }
+    public ChatMessage(String role, String message) {
+        this.role = role;
+        this.content = message;
+    }
 
     public static ChatMessage withSystem(String content) {
         return new ChatMessage(ChatMessageType.SYSTEM, content);

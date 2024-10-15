@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PineconeConfig {
-    private String url = "https://xxx.svc.xxx.pinecone.io";
+    private String host = "https://xxx.svc.xxx.pinecone.io";
     private String key = "";
 
     private String upsert = "/vectors/upsert";

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j;
 
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
@@ -32,7 +33,8 @@ import java.security.NoSuchAlgorithmException;
         DeepSeekConfigProperties.class,
         MoonshotConfigProperties.class,
         HunyuanConfigProperties.class,
-        LingyiConfigProperties.class})
+        LingyiConfigProperties.class,
+        OllamaConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     // okhttp配置
@@ -48,10 +50,11 @@ public class AiConfigAutoConfiguration {
     private final MoonshotConfigProperties moonshotConfigProperties;
     private final HunyuanConfigProperties hunyuanConfigProperties;
     private final LingyiConfigProperties lingyiConfigProperties;
+    private final OllamaConfigProperties ollamaConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -60,6 +63,7 @@ public class AiConfigAutoConfiguration {
         this.moonshotConfigProperties = moonshotConfigProperties;
         this.hunyuanConfigProperties = hunyuanConfigProperties;
         this.lingyiConfigProperties = lingyiConfigProperties;
+        this.ollamaConfigProperties = ollamaConfigProperties;
     }
 
     @Bean
@@ -84,6 +88,7 @@ public class AiConfigAutoConfiguration {
         initMoonshotConfig();
         initHunyuanConfig();
         initLingyiConfig();
+        initOllamaConfig();
     }
 
     private void initOkHttp() {
@@ -98,6 +103,7 @@ public class AiConfigAutoConfiguration {
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
                 .addInterceptor(new ErrorInterceptor())
+                .addInterceptor(new ContentTypeInterceptor())
                 .connectTimeout(okHttpConfigProperties.getConnectTimeout(), okHttpConfigProperties.getTimeUnit())
                 .writeTimeout(okHttpConfigProperties.getWriteTimeout(), okHttpConfigProperties.getTimeUnit())
                 .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit());
@@ -135,6 +141,9 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setApiKey(openAiConfigProperties.getApiKey());
         openAiConfig.setChatCompletionUrl(openAiConfigProperties.getChatCompletionUrl());
         openAiConfig.setEmbeddingUrl(openAiConfigProperties.getEmbeddingUrl());
+        openAiConfig.setSpeechUrl(openAiConfigProperties.getSpeechUrl());
+        openAiConfig.setTranscriptionUrl(openAiConfigProperties.getTranscriptionUrl());
+        openAiConfig.setTranslationUrl(openAiConfigProperties.getTranslationUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }
@@ -157,7 +166,7 @@ public class AiConfigAutoConfiguration {
      */
     private void initPineconeConfig() {
         PineconeConfig pineconeConfig = new PineconeConfig();
-        pineconeConfig.setUrl(pineconeConfigProperties.getUrl());
+        pineconeConfig.setHost(pineconeConfigProperties.getHost());
         pineconeConfig.setKey(pineconeConfigProperties.getKey());
         pineconeConfig.setUpsert(pineconeConfigProperties.getUpsert());
         pineconeConfig.setQuery(pineconeConfigProperties.getQuery());
@@ -211,6 +220,18 @@ public class AiConfigAutoConfiguration {
         lingyiConfig.setChatCompletionUrl(lingyiConfigProperties.getChatCompletionUrl());
 
         configuration.setLingyiConfig(lingyiConfig);
+    }
+
+    /**
+     * 初始化Ollama 配置信息
+     */
+    private void initOllamaConfig() {
+        OllamaConfig ollamaConfig = new OllamaConfig();
+        ollamaConfig.setApiHost(ollamaConfigProperties.getApiHost());
+        ollamaConfig.setChatCompletionUrl(ollamaConfigProperties.getChatCompletionUrl());
+        ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
+
+        configuration.setOllamaConfig(ollamaConfig);
     }
 
 }

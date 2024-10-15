@@ -1,4 +1,4 @@
-package io.github.lnyocly.ai4j.convert;
+package io.github.lnyocly.ai4j.convert.chat;
 
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 
