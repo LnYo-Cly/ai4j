@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MinimaxConfig {
     private String apiHost = "https://api.minimax.chat/";
-    private String apiKey = "xxxxxx";
+    private String apiKey = "";
     private String chatCompletionUrl = "v1/text/chatcompletion_v2";
 }
