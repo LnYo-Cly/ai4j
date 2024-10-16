@@ -3,9 +3,14 @@ package io.github.lnyocly.ai4j;
 import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
+import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
+import io.github.lnyocly.ai4j.network.DispatcherProvider;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
+import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
@@ -105,6 +110,10 @@ public class AiConfigAutoConfiguration {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(okHttpConfigProperties.getLog());
 
+        // SPI加载dispatcher和connectionPool
+        DispatcherProvider dispatcherProvider = ServiceLoaderUtil.load(DispatcherProvider.class);
+        ConnectionPoolProvider connectionPoolProvider = ServiceLoaderUtil.load(ConnectionPoolProvider.class);
+
         // 开启 Http 客户端
         OkHttpClient.Builder okHttpBuilder = new OkHttpClient
                 .Builder()
@@ -113,7 +122,9 @@ public class AiConfigAutoConfiguration {
                 .addInterceptor(new ContentTypeInterceptor())
                 .connectTimeout(okHttpConfigProperties.getConnectTimeout(), okHttpConfigProperties.getTimeUnit())
                 .writeTimeout(okHttpConfigProperties.getWriteTimeout(), okHttpConfigProperties.getTimeUnit())
-                .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit());
+                .readTimeout(okHttpConfigProperties.getReadTimeout(), okHttpConfigProperties.getTimeUnit())
+                .dispatcher(dispatcherProvider.getDispatcher())
+                .connectionPool(connectionPoolProvider.getConnectionPool());
 
         // 是否开启Proxy代理
         if(StringUtils.isNotBlank(okHttpConfigProperties.getProxyUrl())){
@@ -145,7 +156,6 @@ public class AiConfigAutoConfiguration {
     private void initOpenAiConfig() {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost(openAiConfigProperties.getApiHost());
-        //openAiConfig.setWsHost(openAiConfigProperties.getWsHost());
         openAiConfig.setApiKey(openAiConfigProperties.getApiKey());
         openAiConfig.setChatCompletionUrl(openAiConfigProperties.getChatCompletionUrl());
         openAiConfig.setEmbeddingUrl(openAiConfigProperties.getEmbeddingUrl());

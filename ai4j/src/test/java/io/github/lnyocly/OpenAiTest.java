@@ -5,6 +5,8 @@ import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.listener.RealtimeListener;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
+import io.github.lnyocly.ai4j.network.DispatcherProvider;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.audio.enums.AudioEnum;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
@@ -17,6 +19,7 @@ import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
+import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.utils.TikaUtil;
 import io.github.lnyocly.ai4j.vector.VertorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
@@ -24,6 +27,8 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.WebSocket;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -78,6 +83,12 @@ public class OpenAiTest {
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        DispatcherProvider dispatcherProvider = ServiceLoaderUtil.load(DispatcherProvider.class);
+        ConnectionPoolProvider connectionPoolProvider = ServiceLoaderUtil.load(ConnectionPoolProvider.class);
+        Dispatcher dispatcher = dispatcherProvider.getDispatcher();
+        ConnectionPool connectionPool = connectionPoolProvider.getConnectionPool();
+
+
 
         OkHttpClient okHttpClient = new OkHttpClient
                 .Builder()
@@ -87,6 +98,8 @@ public class OpenAiTest {
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
+                .dispatcher(dispatcher)
+                .connectionPool(connectionPool)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
                 .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))

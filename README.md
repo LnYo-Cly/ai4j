@@ -27,6 +27,7 @@
 + 多平台、多服务
 + 统一的输入输出
 + 统一的错误处理
++ 支持SPI机制，可自定义Dispatcher和ConnectPool
 + 支持流式输出。支持函数调用参数流式输出
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
@@ -36,6 +37,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-10-17] 支持SPI机制，可自定义Dispatcher和ConnectPool
 + [2024-10-16] 增加MiniMax平台Chat接口对接
 + [2024-10-15] 增加realtime服务
 + [2024-10-12] 修复早期遗忘的小bug; 修复错误拦截器导致的音频字节流异常错误问题; 增加OpenAi Audio服务。
@@ -69,7 +71,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '${project.ve
 ```
 
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '${project.version}'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', version: '${project.version}'
 ```
 
 
@@ -87,7 +89,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <!-- Spring应用 -->
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
-    <artifactId>ai4j-spring-boot-stater</artifactId>
+    <artifactId>ai4j-spring-boot-starter</artifactId>
     <version>${project.version}</version>
 </dependency>
 ```
