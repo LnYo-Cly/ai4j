@@ -28,6 +28,7 @@ public class Configuration {
     private HunyuanConfig hunyuanConfig;
     private LingyiConfig lingyiConfig;
     private OllamaConfig ollamaConfig;
+    private MinimaxConfig minimaxConfig;
     private BaichuanConfig baichuanConfig;
 
     private PineconeConfig pineconeConfig;
