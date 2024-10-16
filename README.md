@@ -12,12 +12,14 @@
 + Hunyuan(腾讯混元)
 + Lingyi(零一万物)
 + Ollama
-+ 待添加(Qwen Llama MiniMax...)
++ MiniMax
++ 待添加(Qwen Llama ...)
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
 + Embedding
 + Audio
++ Realtime
 + 待添加
 
 ## 特性
@@ -34,6 +36,8 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-10-16] 增加MiniMax平台Chat接口对接
++ [2024-10-15] 增加realtime服务
 + [2024-10-12] 修复早期遗忘的小bug; 修复错误拦截器导致的音频字节流异常错误问题; 增加OpenAi Audio服务。
 + [2024-10-10] 增强对SSE输出的获取，新加入`currData`属性，记录当前消息的整个对象。而原先的`currStr`为当前消息的content内容，保留不变。
 + [2024-09-26] 修复有关Pinecone向量数据库的一些问题。发布0.6.3版本
@@ -55,7 +59,7 @@
 + [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 
 ## 其它支持
-+ [[低价中转平台] 低价ApiKey—限时特惠 0.7:1—支持最新o1模型](https://api.trovebox.online/)
++ [[低价中转平台] 低价ApiKey—限时特惠 支持最新o1模型](https://api.trovebox.online/)
 
 # 快速开始
 ## 导入
