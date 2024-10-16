@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.factor;
 
+import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
@@ -51,6 +52,8 @@ public class AiService {
                 return new LingyiChatService(configuration);
             case OLLAMA:
                 return new OllamaAiChatService(configuration);
+            case BAICHUAN:
+                return new BaichuanChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

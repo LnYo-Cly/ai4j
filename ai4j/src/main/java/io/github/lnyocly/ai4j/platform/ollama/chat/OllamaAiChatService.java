@@ -42,6 +42,7 @@ import java.util.UUID;
  * @Date 2024/9/20 0:00
  */
 public class OllamaAiChatService implements IChatService, ParameterConvert<OllamaChatCompletion>, ResultConvert<OllamaChatCompletionResponse> {
+
     private final OllamaConfig ollamaConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;

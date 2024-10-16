@@ -34,7 +34,8 @@ import java.security.NoSuchAlgorithmException;
         MoonshotConfigProperties.class,
         HunyuanConfigProperties.class,
         LingyiConfigProperties.class,
-        OllamaConfigProperties.class})
+        OllamaConfigProperties.class,
+        BaichuanConfigProperties.class})
 public class AiConfigAutoConfiguration {
 
     // okhttp配置
@@ -51,10 +52,11 @@ public class AiConfigAutoConfiguration {
     private final HunyuanConfigProperties hunyuanConfigProperties;
     private final LingyiConfigProperties lingyiConfigProperties;
     private final OllamaConfigProperties ollamaConfigProperties;
+    private final BaichuanConfigProperties baichuanConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -64,6 +66,7 @@ public class AiConfigAutoConfiguration {
         this.hunyuanConfigProperties = hunyuanConfigProperties;
         this.lingyiConfigProperties = lingyiConfigProperties;
         this.ollamaConfigProperties = ollamaConfigProperties;
+        this.baichuanConfigProperties = baichuanConfigProperties;
     }
 
     @Bean
@@ -89,6 +92,7 @@ public class AiConfigAutoConfiguration {
         initHunyuanConfig();
         initLingyiConfig();
         initOllamaConfig();
+        initBaichuanConfig();
     }
 
     private void initOkHttp() {
@@ -176,7 +180,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化DeepSeek 配置信息
+     * 初始化 DeepSeek 配置信息
      */
     private void initDeepSeekConfig(){
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
@@ -188,7 +192,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Moonshot 配置信息
+     * 初始化 Moonshot 配置信息
      */
     private void initMoonshotConfig() {
         MoonshotConfig moonshotConfig = new MoonshotConfig();
@@ -200,7 +204,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Hunyuan 配置信息
+     * 初始化 Hunyuan 配置信息
      */
     private void initHunyuanConfig() {
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
@@ -211,7 +215,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化lingyi 配置信息
+     * 初始化 lingyi 配置信息
      */
     private void initLingyiConfig() {
         LingyiConfig lingyiConfig = new LingyiConfig();
@@ -223,7 +227,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Ollama 配置信息
+     * 初始化 Ollama 配置信息
      */
     private void initOllamaConfig() {
         OllamaConfig ollamaConfig = new OllamaConfig();
@@ -232,6 +236,18 @@ public class AiConfigAutoConfiguration {
         ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
 
         configuration.setOllamaConfig(ollamaConfig);
+    }
+
+    /**
+     * 初始化 Baichuan 配置信息
+     */
+    private void initBaichuanConfig(){
+        BaichuanConfig baichuanConfig = new BaichuanConfig();
+        baichuanConfig.setApiHost(baichuanConfigProperties.getApiHost());
+        baichuanConfig.setApiKey(baichuanConfigProperties.getApiKey());
+        baichuanConfig.setChatCompletionUrl(baichuanConfig.getChatCompletionUrl());
+
+        configuration.setBaichuanConfig(baichuanConfig);
     }
 
 }

@@ -18,6 +18,7 @@ public enum PlatformType {
     HUNYUAN("hunyuan"),
     LINGYI("lingyi"),
     OLLAMA("ollama"),
+    BAICHUAN("baichuan")
     ;
     private final String platform;
 
