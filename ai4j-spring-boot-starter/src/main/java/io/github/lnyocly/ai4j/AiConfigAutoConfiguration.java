@@ -35,7 +35,8 @@ import java.security.NoSuchAlgorithmException;
         HunyuanConfigProperties.class,
         LingyiConfigProperties.class,
         OllamaConfigProperties.class,
-        MinimaxConfigProperties.class,})
+        MinimaxConfigProperties.class,
+        BaichuanConfigProperties.class})
 
 public class AiConfigAutoConfiguration {
 
@@ -54,10 +55,11 @@ public class AiConfigAutoConfiguration {
     private final LingyiConfigProperties lingyiConfigProperties;
     private final OllamaConfigProperties ollamaConfigProperties;
     private final MinimaxConfigProperties minimaxConfigProperties;
+    private final BaichuanConfigProperties baichuanConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -68,6 +70,7 @@ public class AiConfigAutoConfiguration {
         this.lingyiConfigProperties = lingyiConfigProperties;
         this.ollamaConfigProperties = ollamaConfigProperties;
         this.minimaxConfigProperties = minimaxConfigProperties;
+        this.baichuanConfigProperties = baichuanConfigProperties;
     }
 
     @Bean
@@ -94,6 +97,7 @@ public class AiConfigAutoConfiguration {
         initLingyiConfig();
         initOllamaConfig();
         initMinimaxConfig();
+        initBaichuanConfig();
     }
 
 
@@ -242,6 +246,7 @@ public class AiConfigAutoConfiguration {
 
         configuration.setOllamaConfig(ollamaConfig);
     }
+
     /**
      * 初始化Minimax 配置信息
      */
@@ -252,5 +257,17 @@ public class AiConfigAutoConfiguration {
         minimaxConfig.setChatCompletionUrl(minimaxConfigProperties.getChatCompletionUrl());
 
         configuration.setMinimaxConfig(minimaxConfig);
+    }
+
+    /**
+     * 初始化Baichuan 配置信息
+     */
+    private void initBaichuanConfig() {
+        BaichuanConfig baichuanConfig = new BaichuanConfig();
+        baichuanConfig.setApiHost(baichuanConfigProperties.getApiHost());
+        baichuanConfig.setApiKey(baichuanConfigProperties.getApiKey());
+        baichuanConfig.setChatCompletionUrl(baichuanConfigProperties.getChatCompletionUrl());
+
+        configuration.setBaichuanConfig(baichuanConfig);
     }
 }
