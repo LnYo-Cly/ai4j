@@ -3,14 +3,15 @@ package io.github.lnyocly.ai4j.service.factor;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
+import io.github.lnyocly.ai4j.platform.minimax.chat.MinimaxChatService;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.MoonshotChatService;
+import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
+import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
+import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
-import io.github.lnyocly.ai4j.service.Configuration;
-import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
-import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +51,10 @@ public class AiService {
                 return new HunyuanChatService(configuration);
             case LINGYI:
                 return new LingyiChatService(configuration);
+            case OLLAMA:
+                return new OllamaAiChatService(configuration);
+            case MINIMAX:
+                return new MinimaxChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
@@ -64,6 +69,32 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiEmbeddingService(configuration);
+            default:
+                throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public IAudioService getAudioService(PlatformType platform) {
+        return createAudioService(platform);
+    }
+
+    private IAudioService createAudioService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new OpenAiAudioService(configuration);
+            default:
+                throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public IRealtimeService getRealtimeService(PlatformType platform) {
+        return createRealtimeService(platform);
+    }
+
+    private IRealtimeService createRealtimeService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new OpenAiRealtimeService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

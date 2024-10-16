@@ -5,12 +5,12 @@ import io.github.lnyocly.ai4j.config.PineconeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import io.github.lnyocly.ai4j.vector.VertorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,8 +37,8 @@ public class PineconeService {
     // 插入Pinecone向量库
     public Integer insert(PineconeInsert pineconeInsertReq){
         Request request = new Request.Builder()
-                .url(pineconeConfig.getUrl() + pineconeConfig.getUpsert())
-                .post(RequestBody.create(JSON.toJSONString(pineconeInsertReq), MediaType.parse(Constants.APPLICATION_JSON)))
+                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getUpsert()))
+                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeInsertReq)))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())
@@ -76,8 +76,8 @@ public class PineconeService {
     // 从Pinecone向量库中查询相似向量
     public PineconeQueryResponse query(PineconeQuery pineconeQueryReq){
         Request request = new Request.Builder()
-                .url(pineconeConfig.getUrl() + pineconeConfig.getQuery())
-                .post(RequestBody.create(JSON.toJSONString(pineconeQueryReq), MediaType.parse(Constants.APPLICATION_JSON)))
+                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getQuery()))
+                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeQueryReq)))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())
@@ -106,8 +106,8 @@ public class PineconeService {
     // 从Pinecone向量库中删除向量
     public Boolean delete(PineconeDelete pineconeDeleteReq){
         Request request = new Request.Builder()
-                .url(pineconeConfig.getUrl() + pineconeConfig.getDelete())
-                .post(RequestBody.create(JSON.toJSONString(pineconeDeleteReq), MediaType.parse(Constants.APPLICATION_JSON)))
+                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getDelete()))
+                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeDeleteReq)))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())

@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSources;
 
+
 /**
  * @Author cly
  * @Description 统一的配置管理
@@ -27,6 +28,8 @@ public class Configuration {
     private MoonshotConfig moonshotConfig;
     private HunyuanConfig hunyuanConfig;
     private LingyiConfig lingyiConfig;
+    private OllamaConfig ollamaConfig;
+    private MinimaxConfig minimaxConfig;
 
     private PineconeConfig pineconeConfig;
 

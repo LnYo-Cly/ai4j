@@ -17,6 +17,8 @@ public enum PlatformType {
     MOONSHOT("moonshot"),
     HUNYUAN("hunyuan"),
     LINGYI("lingyi"),
+    OLLAMA("ollama"),
+    MINIMAX("minimax"),
     ;
     private final String platform;
 

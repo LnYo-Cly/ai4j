@@ -1,6 +1,7 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
-一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
+由于SpringAI需要使用JDK17和Spring Boot3， 但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
+一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
 
 
 ## 支持的平台
@@ -10,26 +11,39 @@
 + Moonshot(月之暗面)
 + Hunyuan(腾讯混元)
 + Lingyi(零一万物)
-+ 待添加(Qwen Llama MiniMax...)
++ Ollama
++ MiniMax
++ 待添加(Qwen Llama ...)
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
 + Embedding
++ Audio
++ Realtime
 + 待添加
 
 ## 特性
 + 支持Spring以及普通Java应用、支持Java 8以上的应用
 + 多平台、多服务
 + 统一的输入输出
++ 统一的错误处理
 + 支持流式输出。支持函数调用参数流式输出
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
 + 支持stream_options，流式输出直接获取统计token usage
-+ 内置向量数据库支持: Pinecone
++ 支持RAG，内置向量数据库支持: Pinecone
 + 使用Tika读取文件
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-10-16] 增加MiniMax平台Chat接口对接
++ [2024-10-15] 增加realtime服务
++ [2024-10-12] 修复早期遗忘的小bug; 修复错误拦截器导致的音频字节流异常错误问题; 增加OpenAi Audio服务。
++ [2024-10-10] 增强对SSE输出的获取，新加入`currData`属性，记录当前消息的整个对象。而原先的`currStr`为当前消息的content内容，保留不变。
++ [2024-09-26] 修复有关Pinecone向量数据库的一些问题。发布0.6.3版本
++ [2024-09-20] 增加对Ollama平台的支持，并修复一些bug。发布0.6.2版本
++ [2024-09-19] 增加错误处理链，统一处理为openai错误类型; 修复部分情况下URL拼接问题，修复拦截器中response重复调用而导致的关闭问题。发布0.5.3版本
++ [2024-09-12] 修复上个问题OpenAi参数导致错误的遗漏，发布0.5.2版本
 + [2024-09-12] 修复SpringBoot 2.6以下导致OkHttp变为3.14版本的报错问题；修复OpenAi参数`parallel_tool_calls`在tools为null时的异常问题。发布0.5.1版本。
 + [2024-09-09] 新增零一万物大模型支持、发布0.5.0版本。
 + [2024-09-02] 新增腾讯混元Hunyuan平台支持（注意：所需apiKey 属于SecretId与SecretKey的拼接，格式为 {SecretId}.{SecretKey}），发布0.4.0版本。
@@ -38,6 +52,14 @@
 + [2024-08-29] 修改SseListener以兼容智谱函数调用。
 + [2024-08-28] 添加token统计、添加智谱AI的Chat服务、优化函数调用可以支持多轮多函数。
 + [2024-08-17] 增强SseListener监听器功能。发布0.2.0版本。
+
+## 教程文档
++ [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
++ [Java快速接入qwen2.5、llama3.1等Ollama平台开源大模型](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
++ [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
+
+## 其它支持
++ [[低价中转平台] 低价ApiKey—限时特惠 支持最新o1模型](https://api.trovebox.online/)
 
 # 快速开始
 ## 导入
@@ -388,10 +410,10 @@ public void test_delete_vector_store() throws Exception {
 
 ## PR
 1. Fork 本仓库并创建您的分支。
-2. 如果您添加了应该进行测试的代码，请进行测试。
+2. 编写您的代码，并进行测试。
 3. 确保您的代码符合现有的样式。
-4. 为提交编写清晰的日志信息。对于小的改动，单行信息就可以了，但较大的改动应该有详细的描述。
-5. 完成拉取请求表单，链接到您的 PR 解决的问题。
+4. 提交时编写清晰的日志信息。对于小的改动，单行信息就可以了，但较大的改动应该有详细的描述。
+5. 完成拉取请求表单，确保在`dev`分支进行改动，链接到您的 PR 解决的问题。
 
 # 支持
 如果您觉得这个项目对您有帮助，请点一个star⭐。
@@ -412,3 +434,12 @@ public void test_delete_vector_store() throws Exception {
   <img src="https://contrib.rocks/image?repo=LnYo-Cly/ai4j" />
 </a>
 
+
+# ⭐️ Star History
+<a href="https://star-history.com/#LnYo-Cly/ai4j&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=LnYo-Cly/ai4j&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=LnYo-Cly/ai4j&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=LnYo-Cly/ai4j&type=Date" />
+ </picture>
+</a>
