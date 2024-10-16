@@ -19,6 +19,7 @@ public enum PlatformType {
     LINGYI("lingyi"),
     OLLAMA("ollama"),
     MINIMAX("minimax"),
+    BAICHUAN("baichuan"),
     ;
     private final String platform;
 

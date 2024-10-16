@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.factor;
 
+import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
@@ -13,9 +14,6 @@ import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @Author cly
@@ -55,6 +53,8 @@ public class AiService {
                 return new OllamaAiChatService(configuration);
             case MINIMAX:
                 return new MinimaxChatService(configuration);
+            case BAICHUAN:
+                return new BaichuanChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
