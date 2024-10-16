@@ -48,7 +48,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '${project.ve
 ```
 
 ```groovy
-implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', version: '${project.version}'
+implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', version: '${project.version}'
 ```
 
 
@@ -66,7 +66,7 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-stater', ver
 <!-- Spring application -->
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
-    <artifactId>ai4j-spring-boot-stater</artifactId>
+    <artifactId>ai4j-spring-boot-starter</artifactId>
     <version>${project.version}</version>
 </dependency>
 ```
