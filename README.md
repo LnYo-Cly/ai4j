@@ -1,7 +1,7 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
 由于SpringAI需要使用JDK17和Spring Boot3， 但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
-一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
+一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)、MiniMax、百川Baichuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
 
 
 ## 支持的平台
@@ -13,6 +13,7 @@
 + Lingyi(零一万物)
 + Ollama
 + MiniMax
++ Baichuan
 + 待添加(Qwen Llama ...)
 
 ## 支持的服务
@@ -37,7 +38,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
-+ [2024-10-17] 支持SPI机制，可自定义Dispatcher和ConnectPool
++ [2024-10-17] 支持SPI机制，可自定义Dispatcher和ConnectPool。新增百川Baichuan平台Chat接口支持。
 + [2024-10-16] 增加MiniMax平台Chat接口对接
 + [2024-10-15] 增加realtime服务
 + [2024-10-12] 修复早期遗忘的小bug; 修复错误拦截器导致的音频字节流异常错误问题; 增加OpenAi Audio服务。
