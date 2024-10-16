@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.platform.moonshot.chat.MoonshotChatService;
 import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
+import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
@@ -81,6 +82,19 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiAudioService(configuration);
+            default:
+                throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public IRealtimeService getRealtimeService(PlatformType platform) {
+        return createRealtimeService(platform);
+    }
+
+    private IRealtimeService createRealtimeService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new OpenAiRealtimeService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

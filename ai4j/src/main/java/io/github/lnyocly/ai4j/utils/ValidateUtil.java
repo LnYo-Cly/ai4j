@@ -18,6 +18,13 @@ public class ValidateUtil {
             if (params[i].startsWith("/")) {
                 params[i] = params[i].substring(1);
             }
+            if(params[i].startsWith("?") || params[i].startsWith("&")){
+                // 如果sb的末尾是“/”，则删除末尾
+                if(sb.length() > 0 && sb.charAt(sb.length()-1) == '/') {
+                    sb.deleteCharAt(sb.length() - 1);
+                }
+
+            }
             sb.append(params[i]);
             if(!params[i].endsWith("/")){
                 sb.append('/');
