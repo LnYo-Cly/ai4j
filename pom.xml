@@ -14,7 +14,7 @@
 
     <modules>
         <module>ai4j</module>
-        <module>ai4j-spring-boot-stater</module>
+        <module>ai4j-spring-boot-starter</module>
     </modules>
 
     <build>
