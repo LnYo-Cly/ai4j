@@ -14,7 +14,11 @@
 + Ollama
 + MiniMax
 + Baichuan
-+ 待添加(Qwen Llama ...)
+
+##待添加
++ LLM(Qwen、Llama、Mistral...)
++ MLLM(Gemini、InternVL...)
++ t2i(stable diffusion、imagen...)
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
