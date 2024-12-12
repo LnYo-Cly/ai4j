@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service;
 
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.Data;
 import okhttp3.OkHttpClient;
 import okhttp3.sse.EventSource;
@@ -34,4 +35,5 @@ public class Configuration {
 
     private PineconeConfig pineconeConfig;
 
+    private SearXNGConfig searXNGConfig;
 }

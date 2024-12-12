@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
 
 /**
  * @Author cly
@@ -33,6 +34,11 @@ public class AiService {
     public IChatService getChatService(PlatformType platform) {
         //return chatServiceCache.computeIfAbsent(platform, this::createChatService);
         return createChatService(platform);
+    }
+
+    public IChatService webSearchEnhance(IChatService chatService) {
+        //IChatService chatService = getChatService(platform);
+        return new ChatWithWebSearchEnhance(chatService, configuration);
     }
 
     private IChatService createChatService(PlatformType platform) {
@@ -59,6 +65,8 @@ public class AiService {
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
     }
+
+
 
     public IEmbeddingService getEmbeddingService(PlatformType platform) {
         //return embeddingServiceCache.computeIfAbsent(platform, this::createEmbeddingService);

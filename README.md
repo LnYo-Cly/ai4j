@@ -15,7 +15,7 @@
 + MiniMax
 + Baichuan
 
-##待添加
+## 待添加
 + LLM(Qwen、Llama、Mistral...)
 + MLLM(Gemini、InternVL...)
 + t2i(stable diffusion、imagen...)
@@ -33,6 +33,7 @@
 + 统一的输入输出
 + 统一的错误处理
 + 支持SPI机制，可自定义Dispatcher和ConnectPool
++ 支持服务增强，例如增加websearch服务
 + 支持流式输出。支持函数调用参数流式输出
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
@@ -42,6 +43,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2024-12-12] 使用装饰器模式增强Chat服务，支持SearXNG网络搜索增强，无需模型支持内置搜索以及function_call。
 + [2024-10-17] 支持SPI机制，可自定义Dispatcher和ConnectPool。新增百川Baichuan平台Chat接口支持。
 + [2024-10-16] 增加MiniMax平台Chat接口对接
 + [2024-10-15] 增加realtime服务
@@ -66,7 +68,7 @@
 + [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 
 ## 其它支持
-+ [[低价中转平台] 低价ApiKey—限时特惠 支持最新o1模型](https://api.trovebox.online/)
++ [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)
 
 # 快速开始
 ## 导入
@@ -407,6 +409,57 @@ public void test_delete_vector_store() throws Exception {
 }
 ```
 
+## 内置联网
+
+### SearXNG
+
+#### 配置
+```java
+// 非spring应用
+SearXNGConfig searXNGConfig = new SearXNGConfig();
+searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+
+Configuration configuration = new Configuration();
+configuration.setSearXNGConfig(searXNGConfig);
+```
+
+```YML
+# spring应用
+ai:
+  websearch:
+    searxng:
+      url: http://127.0.0.1:8080/search
+
+```
+
+#### 使用
+
+```java
+
+// ...
+
+webEnhance = aiService.webSearchEnhance(chatService);
+
+// ...
+
+
+@Test
+public void test_chatCompletions_common_websearch_enhance() throws Exception {
+    ChatCompletion chatCompletion = ChatCompletion.builder()
+            .model("qwen2.5:7b")
+            .message(ChatMessage.withUser("鸡你太美是什么梗"))
+            .build();
+
+    System.out.println("请求参数");
+    System.out.println(chatCompletion);
+
+    ChatCompletionResponse chatCompletionResponse = webEnhance.chatCompletion(chatCompletion);
+
+    System.out.println("请求成功");
+    System.out.println(chatCompletionResponse);
+
+}
+```
 
 
 # 为AI4J提供贡献

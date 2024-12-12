@@ -13,6 +13,7 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -35,12 +36,18 @@ public class OllamaTest {
 
     private IChatService chatService;
 
+    private IChatService webEnhance;
+
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
+        SearXNGConfig searXNGConfig = new SearXNGConfig();
+        searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+
         OllamaConfig ollamaConfig = new OllamaConfig();
 
         Configuration configuration = new Configuration();
         configuration.setOllamaConfig(ollamaConfig);
+        configuration.setSearXNGConfig(searXNGConfig);
 
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
@@ -63,7 +70,7 @@ public class OllamaTest {
         AiService aiService = new AiService(configuration);
 
         chatService = aiService.getChatService(PlatformType.OLLAMA);
-
+        webEnhance = aiService.webSearchEnhance(chatService);
     }
 
     @Test
@@ -77,6 +84,22 @@ public class OllamaTest {
         System.out.println(chatCompletion);
 
         ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
+
+        System.out.println("请求成功");
+        System.out.println(chatCompletionResponse);
+
+    }
+    @Test
+    public void test_chatCompletions_common_websearch_enhance() throws Exception {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("qwen2.5:7b")
+                .message(ChatMessage.withUser("鸡你太美是什么梗"))
+                .build();
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+        ChatCompletionResponse chatCompletionResponse = webEnhance.chatCompletion(chatCompletion);
 
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);

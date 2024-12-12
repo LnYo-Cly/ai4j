@@ -26,6 +26,7 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
@@ -67,6 +68,7 @@ public class OpenAiTest {
     private IEmbeddingService embeddingService;
 
     private IChatService chatService;
+    private IChatService webEnhance;
 
     private IAudioService audioService;
     private IRealtimeService realtimeService;
@@ -74,12 +76,17 @@ public class OpenAiTest {
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
+        SearXNGConfig searXNGConfig = new SearXNGConfig();
+        searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost("https://api.openai.com/");
         openAiConfig.setApiKey("**********************");
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
+        configuration.setSearXNGConfig(searXNGConfig);
+
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -117,6 +124,7 @@ public class OpenAiTest {
 
         realtimeService = aiService.getRealtimeService(PlatformType.OPENAI);
 
+        webEnhance = aiService.webSearchEnhance(chatService);
     }
 
 
@@ -147,6 +155,23 @@ public class OpenAiTest {
         System.out.println(chatCompletion);
 
         ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
+
+        System.out.println("请求成功");
+        System.out.println(chatCompletionResponse);
+
+    }
+
+    @Test
+    public void test_chatCompletions_common_websearch_enhance() throws Exception {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("鸡你太美"))
+                .build();
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+        ChatCompletionResponse chatCompletionResponse = webEnhance.chatCompletion(chatCompletion);
 
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);
