@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.websearch.searxng.SearXNGResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @Author cly
@@ -74,7 +75,11 @@ public class ChatWithWebSearchEnhance implements IChatService {
                 .q(query)
                 .build();
 
-        String requestString = JSON.toJSONString(searXNGRequest);
+
+        if(StringUtils.isBlank(searXNGConfig.getUrl())){
+            throw new CommonException("SearXNG url is not configured");
+        }
+
 
         Request request = new Request.Builder()
                 .url(ValidateUtil.concatUrl(searXNGConfig.getUrl(), "?format=json&q=" + query + "&engines=" + searXNGRequest.getEngines()))

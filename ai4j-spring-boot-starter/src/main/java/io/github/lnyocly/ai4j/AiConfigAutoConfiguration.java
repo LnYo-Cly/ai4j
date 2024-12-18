@@ -100,6 +100,8 @@ public class AiConfigAutoConfiguration {
 
         initPineconeConfig();
 
+        initSearXNGConfig();
+
         initOpenAiConfig();
         initZhipuConfig();
         initDeepSeekConfig();
