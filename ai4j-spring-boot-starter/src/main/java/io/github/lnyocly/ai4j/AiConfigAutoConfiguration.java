@@ -295,6 +295,8 @@ public class AiConfigAutoConfiguration {
     private void initSearXNGConfig() {
         SearXNGConfig searXNGConfig = new SearXNGConfig();
         searXNGConfig.setUrl(searXNGConfigProperties.getUrl());
+        searXNGConfig.setEngines(searXNGConfigProperties.getEngines());
+        searXNGConfig.setNums(searXNGConfigProperties.getNums());
 
         configuration.setSearXNGConfig(searXNGConfig);
     }

@@ -15,4 +15,6 @@ import lombok.NonNull;
 @NoArgsConstructor
 public class SearXNGConfig {
     private String url;
+    private String engines = "duckduckgo,google,bing,brave,mojeek,presearch,qwant,startpage,yahoo,arxiv,crossref,google_scholar,internetarchivescholar,semantic_scholar";
+    private int nums = 20;
 }

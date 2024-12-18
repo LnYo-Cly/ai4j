@@ -73,6 +73,7 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
         SearXNGRequest searXNGRequest = SearXNGRequest.builder()
                 .q(query)
+                .engines(searXNGConfig.getEngines())
                 .build();
 
 
@@ -82,7 +83,7 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
 
         Request request = new Request.Builder()
-                .url(ValidateUtil.concatUrl(searXNGConfig.getUrl(), "?format=json&q=" + query + "&engines=" + searXNGRequest.getEngines()))
+                .url(ValidateUtil.concatUrl(searXNGConfig.getUrl(), "?format=json&q=" + query + "&engines=" + searXNGConfig.getEngines()))
                 .get()
                 .build();
 
@@ -91,8 +92,8 @@ public class ChatWithWebSearchEnhance implements IChatService {
             if (execute.isSuccessful() && execute.body() != null){
                 SearXNGResponse searXNGResponse = JSON.parseObject(execute.body().string(), SearXNGResponse.class);
 
-                if(searXNGResponse.getResults().size() > 20) {
-                    return JSON.toJSONString(searXNGResponse.getResults().subList(0, 20));
+                if(searXNGResponse.getResults().size() > searXNGConfig.getNums()) {
+                    return JSON.toJSONString(searXNGResponse.getResults().subList(0, searXNGConfig.getNums()));
                 }
                 return JSON.toJSONString(searXNGResponse.getResults());
 
