@@ -259,6 +259,7 @@ public class AiConfigAutoConfiguration {
     private void initOllamaConfig() {
         OllamaConfig ollamaConfig = new OllamaConfig();
         ollamaConfig.setApiHost(ollamaConfigProperties.getApiHost());
+        ollamaConfig.setApiKey(ollamaConfigProperties.getApiKey());
         ollamaConfig.setChatCompletionUrl(ollamaConfigProperties.getChatCompletionUrl());
         ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
 

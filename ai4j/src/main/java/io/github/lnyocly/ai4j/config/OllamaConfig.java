@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OllamaConfig {
     private String apiHost = "http://localhost:11434/";
+    private String apiKey = "";
     private String chatCompletionUrl = "api/chat";
     private String embeddingUrl = "api/embed";
 }

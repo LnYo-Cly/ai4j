@@ -212,7 +212,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
-        //if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
+        if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
@@ -258,12 +258,15 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             requestString = JSON.toJSONString(jsonObject);
 
 
-
-
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
-                    .build();
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+
+            if(StringUtils.isNotBlank(apiKey)) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+
+            Request request = builder.build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
@@ -334,7 +337,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
-        //if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
+        if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(true);
 
         // 转换 请求参数
@@ -378,11 +381,15 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             }
             requestString = JSON.toJSONString(jsonObject);
 
-
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), requestString))
-                    .build();
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+
+            if(StringUtils.isNotBlank(apiKey)) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+
+            Request request = builder.build();
 
             factory.newEventSource(request, convertEventSource(eventSourceListener));
             eventSourceListener.getCountDownLatch().await();
