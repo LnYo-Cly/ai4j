@@ -1,11 +1,12 @@
 package io.github.lnyocly.ai4j.platform.baichuan.chat;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.BaichuanConfig;
-import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.entity.BaichuanChatCompletion;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.entity.BaichuanChatCompletionResponse;
@@ -16,11 +17,8 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletion;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletionResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.BearerTokenUtils;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
 import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +76,8 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
 
             finishReason = null;
             // 构造请求
-            String requestString = JSON.toJSONString(baichuanChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(baichuanChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -88,7 +87,7 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                BaichuanChatCompletionResponse baichuanChatCompletionResponse = JSON.parseObject(execute.body().string(), BaichuanChatCompletionResponse.class);
+                BaichuanChatCompletionResponse baichuanChatCompletionResponse = mapper.readValue(execute.body().string(), BaichuanChatCompletionResponse.class);
 
                 Choice choice = baichuanChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -161,7 +160,8 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(baichuanChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(baichuanChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -245,11 +245,23 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
                     return;
                 }
 
-                BaichuanChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, BaichuanChatCompletionResponse.class);
-                chatCompletionResponse.setObject("chat.completion.chunk");
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                ObjectMapper mapper = new ObjectMapper();
+                BaichuanChatCompletionResponse chatCompletionResponse = null;
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, BaichuanChatCompletionResponse.class);
+                    chatCompletionResponse.setObject("chat.completion.chunk");
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+
+                    throw new CommonException("Baichuan Chat 对象JSON序列化出错");
+                }
+
+
+
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override

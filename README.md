@@ -34,7 +34,8 @@
 + 统一的错误处理
 + 支持SPI机制，可自定义Dispatcher和ConnectPool
 + 支持服务增强，例如增加websearch服务
-+ 支持流式输出。支持函数调用参数流式输出
++ 支持流式输出。支持函数调用参数流式输出.
++ 简洁的多模态调用方式，例如vision识图
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
 + 支持stream_options，流式输出直接获取统计token usage
@@ -43,6 +44,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2025-02-11] 实现自定义的Jackson序列化，解决OpenAi已经无法通过Json String来直接实现多模态接口的问题。
 + [2024-12-12] 使用装饰器模式增强Chat服务，支持SearXNG网络搜索增强，无需模型支持内置搜索以及function_call。
 + [2024-10-17] 支持SPI机制，可自定义Dispatcher和ConnectPool。新增百川Baichuan平台Chat接口支持。
 + [2024-10-16] 增加MiniMax平台Chat接口对接
@@ -66,6 +68,7 @@
 + [快速接入SpringBoot、接入流式与非流式以及函数调用](http://t.csdnimg.cn/iuIAW)
 + [Java快速接入qwen2.5、llama3.1等Ollama平台开源大模型](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
 + [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
++ [大模型不支持联网搜索？为Deepseek、Qwen、llama等本地模型添加网络搜索](https://blog.csdn.net/qq_35650513/article/details/144572824)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)

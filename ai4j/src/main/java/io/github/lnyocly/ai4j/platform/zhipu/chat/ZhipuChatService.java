@@ -1,10 +1,13 @@
 package io.github.lnyocly.ai4j.platform.zhipu.chat;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -78,7 +81,8 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             finishReason = null;
             // 构造请求
-            String requestString = JSON.toJSONString(zhipuChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(chatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
@@ -88,7 +92,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                ZhipuChatCompletionResponse zhipuChatCompletionResponse = JSON.parseObject(execute.body().string(), ZhipuChatCompletionResponse.class);
+                ZhipuChatCompletionResponse zhipuChatCompletionResponse = mapper.readValue(execute.body().string(), ZhipuChatCompletionResponse.class);
 
                 Choice choice = zhipuChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -165,7 +169,8 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(zhipuChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(zhipuChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + token)
@@ -249,11 +254,22 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
                     return;
                 }
 
-                ZhipuChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ZhipuChatCompletionResponse.class);
-                chatCompletionResponse.setObject("chat.completion.chunk");
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                ObjectMapper mapper = new ObjectMapper();
+
+                ZhipuChatCompletionResponse chatCompletionResponse = null;
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, ZhipuChatCompletionResponse.class);
+                    chatCompletionResponse.setObject("chat.completion.chunk");
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("Zhipu Chat 对象JSON序列化出错");
+                }
+
+
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override

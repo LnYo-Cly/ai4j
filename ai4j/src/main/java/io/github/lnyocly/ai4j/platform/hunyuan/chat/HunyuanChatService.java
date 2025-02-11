@@ -3,18 +3,18 @@ package io.github.lnyocly.ai4j.platform.hunyuan.chat;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.HunyuanConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.hunyuan.HunyuanConstant;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.entity.HunyuanChatCompletion;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.entity.HunyuanChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
@@ -84,7 +84,15 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     return;
                 }
 
-                HunyuanChatCompletionResponse hunyuanChatCompletionResponse = JSON.parseObject(JsonObjectUtil.toSnakeCaseJson(data), HunyuanChatCompletionResponse.class);
+                ObjectMapper mapper = new ObjectMapper();
+                HunyuanChatCompletionResponse hunyuanChatCompletionResponse = null;
+                try {
+                    hunyuanChatCompletionResponse = mapper.readValue(JsonObjectUtil.toSnakeCaseJson(data), HunyuanChatCompletionResponse.class);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("解析混元Hunyuan Chat Completion Response失败");
+                }
+
+
                 ChatCompletionResponse response = convertChatCompletionResponse(hunyuanChatCompletionResponse);
                 response.setObject("chat.completion.chunk");
 
@@ -152,7 +160,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(hunyuanChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(hunyuanChatCompletion);
 
             // 整理tools
             JSONObject jsonObject = JSON.parseObject(requestString);
@@ -191,7 +200,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                         String content = message.getString("content");
                         // 将content内容，判断是否可以转换为ChatMessage.MultiModal类型
                         if(content!=null && content.startsWith("[") && content.endsWith("]")) {
-                            List<ChatMessage.MultiModal> multiModals = JSON.parseArray(content, ChatMessage.MultiModal.class);
+                            List<Content.MultiModal> multiModals = JSON.parseArray(content, Content.MultiModal.class);
                             if(multiModals!=null && !multiModals.isEmpty()){
                                 // 将当前的content转换为contents
                                 message.put("contents", multiModals);
@@ -223,7 +232,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                 responseString = JsonObjectUtil.toSnakeCaseJson(responseString);
                 responseString = JSON.parseObject(responseString).get("response").toString();
 
-                HunyuanChatCompletionResponse hunyuanChatCompletionResponse = JSON.parseObject(responseString, HunyuanChatCompletionResponse.class);
+                HunyuanChatCompletionResponse hunyuanChatCompletionResponse = mapper.readValue(responseString, HunyuanChatCompletionResponse.class);
 
                 Choice choice = hunyuanChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -302,7 +311,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(hunyuanChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(hunyuanChatCompletion);
 
             // 整理tools
             JSONObject jsonObject = JSON.parseObject(requestString);
@@ -341,7 +351,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                         String content = message.getString("content");
                         // 将content内容，判断是否可以转换为ChatMessage.MultiModal类型
                         if(content!=null && content.startsWith("[") && content.endsWith("]")) {
-                            List<ChatMessage.MultiModal> multiModals = JSON.parseArray(content, ChatMessage.MultiModal.class);
+                            List<Content.MultiModal> multiModals = JSON.parseArray(content, Content.MultiModal.class);
                             if(multiModals!=null && !multiModals.isEmpty()){
                                 // 将当前的content转换为contents
                                 message.put("contents", multiModals);
@@ -378,7 +388,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
-                responseMessage.setContent(" ");
+                responseMessage.setContent(Content.ofText(" "));
 
                 List<ChatMessage> messages = new ArrayList<>(hunyuanChatCompletion.getMessages());
                 messages.add(responseMessage);

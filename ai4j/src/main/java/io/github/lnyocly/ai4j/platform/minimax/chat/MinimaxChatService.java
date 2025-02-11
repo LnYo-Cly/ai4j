@@ -1,10 +1,13 @@
 package io.github.lnyocly.ai4j.platform.minimax.chat;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.MinimaxConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletion;
 import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletionResponse;
@@ -82,10 +85,19 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                     return;
                 }
 
-                MinimaxChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, MinimaxChatCompletionResponse.class);
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                ObjectMapper mapper = new ObjectMapper();
+                MinimaxChatCompletionResponse chatCompletionResponse = null;
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, MinimaxChatCompletionResponse.class);
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("Minimax Chat 对象JSON序列化出错");
+                }
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override
@@ -135,7 +147,8 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(minimaxChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(minimaxChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -145,7 +158,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                MinimaxChatCompletionResponse minimaxChatCompletionResponse = JSON.parseObject(execute.body().string(), MinimaxChatCompletionResponse.class);
+                MinimaxChatCompletionResponse minimaxChatCompletionResponse = mapper.readValue(execute.body().string(), MinimaxChatCompletionResponse.class);
 
                 Choice choice = minimaxChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -220,7 +233,8 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(minimaxChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(minimaxChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)

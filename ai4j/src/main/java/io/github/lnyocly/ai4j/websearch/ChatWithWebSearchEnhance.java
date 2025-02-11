@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.Content;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.utils.ValidateUtil;
@@ -54,18 +55,18 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
     private ChatCompletion addWebSearchResults(ChatCompletion chatCompletion) {
         int chatLen = chatCompletion.getMessages().size();
-        String prompt = chatCompletion.getMessages().get(chatLen - 1).getContent();
+        String prompt = chatCompletion.getMessages().get(chatLen - 1).getContent().getText();
         // 执行联网搜索并将结果附加到提示词中
         String searchResults = performWebSearch(prompt);
-        chatCompletion.getMessages().get(chatLen - 1).setContent("我将提供一段来自互联网的资料信息, 请根据这段资料以及用户提出的问题来给出回答。请确保在回答中使用Markdown格式，并在回答末尾列出参考资料。如果资料中的信息不足以回答用户的问题，可以根据自身知识库进行补充，或者说明无法提供确切的答案。\n" +
-                 "网络资料:\n"
+        chatCompletion.getMessages().get(chatLen - 1).setContent(Content.ofText("我将提供一段来自互联网的资料信息, 请根据这段资料以及用户提出的问题来给出回答。请确保在回答中使用Markdown格式，并在回答末尾列出参考资料。如果资料中的信息不足以回答用户的问题，可以根据自身知识库进行补充，或者说明无法提供确切的答案。\n" +
+                "网络资料:\n"
                 + "============\n"
                 + searchResults
                 + "============\n"
                 + "用户问题:\n"
                 + "============\n"
                 + prompt
-                + "============\n");
+                + "============\n"));
         return chatCompletion;
     }
 

@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j.listener;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -110,7 +112,14 @@ public abstract class SseListener extends EventSourceListener {
             return;
         }
 
-        ChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, ChatCompletionResponse.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        ChatCompletionResponse chatCompletionResponse = null;
+        try {
+            chatCompletionResponse = objectMapper.readValue(data, ChatCompletionResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new CommonException("read data error");
+        }
+
         // 统计token，当设置include_usage = true时，最后一条消息会携带usage, 其他消息中usage为null
         Usage currUsage = chatCompletionResponse.getUsage();
         if(currUsage != null){
@@ -161,7 +170,7 @@ public abstract class SseListener extends EventSourceListener {
         }
 
         if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
-                && StringUtils.isBlank(responseMessage.getContent())
+                && StringUtils.isBlank(responseMessage.getContent().getText())
                 && responseMessage.getToolCalls() == null){
             // OPENAI 第一条消息
             return;
@@ -173,7 +182,7 @@ public abstract class SseListener extends EventSourceListener {
 
             // 判断是否为混元的tool最后一条说明性content
             // :{"Role":"assistant","Content":"计划使用get_current_weather工具来获取北京和深圳的当前天气。\n\t\n\t用户想要知道北京和深圳今天的天气情况。用户的请求是关于天气的查询，需要使用天气查询工具来获取信息。"}
-            if(toolCall !=null && StringUtils.isNotBlank(argument)&& "assistant".equals(responseMessage.getRole()) && StringUtils.isNotBlank(responseMessage.getContent()) ){
+            if(toolCall !=null && StringUtils.isNotBlank(argument)&& "assistant".equals(responseMessage.getRole()) && StringUtils.isNotBlank(responseMessage.getContent().getText()) ){
                 return;
             }
 
@@ -205,7 +214,7 @@ public abstract class SseListener extends EventSourceListener {
 
                 argument.append(responseMessage.getContent());
                 if(showToolArgs){
-                    this.currStr = responseMessage.getContent();
+                    this.currStr = responseMessage.getContent().getText();
                     this.send();
                 }
                 return;
@@ -213,8 +222,8 @@ public abstract class SseListener extends EventSourceListener {
 
 
             // 普通响应回答
-            output.append(responseMessage.getContent());
-            currStr = responseMessage.getContent();
+            output.append(responseMessage.getContent().getText());
+            currStr = responseMessage.getContent().getText();
             this.send();
 
 
