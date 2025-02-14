@@ -6,13 +6,11 @@ import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.chain.ErrorHandler;
 import io.github.lnyocly.ai4j.exception.error.Error;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Interceptor;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @Author cly
@@ -25,49 +23,56 @@ public class ErrorInterceptor implements Interceptor {
     @Override
     public Response intercept(@NotNull Chain chain) throws IOException {
         Request original = chain.request();
-
         Response response = chain.proceed(original);
 
-        byte[] contentBytes = response.body().bytes();
+        // 判断是否为流式响应，流式响应Content-Type为text/event-stream
+        if (isStreamingResponse(response)) {
+            return response; // 直接返回，不处理流式响应体
+        }
 
-        String errorMsg = new String(contentBytes);
+        if (!response.isSuccessful() && (response.code() != 100 && response.code() != 101)) {
+            ResponseBody responseBody = response.body();
+            String errorMsg = getResponseBodyContent(responseBody);
 
-        if(!response.isSuccessful() && (response.code() != 100 && response.code() != 101)){
-            JSONObject object;
             try {
-                object = JSON.parseObject(errorMsg);
-                if(object == null){
+                JSONObject object = JSON.parseObject(errorMsg);
+                if (object == null) {
                     errorMsg = response.code() + " " + response.message();
                     throw new CommonException(errorMsg);
                 }
             } catch (Exception e) {
                 throw new CommonException(errorMsg);
             }
-            // 处理错误信息
+
             ErrorHandler errorHandler = ErrorHandler.getInstance();
             Error error = errorHandler.process(errorMsg);
-
             log.error("AI服务请求异常：{}", error.getMessage());
             throw new CommonException(error.getMessage());
+        } else {
 
-        }else{
-            // 对混元特殊处理
-            // {"Response":{"RequestId":"e4650694-f018-4490-b4d0-d5242cd68106","Error":{"Code":"InvalidParameterValue.Model","Message":"模型不存在"}}}
-
-            if (errorMsg.contains("Response") && errorMsg.contains("Error")){
-                // 处理错误信息
+            // 处理腾讯混元部分
+            ResponseBody responseBody = response.body();
+            String content = getResponseBodyContent(responseBody);
+            if (content.contains("Response") && content.contains("Error")) {
                 ErrorHandler errorHandler = ErrorHandler.getInstance();
-                Error error = errorHandler.process(errorMsg);
+                Error error = errorHandler.process(content);
                 log.error("AI服务请求异常：{}", error.getMessage());
                 throw new CommonException(error.getMessage());
             }
-
-
+            // 重新构建响应体，确保内容可用
+            ResponseBody newBody = ResponseBody.create(responseBody.contentType(), content);
+            return response.newBuilder().body(newBody).build();
         }
-        ResponseBody newResponseBody = ResponseBody.create(response.body().contentType(), contentBytes);
+    }
 
-        return response.newBuilder()
-                .body(newResponseBody)
-                .build();
+    private boolean isStreamingResponse(Response response) {
+        MediaType contentType = response.body().contentType();
+        return contentType != null && contentType.toString().contains("text/event-stream");
+    }
+
+    private String getResponseBodyContent(ResponseBody responseBody) throws IOException {
+        if (responseBody == null) return "";
+        byte[] contentBytes = responseBody.bytes();
+        return new String(contentBytes, StandardCharsets.UTF_8);
     }
 }
