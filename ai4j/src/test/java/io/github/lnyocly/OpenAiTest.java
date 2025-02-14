@@ -1,9 +1,5 @@
 package io.github.lnyocly;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
@@ -39,7 +35,6 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import okio.ByteString;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
-import org.bouncycastle.tsp.TSPUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
@@ -81,8 +76,9 @@ public class OpenAiTest {
         searXNGConfig.setUrl("http://127.0.0.1:8080/search");
 
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiHost("**********");
-        openAiConfig.setApiKey("**************");
+        openAiConfig.setApiHost("*********");
+        openAiConfig.setApiKey("************");
+
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
@@ -90,7 +86,7 @@ public class OpenAiTest {
 
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
-        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
         DispatcherProvider dispatcherProvider = ServiceLoaderUtil.load(DispatcherProvider.class);
         ConnectionPoolProvider connectionPoolProvider = ServiceLoaderUtil.load(ConnectionPoolProvider.class);
         Dispatcher dispatcher = dispatcherProvider.getDispatcher();
@@ -221,7 +217,7 @@ public class OpenAiTest {
         // "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o")
+                .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
                         "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
                         "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
@@ -268,25 +264,35 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("鲁迅为什么打周树人"))
+                .model("deepseek-ai/DeepSeek-R1")
+                .message(ChatMessage.withUser("请思考，先有鸡还是先有蛋"))
                 .build();
 
 
         System.out.println("请求参数");
         System.out.println(chatCompletion);
 
+
         // 构造监听器
         SseListener sseListener = new SseListener() {
             @Override
             protected void send() {
+                long aaa = System.currentTimeMillis();
+                //System.out.println(aaa - currentTimeMillis);
                 log.info(this.getCurrStr());
             }
         };
 
-        chatService.chatCompletionStream(chatCompletion, sseListener);
 
-        System.out.println("请求成功");
+        long currentTimeMillis = System.currentTimeMillis();
+        log.info("开始请求");
+            chatService.chatCompletionStream(chatCompletion, sseListener);
+
+        log.info("请求结束");
+        long aaa = System.currentTimeMillis();
+        System.out.println(aaa - currentTimeMillis);
+
+
         System.out.println(sseListener.getOutput());
         System.out.println(sseListener.getUsage());
 
