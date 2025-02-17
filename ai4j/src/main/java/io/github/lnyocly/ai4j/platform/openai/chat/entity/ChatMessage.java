@@ -28,6 +28,9 @@ public class ChatMessage {
     private String name;
     private String refusal;
 
+    @JsonProperty("reasoning_content")
+    private String reasoningContent;
+
     @JsonProperty("tool_call_id")
     private String toolCallId;
 

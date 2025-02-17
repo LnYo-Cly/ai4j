@@ -50,6 +50,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -76,8 +78,8 @@ public class OpenAiTest {
         searXNGConfig.setUrl("http://127.0.0.1:8080/search");
 
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiHost("*********");
-        openAiConfig.setApiKey("************");
+        openAiConfig.setApiHost("************");
+        openAiConfig.setApiKey("*************");
 
 
         Configuration configuration = new Configuration();
@@ -264,7 +266,7 @@ public class OpenAiTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseek-ai/DeepSeek-R1")
+                .model("deepseek-reasoner")
                 .message(ChatMessage.withUser("请思考，先有鸡还是先有蛋"))
                 .build();
 
@@ -283,10 +285,9 @@ public class OpenAiTest {
             }
         };
 
-
         long currentTimeMillis = System.currentTimeMillis();
         log.info("开始请求");
-            chatService.chatCompletionStream(chatCompletion, sseListener);
+        chatService.chatCompletionStream(chatCompletion, sseListener);
 
         log.info("请求结束");
         long aaa = System.currentTimeMillis();
@@ -294,6 +295,7 @@ public class OpenAiTest {
 
 
         System.out.println(sseListener.getOutput());
+        System.out.println(sseListener.getReasoningOutput());
         System.out.println(sseListener.getUsage());
 
     }

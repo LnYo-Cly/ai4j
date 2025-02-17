@@ -60,6 +60,18 @@ public abstract class SseListener extends EventSourceListener {
     private String currToolName = "";
 
     /**
+     * 记录当前是否为思考状态reasoning
+     */
+    @Getter
+    private boolean isReasoning = false;
+
+    /**
+     * 思考内容的输出
+     */
+    @Getter
+    private final StringBuilder reasoningOutput = new StringBuilder();
+
+    /**
      * 是否显示每个函数调用输出的参数文本
      */
     @Getter
@@ -90,6 +102,8 @@ public abstract class SseListener extends EventSourceListener {
     @Getter
     private String finishReason = null;
 
+    @Getter
+    private EventSource eventSource = null;
 
     private boolean ollamaToolCall = false;
 
@@ -103,6 +117,9 @@ public abstract class SseListener extends EventSourceListener {
     public void onEvent(@NotNull EventSource eventSource, @Nullable String id, @Nullable String type, @NotNull String data) {
         // 封装SSE消息对象
         currData = data;
+        if(this.eventSource == null) {
+            this.eventSource = eventSource;
+        }
 
         if ("[DONE]".equalsIgnoreCase(data)) {
             // 整个对话结束，结束前将SSE最后一条“DONE”消息发送出去
@@ -170,7 +187,7 @@ public abstract class SseListener extends EventSourceListener {
         }
 
         if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
-                && StringUtils.isBlank(responseMessage.getContent().getText())
+                && (responseMessage.getContent()!=null && StringUtils.isNotEmpty(responseMessage.getContent().getText()))
                 && responseMessage.getToolCalls() == null){
             // OPENAI 第一条消息
             return;
@@ -182,11 +199,15 @@ public abstract class SseListener extends EventSourceListener {
 
             // 判断是否为混元的tool最后一条说明性content
             // :{"Role":"assistant","Content":"计划使用get_current_weather工具来获取北京和深圳的当前天气。\n\t\n\t用户想要知道北京和深圳今天的天气情况。用户的请求是关于天气的查询，需要使用天气查询工具来获取信息。"}
-            if(toolCall !=null && StringUtils.isNotBlank(argument)&& "assistant".equals(responseMessage.getRole()) && StringUtils.isNotBlank(responseMessage.getContent().getText()) ){
+            if(toolCall !=null && StringUtils.isNotEmpty(argument)&& "assistant".equals(responseMessage.getRole()) && (responseMessage.getContent()!=null && StringUtils.isNotEmpty(responseMessage.getContent().getText())) ){
                 return;
             }
 
-            if("<tool_call>".equals(responseMessage.getContent())){
+            if (responseMessage.getContent() == null) {
+                return;
+            }
+
+            if("<tool_call>".equals(responseMessage.getContent().getText())){
                 // ollama的tool_call
                 ollamaToolCall = true;
                 return;
@@ -200,7 +221,7 @@ public abstract class SseListener extends EventSourceListener {
                  * </tool_call>
                  */
 
-                if("</tool_call>".equals(responseMessage.getContent())){
+                if("</tool_call>".equals(responseMessage.getContent().getText())){
                     // ollama的tool_call
 
                     ToolCall.Function function = JSON.parseObject(argument.toString(), ToolCall.Function.class);
@@ -212,7 +233,7 @@ public abstract class SseListener extends EventSourceListener {
                     return;
                 }
 
-                argument.append(responseMessage.getContent());
+                argument.append(responseMessage.getContent().getText());
                 if(showToolArgs){
                     this.currStr = responseMessage.getContent().getText();
                     this.send();
@@ -221,9 +242,21 @@ public abstract class SseListener extends EventSourceListener {
             }
 
 
-            // 普通响应回答
-            output.append(responseMessage.getContent().getText());
-            currStr = responseMessage.getContent().getText();
+            // 响应回答
+            // 包括content和reasoning_content
+            if(StringUtils.isNotEmpty(responseMessage.getReasoningContent())){
+                isReasoning = true;
+                // reasoningOutput 与 output 分离，目前仅用于deepseek
+                reasoningOutput.append(responseMessage.getReasoningContent());
+                //output.append(responseMessage.getReasoningContent());
+                currStr = responseMessage.getReasoningContent();
+
+            }else {
+                isReasoning = false;
+                output.append(responseMessage.getContent().getText());
+                currStr = responseMessage.getContent().getText();
+            }
+
             this.send();
 
 
