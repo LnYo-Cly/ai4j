@@ -44,6 +44,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2025-02-17] 新增对DeepSeek平台推理模型的适配。
 + [2025-02-12] 为Ollama平台添加Authorization
 + [2025-02-11] 实现自定义的Jackson序列化，解决OpenAi已经无法通过Json String来直接实现多模态接口的问题。
 + [2024-12-12] 使用装饰器模式增强Chat服务，支持SearXNG网络搜索增强，无需模型支持内置搜索以及function_call。
