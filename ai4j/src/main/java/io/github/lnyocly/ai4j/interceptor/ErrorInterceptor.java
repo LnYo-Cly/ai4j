@@ -52,7 +52,8 @@ public class ErrorInterceptor implements Interceptor {
 
             // 处理腾讯混元部分
             ResponseBody responseBody = response.body();
-            String content = getResponseBodyContent(responseBody);
+            byte[] contentBytes = getResponseBodyBytes(responseBody);
+            String content = new String(contentBytes, StandardCharsets.UTF_8);
             if (content.contains("Response") && content.contains("Error")) {
                 ErrorHandler errorHandler = ErrorHandler.getInstance();
                 Error error = errorHandler.process(content);
@@ -60,19 +61,25 @@ public class ErrorInterceptor implements Interceptor {
                 throw new CommonException(error.getMessage());
             }
             // 重新构建响应体，确保内容可用
-            ResponseBody newBody = ResponseBody.create(responseBody.contentType(), content);
+            ResponseBody newBody = ResponseBody.create(responseBody.contentType(), contentBytes);
             return response.newBuilder().body(newBody).build();
         }
+
     }
 
     private boolean isStreamingResponse(Response response) {
         MediaType contentType = response.body().contentType();
-        return contentType != null && contentType.toString().contains("text/event-stream");
+        return contentType != null && ( contentType.toString().contains("text/event-stream") || contentType.toString().contains("application/x-ndjson") );
     }
 
     private String getResponseBodyContent(ResponseBody responseBody) throws IOException {
         if (responseBody == null) return "";
         byte[] contentBytes = responseBody.bytes();
         return new String(contentBytes, StandardCharsets.UTF_8);
+    }
+
+    private byte[] getResponseBodyBytes(ResponseBody responseBody) throws IOException {
+        if (responseBody == null) return new byte[0];
+        return responseBody.bytes();
     }
 }

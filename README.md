@@ -74,6 +74,7 @@
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)
++ [[在线平台] 每日白嫖额度-所有模型均可使用 ](https://chat.trovebox.online/)
 
 # 快速开始
 ## 导入

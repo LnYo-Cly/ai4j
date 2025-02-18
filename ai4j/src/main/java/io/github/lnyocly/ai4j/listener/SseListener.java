@@ -253,6 +253,9 @@ public abstract class SseListener extends EventSourceListener {
 
             }else {
                 isReasoning = false;
+                if (responseMessage.getContent() == null) {
+                    return;
+                }
                 output.append(responseMessage.getContent().getText());
                 currStr = responseMessage.getContent().getText();
             }
