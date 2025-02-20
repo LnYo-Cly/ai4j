@@ -187,9 +187,9 @@ public abstract class SseListener extends EventSourceListener {
         }
 
         if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
-                && (responseMessage.getContent()!=null && StringUtils.isNotEmpty(responseMessage.getContent().getText()))
+                && (responseMessage.getContent()==null || StringUtils.isEmpty(responseMessage.getContent().getText()))
                 && responseMessage.getToolCalls() == null){
-            // OPENAI 第一条消息
+            // 空消息忽略
             return;
         }
 
