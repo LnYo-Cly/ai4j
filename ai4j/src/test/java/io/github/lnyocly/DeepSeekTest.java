@@ -131,7 +131,7 @@ public class DeepSeekTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("deepseek-chat")
+                .model("deepseek-reasoner")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -150,6 +150,9 @@ public class DeepSeekTest {
         chatService.chatCompletionStream(chatCompletion, sseListener);
 
         System.out.println("请求成功");
+        System.out.println("思考内容：");
+        System.out.println(sseListener.getReasoningOutput());
+        System.out.println("回答内容： ");
         System.out.println(sseListener.getOutput());
         System.out.println(sseListener.getUsage());
 

@@ -203,11 +203,8 @@ public abstract class SseListener extends EventSourceListener {
                 return;
             }
 
-            if (responseMessage.getContent() == null) {
-                return;
-            }
 
-            if("<tool_call>".equals(responseMessage.getContent().getText())){
+            if(responseMessage.getContent() != null && "<tool_call>".equals(responseMessage.getContent().getText())){
                 // ollama的tool_call
                 ollamaToolCall = true;
                 return;
@@ -221,7 +218,7 @@ public abstract class SseListener extends EventSourceListener {
                  * </tool_call>
                  */
 
-                if("</tool_call>".equals(responseMessage.getContent().getText())){
+                if(responseMessage.getContent() != null && "</tool_call>".equals(responseMessage.getContent().getText())){
                     // ollama的tool_call
 
                     ToolCall.Function function = JSON.parseObject(argument.toString(), ToolCall.Function.class);
