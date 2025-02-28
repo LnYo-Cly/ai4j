@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
 import io.github.lnyocly.ai4j.platform.minimax.chat.MinimaxChatService;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.MoonshotChatService;
 import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
+import io.github.lnyocly.ai4j.platform.ollama.embedding.OllamaEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
@@ -77,6 +78,8 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiEmbeddingService(configuration);
+            case OLLAMA:
+                return new OllamaEmbeddingService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
