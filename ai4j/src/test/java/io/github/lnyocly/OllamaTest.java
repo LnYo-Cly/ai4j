@@ -8,8 +8,11 @@ import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
+import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
@@ -24,6 +27,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,6 +42,8 @@ public class OllamaTest {
     private IChatService chatService;
 
     private IChatService webEnhance;
+
+    private IEmbeddingService embeddingService;
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
@@ -71,6 +78,8 @@ public class OllamaTest {
 
         chatService = aiService.getChatService(PlatformType.OLLAMA);
         webEnhance = aiService.webSearchEnhance(chatService);
+
+        embeddingService = aiService.getEmbeddingService(PlatformType.OLLAMA);
     }
 
     @Test
@@ -230,6 +239,23 @@ public class OllamaTest {
         System.out.println(sseListener.getOutput());
         System.out.println("内容花费： ");
         System.out.println(sseListener.getUsage());
+    }
+
+    @Test
+    public void test_embedding() throws Exception {
+        Embedding build = Embedding.builder().model("all-minilm").input("Why is the sky blue?").build();
+        EmbeddingResponse embeddingResponse = embeddingService.embedding(build);
+        System.out.println(embeddingResponse);
+    }
+    @Test
+    public void test_embedding_multiple_input() throws Exception {
+        List<String> inputs =  new ArrayList<>();
+        inputs.add("Why is the sky blue?");
+        inputs.add("Why is the grass green?");
+
+        Embedding build = Embedding.builder().model("all-minilm").input(inputs).build();
+        EmbeddingResponse embeddingResponse = embeddingService.embedding(build);
+        System.out.println(embeddingResponse);
     }
 
 
