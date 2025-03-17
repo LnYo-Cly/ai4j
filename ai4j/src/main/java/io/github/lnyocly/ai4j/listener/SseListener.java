@@ -183,6 +183,14 @@ public abstract class SseListener extends EventSourceListener {
         // 消息回答完毕
         if ("stop".equals(finishReason)) {
 
+            // ollama 最后一条消息只到stop
+            if(responseMessage.getContent() != null && responseMessage.getContent().getText() != null) {
+                currStr = responseMessage.getContent().getText();
+            }else {
+                currStr = "";
+            }
+            this.send();
+
             return;
         }
 

@@ -485,6 +485,10 @@ public void test_chatCompletions_common_websearch_enhance() throws Exception {
 # 支持
 如果您觉得这个项目对您有帮助，请点一个star⭐。
 
+# Buy Me a Coffee
+您的支持是我更新的最大的动力。
+
+![新图片](https://cdn.jsdelivr.net/gh/lnyo-cly/blogImg/pics/新图片.jpg)
 
 # 贡献者
 
