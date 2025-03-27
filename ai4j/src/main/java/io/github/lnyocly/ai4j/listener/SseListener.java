@@ -36,7 +36,7 @@ public abstract class SseListener extends EventSourceListener {
     /**
      * 异常回调
      */
-    protected abstract void error(Throwable t, Response response);
+    protected void error(Throwable t, Response response) {}
 
     protected abstract void send();
     /**
