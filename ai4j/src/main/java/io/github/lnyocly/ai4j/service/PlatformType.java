@@ -20,6 +20,7 @@ public enum PlatformType {
     OLLAMA("ollama"),
     MINIMAX("minimax"),
     BAICHUAN("baichuan"),
+    SILICONFLOW("SiliconFlow"),
     ;
     private final String platform;
 

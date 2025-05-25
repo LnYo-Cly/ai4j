@@ -10,6 +10,7 @@ import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
+import io.github.lnyocly.ai4j.platform.siliconFlow.chat.SiliconChatService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
@@ -61,6 +62,8 @@ public class AiService {
                 return new MinimaxChatService(configuration);
             case BAICHUAN:
                 return new BaichuanChatService(configuration);
+            case SILICONFLOW:
+                return new SiliconChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

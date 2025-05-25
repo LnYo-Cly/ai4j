@@ -36,4 +36,6 @@ public class Configuration {
     private PineconeConfig pineconeConfig;
 
     private SearXNGConfig searXNGConfig;
+
+    private SiliconFlowConfig siliconFlowConfig;
 }
