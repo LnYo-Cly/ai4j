@@ -21,7 +21,7 @@ public class OkHttpConfigProperties {
     private String proxyUrl = "";
     private int proxyPort;
 
-    private HttpLoggingInterceptor.Level log = HttpLoggingInterceptor.Level.HEADERS;
+    private HttpLoggingInterceptor.Level log = HttpLoggingInterceptor.Level.BASIC;
     private int connectTimeout = 300;
     private int writeTimeout = 300;
     private int readTimeout = 300;

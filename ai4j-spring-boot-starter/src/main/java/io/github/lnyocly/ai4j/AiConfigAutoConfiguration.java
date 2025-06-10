@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.service.factor.AiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
@@ -40,7 +41,9 @@ import java.security.NoSuchAlgorithmException;
         HunyuanConfigProperties.class,
         LingyiConfigProperties.class,
         OllamaConfigProperties.class,
-        MinimaxConfigProperties.class,})
+        MinimaxConfigProperties.class,
+        BaichuanConfigProperties.class,
+        SearXNGConfigProperties.class})
 
 public class AiConfigAutoConfiguration {
 
@@ -49,6 +52,9 @@ public class AiConfigAutoConfiguration {
 
     // 向量数据库配置
     private final PineconeConfigProperties pineconeConfigProperties;
+
+    // searxng配置
+    private final SearXNGConfigProperties searXNGConfigProperties;
 
     // AI平台配置
     private final OpenAiConfigProperties openAiConfigProperties;
@@ -59,13 +65,15 @@ public class AiConfigAutoConfiguration {
     private final LingyiConfigProperties lingyiConfigProperties;
     private final OllamaConfigProperties ollamaConfigProperties;
     private final MinimaxConfigProperties minimaxConfigProperties;
+    private final BaichuanConfigProperties baichuanConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
+        this.searXNGConfigProperties = searXNGConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
         this.deepSeekConfigProperties = deepSeekConfigProperties;
         this.moonshotConfigProperties = moonshotConfigProperties;
@@ -73,6 +81,7 @@ public class AiConfigAutoConfiguration {
         this.lingyiConfigProperties = lingyiConfigProperties;
         this.ollamaConfigProperties = ollamaConfigProperties;
         this.minimaxConfigProperties = minimaxConfigProperties;
+        this.baichuanConfigProperties = baichuanConfigProperties;
     }
 
     @Bean
@@ -91,6 +100,8 @@ public class AiConfigAutoConfiguration {
 
         initPineconeConfig();
 
+        initSearXNGConfig();
+
         initOpenAiConfig();
         initZhipuConfig();
         initDeepSeekConfig();
@@ -99,6 +110,7 @@ public class AiConfigAutoConfiguration {
         initLingyiConfig();
         initOllamaConfig();
         initMinimaxConfig();
+        initBaichuanConfig();
     }
 
 
@@ -247,11 +259,13 @@ public class AiConfigAutoConfiguration {
     private void initOllamaConfig() {
         OllamaConfig ollamaConfig = new OllamaConfig();
         ollamaConfig.setApiHost(ollamaConfigProperties.getApiHost());
+        ollamaConfig.setApiKey(ollamaConfigProperties.getApiKey());
         ollamaConfig.setChatCompletionUrl(ollamaConfigProperties.getChatCompletionUrl());
         ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
 
         configuration.setOllamaConfig(ollamaConfig);
     }
+
     /**
      * 初始化Minimax 配置信息
      */
@@ -262,5 +276,29 @@ public class AiConfigAutoConfiguration {
         minimaxConfig.setChatCompletionUrl(minimaxConfigProperties.getChatCompletionUrl());
 
         configuration.setMinimaxConfig(minimaxConfig);
+    }
+
+    /**
+     * 初始化Baichuan 配置信息
+     */
+    private void initBaichuanConfig() {
+        BaichuanConfig baichuanConfig = new BaichuanConfig();
+        baichuanConfig.setApiHost(baichuanConfigProperties.getApiHost());
+        baichuanConfig.setApiKey(baichuanConfigProperties.getApiKey());
+        baichuanConfig.setChatCompletionUrl(baichuanConfigProperties.getChatCompletionUrl());
+
+        configuration.setBaichuanConfig(baichuanConfig);
+    }
+
+    /**
+     * 初始化searxng 配置信息
+     */
+    private void initSearXNGConfig() {
+        SearXNGConfig searXNGConfig = new SearXNGConfig();
+        searXNGConfig.setUrl(searXNGConfigProperties.getUrl());
+        searXNGConfig.setEngines(searXNGConfigProperties.getEngines());
+        searXNGConfig.setNums(searXNGConfigProperties.getNums());
+
+        configuration.setSearXNGConfig(searXNGConfig);
     }
 }

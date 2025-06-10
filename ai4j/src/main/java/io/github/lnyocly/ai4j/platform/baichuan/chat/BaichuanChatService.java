@@ -1,14 +1,15 @@
-package io.github.lnyocly.ai4j.platform.zhipu.chat;
+package io.github.lnyocly.ai4j.platform.baichuan.chat;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.config.BaichuanConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.platform.baichuan.chat.entity.BaichuanChatCompletion;
+import io.github.lnyocly.ai4j.platform.baichuan.chat.entity.BaichuanChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -16,11 +17,8 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletion;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletionResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.BearerTokenUtils;
 import io.github.lnyocly.ai4j.utils.ToolUtil;
 import io.github.lnyocly.ai4j.utils.ValidateUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -39,14 +37,14 @@ import java.util.List;
  * @Date 2024/8/27 17:29
  */
 @Slf4j
-public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuChatCompletion>, ResultConvert<ZhipuChatCompletionResponse> {
+public class BaichuanChatService implements IChatService, ParameterConvert<BaichuanChatCompletion>, ResultConvert<BaichuanChatCompletionResponse> {
 
-    private final ZhipuConfig zhipuConfig;
+    private final BaichuanConfig baichuanConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;
 
-    public ZhipuChatService(Configuration configuration) {
-        this.zhipuConfig = configuration.getZhipuConfig();
+    public BaichuanChatService(Configuration configuration) {
+        this.baichuanConfig = configuration.getBaichuanConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
     }
@@ -54,22 +52,19 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = zhipuConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = zhipuConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = baichuanConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = baichuanConfig.getApiKey();
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
 
-        // 根据key获取token
-        String token = BearerTokenUtils.getToken(apiKey);
-
         // 转换 请求参数
-        ZhipuChatCompletion zhipuChatCompletion = this.convertChatCompletionObject(chatCompletion);
+        BaichuanChatCompletion baichuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 如含有function，则添加tool
-        if(zhipuChatCompletion.getFunctions()!=null && !zhipuChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(zhipuChatCompletion.getFunctions());
-            zhipuChatCompletion.setTools(tools);
+        if(baichuanChatCompletion.getFunctions()!=null && !baichuanChatCompletion.getFunctions().isEmpty()){
+            List<Tool> tools = ToolUtil.getAllFunctionTools(baichuanChatCompletion.getFunctions());
+            baichuanChatCompletion.setTools(tools);
         }
 
         // 总token消耗
@@ -82,22 +77,22 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
             finishReason = null;
             // 构造请求
             ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(chatCompletion);
+            String requestString = mapper.writeValueAsString(baichuanChatCompletion);
 
             Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + token)
-                    .url(ValidateUtil.concatUrl(baseUrl, zhipuConfig.getChatCompletionUrl()))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .url(ValidateUtil.concatUrl(baseUrl, baichuanConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                ZhipuChatCompletionResponse zhipuChatCompletionResponse = mapper.readValue(execute.body().string(), ZhipuChatCompletionResponse.class);
+                BaichuanChatCompletionResponse baichuanChatCompletionResponse = mapper.readValue(execute.body().string(), BaichuanChatCompletionResponse.class);
 
-                Choice choice = zhipuChatCompletionResponse.getChoices().get(0);
+                Choice choice = baichuanChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
 
-                Usage usage = zhipuChatCompletionResponse.getUsage();
+                Usage usage = baichuanChatCompletionResponse.getUsage();
                 allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
                 allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
                 allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
@@ -107,7 +102,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
                     ChatMessage message = choice.getMessage();
                     List<ToolCall> toolCalls = message.getToolCalls();
 
-                    List<ChatMessage> messages = new ArrayList<>(zhipuChatCompletion.getMessages());
+                    List<ChatMessage> messages = new ArrayList<>(baichuanChatCompletion.getMessages());
                     messages.add(message);
 
                     // 添加 tool 消息
@@ -118,17 +113,17 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
                         messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
                     }
-                    zhipuChatCompletion.setMessages(messages);
+                    baichuanChatCompletion.setMessages(messages);
 
                 }else{
                     // 其他情况直接返回
-                    zhipuChatCompletionResponse.setUsage(allUsage);
-                    zhipuChatCompletionResponse.setObject("chat.completion");
+                    baichuanChatCompletionResponse.setUsage(allUsage);
+                    baichuanChatCompletionResponse.setObject("chat.completion");
                     // 恢复原始请求数据
-                    chatCompletion.setMessages(zhipuChatCompletion.getMessages());
-                    chatCompletion.setTools(zhipuChatCompletion.getTools());
+                    chatCompletion.setMessages(baichuanChatCompletion.getMessages());
+                    chatCompletion.setTools(baichuanChatCompletion.getTools());
 
-                    return this.convertChatCompletionResponse(zhipuChatCompletionResponse);
+                    return this.convertChatCompletionResponse(baichuanChatCompletionResponse);
 
                 }
 
@@ -147,21 +142,17 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = zhipuConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = zhipuConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = baichuanConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = baichuanConfig.getApiKey();
         chatCompletion.setStream(true);
 
-
-        // 根据key获取token
-        String token = BearerTokenUtils.getToken(apiKey);
-
         // 转换 请求参数
-        ZhipuChatCompletion zhipuChatCompletion = this.convertChatCompletionObject(chatCompletion);
+        BaichuanChatCompletion baichuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 如含有function，则添加tool
-        if(zhipuChatCompletion.getFunctions()!=null && !zhipuChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(zhipuChatCompletion.getFunctions());
-            zhipuChatCompletion.setTools(tools);
+        if(baichuanChatCompletion.getFunctions()!=null && !baichuanChatCompletion.getFunctions().isEmpty()){
+            List<Tool> tools = ToolUtil.getAllFunctionTools(baichuanChatCompletion.getFunctions());
+            baichuanChatCompletion.setTools(tools);
         }
 
         String finishReason = "first";
@@ -170,11 +161,11 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
             finishReason = null;
             ObjectMapper mapper = new ObjectMapper();
-            String jsonString = mapper.writeValueAsString(zhipuChatCompletion);
+            String jsonString = mapper.writeValueAsString(baichuanChatCompletion);
 
             Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + token)
-                    .url(ValidateUtil.concatUrl(baseUrl, zhipuConfig.getChatCompletionUrl()))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .url(ValidateUtil.concatUrl(baseUrl, baichuanConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 
@@ -190,7 +181,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-                List<ChatMessage> messages = new ArrayList<>(zhipuChatCompletion.getMessages());
+                List<ChatMessage> messages = new ArrayList<>(baichuanChatCompletion.getMessages());
                 messages.add(responseMessage);
 
                 // 封装tool结果消息
@@ -203,14 +194,14 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
                 }
                 eventSourceListener.setToolCalls(new ArrayList<>());
                 eventSourceListener.setToolCall(null);
-                zhipuChatCompletion.setMessages(messages);
+                baichuanChatCompletion.setMessages(messages);
             }
 
         }
 
         // 补全原始请求
-        chatCompletion.setMessages(zhipuChatCompletion.getMessages());
-        chatCompletion.setTools(zhipuChatCompletion.getTools());
+        chatCompletion.setMessages(baichuanChatCompletion.getMessages());
+        chatCompletion.setTools(baichuanChatCompletion.getTools());
     }
 
     @Override
@@ -219,19 +210,19 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
     }
 
     @Override
-    public ZhipuChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
-        ZhipuChatCompletion zhipuChatCompletion = new ZhipuChatCompletion();
-        zhipuChatCompletion.setModel(chatCompletion.getModel());
-        zhipuChatCompletion.setMessages(chatCompletion.getMessages());
-        zhipuChatCompletion.setStream(chatCompletion.getStream());
-        zhipuChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
-        zhipuChatCompletion.setTopP(chatCompletion.getTopP());
-        zhipuChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
-        zhipuChatCompletion.setStop(chatCompletion.getStop());
-        zhipuChatCompletion.setTools(chatCompletion.getTools());
-        zhipuChatCompletion.setFunctions(chatCompletion.getFunctions());
-        zhipuChatCompletion.setToolChoice(chatCompletion.getToolChoice());
-        return zhipuChatCompletion;
+    public BaichuanChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
+        BaichuanChatCompletion baichuanChatCompletion = new BaichuanChatCompletion();
+        baichuanChatCompletion.setModel(chatCompletion.getModel());
+        baichuanChatCompletion.setMessages(chatCompletion.getMessages());
+        baichuanChatCompletion.setStream(chatCompletion.getStream());
+        baichuanChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
+        baichuanChatCompletion.setTopP(chatCompletion.getTopP());
+        baichuanChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        baichuanChatCompletion.setStop(chatCompletion.getStop());
+        baichuanChatCompletion.setTools(chatCompletion.getTools());
+        baichuanChatCompletion.setFunctions(chatCompletion.getFunctions());
+        baichuanChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        return baichuanChatCompletion;
     }
 
     @Override
@@ -254,19 +245,20 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
                     return;
                 }
 
-
                 ObjectMapper mapper = new ObjectMapper();
+                BaichuanChatCompletionResponse chatCompletionResponse = null;
 
-                ZhipuChatCompletionResponse chatCompletionResponse = null;
                 String s = null;
                 try {
-                    chatCompletionResponse = mapper.readValue(data, ZhipuChatCompletionResponse.class);
+                    chatCompletionResponse = mapper.readValue(data, BaichuanChatCompletionResponse.class);
                     chatCompletionResponse.setObject("chat.completion.chunk");
                     ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
                     s = mapper.writeValueAsString(response);
                 } catch (JsonProcessingException e) {
-                    throw new CommonException("Zhipu Chat 对象JSON序列化出错");
+
+                    throw new CommonException("Baichuan Chat 对象JSON序列化出错");
                 }
+
 
 
                 eventSourceListener.onEvent(eventSource, id, type, s);
@@ -280,7 +272,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
     }
 
     @Override
-    public ChatCompletionResponse convertChatCompletionResponse(ZhipuChatCompletionResponse zhipuChatCompletionResponse) {
+    public ChatCompletionResponse convertChatCompletionResponse(BaichuanChatCompletionResponse zhipuChatCompletionResponse) {
         ChatCompletionResponse chatCompletionResponse = new ChatCompletionResponse();
         chatCompletionResponse.setId(zhipuChatCompletionResponse.getId());
         chatCompletionResponse.setCreated(zhipuChatCompletionResponse.getCreated());

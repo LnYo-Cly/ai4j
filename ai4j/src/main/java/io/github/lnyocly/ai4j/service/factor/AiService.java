@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.factor;
 
+import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
@@ -9,13 +10,12 @@ import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
+import io.github.lnyocly.ai4j.platform.siliconFlow.chat.SiliconChatService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
 
 /**
  * @Author cly
@@ -37,6 +37,11 @@ public class AiService {
         return createChatService(platform);
     }
 
+    public IChatService webSearchEnhance(IChatService chatService) {
+        //IChatService chatService = getChatService(platform);
+        return new ChatWithWebSearchEnhance(chatService, configuration);
+    }
+
     private IChatService createChatService(PlatformType platform) {
         switch (platform) {
             case OPENAI:
@@ -55,10 +60,16 @@ public class AiService {
                 return new OllamaAiChatService(configuration);
             case MINIMAX:
                 return new MinimaxChatService(configuration);
+            case BAICHUAN:
+                return new BaichuanChatService(configuration);
+            case SILICONFLOW:
+                return new SiliconChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
     }
+
+
 
     public IEmbeddingService getEmbeddingService(PlatformType platform) {
         //return embeddingServiceCache.computeIfAbsent(platform, this::createEmbeddingService);

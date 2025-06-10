@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service;
 
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.Data;
 import okhttp3.OkHttpClient;
 import okhttp3.sse.EventSource;
@@ -30,7 +31,11 @@ public class Configuration {
     private LingyiConfig lingyiConfig;
     private OllamaConfig ollamaConfig;
     private MinimaxConfig minimaxConfig;
+    private BaichuanConfig baichuanConfig;
 
     private PineconeConfig pineconeConfig;
 
+    private SearXNGConfig searXNGConfig;
+
+    private SiliconFlowConfig siliconFlowConfig;
 }

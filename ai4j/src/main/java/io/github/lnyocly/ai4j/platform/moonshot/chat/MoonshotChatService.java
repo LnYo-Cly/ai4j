@@ -3,10 +3,13 @@ package io.github.lnyocly.ai4j.platform.moonshot.chat;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONPath;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.MoonshotConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletion;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletionResponse;
@@ -86,19 +89,29 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
                 }
 
 
+                ObjectMapper mapper = new ObjectMapper();
+                MoonshotChatCompletionResponse chatCompletionResponse = null;
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, MoonshotChatCompletionResponse.class);
 
-                MoonshotChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, MoonshotChatCompletionResponse.class);
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
 
-                // 适配moonshot的流式 usage格式
-                JSONObject object = (JSONObject)JSONPath.eval(data, "$.choices[0].usage");
-                if(object!=null){
-                    Usage usage = object.toJavaObject(Usage.class);
-                    response.setUsage(usage);
+                    // 适配moonshot的流式 usage格式
+                    JSONObject object = (JSONObject)JSONPath.eval(data, "$.choices[0].usage");
+                    if(object!=null){
+                        Usage usage = object.toJavaObject(Usage.class);
+                        response.setUsage(usage);
+                    }
+
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("Moonshot Chat 对象JSON序列化出错");
                 }
 
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override

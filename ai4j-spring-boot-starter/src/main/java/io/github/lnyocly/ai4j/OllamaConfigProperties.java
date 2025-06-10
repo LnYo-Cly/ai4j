@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ai.ollama")
 public class OllamaConfigProperties {
     private String apiHost = "http://localhost:11434/";
+    private String apiKey = "";
     private String chatCompletionUrl = "api/chat";
     private String embeddingUrl = "api/embed";
 }

@@ -1,5 +1,6 @@
 package io.github.lnyocly;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -9,9 +10,7 @@ import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
 import io.github.lnyocly.ai4j.network.DispatcherProvider;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.audio.enums.AudioEnum;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingObject;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
@@ -26,6 +25,7 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
+import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
@@ -48,11 +48,10 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -67,6 +66,7 @@ public class OpenAiTest {
     private IEmbeddingService embeddingService;
 
     private IChatService chatService;
+    private IChatService webEnhance;
 
     private IAudioService audioService;
     private IRealtimeService realtimeService;
@@ -74,15 +74,21 @@ public class OpenAiTest {
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
+        SearXNGConfig searXNGConfig = new SearXNGConfig();
+        searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiHost("https://api.openai.com/");
-        openAiConfig.setApiKey("**********************");
+        openAiConfig.setApiHost("************");
+        openAiConfig.setApiKey("*************");
+
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
+        configuration.setSearXNGConfig(searXNGConfig);
+
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
-        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
         DispatcherProvider dispatcherProvider = ServiceLoaderUtil.load(DispatcherProvider.class);
         ConnectionPoolProvider connectionPoolProvider = ServiceLoaderUtil.load(ConnectionPoolProvider.class);
         Dispatcher dispatcher = dispatcherProvider.getDispatcher();
@@ -117,6 +123,7 @@ public class OpenAiTest {
 
         realtimeService = aiService.getRealtimeService(PlatformType.OPENAI);
 
+        webEnhance = aiService.webSearchEnhance(chatService);
     }
 
 
@@ -154,7 +161,63 @@ public class OpenAiTest {
     }
 
     @Test
+    public void test_chatCompletions_history() throws Exception {
+        List<ChatMessage> history = new ArrayList<>();
+
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("鲁迅为什么打周树人"))
+                .build();
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+        // 向历史中添加刚刚问过的消息
+        history.add(chatCompletion.getMessages().get(chatCompletion.getMessages().size()-1));
+
+        ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
+
+        System.out.println("请求成功");
+        System.out.println(chatCompletionResponse.getChoices().get(0).getMessage());
+        // 将返回的消息添加到历史中
+        history.add(chatCompletionResponse.getChoices().get(0).getMessage());
+
+
+        // 开始第二次问答
+        history.add(ChatMessage.withUser("我刚刚问了什么问题"));
+        ChatCompletion chatCompletionWithHistory = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .messages(history)
+                .build();
+        ChatCompletionResponse chatCompletionResponseWithHistory = chatService.chatCompletion(chatCompletionWithHistory);
+
+        System.out.println("请求成功");
+        System.out.println(chatCompletionResponseWithHistory);
+
+    }
+
+    @Test
+    public void test_chatCompletions_common_websearch_enhance() throws Exception {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("鸡你太美"))
+                .build();
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+        ChatCompletionResponse chatCompletionResponse = webEnhance.chatCompletion(chatCompletion);
+
+        System.out.println("请求成功");
+        System.out.println(chatCompletionResponse);
+
+    }
+
+    @Test
     public void test_chatCompletions_multimodal() throws Exception {
+        // 当传递base64图片时的格式
+        // "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
@@ -164,19 +227,20 @@ public class OpenAiTest {
 
         System.out.println("请求参数");
         System.out.println(chatCompletion);
+        System.out.println(new ObjectMapper().writeValueAsString(chatCompletion));
 
         ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
 
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);
     }
-
-
     @Test
-    public void test_chatCompletions_stream() throws Exception {
+    public void test_chatCompletions_multimodal_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("鲁迅为什么打周树人"))
+                .model("gpt-4o")
+                .message(ChatMessage.withUser("这几张图片，分别有什么动物, 并且是什么品种",
+                        "https://tse2-mm.cn.bing.net/th/id/OIP-C.SVxZtXIcz3LbcE4ZeS6jEgHaE7?w=231&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7",
+                        "https://ts3.cn.mm.bing.net/th?id=OIP-C.BYyILFgs3ATnTEQ-B5ApFQHaFj&w=288&h=216&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"))
                 .build();
 
 
@@ -187,7 +251,7 @@ public class OpenAiTest {
         SseListener sseListener = new SseListener() {
             @Override
             protected void send() {
-                System.out.println(this.getCurrStr());
+                log.info(this.getCurrStr());
             }
         };
 
@@ -195,6 +259,43 @@ public class OpenAiTest {
 
         System.out.println("请求成功");
         System.out.println(sseListener.getOutput());
+        System.out.println(sseListener.getUsage());
+
+    }
+
+    @Test
+    public void test_chatCompletions_stream() throws Exception {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("deepseek-reasoner")
+                .message(ChatMessage.withUser("请思考，先有鸡还是先有蛋"))
+                .build();
+
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+
+        // 构造监听器
+        SseListener sseListener = new SseListener() {
+            @Override
+            protected void send() {
+                long aaa = System.currentTimeMillis();
+                //System.out.println(aaa - currentTimeMillis);
+                log.info(this.getCurrStr());
+            }
+        };
+
+        long currentTimeMillis = System.currentTimeMillis();
+        log.info("开始请求");
+        chatService.chatCompletionStream(chatCompletion, sseListener);
+
+        log.info("请求结束");
+        long aaa = System.currentTimeMillis();
+        System.out.println(aaa - currentTimeMillis);
+
+
+        System.out.println(sseListener.getOutput());
+        System.out.println(sseListener.getReasoningOutput());
         System.out.println(sseListener.getUsage());
 
     }

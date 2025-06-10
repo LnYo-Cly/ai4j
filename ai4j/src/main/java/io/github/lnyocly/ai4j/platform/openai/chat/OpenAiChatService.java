@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.chat;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.listener.SseListener;
@@ -65,7 +66,8 @@ public class OpenAiChatService implements IChatService {
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(chatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(chatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -75,7 +77,7 @@ public class OpenAiChatService implements IChatService {
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                ChatCompletionResponse chatCompletionResponse = JSON.parseObject(execute.body().string(), ChatCompletionResponse.class);
+                ChatCompletionResponse chatCompletionResponse = mapper.readValue(execute.body().string(), ChatCompletionResponse.class);
 
                 Choice choice = chatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -152,7 +154,8 @@ public class OpenAiChatService implements IChatService {
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(chatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(chatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)

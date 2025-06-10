@@ -3,19 +3,19 @@ package io.github.lnyocly.ai4j.platform.ollama.chat;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaChatCompletion;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaMessage;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaOptions;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.chat.enums.ChatMessageType;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
@@ -72,23 +72,23 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             OllamaMessage ollamaMessage = new OllamaMessage();
 
             ollamaMessage.setRole(chatMessage.getRole());
-            String content = chatMessage.getContent();
-            // 将content内容，判断是否可以转换为ChatMessage.MultiModal类型
-            if(content!=null && content.startsWith("[") && content.endsWith("]")) {
-                List<ChatMessage.MultiModal> multiModals = JSON.parseArray(content, ChatMessage.MultiModal.class);
+            String content = chatMessage.getContent().getText();
+
+            if (content != null){
+                // 普通消息
+                ollamaMessage.setContent(content);
+            }else if (chatMessage.getContent().getMultiModals() != null){
+                List<Content.MultiModal> multiModals = chatMessage.getContent().getMultiModals();
                 if(multiModals!=null && !multiModals.isEmpty()){
                     List<String> images = new ArrayList<>();
-                    for (ChatMessage.MultiModal multiModal : multiModals) {
+                    for (Content.MultiModal multiModal : multiModals) {
                         String text = multiModal.getText();
-                        ChatMessage.MultiModal.ImageUrl imageUrl = multiModal.getImageUrl();
+                        Content.MultiModal.ImageUrl imageUrl = multiModal.getImageUrl();
                         if(imageUrl!=null) images.add(imageUrl.getUrl());
                         if(StringUtils.isNotBlank(text)) ollamaMessage.setContent(text);
                     }
                     ollamaMessage.setImages(images);
                 }
-            }else{
-                // 普通内容，不含图片
-                ollamaMessage.setContent(content);
             }
 
             // 设置toolcalls
@@ -162,8 +162,15 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
                 OllamaChatCompletionResponse ollamaChatCompletionResponse = JSON.parseObject(data, OllamaChatCompletionResponse.class);
                 ChatCompletionResponse response = convertChatCompletionResponse(ollamaChatCompletionResponse);
+                ObjectMapper mapper = new ObjectMapper();
+                String s = null;
+                try {
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("Ollama Chat Completion Response convert to JSON error");
+                }
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override
@@ -205,7 +212,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
-        //if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
+        if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
@@ -251,12 +258,15 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             requestString = JSON.toJSONString(jsonObject);
 
 
-
-
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
-                    .build();
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+
+            if(StringUtils.isNotBlank(apiKey)) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+
+            Request request = builder.build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
@@ -327,7 +337,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
-        //if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
+        if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(true);
 
         // 转换 请求参数
@@ -346,7 +356,10 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(ollamaChatCompletion);
+            JSON.toJSONString(ollamaChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(ollamaChatCompletion);
+
 
             JSONObject jsonObject = JSON.parseObject(requestString);
             // 遍历jsonObject的messages
@@ -368,11 +381,15 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             }
             requestString = JSON.toJSONString(jsonObject);
 
-
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), requestString))
-                    .build();
+                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+
+            if(StringUtils.isNotBlank(apiKey)) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+
+            Request request = builder.build();
 
             factory.newEventSource(request, convertEventSource(eventSourceListener));
             eventSourceListener.getCountDownLatch().await();

@@ -1,10 +1,13 @@
 package io.github.lnyocly.ai4j.platform.deepseek.chat;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletion;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletionResponse;
@@ -87,10 +90,23 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
                     return;
                 }
 
-                DeepSeekChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, DeepSeekChatCompletionResponse.class);
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                ObjectMapper mapper = new ObjectMapper();
+                DeepSeekChatCompletionResponse chatCompletionResponse = null;
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, DeepSeekChatCompletionResponse.class);
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    s = mapper.writeValueAsString(response);
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("读取DeepSeek Chat 对象JSON序列化出错");
+                }
+
+
+
+
+
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override
@@ -123,6 +139,7 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         // 转换 请求参数
         DeepSeekChatCompletion deepSeekChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
+
         // 如含有function，则添加tool
         if(deepSeekChatCompletion.getFunctions()!=null && !deepSeekChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(deepSeekChatCompletion.getFunctions());
@@ -139,7 +156,8 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(deepSeekChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(deepSeekChatCompletion);
 
 
             Request request = new Request.Builder()
@@ -150,7 +168,8 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                DeepSeekChatCompletionResponse deepSeekChatCompletionResponse = JSON.parseObject(execute.body().string(), DeepSeekChatCompletionResponse.class);
+
+                DeepSeekChatCompletionResponse deepSeekChatCompletionResponse = mapper.readValue(execute.body().string(), DeepSeekChatCompletionResponse.class);
 
                 Choice choice = deepSeekChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -225,7 +244,8 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(deepSeekChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(deepSeekChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)

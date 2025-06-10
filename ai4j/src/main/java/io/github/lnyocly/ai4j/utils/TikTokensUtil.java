@@ -75,7 +75,7 @@ public class TikTokensUtil {
         for (ChatMessage message : messages) {
 
             sum += tokensPerMessage;
-            sum += encoding.countTokens(message.getContent());
+            sum += encoding.countTokens(message.getContent().getText());
             sum += encoding.countTokens(message.getRole());
             if(StringUtils.isNotEmpty(message.getName())){
                 sum += encoding.countTokens(message.getName());

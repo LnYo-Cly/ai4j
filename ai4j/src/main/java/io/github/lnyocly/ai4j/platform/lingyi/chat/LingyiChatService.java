@@ -1,10 +1,13 @@
 package io.github.lnyocly.ai4j.platform.lingyi.chat;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.LingyiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
+import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.entity.LingyiChatCompletion;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.entity.LingyiChatCompletionResponse;
@@ -81,10 +84,18 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
                     return;
                 }
 
-                LingyiChatCompletionResponse chatCompletionResponse = JSON.parseObject(data, LingyiChatCompletionResponse.class);
-                ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                ObjectMapper mapper = new ObjectMapper();
+                LingyiChatCompletionResponse chatCompletionResponse = null;
+                String s = null;
+                try {
+                    chatCompletionResponse = mapper.readValue(data, LingyiChatCompletionResponse.class);
+                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+                    s = mapper.writeValueAsString(response);
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("Lingyi Chat 对象JSON序列化出错");
+                }
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                eventSourceListener.onEvent(eventSource, id, type, s);
             }
 
             @Override
@@ -133,7 +144,8 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(lingyiChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(lingyiChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -143,7 +155,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                LingyiChatCompletionResponse lingyiChatCompletionResponse = JSON.parseObject(execute.body().string(), LingyiChatCompletionResponse.class);
+                LingyiChatCompletionResponse lingyiChatCompletionResponse = mapper.readValue(execute.body().string(), LingyiChatCompletionResponse.class);
 
                 Choice choice = lingyiChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -218,7 +230,8 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(lingyiChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(lingyiChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
