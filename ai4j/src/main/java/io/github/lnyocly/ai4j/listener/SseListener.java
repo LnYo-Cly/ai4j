@@ -191,6 +191,9 @@ public abstract class SseListener extends EventSourceListener {
             }
             this.send();
 
+            // 重置
+            finishReason = null;
+
             return;
         }
 
@@ -205,7 +208,7 @@ public abstract class SseListener extends EventSourceListener {
         if(responseMessage.getToolCalls() == null ) {
 
 
-            // 判断是否为混元的tool最后一条说明性content
+            // 判断是否为混元的tool最后一条说明性content，用于忽略
             // :{"Role":"assistant","Content":"计划使用get_current_weather工具来获取北京和深圳的当前天气。\n\t\n\t用户想要知道北京和深圳今天的天气情况。用户的请求是关于天气的查询，需要使用天气查询工具来获取信息。"}
             if(toolCall !=null && StringUtils.isNotEmpty(argument)&& "assistant".equals(responseMessage.getRole()) && (responseMessage.getContent()!=null && StringUtils.isNotEmpty(responseMessage.getContent().getText())) ){
                 return;
