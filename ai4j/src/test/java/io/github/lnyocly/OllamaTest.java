@@ -218,7 +218,7 @@ public class OllamaTest {
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("qwen2.5:7b")
-                .message(ChatMessage.withUser("查询洛阳明天的天气"))
+                .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
 

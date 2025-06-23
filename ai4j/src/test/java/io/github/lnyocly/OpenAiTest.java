@@ -100,7 +100,7 @@ public class OpenAiTest {
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
                 .addInterceptor(new ContentTypeInterceptor())
-                .addInterceptor(new ErrorInterceptor())
+                //.addInterceptor(new ErrorInterceptor())
                 .connectTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
@@ -326,7 +326,7 @@ public class OpenAiTest {
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("查询洛阳明天的天气"))
+                .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
 
