@@ -34,6 +34,11 @@ import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 public abstract class SseListener extends EventSourceListener {
+    /**
+     * 异常回调
+     */
+    protected void error(Throwable t, Response response) {}
+
     protected abstract void send();
     /**
      * 最终的消息输出
@@ -105,11 +110,10 @@ public abstract class SseListener extends EventSourceListener {
     @Getter
     private EventSource eventSource = null;
 
-    private boolean ollamaToolCall = false;
 
     @Override
     public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-
+        this.error(t, response);
         countDownLatch.countDown();
     }
 
