@@ -201,6 +201,7 @@ public abstract class SseListener extends EventSourceListener {
 
         if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
                 && (responseMessage.getContent()==null || StringUtils.isEmpty(responseMessage.getContent().getText()))
+                && StringUtils.isEmpty(responseMessage.getReasoningContent())
                 && responseMessage.getToolCalls() == null){
             // 空消息忽略
             return;
