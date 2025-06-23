@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.platform.ollama.chat;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
@@ -128,7 +129,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
                     toolCall.setType("function");
                     toolCall.setId(UUID.randomUUID().toString());
                 }
-                return ChatMessage.withAssistant(toolCalls);
+                return ChatMessage.withAssistant(ollamaMessage.getContent(), toolCalls);
             }else{
                 return ChatMessage.withAssistant(ollamaMessage.getContent());
             }

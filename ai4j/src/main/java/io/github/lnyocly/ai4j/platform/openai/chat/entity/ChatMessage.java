@@ -74,6 +74,14 @@ public class ChatMessage {
                 .build();
     }
 
+    public static ChatMessage withAssistant(String content, List<ToolCall> toolCalls) {
+        return ChatMessage.builder()
+                .role(ChatMessageType.ASSISTANT.getRole())
+                .content(Content.ofText(content))
+                .toolCalls(toolCalls)
+                .build();
+    }
+
     public static ChatMessage withTool(String content, String toolCallId) {
         return ChatMessage.builder()
                 .role(ChatMessageType.TOOL.getRole())
