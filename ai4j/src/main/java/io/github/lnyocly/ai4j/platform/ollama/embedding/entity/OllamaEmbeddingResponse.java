@@ -26,10 +26,10 @@ public class OllamaEmbeddingResponse {
     private List<List<Float>> embeddings;
 
     @JsonProperty("total_duration")
-    private Integer totalDuration;
+    private Long totalDuration;
     @JsonProperty("load_duration")
-    private Integer loadDuration;
+    private Long loadDuration;
     @JsonProperty("prompt_eval_count")
-    private Integer promptEvalCount;
+    private Long promptEvalCount;
 
 }
