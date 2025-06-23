@@ -157,7 +157,8 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(moonshotChatCompletion);
+            ObjectMapper mapper = new ObjectMapper();
+            String requestString = mapper.writeValueAsString(moonshotChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
@@ -167,7 +168,10 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                MoonshotChatCompletionResponse moonshotChatCompletionResponse = JSON.parseObject(execute.body().string(), MoonshotChatCompletionResponse.class);
+                // MoonshotChatCompletionResponse moonshotChatCompletionResponse = JSON.parseObject(execute.body().string(), MoonshotChatCompletionResponse.class);
+                // 不再使用fastjson2
+
+                MoonshotChatCompletionResponse moonshotChatCompletionResponse = mapper.readValue(execute.body().string(), MoonshotChatCompletionResponse.class);
 
                 Choice choice = moonshotChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
@@ -241,7 +245,9 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
             finishReason = null;
-            String jsonString = JSON.toJSONString(moonshotChatCompletion);
+
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonString = mapper.writeValueAsString(moonshotChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
