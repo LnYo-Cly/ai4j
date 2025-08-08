@@ -62,6 +62,9 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         minimaxChatCompletion.setTopP(chatCompletion.getTopP());
         minimaxChatCompletion.setStream(chatCompletion.getStream());
         minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        if(chatCompletion.getMaxCompletionTokens() != null){
+            minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+        }
         return minimaxChatCompletion;
     }
 

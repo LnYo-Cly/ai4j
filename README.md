@@ -51,6 +51,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2025-08-08] OpenAi: max_tokens字段现已废弃，推荐使用max_completion_tokens(GPT-5已经不支持max_tokens字段)
 + [2025-08-08] 支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
 + [2025-06-23] 修复ollama的流式错误；修复ollama函数调用的错误；修复moonshot请求时错误；修复ollama embedding错误；修复思考无内容；修复日志冲突；新增自定义异常方法。
 + [2025-02-28] 新增对Ollama平台的embedding接口的支持。

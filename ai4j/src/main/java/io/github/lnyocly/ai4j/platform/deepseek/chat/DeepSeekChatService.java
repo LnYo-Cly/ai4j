@@ -55,6 +55,9 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         deepSeekChatCompletion.setMessages(chatCompletion.getMessages());
         deepSeekChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
         deepSeekChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        if(chatCompletion.getMaxCompletionTokens() != null){
+            deepSeekChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+        }
         deepSeekChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
         deepSeekChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
         deepSeekChatCompletion.setStop(chatCompletion.getStop());

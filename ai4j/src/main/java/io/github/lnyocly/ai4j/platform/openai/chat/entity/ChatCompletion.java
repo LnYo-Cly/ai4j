@@ -76,8 +76,12 @@ public class ChatCompletion {
     /**
      * 限制一次请求中模型生成 completion 的最大 token 数。输入 token 和输出 token 的总长度受模型的上下文长度的限制。
      */
+    @Deprecated
     @JsonProperty("max_tokens")
     private Integer maxTokens;
+
+    @JsonProperty("max_completion_tokens")
+    private Integer maxCompletionTokens;
 
     /**
      * 模型可能会调用的 tool 的列表。目前，仅支持 function 作为工具。使用此参数来提供以 JSON 作为输入参数的 function 列表。

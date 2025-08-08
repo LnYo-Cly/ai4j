@@ -261,6 +261,9 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
         zhipuChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
         zhipuChatCompletion.setTopP(chatCompletion.getTopP());
         zhipuChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        if(chatCompletion.getMaxCompletionTokens() != null){
+            zhipuChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+        }
         zhipuChatCompletion.setStop(chatCompletion.getStop());
         zhipuChatCompletion.setTools(chatCompletion.getTools());
         zhipuChatCompletion.setFunctions(chatCompletion.getFunctions());

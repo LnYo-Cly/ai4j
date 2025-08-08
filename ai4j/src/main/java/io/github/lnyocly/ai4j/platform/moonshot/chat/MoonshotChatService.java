@@ -56,6 +56,9 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         moonshotChatCompletion.setMessages(chatCompletion.getMessages());
         moonshotChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
         moonshotChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        if(chatCompletion.getMaxCompletionTokens() != null){
+            moonshotChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+        }
         moonshotChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
         moonshotChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
         moonshotChatCompletion.setStop(chatCompletion.getStop());

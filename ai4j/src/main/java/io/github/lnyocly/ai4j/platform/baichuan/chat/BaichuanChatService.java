@@ -247,6 +247,9 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         baichuanChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
         baichuanChatCompletion.setTopP(chatCompletion.getTopP());
         baichuanChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        if(chatCompletion.getMaxCompletionTokens() != null){
+            baichuanChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+        }
         baichuanChatCompletion.setStop(chatCompletion.getStop());
         baichuanChatCompletion.setTools(chatCompletion.getTools());
         baichuanChatCompletion.setFunctions(chatCompletion.getFunctions());
