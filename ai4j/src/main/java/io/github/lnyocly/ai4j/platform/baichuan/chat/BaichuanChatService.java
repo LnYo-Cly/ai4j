@@ -57,15 +57,29 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
 
         // 转换 请求参数
         BaichuanChatCompletion baichuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+ /*       // 如含有function，则添加tool
         if(baichuanChatCompletion.getFunctions()!=null && !baichuanChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(baichuanChatCompletion.getFunctions());
             baichuanChatCompletion.setTools(tools);
-        }
+        }*/
 
         // 总token消耗
         Usage allUsage = new Usage();
@@ -146,14 +160,29 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         if(apiKey == null || "".equals(apiKey)) apiKey = baichuanConfig.getApiKey();
         chatCompletion.setStream(true);
 
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
+
         // 转换 请求参数
         BaichuanChatCompletion baichuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+/*        // 如含有function，则添加tool
         if(baichuanChatCompletion.getFunctions()!=null && !baichuanChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(baichuanChatCompletion.getFunctions());
             baichuanChatCompletion.setTools(tools);
-        }
+        }*/
 
         String finishReason = "first";
 

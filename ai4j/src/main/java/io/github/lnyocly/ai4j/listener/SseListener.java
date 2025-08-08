@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.listener;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
@@ -16,13 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.EventListener;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -109,7 +107,15 @@ public abstract class SseListener extends EventSourceListener {
 
     @Getter
     private EventSource eventSource = null;
-
+    public boolean isAllFieldsNull(Object obj) throws IllegalAccessException {
+        for (Field field : obj.getClass().getDeclaredFields()) {
+            field.setAccessible(true); // 设置私有属性可访问
+            if (field.get(obj) != null) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     @Override
     public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
@@ -152,10 +158,29 @@ public abstract class SseListener extends EventSourceListener {
 
         List<Choice> choices = chatCompletionResponse.getChoices();
 
+        if((choices == null || choices.isEmpty()) && chatCompletionResponse.getUsage() != null){
+            this.currStr = "";
+            this.send();
+            return;
+        }
+
         if(choices == null || choices.isEmpty()){
             return;
         }
         ChatMessage responseMessage = choices.get(0).getDelta();
+
+
+        // 判断ChatMessage responseMessage的对象属性是否全是null，使用util，responseMessage本身不是空
+        try {
+            // delta":{} && “usage”:{xxxxxx} && finish_reason:null
+            if (isAllFieldsNull(responseMessage) && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
+                this.currStr = "";
+                this.send();
+                return;
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
 
         finishReason = choices.get(0).getFinishReason();
 
@@ -234,6 +259,7 @@ public abstract class SseListener extends EventSourceListener {
             }else {
                 isReasoning = false;
                 if (responseMessage.getContent() == null) {
+                    this.send();
                     return;
                 }
                 output.append(responseMessage.getContent().getText());
@@ -270,7 +296,9 @@ public abstract class SseListener extends EventSourceListener {
                     }
 
                     currToolName = responseMessage.getToolCalls().get(0).getFunction().getName();
-
+                    if(showToolArgs){
+                        this.send();
+                    }
 
                 }else {
                     argument.append(responseMessage.getToolCalls().get(0).getFunction().getArguments());

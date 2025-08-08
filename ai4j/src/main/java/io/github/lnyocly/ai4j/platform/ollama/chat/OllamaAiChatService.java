@@ -217,14 +217,28 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
         // 转换 请求参数
         OllamaChatCompletion ollamaChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+/*        // 如含有function，则添加tool
         if(ollamaChatCompletion.getFunctions()!=null && !ollamaChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(ollamaChatCompletion.getFunctions());
             ollamaChatCompletion.setTools(tools);
-        }
+        }*/
 
         // 总token消耗
         Usage allUsage = new Usage();
@@ -341,14 +355,28 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(true);
 
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
         // 转换 请求参数
         OllamaChatCompletion ollamaChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+/*        // 如含有function，则添加tool
         if(ollamaChatCompletion.getFunctions()!=null && !ollamaChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(ollamaChatCompletion.getFunctions());
             ollamaChatCompletion.setTools(tools);
-        }
+        }*/
 
         String finishReason = "first";
 

@@ -128,14 +128,32 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
+
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
+
         // 转换 请求参数
         MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
+/*
         // 如含有function，则添加tool
         if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
             minimaxChatCompletion.setTools(tools);
         }
+*/
 
         // 总token消耗
         Usage allUsage = new Usage();
@@ -219,14 +237,30 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         if(apiKey == null || "".equals(apiKey)) apiKey = minimaxConfig.getApiKey();
         chatCompletion.setStream(true);
 
+
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
+
         // 转换 请求参数
         MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+/*        // 如含有function，则添加tool
         if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
             minimaxChatCompletion.setTools(tools);
-        }
+        }*/
 
         String finishReason = "first";
 

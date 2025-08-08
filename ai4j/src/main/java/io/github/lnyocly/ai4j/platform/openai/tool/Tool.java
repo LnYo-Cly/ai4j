@@ -94,6 +94,11 @@ public class Tool {
              */
             @JsonProperty("enum")
             private List<String> enumValues;
+
+            /**
+             * 数组元素类型定义（当type为array时使用）
+             */
+            private Property items;
         }
 
     }

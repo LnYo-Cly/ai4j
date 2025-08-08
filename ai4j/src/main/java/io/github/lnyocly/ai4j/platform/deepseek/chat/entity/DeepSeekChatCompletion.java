@@ -145,7 +145,9 @@ public class DeepSeekChatCompletion {
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
-            this.functions.addAll(functions);
+            if (functions != null) {
+                this.functions.addAll(functions);
+            }
             return this;
         }
 

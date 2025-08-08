@@ -91,6 +91,13 @@ public class ChatCompletion {
     private List<String> functions;
 
     /**
+     * MCP服务列表，用于集成MCP工具
+     * 支持字符串（服务器ID）或对象（服务器配置）
+     */
+    @JsonIgnore
+    private List<String> mcpServices;
+
+    /**
      * 控制模型调用 tool 的行为。
      * none 意味着模型不会调用任何 tool，而是生成一条消息。
      * auto 意味着模型可以选择生成一条消息或调用一个或多个 tool。
@@ -150,6 +157,7 @@ public class ChatCompletion {
 
     public static class ChatCompletionBuilder {
         private List<String> functions;
+        private List<String> mcpServices;
 
         public ChatCompletion.ChatCompletionBuilder functions(String... functions){
             if (this.functions == null) {
@@ -163,10 +171,37 @@ public class ChatCompletion {
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
-            this.functions.addAll(functions);
+            if (functions != null) {
+                this.functions.addAll(functions);
+            }
             return this;
         }
 
+        public ChatCompletion.ChatCompletionBuilder mcpServices(String... mcpServices){
+            if (this.mcpServices == null) {
+                this.mcpServices = new ArrayList<>();
+            }
+            this.mcpServices.addAll(Arrays.asList(mcpServices));
+            return this;
+        }
+
+        public ChatCompletion.ChatCompletionBuilder mcpServices(List<String> mcpServices){
+            if (this.mcpServices == null) {
+                this.mcpServices = new ArrayList<>();
+            }
+            if (mcpServices != null) {
+                this.mcpServices.addAll(mcpServices);
+            }
+            return this;
+        }
+
+        public ChatCompletion.ChatCompletionBuilder mcpService(String mcpService){
+            if (this.mcpServices == null) {
+                this.mcpServices = new ArrayList<>();
+            }
+            this.mcpServices.add(mcpService);
+            return this;
+        }
 
     }
 }

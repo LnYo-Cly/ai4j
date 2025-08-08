@@ -46,12 +46,16 @@ public class OpenAiChatService implements IChatService {
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
-        if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
             chatCompletion.setTools(tools);
             if(tools == null){
                 chatCompletion.setParallelToolCalls(null);
             }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
         }else{
             chatCompletion.setParallelToolCalls(null);
         }
@@ -139,12 +143,19 @@ public class OpenAiChatService implements IChatService {
             chatCompletion.setStreamOptions(new StreamOptions(true));
         }
 
-        if(chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+
+
             chatCompletion.setTools(tools);
             if(tools == null){
                 chatCompletion.setParallelToolCalls(null);
             }
+        }
+
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
         }else{
             chatCompletion.setParallelToolCalls(null);
         }

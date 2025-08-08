@@ -2,8 +2,10 @@
 # ai4j
 由于SpringAI需要使用JDK17和Spring Boot3， 但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
 一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)、MiniMax、百川Baichuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
+支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
 
 ## 计划列表
+- [x] 对接MCP，支持STDIO,SSE,Streamable HTTP;
 - [ ] 对接 flowgram.ai 工作流组件
 - [ ] 对接dify平台
 - [ ] 对接coze平台
@@ -32,6 +34,7 @@
 + 待添加
 
 ## 特性
++ 支持MCP服务，内置MCP网关，支持建立动态MCP数据源。
 + 支持Spring以及普通Java应用、支持Java 8以上的应用
 + 多平台、多服务
 + 统一的输入输出
@@ -48,6 +51,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2025-08-08] 支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
 + [2025-06-23] 修复ollama的流式错误；修复ollama函数调用的错误；修复moonshot请求时错误；修复ollama embedding错误；修复思考无内容；修复日志冲突；新增自定义异常方法。
 + [2025-02-28] 新增对Ollama平台的embedding接口的支持。
 + [2025-02-17] 新增对DeepSeek平台推理模型的适配。

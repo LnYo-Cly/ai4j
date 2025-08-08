@@ -141,14 +141,30 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
         chatCompletion.setStream(false);
 
+
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
+
         // 转换 请求参数
         HunyuanChatCompletion hunyuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 如含有function，则添加tool
-        if(hunyuanChatCompletion.getFunctions()!=null && !hunyuanChatCompletion.getFunctions().isEmpty()){
+/*        if(hunyuanChatCompletion.getFunctions()!=null && !hunyuanChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(hunyuanChatCompletion.getFunctions());
             hunyuanChatCompletion.setTools(tools);
-        }
+        }*/
 
         // 总token消耗
         Usage allUsage = new Usage();
@@ -295,14 +311,29 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
         chatCompletion.setStream(true);
 
+        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if(tools == null){
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+        }else{
+            chatCompletion.setParallelToolCalls(null);
+        }
+
+
         // 转换 请求参数
         HunyuanChatCompletion hunyuanChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
-        // 如含有function，则添加tool
+/*        // 如含有function，则添加tool
         if(hunyuanChatCompletion.getFunctions()!=null && !hunyuanChatCompletion.getFunctions().isEmpty()){
             List<Tool> tools = ToolUtil.getAllFunctionTools(hunyuanChatCompletion.getFunctions());
             hunyuanChatCompletion.setTools(tools);
-        }
+        }*/
 
         String finishReason = "first";
 

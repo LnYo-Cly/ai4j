@@ -1,6 +1,11 @@
 package io.github.lnyocly;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.annotation.FunctionCall;
+import io.github.lnyocly.ai4j.annotation.FunctionParameter;
+import io.github.lnyocly.ai4j.annotation.FunctionRequest;
+import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
+import io.github.lnyocly.ai4j.utils.ToolUtil;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -27,10 +32,7 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ConnectionPool;
-import okhttp3.Dispatcher;
-import okhttp3.OkHttpClient;
-import okhttp3.WebSocket;
+import okhttp3.*;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okio.ByteString;
 import org.apache.commons.io.FileUtils;
@@ -300,23 +302,75 @@ public class OpenAiTest {
 
     }
 
+
+    @Test
+    public void test_chatCompletions_stream_cancel() throws Exception {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("gpt-4.1-nano")
+                .message(ChatMessage.withUser("你好，你是谁"))
+                .build();
+
+
+        System.out.println("请求参数");
+        System.out.println(chatCompletion);
+
+
+        // 构造监听器
+        SseListener sseListener = new SseListener() {
+            @Override
+            protected void error(Throwable t, Response response) {
+                log.error("出错了");
+                log.error(t.getMessage());
+                log.error(response.message());
+            }
+
+            @Override
+            protected void send() {
+                long aaa = System.currentTimeMillis();
+                //System.out.println(aaa - currentTimeMillis);
+
+
+                if("我".equals(this.getCurrStr())) {
+                    this.getEventSource().cancel();
+                    log.warn("取消");
+                }
+                log.info(this.getCurrData());
+            }
+        };
+
+        long currentTimeMillis = System.currentTimeMillis();
+        log.info("开始请求");
+        chatService.chatCompletionStream(chatCompletion, sseListener);
+
+        log.info("请求结束");
+        long aaa = System.currentTimeMillis();
+        System.out.println(aaa - currentTimeMillis);
+
+
+        System.out.println(sseListener.getOutput());
+        System.out.println(sseListener.getReasoningOutput());
+        System.out.println(sseListener.getUsage());
+
+    }
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
-                .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
+                .message(ChatMessage.withUser("获取当前的时间"))
                 .functions("queryWeather", "queryTrainInfo")
+                .mcpService("TestService")
                 .build();
 
         System.out.println("请求参数");
-        System.out.println(chatCompletion);
+        ObjectMapper objectMapper = new ObjectMapper();
+        System.out.println(objectMapper.writeValueAsString(chatCompletion));
 
         ChatCompletionResponse chatCompletionResponse = chatService.chatCompletion(chatCompletion);
 
         System.out.println("请求成功");
         System.out.println(chatCompletionResponse);
 
-        System.out.println(chatCompletion);
+        System.out.println(objectMapper.writeValueAsString(chatCompletion));
 
     }
 
@@ -583,5 +637,61 @@ public class OpenAiTest {
             finalcontents.add(map);
         }
         return finalcontents;
+    }
+
+    @FunctionCall(name = "test_push_files", description = "Test push multiple files to repository")
+    public static class TestPushFilesFunction implements java.util.function.Function<TestPushFilesFunction.Request, String> {
+
+        @lombok.Data
+        @FunctionRequest
+        public static class Request {
+            @FunctionParameter(description = "List of files to push")
+            private java.util.List<String> files;
+
+            @FunctionParameter(description = "Commit message")
+            private String message;
+        }
+
+        @Override
+        public String apply(Request request) {
+            return "Files pushed: " + request.files.size();
+        }
+    }
+
+    @org.junit.Test
+    public void testArraySchemaGeneration() {
+        System.out.println("=== 测试数组Schema生成 ===");
+
+        try {
+            // 测试传统Function工具
+            Tool.Function function = ToolUtil.getFunctionEntity("test_push_files");
+            if (function != null) {
+                System.out.println("传统Function工具生成成功:");
+                System.out.println("名称: " + function.getName());
+                System.out.println("描述: " + function.getDescription());
+
+                java.util.Map<String, Tool.Function.Property> properties = function.getParameters().getProperties();
+                Tool.Function.Property filesProperty = properties.get("files");
+                if (filesProperty != null) {
+                    System.out.println("files属性类型: " + filesProperty.getType());
+                    if (filesProperty.getItems() != null) {
+                        System.out.println("files.items类型: " + filesProperty.getItems().getType());
+                        System.out.println("✅ 数组Schema包含items定义 - 修复成功!");
+                    } else {
+                        System.out.println("❌ 数组Schema缺少items定义 - 修复失败!");
+                    }
+                } else {
+                    System.out.println("❌ 未找到files属性");
+                }
+            } else {
+                System.out.println("❌ 传统Function工具生成失败");
+            }
+
+            System.out.println("=== 测试完成 ===");
+
+        } catch (Exception e) {
+            System.err.println("测试失败: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
