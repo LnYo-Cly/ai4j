@@ -51,6 +51,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2025-08-19] 修复传递有验证参数的sse-url时，key丢失问题
 + [2025-08-08] OpenAi: max_tokens字段现已废弃，推荐使用max_completion_tokens(GPT-5已经不支持max_tokens字段)
 + [2025-08-08] 支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
 + [2025-06-23] 修复ollama的流式错误；修复ollama函数调用的错误；修复moonshot请求时错误；修复ollama embedding错误；修复思考无内容；修复日志冲突；新增自定义异常方法。
@@ -82,6 +83,7 @@
 + [Java快速接入qwen2.5、llama3.1等Ollama平台开源大模型](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
 + [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 + [大模型不支持联网搜索？为Deepseek、Qwen、llama等本地模型添加网络搜索](https://blog.csdn.net/qq_35650513/article/details/144572824)
++ [java快速接入mcp以及结合mysql动态管理](https://blog.csdn.net/qq_35650513/article/details/150532784?fromshare=blogdetail&sharetype=blogdetail&sharerId=150532784&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)

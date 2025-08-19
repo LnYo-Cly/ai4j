@@ -96,22 +96,22 @@ public class McpClient implements McpTransport.McpMessageHandler {
      */
     public CompletableFuture<Void> disconnect() {
         return CompletableFuture.runAsync(() -> {
-            // 关闭重连调度器
-            reconnectExecutor.shutdownNow();
             if (connected.get()) {
                 if (transport.needsHeartbeat()) {
                     log.info("正在停止心跳服务...");
                     stopHeartbeat();
                 }
                 try {
+                    // 先停止传输层，避免触发新的回调
                     transport.stop().join();
+
                     connected.set(false);
                     initialized.set(false);
                     availableTools = null;
 
                     // 取消所有待响应的请求
                     pendingRequests.values().forEach(future ->
-                        future.completeExceptionally(new RuntimeException("连接已断开")));
+                            future.completeExceptionally(new RuntimeException("连接已断开")));
                     pendingRequests.clear();
 
                     log.info("MCP客户端已断开连接");
@@ -119,8 +119,12 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     log.error("断开连接时发生错误", e);
                 }
             }
+
+            // 最后关闭重连调度器，确保传输层已完全停止
+            reconnectExecutor.shutdownNow();
         });
     }
+
     private void startHeartbeat() {
         if (heartbeatExecutor == null || heartbeatExecutor.isShutdown()) {
             heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -289,28 +293,36 @@ public class McpClient implements McpTransport.McpMessageHandler {
      * 调度一个异步的重连任务
      */
     private void scheduleReconnection() {
-        // 使用 isReconnecting 标志来防止并发的重连尝试
+        // 检查线程池是否已关闭
+        if (reconnectExecutor.isShutdown()) {
+            log.debug("重连调度器已关闭，跳过重连");
+            return;
+        }
+
         if (isReconnecting.compareAndSet(false, true)) {
             log.info("将在5秒后尝试重新连接...");
-            reconnectExecutor.schedule(() -> {
-                try {
-                    log.info("开始执行重连...");
-                    connect().get(60, TimeUnit.SECONDS); // 使用 get() 来等待重连完成
-                    log.info("MCP客户端重连成功！");
-                } catch (Exception e) {
-                    log.error("重连失败，将安排下一次重连", e);
-                    // 如果这次重连失败，再次调度
-                    isReconnecting.set(false); // 重置标志以便下次可以重连
-                    scheduleReconnection(); // 简单起见，这里直接再次调度。实际中可引入指数退避策略。
-                } finally {
-                    // 无论成功与否，最终都重置标志位
-                    // 如果成功，下一次断线时可以再次触发重连
-                    // 如果失败，下一次调度时也可以继续
-                    isReconnecting.set(false);
-                }
-            }, 5, TimeUnit.SECONDS); // 延迟5秒后执行
-        } else {
-            log.info("已有一个重连任务在进行中，本次忽略。");
+            try {
+                reconnectExecutor.schedule(() -> {
+                    try {
+                        log.info("开始执行重连...");
+                        connect().get(60, TimeUnit.SECONDS); // 使用 get() 来等待重连完成
+                        log.info("MCP客户端重连成功！");
+                    } catch (Exception e) {
+                        log.error("重连失败，将安排下一次重连", e);
+                        // 如果这次重连失败，再次调度
+                        isReconnecting.set(false); // 重置标志以便下次可以重连
+                        scheduleReconnection(); // 简单起见，这里直接再次调度。实际中可引入指数退避策略。
+                    } finally {
+                        // 无论成功与否，最终都重置标志位
+                        // 如果成功，下一次断线时可以再次触发重连
+                        // 如果失败，下一次调度时也可以继续
+                        isReconnecting.set(false);
+                    }
+                }, 5, TimeUnit.SECONDS); // 延迟5秒后执行
+            } catch (RejectedExecutionException e) {
+                log.debug("重连调度器已关闭，无法调度重连任务");
+                isReconnecting.set(false);
+            }
         }
     }
     /**
@@ -322,9 +334,12 @@ public class McpClient implements McpTransport.McpMessageHandler {
         // 构建客户端能力 - 使用更完整的配置
         Map<String, Object> capabilities = new HashMap<>();
         // 添加sampling能力
-        Map<String, Object> sampling = new HashMap<>();
-        sampling.put("enabled", true);
-        capabilities.put("sampling", sampling);
+        capabilities.put("sampling", new HashMap<>());
+
+        // 添加roots能力
+        Map<String, Object> roots = new HashMap<>();
+        roots.put("listChanged", true);
+        capabilities.put("roots", roots);
 
         // 添加tools能力
         Map<String, Object> tools = new HashMap<>();
@@ -334,6 +349,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
         // 添加resources能力
         Map<String, Object> resources = new HashMap<>();
         resources.put("listChanged", true);
+        resources.put("subscribe", true);
         capabilities.put("resources", resources);
 
         // 添加prompts能力

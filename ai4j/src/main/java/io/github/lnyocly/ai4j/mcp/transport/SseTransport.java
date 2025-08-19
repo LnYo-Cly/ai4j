@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,6 +25,7 @@ public class SseTransport implements McpTransport {
     private final String sseEndpointUrl;
     private final OkHttpClient httpClient;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final Map<String, String> initialQueryParams = new java.util.LinkedHashMap<>();
 
     private McpMessageHandler messageHandler;
     private EventSource eventSource;
@@ -31,37 +33,33 @@ public class SseTransport implements McpTransport {
     private volatile boolean endpointReceived = false;
 
     public SseTransport(String sseEndpointUrl) {
-        this.sseEndpointUrl = ensureSseEndpoint(sseEndpointUrl);
+        parseInitialQueryParams(sseEndpointUrl);
+        this.sseEndpointUrl = sseEndpointUrl;
         this.httpClient = createDefaultHttpClient();
     }
 
     public SseTransport(String sseEndpointUrl, OkHttpClient httpClient) {
-        this.sseEndpointUrl = ensureSseEndpoint(sseEndpointUrl);
+        parseInitialQueryParams(sseEndpointUrl);
+        this.sseEndpointUrl = sseEndpointUrl;
         this.httpClient = httpClient;
     }
 
-    /**
-     * 确保URL指向SSE端点
-     */
-    private String ensureSseEndpoint(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            throw new IllegalArgumentException("SSE端点URL不能为空");
+    private void parseInitialQueryParams(String url) {
+        try {
+            HttpUrl httpUrl = HttpUrl.get(url);
+            if (httpUrl != null) {
+                // HttpUrl.queryParameterNames() 返回 Set<String>
+                for (String name : httpUrl.queryParameterNames()) {
+                    // 取第一个值（如有多值，可按需改为 list）
+                    String value = httpUrl.queryParameter(name);
+                    if (value != null) {
+                        initialQueryParams.put(name, value);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("解析 SSE URL 查询参数失败：{}", e.getMessage());
         }
-
-        String trimmedUrl = url.trim();
-
-        // 如果URL已经以/sse结尾，直接返回
-        if (trimmedUrl.endsWith("/sse")) {
-            return trimmedUrl;
-        }
-
-        // 如果URL以/结尾，添加sse
-        if (trimmedUrl.endsWith("/")) {
-            return trimmedUrl + "sse";
-        }
-
-        // 否则添加/sse
-        return trimmedUrl + "/sse";
     }
 
     private static OkHttpClient createDefaultHttpClient() {
@@ -336,21 +334,42 @@ public class SseTransport implements McpTransport {
             throw new IllegalArgumentException("端点路径不能为空");
         }
 
-        // 如果已经是完整URL，直接返回
+        // 如果已经是完整URL，则合并 initialQueryParams（避免重复 key）
         if (endpointPath.startsWith("http://") || endpointPath.startsWith("https://")) {
-            return endpointPath;
+            return mergeInitialQueriesIntoUrl(endpointPath);
         }
 
-        // 从SSE端点URL中提取基础域名和协议
+        // 否则将相对路径拼接到 base 上
         String baseUrl = extractBaseUrl(sseEndpointUrl);
-
-        // 确保端点路径以/开头
         String trimmedPath = endpointPath.trim();
         if (!trimmedPath.startsWith("/")) {
             trimmedPath = "/" + trimmedPath;
         }
+        String combined = baseUrl + trimmedPath;
+        return mergeInitialQueriesIntoUrl(combined);
+    }
 
-        return baseUrl + trimmedPath;
+    private String mergeInitialQueriesIntoUrl(String urlStr) {
+        try {
+            HttpUrl url = HttpUrl.get(urlStr);
+            if (url == null) return urlStr; // fallback
+
+            HttpUrl.Builder builder = url.newBuilder();
+
+            // 把初始查询参数加上，前提是 endpoint URL 没有同名参数
+            for (Map.Entry<String, String> e : initialQueryParams.entrySet()) {
+                String key = e.getKey();
+                String val = e.getValue();
+                if (url.queryParameter(key) == null && val != null) {
+                    builder.addQueryParameter(key, val);
+                }
+            }
+
+            return builder.build().toString();
+        } catch (Exception ex) {
+            log.debug("合并初始查询参数失败，返回原始 URL: {}, 错误: {}", urlStr, ex.getMessage());
+            return urlStr;
+        }
     }
 
     /**
