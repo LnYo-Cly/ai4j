@@ -364,7 +364,7 @@ public class McpGateway {
             case "stdio":
                 return TransportConfig.stdio(serverInfo.getCommand(), serverInfo.getArgs(), serverInfo.getEnv());
             case "sse":
-                return TransportConfig.sse(serverInfo.getUrl());
+                return TransportConfig.sse(serverInfo);
             case "streamable_http":
             case "http":
                 return TransportConfig.streamableHttp(serverInfo.getUrl());

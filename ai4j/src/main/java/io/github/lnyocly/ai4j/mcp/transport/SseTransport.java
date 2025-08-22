@@ -31,11 +31,22 @@ public class SseTransport implements McpTransport {
     private EventSource eventSource;
     private String messageEndpointUrl; // 从endpoint事件中获取
     private volatile boolean endpointReceived = false;
+    /**
+     * 自定义HTTP头（用于认证等）
+     */
+    private Map<String, String> headers;
 
     public SseTransport(String sseEndpointUrl) {
         parseInitialQueryParams(sseEndpointUrl);
         this.sseEndpointUrl = sseEndpointUrl;
         this.httpClient = createDefaultHttpClient();
+    }
+
+    public SseTransport(TransportConfig config) {
+        parseInitialQueryParams(config.getUrl());
+        this.sseEndpointUrl = config.getUrl();
+        this.httpClient = createDefaultHttpClient();
+        this.headers = config.getHeaders();
     }
 
     public SseTransport(String sseEndpointUrl, OkHttpClient httpClient) {
@@ -156,6 +167,11 @@ public class SseTransport implements McpTransport {
                 if (sessionId != null) {
                     requestBuilder.header("mcp-session-id", sessionId);
                 }
+                if (headers != null) {
+                    for (Map.Entry<String, String> entry : headers.entrySet()) {
+                        requestBuilder.header(entry.getKey(), entry.getValue());
+                    }
+                }
 
                 Request request = requestBuilder.build();
 
@@ -223,7 +239,13 @@ public class SseTransport implements McpTransport {
      * 启动SSE连接
      */
     private void startSseConnection() {
-        Request sseRequest = new Request.Builder()
+        Request.Builder builder = new Request.Builder();
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+        }
+        Request sseRequest = builder
                 .url(sseEndpointUrl)
                 .header("Accept", "text/event-stream")
                 .header("Cache-Control", "no-cache")

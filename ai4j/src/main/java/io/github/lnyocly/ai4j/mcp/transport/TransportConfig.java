@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
+import io.github.lnyocly.ai4j.mcp.config.McpServerConfig;
+
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +26,10 @@ public class TransportConfig {
     private String command;
     private List<String> args;
     private Map<String, String> env;
+    /**
+     * 自定义HTTP头（用于认证等）
+     */
+    private Map<String, String> headers;
     
     // 高级配置
     private Boolean enableRetry;
@@ -73,6 +79,17 @@ public class TransportConfig {
         TransportConfig config = new TransportConfig();
         config.type = "sse";
         config.url = url;
+        return config;
+    }
+
+    /**
+     * 创建SSE传输配置
+     */
+    public static TransportConfig sse(McpServerConfig.McpServerInfo serverInfo) {
+        TransportConfig config = new TransportConfig();
+        config.type = "sse";
+        config.url = serverInfo.getUrl();
+        config.headers = serverInfo.getHeaders();
         return config;
     }
     
@@ -220,7 +237,15 @@ public class TransportConfig {
     public void setHeartbeatInterval(Long heartbeatInterval) {
         this.heartbeatInterval = heartbeatInterval;
     }
-    
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
+    }
+
     @Override
     public String toString() {
         return "TransportConfig{" +
