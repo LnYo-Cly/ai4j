@@ -300,13 +300,21 @@ public class SseTransport implements McpTransport {
 
         @Override
         public void onFailure(EventSource eventSource, Throwable t, Response response) {
-            if (t instanceof SocketException && "Socket closed".equals(t.getMessage())) {
-                log.debug("正常关闭 SSE 连接");
-                return;
+            if (t != null) {
+                if (t instanceof SocketException && "Socket closed".equals(t.getMessage())) {
+                    log.debug("正常关闭 SSE 连接");
+                    return;
+                }
+                log.error("SSE 连接失败", t);
+                if (messageHandler != null) {
+                    messageHandler.onError(t);
+                }
             }
-            log.error("SSE 连接失败", t);
-            if (messageHandler != null) {
-                messageHandler.onError(t);
+            if (response != null) {
+                log.error("SSE 响应失败，状态码: {}", response.code());
+                if (messageHandler != null) {
+                    messageHandler.onError(new RuntimeException("SSE 响应失败，状态码: " + response.code()));
+                }
             }
         }
     }
