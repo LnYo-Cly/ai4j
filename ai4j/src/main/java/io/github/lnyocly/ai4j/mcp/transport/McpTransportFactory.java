@@ -126,7 +126,7 @@ public class McpTransportFactory {
             throw new IllegalArgumentException("SSE传输需要指定url参数");
         }
         
-        return new SseTransport(url.trim());
+        return new SseTransport(config);
     }
     
     /**
@@ -137,8 +137,8 @@ public class McpTransportFactory {
         if (url == null || url.trim().isEmpty()) {
             throw new IllegalArgumentException("Streamable HTTP传输需要指定url参数");
         }
-        
-        return new StreamableHttpTransport(url.trim());
+        config.setUrl(url.trim());
+        return new StreamableHttpTransport(config);
     }
     
     /**

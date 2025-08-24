@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,13 +35,24 @@ public class StreamableHttpTransport implements McpTransport {
     private EventSource eventSource;
     private String sessionId;
     private String lastEventId;
-    
+    /**
+     * 自定义HTTP头（用于认证等）
+     */
+    private Map<String, String> headers;
     public StreamableHttpTransport(String mcpEndpointUrl) {
         this.mcpEndpointUrl = mcpEndpointUrl;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
+    }
+    public StreamableHttpTransport(TransportConfig config) {
+        this.mcpEndpointUrl = config.getUrl();
+        this.httpClient = new OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
+        this.headers = config.getHeaders();
     }
     
     @Override
@@ -109,6 +121,12 @@ public class StreamableHttpTransport implements McpTransport {
                 // 添加Last-Event-ID用于恢复连接
                 if (lastEventId != null) {
                     requestBuilder.header("last-event-id", lastEventId);
+                }
+
+                if (headers != null) {
+                    for (Map.Entry<String, String> entry : headers.entrySet()) {
+                        requestBuilder.header(entry.getKey(), entry.getValue());
+                    }
                 }
                 
                 Request request = requestBuilder.build();
@@ -253,7 +271,13 @@ public class StreamableHttpTransport implements McpTransport {
             public void run() {
                 if (sessionId != null) {
                     try {
-                        Request request = new Request.Builder()
+                        Request.Builder builder = new Request.Builder();
+                        if (headers != null) {
+                            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                                builder.header(entry.getKey(), entry.getValue());
+                            }
+                        }
+                        Request request = builder
                                 .url(mcpEndpointUrl)
                                 .delete()
                                 .header("mcp-session-id", sessionId)
