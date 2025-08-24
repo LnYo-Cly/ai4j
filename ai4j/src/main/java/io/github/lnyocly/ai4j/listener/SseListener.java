@@ -173,7 +173,8 @@ public abstract class SseListener extends EventSourceListener {
         // 判断ChatMessage responseMessage的对象属性是否全是null，使用util，responseMessage本身不是空
         try {
             // delta":{} && “usage”:{xxxxxx} && finish_reason:null
-            if (isAllFieldsNull(responseMessage) && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
+            // (isAllFieldsNull(responseMessage) || responseMessage.getContent()==null || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) &&
+            if ((isAllFieldsNull(responseMessage) || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
                 this.currStr = "";
                 this.send();
                 return;
