@@ -27,6 +27,11 @@ public class OpenAiAudioService implements IAudioService {
         this.okHttpClient = configuration.getOkHttpClient();
     }
 
+    public OpenAiAudioService(Configuration configuration, OpenAiConfig openAiConfig) {
+        this.openAiConfig = openAiConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+    }
+
 
     @Override
     public InputStream textToSpeech(String baseUrl, String apiKey, TextToSpeech textToSpeech) {

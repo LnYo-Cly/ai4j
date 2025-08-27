@@ -8,10 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Author cly
@@ -157,6 +154,13 @@ public class ChatCompletion {
      */
     @JsonProperty("top_logprobs")
     private Integer topLogprobs;
+
+    /**
+     * 额外参数
+     */
+    @JsonProperty("parameters")
+    @Singular
+    private Map<String, Object> parameters;
 
 
     public static class ChatCompletionBuilder {

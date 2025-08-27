@@ -1,20 +1,22 @@
 package io.github.lnyocly.ai4j;
 
+import cn.hutool.core.bean.BeanUtil;
 import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
 import io.github.lnyocly.ai4j.network.DispatcherProvider;
+import io.github.lnyocly.ai4j.service.AiConfig;
 import io.github.lnyocly.ai4j.service.factor.AiService;
+import io.github.lnyocly.ai4j.service.factor.FreeAiService;
 import io.github.lnyocly.ai4j.utils.OkHttpUtil;
 import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
-import okhttp3.ConnectionPool;
-import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +26,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @Author cly
@@ -32,6 +36,7 @@ import java.security.NoSuchAlgorithmException;
  */
 @Configuration
 @EnableConfigurationProperties({
+        AiConfigProperties.class,
         OpenAiConfigProperties.class,
         OkHttpConfigProperties.class,
         PineconeConfigProperties.class,
@@ -57,6 +62,7 @@ public class AiConfigAutoConfiguration {
     private final SearXNGConfigProperties searXNGConfigProperties;
 
     // AI平台配置
+    private final AiConfigProperties aiConfigProperties;
     private final OpenAiConfigProperties openAiConfigProperties;
     private final ZhipuConfigProperties zhipuConfigProperties;
     private final DeepSeekConfigProperties deepSeekConfigProperties;
@@ -69,11 +75,12 @@ public class AiConfigAutoConfiguration {
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
         this.searXNGConfigProperties = searXNGConfigProperties;
+        this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
         this.deepSeekConfigProperties = deepSeekConfigProperties;
         this.moonshotConfigProperties = moonshotConfigProperties;
@@ -87,6 +94,13 @@ public class AiConfigAutoConfiguration {
     @Bean
     public AiService aiService() {
         return new AiService(configuration);
+    }
+
+    @Bean
+    public FreeAiService getFreeAiService() {
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(BeanUtil.copyToList(aiConfigProperties.getPlatforms(), AiPlatform.class));
+        return new FreeAiService(configuration, aiConfig);
     }
 
     @Bean

@@ -49,6 +49,12 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         this.factory = configuration.createRequestFactory();
     }
 
+    public BaichuanChatService(Configuration configuration, BaichuanConfig baichuanConfig) {
+        this.baichuanConfig = baichuanConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {

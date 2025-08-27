@@ -38,6 +38,11 @@ public class OpenAiChatService implements IChatService {
         this.factory = configuration.createRequestFactory();
     }
 
+    public OpenAiChatService(Configuration configuration, OpenAiConfig openAiConfig) {
+        this.openAiConfig = openAiConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion)  throws Exception {

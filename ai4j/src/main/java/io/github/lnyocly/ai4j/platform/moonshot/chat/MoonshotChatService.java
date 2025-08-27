@@ -49,6 +49,13 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         this.factory = configuration.createRequestFactory();
     }
 
+    public MoonshotChatService(Configuration configuration, MoonshotConfig moonshotConfig) {
+        this.moonshotConfig = moonshotConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
+
     @Override
     public MoonshotChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
         MoonshotChatCompletion moonshotChatCompletion = new MoonshotChatCompletion();

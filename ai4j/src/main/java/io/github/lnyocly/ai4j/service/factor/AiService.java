@@ -32,6 +32,10 @@ public class AiService {
         this.configuration = configuration;
     }
 
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
     public IChatService getChatService(PlatformType platform) {
         //return chatServiceCache.computeIfAbsent(platform, this::createChatService);
         return createChatService(platform);

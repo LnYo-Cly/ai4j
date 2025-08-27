@@ -49,6 +49,12 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         this.factory = configuration.createRequestFactory();
     }
 
+    public HunyuanChatService(Configuration configuration, HunyuanConfig hunyuanConfig) {
+        this.hunyuanConfig = hunyuanConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
 
     @Override
     public HunyuanChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {

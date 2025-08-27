@@ -47,6 +47,12 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         this.factory = configuration.createRequestFactory();
     }
 
+    public DeepSeekChatService(Configuration configuration, DeepSeekConfig deepSeekConfig) {
+        this.deepSeekConfig = deepSeekConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
 
     @Override
     public DeepSeekChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {

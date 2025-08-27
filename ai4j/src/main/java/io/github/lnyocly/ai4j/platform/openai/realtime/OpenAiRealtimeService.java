@@ -23,6 +23,11 @@ public class OpenAiRealtimeService implements IRealtimeService {
         this.okHttpClient = configuration.getOkHttpClient();
     }
 
+    public OpenAiRealtimeService(Configuration configuration, OpenAiConfig openAiConfig) {
+        this.openAiConfig = openAiConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+    }
+
 
     @Override
     public WebSocket createRealtimeClient(String baseUrl, String apiKey, String model, RealtimeListener realtimeListener) {
