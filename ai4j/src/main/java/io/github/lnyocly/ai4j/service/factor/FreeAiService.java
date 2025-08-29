@@ -5,6 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.collection.CollUtil;
 import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
+import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
@@ -85,6 +86,10 @@ public class FreeAiService {
                 BaichuanConfig baichuanConfig = new BaichuanConfig();
                 BeanUtil.copyProperties(aiPlatform, baichuanConfig, CopyOptions.create().ignoreNullValue());
                 return new BaichuanChatService(configuration, baichuanConfig);
+            case DASHSCOPE:
+                DashScopeConfig dashScopeConfig = new DashScopeConfig();
+                BeanUtil.copyProperties(aiPlatform, dashScopeConfig, CopyOptions.create().ignoreNullValue());
+                return new DashScopeChatService(configuration, dashScopeConfig);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

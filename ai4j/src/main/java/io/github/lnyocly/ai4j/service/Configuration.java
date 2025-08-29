@@ -38,4 +38,6 @@ public class Configuration {
     private SearXNGConfig searXNGConfig;
 
     private McpConfig mcpConfig;
+
+    private DashScopeConfig dashScopeConfig;
 }

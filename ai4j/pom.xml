@@ -144,6 +144,12 @@
             <artifactId>hutool-core</artifactId>
             <version>5.8.38</version>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dashscope-sdk-java</artifactId>
+            <scope>compile</scope>
+            <version>2.19.0</version>
+        </dependency>
     </dependencies>
 
     <build>

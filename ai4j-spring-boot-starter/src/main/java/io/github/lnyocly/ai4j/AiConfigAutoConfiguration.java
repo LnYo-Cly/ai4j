@@ -16,7 +16,6 @@ import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @Author cly
@@ -48,7 +45,9 @@ import java.util.List;
         OllamaConfigProperties.class,
         MinimaxConfigProperties.class,
         BaichuanConfigProperties.class,
-        SearXNGConfigProperties.class})
+        SearXNGConfigProperties.class,
+        DashScopeConfigProperties.class,
+})
 
 public class AiConfigAutoConfiguration {
 
@@ -72,10 +71,11 @@ public class AiConfigAutoConfiguration {
     private final OllamaConfigProperties ollamaConfigProperties;
     private final MinimaxConfigProperties minimaxConfigProperties;
     private final BaichuanConfigProperties baichuanConfigProperties;
+    private final DashScopeConfigProperties dashScopeConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -89,6 +89,7 @@ public class AiConfigAutoConfiguration {
         this.ollamaConfigProperties = ollamaConfigProperties;
         this.minimaxConfigProperties = minimaxConfigProperties;
         this.baichuanConfigProperties = baichuanConfigProperties;
+        this.dashScopeConfigProperties = dashScopeConfigProperties;
     }
 
     @Bean
@@ -314,5 +315,15 @@ public class AiConfigAutoConfiguration {
         searXNGConfig.setNums(searXNGConfigProperties.getNums());
 
         configuration.setSearXNGConfig(searXNGConfig);
+    }
+
+    /**
+     * 初始化Dashscope 配置信息
+     */
+    private void initDashScopeConfig() {
+        DashScopeConfig dashScopeConfig = new DashScopeConfig();
+        dashScopeConfig.setApiKey(dashScopeConfigProperties.getApiKey());
+
+        configuration.setDashScopeConfig(dashScopeConfig);
     }
 }

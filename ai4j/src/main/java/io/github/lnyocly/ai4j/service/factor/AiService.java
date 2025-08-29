@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service.factor;
 
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
+import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
@@ -10,10 +11,10 @@ import io.github.lnyocly.ai4j.platform.ollama.chat.OllamaAiChatService;
 import io.github.lnyocly.ai4j.platform.ollama.embedding.OllamaEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
+import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
-import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
 
@@ -66,6 +67,8 @@ public class AiService {
                 return new MinimaxChatService(configuration);
             case BAICHUAN:
                 return new BaichuanChatService(configuration);
+            case DASHSCOPE:
+                return new DashScopeChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
