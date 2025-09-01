@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.listener;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
@@ -103,6 +104,7 @@ public abstract class SseListener extends EventSourceListener {
     private CountDownLatch countDownLatch = new CountDownLatch(1);
 
     @Getter
+    @Setter
     private String finishReason = null;
 
     @Getter
@@ -206,6 +208,7 @@ public abstract class SseListener extends EventSourceListener {
             }
 
             if(toolCall != null) {
+                argument.append(StrUtil.emptyIfNull(responseMessage.getToolCalls().get(0).getFunction().getArguments()));
                 toolCall.getFunction().setArguments(argument.toString());
                 toolCalls.add(toolCall);
             }
@@ -285,10 +288,11 @@ public abstract class SseListener extends EventSourceListener {
                 }
             }else{
                 // 第一条ToolCall表示，不含参数信息
-                if(responseMessage.getToolCalls().get(0).getId() != null) {
+                if(StrUtil.isNotBlank(responseMessage.getToolCalls().get(0).getId())) {
                     if( toolCall == null ){
                         // 第一个函数
                         toolCall = responseMessage.getToolCalls().get(0);
+                        argument.append(StrUtil.emptyIfNull(responseMessage.getToolCalls().get(0).getFunction().getArguments()));
                     }else {
                         toolCall.getFunction().setArguments(argument.toString());
                         argument.setLength(0);

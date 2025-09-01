@@ -430,6 +430,9 @@ public class ToolUtil {
      * 获取所有工具（自动识别用户上下文）
      */
     public static List<Tool> getAllTools(List<String> functionList, List<String> mcpServerIds) {
+        // fix 启动MCP服务工具未初始化
+        ensureInitialized();
+
         List<Tool> allTools = new ArrayList<>();
 
         // 获取传统Function工具
@@ -505,7 +508,7 @@ public class ToolUtil {
         }
         
         try {
-            List<Tool.Function> mcpTools = gateway.getAvailableTools().join();
+            List<Tool.Function> mcpTools = gateway.getAvailableTools(serviceIds).join();
             
             // 转换为Tool对象
             for (Tool.Function function : mcpTools) {
@@ -573,7 +576,7 @@ public class ToolUtil {
         }
         
         try {
-            List<Tool.Function> mcpTools = gateway.getUserAvailableTools(userId).join();
+            List<Tool.Function> mcpTools = gateway.getUserAvailableTools(serviceIds, userId).join();
             
             // 转换为Tool对象
             for (Tool.Function function : mcpTools) {

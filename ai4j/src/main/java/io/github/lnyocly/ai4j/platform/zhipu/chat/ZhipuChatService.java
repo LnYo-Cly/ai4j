@@ -51,6 +51,12 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
         this.factory = configuration.createRequestFactory();
     }
 
+    public ZhipuChatService(Configuration configuration, ZhipuConfig zhipuConfig) {
+        this.zhipuConfig = zhipuConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {

@@ -53,6 +53,12 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         this.factory = configuration.createRequestFactory();
     }
 
+    public OllamaAiChatService(Configuration configuration, OllamaConfig ollamaConfig) {
+        this.ollamaConfig = ollamaConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
+
 
     @Override
     public OllamaChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {

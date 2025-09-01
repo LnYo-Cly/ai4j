@@ -48,7 +48,11 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         this.factory = configuration.createRequestFactory();
     }
 
-
+    public MinimaxChatService(Configuration configuration, MinimaxConfig minimaxConfig) {
+        this.minimaxConfig = minimaxConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
 
     @Override
     public MinimaxChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {

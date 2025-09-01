@@ -25,6 +25,11 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
         this.okHttpClient = configuration.getOkHttpClient();
     }
 
+    public OpenAiEmbeddingService(Configuration configuration, OpenAiConfig openAiConfig) {
+        this.openAiConfig = openAiConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+    }
+
 
     @Override
     public EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq)  throws Exception  {

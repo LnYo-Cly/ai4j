@@ -34,6 +34,10 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
         this.okHttpClient = configuration.getOkHttpClient();
     }
 
+    public OllamaEmbeddingService(Configuration configuration, OllamaConfig ollamaConfig) {
+        this.ollamaConfig = ollamaConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+    }
 
     @Override
     public EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq) throws Exception {

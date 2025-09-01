@@ -47,7 +47,11 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
         this.factory = configuration.createRequestFactory();
     }
 
-
+    public LingyiChatService(Configuration configuration, LingyiConfig lingyiConfig) {
+        this.lingyiConfig = lingyiConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+        this.factory = configuration.createRequestFactory();
+    }
 
     @Override
     public LingyiChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {

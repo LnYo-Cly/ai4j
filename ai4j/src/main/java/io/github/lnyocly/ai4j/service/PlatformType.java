@@ -20,6 +20,7 @@ public enum PlatformType {
     OLLAMA("ollama"),
     MINIMAX("minimax"),
     BAICHUAN("baichuan"),
+    DASHSCOPE("dashscope"),
     ;
     private final String platform;
 

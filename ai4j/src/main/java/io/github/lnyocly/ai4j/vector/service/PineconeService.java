@@ -34,6 +34,11 @@ public class PineconeService {
         this.okHttpClient = configuration.getOkHttpClient();
     }
 
+    public PineconeService(Configuration configuration, PineconeConfig pineconeConfig) {
+        this.pineconeConfig = pineconeConfig;
+        this.okHttpClient = configuration.getOkHttpClient();
+    }
+
     // 插入Pinecone向量库
     public Integer insert(PineconeInsert pineconeInsertReq){
         Request request = new Request.Builder()

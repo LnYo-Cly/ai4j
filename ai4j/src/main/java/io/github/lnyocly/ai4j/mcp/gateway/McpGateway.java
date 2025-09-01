@@ -481,9 +481,26 @@ public class McpGateway {
     }
 
     /**
+     * 获取所有可用的工具（转换为OpenAI Tool格式）
+     */
+    public CompletableFuture<List<Tool.Function>> getAvailableTools(List<String> serviceIds) {
+        if (serviceIds != null && !serviceIds.isEmpty()) {
+            return CompletableFuture.completedFuture(mcpClients.entrySet().stream().filter(entry -> serviceIds.contains(entry.getKey())).map(entry -> {
+                return entry.getValue().getAvailableTools().join();
+            }).flatMap(list -> list.stream().map(this::convertToOpenAiTool)).collect(Collectors.toList()));
+        }
+        if (availableTools != null) {
+            return CompletableFuture.completedFuture(availableTools);
+        }
+
+        return refreshToolMappings()
+                .thenApply(v -> availableTools);
+    }
+
+    /**
      * 获取用户的可用工具（包括用户专属工具和全局工具）
      */
-    public CompletableFuture<List<Tool.Function>> getUserAvailableTools(String userId) {
+    public CompletableFuture<List<Tool.Function>> getUserAvailableTools(List<String> serviceIds, String userId) {
         return CompletableFuture.supplyAsync(() -> {
             List<Tool.Function> userTools = new ArrayList<>();
             String userPrefix = buildUserPrefix(userId);
@@ -502,9 +519,13 @@ public class McpGateway {
                     }
                 });
 
+            List<String> filterIds = serviceIds != null ? serviceIds : new ArrayList<>();
             // 获取全局工具
             mcpClients.entrySet().stream()
-                .filter(entry -> !isUserClientKey(entry.getKey()))
+                .filter(entry -> {
+                    if (isUserClientKey(entry.getKey())) return false;
+                    return filterIds.contains(entry.getKey());
+                })
                 .forEach(entry -> {
                     try {
                         List<McpToolDefinition> clientTools = entry.getValue().getAvailableTools().join();
