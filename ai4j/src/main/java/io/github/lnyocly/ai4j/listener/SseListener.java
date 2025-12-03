@@ -187,7 +187,7 @@ public abstract class SseListener extends EventSourceListener {
 
         finishReason = choices.get(0).getFinishReason();
 
-        // ollama 函数调用
+        // Ollama 在工具调用时返回 stop 而非 tool_calls
         if("stop".equals(finishReason)
                 && responseMessage.getContent()!=null
                 && "".equals(responseMessage.getContent().getText())
@@ -276,15 +276,21 @@ public abstract class SseListener extends EventSourceListener {
         }else{
             // 函数调用回答
 
+            // 完整工具调用模式（一次性返回完整信息）
+            // 特征检测：content 为空字符串 + toolCalls 包含完整函数名和参数
+            // 部分平台（如 Ollama、豆包）采用此模式，一条 data 可能携带一个或多个完整的 tool call
             if(responseMessage.getContent()!=null
                && "".equals(responseMessage.getContent().getText())){
-                // ollama的函数调用
-                currToolName = responseMessage.getToolCalls().get(0).getFunction().getName();
-                toolCalls.add(responseMessage.getToolCalls().get(0));
+                // 遍历所有完整的 tool calls
+                List<ToolCall> completeToolCalls = responseMessage.getToolCalls();
+                for (ToolCall completeToolCall : completeToolCalls) {
+                    currToolName = completeToolCall.getFunction().getName();
+                    toolCalls.add(completeToolCall);
 
-                if(showToolArgs){
-                    this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
-                    this.send();
+                    if(showToolArgs){
+                        this.currStr = completeToolCall.getFunction().getArguments();
+                        this.send();
+                    }
                 }
             }else{
                 // 第一条ToolCall表示，不含参数信息
