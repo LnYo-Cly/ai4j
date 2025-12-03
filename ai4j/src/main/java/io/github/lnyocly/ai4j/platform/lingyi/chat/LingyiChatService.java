@@ -65,6 +65,7 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
         lingyiChatCompletion.setTopP(chatCompletion.getTopP());
         lingyiChatCompletion.setStream(chatCompletion.getStream());
         lingyiChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        lingyiChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return lingyiChatCompletion;
     }
 

@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.platform.baichuan.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -11,6 +12,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder(toBuilder = true)
@@ -62,6 +64,19 @@ public class BaichuanChatCompletion {
 
     @JsonProperty("user_id")
     private String userId;
+
+    /**
+     * 额外的请求体参数，用于扩展不同平台的特定字段
+     * 使用 @JsonAnyGetter 使其内容在序列化时展开到 JSON 顶层
+     */
+    @JsonIgnore
+    @Singular("extraBody")
+    private Map<String, Object> extraBody;
+
+    @JsonAnyGetter
+    public Map<String, Object> getExtraBody() {
+        return extraBody;
+    }
 
     public static class ZhipuChatCompletionBuilder {
         private List<String> functions;

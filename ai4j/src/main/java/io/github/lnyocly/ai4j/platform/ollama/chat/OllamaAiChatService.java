@@ -106,6 +106,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             messages.add(ollamaMessage);
         }
         ollamaChatCompletion.setMessages(messages);
+        ollamaChatCompletion.setExtraBody(chatCompletion.getExtraBody());
 
         return ollamaChatCompletion;
     }
@@ -307,6 +308,14 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             String requestString = JSON.toJSONString(ollamaChatCompletion);
 
             JSONObject jsonObject = JSON.parseObject(requestString);
+            // 展开 extraBody 到顶层
+            JSONObject extraBody = jsonObject.getJSONObject("extraBody");
+            if (extraBody != null) {
+                for (String key : extraBody.keySet()) {
+                    jsonObject.put(key, extraBody.get(key));
+                }
+                jsonObject.remove("extraBody");
+            }
             // 遍历jsonObject的messages
             JSONArray jsonArrayMessages = jsonObject.getJSONArray("messages");
             for (Object message : jsonArrayMessages) {

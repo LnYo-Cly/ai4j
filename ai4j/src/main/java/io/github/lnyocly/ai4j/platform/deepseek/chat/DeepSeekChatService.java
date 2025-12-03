@@ -76,6 +76,7 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         deepSeekChatCompletion.setToolChoice(chatCompletion.getToolChoice());
         deepSeekChatCompletion.setLogprobs(chatCompletion.getLogprobs());
         deepSeekChatCompletion.setTopLogprobs(chatCompletion.getTopLogprobs());
+        deepSeekChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return deepSeekChatCompletion;
     }
 

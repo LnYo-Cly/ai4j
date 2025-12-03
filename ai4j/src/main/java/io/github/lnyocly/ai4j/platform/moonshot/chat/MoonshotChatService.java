@@ -75,6 +75,7 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         moonshotChatCompletion.setTools(chatCompletion.getTools());
         moonshotChatCompletion.setFunctions(chatCompletion.getFunctions());
         moonshotChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        moonshotChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return moonshotChatCompletion;
     }
 

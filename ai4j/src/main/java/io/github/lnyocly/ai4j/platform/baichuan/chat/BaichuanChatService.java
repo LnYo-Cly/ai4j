@@ -260,6 +260,7 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         baichuanChatCompletion.setTools(chatCompletion.getTools());
         baichuanChatCompletion.setFunctions(chatCompletion.getFunctions());
         baichuanChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        baichuanChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return baichuanChatCompletion;
     }
 
