@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @Author cly
@@ -149,6 +150,8 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
     @Override
     public EventSourceListener convertEventSource(SseListener eventSourceListener) {
+        final AtomicBoolean isThinking = new AtomicBoolean(false);
+
         return new EventSourceListener() {
             @Override
             public void onOpen(@NotNull EventSource eventSource, @NotNull Response response) {
@@ -168,16 +171,48 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
                 }
 
                 OllamaChatCompletionResponse ollamaChatCompletionResponse = JSON.parseObject(data, OllamaChatCompletionResponse.class);
-                ChatCompletionResponse response = convertChatCompletionResponse(ollamaChatCompletionResponse);
-                ObjectMapper mapper = new ObjectMapper();
-                String s = null;
-                try {
-                    s = mapper.writeValueAsString(response);
-                } catch (JsonProcessingException e) {
-                    throw new CommonException("Ollama Chat Completion Response convert to JSON error");
+                OllamaMessage message = ollamaChatCompletionResponse.getMessage();
+                String content = message != null ? message.getContent() : null;
+                String thinking = message != null ? message.getThinking() : null;
+
+                // 1. 处理 thinking 字段（Ollama Qwen 模式）
+                // thinking 字段有值时，直接映射到 reasoning_content
+                if (StringUtils.isNotEmpty(thinking)) {
+                    ChatCompletionResponse response = convertChatCompletionResponse(ollamaChatCompletionResponse);
+                    if (response.getChoices() != null && !response.getChoices().isEmpty()) {
+                        ChatMessage delta = response.getChoices().get(0).getDelta();
+                        delta.setReasoningContent(thinking);
+                        delta.setContent(null);
+                    }
+                    sendConvertedResponse(eventSourceListener, eventSource, id, type, response);
+                    return;
                 }
 
-                eventSourceListener.onEvent(eventSource, id, type, s);
+                // 2. 处理 <think> 标签（Ollama DeepSeek 模式）
+                // 检测到 <think> 标签时，标记进入思考模式，不传递标签本身
+                if ("<think>".equals(content)) {
+                    isThinking.set(true);
+                    return;
+                }
+                // 检测到 </think> 标签时，标记退出思考模式，不传递标签本身
+                if ("</think>".equals(content)) {
+                    isThinking.set(false);
+                    return;
+                }
+
+                // 3. 转换为 OpenAI 格式
+                ChatCompletionResponse response = convertChatCompletionResponse(ollamaChatCompletionResponse);
+
+                // 4. 如果处于思考模式，将 content 转换为 reasoning_content
+                if (isThinking.get() && StringUtils.isNotEmpty(content)) {
+                    if (response.getChoices() != null && !response.getChoices().isEmpty()) {
+                        ChatMessage delta = response.getChoices().get(0).getDelta();
+                        delta.setReasoningContent(content);
+                        delta.setContent(null);
+                    }
+                }
+
+                sendConvertedResponse(eventSourceListener, eventSource, id, type, response);
             }
 
             @Override
@@ -185,6 +220,19 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
                 eventSourceListener.onClosed(eventSource);
             }
         };
+    }
+
+    /**
+     * 发送转换后的响应给 SseListener
+     */
+    private void sendConvertedResponse(SseListener listener, EventSource eventSource, String id, String type, ChatCompletionResponse response) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String s = mapper.writeValueAsString(response);
+            listener.onEvent(eventSource, id, type, s);
+        } catch (JsonProcessingException e) {
+            throw new CommonException("Ollama Chat Completion Response convert to JSON error");
+        }
     }
 
     @Override
