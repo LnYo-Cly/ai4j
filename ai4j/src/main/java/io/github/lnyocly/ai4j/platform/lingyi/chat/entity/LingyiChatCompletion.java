@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.platform.lingyi.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,7 +9,10 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author cly
@@ -76,4 +80,40 @@ public class LingyiChatCompletion {
     @JsonProperty("max_tokens")
     private Integer maxTokens;
 
+    /**
+     * 额外的请求体参数，用于扩展不同平台的特定字段
+     * 使用 @JsonAnyGetter 使其内容在序列化时展开到 JSON 顶层
+     */
+    @JsonIgnore
+    @Singular("extraBody")
+    private Map<String, Object> extraBody;
+
+    @JsonAnyGetter
+    public Map<String, Object> getExtraBody() {
+        return extraBody;
+    }
+
+    public static class LingyiChatCompletionBuilder {
+        private List<String> functions;
+
+        public LingyiChatCompletion.LingyiChatCompletionBuilder functions(String... functions){
+            if (this.functions == null) {
+                this.functions = new ArrayList<>();
+            }
+            this.functions.addAll(Arrays.asList(functions));
+            return this;
+        }
+
+        public LingyiChatCompletion.LingyiChatCompletionBuilder functions(List<String> functions){
+            if (this.functions == null) {
+                this.functions = new ArrayList<>();
+            }
+            if (functions != null) {
+                this.functions.addAll(functions);
+            }
+            return this;
+        }
+
+
+    }
 }

@@ -274,6 +274,7 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
         zhipuChatCompletion.setTools(chatCompletion.getTools());
         zhipuChatCompletion.setFunctions(chatCompletion.getFunctions());
         zhipuChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        zhipuChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return zhipuChatCompletion;
     }
 

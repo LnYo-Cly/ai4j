@@ -40,4 +40,6 @@ public class Configuration {
     private McpConfig mcpConfig;
 
     private DashScopeConfig dashScopeConfig;
+
+    private DoubaoConfig doubaoConfig;
 }

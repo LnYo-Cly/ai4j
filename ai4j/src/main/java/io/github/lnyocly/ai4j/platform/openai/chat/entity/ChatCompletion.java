@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.chat.entity;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -161,6 +162,23 @@ public class ChatCompletion {
     @JsonProperty("parameters")
     @Singular
     private Map<String, Object> parameters;
+
+    /**
+     * 额外的请求体参数，用于扩展不同平台的特定字段
+     * 使用 @JsonAnyGetter 使其内容在序列化时展开到 JSON 顶层
+     * 如果 extraBody 中的字段与现有字段同名，extraBody 中的值会覆盖现有值
+     */
+    @JsonIgnore
+    @Singular("extraBody")
+    private Map<String, Object> extraBody;
+
+    /**
+     * Jackson 序列化时自动调用，将 extraBody 的内容展开到顶层
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getExtraBody() {
+        return extraBody;
+    }
 
 
     public static class ChatCompletionBuilder {

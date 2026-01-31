@@ -1,4 +1,4 @@
-package io.github.lnyocly.ai4j.platform.deepseek.chat.entity;
+package io.github.lnyocly.ai4j.platform.doubao.chat.entity;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.StreamOptions;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
-import io.github.lnyocly.ai4j.platform.zhipu.chat.entity.ZhipuChatCompletion;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -18,8 +17,7 @@ import java.util.Map;
 
 /**
  * @Author cly
- * @Description DeepSeek对话请求实体
- * @Date 2024/8/29 10:27
+ * @Description 豆包(火山引擎方舟)对话请求实体
  */
 @Data
 @Builder(toBuilder = true)
@@ -27,7 +25,7 @@ import java.util.Map;
 @AllArgsConstructor()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class DeepSeekChatCompletion {
+public class DoubaoChatCompletion {
 
 
     @NonNull
@@ -60,10 +58,6 @@ public class DeepSeekChatCompletion {
      * 一个 object，指定模型必须输出的格式。
      *
      * 设置为 { "type": "json_object" } 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
-     *
-     * 注意: 使用 JSON 模式时，你还必须通过系统或用户消息指示模型生成 JSON。
-     * 否则，模型可能会生成不断的空白字符，直到生成达到令牌限制，从而导致请求长时间运行并显得“卡住”。
-     * 此外，如果 finish_reason="length"，这表示生成超过了 max_tokens 或对话超过了最大上下文长度，消息内容可能会被部分截断。
      */
     @JsonProperty("response_format")
     private Object responseFormat;
@@ -145,10 +139,10 @@ public class DeepSeekChatCompletion {
         return extraBody;
     }
 
-    public static class DeepSeekChatCompletionBuilder {
+    public static class DoubaoChatCompletionBuilder {
         private List<String> functions;
 
-        public DeepSeekChatCompletion.DeepSeekChatCompletionBuilder functions(String... functions){
+        public DoubaoChatCompletion.DoubaoChatCompletionBuilder functions(String... functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
@@ -156,7 +150,7 @@ public class DeepSeekChatCompletion {
             return this;
         }
 
-        public DeepSeekChatCompletion.DeepSeekChatCompletionBuilder functions(List<String> functions){
+        public DoubaoChatCompletion.DoubaoChatCompletionBuilder functions(List<String> functions){
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }

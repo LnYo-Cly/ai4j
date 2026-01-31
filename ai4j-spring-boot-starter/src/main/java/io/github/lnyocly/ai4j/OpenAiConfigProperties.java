@@ -23,4 +23,5 @@ public class OpenAiConfigProperties {
     private String transcriptionUrl = "v1/audio/transcriptions";
     private String translationUrl = "v1/audio/translations";
     private String realtimeUrl = "v1/realtime";
+    private String imageGenerationUrl = "v1/images/generations";
 }

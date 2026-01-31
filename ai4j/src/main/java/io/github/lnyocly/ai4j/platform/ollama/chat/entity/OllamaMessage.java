@@ -22,6 +22,12 @@ public class OllamaMessage {
     private String content;
     private List<String> images;
 
+    /**
+     * Ollama Qwen 模型的思考内容字段
+     * 该字段会在 Converter 层映射到 OpenAI 格式的 reasoning_content
+     */
+    private String thinking;
+
     @JsonProperty("tool_calls")
     private List<ToolCall> toolCalls;
 }

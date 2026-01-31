@@ -67,6 +67,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         hunyuanChatCompletion.setTools(chatCompletion.getTools());
         hunyuanChatCompletion.setFunctions(chatCompletion.getFunctions());
         hunyuanChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        hunyuanChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return hunyuanChatCompletion;
     }
 

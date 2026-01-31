@@ -1,20 +1,16 @@
-package io.github.lnyocly.ai4j.platform.minimax.chat;
+package io.github.lnyocly.ai4j.platform.doubao.chat;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.lnyocly.ai4j.config.MinimaxConfig;
+import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
-import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletion;
-import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
-import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
+import io.github.lnyocly.ai4j.platform.doubao.chat.entity.DoubaoChatCompletion;
+import io.github.lnyocly.ai4j.platform.doubao.chat.entity.DoubaoChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
@@ -31,46 +27,50 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @Author : isxuwl
- * @Date: 2024/10/15 16:24
- * @Model Description:
- * @Description: Minimax
- */
-public class MinimaxChatService implements IChatService, ParameterConvert<MinimaxChatCompletion>, ResultConvert<MinimaxChatCompletionResponse> {
-    private final MinimaxConfig minimaxConfig;
+
+public class DoubaoChatService implements IChatService, ParameterConvert<DoubaoChatCompletion>, ResultConvert<DoubaoChatCompletionResponse> {
+    private final DoubaoConfig doubaoConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;
 
-    public MinimaxChatService(Configuration configuration) {
-        this.minimaxConfig = configuration.getMinimaxConfig();
+    public DoubaoChatService(Configuration configuration) {
+        this.doubaoConfig = configuration.getDoubaoConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
     }
 
-    public MinimaxChatService(Configuration configuration, MinimaxConfig minimaxConfig) {
-        this.minimaxConfig = minimaxConfig;
+    public DoubaoChatService(Configuration configuration, DoubaoConfig doubaoConfig) {
+        this.doubaoConfig = doubaoConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
     }
+
 
     @Override
-    public MinimaxChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
-        MinimaxChatCompletion minimaxChatCompletion = new MinimaxChatCompletion();
-        minimaxChatCompletion.setModel(chatCompletion.getModel());
-        minimaxChatCompletion.setMessages(chatCompletion.getMessages());
-        minimaxChatCompletion.setTools(chatCompletion.getTools());
-        minimaxChatCompletion.setFunctions(chatCompletion.getFunctions());
-        minimaxChatCompletion.setToolChoice(chatCompletion.getToolChoice());
-        minimaxChatCompletion.setTemperature(chatCompletion.getTemperature());
-        minimaxChatCompletion.setTopP(chatCompletion.getTopP());
-        minimaxChatCompletion.setStream(chatCompletion.getStream());
-        minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+    public DoubaoChatCompletion convertChatCompletionObject(ChatCompletion chatCompletion) {
+        DoubaoChatCompletion doubaoChatCompletion = new DoubaoChatCompletion();
+        doubaoChatCompletion.setModel(chatCompletion.getModel());
+        doubaoChatCompletion.setMessages(chatCompletion.getMessages());
+
+        doubaoChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
+        doubaoChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
         if(chatCompletion.getMaxCompletionTokens() != null){
-            minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
+            doubaoChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
         }
-        minimaxChatCompletion.setExtraBody(chatCompletion.getExtraBody());
-        return minimaxChatCompletion;
+        doubaoChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
+        doubaoChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
+        doubaoChatCompletion.setStop(chatCompletion.getStop());
+        doubaoChatCompletion.setStream(chatCompletion.getStream());
+        doubaoChatCompletion.setStreamOptions(chatCompletion.getStreamOptions());
+        doubaoChatCompletion.setTemperature(chatCompletion.getTemperature());
+        doubaoChatCompletion.setTopP(chatCompletion.getTopP());
+        doubaoChatCompletion.setTools(chatCompletion.getTools());
+        doubaoChatCompletion.setFunctions(chatCompletion.getFunctions());
+        doubaoChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        doubaoChatCompletion.setLogprobs(chatCompletion.getLogprobs());
+        doubaoChatCompletion.setTopLogprobs(chatCompletion.getTopLogprobs());
+        doubaoChatCompletion.setExtraBody(chatCompletion.getExtraBody());
+        return doubaoChatCompletion;
     }
 
     @Override
@@ -94,16 +94,28 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                 }
 
                 ObjectMapper mapper = new ObjectMapper();
-                MinimaxChatCompletionResponse chatCompletionResponse = null;
+                DoubaoChatCompletionResponse chatCompletionResponse = null;
                 String s = null;
                 try {
-                    chatCompletionResponse = mapper.readValue(data, MinimaxChatCompletionResponse.class);
+                    chatCompletionResponse = mapper.readValue(data, DoubaoChatCompletionResponse.class);
+
+                    // 处理豆包的 reasoning_content 字段，转换为 ChatMessage 的 reasoningContent
+                    if (chatCompletionResponse.getChoices() != null && !chatCompletionResponse.getChoices().isEmpty()) {
+                        ChatMessage delta = chatCompletionResponse.getChoices().get(0).getDelta();
+                        if (delta != null && delta.getReasoningContent() != null && !delta.getReasoningContent().isEmpty()) {
+                            // 豆包返回思考内容时，content为空字符串，需要特殊处理
+                            if (delta.getContent() == null || (delta.getContent() != null && delta.getContent().getText() != null && delta.getContent().getText().isEmpty())) {
+                                // 保留 reasoning_content，内容由 SseListener 处理
+                            }
+                        }
+                    }
+
                     ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
                     s = mapper.writeValueAsString(response);
-                } catch (JsonProcessingException e) {
-                    throw new CommonException("Minimax Chat 对象JSON序列化出错");
-                }
 
+                } catch (JsonProcessingException e) {
+                    throw new CommonException("读取豆包 Chat 对象JSON序列化出错");
+                }
 
                 eventSourceListener.onEvent(eventSource, id, type, s);
             }
@@ -115,30 +127,27 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         };
     }
 
-
     @Override
-    public ChatCompletionResponse convertChatCompletionResponse(MinimaxChatCompletionResponse minimaxChatCompletionResponse) {
+    public ChatCompletionResponse convertChatCompletionResponse(DoubaoChatCompletionResponse doubaoChatCompletionResponse) {
         ChatCompletionResponse chatCompletionResponse = new ChatCompletionResponse();
-        chatCompletionResponse.setId(minimaxChatCompletionResponse.getId());
-        chatCompletionResponse.setObject(minimaxChatCompletionResponse.getObject());
-        chatCompletionResponse.setCreated(minimaxChatCompletionResponse.getCreated());
-        chatCompletionResponse.setModel(minimaxChatCompletionResponse.getModel());
-        chatCompletionResponse.setChoices(minimaxChatCompletionResponse.getChoices());
-        chatCompletionResponse.setUsage(minimaxChatCompletionResponse.getUsage());
-
+        chatCompletionResponse.setId(doubaoChatCompletionResponse.getId());
+        chatCompletionResponse.setObject(doubaoChatCompletionResponse.getObject());
+        chatCompletionResponse.setCreated(doubaoChatCompletionResponse.getCreated());
+        chatCompletionResponse.setModel(doubaoChatCompletionResponse.getModel());
+        chatCompletionResponse.setSystemFingerprint(doubaoChatCompletionResponse.getSystemFingerprint());
+        chatCompletionResponse.setChoices(doubaoChatCompletionResponse.getChoices());
+        chatCompletionResponse.setUsage(doubaoChatCompletionResponse.getUsage());
         return chatCompletionResponse;
     }
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = minimaxConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = minimaxConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = doubaoConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = doubaoConfig.getApiKey();
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
-
         if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
             List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
             chatCompletion.setTools(tools);
             if(tools == null){
@@ -153,15 +162,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
 
         // 转换 请求参数
-        MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
-
-/*
-        // 如含有function，则添加tool
-        if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
-            minimaxChatCompletion.setTools(tools);
-        }
-*/
+        DoubaoChatCompletion doubaoChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         // 总token消耗
         Usage allUsage = new Usage();
@@ -174,22 +175,24 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
             // 构造请求
             ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(minimaxChatCompletion);
+            String requestString = mapper.writeValueAsString(doubaoChatCompletion);
+
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, minimaxConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, doubaoConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                MinimaxChatCompletionResponse minimaxChatCompletionResponse = mapper.readValue(execute.body().string(), MinimaxChatCompletionResponse.class);
 
-                Choice choice = minimaxChatCompletionResponse.getChoices().get(0);
+                DoubaoChatCompletionResponse doubaoChatCompletionResponse = mapper.readValue(execute.body().string(), DoubaoChatCompletionResponse.class);
+
+                Choice choice = doubaoChatCompletionResponse.getChoices().get(0);
                 finishReason = choice.getFinishReason();
 
-                Usage usage = minimaxChatCompletionResponse.getUsage();
+                Usage usage = doubaoChatCompletionResponse.getUsage();
                 allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
                 allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
                 allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
@@ -199,7 +202,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                     ChatMessage message = choice.getMessage();
                     List<ToolCall> toolCalls = message.getToolCalls();
 
-                    List<ChatMessage> messages = new ArrayList<>(minimaxChatCompletion.getMessages());
+                    List<ChatMessage> messages = new ArrayList<>(doubaoChatCompletion.getMessages());
                     messages.add(message);
 
                     // 添加 tool 消息
@@ -210,19 +213,18 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
                         messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
                     }
-                    minimaxChatCompletion.setMessages(messages);
+                    doubaoChatCompletion.setMessages(messages);
 
                 }else{// 其他情况直接返回
 
                     // 设置包含tool的总token数
-                    minimaxChatCompletionResponse.setUsage(allUsage);
-                    //deepSeekChatCompletionResponse.setObject("chat.completion");
+                    doubaoChatCompletionResponse.setUsage(allUsage);
 
                     // 恢复原始请求数据
-                    chatCompletion.setMessages(minimaxChatCompletion.getMessages());
-                    chatCompletion.setTools(minimaxChatCompletion.getTools());
+                    chatCompletion.setMessages(doubaoChatCompletion.getMessages());
+                    chatCompletion.setTools(doubaoChatCompletion.getTools());
 
-                    return this.convertChatCompletionResponse(minimaxChatCompletionResponse);
+                    return this.convertChatCompletionResponse(doubaoChatCompletionResponse);
 
                 }
 
@@ -241,13 +243,14 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = minimaxConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = minimaxConfig.getApiKey();
+        if(baseUrl == null || "".equals(baseUrl)) baseUrl = doubaoConfig.getApiHost();
+        if(apiKey == null || "".equals(apiKey)) apiKey = doubaoConfig.getApiKey();
         chatCompletion.setStream(true);
-
-
+        StreamOptions streamOptions = chatCompletion.getStreamOptions();
+        if(streamOptions == null){
+            chatCompletion.setStreamOptions(new StreamOptions(true));
+        }
         if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
             List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
             chatCompletion.setTools(tools);
             if(tools == null){
@@ -262,13 +265,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
 
         // 转换 请求参数
-        MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
-
-/*        // 如含有function，则添加tool
-        if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
-            minimaxChatCompletion.setTools(tools);
-        }*/
+        DoubaoChatCompletion doubaoChatCompletion = this.convertChatCompletionObject(chatCompletion);
 
         String finishReason = "first";
 
@@ -276,11 +273,11 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
             finishReason = null;
             ObjectMapper mapper = new ObjectMapper();
-            String jsonString = mapper.writeValueAsString(minimaxChatCompletion);
+            String jsonString = mapper.writeValueAsString(doubaoChatCompletion);
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, minimaxConfig.getChatCompletionUrl()))
+                    .url(ValidateUtil.concatUrl(baseUrl, doubaoConfig.getChatCompletionUrl()))
                     .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
                     .build();
 
@@ -296,7 +293,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-                List<ChatMessage> messages = new ArrayList<>(minimaxChatCompletion.getMessages());
+                List<ChatMessage> messages = new ArrayList<>(doubaoChatCompletion.getMessages());
                 messages.add(responseMessage);
 
                 // 封装tool结果消息
@@ -309,14 +306,14 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                 }
                 eventSourceListener.setToolCalls(new ArrayList<>());
                 eventSourceListener.setToolCall(null);
-                minimaxChatCompletion.setMessages(messages);
+                doubaoChatCompletion.setMessages(messages);
             }
 
         }
 
         // 补全原始请求
-        chatCompletion.setMessages(minimaxChatCompletion.getMessages());
-        chatCompletion.setTools(minimaxChatCompletion.getTools());
+        chatCompletion.setMessages(doubaoChatCompletion.getMessages());
+        chatCompletion.setTools(doubaoChatCompletion.getTools());
     }
 
     @Override
