@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
+import io.github.lnyocly.ai4j.platform.doubao.chat.DoubaoChatService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
 import io.github.lnyocly.ai4j.platform.minimax.chat.MinimaxChatService;
@@ -90,6 +91,10 @@ public class FreeAiService {
                 DashScopeConfig dashScopeConfig = new DashScopeConfig();
                 BeanUtil.copyProperties(aiPlatform, dashScopeConfig, CopyOptions.create().ignoreNullValue());
                 return new DashScopeChatService(configuration, dashScopeConfig);
+            case DOUBAO:
+                DoubaoConfig doubaoConfig = new DoubaoConfig();
+                BeanUtil.copyProperties(aiPlatform, doubaoConfig, CopyOptions.create().ignoreNullValue());
+                return new DoubaoChatService(configuration, doubaoConfig);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }

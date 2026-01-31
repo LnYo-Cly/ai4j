@@ -47,6 +47,7 @@ import java.security.NoSuchAlgorithmException;
         BaichuanConfigProperties.class,
         SearXNGConfigProperties.class,
         DashScopeConfigProperties.class,
+        DoubaoConfigProperties.class,
 })
 
 public class AiConfigAutoConfiguration {
@@ -72,10 +73,11 @@ public class AiConfigAutoConfiguration {
     private final MinimaxConfigProperties minimaxConfigProperties;
     private final BaichuanConfigProperties baichuanConfigProperties;
     private final DashScopeConfigProperties dashScopeConfigProperties;
+    private final DoubaoConfigProperties doubaoConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -90,6 +92,7 @@ public class AiConfigAutoConfiguration {
         this.minimaxConfigProperties = minimaxConfigProperties;
         this.baichuanConfigProperties = baichuanConfigProperties;
         this.dashScopeConfigProperties = dashScopeConfigProperties;
+        this.doubaoConfigProperties = doubaoConfigProperties;
     }
 
     @Bean
@@ -126,6 +129,8 @@ public class AiConfigAutoConfiguration {
         initOllamaConfig();
         initMinimaxConfig();
         initBaichuanConfig();
+        initDashScopeConfig();
+        initDoubaoConfig();
     }
 
 
@@ -190,6 +195,7 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setTranscriptionUrl(openAiConfigProperties.getTranscriptionUrl());
         openAiConfig.setTranslationUrl(openAiConfigProperties.getTranslationUrl());
         openAiConfig.setRealtimeUrl(openAiConfigProperties.getRealtimeUrl());
+        openAiConfig.setImageGenerationUrl(openAiConfigProperties.getImageGenerationUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }
@@ -325,5 +331,18 @@ public class AiConfigAutoConfiguration {
         dashScopeConfig.setApiKey(dashScopeConfigProperties.getApiKey());
 
         configuration.setDashScopeConfig(dashScopeConfig);
+    }
+
+    /**
+     * 初始化Doubao(火山引擎方舟) 配置信息
+     */
+    private void initDoubaoConfig() {
+        DoubaoConfig doubaoConfig = new DoubaoConfig();
+        doubaoConfig.setApiHost(doubaoConfigProperties.getApiHost());
+        doubaoConfig.setApiKey(doubaoConfigProperties.getApiKey());
+        doubaoConfig.setChatCompletionUrl(doubaoConfigProperties.getChatCompletionUrl());
+        doubaoConfig.setImageGenerationUrl(doubaoConfigProperties.getImageGenerationUrl());
+
+        configuration.setDoubaoConfig(doubaoConfig);
     }
 }

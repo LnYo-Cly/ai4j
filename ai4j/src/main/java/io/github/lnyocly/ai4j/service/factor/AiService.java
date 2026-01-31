@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.service.factor;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
+import io.github.lnyocly.ai4j.platform.doubao.chat.DoubaoChatService;
+import io.github.lnyocly.ai4j.platform.doubao.image.DoubaoImageService;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.HunyuanChatService;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.LingyiChatService;
 import io.github.lnyocly.ai4j.platform.minimax.chat.MinimaxChatService;
@@ -12,6 +14,7 @@ import io.github.lnyocly.ai4j.platform.ollama.embedding.OllamaEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.audio.OpenAiAudioService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
+import io.github.lnyocly.ai4j.platform.openai.image.OpenAiImageService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.service.*;
@@ -69,6 +72,8 @@ public class AiService {
                 return new BaichuanChatService(configuration);
             case DASHSCOPE:
                 return new DashScopeChatService(configuration);
+            case DOUBAO:
+                return new DoubaoChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
@@ -120,6 +125,21 @@ public class AiService {
 
     public PineconeService getPineconeService() {
         return new PineconeService(configuration);
+    }
+
+    public IImageService getImageService(PlatformType platform) {
+        return createImageService(platform);
+    }
+
+    private IImageService createImageService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new OpenAiImageService(configuration);
+            case DOUBAO:
+                return new DoubaoImageService(configuration);
+            default:
+                throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
     }
 
 }

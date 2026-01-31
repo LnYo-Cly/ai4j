@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.listener;
 
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,11 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -132,6 +135,9 @@ public abstract class SseListener extends EventSourceListener {
         if(this.eventSource == null) {
             this.eventSource = eventSource;
         }
+        if(data.contains("\\n")){
+            System.out.println();
+        }
 
         if ("[DONE]".equalsIgnoreCase(data)) {
             // 整个对话结束，结束前将SSE最后一条“DONE”消息发送出去
@@ -172,18 +178,21 @@ public abstract class SseListener extends EventSourceListener {
         ChatMessage responseMessage = choices.get(0).getDelta();
 
 
-        // 判断ChatMessage responseMessage的对象属性是否全是null，使用util，responseMessage本身不是空
+/*        // 判断ChatMessage responseMessage的对象属性是否全是null，使用util，responseMessage本身不是空
         try {
             // delta":{} && “usage”:{xxxxxx} && finish_reason:null
             // (isAllFieldsNull(responseMessage) || responseMessage.getContent()==null || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) &&
-            if ((isAllFieldsNull(responseMessage) || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
+            if ((isAllFieldsNull(responseMessage) ||
+                    (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText())
+                    && StringUtils.isBlank(responseMessage.getReasoningContent()) && ArrayUtil.isEmpty(responseMessage.getToolCalls())))
+                    && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
                 this.currStr = "";
                 this.send();
                 return;
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
-        }
+        }*/
 
         finishReason = choices.get(0).getFinishReason();
 
