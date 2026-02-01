@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * @Author cly
- * @Description 豆包(火山引擎方舟) 配置文件
+ * @Description 璞嗗寘(鐏北寮曟搸鏂硅垷) 閰嶇疆鏂囦欢
  */
 
 @Data
@@ -18,4 +18,6 @@ public class DoubaoConfig {
     private String apiKey = "";
     private String chatCompletionUrl = "chat/completions";
     private String imageGenerationUrl = "images/generations";
+    private String responsesUrl = "responses";
 }
+
