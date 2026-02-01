@@ -23,7 +23,7 @@ import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
 
 /**
  * @Author cly
- * @Description AI服务工厂，创建各种AI应用
+ * @Description AI鏈嶅姟宸ュ巶锛屽垱寤哄悇绉岮I搴旂敤
  * @Date 2024/8/7 18:10
  */
 public class AiService {
@@ -142,4 +142,22 @@ public class AiService {
         }
     }
 
+
+    public IResponsesService getResponsesService(PlatformType platform) {
+        return createResponsesService(platform);
+    }
+
+    private IResponsesService createResponsesService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new io.github.lnyocly.ai4j.platform.openai.response.OpenAiResponsesService(configuration);
+            case DOUBAO:
+                return new io.github.lnyocly.ai4j.platform.doubao.response.DoubaoResponsesService(configuration);
+            case DASHSCOPE:
+                return new io.github.lnyocly.ai4j.platform.dashscope.response.DashScopeResponsesService(configuration);
+            default:
+                throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
 }
+

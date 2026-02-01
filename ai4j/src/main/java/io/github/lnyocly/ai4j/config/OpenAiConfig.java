@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * @Author cly
- * @Description OpenAi平台配置文件信息
+ * @Description OpenAi骞冲彴閰嶇疆鏂囦欢淇℃伅
  * @Date 2024/8/8 0:18
  */
 @Data
@@ -22,5 +22,7 @@ public class OpenAiConfig {
     private String translationUrl = "v1/audio/translations";
     private String realtimeUrl = "v1/realtime";
     private String imageGenerationUrl = "v1/images/generations";
+    private String responsesUrl = "v1/responses";
 
 }
+

@@ -13,4 +13,6 @@ public class DoubaoConfigProperties {
     private String apiKey = "";
     private String chatCompletionUrl = "chat/completions";
     private String imageGenerationUrl = "images/generations";
+    private String responsesUrl = "responses";
 }
+

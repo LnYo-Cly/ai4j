@@ -52,16 +52,16 @@ import java.security.NoSuchAlgorithmException;
 
 public class AiConfigAutoConfiguration {
 
-    // okhttp配置
+    // okhttp閰嶇疆
     private final OkHttpConfigProperties okHttpConfigProperties;
 
-    // 向量数据库配置
+    // 鍚戦噺鏁版嵁搴撻厤缃?
     private final PineconeConfigProperties pineconeConfigProperties;
 
-    // searxng配置
+    // searxng閰嶇疆
     private final SearXNGConfigProperties searXNGConfigProperties;
 
-    // AI平台配置
+    // AI骞冲彴閰嶇疆
     private final AiConfigProperties aiConfigProperties;
     private final OpenAiConfigProperties openAiConfigProperties;
     private final ZhipuConfigProperties zhipuConfigProperties;
@@ -138,15 +138,15 @@ public class AiConfigAutoConfiguration {
     private void initOkHttp() {
         //configuration.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1",10809)));
 
-        // 日志配置
+        // 鏃ュ織閰嶇疆
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
         httpLoggingInterceptor.setLevel(okHttpConfigProperties.getLog());
 
-        // SPI加载dispatcher和connectionPool
+        // SPI鍔犺浇dispatcher鍜宑onnectionPool
         DispatcherProvider dispatcherProvider = ServiceLoaderUtil.load(DispatcherProvider.class);
         ConnectionPoolProvider connectionPoolProvider = ServiceLoaderUtil.load(ConnectionPoolProvider.class);
 
-        // 开启 Http 客户端
+        // 寮€鍚?Http 瀹㈡埛绔?
         OkHttpClient.Builder okHttpBuilder = new OkHttpClient
                 .Builder()
                 .addInterceptor(httpLoggingInterceptor)
@@ -158,13 +158,13 @@ public class AiConfigAutoConfiguration {
                 .dispatcher(dispatcherProvider.getDispatcher())
                 .connectionPool(connectionPoolProvider.getConnectionPool());
 
-        // 是否开启Proxy代理
+        // 鏄惁寮€鍚疨roxy浠ｇ悊
         if(StringUtils.isNotBlank(okHttpConfigProperties.getProxyUrl())){
             Proxy proxy = new Proxy(okHttpConfigProperties.getProxyType(), new InetSocketAddress(okHttpConfigProperties.getProxyUrl(), okHttpConfigProperties.getProxyPort()));
             okHttpBuilder.proxy(proxy);
         }
 
-        // 忽略SSL证书验证, 默认开启
+        // 蹇界暐SSL璇佷功楠岃瘉, 榛樿寮€鍚?
         if(okHttpConfigProperties.isIgnoreSsl()){
             try {
                 okHttpBuilder
@@ -183,7 +183,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Openai 配置信息
+     * 鍒濆鍖朞penai 閰嶇疆淇℃伅
      */
     private void initOpenAiConfig() {
         OpenAiConfig openAiConfig = new OpenAiConfig();
@@ -196,12 +196,13 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setTranslationUrl(openAiConfigProperties.getTranslationUrl());
         openAiConfig.setRealtimeUrl(openAiConfigProperties.getRealtimeUrl());
         openAiConfig.setImageGenerationUrl(openAiConfigProperties.getImageGenerationUrl());
+        openAiConfig.setResponsesUrl(openAiConfigProperties.getResponsesUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }
 
     /**
-     * 初始化Zhipu 配置信息
+     * 鍒濆鍖朲hipu 閰嶇疆淇℃伅
      */
     private void initZhipuConfig() {
         ZhipuConfig zhipuConfig = new ZhipuConfig();
@@ -214,7 +215,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化向量数据库 pinecone
+     * 鍒濆鍖栧悜閲忔暟鎹簱 pinecone
      */
     private void initPineconeConfig() {
         PineconeConfig pineconeConfig = new PineconeConfig();
@@ -228,7 +229,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化DeepSeek 配置信息
+     * 鍒濆鍖朌eepSeek 閰嶇疆淇℃伅
      */
     private void initDeepSeekConfig(){
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
@@ -240,7 +241,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Moonshot 配置信息
+     * 鍒濆鍖朚oonshot 閰嶇疆淇℃伅
      */
     private void initMoonshotConfig() {
         MoonshotConfig moonshotConfig = new MoonshotConfig();
@@ -252,7 +253,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Hunyuan 配置信息
+     * 鍒濆鍖朒unyuan 閰嶇疆淇℃伅
      */
     private void initHunyuanConfig() {
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
@@ -263,7 +264,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化lingyi 配置信息
+     * 鍒濆鍖杔ingyi 閰嶇疆淇℃伅
      */
     private void initLingyiConfig() {
         LingyiConfig lingyiConfig = new LingyiConfig();
@@ -275,7 +276,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Ollama 配置信息
+     * 鍒濆鍖朞llama 閰嶇疆淇℃伅
      */
     private void initOllamaConfig() {
         OllamaConfig ollamaConfig = new OllamaConfig();
@@ -288,7 +289,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Minimax 配置信息
+     * 鍒濆鍖朚inimax 閰嶇疆淇℃伅
      */
     private void initMinimaxConfig() {
         MinimaxConfig minimaxConfig = new MinimaxConfig();
@@ -300,7 +301,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Baichuan 配置信息
+     * 鍒濆鍖朆aichuan 閰嶇疆淇℃伅
      */
     private void initBaichuanConfig() {
         BaichuanConfig baichuanConfig = new BaichuanConfig();
@@ -312,7 +313,7 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化searxng 配置信息
+     * 鍒濆鍖杝earxng 閰嶇疆淇℃伅
      */
     private void initSearXNGConfig() {
         SearXNGConfig searXNGConfig = new SearXNGConfig();
@@ -324,17 +325,19 @@ public class AiConfigAutoConfiguration {
     }
 
     /**
-     * 初始化Dashscope 配置信息
+     * 鍒濆鍖朌ashscope 閰嶇疆淇℃伅
      */
     private void initDashScopeConfig() {
         DashScopeConfig dashScopeConfig = new DashScopeConfig();
         dashScopeConfig.setApiKey(dashScopeConfigProperties.getApiKey());
+        dashScopeConfig.setApiHost(dashScopeConfigProperties.getApiHost());
+        dashScopeConfig.setResponsesUrl(dashScopeConfigProperties.getResponsesUrl());
 
         configuration.setDashScopeConfig(dashScopeConfig);
     }
 
     /**
-     * 初始化Doubao(火山引擎方舟) 配置信息
+     * 鍒濆鍖朌oubao(鐏北寮曟搸鏂硅垷) 閰嶇疆淇℃伅
      */
     private void initDoubaoConfig() {
         DoubaoConfig doubaoConfig = new DoubaoConfig();
@@ -342,7 +345,9 @@ public class AiConfigAutoConfiguration {
         doubaoConfig.setApiKey(doubaoConfigProperties.getApiKey());
         doubaoConfig.setChatCompletionUrl(doubaoConfigProperties.getChatCompletionUrl());
         doubaoConfig.setImageGenerationUrl(doubaoConfigProperties.getImageGenerationUrl());
+        doubaoConfig.setResponsesUrl(doubaoConfigProperties.getResponsesUrl());
 
         configuration.setDoubaoConfig(doubaoConfig);
     }
 }
+

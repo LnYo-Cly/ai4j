@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @Author cly
- * @Description OpenAI配置文件
+ * @Description OpenAI閰嶇疆鏂囦欢
  * @Date 2024/8/9 23:17
  */
 
@@ -24,4 +24,6 @@ public class OpenAiConfigProperties {
     private String translationUrl = "v1/audio/translations";
     private String realtimeUrl = "v1/realtime";
     private String imageGenerationUrl = "v1/images/generations";
+    private String responsesUrl = "v1/responses";
 }
+
