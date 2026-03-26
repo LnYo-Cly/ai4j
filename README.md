@@ -37,6 +37,7 @@
 + 支持MCP服务，内置MCP网关，支持建立动态MCP数据源。
 + 支持Spring以及普通Java应用、支持Java 8以上的应用
 + 多平台、多服务
++ 内置 Coding Agent CLI / TUI，支持本地代码仓交互式会话、provider profile、workspace model override、session/process 管理
 + 统一的输入输出
 + 统一的错误处理
 + 支持SPI机制，可自定义Dispatcher和ConnectPool
@@ -51,6 +52,7 @@
 + Token统计`TikTokensUtil.java`
 
 ## 更新日志
++ [2026-03-26] 新增 Coding Agent CLI / TUI 文档与能力说明，覆盖交互式会话、provider profile、workspace model override、命令参考与配置样例
 + [2025-08-19] 修复传递有验证参数的sse-url时，key丢失问题
 + [2025-08-08] OpenAi: max_tokens字段现已废弃，推荐使用max_completion_tokens(GPT-5已经不支持max_tokens字段)
 + [2025-08-08] 支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
@@ -84,6 +86,117 @@
 + [Java搭建法律AI助手，快速实现RAG应用](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
 + [大模型不支持联网搜索？为Deepseek、Qwen、llama等本地模型添加网络搜索](https://blog.csdn.net/qq_35650513/article/details/144572824)
 + [java快速接入mcp以及结合mysql动态管理](https://blog.csdn.net/qq_35650513/article/details/150532784?fromshare=blogdetail&sharetype=blogdetail&sharerId=150532784&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
+
+## Coding Agent CLI / TUI
+
+AI4J 目前已经内置 `ai4j-cli`，可以直接作为本地 coding agent 使用，支持：
+
++ one-shot 与持续会话
++ CLI / TUI 两种交互模式
++ provider profile 持久化
++ workspace 级 model override
++ session 持久化、resume、fork、history、tree、events、replay
++ process 管理与日志查看
+
+### 打包
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package
+```
+
+产物：
+
+```text
+ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+```
+
+### one-shot 示例
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+  --provider openai `
+  --protocol responses `
+  --model gpt-5-mini `
+  --prompt "Read README and summarize the project structure"
+```
+
+### 交互式 CLI 示例
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+  --provider zhipu `
+  --protocol chat `
+  --model glm-4.7 `
+  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
+  --workspace .
+```
+
+### TUI 示例
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+  --provider zhipu `
+  --protocol chat `
+  --model glm-4.7 `
+  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
+  --workspace .
+```
+
+### 当前协议规则
+
+当前 CLI 对用户只暴露两种协议：
+
++ `chat`
++ `responses`
+
+如果省略 `--protocol`，会按 provider/baseUrl 在本地推导默认值：
+
++ `openai` + 官方 OpenAI host -> `responses`
++ `openai` + 自定义兼容 `baseUrl` -> `chat`
++ `doubao` / `dashscope` -> `responses`
++ 其他 provider -> `chat`
+
+注意：
+
++ 不再对用户暴露 `auto`
++ 旧配置中的 `auto` 会在读取时自动归一化为显式协议
+
+### provider profile 配置位置
+
++ 全局配置：`~/.ai4j/providers.json`
++ 工作区配置：`<workspace>/.ai4j/workspace.json`
+
+推荐工作流：
+
++ 全局保存长期可复用 profile
++ workspace 只引用当前 activeProfile
++ 临时切模型时使用 workspace 的 `modelOverride`
+
+### 常用命令
+
++ `/providers`
++ `/provider`
++ `/provider use <name>`
++ `/provider save <name>`
++ `/provider add <name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]`
++ `/provider edit <name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]`
++ `/provider default <name|clear>`
++ `/provider remove <name>`
++ `/model`
++ `/model <name>`
++ `/model reset`
++ `/stream [on|off]`
++ `/processes`
++ `/process status|follow|logs|write|stop ...`
++ `/resume <id>` / `/load <id>` / `/fork ...`
+
+### 文档入口
+
++ [Coding Agent CLI 快速开始](docs-site/docs/getting-started/coding-agent-cli-quickstart.md)
++ [Coding Agent CLI 与 TUI](docs-site/docs/agent/coding-agent-cli.md)
++ [多 Provider Profile 实战](docs-site/docs/agent/multi-provider-profiles.md)
++ [Coding Agent 命令参考手册](docs-site/docs/agent/coding-agent-command-reference.md)
++ [Provider 配置样例](docs-site/docs/agent/provider-config-examples.md)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)

@@ -21,6 +21,7 @@ An Java SDK for quickly integrating AI large model applications. It integrates m
 ## Features
 + Supports Spring and ordinary Java applications. Supports applications above Java 8.
 + Multi-platform and multi-service.
++ Built-in Coding Agent CLI / TUI with interactive repository sessions, provider profiles, workspace model override, and session/process management.
 + Unified input and output.
 + Unified error handling.
 + Supports streaming output. Supports streaming output of function call parameters.
@@ -36,6 +37,117 @@ An Java SDK for quickly integrating AI large model applications. It integrates m
 + [Quick access to Spring Boot, access to streaming and non-streaming and function calls.](http://t.csdnimg.cn/iuIAW)
 + [Quick access to open source large models such as qwen2.5 and llama3.1 on the Ollama platform in Java.](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
 + [Build a legal AI assistant in Java and quickly implement RAG applications.](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
+
+## Coding Agent CLI / TUI
+
+AI4J now includes `ai4j-cli`, which can be used directly as a local coding agent. Current capabilities include:
+
++ one-shot and persistent sessions
++ CLI and TUI interaction modes
++ provider profile persistence
++ workspace-level model override
++ session persistence, resume, fork, history, tree, events, replay
++ process management and buffered logs
+
+### Build
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package
+```
+
+Artifact:
+
+```text
+ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+```
+
+### one-shot example
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+  --provider openai `
+  --protocol responses `
+  --model gpt-5-mini `
+  --prompt "Read README and summarize the project structure"
+```
+
+### interactive CLI example
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+  --provider zhipu `
+  --protocol chat `
+  --model glm-4.7 `
+  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
+  --workspace .
+```
+
+### TUI example
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+  --provider zhipu `
+  --protocol chat `
+  --model glm-4.7 `
+  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
+  --workspace .
+```
+
+### Current protocol rules
+
+The CLI currently exposes only two protocol families:
+
++ `chat`
++ `responses`
+
+If `--protocol` is omitted, the CLI resolves a default locally from provider/baseUrl:
+
++ `openai` + official OpenAI host -> `responses`
++ `openai` + custom compatible `baseUrl` -> `chat`
++ `doubao` / `dashscope` -> `responses`
++ other providers -> `chat`
+
+Notes:
+
++ `auto` is no longer exposed to users
++ legacy `auto` values in existing config files are normalized to explicit protocols on load
+
+### provider profile locations
+
++ global config: `~/.ai4j/providers.json`
++ workspace config: `<workspace>/.ai4j/workspace.json`
+
+Recommended workflow:
+
++ keep reusable long-term runtime profiles in the global config
++ let each workspace reference one `activeProfile`
++ use workspace `modelOverride` for temporary model switching
+
+### Common commands
+
++ `/providers`
++ `/provider`
++ `/provider use <name>`
++ `/provider save <name>`
++ `/provider add <name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]`
++ `/provider edit <name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]`
++ `/provider default <name|clear>`
++ `/provider remove <name>`
++ `/model`
++ `/model <name>`
++ `/model reset`
++ `/stream [on|off]`
++ `/processes`
++ `/process status|follow|logs|write|stop ...`
++ `/resume <id>` / `/load <id>` / `/fork ...`
+
+### Documentation entry points
+
++ [Coding Agent CLI Quickstart](docs-site/docs/getting-started/coding-agent-cli-quickstart.md)
++ [Coding Agent CLI and TUI](docs-site/docs/agent/coding-agent-cli.md)
++ [Multi-Provider Profiles](docs-site/docs/agent/multi-provider-profiles.md)
++ [Coding Agent Command Reference](docs-site/docs/agent/coding-agent-command-reference.md)
++ [Provider Configuration Examples](docs-site/docs/agent/provider-config-examples.md)
 
 ## Other support
 + [[Low-cost transit platform] Low-cost ApiKey - Limited-time special offer 0.7:1 - Supports the latest o1 model.](https://api.trovebox.online/)
