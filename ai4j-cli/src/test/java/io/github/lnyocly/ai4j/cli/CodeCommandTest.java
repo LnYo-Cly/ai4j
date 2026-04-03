@@ -1,18 +1,48 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
+import io.github.lnyocly.ai4j.cli.command.CodeCommand;
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptionsParser;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderProfile;
+import io.github.lnyocly.ai4j.cli.provider.CliProvidersConfig;
+import io.github.lnyocly.ai4j.cli.runtime.CliToolApprovalDecorator;
+import io.github.lnyocly.ai4j.cli.runtime.CodingCliSessionRunner;
+import io.github.lnyocly.ai4j.cli.runtime.CodingCliTuiSupport;
+import io.github.lnyocly.ai4j.cli.shell.JlineShellContext;
+import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.CodingSessionState;
+import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
+import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory.PreparedCodingAgent;
+import io.github.lnyocly.ai4j.cli.factory.CodingCliTuiFactory;
+import io.github.lnyocly.ai4j.cli.mcp.CliMcpConfig;
+import io.github.lnyocly.ai4j.cli.mcp.CliMcpConfigManager;
+import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
+import io.github.lnyocly.ai4j.cli.mcp.CliMcpServerDefinition;
+import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
+import io.github.lnyocly.ai4j.cli.session.DefaultCodingSessionManager;
+import io.github.lnyocly.ai4j.cli.session.InMemoryCodingSessionStore;
+import io.github.lnyocly.ai4j.cli.session.InMemorySessionEventStore;
+import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
 import io.github.lnyocly.ai4j.coding.process.BashProcessStatus;
 import io.github.lnyocly.ai4j.coding.process.StoredProcessSnapshot;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
+import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.tui.StreamsTerminalIO;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
 import io.github.lnyocly.ai4j.tui.TuiInteractionState;
@@ -26,12 +56,22 @@ import io.github.lnyocly.ai4j.tui.TuiRuntime;
 import io.github.lnyocly.ai4j.tui.TuiScreenModel;
 import io.github.lnyocly.ai4j.tui.TuiSessionView;
 import io.github.lnyocly.ai4j.tui.TuiTheme;
+import org.jline.reader.LineReader;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.junit.Assert;
 import org.junit.Test;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.sse.EventSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -268,6 +309,95 @@ public class CodeCommandTest {
         Assert.assertTrue(output.contains("review"));
         Assert.assertTrue(output.contains("Echo: Review the workspace at " + workspace.toString()));
         Assert.assertTrue(output.contains("Focus: auth flow"));
+    }
+
+    @Test
+    public void test_skills_command_lists_discovered_workspace_skills() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-skills");
+        Path skillsDir = Files.createDirectories(workspace.resolve(".ai4j").resolve("skills").resolve("repo-review"));
+        Files.write(skillsDir.resolve("SKILL.md"), Arrays.asList(
+                "---",
+                "name: repo-review",
+                "description: Review repository changes safely.",
+                "---",
+                "",
+                "# Repo Review",
+                "Review repository changes safely."
+        ), StandardCharsets.UTF_8);
+
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                ("/skills\n"
+                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
+        );
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString()),
+                new StreamsTerminalIO(input, out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("skills:"));
+        Assert.assertTrue(output.contains("count=1"));
+        Assert.assertTrue(output.contains("repo-review"));
+        Assert.assertTrue(output.contains("source=workspace"));
+        Assert.assertTrue(output.contains("Review repository changes safely."));
+    }
+
+    @Test
+    public void test_skills_command_with_name_prints_skill_detail_and_content() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-skill-detail");
+        Path skillsDir = Files.createDirectories(workspace.resolve(".ai4j").resolve("skills").resolve("repo-review"));
+        Files.write(skillsDir.resolve("SKILL.md"), Arrays.asList(
+                "---",
+                "name: repo-review",
+                "description: Review repository changes safely.",
+                "---",
+                "",
+                "# Repo Review",
+                "Review repository changes safely.",
+                "",
+                "Use rg before grep."
+        ), StandardCharsets.UTF_8);
+
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                ("/skills repo-review\n"
+                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
+        );
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString()),
+                new StreamsTerminalIO(input, out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("skill:"));
+        Assert.assertTrue(output.contains("name=repo-review"));
+        Assert.assertTrue(output.contains("path="));
+        Assert.assertTrue(output.contains("description=Review repository changes safely."));
+        Assert.assertTrue(output.contains("roots="));
+        Assert.assertFalse(output.contains("content:"));
+        Assert.assertFalse(output.contains("# Repo Review"));
+        Assert.assertFalse(output.contains("Use rg before grep."));
     }
 
     @Test
@@ -771,7 +901,8 @@ public class CodeCommandTest {
         String output = stripAnsi(out.toString(StandardCharsets.UTF_8.name()));
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("status=off"));
-        Assert.assertTrue(output.contains("render as completed blocks"));
+        Assert.assertTrue(output.contains("request=stream=false"));
+        Assert.assertTrue(output.contains("renders as completed blocks"));
         Assert.assertFalse(output.contains("[java]"));
         Assert.assertFalse(output.contains("[code]"));
         Assert.assertFalse(output.contains("\u2063"));
@@ -780,8 +911,8 @@ public class CodeCommandTest {
     }
 
     @Test
-    public void test_stream_command_is_off_by_default_for_new_session() throws Exception {
-        Path workspace = Files.createTempDirectory("ai4j-cli-stream-default-off");
+    public void test_stream_command_is_on_by_default_for_new_session() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-stream-default-on");
         ByteArrayInputStream input = new ByteArrayInputStream(
                 ("/stream\n"
                         + "/exit\n").getBytes(StandardCharsets.UTF_8)
@@ -803,8 +934,87 @@ public class CodeCommandTest {
 
         String output = stripAnsi(out.toString(StandardCharsets.UTF_8.name()));
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("status=off"));
-        Assert.assertTrue(output.contains("render as completed blocks"));
+        Assert.assertTrue(output.contains("status=on"));
+        Assert.assertTrue(output.contains("request=stream=true"));
+        Assert.assertTrue(output.contains("stream incrementally"));
+    }
+
+    @Test
+    public void test_stream_command_turns_request_streaming_on_for_current_session() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-stream-command-on");
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                ("/stream on\n"
+                        + "record request mode\n"
+                        + "/stream\n"
+                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
+        );
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString()),
+                new StreamsTerminalIO(input, out, err)
+        );
+
+        String output = stripAnsi(out.toString(StandardCharsets.UTF_8.name()));
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("status=on"));
+        Assert.assertTrue(output.contains("request=stream=true"));
+        Assert.assertTrue(output.contains("mode=createStream"));
+    }
+
+    @Test
+    public void test_cli_stream_option_false_uses_non_streaming_model_request() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-stream-off-request");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString(), "--stream", "false", "--prompt", "record request mode"),
+                new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("mode=create"));
+        Assert.assertFalse(output.contains("mode=createStream"));
+    }
+
+    @Test
+    public void test_cli_stream_option_uses_streaming_model_request() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-stream-option");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString(), "--stream", "true", "--prompt", "record request mode"),
+                new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("mode=createStream"));
     }
 
     @Test
@@ -972,6 +1182,108 @@ public class CodeCommandTest {
             Assert.assertEquals("glm-4.7-plus", savedProfile.getModel());
             Assert.assertEquals("https://open.bigmodel.cn/api/coding/paas/v4", savedProfile.getBaseUrl());
             Assert.assertEquals("added-key", savedProfile.getApiKey());
+        } finally {
+            restoreUserHome(previousUserHome);
+        }
+    }
+
+    @Test
+    public void test_mcp_commands_persist_configs_and_render_statuses() throws Exception {
+        Path home = Files.createTempDirectory("ai4j-cli-mcp-home");
+        Path workspace = Files.createTempDirectory("ai4j-cli-mcp-workspace");
+        String previousUserHome = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", home.toString());
+            CliMcpConfigManager manager = new CliMcpConfigManager(workspace);
+            CliMcpConfig globalConfig = CliMcpConfig.builder().build();
+            globalConfig.getMcpServers().put("fetch", CliMcpServerDefinition.builder()
+                    .type("sse")
+                    .url("https://mcp.api-inference.modelscope.net/1e1a663049b340/sse")
+                    .build());
+            manager.saveGlobalConfig(globalConfig);
+
+            ByteArrayInputStream input = new ByteArrayInputStream(
+                    ("/mcp\n"
+                            + "/mcp enable fetch\n"
+                            + "/mcp pause fetch\n"
+                            + "/mcp resume fetch\n"
+                            + "/mcp add --transport http bing-cn-mcp-server https://mcp.api-inference.modelscope.net/0904773a8c2045/mcp\n"
+                            + "/mcp enable bing-cn-mcp-server\n"
+                            + "/mcp remove bing-cn-mcp-server\n"
+                            + "/exit\n").getBytes(StandardCharsets.UTF_8)
+            );
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+            CodeCommand command = new CodeCommand(
+                    new FakeCodingCliAgentFactory(),
+                    Collections.<String, String>emptyMap(),
+                    new Properties(),
+                    workspace
+            );
+
+            int exitCode = command.run(
+                    Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString()),
+                    new StreamsTerminalIO(input, out, err)
+            );
+
+            String output = stripAnsi(out.toString(StandardCharsets.UTF_8.name()));
+            Assert.assertEquals(0, exitCode);
+            Assert.assertTrue(output, output.contains("fetch | type=sse | state=disabled | workspace=disabled | paused=no | tools=0"));
+            Assert.assertTrue(output, output.contains("fetch | type=sse | state=configured | workspace=enabled | paused=no | tools=0"));
+            Assert.assertTrue(output, output.contains("fetch | type=sse | state=paused | workspace=enabled | paused=yes | tools=0"));
+            Assert.assertTrue(output, output.contains("mcp added: bing-cn-mcp-server"));
+            Assert.assertTrue(output, output.contains("mcp removed: bing-cn-mcp-server"));
+
+            CliWorkspaceConfig workspaceConfig = manager.loadWorkspaceConfig();
+            Assert.assertEquals(Collections.singletonList("fetch"), workspaceConfig.getEnabledMcpServers());
+
+            CliMcpConfig savedGlobal = manager.loadGlobalConfig();
+            Assert.assertTrue(savedGlobal.getMcpServers().containsKey("fetch"));
+            Assert.assertFalse(savedGlobal.getMcpServers().containsKey("bing-cn-mcp-server"));
+        } finally {
+            restoreUserHome(previousUserHome);
+        }
+    }
+
+    @Test
+    public void test_startup_warns_for_unavailable_mcp_servers_without_aborting_session() throws Exception {
+        Path home = Files.createTempDirectory("ai4j-cli-mcp-warning-home");
+        Path workspace = Files.createTempDirectory("ai4j-cli-mcp-warning-workspace");
+        String previousUserHome = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", home.toString());
+            CliMcpConfigManager manager = new CliMcpConfigManager(workspace);
+            CliMcpConfig globalConfig = CliMcpConfig.builder().build();
+            globalConfig.getMcpServers().put("broken", CliMcpServerDefinition.builder()
+                    .type("sse")
+                    .build());
+            manager.saveGlobalConfig(globalConfig);
+
+            CliWorkspaceConfig workspaceConfig = new CliWorkspaceConfig();
+            workspaceConfig.setEnabledMcpServers(Arrays.asList("broken", "missing"));
+            manager.saveWorkspaceConfig(workspaceConfig);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+            CodeCommand command = new CodeCommand(
+                    new ConfiguredRuntimeCodingCliAgentFactory(),
+                    Collections.<String, String>emptyMap(),
+                    new Properties(),
+                    workspace
+            );
+
+            int exitCode = command.run(
+                    Arrays.asList("--model", "fake-model", "--workspace", workspace.toString(), "--prompt", "say hello"),
+                    new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
+            );
+
+            String output = stripAnsi(out.toString(StandardCharsets.UTF_8.name()));
+            Assert.assertEquals(0, exitCode);
+            Assert.assertTrue(output.contains("Warning: MCP unavailable: broken (sse transport requires url)"));
+            Assert.assertTrue(output.contains("Warning: MCP unavailable: missing (workspace references undefined MCP server)"));
+            Assert.assertTrue(output.contains("Echo: say hello"));
         } finally {
             restoreUserHome(previousUserHome);
         }
@@ -1388,6 +1700,288 @@ public class CodeCommandTest {
         Assert.assertTrue(output.contains("RAW-TUI"));
     }
 
+    @Test
+    public void test_raw_tui_escape_interrupts_active_turn() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-raw-tui-interrupt");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        final Deque<TuiKeyStroke> keys = new ArrayDeque<TuiKeyStroke>(Arrays.asList(
+                TuiKeyStroke.character("s"),
+                TuiKeyStroke.character("l"),
+                TuiKeyStroke.character("o"),
+                TuiKeyStroke.character("w"),
+                TuiKeyStroke.character(" "),
+                TuiKeyStroke.character("h"),
+                TuiKeyStroke.character("e"),
+                TuiKeyStroke.character("l"),
+                TuiKeyStroke.character("l"),
+                TuiKeyStroke.character("o"),
+                TuiKeyStroke.of(TuiKeyType.ENTER),
+                TuiKeyStroke.of(TuiKeyType.ESCAPE)
+        ));
+        RecordingInteractiveTerminal terminal = new RecordingInteractiveTerminal(out, err) {
+            @Override
+            public boolean isInputClosed() {
+                return keys.isEmpty();
+            }
+        };
+
+        CodingCliTuiFactory tuiFactory = new CodingCliTuiFactory() {
+            @Override
+            public CodingCliTuiSupport create(CodeCommandOptions options,
+                                              TerminalIO terminal,
+                                              TuiConfigManager configManager) {
+                TuiConfig config = new TuiConfig();
+                config.setUseAlternateScreen(false);
+                TuiTheme theme = new TuiTheme();
+                TuiRenderer renderer = new TuiRenderer() {
+                    @Override
+                    public int getMaxEvents() {
+                        return 10;
+                    }
+
+                    @Override
+                    public String getThemeName() {
+                        return "raw-interrupt";
+                    }
+
+                    @Override
+                    public void updateTheme(TuiConfig config, TuiTheme theme) {
+                    }
+
+                    @Override
+                    public String render(TuiScreenModel screenModel) {
+                        return "RAW phase="
+                                + (screenModel == null || screenModel.getAssistantViewModel() == null
+                                ? ""
+                                : screenModel.getAssistantViewModel().getPhase())
+                                + " detail="
+                                + (screenModel == null || screenModel.getAssistantViewModel() == null
+                                ? ""
+                                : String.valueOf(screenModel.getAssistantViewModel().getPhaseDetail()));
+                    }
+                };
+                TuiRuntime runtime = new TuiRuntime() {
+                    @Override
+                    public boolean supportsRawInput() {
+                        return true;
+                    }
+
+                    @Override
+                    public void enter() {
+                    }
+
+                    @Override
+                    public void exit() {
+                    }
+
+                    @Override
+                    public TuiKeyStroke readKeyStroke(long timeoutMs) {
+                        return keys.isEmpty() ? null : keys.removeFirst();
+                    }
+
+                    @Override
+                    public void render(TuiScreenModel screenModel) {
+                        terminal.println(renderer.render(screenModel));
+                    }
+                };
+                return new CodingCliTuiSupport(config, theme, renderer, runtime);
+            }
+        };
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                tuiFactory,
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString()),
+                terminal
+        );
+
+        String output = out.toString(StandardCharsets.UTF_8.name());
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("Conversation interrupted by user."));
+        Assert.assertFalse(output.contains("Slow hello done."));
+    }
+
+    @Test
+    public void test_main_buffer_jline_user_interrupt_suppresses_final_output() throws Exception {
+        String previous = System.getProperty("ai4j.tui.main-buffer");
+        System.setProperty("ai4j.tui.main-buffer", "true");
+
+        Path workspace = Files.createTempDirectory("ai4j-cli-main-buffer-interrupt");
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Terminal terminal = TerminalBuilder.builder()
+                .system(false)
+                .dumb(true)
+                .streams(input, output)
+                .encoding(StandardCharsets.UTF_8)
+                .build();
+        ScriptedLineReaderHandler handler = new ScriptedLineReaderHandler(Arrays.asList("slow hello", "/exit"));
+        LineReader lineReader = (LineReader) Proxy.newProxyInstance(
+                LineReader.class.getClassLoader(),
+                new Class<?>[]{LineReader.class},
+                handler
+        );
+        JlineShellContext shellContext = newJlineShellContext(terminal, lineReader);
+        JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(shellContext, null);
+
+        Properties properties = new Properties();
+        CodeCommandOptions options = new CodeCommandOptionsParser().parse(
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString()),
+                Collections.<String, String>emptyMap(),
+                properties,
+                workspace
+        );
+        CodingSessionManager sessionManager = new DefaultCodingSessionManager(
+                new InMemoryCodingSessionStore(workspace.resolve(".ai4j").resolve("sessions")),
+                new InMemorySessionEventStore()
+        );
+        TuiInteractionState interactionState = new TuiInteractionState();
+        FakeCodingCliAgentFactory agentFactory = new FakeCodingCliAgentFactory();
+        CodingCliAgentFactory.PreparedCodingAgent prepared = agentFactory.prepare(options, terminalIO, interactionState);
+        CodingCliSessionRunner runner = new CodingCliSessionRunner(
+                prepared.getAgent(),
+                prepared.getProtocol(),
+                options,
+                terminalIO,
+                sessionManager,
+                interactionState,
+                new RecordingTuiFactory(),
+                null,
+                agentFactory,
+                Collections.<String, String>emptyMap(),
+                properties
+        );
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<Integer> future = executor.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    return runner.run();
+                }
+            });
+
+            String turnId = null;
+            for (int attempt = 0; attempt < 40; attempt++) {
+                Thread.sleep(50L);
+                turnId = (String) readPrivateField(runner, "activeMainBufferTurnId");
+                if (turnId != null) {
+                    break;
+                }
+            }
+            Assert.assertNotNull(turnId);
+            invokePrivateMethod(runner, "interruptActiveMainBufferTurn", new Class<?>[]{String.class}, turnId);
+
+            int exitCode = future.get(5, TimeUnit.SECONDS);
+            String rendered = output.toString(StandardCharsets.UTF_8.name());
+            Assert.assertEquals(0, exitCode);
+            Assert.assertTrue(rendered.contains("Conversation interrupted by user."));
+            Assert.assertFalse(rendered.contains("Slow hello done."));
+            Assert.assertEquals(2, handler.getReadLineCalls());
+        } finally {
+            executor.shutdownNow();
+            terminalIO.close();
+            shellContext.close();
+            restoreProperty("ai4j.tui.main-buffer", previous);
+        }
+    }
+
+    @Test
+    public void test_main_buffer_jline_user_interrupt_cancels_active_chat_stream() throws Exception {
+        String previous = System.getProperty("ai4j.tui.main-buffer");
+        System.setProperty("ai4j.tui.main-buffer", "true");
+
+        Path workspace = Files.createTempDirectory("ai4j-cli-main-buffer-chat-cancel");
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Terminal terminal = TerminalBuilder.builder()
+                .system(false)
+                .dumb(true)
+                .streams(input, output)
+                .encoding(StandardCharsets.UTF_8)
+                .build();
+        ScriptedLineReaderHandler handler = new ScriptedLineReaderHandler(Arrays.asList("slow chat stream", "/exit"));
+        LineReader lineReader = (LineReader) Proxy.newProxyInstance(
+                LineReader.class.getClassLoader(),
+                new Class<?>[]{LineReader.class},
+                handler
+        );
+        JlineShellContext shellContext = newJlineShellContext(terminal, lineReader);
+        JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(shellContext, null);
+
+        Properties properties = new Properties();
+        CodeCommandOptions options = new CodeCommandOptionsParser().parse(
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString()),
+                Collections.<String, String>emptyMap(),
+                properties,
+                workspace
+        );
+        CodingSessionManager sessionManager = new DefaultCodingSessionManager(
+                new InMemoryCodingSessionStore(workspace.resolve(".ai4j").resolve("sessions")),
+                new InMemorySessionEventStore()
+        );
+        TuiInteractionState interactionState = new TuiInteractionState();
+        CountDownLatch cancelled = new CountDownLatch(1);
+        CodingCliAgentFactory agentFactory = new CustomModelCodingCliAgentFactory(
+                new ChatModelClient(new BlockingChatService(cancelled))
+        );
+        CodingCliAgentFactory.PreparedCodingAgent prepared = agentFactory.prepare(options, terminalIO, interactionState);
+        CodingCliSessionRunner runner = new CodingCliSessionRunner(
+                prepared.getAgent(),
+                prepared.getProtocol(),
+                options,
+                terminalIO,
+                sessionManager,
+                interactionState,
+                new RecordingTuiFactory(),
+                null,
+                agentFactory,
+                Collections.<String, String>emptyMap(),
+                properties
+        );
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<Integer> future = executor.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    return runner.run();
+                }
+            });
+
+            String turnId = null;
+            for (int attempt = 0; attempt < 40; attempt++) {
+                Thread.sleep(50L);
+                turnId = (String) readPrivateField(runner, "activeMainBufferTurnId");
+                if (turnId != null) {
+                    break;
+                }
+            }
+            Assert.assertNotNull(turnId);
+            invokePrivateMethod(runner, "interruptActiveMainBufferTurn", new Class<?>[]{String.class}, turnId);
+
+            int exitCode = future.get(5, TimeUnit.SECONDS);
+            String rendered = output.toString(StandardCharsets.UTF_8.name());
+            Assert.assertEquals(0, exitCode);
+            Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
+            Assert.assertTrue(rendered.contains("Conversation interrupted by user."));
+            Assert.assertFalse(rendered.contains("slow chat stream completed"));
+            Assert.assertEquals(2, handler.getReadLineCalls());
+        } finally {
+            executor.shutdownNow();
+            terminalIO.close();
+            shellContext.close();
+            restoreProperty("ai4j.tui.main-buffer", previous);
+        }
+    }
+
     private void seedStoredSession(Path workspace,
                                    String sessionId,
                                    String processId,
@@ -1452,12 +2046,137 @@ public class CodeCommandTest {
                             .modelClient(new FakeModelClient())
                             .model(options.getModel())
                             .workspaceContext(WorkspaceContext.builder().rootPath(options.getWorkspace()).build())
+                            .agentOptions(AgentOptions.builder().stream(options.isStream()).build())
                             .codingOptions(CodingAgentOptions.builder()
                                     .toolExecutorDecorator(new CliToolApprovalDecorator(options.getApprovalMode(), terminal, interactionState))
                                     .build())
                             .build(),
                     options.getProtocol() == null ? CliProtocol.CHAT : options.getProtocol()
             );
+        }
+    }
+
+    private static final class CustomModelCodingCliAgentFactory implements CodingCliAgentFactory {
+
+        private final AgentModelClient modelClient;
+
+        private CustomModelCodingCliAgentFactory(AgentModelClient modelClient) {
+            this.modelClient = modelClient;
+        }
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options) {
+            return prepare(options, null);
+        }
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options, TerminalIO terminal) {
+            return prepare(options, terminal, null);
+        }
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options,
+                                           TerminalIO terminal,
+                                           TuiInteractionState interactionState) {
+            return new PreparedCodingAgent(
+                    CodingAgents.builder()
+                            .modelClient(modelClient)
+                            .model(options.getModel())
+                            .workspaceContext(WorkspaceContext.builder().rootPath(options.getWorkspace()).build())
+                            .agentOptions(AgentOptions.builder().stream(options.isStream()).build())
+                            .codingOptions(CodingAgentOptions.builder()
+                                    .toolExecutorDecorator(new CliToolApprovalDecorator(options.getApprovalMode(), terminal, interactionState))
+                                    .build())
+                            .build(),
+                    options.getProtocol() == null ? CliProtocol.CHAT : options.getProtocol()
+            );
+        }
+    }
+
+    private static final class ConfiguredRuntimeCodingCliAgentFactory implements CodingCliAgentFactory {
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options) throws Exception {
+            return prepare(options, null);
+        }
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options, TerminalIO terminal) throws Exception {
+            return prepare(options, terminal, null);
+        }
+
+        @Override
+        public PreparedCodingAgent prepare(CodeCommandOptions options,
+                                           TerminalIO terminal,
+                                           TuiInteractionState interactionState) throws Exception {
+            CliMcpRuntimeManager runtimeManager = CliMcpRuntimeManager.initialize(
+                    java.nio.file.Paths.get(options.getWorkspace()),
+                    Collections.<String>emptySet()
+            );
+            return new PreparedCodingAgent(
+                    CodingAgents.builder()
+                            .modelClient(new FakeModelClient())
+                            .model(options.getModel())
+                            .workspaceContext(WorkspaceContext.builder().rootPath(options.getWorkspace()).build())
+                            .agentOptions(AgentOptions.builder().stream(options.isStream()).build())
+                            .codingOptions(CodingAgentOptions.builder()
+                                    .toolExecutorDecorator(new CliToolApprovalDecorator(options.getApprovalMode(), terminal, interactionState))
+                                    .build())
+                            .build(),
+                    options.getProtocol() == null ? CliProtocol.CHAT : options.getProtocol(),
+                    runtimeManager
+            );
+        }
+    }
+
+    private static final class BlockingChatService implements IChatService {
+
+        private final CountDownLatch cancelled;
+
+        private BlockingChatService(CountDownLatch cancelled) {
+            this.cancelled = cancelled;
+        }
+
+        @Override
+        public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public ChatCompletionResponse chatCompletion(ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public void chatCompletionStream(String baseUrl,
+                                         String apiKey,
+                                         ChatCompletion chatCompletion,
+                                         SseListener eventSourceListener) throws Exception {
+            eventSourceListener.onOpen(new EventSource() {
+                @Override
+                public Request request() {
+                    return new Request.Builder().url("http://localhost/test").build();
+                }
+
+                @Override
+                public void cancel() {
+                    cancelled.countDown();
+                }
+            }, new okhttp3.Response.Builder()
+                    .request(new Request.Builder().url("http://localhost/test").build())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .build());
+
+            if (!eventSourceListener.getCountDownLatch().await(5, TimeUnit.SECONDS)) {
+                throw new AssertionError("stream was not released");
+            }
+        }
+
+        @Override
+        public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
+            chatCompletionStream(null, null, chatCompletion, eventSourceListener);
         }
     }
 
@@ -1470,6 +2189,7 @@ public class CodeCommandTest {
                                           TerminalIO terminal,
                                           TuiConfigManager configManager) {
             TuiConfig config = new TuiConfig();
+            config.setUseAlternateScreen(false);
             TuiTheme theme = new TuiTheme();
             TuiRenderer renderer = new TuiRenderer() {
                 @Override
@@ -1693,6 +2413,105 @@ public class CodeCommandTest {
         }
     }
 
+    private JlineShellContext newJlineShellContext(Terminal terminal, LineReader lineReader) throws Exception {
+        Constructor<JlineShellContext> constructor = JlineShellContext.class
+                .getDeclaredConstructor(Terminal.class, LineReader.class, org.jline.utils.Status.class);
+        constructor.setAccessible(true);
+        return constructor.newInstance(terminal, lineReader, null);
+    }
+
+    private void restoreProperty(String key, String value) {
+        if (value == null) {
+            System.clearProperty(key);
+        } else {
+            System.setProperty(key, value);
+        }
+    }
+
+    private Object readPrivateField(Object target, String fieldName) throws Exception {
+        java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return field.get(target);
+    }
+
+    private Object invokePrivateMethod(Object target, String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {
+        Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(target, args);
+    }
+
+    private static final class ScriptedLineReaderHandler implements InvocationHandler {
+
+        private final Deque<String> scriptedLines;
+        private int readLineCalls;
+
+        private ScriptedLineReaderHandler(List<String> scriptedLines) {
+            this.scriptedLines = new ArrayDeque<String>(scriptedLines == null
+                    ? Collections.<String>emptyList()
+                    : scriptedLines);
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+            String name = method.getName();
+            if ("readLine".equals(name)) {
+                readLineCalls++;
+                return scriptedLines.isEmpty() ? null : scriptedLines.removeFirst();
+            }
+            if ("isReading".equals(name)) {
+                return Boolean.FALSE;
+            }
+            if ("callWidget".equals(name)) {
+                return Boolean.TRUE;
+            }
+            if ("hashCode".equals(name)) {
+                return System.identityHashCode(proxy);
+            }
+            if ("equals".equals(name)) {
+                return proxy == (args == null || args.length == 0 ? null : args[0]);
+            }
+            if ("toString".equals(name)) {
+                return "ScriptedLineReader";
+            }
+            return defaultValue(method.getReturnType());
+        }
+
+        private int getReadLineCalls() {
+            return readLineCalls;
+        }
+
+        private Object defaultValue(Class<?> returnType) {
+            if (returnType == null || Void.TYPE.equals(returnType)) {
+                return null;
+            }
+            if (Boolean.TYPE.equals(returnType)) {
+                return Boolean.FALSE;
+            }
+            if (Character.TYPE.equals(returnType)) {
+                return Character.valueOf('\0');
+            }
+            if (Byte.TYPE.equals(returnType)) {
+                return Byte.valueOf((byte) 0);
+            }
+            if (Short.TYPE.equals(returnType)) {
+                return Short.valueOf((short) 0);
+            }
+            if (Integer.TYPE.equals(returnType)) {
+                return Integer.valueOf(0);
+            }
+            if (Long.TYPE.equals(returnType)) {
+                return Long.valueOf(0L);
+            }
+            if (Float.TYPE.equals(returnType)) {
+                return Float.valueOf(0F);
+            }
+            if (Double.TYPE.equals(returnType)) {
+                return Double.valueOf(0D);
+            }
+            return null;
+        }
+    }
+
     private static final class FakeModelClient implements AgentModelClient {
 
         @Override
@@ -1740,6 +2559,32 @@ public class CodeCommandTest {
             }
             if (userInput != null && userInput.toLowerCase().contains("slow hello")) {
                 return AgentModelResult.builder().outputText("Slow hello done.").build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("chunked hello")) {
+                return AgentModelResult.builder().outputText("Hello world from stream.").build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("show code block")) {
+                return AgentModelResult.builder()
+                        .outputText("Here is a code sample:\n```java\nSystem.out.println(\"hi\");\n```\nDone.")
+                        .build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("show split fence")) {
+                return AgentModelResult.builder()
+                        .outputText("Here is python:\n```python\nprint(\"Hello, World!\")\n```\nDone.")
+                        .build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("rewrite final markdown")) {
+                return AgentModelResult.builder()
+                        .outputText("已经为你创建了 `hello.py` 文件并成功运行！\n\n```python\nprint(\"Hello, World!\")\n```\n\n运行结果：\nHello, World!")
+                        .build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("final adds code block")) {
+                return AgentModelResult.builder()
+                        .outputText("已经为你创建了一个Python的Hello World程序！文件名为 hello_world.py。\n\n你可以通过以下命令运行它：\n\n```bash\npython hello_world.py\n```\n\n这个程序会输出：`Hello, World!`")
+                        .build();
+            }
+            if (userInput != null && userInput.toLowerCase().contains("record request mode")) {
+                return AgentModelResult.builder().outputText("mode=create").build();
             }
             if (userInput != null && userInput.toLowerCase().contains("run bash")) {
                 return AgentModelResult.builder()
@@ -1809,6 +2654,10 @@ public class CodeCommandTest {
                         Thread.sleep(450L);
                     } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
+                        return result;
+                    }
+                    if (Thread.currentThread().isInterrupted()) {
+                        return result;
                     }
                     listener.onDeltaText("Slow hello done.");
                     listener.onComplete(result);
@@ -1821,6 +2670,14 @@ public class CodeCommandTest {
                     listener.onDeltaText("Hello ");
                     listener.onDeltaText("world ");
                     listener.onDeltaText("from stream.");
+                    listener.onComplete(result);
+                }
+                return result;
+            }
+            if (userInput != null && userInput.toLowerCase().contains("record request mode")) {
+                AgentModelResult result = AgentModelResult.builder().outputText("mode=createStream").build();
+                if (listener != null) {
+                    listener.onDeltaText("mode=createStream");
                     listener.onComplete(result);
                 }
                 return result;

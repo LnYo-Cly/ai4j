@@ -4,12 +4,6 @@ import com.alibaba.fastjson2.JSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,76 +63,24 @@ public class FileMcpConfigSource implements McpConfigSource {
      */
     private void loadConfigs() {
         try {
-            String configContent = loadConfigContent(configFile);
-            if (configContent != null && !configContent.trim().isEmpty()) {
-                McpServerConfig serverConfig = JSON.parseObject(configContent, McpServerConfig.class);
-                if (serverConfig != null && serverConfig.getMcpServers() != null) {
-                    // 只加载启用的服务
-                    Map<String, McpServerConfig.McpServerInfo> enabledConfigs = new HashMap<>();
-                    serverConfig.getMcpServers().forEach((serverId, serverInfo) -> {
-                        if (serverInfo.getEnabled() == null || serverInfo.getEnabled()) {
-                            enabledConfigs.put(serverId, serverInfo);
-                        }
-                    });
-                    this.configs = enabledConfigs;
-                    log.info("成功加载MCP配置文件: {}, 共 {} 个启用的服务", configFile, enabledConfigs.size());
-                } else {
-                    this.configs = new HashMap<>();
-                    log.warn("MCP配置文件为空或格式错误: {}", configFile);
-                }
+            McpServerConfig serverConfig = McpConfigIO.loadServerConfig(configFile, getClass().getClassLoader());
+            Map<String, McpServerConfig.McpServerInfo> enabledConfigs =
+                    McpConfigIO.extractEnabledConfigs(serverConfig);
+            if (!enabledConfigs.isEmpty()) {
+                this.configs = enabledConfigs;
+                log.info("成功加载MCP配置文件: {}, 共 {} 个启用的服务", configFile, enabledConfigs.size());
             } else {
                 this.configs = new HashMap<>();
-                log.info("未找到MCP配置文件: {}", configFile);
+                if (serverConfig == null) {
+                    log.info("未找到MCP配置文件: {}", configFile);
+                } else {
+                    log.warn("MCP配置文件为空或没有启用的服务: {}", configFile);
+                }
             }
         } catch (Exception e) {
             this.configs = new HashMap<>();
             log.error("加载MCP配置文件失败: {}", configFile, e);
         }
-    }
-    
-    /**
-     * 加载配置文件内容
-     */
-    private String loadConfigContent(String configFile) throws IOException {
-        // 首先尝试从类路径加载
-        InputStream is = getClass().getClassLoader().getResourceAsStream(configFile);
-        if (is != null) {
-            try {
-                byte[] bytes = readAllBytes(is);
-                return new String(bytes, StandardCharsets.UTF_8);
-            } finally {
-                is.close();
-            }
-        }
-
-        // 然后尝试从文件系统加载
-        Path configPath = Paths.get(configFile);
-        if (Files.exists(configPath)) {
-            return readFileToString(configPath);
-        }
-
-        return null;
-    }
-    
-    /**
-     * JDK 8 兼容的读取所有字节方法
-     */
-    private byte[] readAllBytes(InputStream is) throws IOException {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
-        while ((bytesRead = is.read(buffer)) != -1) {
-            output.write(buffer, 0, bytesRead);
-        }
-        return output.toByteArray();
-    }
-
-    /**
-     * JDK 8 兼容的读取文件为字符串方法
-     */
-    private String readFileToString(Path path) throws IOException {
-        byte[] bytes = Files.readAllBytes(path);
-        return new String(bytes, StandardCharsets.UTF_8);
     }
     
     /**

@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.render.AssistantTranscriptRenderer;
+import io.github.lnyocly.ai4j.cli.render.CliThemeStyler;
 import io.github.lnyocly.ai4j.tui.TuiTheme;
 import org.junit.Test;
 

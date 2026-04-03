@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.render.TranscriptPrinter;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
 import org.junit.Test;
 

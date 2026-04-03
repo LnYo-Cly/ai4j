@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.render.CliDisplayWidth;
 import org.jline.utils.AttributedString;
 import org.junit.Assert;
 import org.junit.Test;

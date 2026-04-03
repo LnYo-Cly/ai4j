@@ -179,9 +179,49 @@ sidebar_position: 4
 
 ---
 
+### `/skills`
+
+列出当前会话已发现的 coding skills。
+
+```text
+/skills
+```
+
+通常会包含：
+
+- 当前发现到的 skill 数量
+- workspace 配置文件位置
+- 当前生效的 skill roots
+- 每个 skill 的 name / source / path / description
+
+---
+
+### `/skills <name>`
+
+查看单个 skill 的详细信息。
+
+```text
+/skills <skill-name>
+```
+
+示例：
+
+```text
+/skills repo-review
+```
+
+说明：
+
+- 会显示 skill 的来源、路径、描述
+- 会显示当前 skill roots，便于确认它是从哪里被发现的
+- 只展示元信息，不会打印 `SKILL.md` 正文
+- skill 名称可通过 slash 补全获得
+
+---
+
 ### `/stream`
 
-显示 transcript streaming 状态。
+显示当前 CLI 会话的模型请求 streaming 状态。
 
 ```text
 /stream
@@ -191,7 +231,7 @@ sidebar_position: 4
 
 ### `/stream on|off`
 
-切换交互 transcript 的增量渲染行为。
+切换当前 CLI 会话的模型请求 streaming 行为。
 
 ```text
 /stream on
@@ -200,8 +240,10 @@ sidebar_position: 4
 
 说明：
 
-- `on`：assistant / reasoning 会增量写入主缓冲区 transcript
-- `off`：等待一轮完成后再输出整理后的最终文本
+- 作用域是当前 CLI 会话
+- 切换时会立即重建当前 session runtime
+- `on`：后续请求使用 `stream=true`，assistant / reasoning 会增量写入 transcript
+- `off`：后续请求使用 `stream=false`，等待完整响应后再输出完成块
 - 这不是 provider 协议切换命令
 
 ---
@@ -415,7 +457,17 @@ sidebar_position: 4
 - `Tab`：应用当前补全项
 - `Ctrl+P`：打开 command palette
 - `Enter`：提交输入
-- `Esc`：清空输入
+- `Esc`：活跃 turn 时中断当前任务；空闲时关闭面板或清空输入
+
+当前状态栏文案含义：
+
+- `Thinking`：分析当前输入和上下文
+- `Connecting`：正在打开模型请求或等待首个模型事件
+- `Responding`：模型正在持续输出
+- `Working`：工具或进程仍在运行
+- `Retrying`：请求正在重试
+- `Waiting`：短时间内没有新进展
+- `Stalled`：较长时间没有新进展，状态栏会提示 `press Esc to interrupt`
 
 当前命令补全已覆盖：
 
@@ -424,5 +476,5 @@ sidebar_position: 4
 - `/provider add|edit` 参数
 - `/provider add|edit --protocol` 值
 - `/model` 候选
+- `/skills` 候选
 - `/stream on|off`
-

@@ -1,5 +1,8 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.command.CustomCommandRegistry;
+import io.github.lnyocly.ai4j.cli.shell.JlineShellContext;
+import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.Buffer;
@@ -22,6 +25,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class JlineShellTerminalIOTest {
 
@@ -324,6 +329,144 @@ public class JlineShellTerminalIOTest {
         } finally {
             terminalIO.close();
             context.close();
+        }
+    }
+
+    @Test
+    public void test_turn_interrupt_watch_invokes_handler_on_escape() throws Exception {
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{27});
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Terminal terminal = TerminalBuilder.builder()
+                .system(false)
+                .dumb(true)
+                .streams(input, output)
+                .encoding(StandardCharsets.UTF_8)
+                .build();
+        LineReader lineReader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .appName("ai4j-cli-test")
+                .build();
+        JlineShellContext context = newContext(terminal, lineReader, null);
+        JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(context, null);
+        CountDownLatch interrupted = new CountDownLatch(1);
+        try {
+            terminalIO.beginTurnInterruptWatch(new Runnable() {
+                @Override
+                public void run() {
+                    interrupted.countDown();
+                }
+            });
+
+            Assert.assertTrue(interrupted.await(2, TimeUnit.SECONDS));
+        } finally {
+            terminalIO.endTurnInterruptWatch();
+            terminalIO.close();
+            context.close();
+        }
+    }
+
+    @Test
+    public void test_turn_interrupt_polling_detects_escape() throws Exception {
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{27});
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Terminal terminal = TerminalBuilder.builder()
+                .system(false)
+                .dumb(true)
+                .streams(input, output)
+                .encoding(StandardCharsets.UTF_8)
+                .build();
+        LineReader lineReader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .appName("ai4j-cli-test")
+                .build();
+        JlineShellContext context = newContext(terminal, lineReader, null);
+        JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(context, null);
+        try {
+            terminalIO.beginTurnInterruptPolling();
+            Assert.assertTrue(terminalIO.pollTurnInterrupt(500L));
+        } finally {
+            terminalIO.endTurnInterruptPolling();
+            terminalIO.close();
+            context.close();
+        }
+    }
+
+    @Test
+    public void test_connecting_status_escalates_to_stalled_when_no_model_events_arrive() throws Exception {
+        String previousWaiting = System.getProperty("ai4j.jline.waiting-ms");
+        String previousStalled = System.getProperty("ai4j.jline.stalled-ms");
+        try {
+            System.setProperty("ai4j.jline.waiting-ms", "80");
+            System.setProperty("ai4j.jline.stalled-ms", "220");
+            ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            Terminal terminal = TerminalBuilder.builder()
+                    .system(false)
+                    .dumb(true)
+                    .streams(input, output)
+                    .encoding(StandardCharsets.UTF_8)
+                    .build();
+            LineReader lineReader = LineReaderBuilder.builder()
+                    .terminal(terminal)
+                    .appName("ai4j-cli-test")
+                    .build();
+            JlineShellContext context = newContext(terminal, lineReader, null);
+            JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(context, null);
+            try {
+                terminalIO.showConnecting("Connecting to fake-provider/fake-model");
+                Thread.sleep(140L);
+                String waiting = terminalIO.currentStatusLine();
+                Assert.assertTrue(waiting, waiting.contains("Connecting to fake-provider/fake-model ("));
+
+                Thread.sleep(160L);
+                String stalled = terminalIO.currentStatusLine();
+                Assert.assertTrue(stalled.contains("Stalled"));
+                Assert.assertTrue(stalled.contains("No response from model stream"));
+                Assert.assertTrue(stalled.contains("press Esc to interrupt"));
+            } finally {
+                terminalIO.close();
+                context.close();
+            }
+        } finally {
+            restoreProperty("ai4j.jline.waiting-ms", previousWaiting);
+            restoreProperty("ai4j.jline.stalled-ms", previousStalled);
+        }
+    }
+
+    @Test
+    public void test_responding_status_changes_to_waiting_when_model_stream_goes_quiet() throws Exception {
+        String previousWaiting = System.getProperty("ai4j.jline.waiting-ms");
+        String previousStalled = System.getProperty("ai4j.jline.stalled-ms");
+        try {
+            System.setProperty("ai4j.jline.waiting-ms", "80");
+            System.setProperty("ai4j.jline.stalled-ms", "400");
+            ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            Terminal terminal = TerminalBuilder.builder()
+                    .system(false)
+                    .dumb(true)
+                    .streams(input, output)
+                    .encoding(StandardCharsets.UTF_8)
+                    .build();
+            LineReader lineReader = LineReaderBuilder.builder()
+                    .terminal(terminal)
+                    .appName("ai4j-cli-test")
+                    .build();
+            JlineShellContext context = newContext(terminal, lineReader, null);
+            JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(context, null);
+            try {
+                terminalIO.showResponding();
+                Thread.sleep(140L);
+                String waiting = terminalIO.currentStatusLine();
+                Assert.assertTrue(waiting, waiting.contains("Waiting"));
+                Assert.assertTrue(waiting, waiting.contains("No new model output"));
+            } finally {
+                terminalIO.close();
+                context.close();
+            }
+        } finally {
+            restoreProperty("ai4j.jline.waiting-ms", previousWaiting);
+            restoreProperty("ai4j.jline.stalled-ms", previousStalled);
         }
     }
 

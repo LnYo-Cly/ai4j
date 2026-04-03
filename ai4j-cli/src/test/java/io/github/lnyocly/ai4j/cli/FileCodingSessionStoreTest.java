@@ -1,8 +1,9 @@
-package io.github.lnyocly.ai4j.cli;
+package io.github.lnyocly.ai4j.cli.session;
 
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.coding.CodingSessionCheckpoint;
+import io.github.lnyocly.ai4j.coding.CodingSessionCompactResult;
 import io.github.lnyocly.ai4j.coding.CodingSessionState;
 import io.github.lnyocly.ai4j.coding.process.BashProcessStatus;
 import io.github.lnyocly.ai4j.coding.process.StoredProcessSnapshot;
@@ -56,6 +57,22 @@ public class FileCodingSessionStoreTest {
                                 .goal("Continue session-alpha")
                                 .doneItems(Collections.singletonList("Saved workspace state"))
                                 .build())
+                        .latestCompactResult(CodingSessionCompactResult.builder()
+                                .sessionId("session-alpha")
+                                .beforeItemCount(12)
+                                .afterItemCount(3)
+                                .summary("checkpoint summary")
+                                .automatic(false)
+                                .strategy("checkpoint-delta")
+                                .deltaItemCount(5)
+                                .checkpointReused(true)
+                                .checkpoint(CodingSessionCheckpoint.builder()
+                                        .goal("Continue session-alpha")
+                                        .nextSteps(Collections.singletonList("Resume the next coding step"))
+                                        .build())
+                                .build())
+                        .autoCompactFailureCount(2)
+                        .autoCompactCircuitBreakerOpen(true)
                         .processSnapshots(Collections.singletonList(StoredProcessSnapshot.builder()
                                 .processId("proc_demo")
                                 .command("echo ready")
@@ -82,6 +99,10 @@ public class FileCodingSessionStoreTest {
         assertEquals(1, loaded.getProcessCount());
         assertEquals(1, loaded.getRestoredProcessCount());
         assertNotNull(loaded.getState().getCheckpoint());
+        assertNotNull(loaded.getState().getLatestCompactResult());
+        assertEquals("checkpoint-delta", loaded.getState().getLatestCompactResult().getStrategy());
+        assertEquals(2, loaded.getState().getAutoCompactFailureCount());
+        assertTrue(loaded.getState().isAutoCompactCircuitBreakerOpen());
         assertEquals(1, loaded.getState().getProcessSnapshots().size());
         assertEquals(1, sessions.size());
         assertEquals("session-alpha", sessions.get(0).getSessionId());

@@ -1,5 +1,11 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptionsParser;
+import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderProfile;
+import io.github.lnyocly.ai4j.cli.provider.CliProvidersConfig;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,8 +41,7 @@ public class CodeCommandOptionsParserTest {
         Assert.assertEquals("GLM-4.5-Flash", options.getModel());
         Assert.assertEquals("zhipu-key-from-env", options.getApiKey());
         Assert.assertEquals("workspace-from-env", options.getWorkspace());
-        Assert.assertEquals(12, options.getMaxSteps());
-        Assert.assertEquals(32, options.getMaxToolCalls());
+        Assert.assertEquals(0, options.getMaxSteps());
         Assert.assertEquals(Boolean.FALSE, options.getParallelToolCalls());
     }
 
@@ -105,6 +110,18 @@ public class CodeCommandOptionsParserTest {
         Assert.assertEquals(8000, options.getCompactReserveTokens());
         Assert.assertEquals(12000, options.getCompactKeepRecentTokens());
         Assert.assertEquals(512, options.getCompactSummaryMaxOutputTokens());
+    }
+
+    @Test
+    public void test_parse_stream_option() {
+        CodeCommandOptions options = parser.parse(
+                Arrays.asList("--model", "demo-model", "--stream", "true"),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                Paths.get(".")
+        );
+
+        Assert.assertTrue(options.isStream());
     }
 
     @Test

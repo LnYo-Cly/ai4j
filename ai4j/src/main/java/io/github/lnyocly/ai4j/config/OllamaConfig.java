@@ -18,4 +18,5 @@ public class OllamaConfig {
     private String apiKey = "";
     private String chatCompletionUrl = "api/chat";
     private String embeddingUrl = "api/embed";
+    private String rerankUrl = "api/rerank";
 }

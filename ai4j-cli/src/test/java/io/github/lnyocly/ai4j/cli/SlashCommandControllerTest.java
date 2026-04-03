@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.command.CustomCommandRegistry;
 import io.github.lnyocly.ai4j.tui.TuiConfigManager;
 import org.jline.reader.Buffer;
 import org.jline.reader.Candidate;
@@ -34,10 +35,14 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/cmd ");
         assertContainsValue(candidates, "/theme ");
         assertContainsValue(candidates, "/stream ");
+        assertContainsValue(candidates, "/mcp ");
         assertContainsValue(candidates, "/providers");
         assertContainsValue(candidates, "/provider ");
         assertContainsValue(candidates, "/model ");
+        assertContainsValue(candidates, "/skills ");
+        assertContainsValue(candidates, "/agents ");
         assertContainsValue(candidates, "/process ");
+        assertContainsValue(candidates, "/team");
     }
 
     @Test
@@ -86,6 +91,36 @@ public class SlashCommandControllerTest {
     }
 
     @Test
+    public void suggestSkillNamesFromSupplier() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-skills");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+        controller.setSkillCandidateSupplier(() -> Arrays.asList("repo-review", "release-checklist"));
+
+        List<Candidate> candidates = controller.suggest("/skills ", "/skills ".length());
+
+        assertContainsValue(candidates, "repo-review");
+        assertContainsValue(candidates, "release-checklist");
+    }
+
+    @Test
+    public void suggestAgentNamesFromSupplier() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-agents");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+        controller.setAgentCandidateSupplier(() -> Arrays.asList("reviewer", "planner"));
+
+        List<Candidate> candidates = controller.suggest("/agents ", "/agents ".length());
+
+        assertContainsValue(candidates, "reviewer");
+        assertContainsValue(candidates, "planner");
+    }
+
+    @Test
     public void suggestExactExecutableArgumentCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
         Path workspace = Files.createTempDirectory("ai4j-cli-slash-stream-exact");
         SlashCommandController controller = new SlashCommandController(
@@ -98,6 +133,68 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/stream ");
         assertTrue(!containsValue(candidates, "/stream on"));
         assertTrue(!containsValue(candidates, "/stream off"));
+    }
+
+    @Test
+    public void suggestExactMcpCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-mcp-exact");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/mcp", "/mcp".length());
+
+        assertContainsValue(candidates, "/mcp ");
+        assertTrue(!containsValue(candidates, "/mcp add "));
+        assertTrue(!containsValue(candidates, "/mcp enable "));
+    }
+
+    @Test
+    public void suggestMcpActionsAfterTrailingSpaceIncludesManagementCommands() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-mcp-actions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/mcp ", "/mcp ".length());
+
+        assertContainsValue(candidates, "list ");
+        assertContainsValue(candidates, "add ");
+        assertContainsValue(candidates, "enable ");
+        assertContainsValue(candidates, "pause ");
+        assertContainsValue(candidates, "remove ");
+    }
+
+    @Test
+    public void suggestMcpTransportOptionsAfterTransportFlag() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-mcp-transport");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/mcp add --transport ", "/mcp add --transport ".length());
+
+        assertContainsValue(candidates, "stdio");
+        assertContainsValue(candidates, "sse");
+        assertContainsValue(candidates, "http");
+    }
+
+    @Test
+    public void suggestMcpServerNamesFromSupplier() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-mcp-server");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+        controller.setMcpServerCandidateSupplier(() -> Arrays.asList("fetch", "time"));
+
+        List<Candidate> candidates = controller.suggest("/mcp enable ", "/mcp enable ".length());
+
+        assertContainsValue(candidates, "fetch");
+        assertContainsValue(candidates, "time");
     }
 
     @Test

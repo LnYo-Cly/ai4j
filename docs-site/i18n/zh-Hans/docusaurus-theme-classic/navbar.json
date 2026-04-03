@@ -1,0 +1,30 @@
+﻿{
+  "title": {
+    "message": "AI4J 文档站",
+    "description": "导航栏标题"
+  },
+  "logo.alt": {
+    "message": "AI4J Logo",
+    "description": "导航栏 Logo 的 alt 文本"
+  },
+  "item.label.Docs": {
+    "message": "文档",
+    "description": "Docs 导航项"
+  },
+  "item.label.Blog": {
+    "message": "博客",
+    "description": "Blog 导航项"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "GitHub 导航项"
+  },
+  "item.label.文档": {
+    "message": "文档",
+    "description": "文档导航项"
+  },
+  "item.label.博客": {
+    "message": "博客",
+    "description": "博客导航项"
+  }
+}

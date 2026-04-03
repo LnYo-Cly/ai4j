@@ -1,5 +1,8 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.command.CustomCommandRegistry;
+import io.github.lnyocly.ai4j.cli.command.CustomCommandTemplate;
+import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
 import io.github.lnyocly.ai4j.coding.session.CodingSessionDescriptor;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.tui.TuiConfigManager;
@@ -21,7 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
 
-final class SlashCommandController implements Completer {
+public final class SlashCommandController implements Completer {
 
     private static final Runnable NOOP_STATUS_REFRESH = new Runnable() {
         @Override
@@ -38,6 +41,8 @@ final class SlashCommandController implements Completer {
             new SlashCommandSpec("/providers", "List saved provider profiles", false),
             new SlashCommandSpec("/provider", "Show or switch the active provider profile", true),
             new SlashCommandSpec("/model", "Show or switch the active model override", true),
+            new SlashCommandSpec("/skills", "List or inspect discovered coding skills", true),
+            new SlashCommandSpec("/agents", "List or inspect available coding agents", true),
             new SlashCommandSpec("/commands", "List available custom commands", false),
             new SlashCommandSpec("/palette", "Alias of /commands", false),
             new SlashCommandSpec("/cmd", "Run a custom command template", true),
@@ -46,8 +51,10 @@ final class SlashCommandController implements Completer {
             new SlashCommandSpec("/tree", "Show the current session tree", true),
             new SlashCommandSpec("/events", "Show the latest session ledger events", true),
             new SlashCommandSpec("/replay", "Replay recent turns grouped from the event ledger", true),
+            new SlashCommandSpec("/team", "Show the current agent team board", false),
             new SlashCommandSpec("/compacts", "Show recent compact history", true),
-            new SlashCommandSpec("/stream", "Show or switch transcript streaming", true),
+            new SlashCommandSpec("/stream", "Show or switch model request streaming", true),
+            new SlashCommandSpec("/mcp", "Show or manage MCP services", true),
             new SlashCommandSpec("/processes", "List active and restored process metadata", false),
             new SlashCommandSpec("/process", "Inspect or control a process", true),
             new SlashCommandSpec("/checkpoint", "Show the current structured checkpoint summary", false),
@@ -71,6 +78,9 @@ final class SlashCommandController implements Completer {
     private static final List<String> PROCESS_FOLLOW_LIMITS = Arrays.asList("200", "400", "800", "1600");
     private static final List<String> PROCESS_LOG_LIMITS = Arrays.asList("200", "480", "800", "1600");
     private static final List<String> STREAM_OPTIONS = Arrays.asList("on", "off");
+    private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
+    private static final String MCP_TRANSPORT_FLAG = "--transport";
+    private static final List<String> MCP_TRANSPORT_OPTIONS = Arrays.asList("stdio", "sse", "http");
     private static final List<String> PROVIDER_ACTIONS = Arrays.asList("use", "save", "add", "edit", "default", "remove");
     private static final String MODEL_RESET = "reset";
     private static final List<String> PROVIDER_DEFAULT_OPTIONS = Arrays.asList("clear");
@@ -93,6 +103,8 @@ final class SlashCommandController implements Completer {
             "/providers",
             "/provider",
             "/model",
+            "/skills",
+            "/agents",
             "/commands",
             "/palette",
             "/sessions",
@@ -100,8 +112,10 @@ final class SlashCommandController implements Completer {
             "/tree",
             "/events",
             "/replay",
+            "/team",
             "/compacts",
             "/stream",
+            "/mcp",
             "/processes",
             "/checkpoint",
             "/fork",
@@ -137,19 +151,40 @@ final class SlashCommandController implements Completer {
                     return Collections.emptyList();
                 }
             };
+    private volatile Supplier<List<String>> mcpServerCandidateSupplier =
+            new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+    private volatile Supplier<List<String>> skillCandidateSupplier =
+            new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+    private volatile Supplier<List<String>> agentCandidateSupplier =
+            new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
     private volatile Runnable statusRefresh = NOOP_STATUS_REFRESH;
     private PaletteSnapshot paletteSnapshot = PaletteSnapshot.closed();
 
-    SlashCommandController(CustomCommandRegistry customCommandRegistry, TuiConfigManager tuiConfigManager) {
+    public SlashCommandController(CustomCommandRegistry customCommandRegistry, TuiConfigManager tuiConfigManager) {
         this.customCommandRegistry = customCommandRegistry;
         this.tuiConfigManager = tuiConfigManager;
     }
 
-    void setSessionManager(CodingSessionManager sessionManager) {
+    public void setSessionManager(CodingSessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }
 
-    void setProcessCandidateSupplier(Supplier<List<ProcessCompletionCandidate>> processCandidateSupplier) {
+    public void setProcessCandidateSupplier(Supplier<List<ProcessCompletionCandidate>> processCandidateSupplier) {
         if (processCandidateSupplier == null) {
             this.processCandidateSupplier = new Supplier<List<ProcessCompletionCandidate>>() {
                 @Override
@@ -162,7 +197,7 @@ final class SlashCommandController implements Completer {
         this.processCandidateSupplier = processCandidateSupplier;
     }
 
-    void setProfileCandidateSupplier(Supplier<List<String>> profileCandidateSupplier) {
+    public void setProfileCandidateSupplier(Supplier<List<String>> profileCandidateSupplier) {
         if (profileCandidateSupplier == null) {
             this.profileCandidateSupplier = new Supplier<List<String>>() {
                 @Override
@@ -175,7 +210,7 @@ final class SlashCommandController implements Completer {
         this.profileCandidateSupplier = profileCandidateSupplier;
     }
 
-    void setModelCandidateSupplier(Supplier<List<ModelCompletionCandidate>> modelCandidateSupplier) {
+    public void setModelCandidateSupplier(Supplier<List<ModelCompletionCandidate>> modelCandidateSupplier) {
         if (modelCandidateSupplier == null) {
             this.modelCandidateSupplier = new Supplier<List<ModelCompletionCandidate>>() {
                 @Override
@@ -188,11 +223,50 @@ final class SlashCommandController implements Completer {
         this.modelCandidateSupplier = modelCandidateSupplier;
     }
 
-    void setStatusRefresh(Runnable statusRefresh) {
+    public void setMcpServerCandidateSupplier(Supplier<List<String>> mcpServerCandidateSupplier) {
+        if (mcpServerCandidateSupplier == null) {
+            this.mcpServerCandidateSupplier = new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+            return;
+        }
+        this.mcpServerCandidateSupplier = mcpServerCandidateSupplier;
+    }
+
+    public void setSkillCandidateSupplier(Supplier<List<String>> skillCandidateSupplier) {
+        if (skillCandidateSupplier == null) {
+            this.skillCandidateSupplier = new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+            return;
+        }
+        this.skillCandidateSupplier = skillCandidateSupplier;
+    }
+
+    public void setAgentCandidateSupplier(Supplier<List<String>> agentCandidateSupplier) {
+        if (agentCandidateSupplier == null) {
+            this.agentCandidateSupplier = new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+            return;
+        }
+        this.agentCandidateSupplier = agentCandidateSupplier;
+    }
+
+    public void setStatusRefresh(Runnable statusRefresh) {
         this.statusRefresh = statusRefresh == null ? NOOP_STATUS_REFRESH : statusRefresh;
     }
 
-    void configure(LineReader lineReader) {
+    public void configure(LineReader lineReader) {
         if (lineReader == null) {
             return;
         }
@@ -336,8 +410,17 @@ final class SlashCommandController implements Completer {
         if ("/stream".equalsIgnoreCase(command)) {
             return streamCandidates(tokenFragment(tokens, endsWithSpace));
         }
+        if ("/skills".equalsIgnoreCase(command)) {
+            return skillCandidates(tokenFragment(tokens, endsWithSpace));
+        }
+        if ("/agents".equalsIgnoreCase(command)) {
+            return agentCandidates(tokenFragment(tokens, endsWithSpace));
+        }
         if ("/provider".equalsIgnoreCase(command)) {
             return providerCandidates(tokens, endsWithSpace);
+        }
+        if ("/mcp".equalsIgnoreCase(command)) {
+            return mcpCandidates(tokens, endsWithSpace);
         }
         if ("/model".equalsIgnoreCase(command)) {
             return modelCandidates(tokenFragment(tokens, endsWithSpace));
@@ -367,6 +450,12 @@ final class SlashCommandController implements Completer {
         }
         if ("/stream".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", streamCandidates(""));
+        }
+        if ("/skills".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", skillCandidates(""));
+        }
+        if ("/agents".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", agentCandidates(""));
         }
         if ("/provider".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", providerActionCandidates(""));
@@ -482,7 +571,7 @@ final class SlashCommandController implements Completer {
         return isBlank(line) ? EnterAction.IGNORE_EMPTY : EnterAction.ACCEPT;
     }
 
-    PaletteSnapshot getPaletteSnapshot() {
+    public PaletteSnapshot getPaletteSnapshot() {
         synchronized (paletteLock) {
             return paletteSnapshot.copy();
         }
@@ -550,11 +639,14 @@ final class SlashCommandController implements Completer {
         if (selected == null || isBlank(replacement)) {
             return false;
         }
+        if (!replacement.endsWith(" ")) {
+            return false;
+        }
         String normalized = replacement.trim();
-        if (replacement.endsWith(" ") && commandRequiresArgument(normalized)) {
+        if (commandRequiresArgument(normalized)) {
             return true;
         }
-        return false;
+        return !suggest(replacement, replacement.length()).isEmpty();
     }
 
     private boolean commandRequiresArgument(String command) {
@@ -841,6 +933,220 @@ final class SlashCommandController implements Completer {
             ));
         }
         return candidates;
+    }
+
+    private List<Candidate> skillCandidates(String partial) {
+        Supplier<List<String>> supplier = skillCandidateSupplier;
+        List<String> skills = supplier == null ? null : supplier.get();
+        if (skills == null || skills.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String skill : skills) {
+            if (isBlank(skill) || !matches(skill, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    skill,
+                    skill,
+                    "Skills",
+                    "Inspect coding skill " + skill,
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> agentCandidates(String partial) {
+        Supplier<List<String>> supplier = agentCandidateSupplier;
+        List<String> agents = supplier == null ? null : supplier.get();
+        if (agents == null || agents.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String agent : agents) {
+            if (isBlank(agent) || !matches(agent, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    agent,
+                    agent,
+                    "Agents",
+                    "Inspect coding agent " + agent,
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> mcpCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 1) {
+            return mcpActionCandidates("");
+        }
+        if (tokens.size() == 2 && !endsWithSpace) {
+            return mcpActionCandidates(tokens.get(1));
+        }
+        String action = tokens.get(1);
+        if ("add".equalsIgnoreCase(action)) {
+            return mcpAddCandidates(tokens, endsWithSpace);
+        }
+        if ("list".equalsIgnoreCase(action)) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 2 && endsWithSpace) {
+            return mcpServerNameCandidates(action, "");
+        }
+        if (tokens.size() == 3 && !endsWithSpace) {
+            return mcpServerNameCandidates(action, tokens.get(2));
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> mcpActionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : MCP_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(action, action, "MCP", describeMcpAction(action), true));
+        }
+        return candidates;
+    }
+
+    private String describeMcpAction(String action) {
+        if ("list".equalsIgnoreCase(action)) {
+            return "List MCP services";
+        }
+        if ("add".equalsIgnoreCase(action)) {
+            return "Add a global MCP service";
+        }
+        if ("enable".equalsIgnoreCase(action)) {
+            return "Enable an MCP service in this workspace";
+        }
+        if ("disable".equalsIgnoreCase(action)) {
+            return "Disable an MCP service in this workspace";
+        }
+        if ("pause".equalsIgnoreCase(action)) {
+            return "Pause an MCP service for this session";
+        }
+        if ("resume".equalsIgnoreCase(action)) {
+            return "Resume an MCP service for this session";
+        }
+        if ("retry".equalsIgnoreCase(action)) {
+            return "Reconnect an MCP service";
+        }
+        if ("remove".equalsIgnoreCase(action)) {
+            return "Delete a global MCP service";
+        }
+        return "MCP action";
+    }
+
+    private List<Candidate> mcpAddCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.size() < 2) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 2 && endsWithSpace) {
+            return mcpAddOptionCandidates("");
+        }
+        if (tokens.size() == 3 && !endsWithSpace) {
+            return mcpAddOptionCandidates(tokens.get(2));
+        }
+        if (tokens.size() == 3 && endsWithSpace) {
+            if (MCP_TRANSPORT_FLAG.equalsIgnoreCase(tokens.get(2))) {
+                return mcpTransportCandidates("");
+            }
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 4 && !endsWithSpace && MCP_TRANSPORT_FLAG.equalsIgnoreCase(tokens.get(2))) {
+            return mcpTransportCandidates(tokens.get(3));
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> mcpAddOptionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        if (matches(MCP_TRANSPORT_FLAG, partial)) {
+            candidates.add(commandCandidate(
+                    MCP_TRANSPORT_FLAG,
+                    MCP_TRANSPORT_FLAG,
+                    "MCP",
+                    "Choose the MCP transport: stdio, sse, http",
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> mcpTransportCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String transport : MCP_TRANSPORT_OPTIONS) {
+            if (!matches(transport, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    transport,
+                    transport,
+                    "MCP",
+                    "Use " + transport + " transport",
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> mcpServerNameCandidates(String action, String partial) {
+        Supplier<List<String>> supplier = mcpServerCandidateSupplier;
+        List<String> serverNames = supplier == null ? null : supplier.get();
+        if (serverNames == null || serverNames.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String serverName : serverNames) {
+            if (isBlank(serverName) || !matches(serverName, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    serverName,
+                    serverName,
+                    "MCP",
+                    describeMcpServerAction(action, serverName),
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private String describeMcpServerAction(String action, String serverName) {
+        if ("enable".equalsIgnoreCase(action)) {
+            return "Enable MCP service " + serverName;
+        }
+        if ("disable".equalsIgnoreCase(action)) {
+            return "Disable MCP service " + serverName;
+        }
+        if ("pause".equalsIgnoreCase(action)) {
+            return "Pause MCP service " + serverName + " for this session";
+        }
+        if ("resume".equalsIgnoreCase(action)) {
+            return "Resume MCP service " + serverName + " for this session";
+        }
+        if ("retry".equalsIgnoreCase(action)) {
+            return "Reconnect MCP service " + serverName;
+        }
+        if ("remove".equalsIgnoreCase(action)) {
+            return "Delete global MCP service " + serverName;
+        }
+        return "Use MCP service " + serverName;
     }
 
     private List<Candidate> providerCandidates(List<String> tokens, boolean endsWithSpace) {
@@ -1370,40 +1676,40 @@ final class SlashCommandController implements Completer {
         }
     }
 
-    static final class ProcessCompletionCandidate {
+    public static final class ProcessCompletionCandidate {
 
         private final String processId;
         private final String description;
 
-        ProcessCompletionCandidate(String processId, String description) {
+        public ProcessCompletionCandidate(String processId, String description) {
             this.processId = processId;
             this.description = description;
         }
 
-        String getProcessId() {
+        public String getProcessId() {
             return processId;
         }
 
-        String getDescription() {
+        public String getDescription() {
             return description;
         }
     }
 
-    static final class ModelCompletionCandidate {
+    public static final class ModelCompletionCandidate {
 
         private final String model;
         private final String description;
 
-        ModelCompletionCandidate(String model, String description) {
+        public ModelCompletionCandidate(String model, String description) {
             this.model = model;
             this.description = description;
         }
 
-        String getModel() {
+        public String getModel() {
             return model;
         }
 
-        String getDescription() {
+        public String getDescription() {
             return description;
         }
     }
@@ -1423,7 +1729,7 @@ final class SlashCommandController implements Completer {
         }
     }
 
-    static final class PaletteSnapshot {
+    public static final class PaletteSnapshot {
 
         private final boolean open;
         private final String query;
@@ -1439,23 +1745,23 @@ final class SlashCommandController implements Completer {
                     : Collections.unmodifiableList(new ArrayList<PaletteItemSnapshot>(items));
         }
 
-        static PaletteSnapshot closed() {
+        public static PaletteSnapshot closed() {
             return new PaletteSnapshot(false, "", -1, Collections.<PaletteItemSnapshot>emptyList());
         }
 
-        boolean isOpen() {
+        public boolean isOpen() {
             return open;
         }
 
-        String getQuery() {
+        public String getQuery() {
             return query;
         }
 
-        int getSelectedIndex() {
+        public int getSelectedIndex() {
             return selectedIndex;
         }
 
-        List<PaletteItemSnapshot> getItems() {
+        public List<PaletteItemSnapshot> getItems() {
             return items;
         }
 
@@ -1475,7 +1781,7 @@ final class SlashCommandController implements Completer {
         }
     }
 
-    static final class PaletteItemSnapshot {
+    public static final class PaletteItemSnapshot {
 
         private final String value;
         private final String display;
@@ -1489,19 +1795,19 @@ final class SlashCommandController implements Completer {
             this.group = group;
         }
 
-        String getValue() {
+        public String getValue() {
             return value;
         }
 
-        String getDisplay() {
+        public String getDisplay() {
             return display;
         }
 
-        String getDescription() {
+        public String getDescription() {
             return description;
         }
 
-        String getGroup() {
+        public String getGroup() {
             return group;
         }
     }
@@ -1517,3 +1823,4 @@ final class SlashCommandController implements Completer {
         IGNORE_EMPTY
     }
 }
+

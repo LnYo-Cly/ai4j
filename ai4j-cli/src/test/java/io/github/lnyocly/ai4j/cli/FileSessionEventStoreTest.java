@@ -1,4 +1,4 @@
-package io.github.lnyocly.ai4j.cli;
+package io.github.lnyocly.ai4j.cli.session;
 
 import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.session.SessionEventType;

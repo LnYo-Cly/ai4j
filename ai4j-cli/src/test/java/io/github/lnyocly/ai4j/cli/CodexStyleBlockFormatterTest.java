@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.cli;
 
 import io.github.lnyocly.ai4j.coding.CodingSessionCompactResult;
+import io.github.lnyocly.ai4j.cli.render.CodexStyleBlockFormatter;
 import io.github.lnyocly.ai4j.tui.TuiAssistantToolView;
 import org.junit.Test;
 
@@ -57,6 +58,21 @@ public class CodexStyleBlockFormatterTest {
         assertEquals("• Ran echo hello", lines.get(0));
         assertEquals("  └ hello", lines.get(1));
         assertEquals("    world", lines.get(2));
+    }
+
+    @Test
+    public void formatToolKeepsQualifiedMcpToolLabel() {
+        TuiAssistantToolView toolView = TuiAssistantToolView.builder()
+                .toolName("fetch")
+                .status("done")
+                .title("fetch.fetch(url=\"https://zjuers.com/\")")
+                .previewLines(Arrays.asList("out> Contents of https://zjuers.com/"))
+                .build();
+
+        List<String> lines = formatter.formatTool(toolView);
+
+        assertEquals("• Ran fetch.fetch(url=\"https://zjuers.com/\")", lines.get(0));
+        assertEquals("  └ Contents of https://zjuers.com/", lines.get(1));
     }
 
     @Test

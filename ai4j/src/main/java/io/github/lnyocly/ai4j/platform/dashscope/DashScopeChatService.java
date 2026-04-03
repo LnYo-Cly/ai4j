@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.config.DashScopeConfig;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.dashscope.entity.DashScopeResult;
 import io.github.lnyocly.ai4j.platform.dashscope.util.MessageUtil;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
@@ -22,7 +23,7 @@ import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
@@ -70,6 +71,7 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
         if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
@@ -115,6 +117,11 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
 
             // 判断是否为函数调用返回
             if ("tool_calls".equals(finishReason)) {
+                if (passThroughToolCalls) {
+                    ChatCompletionResponse chatCompletionResponse = convertChatCompletionResponse(dashScopeResult);
+                    chatCompletionResponse.setUsage(allUsage);
+                    return chatCompletionResponse;
+                }
                 Message message = choice.getMessage();
                 List<ToolCallBase> toolCalls = message.getToolCalls();
 
@@ -156,6 +163,7 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
         chatCompletion.setStream(true);
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         StreamOptions streamOptions = chatCompletion.getStreamOptions();
         if (streamOptions == null) {
             chatCompletion.setStreamOptions(new StreamOptions(true));
@@ -187,38 +195,43 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
             Generation gen = new Generation();
             GenerationParam param = convertChatCompletionObject(chatCompletion);
             param.setApiKey(apiKey);
-            gen.streamCall(param, new ResultCallback<GenerationResult>() {
-                @SneakyThrows
-                @Override
-                public void onEvent(GenerationResult message) {
-                    log.info("{}", JSON.toJSONString(message));
-                    DashScopeResult dashScopeResult = new DashScopeResult();
-                    dashScopeResult.setGenerationResult(message);
-                    dashScopeResult.setObject("chat.completion.chunk");
-                    dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
-                    dashScopeResult.setModel(chatCompletion.getModel());
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    eventSourceListener.onEvent(eventSource, message.getRequestId(), null, objectMapper.writeValueAsString(convertChatCompletionResponse(dashScopeResult)));
-                }
+            StreamExecutionSupport.execute(
+                    eventSourceListener,
+                    chatCompletion.getStreamExecution(),
+                    () -> gen.streamCall(param, new ResultCallback<GenerationResult>() {
+                        @SneakyThrows
+                        @Override
+                        public void onEvent(GenerationResult message) {
+                            log.info("{}", JSON.toJSONString(message));
+                            DashScopeResult dashScopeResult = new DashScopeResult();
+                            dashScopeResult.setGenerationResult(message);
+                            dashScopeResult.setObject("chat.completion.chunk");
+                            dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
+                            dashScopeResult.setModel(chatCompletion.getModel());
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            eventSourceListener.onEvent(eventSource, message.getRequestId(), null, objectMapper.writeValueAsString(convertChatCompletionResponse(dashScopeResult)));
+                        }
 
-                @Override
-                public void onComplete() {
-                    eventSourceListener.onClosed(eventSource);
-                }
+                        @Override
+                        public void onComplete() {
+                            eventSourceListener.onClosed(eventSource);
+                        }
 
-                @Override
-                public void onError(Exception e) {
-                    eventSourceListener.onFailure(eventSource, e, null);
-                }
-            });
-
-            eventSourceListener.getCountDownLatch().await();
+                        @Override
+                        public void onError(Exception e) {
+                            eventSourceListener.onFailure(eventSource, e, null);
+                        }
+                    })
+            );
 
             finishReason = eventSourceListener.getFinishReason();
             List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
             // 需要调用函数
             if ("tool_calls".equals(finishReason) && !toolCalls.isEmpty()) {
+                if (passThroughToolCalls) {
+                    return;
+                }
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 

@@ -196,7 +196,7 @@ public class McpResourceAdapter {
             throws Exception {
         
         // 创建服务实例
-        Object serviceInstance = resourceClass.newInstance();
+        Object serviceInstance = resourceClass.getDeclaredConstructor().newInstance();
         
         // 准备方法参数
         Object[] methodArgs = prepareResourceMethodArguments(method, uriParams);

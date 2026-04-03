@@ -1,11 +1,17 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
+import io.github.lnyocly.ai4j.cli.provider.CliProviderProfile;
+import io.github.lnyocly.ai4j.cli.provider.CliProvidersConfig;
+import io.github.lnyocly.ai4j.cli.provider.CliResolvedProviderConfig;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
@@ -34,6 +40,9 @@ public class CliProviderConfigManagerTest {
             manager.saveWorkspaceConfig(CliWorkspaceConfig.builder()
                     .activeProfile("zhipu-main")
                     .modelOverride("glm-4.7-plus")
+                    .enabledMcpServers(Arrays.asList(" fetch ", "time", "fetch"))
+                    .skillDirectories(Arrays.asList(" .ai4j/skills ", "C:/skills/team ", ".ai4j/skills"))
+                    .agentDirectories(Arrays.asList(" .ai4j/agents ", "C:/agents/team ", ".ai4j/agents"))
                     .build());
 
             CliProvidersConfig loadedProviders = manager.loadProvidersConfig();
@@ -52,6 +61,9 @@ public class CliProviderConfigManagerTest {
             Assert.assertEquals(1, loadedProviders.getProfiles().size());
             Assert.assertEquals("zhipu-main", loadedWorkspace.getActiveProfile());
             Assert.assertEquals("glm-4.7-plus", loadedWorkspace.getModelOverride());
+            Assert.assertEquals(Arrays.asList("fetch", "time"), loadedWorkspace.getEnabledMcpServers());
+            Assert.assertEquals(Arrays.asList(".ai4j/skills", "C:/skills/team"), loadedWorkspace.getSkillDirectories());
+            Assert.assertEquals(Arrays.asList(".ai4j/agents", "C:/agents/team"), loadedWorkspace.getAgentDirectories());
             Assert.assertEquals(PlatformType.ZHIPU, resolved.getProvider());
             Assert.assertEquals(CliProtocol.CHAT, resolved.getProtocol());
             Assert.assertEquals("glm-4.7-plus", resolved.getModel());

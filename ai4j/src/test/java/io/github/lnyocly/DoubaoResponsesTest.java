@@ -8,8 +8,8 @@ import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseRequest;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IResponsesService;
 import io.github.lnyocly.ai4j.service.PlatformType;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assume;
@@ -91,3 +91,5 @@ public class DoubaoResponsesTest {
         System.out.println(listener.getResponse());
     }
 }
+
+

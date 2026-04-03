@@ -10,8 +10,8 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -137,3 +137,5 @@ public class DoubaoTest {
 
     }
 }
+
+

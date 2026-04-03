@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.cli;
 
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -7,6 +8,8 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
+import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory.PreparedCodingAgent;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,6 +42,7 @@ public class Ai4jCliTest {
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("ai4j-cli"));
         Assert.assertTrue(output.contains("code"));
+        Assert.assertTrue(output.contains("acp"));
     }
 
     @Test

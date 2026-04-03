@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.cli;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.cli.render.PatchSummaryFormatter;
 import org.junit.Test;
 
 import java.util.Arrays;

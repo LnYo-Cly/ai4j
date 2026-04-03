@@ -75,6 +75,7 @@ public class MoonshotChatCompletion {
     /**
      * 如果设置为 True，将会以 SSE（server-sent events）的形式以流式发送消息增量。消息流以 data: [DONE] 结尾
      */
+    @Builder.Default
     private Boolean stream = false;
 
 

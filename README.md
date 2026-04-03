@@ -1,7 +1,7 @@
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
 # ai4j
 由于SpringAI需要使用JDK17和Spring Boot3， 但是目前很多应用依旧使用的JDK8版本，所以使用可以支持JDK8的AI4J来接入OpenAI等大模型。  
-一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)、MiniMax、百川Baichuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。
+一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)、MiniMax、百川Baichuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持统一 `VectorStore` 抽象与多种向量数据库（Pinecone、Qdrant、pgvector、Milvus），并且支持JDK1.8，为用户提供快速整合AI的能力。
 支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连
 
 ## 计划列表
@@ -12,6 +12,7 @@
 
 ## 支持的平台
 + OpenAi(包含与OpenAi请求格式相同/兼容的平台)
++ Jina（Rerank / Jina-compatible Rerank）
 + Zhipu(智谱)
 + DeepSeek(深度求索)
 + Moonshot(月之暗面)
@@ -28,10 +29,12 @@
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
++ Responses
 + Embedding
++ Rerank
 + Audio
++ Image
 + Realtime
-+ 待添加
 
 ## 特性
 + 支持MCP服务，内置MCP网关，支持建立动态MCP数据源。
@@ -47,11 +50,52 @@
 + 轻松使用Tool Calls
 + 支持多个函数同时调用（智谱不支持）
 + 支持stream_options，流式输出直接获取统计token usage
-+ 支持RAG，内置向量数据库支持: Pinecone
++ 内置 `ChatMemory`，支持基础多轮会话上下文维护，可同时适配 Chat / Responses
++ 支持RAG，内置统一 `VectorStore` 抽象，当前支持: Pinecone、Qdrant、pgvector、Milvus
++ 内置 `IngestionPipeline`，统一串联 `DocumentLoader -> Chunker -> MetadataEnricher -> Embedding -> VectorStore.upsert`
++ 内置 `DenseRetriever`、`Bm25Retriever`、`HybridRetriever`，可按语义检索、关键词检索、混合检索方式组合知识库召回
++ `HybridRetriever` 支持 `RrfFusionStrategy`、`RsfFusionStrategy`、`DbsfFusionStrategy`，默认使用 RRF；融合排序与 `Reranker` 语义精排解耦
++ 支持统一 `IRerankService`，当前可接 Jina / Jina-compatible、Ollama、Doubao(方舟知识库重排)；可通过 `ModelReranker` 无缝接入 RAG 精排
++ RAG 运行时可直接拿到 `rank/retrieverSource/retrievalScore/fusionScore/rerankScore/scoreDetails/trace`，并可通过 `RagEvaluator` 计算 `Precision@K/Recall@K/F1@K/MRR/NDCG`
 + 使用Tika读取文件
 + Token统计`TikTokensUtil.java`
 
+## 官方文档站
++ 在线文档站：`https://docs.ai4j.dev`
++ 文档站源码位于 `docs-site/`
++ 适合直接使用者的入口：`docs-site/docs/coding-agent/`
++ 适合 SDK 接入的入口：`docs-site/docs/getting-started/` 与 `docs-site/docs/ai-basics/`
++ 适合协议与扩展集成的入口：`docs-site/docs/mcp/`、`docs-site/docs/agent/`
+
+推荐阅读顺序：
+
++ `docs-site/docs/intro.md`
++ `docs-site/docs/getting-started/installation.md`
++ `docs-site/docs/coding-agent/overview.md`
++ `docs-site/docs/ai-basics/overview.md`
++ `docs-site/docs/mcp/overview.md`
+
+基础会话上下文新增入口：
+
++ `docs-site/docs/ai-basics/chat/chat-memory.md`
++ `docs-site/docs/ai-basics/services/rerank.md`
++ `docs-site/docs/ai-basics/rag/ingestion-pipeline.md`
+
+本地运行文档站：
+
+```powershell
+cd .\docs-site
+npm install
+npm run start
+```
+
+```powershell
+cd .\docs-site
+npm run build
+```
+
 ## 更新日志
++ [2026-03-28] 修复 Coding Agent ACP 流式场景下纯空白 chunk 被 runtime 过滤的问题；ACP 保持透传原始 delta，不做 chunk 聚合；补充 CLI/文档中的流式语义说明
 + [2026-03-26] 新增 Coding Agent CLI / TUI 文档与能力说明，覆盖交互式会话、provider profile、workspace model override、命令参考与配置样例
 + [2025-08-19] 修复传递有验证参数的sse-url时，key丢失问题
 + [2025-08-08] OpenAi: max_tokens字段现已废弃，推荐使用max_completion_tokens(GPT-5已经不支持max_tokens字段)
@@ -142,6 +186,16 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
   --workspace .
 ```
 
+### ACP 示例
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar acp `
+  --provider openai `
+  --protocol responses `
+  --model gpt-5-mini `
+  --workspace .
+```
+
 ### 当前协议规则
 
 当前 CLI 对用户只暴露两种协议：
@@ -172,6 +226,47 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 + workspace 只引用当前 activeProfile
 + 临时切模型时使用 workspace 的 `modelOverride`
 
+`workspace.json` 也可以显式挂载额外 skill 目录：
+
+```json
+{
+  "activeProfile": "openai-main",
+  "modelOverride": "gpt-5-mini",
+  "enabledMcpServers": ["fetch"],
+  "skillDirectories": [
+    ".ai4j/skills",
+    "C:/skills/team",
+    "../shared-skills"
+  ]
+}
+```
+
+skill 发现规则：
+
++ 默认扫描 `<workspace>/.ai4j/skills`
++ 默认扫描 `~/.ai4j/skills`
++ `skillDirectories` 中的相对路径按 workspace 根目录解析
++ 进入 CLI 后可用 `/skills` 查看当前发现到的 skill
++ 可用 `/skills <name>` 查看某个 skill 的路径、来源、描述和扫描 roots，不打印 `SKILL.md` 正文
+
+### `/stream`、`Esc` 与状态提示
+
+当前 `/stream` 的语义是“当前 CLI 会话里的模型请求是否启用 `stream`”，不是单纯的 transcript 渲染开关：
+
++ 作用域是当前 CLI 会话
++ `/stream on|off` 会切换请求级 `stream=true|false`，并立即重建当前 session runtime
++ `on` 时 provider 响应按增量到达，assistant 文本也按增量呈现
++ `off` 时等待完整响应后再输出整理后的完成块
++ 流式 event 粒度由上游 provider/SSE 决定，不保证“一个 event = 一个 token”
++ 如果通过 ACP/IDE 接入，宿主应按收到的 chunk 顺序渲染，并保留换行与空白
+
+当前交互壳层里：
+
++ `Esc` 在活跃 turn 中断当前任务；空闲时关闭 palette 或清空输入
++ 状态栏会显示 `Thinking`、`Connecting`、`Responding`、`Working`、`Retrying`
++ 一段时间没有新进展会升级为 `Waiting`
++ 更久没有新进展会显示 `Stalled`，并提示 `press Esc to interrupt`
+
 ### 常用命令
 
 + `/providers`
@@ -185,6 +280,8 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 + `/model`
 + `/model <name>`
 + `/model reset`
++ `/skills`
++ `/skills <name>`
 + `/stream [on|off]`
 + `/processes`
 + `/process status|follow|logs|write|stop ...`
@@ -192,11 +289,17 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 
 ### 文档入口
 
-+ [Coding Agent CLI 快速开始](docs-site/docs/getting-started/coding-agent-cli-quickstart.md)
-+ [Coding Agent CLI 与 TUI](docs-site/docs/agent/coding-agent-cli.md)
-+ [多 Provider Profile 实战](docs-site/docs/agent/multi-provider-profiles.md)
-+ [Coding Agent 命令参考手册](docs-site/docs/agent/coding-agent-command-reference.md)
-+ [Provider 配置样例](docs-site/docs/agent/provider-config-examples.md)
++ [Coding Agent 总览](docs-site/docs/coding-agent/overview.md)
++ [Coding Agent 快速开始](docs-site/docs/coding-agent/quickstart.md)
++ [CLI / TUI 使用指南](docs-site/docs/coding-agent/cli-and-tui.md)
++ [会话、流式与进程](docs-site/docs/coding-agent/session-runtime.md)
++ [配置体系](docs-site/docs/coding-agent/configuration.md)
++ [Tools 与审批机制](docs-site/docs/coding-agent/tools-and-approvals.md)
++ [Skills 使用与组织](docs-site/docs/coding-agent/skills.md)
++ [MCP 对接](docs-site/docs/coding-agent/mcp-integration.md)
++ [ACP 集成](docs-site/docs/coding-agent/acp-integration.md)
++ [TUI 定制与主题](docs-site/docs/coding-agent/tui-customization.md)
++ [命令参考](docs-site/docs/coding-agent/command-reference.md)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)
@@ -384,6 +487,39 @@ public void test_chat_tool_call() throws Exception {
     System.out.println(response);
 }
 ```
+
+### 内置 ChatMemory
+
+如果你只是做基础多轮对话，不想自己每轮维护完整上下文，可以直接使用 `ChatMemory`：
+
+```java
+IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+ChatMemory memory = new InMemoryChatMemory(new MessageWindowChatMemoryPolicy(12));
+memory.addSystem("你是一个简洁的 Java 助手");
+memory.addUser("请用三点介绍 AI4J");
+
+ChatCompletion request = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .messages(memory.toChatMessages())
+        .build();
+
+ChatCompletionResponse response = chatService.chatCompletion(request);
+String answer = response.getChoices().get(0).getMessage().getContent().getText();
+
+memory.addAssistant(answer);
+```
+
+同一份 `memory` 也可以直接给 `Responses`：
+
+```java
+IResponsesService responsesService = aiService.getResponsesService(PlatformType.DOUBAO);
+
+ResponseRequest request = ResponseRequest.builder()
+        .model("doubao-seed-1-8-251228")
+        .input(memory.toResponsesInput())
+        .build();
+```
 #### 定义函数
 ```java
 @FunctionCall(name = "queryWeather", description = "查询目标地点的天气预报")
@@ -458,88 +594,162 @@ public void test_embed() throws Exception {
 }
 ```
 
+## Rerank服务
+
+### 直接调用统一重排服务
+
+```java
+IRerankService rerankService = aiService.getRerankService(PlatformType.JINA);
+
+RerankRequest request = RerankRequest.builder()
+        .model("jina-reranker-v2-base-multilingual")
+        .query("哪段最适合回答 Java 8 为什么仍然常见")
+        .documents(Arrays.asList(
+                RerankDocument.builder().id("doc-1").text("Java 8 仍是很多传统系统的默认运行时").build(),
+                RerankDocument.builder().id("doc-2").text("AI4J 提供统一 Chat、Responses 和 RAG 接口").build(),
+                RerankDocument.builder().id("doc-3").text("历史中间件和升级成本让很多企业延后 JDK 升级").build()
+        ))
+        .topN(2)
+        .build();
+
+RerankResponse response = rerankService.rerank(request);
+System.out.println(response.getResults());
+```
+
+### 作为 RAG 精排器接入
+
+```java
+Reranker reranker = aiService.getModelReranker(
+        PlatformType.JINA,
+        "jina-reranker-v2-base-multilingual",
+        5,
+        "优先保留制度原文、版本说明和编号明确的片段"
+);
+```
+
 ## RAG
+### 推荐：使用统一 IngestionPipeline 入库
+
+```java
+VectorStore vectorStore = aiService.getQdrantVectorStore();
+
+IngestionPipeline ingestionPipeline = aiService.getIngestionPipeline(
+        PlatformType.OPENAI,
+        vectorStore
+);
+
+IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder()
+        .dataset("kb_docs")
+        .embeddingModel("text-embedding-3-small")
+        .document(RagDocument.builder()
+                .sourceName("员工手册")
+                .sourcePath("/docs/employee-handbook.md")
+                .tenant("acme")
+                .biz("hr")
+                .version("2026.03")
+                .build())
+        .source(IngestionSource.text("第一章 假期政策。第二章 报销政策。"))
+        .build());
+
+System.out.println(ingestResult.getUpsertedCount());
+```
+
+如果你已经走 Pinecone，也可以直接：
+
+```java
+IngestionPipeline ingestionPipeline = aiService.getPineconeIngestionPipeline(PlatformType.OPENAI);
+```
+
+推荐主线是：
+
+1. `IngestionPipeline` 负责文档入库
+2. `VectorStore` 负责底层向量存储
+3. `DenseRetriever / HybridRetriever / ModelReranker / RagService` 负责查询阶段
+
+完整说明见：
+
++ `docs-site/docs/ai-basics/rag/ingestion-pipeline.md`
++ `docs-site/docs/ai-basics/rag/overview.md`
+
 ### 配置向量数据库
 ```yml
 ai:
   vector:
     pinecone:
-      url: ""
+      host: ""
       key: ""
 ```
-### 获取实例
+### 推荐：Pinecone 也走统一 `VectorStore + IngestionPipeline`
+
 ```java
-@Autowired
-private PineconeService pineconeService;
-```
-### 插入向量数据库
-```java
-public void test_insert_vector_store() throws Exception {
-    // 获取embedding服务实例
-    IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
+VectorStore vectorStore = aiService.getPineconeVectorStore();
 
-    // Tika读取file文件内容
-    String fileContent = TikaUtil.parseFile(new File("D:\\data\\test\\test.txt"));
+IngestionPipeline ingestionPipeline = aiService.getPineconeIngestionPipeline(PlatformType.OPENAI);
 
-    // 分割文本内容
-    RecursiveCharacterTextSplitter recursiveCharacterTextSplitter = new RecursiveCharacterTextSplitter(1000, 200);
-    List<String> contentList = recursiveCharacterTextSplitter.splitText(fileContent);
+IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder()
+        .dataset("tenant_a_hr_v202603")
+        .embeddingModel("text-embedding-3-small")
+        .document(RagDocument.builder()
+                .sourceName("员工手册")
+                .sourcePath("/docs/employee-handbook.pdf")
+                .tenant("tenant_a")
+                .biz("hr")
+                .version("2026.03")
+                .build())
+        .source(IngestionSource.file(new File("D:/data/employee-handbook.pdf")))
+        .build());
 
-    // 转为向量
-    Embedding build = Embedding.builder()
-            .input(contentList)
-            .model("text-embedding-3-small")
-            .build();
-    EmbeddingResponse embedding = embeddingService.embedding(build);
-    List<List<Float>> vectors = embedding.getData().stream().map(EmbeddingObject::getEmbedding).collect(Collectors.toList());
-    VertorDataEntity vertorDataEntity = new VertorDataEntity();
-    vertorDataEntity.setVector(vectors);
-    vertorDataEntity.setContent(contentList);
-    
-    // 向量存储
-    Integer count = pineconeService.insert(vertorDataEntity, "userId");
-
-}
-```
-### 从向量数据库查询
-```java
-public void test_query_vector_store() throws Exception {
-    // 获取embedding服务实例
-    IEmbeddingService embeddingService = aiService.getEmbeddingService(PlatformType.OPENAI);
-
-    // 构建要查询的问题，转为向量
-    Embedding build = Embedding.builder()
-            .input("question")
-            .model("text-embedding-3-small")
-            .build();
-    EmbeddingResponse embedding = embeddingService.embedding(build);
-    List<Float> question = embedding.getData().get(0).getEmbedding();
-
-    // 构建向量数据库的查询对象
-    PineconeQuery pineconeQueryReq = PineconeQuery.builder()
-            .namespace("userId")
-            .vector(question)
-            .build();
-
-    String result = pineconeService.query(pineconeQueryReq, " ");
-    
-    // 携带result，与chat服务进行对话
-    // ......
-}
+System.out.println("upserted=" + ingestResult.getUpsertedCount());
 ```
 
-### 删除向量数据库数据
+### 查询阶段：直接走统一 `RagService`
+
 ```java
-public void test_delete_vector_store() throws Exception {
-    // 构建参数
-    PineconeDelete pineconeDelete = PineconeDelete.builder()
-                                    .deleteAll(true)
-                                    .namespace("userId")
-                                    .build();
-    // 删除
-    Boolean res = pineconeService.delete(pineconeDelete);
-}
+RagService ragService = aiService.getRagService(
+        PlatformType.OPENAI,
+        vectorStore
+);
+
+RagQuery ragQuery = RagQuery.builder()
+        .query("年假如何计算")
+        .dataset("tenant_a_hr_v202603")
+        .embeddingModel("text-embedding-3-small")
+        .topK(5)
+        .build();
+
+RagResult ragResult = ragService.search(ragQuery);
+
+System.out.println(ragResult.getContext());
+System.out.println(ragResult.getCitations());
 ```
+
+### 如果需要更高精度，再接 Rerank
+
+```java
+Reranker reranker = aiService.getModelReranker(
+        PlatformType.JINA,
+        "jina-reranker-v2-base-multilingual",
+        5,
+        "优先制度原文、章节标题和编号明确的片段"
+);
+
+RagService ragService = new DefaultRagService(
+        new DenseRetriever(
+                aiService.getEmbeddingService(PlatformType.OPENAI),
+                vectorStore
+        ),
+        reranker,
+        new DefaultRagContextAssembler()
+);
+```
+
+### 什么时候还需要直接用已废弃的 `PineconeService`（Deprecated）
+
+`PineconeService` 目前在文档层已视为 Deprecated。只有在你明确需要 Pinecone 特有的底层控制时，才建议继续直接用：
+
++ namespace 级底层操作
++ 兼容旧项目里已经写死的 `PineconeQuery / PineconeDelete`
++ 你就是在做 Pinecone 专用封装，而不是面向统一 RAG 抽象开发
 
 ## 内置联网
 

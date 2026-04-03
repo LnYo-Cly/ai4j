@@ -10,6 +10,8 @@ sidebar_position: 1
 2. 应该如何选择运行时（ReAct / CodeAct / DeepResearch）？
 3. 单 Agent、SubAgent、Agent Teams、StateGraph 的边界分别是什么？
 
+如果你的目标是直接把本地代码仓跑成一个可交互的编码助手，请先看 [Coding Agent 专题](/docs/coding-agent/overview)。
+
 ---
 
 ## 1. Agent 能力地图（从核心到扩展）
@@ -31,6 +33,10 @@ AI4J Agent 不是一个只能聊天的封装，而是一套可拆分、可替换
 - `AgentSession`
 - `AgentContext`
 - `Agents`
+
+源码模块根路径：
+
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent`
 
 ---
 
@@ -59,12 +65,24 @@ AI4J Agent 不是一个只能聊天的封装，而是一套可拆分、可替换
 
 - `AgentToolRegistry`：决定“暴露给模型哪些工具”；
 - `ToolExecutor`：决定“工具调用如何执行”；
+- `ToolUtilRegistry` / `ToolUtilExecutor` 是 Agent 层复用基础 `ToolUtil` 的桥；
 - 默认执行器 `ToolUtilExecutor` 支持 Function/MCP。
 
 ### 2.5 `agent.memory`
 
 - 默认 `InMemoryAgentMemory`；
 - 支持 `MemoryCompressor` 和窗口压缩策略。
+
+这里还要和基础层做一个边界区分：
+
+- `ChatMemory` 在 `ai4j.memory`，面向基础 `Chat / Responses`
+- `AgentMemory` 在 `ai4j-agent.agent.memory`，面向 runtime step loop
+- `CodingSession` 则是在 `ai4j-coding` 上再叠一层长期任务会话状态
+
+如果你容易把这三层混掉，建议连读：
+
+- [Memory 与 Tool 分层边界](/docs/ai-basics/memory-and-tool-boundaries)
+- [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
 
 ### 2.6 `agent.workflow`
 
@@ -90,6 +108,14 @@ AI4J Agent 不是一个只能聊天的封装，而是一套可拆分、可替换
 ---
 
 ## 3. 运行时怎么选
+
+在真正进入 Runtime 之前，建议先记住 Agent 的三个源码入口根：
+
+- `agent.runtime`：step loop 和运行时策略
+- `agent.tool`：tool registry / executor / sanitizer
+- `agent.memory`：runtime memory 与压缩
+
+这样读源码时不容易把“模型调用适配”和“runtime 治理”混成一层。
 
 ### ReActRuntime（默认）
 
@@ -129,6 +155,15 @@ AI4J Agent 不是一个只能聊天的封装，而是一套可拆分、可替换
 
 ---
 
+## 5. 先按场景选路径
+
+如果你不想先理解所有模块，而是想直接判断“我该从哪一页开始”，建议先看：
+
+1. [Agent 使用路径与场景选择](/docs/agent/use-cases-and-paths)
+2. [最小 ReAct Agent](/docs/agent/minimal-react-agent)
+
+---
+
 ## 5. 最小示例（可运行）
 
 ```java
@@ -151,23 +186,21 @@ System.out.println(result.getOutputText());
 
 ## 6. Agent 章节阅读顺序
 
-建议按下面顺序读完：
+这一章聚焦通用 Agent 框架本身，不再展开 CLI / TUI / ACP 入口。建议按下面顺序读完：
 
-1. `Coding Agent CLI 与 TUI`
-2. `多 Provider Profile 实战`
-3. `Coding Agent 命令参考手册`
-4. `Provider 配置样例`
-5. `自定义 Agent 开发指南`
-6. `System Prompt 与 Instructions`
-7. `Model Client 选择与适配`
-8. `Runtime 实现详解`
-9. `Memory 管理`
-10. `Workflow StateGraph`
-11. `CodeAct`（含自定义沙箱）
-12. `SubAgent 与 handoff policy`
-13. `Agent Teams`
-14. `Trace 可观测`
-15. `核心类参考手册`
+1. `Agent 使用路径与场景选择`
+2. `最小 ReAct Agent`
+3. `自定义 Agent 开发指南`
+4. `System Prompt 与 Instructions`
+5. `Model Client 选择与适配`
+6. `Runtime 实现详解`
+7. `Memory 管理`
+8. `Workflow StateGraph`
+9. `CodeAct`（含自定义沙箱）
+10. `SubAgent 与 handoff policy`
+11. `Agent Teams`
+12. `Trace 可观测`
+13. `核心类参考手册`
 
 ---
 

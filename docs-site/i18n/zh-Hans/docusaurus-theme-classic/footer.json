@@ -1,0 +1,74 @@
+﻿{
+  "link.title.Docs": {
+    "message": "文档",
+    "description": "页脚文档分组标题"
+  },
+  "link.title.Resources": {
+    "message": "资源",
+    "description": "页脚资源分组标题"
+  },
+  "link.title.Open Source": {
+    "message": "开源",
+    "description": "页脚开源分组标题"
+  },
+  "link.title.文档": {
+    "message": "文档",
+    "description": "页脚文档分组标题（中文键）"
+  },
+  "link.title.资源": {
+    "message": "资源",
+    "description": "页脚资源分组标题（中文键）"
+  },
+  "link.title.开源": {
+    "message": "开源",
+    "description": "页脚开源分组标题（中文键）"
+  },
+  "link.item.label.Start Here": {
+    "message": "开始阅读",
+    "description": "开始阅读链接"
+  },
+  "link.item.label.Agent": {
+    "message": "智能体 Agent",
+    "description": "Agent 链接"
+  },
+  "link.item.label.MCP": {
+    "message": "MCP",
+    "description": "MCP 链接"
+  },
+  "link.item.label.Blog Migration Map": {
+    "message": "历史博客迁移映射",
+    "description": "历史博客迁移映射链接"
+  },
+  "link.item.label.Cloudflare Deployment": {
+    "message": "Cloudflare Pages 部署指南",
+    "description": "Cloudflare 部署链接"
+  },
+  "link.item.label.开始阅读": {
+    "message": "开始阅读",
+    "description": "开始阅读链接（中文键）"
+  },
+  "link.item.label.智能体 Agent": {
+    "message": "智能体 Agent",
+    "description": "智能体链接（中文键）"
+  },
+  "link.item.label.历史博客迁移映射": {
+    "message": "历史博客迁移映射",
+    "description": "迁移映射链接（中文键）"
+  },
+  "link.item.label.Cloudflare Pages 部署指南": {
+    "message": "Cloudflare Pages 部署指南",
+    "description": "Cloudflare 部署链接（中文键）"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "GitHub 链接"
+  },
+  "link.item.label.Issues": {
+    "message": "Issues",
+    "description": "Issues 链接"
+  },
+  "copyright": {
+    "message": "Copyright (c) 2026 AI4J Contributors · 基于 Docusaurus 构建",
+    "description": "页脚版权"
+  }
+}

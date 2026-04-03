@@ -58,6 +58,7 @@ public class Content {
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class MultiModal {
+        @Builder.Default
         private String type = Type.TEXT.type;
         private String text;
         @JsonProperty("image_url")

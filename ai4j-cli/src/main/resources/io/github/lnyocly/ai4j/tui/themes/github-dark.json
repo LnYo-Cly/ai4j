@@ -1,0 +1,20 @@
+{
+  "name": "github-dark",
+  "brand": "#58a6ff",
+  "accent": "#d2a8ff",
+  "success": "#3fb950",
+  "warning": "#d29922",
+  "danger": "#f85149",
+  "text": "#c9d1d9",
+  "muted": "#8b949e",
+  "panelBorder": "#30363d",
+  "panelTitle": "#58a6ff",
+  "badgeForeground": "#0d1117",
+  "codeBackground": "#161b22",
+  "codeBorder": "#30363d",
+  "codeText": "#c9d1d9",
+  "codeKeyword": "#ff7b72",
+  "codeString": "#a5d6ff",
+  "codeComment": "#8b949e",
+  "codeNumber": "#79c0ff"
+}

@@ -1,100 +1,20 @@
 ---
-sidebar_position: 6
+sidebar_position: 99
 ---
 
-# Coding Agent CLI 快速开始
+# Coding Agent CLI 快速开始（迁移）
 
-如果你想最快体验 AI4J 的 coding agent，而不是从 SDK 代码接起，建议直接从 `ai4j-cli` 开始。
+`Coding Agent` 已从 `快速开始` 中独立成单独专题。
 
-这条链路适合：
+如果你要直接使用本地 coding agent，而不是先从 SDK 基础接口接起，建议改为阅读下面这组正式页面：
 
-- 直接在本地代码仓里做问答、改文件、跑命令；
-- 体验持续会话、session、process、slash command；
-- 验证不同 provider / model / protocol 的切换行为。
+1. [Coding Agent 总览](/docs/coding-agent/overview)
+2. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
+3. [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
+4. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
+5. [ACP 集成](/docs/coding-agent/acp-integration)
 
----
+如果你当前停留在“第一次接 AI4J SDK”的阶段，建议回到：
 
-## 1. 基本启动
-
-先打包：
-
-```powershell
-mvn -pl ai4j-cli -am -DskipTests package
-```
-
-产物：
-
-```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
-```
-
----
-
-## 2. 最小 one-shot 示例
-
-```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
-  --provider openai `
-  --protocol responses `
-  --model gpt-5-mini `
-  --prompt "Read README and summarize the project structure"
-```
-
-适用场景：
-
-- 单次任务
-- 不需要持续会话
-- 先验证 provider/model 配置是否能通
-
----
-
-## 3. 进入交互式 coding session
-
-```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
-  --provider zhipu `
-  --protocol chat `
-  --model glm-4.7 `
-  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
-  --workspace .
-```
-
-交互式会话下，你可以直接输入自然语言任务，也可以使用 slash 命令：
-
-- `/status`
-- `/session`
-- `/providers`
-- `/provider ...`
-- `/model ...`
-- `/stream on|off`
-
----
-
-## 4. 启动 TUI shell
-
-```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
-  --provider zhipu `
-  --protocol chat `
-  --model glm-4.7 `
-  --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
-  --workspace .
-```
-
-当前 TUI shell 支持：
-
-- `/` 打开命令面板
-- `Tab` 应用补全
-- `Ctrl+P` 打开 command palette
-- `Enter` 提交输入
-- `Esc` 清空输入
-
----
-
-## 5. 你接下来该看哪一页
-
-如果你已经能跑起来，建议继续看：
-
-1. `Agent / Coding Agent CLI 与 TUI`
-2. `Agent / 多 Provider Profile 实战`
-
+- [安装与环境准备](/docs/getting-started/installation)
+- [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)

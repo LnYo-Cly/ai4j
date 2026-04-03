@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.entity.DeepSeekChatCompletion;
-import io.github.lnyocly.ai4j.platform.hunyuan.HunyuanConstant;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import lombok.AllArgsConstructor;

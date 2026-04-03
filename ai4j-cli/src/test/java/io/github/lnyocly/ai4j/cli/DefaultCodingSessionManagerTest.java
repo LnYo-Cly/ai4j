@@ -1,9 +1,12 @@
-package io.github.lnyocly.ai4j.cli;
+package io.github.lnyocly.ai4j.cli.session;
 
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.cli.CliProtocol;
+import io.github.lnyocly.ai4j.cli.CliUiMode;
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
 import io.github.lnyocly.ai4j.coding.CodingAgentResult;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
@@ -61,7 +64,6 @@ public class DefaultCodingSessionManagerTest {
                 null,
                 null,
                 8,
-                16,
                 null,
                 null,
                 null,

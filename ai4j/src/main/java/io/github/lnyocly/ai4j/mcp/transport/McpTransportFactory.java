@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
+import io.github.lnyocly.ai4j.mcp.util.McpTypeSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ public class McpTransportFactory {
         STDIO("stdio"),
         SSE("sse"), 
         STREAMABLE_HTTP("streamable_http"),
+        @Deprecated
         HTTP("http"); // 向后兼容，映射到streamable_http
         
         private final String value;
@@ -36,31 +38,18 @@ public class McpTransportFactory {
          * 从字符串创建传输类型
          */
         public static TransportType fromString(String value) {
-            if (value == null || value.trim().isEmpty()) {
-                return STDIO; // 默认使用stdio
+            if (!McpTypeSupport.isKnownType(value)) {
+                log.warn("未知的传输类型: {}, 使用默认的stdio", value);
             }
-            
-            String normalizedValue = value.trim().toLowerCase();
-            for (TransportType type : values()) {
-                if (type.value.equalsIgnoreCase(normalizedValue)) {
-                    return type;
-                }
-            }
-            
-            // 特殊处理一些常见的别名
-            switch (normalizedValue) {
-                case "mcp":
-                case "streamable-http":
-                case "http-streamable":
-                    return STREAMABLE_HTTP;
-                case "server-sent-events":
-                case "event-stream":
+
+            String normalizedType = McpTypeSupport.normalizeType(value);
+            switch (normalizedType) {
+                case McpTypeSupport.TYPE_SSE:
                     return SSE;
-                case "process":
-                case "local":
-                    return STDIO;
+                case McpTypeSupport.TYPE_STREAMABLE_HTTP:
+                    return STREAMABLE_HTTP;
+                case McpTypeSupport.TYPE_STDIO:
                 default:
-                    log.warn("未知的传输类型: {}, 使用默认的stdio", value);
                     return STDIO;
             }
         }
@@ -176,11 +165,6 @@ public class McpTransportFactory {
      * 检查传输类型是否支持
      */
     public static boolean isSupported(String typeString) {
-        try {
-            TransportType.fromString(typeString);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return McpTypeSupport.isKnownType(typeString);
     }
 }

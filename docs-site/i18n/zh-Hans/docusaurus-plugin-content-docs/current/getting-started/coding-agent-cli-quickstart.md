@@ -66,7 +66,13 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 - `/providers`
 - `/provider ...`
 - `/model ...`
+- `/skills [name]`
 - `/stream on|off`
+
+这里有两个关键语义：
+
+- `/stream on|off` 切换的是当前 CLI 会话里的模型请求流式开关，并会立即重建当前 session runtime
+- `/skills <name>` 只显示 skill 的来源、路径、描述和扫描 roots，不回显 `SKILL.md` 正文
 
 ---
 
@@ -87,7 +93,9 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 - `Tab` 应用补全
 - `Ctrl+P` 打开 command palette
 - `Enter` 提交输入
-- `Esc` 清空输入
+- `Esc` 在活跃 turn 中断当前任务；空闲时关闭 palette 或清空输入
+
+状态栏会在 `Thinking / Connecting / Responding / Working / Retrying` 之间切换；如果一段时间没有新进展，会升级为 `Waiting`，再继续无进展会显示 `Stalled` 并提示可以按 `Esc` 中断。
 
 ---
 
@@ -97,4 +105,3 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 
 1. `Agent / Coding Agent CLI 与 TUI`
 2. `Agent / 多 Provider Profile 实战`
-

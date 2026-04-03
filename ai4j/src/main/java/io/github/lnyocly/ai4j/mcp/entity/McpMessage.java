@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -22,6 +23,7 @@ public abstract class McpMessage {
     /**
      * JSON-RPC版本，固定为"2.0"
      */
+    @Builder.Default
     @JsonProperty("jsonrpc")
     private String jsonrpc = "2.0";
     

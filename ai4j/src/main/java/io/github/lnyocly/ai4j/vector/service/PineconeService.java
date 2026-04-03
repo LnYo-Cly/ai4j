@@ -5,8 +5,8 @@ import io.github.lnyocly.ai4j.config.PineconeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.service.Configuration;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
-import io.github.lnyocly.ai4j.vector.VertorDataEntity;
+import io.github.lnyocly.ai4j.network.UrlUtils;
+import io.github.lnyocly.ai4j.vector.VectorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.*;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class PineconeService {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+
     private final PineconeConfig pineconeConfig;
     private final OkHttpClient okHttpClient;
 
@@ -42,8 +44,8 @@ public class PineconeService {
     // 插入Pinecone向量库
     public Integer insert(PineconeInsert pineconeInsertReq){
         Request request = new Request.Builder()
-                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getUpsert()))
-                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeInsertReq)))
+                .url(UrlUtils.concatUrl(pineconeConfig.getHost(), pineconeConfig.getUpsert()))
+                .post(jsonBody(pineconeInsertReq))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())
@@ -63,16 +65,16 @@ public class PineconeService {
         }
     }
 
-    public Integer insert(VertorDataEntity vertorDataEntity, String namespace) {
-        int count = vertorDataEntity.getContent().size();
+    public Integer insert(VectorDataEntity vectorDataEntity, String namespace) {
+        int count = vectorDataEntity.getContent().size();
         List<PineconeVectors> pineconeVectors = new ArrayList<>();
         // 生成每个向量的id
         List<String> ids = generateIDs(count);
         // 生成每个向量对应的文本,元数据，kv
-        List<Map<String, String>> metadatas = generateContent(vertorDataEntity.getContent());
+        List<Map<String, String>> metadatas = generateContent(vectorDataEntity.getContent());
 
         for(int i = 0;i < count; ++i){
-            pineconeVectors.add(new PineconeVectors(ids.get(i), vertorDataEntity.getVector().get(i), metadatas.get(i)));
+            pineconeVectors.add(new PineconeVectors(ids.get(i), vectorDataEntity.getVector().get(i), metadatas.get(i)));
         }
         PineconeInsert pineconeInsert = new PineconeInsert(pineconeVectors, namespace);
         return this.insert(pineconeInsert);
@@ -81,8 +83,8 @@ public class PineconeService {
     // 从Pinecone向量库中查询相似向量
     public PineconeQueryResponse query(PineconeQuery pineconeQueryReq){
         Request request = new Request.Builder()
-                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getQuery()))
-                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeQueryReq)))
+                .url(UrlUtils.concatUrl(pineconeConfig.getHost(), pineconeConfig.getQuery()))
+                .post(jsonBody(pineconeQueryReq))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())
@@ -111,8 +113,8 @@ public class PineconeService {
     // 从Pinecone向量库中删除向量
     public Boolean delete(PineconeDelete pineconeDeleteReq){
         Request request = new Request.Builder()
-                .url(ValidateUtil.concatUrl(pineconeConfig.getHost(), pineconeConfig.getDelete()))
-                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), JSON.toJSONString(pineconeDeleteReq)))
+                .url(UrlUtils.concatUrl(pineconeConfig.getHost(), pineconeConfig.getDelete()))
+                .post(jsonBody(pineconeDeleteReq))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON)
                 .header("Api-Key", pineconeConfig.getKey())
@@ -152,4 +154,9 @@ public class PineconeService {
         return finalcontents;
     }
 
+    private RequestBody jsonBody(Object payload) {
+        return RequestBody.create(JSON.toJSONString(payload), JSON_MEDIA_TYPE);
+    }
+
 }
+

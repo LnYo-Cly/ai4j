@@ -1,11 +1,11 @@
 package io.github.lnyocly.ai4j.mcp.client;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.annotation.JSONField;
 import io.github.lnyocly.ai4j.mcp.entity.*;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
 import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
 import io.github.lnyocly.ai4j.mcp.transport.McpTransport;
+import io.github.lnyocly.ai4j.mcp.transport.McpTransportSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +25,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class McpClient implements McpTransport.McpMessageHandler {
 
     private static final Logger log = LoggerFactory.getLogger(McpClient.class);
+    private static final long HEARTBEAT_INTERVAL_MINUTES = 10L;
 
     private final String clientName;
     private final String clientVersion;
     private final McpTransport transport;
+    private final boolean autoReconnect;
     private final AtomicBoolean initialized;
     private final AtomicBoolean connected;
     private final AtomicLong messageIdCounter;
@@ -41,13 +43,20 @@ public class McpClient implements McpTransport.McpMessageHandler {
 
     // 缓存的服务器工具列表
     private volatile List<McpToolDefinition> availableTools;
+    private volatile List<McpResource> availableResources;
+    private volatile List<McpPrompt> availablePrompts;
 
     private ScheduledExecutorService heartbeatExecutor;
 
     public McpClient(String clientName, String clientVersion, McpTransport transport) {
+        this(clientName, clientVersion, transport, true);
+    }
+
+    public McpClient(String clientName, String clientVersion, McpTransport transport, boolean autoReconnect) {
         this.clientName = clientName;
         this.clientVersion = clientVersion;
         this.transport = transport;
+        this.autoReconnect = autoReconnect;
         this.initialized = new AtomicBoolean(false);
         this.connected = new AtomicBoolean(false);
         this.messageIdCounter = new AtomicLong(0);
@@ -75,17 +84,17 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     log.debug("初始化请求完成");
 
                     connected.set(true); // 在所有步骤成功后再设置
-                    log.info("MCP客户端连接成功");
+                    log.debug("MCP客户端连接成功");
                     if (transport.needsHeartbeat()) {
-                        log.info("正在启动心跳服务...");
+                        log.debug("正在启动心跳服务...");
                         startHeartbeat();
                     }
                 } catch (Exception e) {
-                    log.error("连接MCP服务器失败", e);
+                    log.debug("连接MCP服务器失败: {}", McpTransportSupport.safeMessage(e), e);
                     // 确保在失败时状态被重置
                     connected.set(false);
                     initialized.set(false);
-                    throw new RuntimeException("连接MCP服务器失败", e);
+                    throw new RuntimeException(McpTransportSupport.safeMessage(e), e);
                 }
             }
         });
@@ -96,25 +105,26 @@ public class McpClient implements McpTransport.McpMessageHandler {
      */
     public CompletableFuture<Void> disconnect() {
         return CompletableFuture.runAsync(() -> {
-            if (connected.get()) {
-                if (transport.needsHeartbeat()) {
-                    log.info("正在停止心跳服务...");
+            if (connected.get() || transport.isConnected()) {
+                if (transport.needsHeartbeat() && connected.get()) {
+                    log.debug("正在停止心跳服务...");
                     stopHeartbeat();
                 }
+                connected.set(false);
+                initialized.set(false);
+                availableTools = null;
+                availableResources = null;
+                availablePrompts = null;
                 try {
                     // 先停止传输层，避免触发新的回调
                     transport.stop().join();
-
-                    connected.set(false);
-                    initialized.set(false);
-                    availableTools = null;
 
                     // 取消所有待响应的请求
                     pendingRequests.values().forEach(future ->
                             future.completeExceptionally(new RuntimeException("连接已断开")));
                     pendingRequests.clear();
 
-                    log.info("MCP客户端已断开连接");
+                    log.debug("MCP客户端已断开连接");
                 } catch (Exception e) {
                     log.error("断开连接时发生错误", e);
                 }
@@ -130,11 +140,10 @@ public class McpClient implements McpTransport.McpMessageHandler {
             heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
         }
 
-        // 每2分钟发送一次心跳
+        // 长连接传输由底层连接自行保活；这里仅保留低频兜底检查。
         heartbeatExecutor.scheduleAtFixedRate(() -> {
             if (isConnected()) {
-                log.info("发送MCP心跳包...");
-                // 使用一个轻量级请求作为心跳，例如获取工具列表
+                log.debug("执行MCP心跳检查");
                 this.getAvailableTools().exceptionally(e -> {
                     log.warn("心跳请求失败: {}", e.getMessage());
                     // 如果心跳失败，也可以考虑触发重连
@@ -142,7 +151,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     return null;
                 });
             }
-        }, 2, 2, TimeUnit.MINUTES);
+        }, HEARTBEAT_INTERVAL_MINUTES, HEARTBEAT_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
     private void stopHeartbeat() {
@@ -177,8 +186,9 @@ public class McpClient implements McpTransport.McpMessageHandler {
                 .thenApply(response -> {
                     try {
                         if (response.isSuccessResponse() && response.getResult() != null) {
-                            // 解析工具列表
-                            return parseToolsListResponse(response.getResult());
+                            List<McpToolDefinition> parsedTools = McpClientResponseSupport.parseToolsListResponse(response.getResult());
+                            availableTools = parsedTools;
+                            return parsedTools;
                         } else {
                             log.warn("获取工具列表失败: {}", response.getError());
                             return new ArrayList<McpToolDefinition>();
@@ -186,6 +196,126 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     } catch (Exception e) {
                         log.error("解析工具列表响应失败", e);
                         return new ArrayList<McpToolDefinition>();
+                    }
+                });
+    }
+
+    /**
+     * 获取可用资源列表
+     */
+    public CompletableFuture<List<McpResource>> getAvailableResources() {
+        if (availableResources != null) {
+            return CompletableFuture.completedFuture(availableResources);
+        }
+
+        return sendRequest("resources/list", null)
+                .thenApply(response -> {
+                    try {
+                        if (response.isSuccessResponse() && response.getResult() != null) {
+                            List<McpResource> parsedResources = McpClientResponseSupport.parseResourcesListResponse(response.getResult());
+                            availableResources = parsedResources;
+                            return parsedResources;
+                        } else {
+                            log.warn("获取资源列表失败: {}", response.getError());
+                            return new ArrayList<McpResource>();
+                        }
+                    } catch (Exception e) {
+                        log.error("解析资源列表响应失败", e);
+                        return new ArrayList<McpResource>();
+                    }
+                });
+    }
+
+    /**
+     * 读取资源内容
+     */
+    public CompletableFuture<McpResourceContent> readResource(String uri) {
+        if (uri == null || uri.trim().isEmpty()) {
+            CompletableFuture<McpResourceContent> future = new CompletableFuture<McpResourceContent>();
+            future.completeExceptionally(new IllegalArgumentException("uri is required"));
+            return future;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("uri", uri);
+
+        return sendRequest("resources/read", params)
+                .thenApply(response -> {
+                    try {
+                        if (response.isSuccessResponse() && response.getResult() != null) {
+                            return McpClientResponseSupport.parseResourceReadResponse(response.getResult());
+                        } else {
+                            log.warn("读取资源失败: {}", response.getError());
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        log.error("解析资源读取响应失败", e);
+                        return null;
+                    }
+                });
+    }
+
+    /**
+     * 获取可用提示模板列表
+     */
+    public CompletableFuture<List<McpPrompt>> getAvailablePrompts() {
+        if (availablePrompts != null) {
+            return CompletableFuture.completedFuture(availablePrompts);
+        }
+
+        return sendRequest("prompts/list", null)
+                .thenApply(response -> {
+                    try {
+                        if (response.isSuccessResponse() && response.getResult() != null) {
+                            List<McpPrompt> parsedPrompts = McpClientResponseSupport.parsePromptsListResponse(response.getResult());
+                            availablePrompts = parsedPrompts;
+                            return parsedPrompts;
+                        } else {
+                            log.warn("获取提示模板列表失败: {}", response.getError());
+                            return new ArrayList<McpPrompt>();
+                        }
+                    } catch (Exception e) {
+                        log.error("解析提示模板列表响应失败", e);
+                        return new ArrayList<McpPrompt>();
+                    }
+                });
+    }
+
+    /**
+     * 获取提示模板渲染结果
+     */
+    public CompletableFuture<McpPromptResult> getPrompt(String name) {
+        return getPrompt(name, null);
+    }
+
+    /**
+     * 获取提示模板渲染结果
+     */
+    public CompletableFuture<McpPromptResult> getPrompt(String name, Map<String, Object> arguments) {
+        if (name == null || name.trim().isEmpty()) {
+            CompletableFuture<McpPromptResult> future = new CompletableFuture<McpPromptResult>();
+            future.completeExceptionally(new IllegalArgumentException("name is required"));
+            return future;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("name", name);
+        if (arguments != null && !arguments.isEmpty()) {
+            params.put("arguments", arguments);
+        }
+
+        return sendRequest("prompts/get", params)
+                .thenApply(response -> {
+                    try {
+                        if (response.isSuccessResponse() && response.getResult() != null) {
+                            return McpClientResponseSupport.parsePromptGetResponse(name, response.getResult());
+                        } else {
+                            log.warn("获取提示模板失败: {}", response.getError());
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        log.error("解析提示模板响应失败", e);
+                        return null;
                     }
                 });
     }
@@ -212,7 +342,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     try {
                         if (response.isSuccessResponse() && response.getResult() != null) {
                             // 解析工具调用结果
-                            return parseToolCallResponse(response.getResult());
+                            return McpClientResponseSupport.parseToolCallResponse(response.getResult());
                         } else {
                             log.warn("工具调用失败: {}", response.getError());
                             return "工具调用失败: " + (response.getError() != null ? response.getError().getMessage() : "未知错误");
@@ -250,13 +380,13 @@ public class McpClient implements McpTransport.McpMessageHandler {
 
     @Override
     public void onConnected() {
-        log.info("MCP传输层连接已建立");
+        log.debug("MCP传输层连接已建立");
         connected.set(true);
     }
 
     @Override
     public void onDisconnected(String reason) {
-        log.info("MCP传输层连接已断开: {}", reason);
+        log.debug("MCP传输层连接已断开: {}", reason);
         if (connected.get()) { // 增加一个判断，避免重复执行
             connected.set(false);
             initialized.set(false);
@@ -279,15 +409,19 @@ public class McpClient implements McpTransport.McpMessageHandler {
             pendingRequests.clear();
 
             // 触发异步重连
-            scheduleReconnection();
+            if (autoReconnect) {
+                scheduleReconnection();
+            } else {
+                log.debug("自动重连已禁用，跳过MCP重连: {}", clientName);
+            }
         }
     }
 
     @Override
     public void onError(Throwable error) {
-        log.error("MCP传输层发生错误", error);
+        log.debug("MCP传输层发生错误: {}", McpTransportSupport.safeMessage(error), error);
         // 将传输层错误视为一次断开连接事件。
-        this.onDisconnected("Transport layer error: " + error.getMessage());
+        this.onDisconnected(McpTransportSupport.safeMessage(error));
     }
     /**
      * 调度一个异步的重连任务
@@ -300,13 +434,13 @@ public class McpClient implements McpTransport.McpMessageHandler {
         }
 
         if (isReconnecting.compareAndSet(false, true)) {
-            log.info("将在5秒后尝试重新连接...");
+            log.debug("将在5秒后尝试重新连接...");
             try {
                 reconnectExecutor.schedule(() -> {
                     try {
-                        log.info("开始执行重连...");
+                        log.debug("开始执行重连...");
                         connect().get(60, TimeUnit.SECONDS); // 使用 get() 来等待重连完成
-                        log.info("MCP客户端重连成功！");
+                        log.debug("MCP客户端重连成功");
                     } catch (Exception e) {
                         log.error("重连失败，将安排下一次重连", e);
                         // 如果这次重连失败，再次调度
@@ -329,7 +463,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
      * 发送初始化请求
      */
     private CompletableFuture<Void> initialize() {
-        log.info("开始MCP初始化流程");
+        log.debug("开始MCP初始化流程");
 
         // 构建客户端能力 - 使用更完整的配置
         Map<String, Object> capabilities = new HashMap<>();
@@ -369,13 +503,13 @@ public class McpClient implements McpTransport.McpMessageHandler {
 
         return sendRequest("initialize", params)
                 .thenCompose(response -> {
-                    log.info("收到初始化响应，发送initialized通知");
+                    log.debug("收到初始化响应，发送initialized通知");
                     // 发送初始化完成通知 - 使用空对象而不是null
                     return sendNotification("notifications/initialized", new HashMap<>());
                 })
                 .thenRun(() -> {
                     initialized.set(true);
-                    log.info("MCP客户端初始化完成");
+                    log.debug("MCP客户端初始化完成");
                 });
     }
 
@@ -389,7 +523,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
         McpRequest request = new McpRequest(method, messageId, params);
 
         // 添加详细日志
-        log.info("发送MCP请求: method={}, id={}, params={}", method, messageId, JSON.toJSONString(params));
+        log.debug("发送MCP请求: method={}, id={}, params={}", method, messageId, JSON.toJSONString(params));
 
         CompletableFuture<McpMessage> future = new CompletableFuture<>();
         pendingRequests.put(messageId, future);
@@ -427,7 +561,7 @@ public class McpClient implements McpTransport.McpMessageHandler {
         Object messageId = message.getId();
 
         // 记录完整的响应消息用于调试
-        log.info("收到MCP响应: id={}, 完整消息={}", messageId, JSON.toJSONString(message));
+        log.debug("收到MCP响应: id={}, 完整消息={}", messageId, JSON.toJSONString(message));
 
         // 尝试不同的ID类型匹配
         CompletableFuture<McpMessage> future = pendingRequests.remove(messageId);
@@ -461,16 +595,18 @@ public class McpClient implements McpTransport.McpMessageHandler {
         switch (method) {
             case "notifications/tools/list_changed":
                 // 工具列表变更通知
-                log.info("服务器工具列表已变更，清除缓存");
+                log.debug("服务器工具列表已变更，清除缓存");
                 availableTools = null; // 清除缓存
                 break;
             case "notifications/resources/list_changed":
                 // 资源列表变更通知
-                log.info("服务器资源列表已变更");
+                log.debug("服务器资源列表已变更");
+                availableResources = null;
                 break;
             case "notifications/prompts/list_changed":
                 // 提示列表变更通知
-                log.info("服务器提示列表已变更");
+                log.debug("服务器提示列表已变更");
+                availablePrompts = null;
                 break;
             case "notifications/progress":
                 // 进度通知
@@ -491,89 +627,6 @@ public class McpClient implements McpTransport.McpMessageHandler {
 
         // 这里可以处理服务器向客户端发送的请求
         // 比如sampling/createMessage等
-    }
-
-    /**
-     * 解析工具列表响应
-     */
-    private List<McpToolDefinition> parseToolsListResponse(Object result) {
-        List<McpToolDefinition> tools = new ArrayList<>();
-
-        try {
-            if (result instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> resultMap = (Map<String, Object>) result;
-                Object toolsObj = resultMap.get("tools");
-
-                if (toolsObj instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<Object> toolsList = (List<Object>) toolsObj;
-
-                    for (Object toolObj : toolsList) {
-                        if (toolObj instanceof Map) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> toolMap = (Map<String, Object>) toolObj;
-
-                            McpToolDefinition tool = McpToolDefinition.builder()
-                                    .name((String) toolMap.get("name"))
-                                    .description((String) toolMap.get("description"))
-                                    .inputSchema((Map<String, Object>) toolMap.get("inputSchema"))
-                                    .build();
-
-                            tools.add(tool);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("解析工具列表时发生错误", e);
-        }
-
-        return tools;
-    }
-
-    /**
-     * 解析工具调用响应
-     */
-    private String parseToolCallResponse(Object result) {
-        try {
-            if (result instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> resultMap = (Map<String, Object>) result;
-
-                // 检查是否有内容字段
-                Object content = resultMap.get("content");
-                if (content != null) {
-                    if (content instanceof List) {
-                        @SuppressWarnings("unchecked")
-                        List<Object> contentList = (List<Object>) content;
-
-                        StringBuilder result_text = new StringBuilder();
-                        for (Object item : contentList) {
-                            if (item instanceof Map) {
-                                @SuppressWarnings("unchecked")
-                                Map<String, Object> itemMap = (Map<String, Object>) item;
-                                Object text = itemMap.get("text");
-                                if (text != null) {
-                                    result_text.append(text.toString());
-                                }
-                            }
-                        }
-                        return result_text.toString();
-                    } else {
-                        return content.toString();
-                    }
-                }
-
-                // 如果没有content字段，返回整个结果的字符串表示
-                return JSON.toJSONString(result);
-            }
-
-            return result != null ? result.toString() : "";
-        } catch (Exception e) {
-            log.error("解析工具调用结果时发生错误", e);
-            return "解析结果失败: " + e.getMessage();
-        }
     }
 
     /**
