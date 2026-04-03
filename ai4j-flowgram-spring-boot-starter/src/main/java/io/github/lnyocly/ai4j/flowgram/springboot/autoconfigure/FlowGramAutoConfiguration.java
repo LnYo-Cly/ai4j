@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.flowgram.FlowGramLlmNodeRunner;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutor;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramRuntimeListener;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramRuntimeService;
+import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.flowgram.springboot.adapter.FlowGramProtocolAdapter;
 import io.github.lnyocly.ai4j.flowgram.springboot.config.FlowGramProperties;
 import io.github.lnyocly.ai4j.flowgram.springboot.controller.FlowGramTaskController;
@@ -107,8 +108,12 @@ public class FlowGramAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(FlowGramLlmNodeRunner.class)
     public FlowGramLlmNodeRunner flowGramLlmNodeRunner(AiServiceRegistry aiServiceRegistry,
-                                                       FlowGramProperties properties) {
-        return new Ai4jFlowGramLlmNodeRunner(new RegistryBackedFlowGramModelClientResolver(aiServiceRegistry, properties));
+                                                       FlowGramProperties properties,
+                                                       ObjectProvider<TracePricingResolver> pricingResolverProvider) {
+        return new Ai4jFlowGramLlmNodeRunner(
+                new RegistryBackedFlowGramModelClientResolver(aiServiceRegistry, properties),
+                pricingResolverProvider.getIfAvailable()
+        );
     }
 
     @Bean

@@ -283,6 +283,7 @@ starter 当前会默认装配：
 - `status`
 - `startedAt`
 - `endedAt`
+- `summary`
 - `events`
 - `nodes`
 
@@ -301,8 +302,44 @@ starter 当前会默认装配：
 - `terminated`
 - `startedAt`
 - `endedAt`
+- `durationMillis`
 - `error`
 - `eventCount`
+- `metrics`
+
+`summary` 当前至少会带：
+
+- `durationMillis`
+- `eventCount`
+- `nodeCount`
+- `completedNodeCount`
+- `failedNodeCount`
+- `metrics`
+
+其中 `summary.metrics` 会聚合整个任务当前可见的 LLM 指标：
+
+- `promptTokens`
+- `completionTokens`
+- `totalTokens`
+- `inputCost`
+- `outputCost`
+- `totalCost`
+- `currency`
+
+`nodes[nodeId].metrics` 用来表达节点级指标，当前重点是：
+
+- LLM 节点耗时
+- LLM token 统计
+- 成本估算结果
+
+同时，`report.workflow.nodes[nodeId].outputs.metrics` 也会在后端自动补齐。
+
+这意味着如果底层 `rawResponse.usage` 存在：
+
+- `/tasks/{taskId}/report` 的节点输出里可以直接读 token
+- `/tasks/{taskId}/report` 和 `/tasks/{taskId}/result` 的 `trace` 里也能直接读聚合后的 metrics
+
+如果 provider 本次失败或没有返回 usage，这些 token/cost 字段会保持为空，而不是伪造数值。
 
 ### 6.2 这层 projection 解决什么问题
 
@@ -311,8 +348,19 @@ starter 当前会默认装配：
 1. 当前任务整体状态是什么
 2. 某个节点是否已经开始、结束或失败
 3. 右侧调试面板如何渲染时间线和节点状态
+4. 当前运行累计消耗了多少 token / 成本
 
 所以它不是“再造一套后端 trace 系统”，而是把 runtime event 整理成前端直接可消费的数据结构。
+
+这里还多做了一层后端 enrichment：
+
+- `FlowGramRuntimeTraceCollector`
+  - 负责把 runtime event 折叠成时间线和节点快照
+- `FlowGramRuntimeFacade`
+  - 在返回 `report/result` 前补齐 `trace.summary.metrics`
+  - 同时把节点 `rawResponse.usage` 回填成 `outputs.metrics` 和 `trace.nodes[nodeId].metrics`
+
+这样前端调试面板只需要消费 projection，不需要自己再解析不同 provider 的原始 usage 结构。
 
 ### 6.3 与 OpenTelemetry 的边界
 

@@ -8,9 +8,13 @@ import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
+import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -166,6 +170,9 @@ public class AgentTraceListener implements AgentListener {
         if (span == null) {
             return;
         }
+        if (event.getPayload() != null) {
+            enrichModelSpan(span, event.getPayload());
+        }
         if (config.isRecordModelOutput()) {
             if (event.getPayload() != null) {
                 putAttribute(span, "output", safeValue(event.getPayload()));
@@ -174,6 +181,7 @@ public class AgentTraceListener implements AgentListener {
             }
         }
         if (event.getPayload() != null) {
+            accumulateModelMetrics(step, span);
             if (step != null) {
                 modelSpans.remove(step);
             }
@@ -365,6 +373,7 @@ public class AgentTraceListener implements AgentListener {
                 .startTime(System.currentTimeMillis())
                 .attributes(attributes == null ? new HashMap<>() : attributes)
                 .events(new ArrayList<TraceSpanEvent>())
+                .metrics(new TraceMetrics())
                 .build();
         return span;
     }
@@ -395,6 +404,160 @@ public class AgentTraceListener implements AgentListener {
             }
         }
         return rootSpan;
+    }
+
+    private void enrichModelSpan(TraceSpan span, Object payload) {
+        if (span == null || payload == null) {
+            return;
+        }
+        String responseId = null;
+        String responseModel = null;
+        String finishReason = null;
+        Usage usage = null;
+        if (payload instanceof ChatCompletionResponse) {
+            ChatCompletionResponse response = (ChatCompletionResponse) payload;
+            responseId = response.getId();
+            responseModel = response.getModel();
+            usage = response.getUsage();
+            finishReason = firstChoiceFinishReason(response.getChoices());
+            putAttribute(span, "systemFingerprint", safeValue(response.getSystemFingerprint()));
+        } else if (payload instanceof Map) {
+            Map<String, Object> response = payloadMap(payload);
+            responseId = stringValue(response, "id");
+            responseModel = stringValue(response, "model");
+            finishReason = stringValue(response, "finishReason");
+            usage = mapToUsage(response.get("usage"));
+        }
+        if (responseId != null) {
+            putAttribute(span, "responseId", responseId);
+        }
+        if (responseModel != null) {
+            putAttribute(span, "responseModel", responseModel);
+        }
+        if (finishReason != null) {
+            putAttribute(span, "finishReason", finishReason);
+        }
+        mergeMetrics(span, metricsFromUsage(usage, resolveModelPricing(span, responseModel)));
+    }
+
+    private void accumulateModelMetrics(Integer step, TraceSpan modelSpan) {
+        if (modelSpan == null || modelSpan.getMetrics() == null) {
+            return;
+        }
+        mergeUsageMetrics(rootSpan, modelSpan.getMetrics());
+        if (step != null) {
+            mergeUsageMetrics(stepSpans.get(step), modelSpan.getMetrics());
+        }
+    }
+
+    private void mergeMetrics(TraceSpan span, TraceMetrics metrics) {
+        if (span == null || metrics == null) {
+            return;
+        }
+        TraceMetrics target = span.getMetrics();
+        if (target == null) {
+            target = new TraceMetrics();
+            span.setMetrics(target);
+        }
+        if (target.getDurationMillis() == null) {
+            target.setDurationMillis(metrics.getDurationMillis());
+        }
+        target.setPromptTokens(sum(target.getPromptTokens(), metrics.getPromptTokens()));
+        target.setCompletionTokens(sum(target.getCompletionTokens(), metrics.getCompletionTokens()));
+        target.setTotalTokens(sum(target.getTotalTokens(), metrics.getTotalTokens()));
+        target.setInputCost(sum(target.getInputCost(), metrics.getInputCost()));
+        target.setOutputCost(sum(target.getOutputCost(), metrics.getOutputCost()));
+        target.setTotalCost(sum(target.getTotalCost(), metrics.getTotalCost()));
+        if (target.getCurrency() == null) {
+            target.setCurrency(metrics.getCurrency());
+        }
+    }
+
+    private void mergeUsageMetrics(TraceSpan span, TraceMetrics source) {
+        if (span == null || source == null) {
+            return;
+        }
+        TraceMetrics usageOnly = TraceMetrics.builder()
+                .promptTokens(source.getPromptTokens())
+                .completionTokens(source.getCompletionTokens())
+                .totalTokens(source.getTotalTokens())
+                .inputCost(source.getInputCost())
+                .outputCost(source.getOutputCost())
+                .totalCost(source.getTotalCost())
+                .currency(source.getCurrency())
+                .build();
+        mergeMetrics(span, usageOnly);
+    }
+
+    private TraceMetrics metricsFromUsage(Usage usage, TracePricing pricing) {
+        if (!config.isRecordMetrics() || usage == null) {
+            return null;
+        }
+        long promptTokens = usage.getPromptTokens();
+        long completionTokens = usage.getCompletionTokens();
+        long totalTokens = usage.getTotalTokens();
+        Double inputCost = null;
+        Double outputCost = null;
+        Double totalCost = null;
+        String currency = null;
+        if (pricing != null) {
+            if (pricing.getInputCostPerMillionTokens() != null) {
+                inputCost = (promptTokens / 1000000D) * pricing.getInputCostPerMillionTokens();
+            }
+            if (pricing.getOutputCostPerMillionTokens() != null) {
+                outputCost = (completionTokens / 1000000D) * pricing.getOutputCostPerMillionTokens();
+            }
+            if (inputCost != null || outputCost != null) {
+                totalCost = (inputCost == null ? 0D : inputCost) + (outputCost == null ? 0D : outputCost);
+            }
+            currency = pricing.getCurrency();
+        }
+        return TraceMetrics.builder()
+                .promptTokens(promptTokens)
+                .completionTokens(completionTokens)
+                .totalTokens(totalTokens)
+                .inputCost(inputCost)
+                .outputCost(outputCost)
+                .totalCost(totalCost)
+                .currency(currency)
+                .build();
+    }
+
+    private TracePricing resolveModelPricing(TraceSpan span, String responseModel) {
+        TracePricingResolver resolver = config.getPricingResolver();
+        if (resolver == null) {
+            return null;
+        }
+        String model = responseModel;
+        if (model == null && span != null && span.getAttributes() != null) {
+            Object value = span.getAttributes().get("model");
+            if (value != null) {
+                model = String.valueOf(value);
+            }
+        }
+        return model == null ? null : resolver.resolve(model);
+    }
+
+    private Usage mapToUsage(Object value) {
+        if (value instanceof Usage) {
+            return (Usage) value;
+        }
+        if (!(value instanceof Map)) {
+            return null;
+        }
+        Map<String, Object> usageMap = payloadMap(value);
+        Usage usage = new Usage();
+        usage.setPromptTokens(longValue(firstNonNull(usageMap.get("prompt_tokens"), usageMap.get("promptTokens"), usageMap.get("input"))));
+        usage.setCompletionTokens(longValue(firstNonNull(usageMap.get("completion_tokens"), usageMap.get("completionTokens"), usageMap.get("output"))));
+        usage.setTotalTokens(longValue(firstNonNull(usageMap.get("total_tokens"), usageMap.get("totalTokens"), usageMap.get("total"))));
+        return usage;
+    }
+
+    private String firstChoiceFinishReason(List<Choice> choices) {
+        if (choices == null || choices.isEmpty() || choices.get(0) == null) {
+            return null;
+        }
+        return choices.get(0).getFinishReason();
     }
 
     private void putAttribute(TraceSpan span, String key, Object value) {
@@ -548,6 +711,52 @@ public class AgentTraceListener implements AgentListener {
         return null;
     }
 
+    private Object firstNonNull(Object... values) {
+        if (values == null) {
+            return null;
+        }
+        for (Object value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private Long sum(Long left, Long right) {
+        if (left == null) {
+            return right;
+        }
+        if (right == null) {
+            return left;
+        }
+        return left + right;
+    }
+
+    private Double sum(Double left, Double right) {
+        if (left == null) {
+            return right;
+        }
+        if (right == null) {
+            return left;
+        }
+        return left + right;
+    }
+
+    private long longValue(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ex) {
+            return 0L;
+        }
+    }
+
     private void finishSpan(TraceSpan span, TraceSpanStatus status, String error) {
         if (span == null) {
             return;
@@ -555,6 +764,15 @@ public class AgentTraceListener implements AgentListener {
         span.setStatus(status == null ? TraceSpanStatus.OK : status);
         span.setEndTime(System.currentTimeMillis());
         span.setError(error);
+        if (config.isRecordMetrics()) {
+            TraceMetrics metrics = span.getMetrics();
+            if (metrics == null) {
+                metrics = new TraceMetrics();
+                span.setMetrics(metrics);
+            }
+            long durationMillis = span.getEndTime() - span.getStartTime();
+            metrics.setDurationMillis(durationMillis < 0 ? 0L : durationMillis);
+        }
         if (exporter != null) {
             exporter.export(span);
         }

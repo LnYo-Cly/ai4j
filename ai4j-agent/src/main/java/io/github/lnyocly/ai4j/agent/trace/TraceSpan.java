@@ -21,4 +21,5 @@ public class TraceSpan {
     private String error;
     private Map<String, Object> attributes;
     private List<TraceSpanEvent> events;
+    private TraceMetrics metrics;
 }

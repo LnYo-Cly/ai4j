@@ -20,7 +20,12 @@ public class TraceConfig {
     private boolean recordToolOutput = true;
 
     @Builder.Default
+    private boolean recordMetrics = true;
+
+    @Builder.Default
     private int maxFieldLength = 0;
 
     private TraceMasker masker;
+
+    private TracePricingResolver pricingResolver;
 }

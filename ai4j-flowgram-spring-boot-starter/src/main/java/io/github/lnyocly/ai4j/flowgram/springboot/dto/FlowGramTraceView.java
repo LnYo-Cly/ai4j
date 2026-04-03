@@ -18,6 +18,7 @@ public class FlowGramTraceView {
     private String status;
     private Long startedAt;
     private Long endedAt;
+    private SummaryView summary;
     private List<EventView> events;
     private Map<String, NodeView> nodes;
 
@@ -43,7 +44,39 @@ public class FlowGramTraceView {
         private boolean terminated;
         private Long startedAt;
         private Long endedAt;
+        private Long durationMillis;
         private String error;
         private Integer eventCount;
+        private String model;
+        private MetricsView metrics;
+    }
+
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SummaryView {
+        private Long durationMillis;
+        private Integer eventCount;
+        private Integer nodeCount;
+        private Integer terminatedNodeCount;
+        private Integer successNodeCount;
+        private Integer failedNodeCount;
+        private Integer llmNodeCount;
+        private MetricsView metrics;
+    }
+
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MetricsView {
+        private Long promptTokens;
+        private Long completionTokens;
+        private Long totalTokens;
+        private Double inputCost;
+        private Double outputCost;
+        private Double totalCost;
+        private String currency;
     }
 }

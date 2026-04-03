@@ -185,6 +185,18 @@ Flowgram 前端画布
   "status": "success",
   "startedAt": 1710000000000,
   "endedAt": 1710000005231,
+  "summary": {
+    "durationMillis": 5231,
+    "eventCount": 4,
+    "nodeCount": 1,
+    "completedNodeCount": 1,
+    "failedNodeCount": 0,
+    "metrics": {
+      "promptTokens": 159,
+      "completionTokens": 236,
+      "totalTokens": 395
+    }
+  },
   "events": [
     { "type": "TASK_STARTED", "timestamp": 1710000000000, "status": "processing" },
     { "type": "NODE_STARTED", "timestamp": 1710000000100, "nodeId": "llm_0", "status": "processing" },
@@ -198,7 +210,13 @@ Flowgram 前端画布
       "terminated": true,
       "startedAt": 1710000000100,
       "endedAt": 1710000004200,
-      "eventCount": 2
+      "durationMillis": 4100,
+      "eventCount": 2,
+      "metrics": {
+        "promptTokens": 159,
+        "completionTokens": 236,
+        "totalTokens": 395
+      }
     }
   }
 }
@@ -208,12 +226,18 @@ Flowgram 前端画布
 
 - 顶部任务状态
   - 用 `trace.status/startedAt/endedAt`
+- 顶部总指标
+  - 用 `trace.summary.metrics`
 - 节点执行高亮
   - 用 `trace.nodes[nodeId].status`
 - 时间线面板
   - 直接渲染 `trace.events`
 - 节点失败详情
   - 读 `trace.nodes[nodeId].error`
+- 节点级 token / 成本
+  - 用 `trace.nodes[nodeId].metrics`
+- 节点原始输出区
+  - 如果你还要展示 report 里的节点输出，可直接读 `workflow.nodes[nodeId].outputs.metrics`
 
 ### 6.2 为什么不直接读 OpenTelemetry
 
@@ -228,6 +252,13 @@ Flowgram 前端画布
 - 前端只消费 `trace` projection
 
 这样前后端的职责边界最清晰。
+
+还要注意一件事：
+
+- 新版后端会在 `report/result` 返回前自动把 `rawResponse.usage` 归一化成 `outputs.metrics`
+- 同时补齐 `trace.summary.metrics` 和 `trace.nodes[nodeId].metrics`
+
+所以前端不应该再把“自己解析 provider 原始 usage”当成默认路径。只有在你明确兼容旧后端时，才需要做 client-side fallback。
 
 ---
 

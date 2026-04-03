@@ -13,6 +13,8 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -275,7 +277,16 @@ public class FlowGramRuntimeServiceTest {
         Ai4jFlowGramLlmNodeRunner runner = new Ai4jFlowGramLlmNodeRunner(new AgentModelClient() {
             @Override
             public AgentModelResult create(AgentPrompt prompt) {
-                return AgentModelResult.builder().outputText("ai4j-ok").build();
+                return AgentModelResult.builder()
+                        .outputText("ai4j-ok")
+                        .rawResponse(new MinimaxChatCompletionResponse(
+                                "resp-1",
+                                "chat.completion",
+                                1L,
+                                "test-model",
+                                null,
+                                new Usage(12L, 8L, 20L)))
+                        .build();
             }
 
             @Override
@@ -289,6 +300,11 @@ public class FlowGramRuntimeServiceTest {
 
         assertEquals("ai4j-ok", result.get("result"));
         assertEquals("ai4j-ok", result.get("outputText"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> metrics = (Map<String, Object>) result.get("metrics");
+        assertEquals(12L, metrics.get("promptTokens"));
+        assertEquals(8L, metrics.get("completionTokens"));
+        assertEquals(20L, metrics.get("totalTokens"));
     }
 
     private static FlowGramTaskResultOutput awaitResult(FlowGramRuntimeService service, String taskId) throws Exception {

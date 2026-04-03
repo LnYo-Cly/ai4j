@@ -3,6 +3,11 @@ server:
 
 ai:
   platforms:
+    - id: minimax-coding
+      platform: minimax
+      api-key: ${MINIMAX_API_KEY:}
+      api-host: https://api.minimax.chat/
+      chat-completion-url: v1/text/chatcompletion_v2
     - id: glm-coding
       platform: zhipu
       api-key: ${ZHIPU_API_KEY:}
@@ -11,6 +16,6 @@ ai:
 
 ai4j:
   flowgram:
-    default-service-id: glm-coding
+    default-service-id: minimax-coding
     api:
       base-path: /flowgram

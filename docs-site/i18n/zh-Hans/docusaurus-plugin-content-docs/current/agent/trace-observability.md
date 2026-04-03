@@ -20,9 +20,13 @@ sidebar_position: 9
 - `TraceConfig`
   - 控制记录开关、脱敏、字段裁剪
 - `TraceSpan`
-  - 一条 span，包含基础字段、attributes、events
+  - 一条 span，包含基础字段、attributes、events、metrics
 - `TraceSpanEvent`
   - span 内部事件，例如 `model.reasoning`、`model.retry`
+- `TraceMetrics`
+  - 统一挂载时延、token、cost 这些指标
+- `TracePricing` / `TracePricingResolver`
+  - 给模型 usage 做成本估算的可选配置
 - `TraceExporter`
   - 导出接口
 - `ConsoleTraceExporter`
@@ -35,6 +39,8 @@ sidebar_position: 9
   - 追加写入 JSONL 文件
 - `OpenTelemetryTraceExporter`
   - 把 AI4J trace 桥接导出到 OTel pipeline
+- `LangfuseTraceExporter`
+  - 输出 Langfuse 可识别的 OTel span attributes，方便接 Langfuse
 
 ## 2. 启用方式
 
@@ -86,12 +92,24 @@ Agent agent = Agents.react()
 - `error`
 - `attributes`
 - `events`
+- `metrics`
 
 `events` 里的每一项是 `TraceSpanEvent`：
 
 - `timestamp`
 - `name`
 - `attributes`
+
+`metrics` 当前包含：
+
+- `durationMillis`
+- `promptTokens`
+- `completionTokens`
+- `totalTokens`
+- `inputCost`
+- `outputCost`
+- `totalCost`
+- `currency`
 
 这意味着当前 trace 不是只有“粗粒度 span”，也支持在一个 span 内附加中间事件。
 
@@ -245,8 +263,10 @@ Agent agent = Agents.react()
 - `recordModelOutput = true`
 - `recordToolArgs = true`
 - `recordToolOutput = true`
+- `recordMetrics = true`
 - `maxFieldLength = 0`
 - `masker = null`
+- `pricingResolver = null`
 
 也就是默认偏“全记录”，方便本地调试和研发联调。
 
@@ -277,19 +297,38 @@ Agent agent = Agents.react()
 - 最终 raw payload -> `output`
 - 流式文本增量 -> `model.response.delta` event
 - 最终回答 -> `RUN.finalOutput`
+- provider 返回的 `usage/model/finishReason` 也会被抽出来单独记录
 
-### 8.3 工具调用
+### 8.3 模型指标
+
+`MODEL` span 在 payload 带 `usage` 时，会自动补齐：
+
+- `metrics.durationMillis`
+- `metrics.promptTokens`
+- `metrics.completionTokens`
+- `metrics.totalTokens`
+
+如果你配置了 `TracePricingResolver`，还会继续估算：
+
+- `metrics.inputCost`
+- `metrics.outputCost`
+- `metrics.totalCost`
+- `metrics.currency`
+
+同时，`RUN` 和 `STEP` span 会聚合同一轮里的 token / cost，总结视角不需要你自己再扫一遍全部 `MODEL` span。
+
+### 8.4 工具调用
 
 - `tool`
 - `callId`
 - `arguments`
 
-### 8.4 工具返回
+### 8.5 工具返回
 
 - 普通工具：`output`
 - CodeAct 工具：`result/stdout/error`
 
-### 8.5 handoff / team / compact
+### 8.6 handoff / team / compact
 
 这些数据主要落在它们各自 span 的 attributes 和 events 上，不再强行塞进 `MODEL` 或 `TOOL`。
 
@@ -360,13 +399,52 @@ Agent agent = Agents.react()
 - `ai4j.error`
 - `ai4j.attr.*`
 - `ai4j.event.*`
+- `ai4j.metrics.*`
+- `gen_ai.usage.input_tokens`
+- `gen_ai.usage.output_tokens`
 
 要注意一件事：
 
 - 当前它是“桥接 exporter”
 - 不是把 `AgentRuntime` 全部改造成原生 OTel instrumentation
+- exporter 内部会按 `parentSpanId` 做一层缓冲重排，尽量恢复父子链路，不是简单把每个 span 独立平铺出去
 
 所以如果你需要非常严格的 OTel context propagation / 原生父子链路管理，应该在更深层做原生埋点；如果你只是要接 OTel collector、再喂给 Langfuse 之类系统，这一层已经够用。
+
+### 9.6 `LangfuseTraceExporter`
+
+如果你的后端已经走 OTel pipeline，但上层想直接进 Langfuse，这是推荐接法。
+
+```java
+OpenTelemetry openTelemetry = ...;
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4o-mini")
+        .traceExporter(new LangfuseTraceExporter(openTelemetry, "prod", "2026-04-03"))
+        .build();
+```
+
+它做的事情不是直连 Langfuse 私有协议，而是：
+
+- 继续输出 OTel span
+- 额外写入 Langfuse 识别的 attributes
+- 让你可以复用现有 collector / OTLP pipeline
+
+当前会重点映射：
+
+- `langfuse.observation.type`
+- `langfuse.observation.level`
+- `langfuse.observation.input`
+- `langfuse.observation.output`
+- `langfuse.observation.model`
+- `langfuse.observation.model_parameters`
+- `langfuse.observation.usage_details`
+- `langfuse.observation.cost_details`
+- `langfuse.observation.metadata`
+- `langfuse.trace.name`
+- `langfuse.trace.output`
+- `langfuse.trace.metadata`
 
 ## 10. 脱敏与裁剪
 
@@ -398,6 +476,16 @@ Agent trace 和 FlowGram trace 不应该混成一层。
 - `FlowGram`
   - 先产出 runtime event
   - 再由后端投影成前端可消费的 `FlowGramTraceView`
+
+`FlowGramTraceView` 当前不只是时间线快照。
+
+在新版 starter 里，后端在返回 `report/result` 前还会补齐：
+
+- `trace.summary.metrics`
+- `trace.nodes[nodeId].metrics`
+- `workflow.nodes[nodeId].outputs.metrics`
+
+也就是说，FlowGram 前端现在可以直接拿后端 projection 看 node duration、LLM tokens 和 cost，不需要默认自己再从 `rawResponse.usage` 做一遍 client-side 解析。
 
 也就是说：
 

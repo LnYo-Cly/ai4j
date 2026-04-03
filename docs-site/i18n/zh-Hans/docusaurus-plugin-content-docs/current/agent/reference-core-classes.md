@@ -314,15 +314,21 @@ sidebar_position: 14
 
 - `TraceSpan`
   - 基础字段：`traceId/spanId/parentSpanId/name/type/status/startTime/endTime/error`
-  - 扩展字段：`attributes/events`
+  - 扩展字段：`attributes/events/metrics`
 - `TraceSpanEvent`
   - `timestamp/name/attributes`
+- `TraceMetrics`
+  - `durationMillis/promptTokens/completionTokens/totalTokens/inputCost/outputCost/totalCost/currency`
 - `TraceSpanType`
   - `RUN/STEP/MODEL/TOOL/HANDOFF/TEAM_TASK/MEMORY/FLOWGRAM_TASK/FLOWGRAM_NODE`
 - `TraceSpanStatus`
   - `OK/ERROR/CANCELED`
 - `TraceConfig`
-  - `recordModelInput/recordModelOutput/recordToolArgs/recordToolOutput/maxFieldLength/masker`
+  - `recordModelInput/recordModelOutput/recordToolArgs/recordToolOutput/recordMetrics/maxFieldLength/masker/pricingResolver`
+- `TracePricing`
+  - `inputCostPerMillionTokens/outputCostPerMillionTokens/currency`
+- `TracePricingResolver`
+  - `resolve(model) -> TracePricing`
 - `TraceExporter`
   - 统一导出接口：`export(TraceSpan)`
 - 内置 exporter
@@ -331,6 +337,7 @@ sidebar_position: 14
   - `CompositeTraceExporter`
   - `JsonlTraceExporter`
   - `OpenTelemetryTraceExporter`
+  - `LangfuseTraceExporter`
 - `AgentTraceListener`
   - 把 `AgentEvent` 映射成 trace
   - 当前覆盖 `MODEL_REASONING`、`MODEL_RETRY`、`HANDOFF_*`、`TEAM_*`、`MEMORY_COMPRESS`

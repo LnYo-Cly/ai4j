@@ -13,6 +13,8 @@ import io.github.lnyocly.ai4j.agent.flowgram.FlowGramRuntimeListener;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramEdgeSchema;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramNodeSchema;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramWorkflowSchema;
+import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramStoredTask;
@@ -104,6 +106,8 @@ public class FlowGramTaskControllerIntegrationTest {
         assertEquals("success", report.getJSONObject("trace").getString("status"));
         assertEquals(taskId, report.getJSONObject("trace").getString("taskId"));
         assertTrue(report.getJSONObject("trace").getJSONArray("events").size() >= 4);
+        assertEquals(8, report.getJSONObject("trace").getJSONObject("summary").getIntValue("eventCount"));
+        assertEquals(3, report.getJSONObject("trace").getJSONObject("summary").getIntValue("nodeCount"));
         assertEquals("success", report.getJSONObject("trace").getJSONObject("nodes")
                 .getJSONObject("transform_0").getString("status"));
 
@@ -115,6 +119,7 @@ public class FlowGramTaskControllerIntegrationTest {
 
         assertEquals(taskId, result.getJSONObject("trace").getString("taskId"));
         assertEquals("success", result.getJSONObject("trace").getString("status"));
+        assertEquals(3, result.getJSONObject("trace").getJSONObject("summary").getIntValue("nodeCount"));
 
         assertTrue(runtimeEventCollector.hasEventType(FlowGramRuntimeEvent.Type.TASK_FINISHED));
         assertTrue(runtimeEventCollector.hasNodeEvent("transform_0", FlowGramRuntimeEvent.Type.NODE_FINISHED));
@@ -133,6 +138,36 @@ public class FlowGramTaskControllerIntegrationTest {
         JSONArray errors = response.getJSONArray("errors");
         assertTrue(errors.toJSONString().contains("FlowGram workflow must contain exactly one Start node"));
         assertTrue(errors.toJSONString().contains("FlowGram workflow must contain at least one End node"));
+    }
+
+    @Test
+    public void shouldBackfillTraceMetricsFromSerializedLlmResponse() throws Exception {
+        FlowGramTaskRunRequest request = FlowGramTaskRunRequest.builder()
+                .schema(llmWorkflow())
+                .inputs(mapOf("prompt", "token-check"))
+                .build();
+
+        JSONObject runResponse = postForJson("/flowgram/tasks/run", request);
+        String taskId = runResponse.getString("taskId");
+        assertNotNull(taskId);
+
+        JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
+        JSONObject llmOutputs = report.getJSONObject("nodes").getJSONObject("llm_0").getJSONObject("outputs");
+        JSONObject outputMetrics = llmOutputs.getJSONObject("metrics");
+        assertEquals(159L, outputMetrics.getLongValue("promptTokens"));
+        assertEquals(280L, outputMetrics.getLongValue("completionTokens"));
+        assertEquals(439L, outputMetrics.getLongValue("totalTokens"));
+
+        JSONObject traceMetrics = report.getJSONObject("trace").getJSONObject("summary").getJSONObject("metrics");
+        assertEquals(159L, traceMetrics.getLongValue("promptTokens"));
+        assertEquals(280L, traceMetrics.getLongValue("completionTokens"));
+        assertEquals(439L, traceMetrics.getLongValue("totalTokens"));
+        assertEquals(439L, report.getJSONObject("trace").getJSONObject("nodes")
+                .getJSONObject("llm_0").getJSONObject("metrics").getLongValue("totalTokens"));
+
+        JSONObject result = awaitResult(taskId);
+        JSONObject resultTraceMetrics = result.getJSONObject("trace").getJSONObject("summary").getJSONObject("metrics");
+        assertEquals(439L, resultTraceMetrics.getLongValue("totalTokens"));
     }
 
     @Test
@@ -188,6 +223,20 @@ public class FlowGramTaskControllerIntegrationTest {
                 .build();
     }
 
+    private static FlowGramWorkflowSchema llmWorkflow() {
+        return FlowGramWorkflowSchema.builder()
+                .nodes(Arrays.asList(
+                        node("start_0", "Start", startData()),
+                        node("llm_0", "LLM", llmData()),
+                        node("end_0", "End", endData(ref("llm_0", "result")))
+                ))
+                .edges(Arrays.asList(
+                        edge("start_0", "llm_0"),
+                        edge("llm_0", "end_0")
+                ))
+                .build();
+    }
+
     private static FlowGramWorkflowSchema invalidWorkflow() {
         return FlowGramWorkflowSchema.builder()
                 .nodes(Collections.singletonList(
@@ -222,6 +271,23 @@ public class FlowGramTaskControllerIntegrationTest {
                 "inputs", objectSchema(required("text"), property("text", stringSchema())),
                 "outputs", objectSchema(required("result"), property("result", stringSchema())),
                 "inputsValues", mapOf("text", ref("start_0", "prompt"))
+        );
+    }
+
+    private static Map<String, Object> llmData() {
+        return mapOf(
+                "inputs", objectSchema(
+                        required("modelName", "prompt"),
+                        property("serviceId", stringSchema()),
+                        property("modelName", stringSchema()),
+                        property("prompt", stringSchema())
+                ),
+                "outputs", objectSchema(required("result"), property("result", stringSchema())),
+                "inputsValues", mapOf(
+                        "serviceId", constant("minimax-coding"),
+                        "modelName", constant("MiniMax-M2.1"),
+                        "prompt", ref("start_0", "prompt")
+                )
         );
     }
 
@@ -262,6 +328,10 @@ public class FlowGramTaskControllerIntegrationTest {
         return mapOf("type", "ref", "content", Arrays.asList(path));
     }
 
+    private static Map<String, Object> constant(Object value) {
+        return mapOf("type", "constant", "content", value);
+    }
+
     private static Map<String, Object> mapOf(Object... keyValues) {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         for (int i = 0; i < keyValues.length; i += 2) {
@@ -279,7 +349,21 @@ public class FlowGramTaskControllerIntegrationTest {
             return new FlowGramLlmNodeRunner() {
                 @Override
                 public Map<String, Object> run(FlowGramNodeSchema node, Map<String, Object> inputs) {
-                    throw new AssertionError("LLM runner should not be used in custom executor integration test");
+                    Map<String, Object> outputs = new LinkedHashMap<String, Object>();
+                    outputs.put("result", "llm:" + String.valueOf(inputs.get("prompt")));
+                    outputs.put("outputText", "llm:" + String.valueOf(inputs.get("prompt")));
+                    outputs.put("rawResponse", new MinimaxChatCompletionResponse(
+                            "resp-trace",
+                            "chat.completion",
+                            1L,
+                            String.valueOf(inputs.get("modelName")),
+                            null,
+                            new Usage(159L, 280L, 439L)));
+                    outputs.put("metrics", mapOf(
+                            "durationMillis", 1234L,
+                            "model", String.valueOf(inputs.get("modelName"))
+                    ));
+                    return outputs;
                 }
             };
         }

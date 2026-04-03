@@ -38,6 +38,7 @@ public class FlowGramRuntimeFacade {
     private final FlowGramTaskOwnershipStrategy ownershipStrategy;
     private final FlowGramProperties properties;
     private final FlowGramRuntimeTraceCollector traceCollector;
+    private final FlowGramTraceResponseEnricher traceResponseEnricher = new FlowGramTraceResponseEnricher();
 
     public FlowGramRuntimeFacade(FlowGramRuntimeService runtimeService,
                                  FlowGramProtocolAdapter protocolAdapter,
@@ -97,10 +98,10 @@ public class FlowGramRuntimeFacade {
                     report.getWorkflow().getError(),
                     null);
         }
-        return protocolAdapter.toReportResponse(taskId,
+        return traceResponseEnricher.enrichReportResponse(protocolAdapter.toReportResponse(taskId,
                 report,
                 properties == null || properties.isReportNodeDetails(),
-                resolveTrace(taskId));
+                resolveTrace(taskId, report)));
     }
 
     public FlowGramTaskResultResponse result(String taskId, HttpServletRequest servletRequest) {
@@ -112,7 +113,11 @@ public class FlowGramRuntimeFacade {
         FlowGramCaller caller = resolveCaller(servletRequest);
         ensureAllowed(FlowGramAction.RESULT, caller, task);
         taskStore.updateState(taskId, result.getStatus(), result.isTerminated(), result.getError(), result.getResult());
-        return protocolAdapter.toResultResponse(taskId, result, resolveTrace(taskId));
+        FlowGramTaskReportOutput report = runtimeService.getTaskReport(taskId);
+        FlowGramTraceView trace = resolveTrace(taskId, report);
+        FlowGramTaskReportResponse reportResponse = traceResponseEnricher.enrichReportResponse(
+                protocolAdapter.toReportResponse(taskId, report, true, trace));
+        return protocolAdapter.toResultResponse(taskId, result, reportResponse == null ? trace : reportResponse.getTrace());
     }
 
     public FlowGramTaskCancelResponse cancel(String taskId, HttpServletRequest servletRequest) {
@@ -145,10 +150,10 @@ public class FlowGramRuntimeFacade {
         }
     }
 
-    private FlowGramTraceView resolveTrace(String taskId) {
+    private FlowGramTraceView resolveTrace(String taskId, FlowGramTaskReportOutput report) {
         if (traceCollector == null || (properties != null && !properties.isTraceEnabled())) {
             return null;
         }
-        return traceCollector.getTrace(taskId);
+        return traceCollector.getTrace(taskId, report);
     }
 }
