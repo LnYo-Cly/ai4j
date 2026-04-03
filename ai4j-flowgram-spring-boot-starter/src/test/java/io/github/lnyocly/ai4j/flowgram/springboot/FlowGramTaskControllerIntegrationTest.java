@@ -101,12 +101,20 @@ public class FlowGramTaskControllerIntegrationTest {
                 .getJSONObject("inputs").getString("prompt"));
         assertEquals("custom:HELLO-FLOWGRAM", report.getJSONObject("nodes").getJSONObject("transform_0")
                 .getJSONObject("outputs").getString("result"));
+        assertEquals("success", report.getJSONObject("trace").getString("status"));
+        assertEquals(taskId, report.getJSONObject("trace").getString("taskId"));
+        assertTrue(report.getJSONObject("trace").getJSONArray("events").size() >= 4);
+        assertEquals("success", report.getJSONObject("trace").getJSONObject("nodes")
+                .getJSONObject("transform_0").getString("status"));
 
         FlowGramStoredTask storedTask = taskStore.find(taskId);
         assertNotNull(storedTask);
         assertEquals("success", storedTask.getStatus());
         assertTrue(Boolean.TRUE.equals(storedTask.getTerminated()));
         assertEquals("custom:HELLO-FLOWGRAM", storedTask.getResultSnapshot().get("result"));
+
+        assertEquals(taskId, result.getJSONObject("trace").getString("taskId"));
+        assertEquals("success", result.getJSONObject("trace").getString("status"));
 
         assertTrue(runtimeEventCollector.hasEventType(FlowGramRuntimeEvent.Type.TASK_FINISHED));
         assertTrue(runtimeEventCollector.hasNodeEvent("transform_0", FlowGramRuntimeEvent.Type.NODE_FINISHED));

@@ -22,6 +22,7 @@ import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramAccessChecker
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramCallerResolver;
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramTaskOwnershipStrategy;
 import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramRuntimeFacade;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramRuntimeTraceCollector;
 import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramTaskStore;
 import io.github.lnyocly.ai4j.flowgram.springboot.support.InMemoryFlowGramTaskStore;
 import io.github.lnyocly.ai4j.flowgram.springboot.support.JdbcFlowGramTaskStore;
@@ -189,14 +190,21 @@ public class FlowGramAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public FlowGramRuntimeTraceCollector flowGramRuntimeTraceCollector() {
+        return new FlowGramRuntimeTraceCollector();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public FlowGramRuntimeFacade flowGramRuntimeFacade(FlowGramRuntimeService runtimeService,
                                                        FlowGramProtocolAdapter protocolAdapter,
                                                        FlowGramTaskStore taskStore,
                                                        FlowGramCallerResolver callerResolver,
                                                        FlowGramAccessChecker accessChecker,
                                                        FlowGramTaskOwnershipStrategy ownershipStrategy,
-                                                       FlowGramProperties properties) {
-        return new FlowGramRuntimeFacade(runtimeService, protocolAdapter, taskStore, callerResolver, accessChecker, ownershipStrategy, properties);
+                                                       FlowGramProperties properties,
+                                                       FlowGramRuntimeTraceCollector traceCollector) {
+        return new FlowGramRuntimeFacade(runtimeService, protocolAdapter, taskStore, callerResolver, accessChecker, ownershipStrategy, properties, traceCollector);
     }
 
     @Bean

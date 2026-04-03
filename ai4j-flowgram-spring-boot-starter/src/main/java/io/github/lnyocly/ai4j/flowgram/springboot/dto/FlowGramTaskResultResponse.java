@@ -18,4 +18,5 @@ public class FlowGramTaskResultResponse {
     private boolean terminated;
     private String error;
     private Map<String, Object> result;
+    private FlowGramTraceView trace;
 }

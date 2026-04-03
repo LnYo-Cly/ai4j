@@ -5,30 +5,31 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class FlowGramTaskReportResponse {
+public class FlowGramTraceView {
 
     private String taskId;
-    private Map<String, Object> inputs;
-    private Map<String, Object> outputs;
-    private WorkflowStatus workflow;
-    private Map<String, NodeStatus> nodes;
-    private FlowGramTraceView trace;
+    private String status;
+    private Long startedAt;
+    private Long endedAt;
+    private List<EventView> events;
+    private Map<String, NodeView> nodes;
 
     @Data
     @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class WorkflowStatus {
+    public static class EventView {
+        private String type;
+        private Long timestamp;
+        private String nodeId;
         private String status;
-        private boolean terminated;
-        private Long startTime;
-        private Long endTime;
         private String error;
     }
 
@@ -36,13 +37,13 @@ public class FlowGramTaskReportResponse {
     @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class NodeStatus {
+    public static class NodeView {
+        private String nodeId;
         private String status;
         private boolean terminated;
-        private Long startTime;
-        private Long endTime;
+        private Long startedAt;
+        private Long endedAt;
         private String error;
-        private Map<String, Object> inputs;
-        private Map<String, Object> outputs;
+        private Integer eventCount;
     }
 }

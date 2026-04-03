@@ -313,13 +313,34 @@ sidebar_position: 14
 ## 9. Trace 层（`agent.trace`）
 
 - `TraceSpan`
-- `TraceSpanType`（`RUN/STEP/MODEL/TOOL`）
+  - 基础字段：`traceId/spanId/parentSpanId/name/type/status/startTime/endTime/error`
+  - 扩展字段：`attributes/events`
+- `TraceSpanEvent`
+  - `timestamp/name/attributes`
+- `TraceSpanType`
+  - `RUN/STEP/MODEL/TOOL/HANDOFF/TEAM_TASK/MEMORY/FLOWGRAM_TASK/FLOWGRAM_NODE`
 - `TraceSpanStatus`
+  - `OK/ERROR/CANCELED`
 - `TraceConfig`
+  - `recordModelInput/recordModelOutput/recordToolArgs/recordToolOutput/maxFieldLength/masker`
 - `TraceExporter`
+  - 统一导出接口：`export(TraceSpan)`
+- 内置 exporter
+  - `ConsoleTraceExporter`
+  - `InMemoryTraceExporter`
+  - `CompositeTraceExporter`
+  - `JsonlTraceExporter`
+  - `OpenTelemetryTraceExporter`
 - `AgentTraceListener`
+  - 把 `AgentEvent` 映射成 trace
+  - 当前覆盖 `MODEL_REASONING`、`MODEL_RETRY`、`HANDOFF_*`、`TEAM_*`、`MEMORY_COMPRESS`
 
-用于在线追踪、链路分析、问题回放。
+用途：
+
+- 在线追踪
+- 链路分析
+- 问题回放
+- 向 OTel / 日志文件 / 测试断言输出统一 trace 数据
 
 ---
 

@@ -4,5 +4,10 @@ public enum TraceSpanType {
     RUN,
     STEP,
     MODEL,
-    TOOL
+    TOOL,
+    HANDOFF,
+    TEAM_TASK,
+    MEMORY,
+    FLOWGRAM_TASK,
+    FLOWGRAM_NODE
 }

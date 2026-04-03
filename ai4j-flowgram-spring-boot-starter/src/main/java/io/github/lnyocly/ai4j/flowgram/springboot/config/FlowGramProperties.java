@@ -16,6 +16,7 @@ public class FlowGramProperties {
     private boolean streamProgress = false;
     private Duration taskRetention = Duration.ofHours(1);
     private boolean reportNodeDetails = true;
+    private boolean traceEnabled = true;
     private final ApiProperties api = new ApiProperties();
     private final TaskStoreProperties taskStore = new TaskStoreProperties();
     private final CorsProperties cors = new CorsProperties();

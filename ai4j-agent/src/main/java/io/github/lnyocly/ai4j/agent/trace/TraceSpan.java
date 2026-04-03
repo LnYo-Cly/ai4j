@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.agent.trace;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -19,4 +20,5 @@ public class TraceSpan {
     private long endTime;
     private String error;
     private Map<String, Object> attributes;
+    private List<TraceSpanEvent> events;
 }

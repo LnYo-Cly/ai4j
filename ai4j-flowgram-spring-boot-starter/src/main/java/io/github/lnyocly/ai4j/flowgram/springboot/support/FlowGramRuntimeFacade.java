@@ -15,6 +15,7 @@ import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunResponse;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateResponse;
+import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTraceView;
 import io.github.lnyocly.ai4j.flowgram.springboot.exception.FlowGramAccessDeniedException;
 import io.github.lnyocly.ai4j.flowgram.springboot.exception.FlowGramTaskNotFoundException;
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramAccessChecker;
@@ -36,6 +37,7 @@ public class FlowGramRuntimeFacade {
     private final FlowGramAccessChecker accessChecker;
     private final FlowGramTaskOwnershipStrategy ownershipStrategy;
     private final FlowGramProperties properties;
+    private final FlowGramRuntimeTraceCollector traceCollector;
 
     public FlowGramRuntimeFacade(FlowGramRuntimeService runtimeService,
                                  FlowGramProtocolAdapter protocolAdapter,
@@ -43,7 +45,8 @@ public class FlowGramRuntimeFacade {
                                  FlowGramCallerResolver callerResolver,
                                  FlowGramAccessChecker accessChecker,
                                  FlowGramTaskOwnershipStrategy ownershipStrategy,
-                                 FlowGramProperties properties) {
+                                 FlowGramProperties properties,
+                                 FlowGramRuntimeTraceCollector traceCollector) {
         this.runtimeService = runtimeService;
         this.protocolAdapter = protocolAdapter;
         this.taskStore = taskStore;
@@ -51,6 +54,7 @@ public class FlowGramRuntimeFacade {
         this.accessChecker = accessChecker;
         this.ownershipStrategy = ownershipStrategy;
         this.properties = properties;
+        this.traceCollector = traceCollector;
     }
 
     public FlowGramTaskRunResponse run(FlowGramTaskRunRequest request, HttpServletRequest servletRequest) {
@@ -93,7 +97,10 @@ public class FlowGramRuntimeFacade {
                     report.getWorkflow().getError(),
                     null);
         }
-        return protocolAdapter.toReportResponse(taskId, report, properties == null || properties.isReportNodeDetails());
+        return protocolAdapter.toReportResponse(taskId,
+                report,
+                properties == null || properties.isReportNodeDetails(),
+                resolveTrace(taskId));
     }
 
     public FlowGramTaskResultResponse result(String taskId, HttpServletRequest servletRequest) {
@@ -105,7 +112,7 @@ public class FlowGramRuntimeFacade {
         FlowGramCaller caller = resolveCaller(servletRequest);
         ensureAllowed(FlowGramAction.RESULT, caller, task);
         taskStore.updateState(taskId, result.getStatus(), result.isTerminated(), result.getError(), result.getResult());
-        return protocolAdapter.toResultResponse(taskId, result);
+        return protocolAdapter.toResultResponse(taskId, result, resolveTrace(taskId));
     }
 
     public FlowGramTaskCancelResponse cancel(String taskId, HttpServletRequest servletRequest) {
@@ -136,5 +143,12 @@ public class FlowGramRuntimeFacade {
         if (!accessChecker.isAllowed(action, caller, task)) {
             throw new FlowGramAccessDeniedException(action);
         }
+    }
+
+    private FlowGramTraceView resolveTrace(String taskId) {
+        if (traceCollector == null || (properties != null && !properties.isTraceEnabled())) {
+            return null;
+        }
+        return traceCollector.getTrace(taskId);
     }
 }

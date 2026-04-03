@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskReportResponse
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskResultResponse;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunResponse;
+import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTraceView;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateResponse;
 
@@ -52,7 +53,8 @@ public class FlowGramProtocolAdapter {
 
     public FlowGramTaskReportResponse toReportResponse(String taskId,
                                                        FlowGramTaskReportOutput output,
-                                                       boolean includeNodeDetails) {
+                                                       boolean includeNodeDetails,
+                                                       FlowGramTraceView trace) {
         Map<String, FlowGramTaskReportResponse.NodeStatus> nodes = null;
         if (includeNodeDetails && output != null && output.getNodes() != null) {
             nodes = new LinkedHashMap<String, FlowGramTaskReportResponse.NodeStatus>();
@@ -82,16 +84,20 @@ public class FlowGramProtocolAdapter {
                         .error(workflow == null ? null : workflow.getError())
                         .build())
                 .nodes(nodes)
+                .trace(trace)
                 .build();
     }
 
-    public FlowGramTaskResultResponse toResultResponse(String taskId, FlowGramTaskResultOutput output) {
+    public FlowGramTaskResultResponse toResultResponse(String taskId,
+                                                       FlowGramTaskResultOutput output,
+                                                       FlowGramTraceView trace) {
         return FlowGramTaskResultResponse.builder()
                 .taskId(taskId)
                 .status(output == null ? null : output.getStatus())
                 .terminated(output != null && output.isTerminated())
                 .error(output == null ? null : output.getError())
                 .result(output == null ? Collections.<String, Object>emptyMap() : safeMap(output.getResult()))
+                .trace(trace)
                 .build();
     }
 

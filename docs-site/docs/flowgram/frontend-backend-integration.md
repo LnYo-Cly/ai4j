@@ -152,7 +152,86 @@ Flowgram 前端画布
 
 ---
 
-## 6. 如何配置后端地址
+## 6. 前端现在应该消费哪一层 trace
+
+当前后端已经不只是返回 `workflow/nodes/result` 这些静态结构。
+
+当 `ai4j.flowgram.trace-enabled=true` 时：
+
+- `/tasks/{taskId}/report`
+- `/tasks/{taskId}/result`
+
+都会带一个 `trace` 字段。
+
+这层数据来自：
+
+- `FlowGramRuntimeEvent`
+- `FlowGramRuntimeTraceCollector`
+- `FlowGramTraceView`
+
+它的定位是：
+
+- 给前端调试面板
+- 给节点时间线
+- 给任务详情页
+
+也就是“前端直接渲染”的后端 projection。
+
+### 6.1 `trace` 字段的结构
+
+```json
+{
+  "taskId": "task-123",
+  "status": "success",
+  "startedAt": 1710000000000,
+  "endedAt": 1710000005231,
+  "events": [
+    { "type": "TASK_STARTED", "timestamp": 1710000000000, "status": "processing" },
+    { "type": "NODE_STARTED", "timestamp": 1710000000100, "nodeId": "llm_0", "status": "processing" },
+    { "type": "NODE_FINISHED", "timestamp": 1710000004200, "nodeId": "llm_0", "status": "success" },
+    { "type": "TASK_FINISHED", "timestamp": 1710000005231, "status": "success" }
+  ],
+  "nodes": {
+    "llm_0": {
+      "nodeId": "llm_0",
+      "status": "success",
+      "terminated": true,
+      "startedAt": 1710000000100,
+      "endedAt": 1710000004200,
+      "eventCount": 2
+    }
+  }
+}
+```
+
+前端一般可以这样消费：
+
+- 顶部任务状态
+  - 用 `trace.status/startedAt/endedAt`
+- 节点执行高亮
+  - 用 `trace.nodes[nodeId].status`
+- 时间线面板
+  - 直接渲染 `trace.events`
+- 节点失败详情
+  - 读 `trace.nodes[nodeId].error`
+
+### 6.2 为什么不直接读 OpenTelemetry
+
+因为两层目标不一样：
+
+- OTel 面向后端 observability 平台
+- `FlowGramTraceView` 面向前端画布运行时
+
+推荐模式是：
+
+- 后端可以继续往 OTel 导出
+- 前端只消费 `trace` projection
+
+这样前后端的职责边界最清晰。
+
+---
+
+## 7. 如何配置后端地址
 
 `WorkflowRuntimeServerClient` 会把请求发到：
 
@@ -175,7 +254,7 @@ Flowgram 前端画布
 
 ---
 
-## 7. 安全与任务归属怎么接
+## 8. 安全与任务归属怎么接
 
 后端 starter 当前已经预留了几层平台化接口：
 
@@ -206,17 +285,18 @@ Flowgram 前端画布
 
 ---
 
-## 8. 推荐接入顺序
+## 9. 推荐接入顺序
 
 1. 先用 `ai4j-flowgram-demo` 跑通后端 API
 2. 再用 `ai4j-flowgram-webapp-demo` 跑通 server 模式
 3. 确认 schema 归一化后的节点类型与后端一致
-4. 再补 caller、auth、task store、权限
-5. 最后再加你的自定义节点与业务面板
+4. 先把 `trace` 面板接上，确认节点时间线与状态可信
+5. 再补 caller、auth、task store、权限
+6. 最后再加你的自定义节点与业务面板
 
 ---
 
-## 9. 继续阅读
+## 10. 继续阅读
 
 1. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
 2. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)

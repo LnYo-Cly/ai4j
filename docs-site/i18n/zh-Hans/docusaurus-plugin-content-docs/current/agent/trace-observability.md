@@ -1,36 +1,47 @@
-﻿---
+---
 sidebar_position: 9
 ---
 
-# Trace 与可观测性（轻量版链路追踪）
+# Trace 与可观测性（轻量链路追踪）
 
-你前面反复问到：
+这一页讲的是 `ai4j-agent` 当前已经落地的 trace 能力，不是泛泛而谈“以后可以怎么做”。
 
-- 有没有类似 LangSmith 的链路追踪
-- 是否记录 prompt/system/input/tool 参数/模型输出
-- RUN/STEP/MODEL/TOOL 的出现时机是什么
+重点回答四个问题：
 
-这页给出“当前实现的完整答案”。
+- Agent runtime 现在到底会产出哪些 trace 数据
+- `reasoning / retry / handoff / team / compact` 这些事件怎么映射到 trace
+- 内置 exporter 有哪些，`OpenTelemetry` 是怎么接进来的
+- `Agent` trace 和 `FlowGram` 前端调试视图之间是什么关系
 
-## 1. Trace 组件图
+## 1. 当前 trace 组件
 
 - `AgentTraceListener`
-  - 监听 Agent 事件，生成 Span
+  - 监听 `AgentEvent`，把 runtime 事件折叠成 `TraceSpan`
 - `TraceConfig`
   - 控制记录开关、脱敏、字段裁剪
 - `TraceSpan`
-  - 单条链路节点数据结构
+  - 一条 span，包含基础字段、attributes、events
+- `TraceSpanEvent`
+  - span 内部事件，例如 `model.reasoning`、`model.retry`
 - `TraceExporter`
-  - 导出接口（控制台/内存/你自己的存储）
+  - 导出接口
 - `ConsoleTraceExporter`
   - 打印 `TRACE {...}`
 - `InMemoryTraceExporter`
-  - 测试里断言用
+  - 测试断言和调试采样
+- `CompositeTraceExporter`
+  - 一个 span 扇出到多个 exporter
+- `JsonlTraceExporter`
+  - 追加写入 JSONL 文件
+- `OpenTelemetryTraceExporter`
+  - 把 AI4J trace 桥接导出到 OTel pipeline
 
 ## 2. 启用方式
 
+最小接法：
+
 ```java
-Agent agent = Agents.codeAct()
+Agent agent = Agents.react()
         .modelClient(modelClient)
         .model("doubao-seed-1-8-251228")
         .traceConfig(TraceConfig.builder().build())
@@ -38,39 +49,195 @@ Agent agent = Agents.codeAct()
         .build();
 ```
 
-`AgentBuilder` 行为：
+`AgentBuilder` 的默认行为很简单：
 
-- 只要设置 `traceExporter`，会自动把 `AgentTraceListener` 挂到 `AgentEventPublisher`。
+- 只要你设置了 `traceExporter(...)`
+- `build()` 时就会自动挂一个 `AgentTraceListener`
+- 不需要再手动注册 listener
 
-## 3. Span 类型与时机
+如果你要同时打控制台、内存和文件：
 
-## `RUN`
+```java
+TraceExporter exporter = new CompositeTraceExporter(
+        new ConsoleTraceExporter(),
+        new InMemoryTraceExporter(),
+        new JsonlTraceExporter("logs/agent-trace.jsonl")
+);
 
-- 触发：第一个 `STEP_START`
-- 结束：`FINAL_OUTPUT` 或 `ERROR`
-- 含义：一次完整 agent 调用
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4o-mini")
+        .traceExporter(exporter)
+        .build();
+```
 
-## `STEP`
+## 3. `TraceSpan` 结构
 
-- 触发：每轮 `STEP_START`
-- 结束：对应 `STEP_END`
-- 含义：一次 runtime 循环
+`TraceSpan` 当前包含：
 
-## `MODEL`
+- `traceId`
+- `spanId`
+- `parentSpanId`
+- `name`
+- `type`
+- `status`
+- `startTime`
+- `endTime`
+- `error`
+- `attributes`
+- `events`
 
-- 触发：`MODEL_REQUEST`
-- 结束：`MODEL_RESPONSE`
-- 含义：一次模型请求/响应
+`events` 里的每一项是 `TraceSpanEvent`：
 
-## `TOOL`
+- `timestamp`
+- `name`
+- `attributes`
 
-- 触发：`TOOL_CALL`
-- 结束：`TOOL_RESULT`
-- 含义：一次工具执行（包括 CodeAct 的 code 执行）
+这意味着当前 trace 不是只有“粗粒度 span”，也支持在一个 span 内附加中间事件。
 
-> 如果某轮没有工具调用，只看到 RUN/STEP/MODEL 没有 TOOL 是正常的。
+## 4. Span 类型
 
-## 4. 默认记录策略（你关心的“全记录”）
+当前 `TraceSpanType` 已经不只四种：
+
+- `RUN`
+  - 一次完整 agent 调用
+- `STEP`
+  - 一轮 runtime loop
+- `MODEL`
+  - 一次模型请求
+- `TOOL`
+  - 一次工具执行
+- `HANDOFF`
+  - 一次 subagent handoff
+- `TEAM_TASK`
+  - 一条 team task 的生命周期
+- `MEMORY`
+  - 一次 memory compact / compress
+- `FLOWGRAM_TASK`
+  - 给 FlowGram runtime 复用的任务级 span 类型
+- `FLOWGRAM_NODE`
+  - 给 FlowGram runtime 复用的节点级 span 类型
+
+其中 `FLOWGRAM_TASK / FLOWGRAM_NODE` 是 trace 核心模型里的通用类型，当前 `AgentTraceListener` 本身不直接产出它们；FlowGram 侧走的是独立 runtime event + projection 链路。
+
+## 5. 状态模型
+
+`TraceSpanStatus` 当前有三种：
+
+- `OK`
+- `ERROR`
+- `CANCELED`
+
+也就是说，trace 层现在可以明确区分：
+
+- 正常结束
+- 异常失败
+- 主动取消
+
+这对 handoff、team task、FlowGram task 都是有意义的。
+
+## 6. Agent 事件如何映射到 trace
+
+### 6.1 运行主链路
+
+- 第一次 `STEP_START`
+  - 创建 `RUN`
+- 每个 `STEP_START / STEP_END`
+  - 创建并结束 `STEP`
+- `MODEL_REQUEST`
+  - 创建 `MODEL`
+- `TOOL_CALL / TOOL_RESULT`
+  - 创建并结束 `TOOL`
+- `FINAL_OUTPUT`
+  - 结束 `RUN`
+- `ERROR`
+  - 将 `RUN` 标记为 `ERROR`
+
+### 6.2 模型中间事件
+
+`BaseAgentRuntime.executeModel(...)` 现在除了 request/response，还会发：
+
+- `MODEL_REASONING`
+- `MODEL_RETRY`
+
+这些不会额外拆成独立 span，而是挂在当前 `MODEL` span 的 `events` 上：
+
+- `model.reasoning`
+- `model.retry`
+- 流式文本增量会作为 `model.response.delta`
+
+这样做的原因是：
+
+- reasoning / retry 本质上属于同一次模型调用的内部过程
+- 单独拆 span 会让层级过碎
+- 挂成 span event 更适合做时间线与回放
+
+### 6.3 SubAgent handoff
+
+`SubAgentToolExecutor` 会发：
+
+- `HANDOFF_START`
+- `HANDOFF_END`
+
+`AgentTraceListener` 会把它们折叠成一个 `HANDOFF` span。
+
+当前 handoff payload 里常见的字段包括：
+
+- `handoffId`
+- `callId`
+- `tool`
+- `subagent`
+- `title`
+- `detail`
+- `status`
+- `depth`
+- `sessionMode`
+- `attempts`
+- `durationMillis`
+- `output`
+- `error`
+
+所以 handoff trace 既能回答“有没有委派”，也能回答：
+
+- 委派给谁
+- 第几层 handoff
+- 是完成、失败还是 fallback
+- 花了多久
+
+### 6.4 Agent Team
+
+`AgentTeamEventHook` 会发：
+
+- `TEAM_TASK_CREATED`
+- `TEAM_TASK_UPDATED`
+- `TEAM_MESSAGE`
+
+映射规则是：
+
+- task create / update
+  - 聚合成 `TEAM_TASK` span
+- team message
+  - 写入对应 `TEAM_TASK` span 的 `team.message` event
+
+这和 handoff 的区别是：
+
+- handoff 更像主 agent 把一个 tool 调用委派出去
+- team task 更像显式任务板上的任务生命周期
+
+### 6.5 Memory compact
+
+`MEMORY_COMPRESS` 现在映射为一个短生命周期 `MEMORY` span。
+
+它适合挂这些信息：
+
+- 为什么压缩
+- summary / checkpoint 标识
+- 是否 fallback
+- 压缩发生在哪个 step
+
+如果你在 Coding Agent 里看 compact 诊断，这一层语义和 agent trace 是能对齐的。
+
+## 7. 默认记录策略
 
 `TraceConfig.builder().build()` 默认就是：
 
@@ -78,83 +245,134 @@ Agent agent = Agents.codeAct()
 - `recordModelOutput = true`
 - `recordToolArgs = true`
 - `recordToolOutput = true`
-- `maxFieldLength = 0`（不截断）
-- `masker = null`（不脱敏）
+- `maxFieldLength = 0`
+- `masker = null`
 
-也就是你想要的“默认全记录、默认不脱敏”。
+也就是默认偏“全记录”，方便本地调试和研发联调。
 
-## 5. 当前会记录哪些关键内容
+## 8. 当前会记录哪些字段
 
-## 模型输入（MODEL span attributes）
+### 8.1 模型输入
+
+`MODEL` span attributes 里常见字段：
 
 - `model`
 - `systemPrompt`
 - `instructions`
-- `items`（用户输入/历史/memory）
-- `tools` / `toolChoice` / `parallelToolCalls`
-- `temperature/topP/maxOutputTokens/reasoning`
-- `store/stream/user/extraBody`
+- `items`
+- `tools`
+- `toolChoice`
+- `parallelToolCalls`
+- `temperature`
+- `topP`
+- `maxOutputTokens`
+- `reasoning`
+- `store`
+- `stream`
+- `user`
+- `extraBody`
 
-## 模型输出
+### 8.2 模型输出
 
-- `output`（原始 payload）或 `delta`
-- `finalOutput`（挂在 RUN span）
+- 最终 raw payload -> `output`
+- 流式文本增量 -> `model.response.delta` event
+- 最终回答 -> `RUN.finalOutput`
 
-## 工具调用
+### 8.3 工具调用
 
 - `tool`
 - `callId`
 - `arguments`
 
-## 工具返回
+### 8.4 工具返回
 
 - 普通工具：`output`
 - CodeAct 工具：`result/stdout/error`
 
-这已经覆盖了你提到的 LangSmith 核心可观测字段（prompt / tool 参数 / 模型输出）。
+### 8.5 handoff / team / compact
 
-## 6. 一段真实日志如何解读
+这些数据主要落在它们各自 span 的 attributes 和 events 上，不再强行塞进 `MODEL` 或 `TOOL`。
 
-你看到这种日志：
+## 9. 内置 exporter 的使用边界
 
-```text
-TRACE {"type":"MODEL", ...}
-TRACE {"type":"TOOL", ...}
-TRACE {"type":"STEP", ...}
-TRACE {"type":"RUN", ...}
-```
+### 9.1 `ConsoleTraceExporter`
 
-解读顺序建议：
+适合：
 
-1. 先看 `RUN` 总耗时与状态
-2. 再看每个 `STEP`（是否循环过多）
-3. 再看 `MODEL`（模型时延和输入是否正确）
-4. 最后看 `TOOL`（参数与输出是否异常）
+- 本地开发
+- 先快速看有没有请求、有没有工具、有没有 handoff
 
-## 7. 自定义 Exporter（接数据库/ES/OTEL 网关）
+不适合：
 
-你只需要实现一个接口：
+- 正式存档
+- 大规模查询
+
+### 9.2 `InMemoryTraceExporter`
+
+适合：
+
+- 单元测试
+- 集成测试里断言 span 类型和字段
+
+### 9.3 `JsonlTraceExporter`
+
+适合：
+
+- 本地归档
+- 调试时导出文件给别的系统离线分析
+- 简单接 ELK / ClickHouse 导入任务
+
+### 9.4 `CompositeTraceExporter`
+
+适合：
+
+- 同时满足调试、留档、平台接入三类需求
+
+### 9.5 `OpenTelemetryTraceExporter`
+
+这是当前推荐的“平台接入桥”。
+
+它的定位不是“用 OTel 完全替代 AI4J trace 模型”，而是：
+
+- 保留 AI4J 自己的 `TraceSpan` 语义
+- 导出时把关键字段映射到 OTel span 和 attributes
+- 方便接已有的 collector / observability pipeline
+
+接法：
 
 ```java
-public class DbTraceExporter implements TraceExporter {
-    @Override
-    public void export(TraceSpan span) {
-        // 持久化 span
-    }
-}
+OpenTelemetry openTelemetry = ...;
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4o-mini")
+        .traceExporter(new OpenTelemetryTraceExporter(openTelemetry))
+        .build();
 ```
 
-接入：
+当前导出时会写入这些关键属性：
 
-```java
-.traceExporter(new DbTraceExporter())
-```
+- `ai4j.trace_id`
+- `ai4j.span_id`
+- `ai4j.parent_span_id`
+- `ai4j.span_type`
+- `ai4j.span_status`
+- `ai4j.error`
+- `ai4j.attr.*`
+- `ai4j.event.*`
 
-## 8. 何时开启脱敏与截断
+要注意一件事：
+
+- 当前它是“桥接 exporter”
+- 不是把 `AgentRuntime` 全部改造成原生 OTel instrumentation
+
+所以如果你需要非常严格的 OTel context propagation / 原生父子链路管理，应该在更深层做原生埋点；如果你只是要接 OTel collector、再喂给 Langfuse 之类系统，这一层已经够用。
+
+## 10. 脱敏与裁剪
 
 线上建议至少做两件事：
 
-1. 通过 `masker` 脱敏密钥/身份信息
+1. 通过 `masker` 脱敏
 2. 通过 `maxFieldLength` 限制超长字段
 
 示例：
@@ -162,27 +380,54 @@ public class DbTraceExporter implements TraceExporter {
 ```java
 TraceConfig config = TraceConfig.builder()
         .maxFieldLength(4000)
-        .masker(text -> text == null ? null : text.replaceAll("(?i)api[_-]?key\\s*[:=]\\s*[^,\\s]+", "apiKey=***"))
+        .masker(text -> text == null
+                ? null
+                : text.replaceAll("(?i)api[_-]?key\\s*[:=]\\s*[^,\\s]+", "apiKey=***"))
         .build();
 ```
 
-## 9. 轻量版和完整版的边界
+## 11. 与 FlowGram trace 的关系
 
-当前 Trace 定位是“轻量 SDK 级追踪”：
+Agent trace 和 FlowGram trace 不应该混成一层。
 
-- 优点：接入快、改造小、字段完整
-- 缺点：不含 LangSmith 那种 UI 检索/评估/告警平台
+当前推荐边界是：
 
-如果你后续想升级到“完整版平台”，建议在 `TraceExporter` 外接：
+- `Agent`
+  - 输出 `TraceSpan`
+  - 可接 `OpenTelemetryTraceExporter`
+- `FlowGram`
+  - 先产出 runtime event
+  - 再由后端投影成前端可消费的 `FlowGramTraceView`
 
-- 存储（OLAP/ES/ClickHouse）
-- Trace 查询 API
-- 可视化前端
-- 质量评估与告警
+也就是说：
 
-## 10. 参考测试
+- 后端平台侧可以 OTel-first
+- 但给 `FlowGram.ai` 这类前端画布时，不建议直接让前端读原始 OTel span
+- 应该读后端整理好的 trace projection
 
-- `CodeActRuntimeWithTraceTest`
+## 12. 一段 trace 怎么看
+
+建议按这个顺序读：
+
+1. 先看 `RUN`
+   - 整体耗时、整体状态、最终输出
+2. 再看 `STEP`
+   - 有没有循环过多
+3. 再看 `MODEL`
+   - prompt 是否正确、reasoning/retry 发生在哪
+4. 再看 `TOOL`
+   - 调了什么工具、参数和输出是否异常
+5. 再看 `HANDOFF / TEAM_TASK / MEMORY`
+   - 问题是在委派、协作，还是在压缩点发生的
+
+## 13. 参考测试
+
 - `AgentTraceListenerTest`
+- `AgentTraceUsageTest`
+- `CodeActRuntimeWithTraceTest`
 
-先跑这两个测试，你可以很快确认链路字段是否满足你的审计需求。
+## 14. 继续阅读
+
+- [Agent 核心类参考手册](/docs/agent/reference-core-classes)
+- [Flowgram API 与运行时](/docs/flowgram/api-and-runtime)
+- [引用、Trace 与前端展示](/docs/ai-basics/rag/citations-trace-and-ui-integration)

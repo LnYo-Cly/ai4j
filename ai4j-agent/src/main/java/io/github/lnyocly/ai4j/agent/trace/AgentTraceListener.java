@@ -10,6 +10,8 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +25,8 @@ public class AgentTraceListener implements AgentListener {
     private final Map<Integer, TraceSpan> modelSpans = new HashMap<>();
     private final Map<String, TraceSpan> toolSpans = new HashMap<>();
     private final Map<Integer, TraceSpan> toolSpansByStep = new HashMap<>();
+    private final Map<String, TraceSpan> handoffSpans = new HashMap<>();
+    private final Map<String, TraceSpan> teamTaskSpans = new HashMap<>();
 
     public AgentTraceListener(TraceExporter exporter) {
         this(exporter, null);
@@ -55,11 +59,35 @@ public class AgentTraceListener implements AgentListener {
             case MODEL_RESPONSE:
                 onModelResponse(event);
                 break;
+            case MODEL_RETRY:
+                onModelRetry(event);
+                break;
+            case MODEL_REASONING:
+                onModelReasoning(event);
+                break;
             case TOOL_CALL:
                 onToolCall(event);
                 break;
             case TOOL_RESULT:
                 onToolResult(event);
+                break;
+            case HANDOFF_START:
+                onHandoffStart(event);
+                break;
+            case HANDOFF_END:
+                onHandoffEnd(event);
+                break;
+            case TEAM_TASK_CREATED:
+                onTeamTaskCreated(event);
+                break;
+            case TEAM_TASK_UPDATED:
+                onTeamTaskUpdated(event);
+                break;
+            case TEAM_MESSAGE:
+                onTeamMessage(event);
+                break;
+            case MEMORY_COMPRESS:
+                onMemoryCompress(event);
                 break;
             case FINAL_OUTPUT:
                 onFinalOutput(event);
@@ -134,10 +162,7 @@ public class AgentTraceListener implements AgentListener {
 
     private void onModelResponse(AgentEvent event) {
         Integer step = event.getStep();
-        if (step == null) {
-            return;
-        }
-        TraceSpan span = modelSpans.remove(step);
+        TraceSpan span = resolveModelSpan(step);
         if (span == null) {
             return;
         }
@@ -145,10 +170,29 @@ public class AgentTraceListener implements AgentListener {
             if (event.getPayload() != null) {
                 putAttribute(span, "output", safeValue(event.getPayload()));
             } else if (event.getMessage() != null && !event.getMessage().isEmpty()) {
-                putAttribute(span, "delta", safeValue(event.getMessage()));
+                addSpanEvent(span, "model.response.delta", singletonAttribute("delta", safeValue(event.getMessage())));
             }
         }
-        finishSpan(span, TraceSpanStatus.OK, null);
+        if (event.getPayload() != null) {
+            if (step != null) {
+                modelSpans.remove(step);
+            }
+            finishSpan(span, TraceSpanStatus.OK, null);
+        }
+    }
+
+    private void onModelRetry(AgentEvent event) {
+        TraceSpan span = resolveModelSpan(event.getStep());
+        addSpanEvent(span, "model.retry", attributesFromEvent(event));
+    }
+
+    private void onModelReasoning(AgentEvent event) {
+        TraceSpan span = resolveModelSpan(event.getStep());
+        Map<String, Object> attributes = attributesFromEvent(event);
+        if (event.getMessage() != null && !event.getMessage().isEmpty()) {
+            attributes.put("text", safeValue(event.getMessage()));
+        }
+        addSpanEvent(span, "model.reasoning", attributes);
     }
 
     private void onToolCall(AgentEvent event) {
@@ -235,6 +279,81 @@ public class AgentTraceListener implements AgentListener {
         reset();
     }
 
+    private void onHandoffStart(AgentEvent event) {
+        Map<String, Object> payload = payloadMap(event.getPayload());
+        String handoffId = firstNonBlank(stringValue(payload, "handoffId"), event.getMessage(), UUID.randomUUID().toString());
+        TraceSpan parent = resolveHandoffParent(event, payload);
+        TraceSpan span = startSpan("handoff:" + firstNonBlank(stringValue(payload, "subagent"), stringValue(payload, "tool"), "subagent"),
+                TraceSpanType.HANDOFF,
+                parent == null ? null : parent.getSpanId(),
+                safeAttributes(payload));
+        handoffSpans.put(handoffId, span);
+    }
+
+    private void onHandoffEnd(AgentEvent event) {
+        Map<String, Object> payload = payloadMap(event.getPayload());
+        String handoffId = firstNonBlank(stringValue(payload, "handoffId"), event.getMessage());
+        TraceSpan span = handoffId == null ? null : handoffSpans.remove(handoffId);
+        if (span == null) {
+            TraceSpan parent = resolveHandoffParent(event, payload);
+            span = startSpan("handoff:" + firstNonBlank(stringValue(payload, "subagent"), stringValue(payload, "tool"), "subagent"),
+                    TraceSpanType.HANDOFF,
+                    parent == null ? null : parent.getSpanId(),
+                    safeAttributes(payload));
+        } else {
+            mergeAttributes(span, safeAttributes(payload));
+        }
+        addSpanEvent(span, "handoff.end", attributesFromEvent(event));
+        finishSpan(span, resolveStatus(payload, event.getMessage()), firstNonBlank(stringValue(payload, "error"), event.getMessage()));
+    }
+
+    private void onTeamTaskCreated(AgentEvent event) {
+        Map<String, Object> payload = payloadMap(event.getPayload());
+        String taskId = firstNonBlank(stringValue(payload, "taskId"), event.getMessage(), UUID.randomUUID().toString());
+        TraceSpan span = startSpan("team.task:" + taskId,
+                TraceSpanType.TEAM_TASK,
+                rootSpan == null ? null : rootSpan.getSpanId(),
+                safeAttributes(payload));
+        teamTaskSpans.put(taskId, span);
+        addSpanEvent(span, "team.task.created", attributesFromEvent(event));
+    }
+
+    private void onTeamTaskUpdated(AgentEvent event) {
+        Map<String, Object> payload = payloadMap(event.getPayload());
+        String taskId = firstNonBlank(stringValue(payload, "taskId"), event.getMessage());
+        if (taskId == null) {
+            return;
+        }
+        TraceSpan span = teamTaskSpans.get(taskId);
+        if (span == null) {
+            span = startSpan("team.task:" + taskId,
+                    TraceSpanType.TEAM_TASK,
+                    rootSpan == null ? null : rootSpan.getSpanId(),
+                    safeAttributes(payload));
+            teamTaskSpans.put(taskId, span);
+        } else {
+            mergeAttributes(span, safeAttributes(payload));
+        }
+        addSpanEvent(span, "team.task.updated", attributesFromEvent(event));
+        if (isTerminalStatus(stringValue(payload, "status")) || stringValue(payload, "error") != null) {
+            teamTaskSpans.remove(taskId);
+            finishSpan(span, resolveStatus(payload, event.getMessage()), stringValue(payload, "error"));
+        }
+    }
+
+    private void onTeamMessage(AgentEvent event) {
+        Map<String, Object> payload = payloadMap(event.getPayload());
+        String taskId = stringValue(payload, "taskId");
+        TraceSpan span = taskId == null ? rootSpan : teamTaskSpans.get(taskId);
+        addSpanEvent(span == null ? rootSpan : span, "team.message", attributesFromEvent(event));
+    }
+
+    private void onMemoryCompress(AgentEvent event) {
+        TraceSpan parent = event.getStep() == null ? rootSpan : stepSpans.get(event.getStep());
+        TraceSpan span = startSpan("memory.compress", TraceSpanType.MEMORY, parent == null ? null : parent.getSpanId(), attributesFromEvent(event));
+        finishSpan(span, TraceSpanStatus.OK, null);
+    }
+
     private TraceSpan startSpan(String name, TraceSpanType type, String parentId, Map<String, Object> attributes) {
         TraceSpan span = TraceSpan.builder()
                 .traceId(traceId)
@@ -245,8 +364,37 @@ public class AgentTraceListener implements AgentListener {
                 .status(TraceSpanStatus.OK)
                 .startTime(System.currentTimeMillis())
                 .attributes(attributes == null ? new HashMap<>() : attributes)
+                .events(new ArrayList<TraceSpanEvent>())
                 .build();
         return span;
+    }
+
+    private TraceSpan resolveModelSpan(Integer step) {
+        if (step == null) {
+            return null;
+        }
+        return modelSpans.get(step);
+    }
+
+    private TraceSpan resolveHandoffParent(AgentEvent event, Map<String, Object> payload) {
+        String callId = stringValue(payload, "callId");
+        if (callId != null) {
+            TraceSpan span = toolSpans.get(callId);
+            if (span != null) {
+                return span;
+            }
+        }
+        if (event != null && event.getStep() != null) {
+            TraceSpan span = toolSpansByStep.get(event.getStep());
+            if (span != null) {
+                return span;
+            }
+            span = stepSpans.get(event.getStep());
+            if (span != null) {
+                return span;
+            }
+        }
+        return rootSpan;
     }
 
     private void putAttribute(TraceSpan span, String key, Object value) {
@@ -262,6 +410,34 @@ public class AgentTraceListener implements AgentListener {
             return;
         }
         attributes.put(key, value);
+    }
+
+    private void mergeAttributes(TraceSpan span, Map<String, Object> attributes) {
+        if (span == null || attributes == null || attributes.isEmpty()) {
+            return;
+        }
+        Map<String, Object> target = span.getAttributes();
+        if (target == null) {
+            target = new HashMap<String, Object>();
+            span.setAttributes(target);
+        }
+        target.putAll(attributes);
+    }
+
+    private void addSpanEvent(TraceSpan span, String name, Map<String, Object> attributes) {
+        if (span == null || name == null) {
+            return;
+        }
+        List<TraceSpanEvent> events = span.getEvents();
+        if (events == null) {
+            events = new ArrayList<TraceSpanEvent>();
+            span.setEvents(events);
+        }
+        events.add(TraceSpanEvent.builder()
+                .timestamp(System.currentTimeMillis())
+                .name(name)
+                .attributes(attributes == null ? new HashMap<String, Object>() : attributes)
+                .build());
     }
 
     private Object safeValue(Object value) {
@@ -282,6 +458,94 @@ public class AgentTraceListener implements AgentListener {
             text = text.substring(0, maxLength) + "...";
         }
         return text;
+    }
+
+    private Map<String, Object> attributesFromEvent(AgentEvent event) {
+        Map<String, Object> attributes = safeAttributes(payloadMap(event == null ? null : event.getPayload()));
+        if (event != null && event.getMessage() != null && !event.getMessage().isEmpty()) {
+            attributes.put("message", safeValue(event.getMessage()));
+        }
+        if (event != null && event.getStep() != null) {
+            attributes.put("step", event.getStep());
+        }
+        return attributes;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> payloadMap(Object payload) {
+        if (payload instanceof Map) {
+            return (Map<String, Object>) payload;
+        }
+        return new HashMap<String, Object>();
+    }
+
+    private Map<String, Object> safeAttributes(Map<String, Object> source) {
+        Map<String, Object> target = new HashMap<String, Object>();
+        if (source == null || source.isEmpty()) {
+            return target;
+        }
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            target.put(entry.getKey(), safeValue(entry.getValue()));
+        }
+        return target;
+    }
+
+    private Map<String, Object> singletonAttribute(String key, Object value) {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        if (key != null && value != null) {
+            attributes.put(key, value);
+        }
+        return attributes;
+    }
+
+    private String stringValue(Map<String, Object> payload, String key) {
+        if (payload == null || key == null) {
+            return null;
+        }
+        Object value = payload.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private TraceSpanStatus resolveStatus(Map<String, Object> payload, String fallbackMessage) {
+        String status = stringValue(payload, "status");
+        if (stringValue(payload, "error") != null || (fallbackMessage != null && fallbackMessage.toLowerCase().contains("fail"))) {
+            return TraceSpanStatus.ERROR;
+        }
+        if (status == null) {
+            return TraceSpanStatus.OK;
+        }
+        String normalized = status.trim().toLowerCase();
+        if ("canceled".equals(normalized) || "cancelled".equals(normalized)) {
+            return TraceSpanStatus.CANCELED;
+        }
+        if ("failed".equals(normalized) || "error".equals(normalized)) {
+            return TraceSpanStatus.ERROR;
+        }
+        return TraceSpanStatus.OK;
+    }
+
+    private boolean isTerminalStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+        String normalized = status.trim().toLowerCase();
+        return "completed".equals(normalized)
+                || "failed".equals(normalized)
+                || "blocked".equals(normalized)
+                || "canceled".equals(normalized)
+                || "cancelled".equals(normalized);
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private void finishSpan(TraceSpan span, TraceSpanStatus status, String error) {
@@ -309,5 +573,8 @@ public class AgentTraceListener implements AgentListener {
         stepSpans.clear();
         modelSpans.clear();
         toolSpans.clear();
+        toolSpansByStep.clear();
+        handoffSpans.clear();
+        teamTaskSpans.clear();
     }
 }
