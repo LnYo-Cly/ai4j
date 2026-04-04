@@ -118,6 +118,7 @@ CLI 当前只对用户暴露两种协议：
 - `/provider add`、`/provider edit`
 - `/provider default`
 - `/model`
+- `/experimental`
 - `/stream`
 - `/skills`
 - `/mcp`
@@ -127,6 +128,7 @@ CLI 当前只对用户暴露两种协议：
 - `/events`
 - `/replay`
 - `/team`
+- `/team list|status|messages|resume`
 - `/processes`
 
 ### 5.2 Session / Process
@@ -146,7 +148,8 @@ CLI 当前只对用户暴露两种协议：
 - `Tab`：应用当前补全项
 - `Ctrl+P`：打开 palette
 - `Ctrl+R`：进入 replay
-- `/team`：打开当前团队任务板
+- `/team`：打开当前会话里的团队任务板
+- `/team resume <team-id>`：打开某个已持久化的团队快照
 - `Enter`：提交输入
 - `Esc`：中断当前任务，或关闭当前 UI 面板
 
@@ -155,14 +158,45 @@ palette 适合做两件事：
 - 快速插入高频 slash command
 - 在不记忆完整命令的情况下发现可用动作
 
-`/team` 则适合在多智能体协作时快速查看：
+`/team` / `/team ...` 则适合在多智能体协作时快速查看：
 
-- 当前有哪些 team tasks
+- 当前会话里有哪些 team tasks
 - 每个 task 归属哪个成员
 - 任务处于 `pending/running/completed/failed` 的哪一阶段
 - 最近的团队协作消息是否已经发出
+- 工作区里哪些 team 已经被持久化
+- 某个 team 最近一次落盘状态和 mailbox 消息
 
-### 6.1 状态栏
+`/experimental` 则适合在当前仓库里直接切换实验性 agent runtime surface，例如：
+
+- `/experimental subagent off`
+- `/experimental agent-teams on`
+
+切换后会立即重建当前 session runtime，并把结果写回 workspace 配置。
+
+### 6.1 当前 board 与持久化快照的区别
+
+`/team` 和 `/team resume ...` 的数据来源不一样：
+
+- `/team`：当前 session event ledger
+- `/team status|messages|resume`：`<workspace>/.ai4j/teams`
+
+当前工作区下，team 持久化目录结构是：
+
+```text
+<workspace>/.ai4j/teams/
+  state/<teamId>.json
+  mailbox/<teamId>.jsonl
+```
+
+可以把它理解成两层：
+
+- session ledger 负责“当前这次 CLI/TUI/ACP 会话里观测到了哪些 team 事件”
+- team snapshot 负责“某个 team runtime 最近一次显式落盘后的状态”
+
+所以 `/team resume <team-id>` 的含义是“切到这个快照视角继续查看”，不是“把一个 team runtime 真正恢复执行”。
+
+### 6.2 状态栏
 
 当前常见状态包括：
 

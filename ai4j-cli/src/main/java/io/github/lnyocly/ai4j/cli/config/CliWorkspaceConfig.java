@@ -7,6 +7,8 @@ public class CliWorkspaceConfig {
 
     private String activeProfile;
     private String modelOverride;
+    private Boolean experimentalSubagentsEnabled;
+    private Boolean experimentalAgentTeamsEnabled;
     private List<String> enabledMcpServers;
     private List<String> skillDirectories;
     private List<String> agentDirectories;
@@ -16,11 +18,15 @@ public class CliWorkspaceConfig {
 
     public CliWorkspaceConfig(String activeProfile,
                               String modelOverride,
+                              Boolean experimentalSubagentsEnabled,
+                              Boolean experimentalAgentTeamsEnabled,
                               List<String> enabledMcpServers,
                               List<String> skillDirectories,
                               List<String> agentDirectories) {
         this.activeProfile = activeProfile;
         this.modelOverride = modelOverride;
+        this.experimentalSubagentsEnabled = experimentalSubagentsEnabled;
+        this.experimentalAgentTeamsEnabled = experimentalAgentTeamsEnabled;
         this.enabledMcpServers = copy(enabledMcpServers);
         this.skillDirectories = copy(skillDirectories);
         this.agentDirectories = copy(agentDirectories);
@@ -34,6 +40,8 @@ public class CliWorkspaceConfig {
         return new Builder()
                 .activeProfile(activeProfile)
                 .modelOverride(modelOverride)
+                .experimentalSubagentsEnabled(experimentalSubagentsEnabled)
+                .experimentalAgentTeamsEnabled(experimentalAgentTeamsEnabled)
                 .enabledMcpServers(enabledMcpServers)
                 .skillDirectories(skillDirectories)
                 .agentDirectories(agentDirectories);
@@ -53,6 +61,22 @@ public class CliWorkspaceConfig {
 
     public void setModelOverride(String modelOverride) {
         this.modelOverride = modelOverride;
+    }
+
+    public Boolean getExperimentalSubagentsEnabled() {
+        return experimentalSubagentsEnabled;
+    }
+
+    public void setExperimentalSubagentsEnabled(Boolean experimentalSubagentsEnabled) {
+        this.experimentalSubagentsEnabled = experimentalSubagentsEnabled;
+    }
+
+    public Boolean getExperimentalAgentTeamsEnabled() {
+        return experimentalAgentTeamsEnabled;
+    }
+
+    public void setExperimentalAgentTeamsEnabled(Boolean experimentalAgentTeamsEnabled) {
+        this.experimentalAgentTeamsEnabled = experimentalAgentTeamsEnabled;
     }
 
     public List<String> getEnabledMcpServers() {
@@ -87,6 +111,8 @@ public class CliWorkspaceConfig {
 
         private String activeProfile;
         private String modelOverride;
+        private Boolean experimentalSubagentsEnabled;
+        private Boolean experimentalAgentTeamsEnabled;
         private List<String> enabledMcpServers;
         private List<String> skillDirectories;
         private List<String> agentDirectories;
@@ -101,6 +127,16 @@ public class CliWorkspaceConfig {
 
         public Builder modelOverride(String modelOverride) {
             this.modelOverride = modelOverride;
+            return this;
+        }
+
+        public Builder experimentalSubagentsEnabled(Boolean experimentalSubagentsEnabled) {
+            this.experimentalSubagentsEnabled = experimentalSubagentsEnabled;
+            return this;
+        }
+
+        public Builder experimentalAgentTeamsEnabled(Boolean experimentalAgentTeamsEnabled) {
+            this.experimentalAgentTeamsEnabled = experimentalAgentTeamsEnabled;
             return this;
         }
 
@@ -120,7 +156,15 @@ public class CliWorkspaceConfig {
         }
 
         public CliWorkspaceConfig build() {
-            return new CliWorkspaceConfig(activeProfile, modelOverride, enabledMcpServers, skillDirectories, agentDirectories);
+            return new CliWorkspaceConfig(
+                    activeProfile,
+                    modelOverride,
+                    experimentalSubagentsEnabled,
+                    experimentalAgentTeamsEnabled,
+                    enabledMcpServers,
+                    skillDirectories,
+                    agentDirectories
+            );
         }
     }
 }

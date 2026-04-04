@@ -39,6 +39,7 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/providers");
         assertContainsValue(candidates, "/provider ");
         assertContainsValue(candidates, "/model ");
+        assertContainsValue(candidates, "/experimental ");
         assertContainsValue(candidates, "/skills ");
         assertContainsValue(candidates, "/agents ");
         assertContainsValue(candidates, "/process ");
@@ -88,6 +89,86 @@ public class SlashCommandControllerTest {
 
         assertContainsValue(candidates, "on");
         assertContainsValue(candidates, "off");
+    }
+
+    @Test
+    public void suggestExperimentalFeaturesIncludesSubagentAndAgentTeams() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-experimental");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/experimental ", "/experimental ".length());
+
+        assertContainsValue(candidates, "subagent");
+        assertContainsValue(candidates, "agent-teams");
+    }
+
+    @Test
+    public void suggestExperimentalToggleOptionsIncludesOnAndOff() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-experimental-toggle");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/experimental subagent ", "/experimental subagent ".length());
+
+        assertContainsValue(candidates, "on");
+        assertContainsValue(candidates, "off");
+    }
+
+    @Test
+    public void suggestTeamActionsIncludesPersistedStateCommands() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-team");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/team ", "/team ".length());
+
+        assertContainsValue(candidates, "list");
+        assertContainsValue(candidates, "status ");
+        assertContainsValue(candidates, "messages ");
+        assertContainsValue(candidates, "resume ");
+    }
+
+    @Test
+    public void suggestTeamIdsFromSupplierForStatusAndResume() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-team-id");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+        controller.setTeamCandidateSupplier(() -> Arrays.asList("experimental-delivery-team", "travel-team"));
+
+        List<Candidate> statusCandidates = controller.suggest("/team status ", "/team status ".length());
+        List<Candidate> resumeCandidates = controller.suggest("/team resume ", "/team resume ".length());
+
+        assertContainsValue(statusCandidates, "experimental-delivery-team");
+        assertContainsValue(statusCandidates, "travel-team");
+        assertContainsValue(resumeCandidates, "experimental-delivery-team");
+    }
+
+    @Test
+    public void suggestTeamMessageLimitsAfterTeamId() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-team-messages");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+        controller.setTeamCandidateSupplier(() -> Arrays.asList("experimental-delivery-team"));
+
+        List<Candidate> candidates = controller.suggest(
+                "/team messages experimental-delivery-team ",
+                "/team messages experimental-delivery-team ".length()
+        );
+
+        assertContainsValue(candidates, "10");
+        assertContainsValue(candidates, "20");
+        assertContainsValue(candidates, "50");
     }
 
     @Test

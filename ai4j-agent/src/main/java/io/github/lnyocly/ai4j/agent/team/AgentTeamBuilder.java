@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import java.util.function.Supplier;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,9 @@ public class AgentTeamBuilder {
     private final List<AgentTeamMember> members = new ArrayList<>();
     private AgentTeamOptions options;
     private AgentTeamMessageBus messageBus;
+    private AgentTeamStateStore stateStore;
+    private String teamId;
+    private Path storageDirectory;
     private AgentTeamPlanApproval planApproval;
     private final List<AgentTeamHook> hooks = new ArrayList<>();
 
@@ -56,6 +60,18 @@ public class AgentTeamBuilder {
 
     public AgentTeamMessageBus getMessageBus() {
         return messageBus;
+    }
+
+    public AgentTeamStateStore getStateStore() {
+        return stateStore;
+    }
+
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public Path getStorageDirectory() {
+        return storageDirectory;
     }
 
     public AgentTeamPlanApproval getPlanApproval() {
@@ -112,6 +128,21 @@ public class AgentTeamBuilder {
 
     public AgentTeamBuilder messageBus(AgentTeamMessageBus messageBus) {
         this.messageBus = messageBus;
+        return this;
+    }
+
+    public AgentTeamBuilder stateStore(AgentTeamStateStore stateStore) {
+        this.stateStore = stateStore;
+        return this;
+    }
+
+    public AgentTeamBuilder teamId(String teamId) {
+        this.teamId = teamId;
+        return this;
+    }
+
+    public AgentTeamBuilder storageDirectory(Path storageDirectory) {
+        this.storageDirectory = storageDirectory;
         return this;
     }
 

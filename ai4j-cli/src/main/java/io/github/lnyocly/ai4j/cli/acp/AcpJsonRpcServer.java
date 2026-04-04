@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
+import io.github.lnyocly.ai4j.cli.factory.DefaultCodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpServerDefinition;
 import io.github.lnyocly.ai4j.cli.mcp.CliResolvedMcpConfig;
@@ -1317,6 +1318,11 @@ public class AcpJsonRpcServer implements Closeable {
                         public String executeModel(String argument) throws Exception {
                             return executeModelCommand(argument);
                         }
+
+                        @Override
+                        public String executeExperimental(String argument) throws Exception {
+                            return executeExperimentalCommand(argument);
+                        }
                     }
             );
         }
@@ -1364,6 +1370,31 @@ public class AcpJsonRpcServer implements Closeable {
             applyModelChange(argument, true, false);
             persistSessionIfConfigured();
             return renderModelOutput();
+        }
+
+        private synchronized String executeExperimentalCommand(String argument) throws Exception {
+            if (isBlank(argument)) {
+                return renderExperimentalOutput();
+            }
+            List<String> tokens = Arrays.asList(argument.trim().split("\\s+"));
+            if (tokens.size() != 2) {
+                return "Usage: /experimental <subagent|agent-teams> <on|off>";
+            }
+            String feature = normalizeExperimentalFeature(tokens.get(0));
+            Boolean enabled = parseExperimentalToggle(tokens.get(1));
+            if (feature == null || enabled == null) {
+                return "Usage: /experimental <subagent|agent-teams> <on|off>";
+            }
+            CliWorkspaceConfig workspaceConfig = providerConfigManager.loadWorkspaceConfig();
+            if ("subagent".equals(feature)) {
+                workspaceConfig.setExperimentalSubagentsEnabled(enabled);
+            } else {
+                workspaceConfig.setExperimentalAgentTeamsEnabled(enabled);
+            }
+            providerConfigManager.saveWorkspaceConfig(workspaceConfig);
+            rebindSession(options);
+            persistSessionIfConfigured();
+            return renderExperimentalOutput();
         }
 
         private void applyModeChange(String rawModeId, boolean emitUpdates) throws Exception {
@@ -1667,6 +1698,59 @@ public class AcpJsonRpcServer implements Closeable {
             builder.append("- profile=").append(firstNonBlank(resolved.getEffectiveProfile(), "(none)")).append('\n');
             builder.append("- workspaceConfig=").append(providerConfigManager.workspaceConfigPath());
             return builder.toString().trim();
+        }
+
+        private String renderExperimentalOutput() {
+            CliWorkspaceConfig workspaceConfig = providerConfigManager.loadWorkspaceConfig();
+            StringBuilder builder = new StringBuilder();
+            builder.append("experimental:\n");
+            builder.append("- subagent=").append(renderExperimentalState(
+                    workspaceConfig == null ? null : workspaceConfig.getExperimentalSubagentsEnabled(),
+                    DefaultCodingCliAgentFactory.isExperimentalSubagentsEnabled(workspaceConfig)
+            )).append('\n');
+            builder.append("- agent-teams=").append(renderExperimentalState(
+                    workspaceConfig == null ? null : workspaceConfig.getExperimentalAgentTeamsEnabled(),
+                    DefaultCodingCliAgentFactory.isExperimentalAgentTeamsEnabled(workspaceConfig)
+            )).append('\n');
+            builder.append("- workspaceConfig=").append(providerConfigManager.workspaceConfigPath());
+            return builder.toString().trim();
+        }
+
+        private String renderExperimentalState(Boolean configuredValue, boolean effectiveValue) {
+            String base = effectiveValue ? "on" : "off";
+            return configuredValue == null ? base + " (default)" : base;
+        }
+
+        private String normalizeExperimentalFeature(String raw) {
+            if (isBlank(raw)) {
+                return null;
+            }
+            String normalized = raw.trim().toLowerCase(Locale.ROOT);
+            if ("subagent".equals(normalized) || "subagents".equals(normalized)) {
+                return "subagent";
+            }
+            if ("agent-teams".equals(normalized)
+                    || "agent-team".equals(normalized)
+                    || "agentteams".equals(normalized)
+                    || "team".equals(normalized)
+                    || "teams".equals(normalized)) {
+                return "agent-teams";
+            }
+            return null;
+        }
+
+        private Boolean parseExperimentalToggle(String raw) {
+            if (isBlank(raw)) {
+                return null;
+            }
+            String normalized = raw.trim().toLowerCase(Locale.ROOT);
+            if ("on".equals(normalized) || "enable".equals(normalized) || "enabled".equals(normalized)) {
+                return Boolean.TRUE;
+            }
+            if ("off".equals(normalized) || "disable".equals(normalized) || "disabled".equals(normalized)) {
+                return Boolean.FALSE;
+            }
+            return null;
         }
 
         private List<Map<String, Object>> buildModeOptionValues() {

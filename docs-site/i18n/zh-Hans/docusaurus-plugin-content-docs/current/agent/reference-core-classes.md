@@ -242,6 +242,9 @@ sidebar_position: 14
 - `planApproval(...)`
 - `hook(...)`
 - `messageBus(...)`
+- `teamId(...)`
+- `stateStore(...)`
+- `storageDirectory(...)`
 
 ### 8.2 任务模型与状态
 
@@ -255,6 +258,12 @@ sidebar_position: 14
 - `AgentTeamMessage`
 - `AgentTeamMessageBus`
 - `InMemoryAgentTeamMessageBus`
+- `FileAgentTeamMessageBus`
+- `AgentTeamState`
+- `AgentTeamMemberSnapshot`
+- `AgentTeamStateStore`
+- `InMemoryAgentTeamStateStore`
+- `FileAgentTeamStateStore`
 - `AgentTeamPlanApproval`
 - `AgentTeamHook`
 - `AgentTeamControl`
@@ -264,6 +273,21 @@ sidebar_position: 14
 - 队员管理：`registerMember/unregisterMember/listMembers`
 - 信息管理：`listMessages/listMessagesFor/sendMessage/broadcastMessage/publishMessage`
 - 任务管理：`listTaskStates/claimTask/releaseTask/reassignTask/heartbeatTask`
+
+`AgentTeam` 现在额外提供的状态接口：
+
+- `getTeamId()`
+- `snapshotState()`
+- `loadPersistedState()`
+- `restoreState(...)`
+- `clearPersistedState()`
+
+默认文件持久化规则：
+
+- 当 builder 只提供 `storageDirectory(...)` 时
+- `state` 会落到 `<storageDirectory>/state/<teamId>.json`
+- `mailbox` 会落到 `<storageDirectory>/mailbox/<teamId>.jsonl`
+- 新建同 `teamId` 的 Team 后，可显式调用 `loadPersistedState()` 恢复运行快照
 
 ### 8.4 Team 工具（成员主动协作）
 
@@ -298,6 +322,7 @@ sidebar_position: 14
 
 执行后返回：
 
+- `teamId`
 - `objective`
 - `plan`
 - `memberResults`

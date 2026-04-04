@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.team;
 
-import io.github.lnyocly.ai4j.agent.AgentResult;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,25 +7,27 @@ import java.util.List;
 
 @Data
 @Builder(toBuilder = true)
-public class AgentTeamResult {
+public class AgentTeamState {
 
     private String teamId;
 
     private String objective;
 
-    private AgentTeamPlan plan;
-
-    private List<AgentTeamMemberResult> memberResults;
+    private List<AgentTeamMemberSnapshot> members;
 
     private List<AgentTeamTaskState> taskStates;
 
     private List<AgentTeamMessage> messages;
 
-    private int rounds;
+    private String lastOutput;
 
-    private String output;
+    private int lastRounds;
 
-    private AgentResult synthesisResult;
+    private long lastRunStartedAt;
 
-    private long totalDurationMillis;
+    private long lastRunCompletedAt;
+
+    private long updatedAt;
+
+    private boolean runActive;
 }

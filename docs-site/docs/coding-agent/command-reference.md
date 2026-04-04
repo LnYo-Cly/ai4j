@@ -25,6 +25,7 @@ sidebar_position: 11
 - `/providers`
 - `/provider`
 - `/model`
+- `/experimental`
 - `/skills`
 - `/agents`
 - `/mcp`
@@ -46,7 +47,7 @@ sidebar_position: 11
 
 ---
 
-## 1. Provider / Model
+## 1. Provider / Model / Runtime Flags
 
 ### `/providers`
 
@@ -219,6 +220,35 @@ sidebar_position: 11
 ```text
 /model reset
 ```
+
+---
+
+### `/experimental`
+
+查看或切换当前 workspace 的实验性 runtime 特性开关。
+
+```text
+/experimental
+/experimental <subagent|agent-teams> <on|off>
+```
+
+示例：
+
+```text
+/experimental
+/experimental subagent off
+/experimental agent-teams on
+```
+
+说明：
+
+- 当前状态会持久化到 `<workspace>/.ai4j/workspace.json`
+- `subagent` 控制是否注入实验性的后台工作 subagent tool：`subagent_background_worker`
+- `agent-teams` 控制是否注入实验性的交付团队 subagent tool：`subagent_delivery_team`
+- 对应字段缺失时，当前实现按 `on (default)` 处理
+- 切换后会立即重建当前 session runtime，让当前会话的可见工具集合生效
+- 这个命令改变的是“当前 session 可见的 agent tool surface”，不是固定内置本地 Tool 列表
+- 是否能稳定触发这些 agent tool，还取决于当前 provider / model 的 tool-calling 质量
 
 ---
 
@@ -491,16 +521,26 @@ sidebar_position: 11
 
 ### `/team`
 
-查看当前 agent team board，按成员 lane 聚合当前任务状态与近期协作消息。
+查看当前 agent team board，或管理工作区里已经持久化的 team snapshot。
 
 ```text
 /team
+/team list
+/team status [team-id]
+/team messages [team-id] [limit]
+/team resume [team-id]
 ```
 
 说明：
 
-- `CLI` / `ACP`：返回文本版 team board
-- `TUI`：打开 team board overlay，可用上下键滚动、`Esc` 关闭
+- `/team`：读取当前 session event ledger，经 `TeamBoardRenderSupport` 聚合成“当前会话里的 team board”
+- `/team list`：列出 `<workspace>/.ai4j/teams/state/*.json` 中已知的 teamId
+- `/team status [team-id]`：读取最近一次持久化的 `AgentTeamState` 并渲染文本版 board；`team-id` 省略时，默认取最近一个持久化 team
+- `/team messages [team-id] [limit]`：读取 `<workspace>/.ai4j/teams/mailbox/<teamId>.jsonl`，用于看最近的团队协作消息
+- `/team resume [team-id]`：重新打开一个“持久化快照视角”的 board，不会重新启动 team runtime，也不会重放 live team 执行
+- `CLI` / `ACP`：返回文本版结果
+- `TUI`：`/team` 打开当前 board，`/team resume ...` 打开持久化 board snapshot
+- 当前 experimental delivery team 默认把数据写到 `<workspace>/.ai4j/teams`
 - 只聚合 Team task / Team message，不会把普通 delegate task 混进来
 
 ---
@@ -725,6 +765,7 @@ sidebar_position: 11
 - `/provider add|edit` 参数
 - `/provider add|edit --protocol` 值
 - `/model` 候选
+- `/experimental` 的 feature / on|off 候选
 - `/skills` 候选
 - `/stream on|off`
 

@@ -9,6 +9,7 @@ sidebar_position: 11
 - 如何只配置 `leadAgent` 就跑起来；
 - 如何管理队员、任务、消息；
 - 如何让队员通过 `team_*` 工具主动协作；
+- 如何把 Team 状态和消息落盘并显式恢复；
 - 如何在工程上做回退、治理与排障。
 
 ---
@@ -231,6 +232,33 @@ AgentTeam team = Agents.team()
 
 ---
 
+### 8.4 持久化 MessageBus（文件邮箱）
+
+默认 `MessageBus` 是内存实现：`InMemoryAgentTeamMessageBus`。  
+如果你给 `AgentTeamBuilder` 提供 `storageDirectory(...)`，当前实现会自动切到文件邮箱：
+
+- mailbox 文件：`<storageDirectory>/mailbox/<teamId>.jsonl`
+- 每条消息按一行 JSON 追加
+- 新建同 `teamId` 的 Team 时，会自动读回已有邮箱内容
+
+也可以手动覆盖：
+
+```java
+AgentTeam team = Agents.team()
+        .teamId("travel-team")
+        .messageBus(new FileAgentTeamMessageBus(Paths.get(".ai4j/teams/mailbox/travel-team.jsonl")))
+        .member(...)
+        .build();
+```
+
+这层能力的作用很直接：
+
+- 消息不再只存在 JVM 内存里；
+- Team 重建后还能继续查看历史消息；
+- trace、审计、宿主 UI 都能拿到稳定的协作记录。
+
+---
+
 ## 9. 队员主动协作：`team_*` 内置工具
 
 当前版本支持把 Team 工具自动注入到成员运行时（默认开启）：
@@ -251,7 +279,76 @@ AgentTeam team = Agents.team()
 
 ---
 
-## 10. AgentTeamOptions 参数建议
+## 10. Team 状态持久化与显式恢复
+
+这次增强后，`AgentTeam` 不再只是一次性的内存对象。当前可用能力包括：
+
+- 稳定标识：`teamId(...)`
+- 状态落盘：`stateStore(...)` 或 `storageDirectory(...)`
+- 运行快照：`snapshotState()`
+- 显式恢复：`loadPersistedState()` / `restoreState(...)`
+- 清理：`clearPersistedState()`
+
+最简单的写法是只给一个 `teamId` 和 `storageDirectory`：
+
+```java
+Path root = Paths.get(".ai4j/teams");
+
+AgentTeam team = Agents.team()
+        .teamId("travel-team")
+        .storageDirectory(root)
+        .member(...)
+        .build();
+
+team.run("deliver the travel workspace");
+
+AgentTeam sameTeam = Agents.team()
+        .teamId("travel-team")
+        .storageDirectory(root)
+        .member(...)
+        .build();
+
+AgentTeamState restored = sameTeam.loadPersistedState();
+```
+
+当前默认文件布局：
+
+- state 文件：`<storageDirectory>/state/<teamId>.json`
+- mailbox 文件：`<storageDirectory>/mailbox/<teamId>.jsonl`
+
+`AgentTeamState` 快照里包含：
+
+- `teamId`
+- `objective`
+- `members`
+- `taskStates`
+- `messages`
+- `lastOutput`
+- `lastRounds`
+- `lastRunStartedAt`
+- `lastRunCompletedAt`
+- `updatedAt`
+- `runActive`
+
+这套恢复机制的边界也要说清：
+
+- 它恢复的是 Team 的运行快照，不是从磁盘重新构造成员 Agent；
+- 你仍然要在 builder 里重新提供成员、planner、synthesizer；
+- `loadPersistedState()` 负责把任务状态、消息历史、上次输出重新挂回 Team 对象。
+
+如果你需要完全自定义存储，也可以直接传 `stateStore(...)`：
+
+```java
+AgentTeam team = Agents.team()
+        .teamId("travel-team")
+        .stateStore(new FileAgentTeamStateStore(Paths.get(".ai4j/custom-team-state")))
+        .member(...)
+        .build();
+```
+
+---
+
+## 11. AgentTeamOptions 参数建议
 
 ### 调度
 
@@ -288,7 +385,7 @@ AgentTeam team = Agents.team()
 
 ---
 
-## 11. Hook 与 PlanApproval
+## 12. Hook 与 PlanApproval
 
 ### 11.1 PlanApproval
 
@@ -315,7 +412,7 @@ AgentTeam team = Agents.team()
 
 ---
 
-## 12. 常见问题
+## 13. 常见问题
 
 ### Q1：队员只能是 ReAct Agent 吗？
 
@@ -339,18 +436,32 @@ AgentTeam team = Agents.team()
 
 支持。可结合 `AgentTraceListener` + exporter，把 Team 链路接入你的观测系统。
 
+### Q4：`loadPersistedState()` 能否把整个 Team 从磁盘“自动复活”？
+
+不能。当前实现恢复的是运行快照，不是成员 Agent 的序列化镜像。
+
+你需要：
+
+- 用相同 `teamId`
+- 重新提供成员 / planner / synthesizer
+- 再调用 `loadPersistedState()`
+
+这样可以把任务状态、消息历史、上次输出恢复回来。
+
 ---
 
-## 13. 对应测试与验证命令
+## 14. 对应测试与验证命令
 
 主要测试：
 
 - `AgentTeamTest`
 - `AgentTeamTaskBoardTest`
+- `FileAgentTeamStateStoreTest`
+- `AgentTeamPersistenceTest`
 - `DoubaoAgentTeamBestPracticeTest`
 
 运行示例：
 
 ```bash
-mvn -pl ai4j -DskipTests=false "-Dtest=AgentTeamTest,AgentTeamTaskBoardTest" test
+mvn -pl ai4j-agent -DskipTests=false "-Dtest=AgentTeamTest,AgentTeamTaskBoardTest,FileAgentTeamStateStoreTest,AgentTeamPersistenceTest" test
 ```

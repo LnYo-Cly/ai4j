@@ -13,10 +13,13 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMember;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamPlan;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamState;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTask;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,6 +98,59 @@ public class AgentTeamAgentAdapterTest {
         AgentEvent finalEvent = firstEvent(events, AgentEventType.FINAL_OUTPUT);
         Assert.assertNotNull(finalEvent);
         Assert.assertEquals("synthesized", finalEvent.getMessage());
+    }
+
+    @Test
+    public void shouldPreserveTeamPersistenceSettingsWhenBuildingStandardAgent() throws Exception {
+        Path storageRoot = Files.createTempDirectory("agent-team-build-agent-persistence");
+
+        ScriptedModelClient memberClient = new ScriptedModelClient();
+        memberClient.enqueue(textResult("delivery-complete"));
+
+        ScriptedModelClient synthClient = new ScriptedModelClient();
+        synthClient.enqueue(textResult("persisted-summary"));
+
+        Agent teamAgent = Agents.team()
+                .teamId("delivery-team")
+                .storageDirectory(storageRoot)
+                .planner((objective, members, options) -> AgentTeamPlan.builder()
+                        .tasks(Arrays.asList(
+                                AgentTeamTask.builder()
+                                        .id("deliver")
+                                        .memberId("builder")
+                                        .task("Deliver travel package")
+                                        .build()
+                        ))
+                        .build())
+                .synthesizerAgent(newAgent("synth", synthClient))
+                .member(AgentTeamMember.builder()
+                        .id("builder")
+                        .name("Builder")
+                        .agent(newAgent("member", memberClient))
+                        .build())
+                .buildAgent();
+
+        AgentResult result = teamAgent.run(AgentRequest.builder().input("run delivery").build());
+
+        Assert.assertEquals("persisted-summary", result.getOutputText());
+
+        AgentTeamState restored = Agents.team()
+                .teamId("delivery-team")
+                .storageDirectory(storageRoot)
+                .planner((objective, members, options) -> AgentTeamPlan.builder().tasks(new ArrayList<AgentTeamTask>()).build())
+                .synthesizerAgent(newAgent("noop-synth", new ScriptedModelClient()))
+                .member(AgentTeamMember.builder()
+                        .id("builder")
+                        .name("Builder")
+                        .agent(newAgent("noop-member", new ScriptedModelClient()))
+                        .build())
+                .build()
+                .loadPersistedState();
+
+        Assert.assertNotNull(restored);
+        Assert.assertEquals("delivery-team", restored.getTeamId());
+        Assert.assertEquals("persisted-summary", restored.getLastOutput());
+        Assert.assertEquals(1, restored.getTaskStates().size());
     }
 
     private static AgentEvent firstEvent(List<AgentEvent> events, AgentEventType type) {

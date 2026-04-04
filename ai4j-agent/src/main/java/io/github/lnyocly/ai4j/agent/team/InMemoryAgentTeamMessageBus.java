@@ -51,4 +51,12 @@ public class InMemoryAgentTeamMessageBus implements AgentTeamMessageBus {
     public synchronized void clear() {
         messages.clear();
     }
+
+    @Override
+    public synchronized void restore(List<AgentTeamMessage> restoredMessages) {
+        messages.clear();
+        if (restoredMessages != null && !restoredMessages.isEmpty()) {
+            messages.addAll(restoredMessages);
+        }
+    }
 }

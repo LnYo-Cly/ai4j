@@ -1,5 +1,10 @@
 package io.github.lnyocly.ai4j.cli.runtime;
 
+import io.github.lnyocly.ai4j.agent.team.AgentTeamMemberSnapshot;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamState;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamTask;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskState;
 import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.session.SessionEventType;
 
@@ -20,6 +25,52 @@ public final class TeamBoardRenderSupport {
 
     public static List<String> renderBoardLines(List<SessionEvent> events) {
         Aggregation aggregation = aggregate(events);
+        if (aggregation.tasksById.isEmpty() && aggregation.messages.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<LaneState> lanes = buildLanes(aggregation);
+        List<String> lines = new ArrayList<String>();
+        lines.add("summary tasks=" + aggregation.tasksById.size()
+                + " running=" + aggregation.runningCount
+                + " completed=" + aggregation.completedCount
+                + " failed=" + aggregation.failedCount
+                + " blocked=" + aggregation.blockedCount
+                + " members=" + lanes.size());
+
+        for (LaneState lane : lanes) {
+            if (!lines.isEmpty()) {
+                lines.add("");
+            }
+            lines.add("lane " + lane.label);
+            if (lane.tasks.isEmpty()) {
+                lines.add("  (no tasks)");
+            } else {
+                for (TaskState task : lane.tasks) {
+                    lines.add("  [" + taskBadge(task) + "] " + taskLabel(task));
+                    if (!isBlank(task.detail)) {
+                        lines.add("    " + clip(singleLine(task.detail), 96));
+                    }
+                    if (!isBlank(task.childSessionId)) {
+                        lines.add("    child session: " + clip(task.childSessionId, 84));
+                    }
+                    if (task.heartbeatCount > 0) {
+                        lines.add("    heartbeats: " + task.heartbeatCount);
+                    }
+                }
+            }
+            if (!lane.messages.isEmpty()) {
+                lines.add("  messages:");
+                for (MessageState message : lane.messages) {
+                    lines.add("    - " + messageLabel(message));
+                }
+            }
+        }
+        return lines;
+    }
+
+    public static List<String> renderBoardLines(AgentTeamState state) {
+        Aggregation aggregation = aggregate(state);
         if (aggregation.tasksById.isEmpty() && aggregation.messages.isEmpty()) {
             return Collections.emptyList();
         }
@@ -99,6 +150,77 @@ public final class TeamBoardRenderSupport {
                 if (message != null) {
                     aggregation.messages.add(message);
                 }
+            }
+        }
+        for (TaskState task : aggregation.tasksById.values()) {
+            String normalized = normalizeStatus(task.status);
+            if ("running".equals(normalized) || "in_progress".equals(normalized)) {
+                aggregation.runningCount++;
+            } else if ("completed".equals(normalized)) {
+                aggregation.completedCount++;
+            } else if ("failed".equals(normalized)) {
+                aggregation.failedCount++;
+            } else if ("blocked".equals(normalized)) {
+                aggregation.blockedCount++;
+            }
+        }
+        return aggregation;
+    }
+
+    private static Aggregation aggregate(AgentTeamState state) {
+        Aggregation aggregation = new Aggregation();
+        if (state == null) {
+            return aggregation;
+        }
+        Map<String, String> memberLabels = memberLabelMap(state.getMembers());
+        if (state.getTaskStates() != null) {
+            for (AgentTeamTaskState persistedTask : state.getTaskStates()) {
+                if (persistedTask == null) {
+                    continue;
+                }
+                TaskState next = new TaskState();
+                next.order = aggregation.nextTaskOrder++;
+                next.taskId = firstNonBlank(trimToNull(persistedTask.getTaskId()),
+                        trimToNull(persistedTask.getTask() == null ? null : persistedTask.getTask().getId()),
+                        "team-task-" + next.order);
+                next.title = trimToNull(persistedTask.getTask() == null ? null : persistedTask.getTask().getTask());
+                next.task = trimToNull(persistedTask.getTask() == null ? null : persistedTask.getTask().getTask());
+                next.status = persistedTask.getStatus() == null ? null : persistedTask.getStatus().name().toLowerCase(Locale.ROOT);
+                next.phase = trimToNull(persistedTask.getPhase());
+                next.detail = firstNonBlank(trimToNull(persistedTask.getDetail()),
+                        trimToNull(persistedTask.getError()),
+                        trimToNull(persistedTask.getOutput()));
+                next.percent = persistedTask.getPercent() == null ? null : String.valueOf(persistedTask.getPercent());
+                String memberId = firstNonBlank(trimToNull(persistedTask.getClaimedBy()),
+                        trimToNull(taskMemberId(persistedTask.getTask())));
+                next.memberKey = memberId;
+                next.memberLabel = firstNonBlank(memberLabels.get(memberId), memberId, "unassigned");
+                next.heartbeatCount = persistedTask.getHeartbeatCount();
+                next.updatedAtEpochMs = firstPositive(
+                        persistedTask.getUpdatedAtEpochMs(),
+                        persistedTask.getLastHeartbeatTime(),
+                        persistedTask.getEndTime(),
+                        persistedTask.getStartTime()
+                );
+                aggregation.tasksById.put(next.taskId, next);
+            }
+        }
+        if (state.getMessages() != null) {
+            for (AgentTeamMessage message : state.getMessages()) {
+                if (message == null) {
+                    continue;
+                }
+                MessageState next = new MessageState();
+                next.messageId = trimToNull(message.getId());
+                next.fromMemberId = trimToNull(message.getFromMemberId());
+                next.toMemberId = trimToNull(message.getToMemberId());
+                next.messageType = trimToNull(message.getType());
+                next.taskId = trimToNull(message.getTaskId());
+                next.text = trimToNull(message.getContent());
+                next.createdAtEpochMs = message.getCreatedAt();
+                next.memberKey = firstNonBlank(next.fromMemberId, next.toMemberId, "team");
+                next.memberLabel = firstNonBlank(memberLabels.get(next.memberKey), next.memberKey, "team");
+                aggregation.messages.add(next);
             }
         }
         for (TaskState task : aggregation.tasksById.values()) {
@@ -371,6 +493,36 @@ public final class TeamBoardRenderSupport {
         }
         Object value = payload.get(key);
         return value == null ? null : String.valueOf(value);
+    }
+
+    private static String taskMemberId(AgentTeamTask task) {
+        return task == null ? null : task.getMemberId();
+    }
+
+    private static long firstPositive(long... values) {
+        if (values == null) {
+            return 0L;
+        }
+        for (long value : values) {
+            if (value > 0L) {
+                return value;
+            }
+        }
+        return 0L;
+    }
+
+    private static Map<String, String> memberLabelMap(List<AgentTeamMemberSnapshot> members) {
+        if (members == null || members.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> labels = new LinkedHashMap<String, String>();
+        for (AgentTeamMemberSnapshot member : members) {
+            if (member == null || isBlank(member.getId())) {
+                continue;
+            }
+            labels.put(member.getId(), firstNonBlank(trimToNull(member.getName()), trimToNull(member.getId())));
+        }
+        return labels;
     }
 
     private static String singleLine(String value) {

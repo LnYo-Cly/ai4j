@@ -41,6 +41,7 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/providers", "List saved provider profiles", false),
             new SlashCommandSpec("/provider", "Show or switch the active provider profile", true),
             new SlashCommandSpec("/model", "Show or switch the active model override", true),
+            new SlashCommandSpec("/experimental", "Show or switch experimental runtime feature flags", true),
             new SlashCommandSpec("/skills", "List or inspect discovered coding skills", true),
             new SlashCommandSpec("/agents", "List or inspect available coding agents", true),
             new SlashCommandSpec("/commands", "List available custom commands", false),
@@ -78,6 +79,9 @@ public final class SlashCommandController implements Completer {
     private static final List<String> PROCESS_FOLLOW_LIMITS = Arrays.asList("200", "400", "800", "1600");
     private static final List<String> PROCESS_LOG_LIMITS = Arrays.asList("200", "480", "800", "1600");
     private static final List<String> STREAM_OPTIONS = Arrays.asList("on", "off");
+    private static final List<String> EXPERIMENTAL_FEATURES = Arrays.asList("subagent", "agent-teams");
+    private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
+    private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
     private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
     private static final String MCP_TRANSPORT_FLAG = "--transport";
     private static final List<String> MCP_TRANSPORT_OPTIONS = Arrays.asList("stdio", "sse", "http");
@@ -103,6 +107,7 @@ public final class SlashCommandController implements Completer {
             "/providers",
             "/provider",
             "/model",
+            "/experimental",
             "/skills",
             "/agents",
             "/commands",
@@ -166,6 +171,13 @@ public final class SlashCommandController implements Completer {
                 }
             };
     private volatile Supplier<List<String>> agentCandidateSupplier =
+            new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+    private volatile Supplier<List<String>> teamCandidateSupplier =
             new Supplier<List<String>>() {
                 @Override
                 public List<String> get() {
@@ -260,6 +272,19 @@ public final class SlashCommandController implements Completer {
             return;
         }
         this.agentCandidateSupplier = agentCandidateSupplier;
+    }
+
+    public void setTeamCandidateSupplier(Supplier<List<String>> teamCandidateSupplier) {
+        if (teamCandidateSupplier == null) {
+            this.teamCandidateSupplier = new Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return Collections.emptyList();
+                }
+            };
+            return;
+        }
+        this.teamCandidateSupplier = teamCandidateSupplier;
     }
 
     public void setStatusRefresh(Runnable statusRefresh) {
@@ -410,6 +435,9 @@ public final class SlashCommandController implements Completer {
         if ("/stream".equalsIgnoreCase(command)) {
             return streamCandidates(tokenFragment(tokens, endsWithSpace));
         }
+        if ("/experimental".equalsIgnoreCase(command)) {
+            return experimentalCandidates(tokens, endsWithSpace);
+        }
         if ("/skills".equalsIgnoreCase(command)) {
             return skillCandidates(tokenFragment(tokens, endsWithSpace));
         }
@@ -435,6 +463,9 @@ public final class SlashCommandController implements Completer {
         if ("/process".equalsIgnoreCase(command)) {
             return processCandidates(tokens, endsWithSpace);
         }
+        if ("/team".equalsIgnoreCase(command)) {
+            return teamCandidates(tokens, endsWithSpace);
+        }
         return Collections.emptyList();
     }
 
@@ -450,6 +481,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/stream".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", streamCandidates(""));
+        }
+        if ("/experimental".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", experimentalFeatureCandidates(""));
         }
         if ("/skills".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", skillCandidates(""));
@@ -472,6 +506,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/process".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", processSubcommandCandidates(""));
+        }
+        if ("/team".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", teamActionCandidates(""));
         }
         return Collections.emptyList();
     }
@@ -933,6 +970,183 @@ public final class SlashCommandController implements Completer {
             ));
         }
         return candidates;
+    }
+
+    private List<Candidate> experimentalCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 1) {
+            return experimentalFeatureCandidates("");
+        }
+        if (tokens.size() == 2 && !endsWithSpace) {
+            return experimentalFeatureCandidates(tokens.get(1));
+        }
+        if (tokens.size() == 2 && endsWithSpace) {
+            return experimentalToggleCandidates("");
+        }
+        if (tokens.size() == 3 && !endsWithSpace) {
+            return experimentalToggleCandidates(tokens.get(2));
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> experimentalFeatureCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String feature : EXPERIMENTAL_FEATURES) {
+            if (!matches(feature, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    feature,
+                    feature,
+                    "Experimental",
+                    describeExperimentalFeature(feature),
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private String describeExperimentalFeature(String feature) {
+        if ("subagent".equalsIgnoreCase(feature)) {
+            return "Toggle experimental subagent tool injection";
+        }
+        if ("agent-teams".equalsIgnoreCase(feature)) {
+            return "Toggle experimental agent team tool injection";
+        }
+        return "Experimental runtime feature";
+    }
+
+    private List<Candidate> experimentalToggleCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String option : STREAM_OPTIONS) {
+            if (!matches(option, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    option,
+                    option,
+                    "Experimental",
+                    "Set experimental feature " + option,
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> teamCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 1) {
+            return teamActionCandidates("");
+        }
+        if (tokens.size() == 2 && !endsWithSpace) {
+            return teamActionCandidates(tokens.get(1));
+        }
+        String action = tokens.get(1);
+        if ("list".equalsIgnoreCase(action)) {
+            return Collections.emptyList();
+        }
+        if ("status".equalsIgnoreCase(action) || "resume".equalsIgnoreCase(action)) {
+            if (tokens.size() == 2 && endsWithSpace) {
+                return teamIdCandidates("");
+            }
+            if (tokens.size() == 3 && !endsWithSpace) {
+                return teamIdCandidates(tokens.get(2));
+            }
+            return Collections.emptyList();
+        }
+        if ("messages".equalsIgnoreCase(action)) {
+            if (tokens.size() == 2 && endsWithSpace) {
+                return teamIdCandidates("");
+            }
+            if (tokens.size() == 3 && !endsWithSpace) {
+                return teamIdCandidates(tokens.get(2));
+            }
+            if (tokens.size() == 3 && endsWithSpace) {
+                return teamMessageLimitCandidates("");
+            }
+            if (tokens.size() == 4 && !endsWithSpace) {
+                return teamMessageLimitCandidates(tokens.get(3));
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> teamActionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : TEAM_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(action, action, "Team", describeTeamAction(action), !"list".equalsIgnoreCase(action)));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> teamIdCandidates(String partial) {
+        Supplier<List<String>> supplier = teamCandidateSupplier;
+        List<String> teamIds = supplier == null ? null : supplier.get();
+        if (teamIds == null || teamIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String teamId : teamIds) {
+            if (isBlank(teamId) || !matches(teamId, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    teamId,
+                    teamId,
+                    "Team",
+                    "Inspect persisted team " + teamId,
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> teamMessageLimitCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String option : TEAM_MESSAGE_LIMITS) {
+            if (!matches(option, partial)) {
+                continue;
+            }
+            candidates.add(new Candidate(
+                    option,
+                    option,
+                    "Team",
+                    "Read up to " + option + " persisted team messages",
+                    null,
+                    null,
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private String describeTeamAction(String action) {
+        if ("list".equalsIgnoreCase(action)) {
+            return "List persisted teams in the current workspace";
+        }
+        if ("status".equalsIgnoreCase(action)) {
+            return "Show one persisted team's current snapshot";
+        }
+        if ("messages".equalsIgnoreCase(action)) {
+            return "Show recent messages from a persisted team mailbox";
+        }
+        if ("resume".equalsIgnoreCase(action)) {
+            return "Load a persisted team snapshot and reopen its board view";
+        }
+        return "Team action";
     }
 
     private List<Candidate> skillCandidates(String partial) {

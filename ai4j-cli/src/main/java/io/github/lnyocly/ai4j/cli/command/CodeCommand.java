@@ -219,6 +219,7 @@ public class CodeCommand {
         terminal.println("  /events [n]  Show the latest session ledger events");
         terminal.println("  /replay [n]  Replay recent turns from the event ledger");
         terminal.println("  /team  Show the current agent team board by member lane");
+        terminal.println("  /team list|status [team-id]|messages [team-id] [limit]|resume [team-id]  Manage persisted team snapshots");
         terminal.println("  /stream [on|off]  Show or switch model request streaming");
         terminal.println("  /processes  List active and restored process metadata");
         terminal.println("  /process status <id>  Show metadata for one process");

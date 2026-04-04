@@ -55,6 +55,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 
 - `/provider`
 - `/model`
+- `/experimental`
 - `/stream`
 - `/skills`
 - `/mcp`
@@ -113,6 +114,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar acp `
 - `/status`
 - `/session`
 - `/save`
+- `/experimental`
 - `/skills`
 - `/agents`
 - `/mcp`

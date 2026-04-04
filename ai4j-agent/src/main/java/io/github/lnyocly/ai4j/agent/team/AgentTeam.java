@@ -31,9 +31,11 @@ public class AgentTeam implements AgentTeamControl {
     private final AgentTeamPlanner planner;
     private final AgentTeamSynthesizer synthesizer;
     private final AgentTeamOptions options;
+    private final String teamId;
     private final List<RuntimeMember> orderedMembers;
     private final Map<String, RuntimeMember> membersById;
     private final AgentTeamMessageBus messageBus;
+    private final AgentTeamStateStore stateStore;
     private final AgentTeamPlanApproval planApproval;
     private final List<AgentTeamHook> hooks;
     private final AgentTeamToolRegistry teamToolRegistry;
@@ -44,13 +46,19 @@ public class AgentTeam implements AgentTeamControl {
     private volatile AgentTeamTaskBoard activeBoard;
     private volatile List<AgentTeamTaskState> lastTaskStates = Collections.emptyList();
     private volatile String activeObjective;
+    private volatile String lastOutput;
+    private volatile int lastRounds;
+    private volatile long lastRunStartedAt;
+    private volatile long lastRunCompletedAt;
 
     AgentTeam(AgentTeamBuilder builder) {
         if (builder == null) {
             throw new IllegalArgumentException("builder is required");
         }
         this.options = builder.getOptions() == null ? AgentTeamOptions.builder().build() : builder.getOptions();
-        this.messageBus = builder.getMessageBus() == null ? new InMemoryAgentTeamMessageBus() : builder.getMessageBus();
+        this.teamId = firstNonBlank(builder.getTeamId(), UUID.randomUUID().toString());
+        this.messageBus = resolveMessageBus(builder);
+        this.stateStore = resolveStateStore(builder);
         this.planApproval = builder.getPlanApproval();
         this.hooks = builder.getHooks() == null ? Collections.<AgentTeamHook>emptyList() : new ArrayList<>(builder.getHooks());
         this.teamToolRegistry = new AgentTeamToolRegistry();
@@ -108,6 +116,75 @@ public class AgentTeam implements AgentTeamControl {
         return AgentTeamBuilder.builder();
     }
 
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public AgentTeamState snapshotState() {
+        return AgentTeamState.builder()
+                .teamId(teamId)
+                .objective(currentObjective())
+                .members(snapshotMemberViews())
+                .taskStates(copyTaskStates(listTaskStates()))
+                .messages(options.isEnableMessageBus() ? copyMessages(messageBus.snapshot()) : Collections.<AgentTeamMessage>emptyList())
+                .lastOutput(lastOutput)
+                .lastRounds(lastRounds)
+                .lastRunStartedAt(lastRunStartedAt)
+                .lastRunCompletedAt(lastRunCompletedAt)
+                .updatedAt(System.currentTimeMillis())
+                .runActive(currentBoard() != null)
+                .build();
+    }
+
+    public AgentTeamState loadPersistedState() {
+        if (stateStore == null) {
+            return null;
+        }
+        AgentTeamState state = stateStore.load(teamId);
+        restoreState(state);
+        return state;
+    }
+
+    public void restoreState(AgentTeamState state) {
+        if (state == null) {
+            return;
+        }
+        if (!isSameTeam(state)) {
+            throw new IllegalArgumentException("team state does not belong to teamId=" + teamId);
+        }
+        if (options.isEnableMessageBus()) {
+            messageBus.restore(copyMessages(state.getMessages()));
+        }
+        synchronized (runtimeLock) {
+            activeObjective = state.getObjective();
+            activeBoard = null;
+            lastTaskStates = copyTaskStates(state.getTaskStates());
+        }
+        lastOutput = state.getLastOutput();
+        lastRounds = state.getLastRounds();
+        lastRunStartedAt = state.getLastRunStartedAt();
+        lastRunCompletedAt = state.getLastRunCompletedAt();
+    }
+
+    public boolean clearPersistedState() {
+        if (options.isEnableMessageBus()) {
+            messageBus.clear();
+        }
+        synchronized (runtimeLock) {
+            activeBoard = null;
+            activeObjective = null;
+            lastTaskStates = Collections.emptyList();
+        }
+        lastOutput = null;
+        lastRounds = 0;
+        lastRunStartedAt = 0L;
+        lastRunCompletedAt = 0L;
+        if (stateStore == null) {
+            return false;
+        }
+        return stateStore.delete(teamId);
+    }
+
     @Override
     public void registerMember(AgentTeamMember member) {
         if (!options.isAllowDynamicMemberRegistration()) {
@@ -121,6 +198,7 @@ public class AgentTeam implements AgentTeamControl {
             orderedMembers.add(runtimeMember);
             membersById.put(runtimeMember.id, runtimeMember);
         }
+        persistState();
     }
 
     @Override
@@ -142,6 +220,7 @@ public class AgentTeam implements AgentTeamControl {
             RuntimeMember removed = membersById.remove(normalized);
             if (removed != null) {
                 orderedMembers.remove(removed);
+                persistState();
                 return true;
             }
             return false;
@@ -281,6 +360,8 @@ public class AgentTeam implements AgentTeamControl {
     public AgentTeamResult run(AgentRequest request) throws Exception {
         long start = System.currentTimeMillis();
         String objective = request == null ? "" : toText(request.getInput());
+        lastRunStartedAt = start;
+        lastRunCompletedAt = 0L;
 
         if (options.isEnableMessageBus()) {
             messageBus.clear();
@@ -301,6 +382,7 @@ public class AgentTeam implements AgentTeamControl {
             lastTaskStates = Collections.emptyList();
             activeObjective = objective;
         }
+        persistState();
 
         try {
             fireAfterPlan(objective, plan);
@@ -313,8 +395,13 @@ public class AgentTeam implements AgentTeamControl {
 
             List<AgentTeamTaskState> taskStates = board.snapshot();
             rememberTaskStates(taskStates);
+            lastRounds = dispatch.rounds;
+            lastOutput = synthesis == null ? "" : synthesis.getOutputText();
+            lastRunCompletedAt = System.currentTimeMillis();
+            persistState();
 
             return AgentTeamResult.builder()
+                    .teamId(teamId)
                     .objective(objective)
                     .plan(plan)
                     .memberResults(dispatch.results)
@@ -327,6 +414,8 @@ public class AgentTeam implements AgentTeamControl {
                     .build();
         } finally {
             rememberTaskStates(board.snapshot());
+            lastRunCompletedAt = System.currentTimeMillis();
+            persistState();
             synchronized (runtimeLock) {
                 activeBoard = null;
                 activeObjective = null;
@@ -617,6 +706,7 @@ public class AgentTeam implements AgentTeamControl {
         }
 
         messageBus.publish(safeMessage);
+        persistState();
         for (AgentTeamHook hook : hooks) {
             try {
                 hook.onMessage(safeMessage);
@@ -662,6 +752,16 @@ public class AgentTeam implements AgentTeamControl {
         }
     }
 
+    private List<AgentTeamMemberSnapshot> snapshotMemberViews() {
+        synchronized (memberLock) {
+            List<AgentTeamMemberSnapshot> snapshot = new ArrayList<AgentTeamMemberSnapshot>();
+            for (RuntimeMember member : orderedMembers) {
+                snapshot.add(AgentTeamMemberSnapshot.from(member.toPublicMember()));
+            }
+            return snapshot;
+        }
+    }
+
     private void rememberTaskStates(List<AgentTeamTaskState> taskStates) {
         synchronized (runtimeLock) {
             if (taskStates == null || taskStates.isEmpty()) {
@@ -670,12 +770,70 @@ public class AgentTeam implements AgentTeamControl {
                 lastTaskStates = new ArrayList<>(taskStates);
             }
         }
+        persistState();
     }
 
     private String currentObjective() {
         synchronized (runtimeLock) {
             return activeObjective;
         }
+    }
+
+    private AgentTeamMessageBus resolveMessageBus(AgentTeamBuilder builder) {
+        if (builder.getMessageBus() != null) {
+            return builder.getMessageBus();
+        }
+        if (builder.getStorageDirectory() != null) {
+            return new FileAgentTeamMessageBus(
+                    builder.getStorageDirectory()
+                            .resolve("mailbox")
+                            .resolve(teamId + ".jsonl")
+            );
+        }
+        return new InMemoryAgentTeamMessageBus();
+    }
+
+    private AgentTeamStateStore resolveStateStore(AgentTeamBuilder builder) {
+        if (builder.getStateStore() != null) {
+            return builder.getStateStore();
+        }
+        if (builder.getStorageDirectory() != null) {
+            return new FileAgentTeamStateStore(builder.getStorageDirectory().resolve("state"));
+        }
+        return null;
+    }
+
+    private void persistState() {
+        if (stateStore == null) {
+            return;
+        }
+        stateStore.save(snapshotState());
+    }
+
+    private boolean isSameTeam(AgentTeamState state) {
+        return state != null && state.getTeamId() != null && state.getTeamId().equals(teamId);
+    }
+
+    private List<AgentTeamTaskState> copyTaskStates(List<AgentTeamTaskState> taskStates) {
+        if (taskStates == null || taskStates.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<AgentTeamTaskState> copy = new ArrayList<AgentTeamTaskState>(taskStates.size());
+        for (AgentTeamTaskState state : taskStates) {
+            copy.add(state == null ? null : state.toBuilder().build());
+        }
+        return copy;
+    }
+
+    private List<AgentTeamMessage> copyMessages(List<AgentTeamMessage> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<AgentTeamMessage> copy = new ArrayList<AgentTeamMessage>(messages.size());
+        for (AgentTeamMessage message : messages) {
+            copy.add(message == null ? null : message.toBuilder().build());
+        }
+        return copy;
     }
 
     private AgentTeamMember resolveMemberView(String memberId) {

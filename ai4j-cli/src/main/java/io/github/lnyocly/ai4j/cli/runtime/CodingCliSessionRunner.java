@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliTuiFactory;
 import io.github.lnyocly.ai4j.cli.factory.DefaultCodingCliTuiFactory;
+import io.github.lnyocly.ai4j.cli.factory.DefaultCodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpConfig;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpConfigManager;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
@@ -140,6 +141,8 @@ public class CodingCliSessionRunner {
     private List<SessionEvent> tuiEvents = new ArrayList<SessionEvent>();
     private List<String> tuiReplay = new ArrayList<String>();
     private List<String> tuiTeamBoard = new ArrayList<String>();
+    private String selectedPersistedTeamId;
+    private boolean tuiPersistedTeamBoard;
     private BashProcessInfo tuiInspectedProcess;
     private BashProcessLogChunk tuiInspectedProcessLogs;
     private String tuiAssistantOutput;
@@ -294,6 +297,12 @@ public class CodingCliSessionRunner {
                 @Override
                 public List<String> get() {
                     return listKnownAgentNames();
+                }
+            });
+            slashCommandController.setTeamCandidateSupplier(new java.util.function.Supplier<List<String>>() {
+                @Override
+                public List<String> get() {
+                    return listKnownTeamIds();
                 }
             });
         }
@@ -720,6 +729,12 @@ public class CodingCliSessionRunner {
             renderTui(switched);
             return DispatchResult.stay(switched);
         }
+        if ("/experimental".equalsIgnoreCase(normalized) || normalized.startsWith("/experimental ")) {
+            ManagedCodingSession switched = handleExperimentalCommand(session, extractCommandArgument(normalized));
+            activeSession = switched;
+            renderTui(switched);
+            return DispatchResult.stay(switched);
+        }
         if ("/skills".equalsIgnoreCase(normalized) || normalized.startsWith("/skills ")) {
             printSkills(session, extractCommandArgument(normalized));
             renderTui(session);
@@ -770,8 +785,8 @@ public class CodingCliSessionRunner {
             renderTui(session);
             return DispatchResult.stay(session);
         }
-        if ("/team".equalsIgnoreCase(normalized)) {
-            printTeamBoard(session);
+        if ("/team".equalsIgnoreCase(normalized) || normalized.startsWith("/team ")) {
+            handleTeamCommand(session, extractCommandArgument(normalized));
             renderTui(session);
             return DispatchResult.stay(session);
         }
@@ -929,6 +944,8 @@ public class CodingCliSessionRunner {
         builder.append("  /model  Show the current effective model and override state\n");
         builder.append("  /model <name>  Save a workspace model override and switch immediately\n");
         builder.append("  /model reset  Clear the workspace model override\n");
+        builder.append("  /experimental  Show experimental runtime feature state\n");
+        builder.append("  /experimental <subagent|agent-teams> <on|off>  Toggle experimental subagent or team runtime tools\n");
         builder.append("  /skills [name]  List discovered coding skills or inspect one skill in detail\n");
         builder.append("  /agents [name]  List available coding agents or inspect one worker definition\n");
         builder.append("  /mcp  Show current MCP services and status\n");
@@ -946,6 +963,7 @@ public class CodingCliSessionRunner {
         builder.append("  /events [n]  Show the latest session ledger events\n");
         builder.append("  /replay [n]  Replay recent turns grouped from the event ledger\n");
         builder.append("  /team    Show the current agent team board grouped by member lane\n");
+        builder.append("  /team list|status [team-id]|messages [team-id] [limit]|resume [team-id]  Manage persisted team snapshots\n");
         builder.append("  /compacts [n]  Show recent compact history from the event ledger\n");
         builder.append("  /stream [on|off]  Show or switch model request streaming\n");
         builder.append("  /processes  List active and restored process metadata\n");
@@ -1178,6 +1196,35 @@ public class CodingCliSessionRunner {
         CodeCommandOptions nextOptions = resolveConfiguredRuntimeOptions();
         ManagedCodingSession rebound = switchSessionRuntime(session, nextOptions);
         emitOutput(renderModelOutput());
+        persistSession(rebound, false);
+        return rebound;
+    }
+
+    private ManagedCodingSession handleExperimentalCommand(ManagedCodingSession session, String argument) throws Exception {
+        if (isBlank(argument)) {
+            emitOutput(renderExperimentalOutput());
+            return session;
+        }
+        List<String> tokens = splitWhitespace(argument);
+        if (tokens.size() != 2) {
+            emitError("Usage: /experimental <subagent|agent-teams> <on|off>");
+            return session;
+        }
+        String feature = normalizeExperimentalFeature(tokens.get(0));
+        Boolean enabled = parseExperimentalToggle(tokens.get(1));
+        if (feature == null || enabled == null) {
+            emitError("Usage: /experimental <subagent|agent-teams> <on|off>");
+            return session;
+        }
+        CliWorkspaceConfig workspaceConfig = providerConfigManager.loadWorkspaceConfig();
+        if ("subagent".equals(feature)) {
+            workspaceConfig.setExperimentalSubagentsEnabled(enabled);
+        } else {
+            workspaceConfig.setExperimentalAgentTeamsEnabled(enabled);
+        }
+        providerConfigManager.saveWorkspaceConfig(workspaceConfig);
+        ManagedCodingSession rebound = switchSessionRuntime(session, options);
+        emitOutput(renderExperimentalOutput());
         persistSession(rebound, false);
         return rebound;
     }
@@ -2419,14 +2466,17 @@ public class CodingCliSessionRunner {
             List<SessionEvent> events = sessionManager.listEvents(session.getSessionId(), null, null);
             List<String> teamBoardLines = TeamBoardRenderSupport.renderBoardLines(events);
             if (useAppendOnlyTranscriptTui()) {
+                tuiPersistedTeamBoard = false;
                 emitOutput(TeamBoardRenderSupport.renderBoardOutput(teamBoardLines));
                 return;
             }
             if (useMainBufferInteractiveShell()) {
+                tuiPersistedTeamBoard = false;
                 emitOutput(TeamBoardRenderSupport.renderBoardOutput(teamBoardLines));
                 return;
             }
             if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
+                tuiPersistedTeamBoard = false;
                 setTuiCachedTeamBoard(teamBoardLines);
                 if (!teamBoardLines.isEmpty()) {
                     interactionState.openTeamBoard();
@@ -2440,6 +2490,97 @@ public class CodingCliSessionRunner {
         } catch (IOException ex) {
             emitError("Failed to render team board: " + ex.getMessage());
         }
+    }
+
+    private void handleTeamCommand(ManagedCodingSession session, String argument) {
+        if (isBlank(argument)) {
+            printTeamBoard(session);
+            return;
+        }
+        CliTeamStateManager teamStateManager = createTeamStateManager(session);
+        List<String> tokens = splitWhitespace(argument);
+        if (tokens.isEmpty()) {
+            printTeamBoard(session);
+            return;
+        }
+        String action = tokens.get(0).toLowerCase(Locale.ROOT);
+        if ("list".equals(action)) {
+            emitOutput(teamStateManager.renderListOutput());
+            return;
+        }
+        if ("status".equals(action)) {
+            String requestedTeamId = teamArgument(tokens, 1);
+            emitOutput(teamStateManager.renderStatusOutput(firstNonBlank(requestedTeamId, selectedPersistedTeamId)));
+            return;
+        }
+        if ("messages".equals(action)) {
+            String requestedTeamId = teamArgument(tokens, 1);
+            Integer limit = tokens.size() > 2 ? Integer.valueOf(parseLimit(tokens.get(2))) : null;
+            emitOutput(teamStateManager.renderMessagesOutput(firstNonBlank(requestedTeamId, selectedPersistedTeamId), limit));
+            return;
+        }
+        if ("resume".equals(action)) {
+            resumePersistedTeamBoard(session, teamStateManager, firstNonBlank(teamArgument(tokens, 1), selectedPersistedTeamId));
+            return;
+        }
+        emitError("Usage: /team | /team list | /team status [team-id] | /team messages [team-id] [limit] | /team resume [team-id]");
+    }
+
+    private void resumePersistedTeamBoard(ManagedCodingSession session,
+                                          CliTeamStateManager teamStateManager,
+                                          String requestedTeamId) {
+        CliTeamStateManager.ResolvedTeamState resolved = teamStateManager == null
+                ? null
+                : teamStateManager.resolveState(requestedTeamId);
+        if (resolved == null || resolved.getState() == null) {
+            emitOutput(isBlank(requestedTeamId) ? "team: (none)" : "team not found: " + requestedTeamId.trim());
+            return;
+        }
+        selectedPersistedTeamId = resolved.getTeamId();
+        List<String> boardLines = TeamBoardRenderSupport.renderBoardLines(resolved.getState());
+        if (useAppendOnlyTranscriptTui() || useMainBufferInteractiveShell()) {
+            emitOutput(teamStateManager.renderResumeOutput(resolved.getTeamId()));
+            return;
+        }
+        if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
+            tuiPersistedTeamBoard = true;
+            setTuiCachedTeamBoard(boardLines);
+            if (!boardLines.isEmpty()) {
+                interactionState.openTeamBoard();
+                setTuiAssistantOutput("Team board resumed: " + resolved.getTeamId());
+            } else {
+                setTuiAssistantOutput("team: (none)");
+            }
+            return;
+        }
+        emitOutput(teamStateManager.renderResumeOutput(resolved.getTeamId()));
+    }
+
+    private String teamArgument(List<String> tokens, int index) {
+        if (tokens == null || index < 0 || tokens.size() <= index) {
+            return null;
+        }
+        String value = tokens.get(index);
+        return isBlank(value) ? null : value.trim();
+    }
+
+    private CliTeamStateManager createTeamStateManager(ManagedCodingSession session) {
+        return new CliTeamStateManager(resolveWorkspaceRoot(session));
+    }
+
+    private List<String> listKnownTeamIds() {
+        return createTeamStateManager(activeSession).listKnownTeamIds();
+    }
+
+    private Path resolveWorkspaceRoot(ManagedCodingSession session) {
+        String workspace = session == null ? null : session.getWorkspace();
+        if (isBlank(workspace) && options != null) {
+            workspace = options.getWorkspace();
+        }
+        if (isBlank(workspace)) {
+            return Paths.get(".").toAbsolutePath().normalize();
+        }
+        return Paths.get(workspace).toAbsolutePath().normalize();
     }
 
     private void printCompacts(ManagedCodingSession session, String limitArgument) {
@@ -3561,10 +3702,11 @@ public class CodingCliSessionRunner {
 
     private List<String> renderCommandLines(List<CustomCommandTemplate> commands) {
         List<String> lines = new ArrayList<String>();
-        lines.add("/help /status /session /theme /save /providers /provider /model /skills /agents");
+        lines.add("/help /status /session /theme /save /providers /provider /model /experimental /skills /agents");
         lines.add("/provider use|save|add|edit|default|remove /mcp");
+        lines.add("/experimental subagent|agent-teams on|off");
         lines.add("/mcp add|enable|disable|pause|resume|retry|remove");
-        lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /compacts /checkpoint");
+        lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /team list|status|messages|resume /compacts /checkpoint");
         lines.add("/processes /process status|follow|logs|write|stop");
         lines.add("/resume <id> /load <id> /fork ... /compact /clear /exit");
         if (commands != null) {
@@ -3647,6 +3789,11 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("provider-remove", "command", "/provider remove", "Delete a saved provider profile", "/provider remove"));
         items.add(new TuiPaletteItem("model", "command", "/model", "Show the current effective model", "/model"));
         items.add(new TuiPaletteItem("model-reset", "command", "/model reset", "Clear the workspace model override", "/model reset"));
+        items.add(new TuiPaletteItem("experimental", "command", "/experimental", "Show experimental runtime feature state", "/experimental"));
+        items.add(new TuiPaletteItem("experimental-subagent-on", "command", "/experimental subagent on", "Enable experimental subagent tool injection", "/experimental subagent on"));
+        items.add(new TuiPaletteItem("experimental-subagent-off", "command", "/experimental subagent off", "Disable experimental subagent tool injection", "/experimental subagent off"));
+        items.add(new TuiPaletteItem("experimental-agent-teams-on", "command", "/experimental agent-teams on", "Enable experimental agent team tool injection", "/experimental agent-teams on"));
+        items.add(new TuiPaletteItem("experimental-agent-teams-off", "command", "/experimental agent-teams off", "Disable experimental agent team tool injection", "/experimental agent-teams off"));
         items.add(new TuiPaletteItem("skills", "command", "/skills", "List discovered coding skills", "/skills"));
         items.add(new TuiPaletteItem("agents", "command", "/agents", "List available coding agents", "/agents"));
         items.add(new TuiPaletteItem("mcp", "command", "/mcp", "Show current MCP services and status", "/mcp"));
@@ -3666,6 +3813,10 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("events", "command", "/events", "Show the latest session ledger events", "/events 20"));
         items.add(new TuiPaletteItem("replay", "command", "/replay", "Show recent history", "/replay 20"));
         items.add(new TuiPaletteItem("team", "command", "/team", "Open the current agent team board", "/team"));
+        items.add(new TuiPaletteItem("team-list", "command", "/team list", "List persisted teams in this workspace", "/team list"));
+        items.add(new TuiPaletteItem("team-status", "command", "/team status ", "Inspect one persisted team snapshot", "/team status "));
+        items.add(new TuiPaletteItem("team-messages", "command", "/team messages ", "Inspect persisted team mailbox messages", "/team messages "));
+        items.add(new TuiPaletteItem("team-resume", "command", "/team resume ", "Reopen a persisted team board from disk", "/team resume "));
         items.add(new TuiPaletteItem("compacts", "command", "/compacts", "Show compact history from the event ledger", "/compacts 20"));
         items.add(new TuiPaletteItem("processes", "command", "/processes", "List active and restored process metadata", "/processes"));
         items.add(new TuiPaletteItem("process-status", "command", "/process status", "Show metadata for one process", "/process status"));
@@ -3867,7 +4018,7 @@ public class CodingCliSessionRunner {
     }
 
     private void refreshTuiTeamBoard(ManagedCodingSession session) {
-        if (tuiRenderer == null || session == null || !interactionState.isTeamBoardOpen()) {
+        if (tuiRenderer == null || session == null || !interactionState.isTeamBoardOpen() || tuiPersistedTeamBoard) {
             return;
         }
         try {
@@ -5002,6 +5153,59 @@ public class CodingCliSessionRunner {
         builder.append("- profile=").append(firstNonBlank(resolved.getEffectiveProfile(), "(none)")).append('\n');
         builder.append("- workspaceConfig=").append(providerConfigManager.workspaceConfigPath());
         return builder.toString().trim();
+    }
+
+    private String renderExperimentalOutput() {
+        CliWorkspaceConfig workspaceConfig = providerConfigManager.loadWorkspaceConfig();
+        StringBuilder builder = new StringBuilder();
+        builder.append("experimental:\n");
+        builder.append("- subagent=").append(renderExperimentalState(
+                workspaceConfig == null ? null : workspaceConfig.getExperimentalSubagentsEnabled(),
+                DefaultCodingCliAgentFactory.isExperimentalSubagentsEnabled(workspaceConfig)
+        )).append('\n');
+        builder.append("- agent-teams=").append(renderExperimentalState(
+                workspaceConfig == null ? null : workspaceConfig.getExperimentalAgentTeamsEnabled(),
+                DefaultCodingCliAgentFactory.isExperimentalAgentTeamsEnabled(workspaceConfig)
+        )).append('\n');
+        builder.append("- workspaceConfig=").append(providerConfigManager.workspaceConfigPath());
+        return builder.toString().trim();
+    }
+
+    private String renderExperimentalState(Boolean configuredValue, boolean effectiveValue) {
+        String base = effectiveValue ? "on" : "off";
+        return configuredValue == null ? base + " (default)" : base;
+    }
+
+    private String normalizeExperimentalFeature(String raw) {
+        if (isBlank(raw)) {
+            return null;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if ("subagent".equals(normalized) || "subagents".equals(normalized)) {
+            return "subagent";
+        }
+        if ("agent-teams".equals(normalized)
+                || "agent-team".equals(normalized)
+                || "agentteams".equals(normalized)
+                || "team".equals(normalized)
+                || "teams".equals(normalized)) {
+            return "agent-teams";
+        }
+        return null;
+    }
+
+    private Boolean parseExperimentalToggle(String raw) {
+        if (isBlank(raw)) {
+            return null;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if ("on".equals(normalized) || "enable".equals(normalized) || "enabled".equals(normalized)) {
+            return Boolean.TRUE;
+        }
+        if ("off".equals(normalized) || "disable".equals(normalized) || "disabled".equals(normalized)) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 
     private String renderSkillsOutput(ManagedCodingSession session, String argument) {

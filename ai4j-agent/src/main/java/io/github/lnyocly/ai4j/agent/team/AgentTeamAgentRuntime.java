@@ -71,6 +71,9 @@ public class AgentTeamAgentRuntime implements AgentRuntime {
         }
         copy.options(source.getOptions());
         copy.messageBus(source.getMessageBus());
+        copy.stateStore(source.getStateStore());
+        copy.teamId(source.getTeamId());
+        copy.storageDirectory(source.getStorageDirectory());
         copy.planApproval(source.getPlanApproval());
         if (source.getHooks() != null) {
             copy.hooks(new ArrayList<AgentTeamHook>(source.getHooks()));

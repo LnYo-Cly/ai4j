@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpStatusSnapshot;
+import io.github.lnyocly.ai4j.cli.runtime.CliTeamStateManager;
 import io.github.lnyocly.ai4j.cli.runtime.TeamBoardRenderSupport;
 import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
@@ -48,6 +49,7 @@ final class AcpSlashCommandSupport {
             new CommandSpec("providers", "List saved provider profiles", null),
             new CommandSpec("provider", "Show or switch the active provider profile", "use <profile> | save <profile> | add/edit/default/remove ..."),
             new CommandSpec("model", "Show or switch the active model override", "optional model name | reset"),
+            new CommandSpec("experimental", "Show or switch experimental runtime features", "optional feature | <subagent|agent-teams> <on|off>"),
             new CommandSpec("skills", "List coding skills or inspect one skill", "optional skill name"),
             new CommandSpec("agents", "List coding agents or inspect one agent", "optional agent name"),
             new CommandSpec("mcp", "Show MCP services and status", null),
@@ -55,7 +57,7 @@ final class AcpSlashCommandSupport {
             new CommandSpec("history", "Show session lineage", "optional target session id"),
             new CommandSpec("tree", "Show the session tree", "optional root session id"),
             new CommandSpec("events", "Show recent session events", "optional limit"),
-            new CommandSpec("team", "Show current agent team board", null),
+            new CommandSpec("team", "Show current team board or persisted team state", "optional: list | status [team-id] | messages [team-id] [limit] | resume [team-id]"),
             new CommandSpec("compacts", "Show compact history", "optional limit"),
             new CommandSpec("checkpoint", "Show current checkpoint summary", null),
             new CommandSpec("processes", "List managed processes", null),
@@ -113,6 +115,9 @@ final class AcpSlashCommandSupport {
         if ("model".equals(name)) {
             return ExecutionResult.of(executeRuntimeCommand(context, RuntimeCommand.MODEL, command.argument));
         }
+        if ("experimental".equals(name)) {
+            return ExecutionResult.of(executeRuntimeCommand(context, RuntimeCommand.EXPERIMENTAL, command.argument));
+        }
         if ("skills".equals(name)) {
             return ExecutionResult.of(renderSkills(context, command.argument));
         }
@@ -135,7 +140,7 @@ final class AcpSlashCommandSupport {
             return ExecutionResult.of(renderEvents(context, command.argument));
         }
         if ("team".equals(name)) {
-            return ExecutionResult.of(renderTeam(context));
+            return ExecutionResult.of(renderTeam(context, command.argument));
         }
         if ("compacts".equals(name)) {
             return ExecutionResult.of(renderCompacts(context, command.argument));
@@ -166,6 +171,9 @@ final class AcpSlashCommandSupport {
         }
         if (command == RuntimeCommand.MODEL) {
             return context.runtimeCommandHandler.executeModel(argument);
+        }
+        if (command == RuntimeCommand.EXPERIMENTAL) {
+            return context.runtimeCommandHandler.executeExperimental(argument);
         }
         return "command unavailable in this ACP session";
     }
@@ -497,12 +505,45 @@ final class AcpSlashCommandSupport {
         return "checkpoint:\n" + CodingSessionCheckpointFormatter.render(CodingSessionCheckpointFormatter.parse(summary));
     }
 
-    private static String renderTeam(Context context) throws Exception {
+    private static String renderTeam(Context context, String argument) throws Exception {
         if (context == null || context.session == null || context.sessionManager == null) {
             return "team: (none)";
         }
+        if (!isBlank(argument)) {
+            CliTeamStateManager manager = new CliTeamStateManager(resolveWorkspaceRoot(context));
+            List<String> tokens = splitWhitespace(argument);
+            if (tokens.isEmpty()) {
+                return manager.renderListOutput();
+            }
+            String action = tokens.get(0).toLowerCase(Locale.ROOT);
+            if ("list".equals(action)) {
+                return manager.renderListOutput();
+            }
+            if ("status".equals(action)) {
+                return manager.renderStatusOutput(tokens.size() > 1 ? tokens.get(1) : null);
+            }
+            if ("messages".equals(action)) {
+                Integer limit = tokens.size() > 2 ? Integer.valueOf(parseLimit(tokens.get(2))) : null;
+                return manager.renderMessagesOutput(tokens.size() > 1 ? tokens.get(1) : null, limit);
+            }
+            if ("resume".equals(action)) {
+                return manager.renderResumeOutput(tokens.size() > 1 ? tokens.get(1) : null);
+            }
+            return "Usage: /team | /team list | /team status [team-id] | /team messages [team-id] [limit] | /team resume [team-id]";
+        }
         List<SessionEvent> events = context.sessionManager.listEvents(context.session.getSessionId(), null, null);
         return TeamBoardRenderSupport.renderBoardOutput(TeamBoardRenderSupport.renderBoardLines(events));
+    }
+
+    private static java.nio.file.Path resolveWorkspaceRoot(Context context) {
+        String workspace = context == null || context.session == null ? null : trimToNull(context.session.getWorkspace());
+        if (workspace == null && context != null && context.options != null) {
+            workspace = trimToNull(context.options.getWorkspace());
+        }
+        if (workspace == null) {
+            return java.nio.file.Paths.get(".").toAbsolutePath().normalize();
+        }
+        return java.nio.file.Paths.get(workspace).toAbsolutePath().normalize();
     }
 
     private static String renderProcesses(Context context) {
@@ -979,6 +1020,13 @@ final class AcpSlashCommandSupport {
         return value == null || value.trim().isEmpty();
     }
 
+    private static List<String> splitWhitespace(String value) {
+        if (isBlank(value)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(value.trim().split("\\s+"));
+    }
+
     static final class Context {
         final ManagedCodingSession session;
         final CodingSessionManager sessionManager;
@@ -1017,6 +1065,8 @@ final class AcpSlashCommandSupport {
         String executeProvider(String argument) throws Exception;
 
         String executeModel(String argument) throws Exception;
+
+        String executeExperimental(String argument) throws Exception;
     }
 
     static final class ExecutionResult {
@@ -1060,6 +1110,7 @@ final class AcpSlashCommandSupport {
     private enum RuntimeCommand {
         PROVIDERS,
         PROVIDER,
-        MODEL
+        MODEL,
+        EXPERIMENTAL
     }
 }

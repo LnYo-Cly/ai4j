@@ -21,6 +21,12 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamMemberSnapshot;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamState;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamTask;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskState;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskStatus;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.CodingSessionState;
@@ -36,6 +42,8 @@ import io.github.lnyocly.ai4j.cli.session.DefaultCodingSessionManager;
 import io.github.lnyocly.ai4j.cli.session.InMemoryCodingSessionStore;
 import io.github.lnyocly.ai4j.cli.session.InMemorySessionEventStore;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
+import io.github.lnyocly.ai4j.agent.team.FileAgentTeamMessageBus;
+import io.github.lnyocly.ai4j.agent.team.FileAgentTeamStateStore;
 import io.github.lnyocly.ai4j.coding.process.BashProcessStatus;
 import io.github.lnyocly.ai4j.coding.process.StoredProcessSnapshot;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -427,7 +435,7 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("• Approval required for bash"));
+        Assert.assertTrue(output.contains("Approval required for bash"));
         Assert.assertTrue(output.contains("type sample.txt"));
     }
 
@@ -527,10 +535,10 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("• Approval required for bash"));
+        Assert.assertTrue(output.contains("Approval required for bash"));
         Assert.assertTrue(output.contains("type sample.txt"));
-        Assert.assertTrue(output.contains("• Approve? [y/N] "));
-        Assert.assertTrue(output.contains("• Approved"));
+        Assert.assertTrue(output.contains("Approve? [y/N]"));
+        Assert.assertTrue(output.contains("Approved"));
     }
 
     @Test
@@ -554,9 +562,9 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("• Rejected"));
-        Assert.assertFalse(output.contains("• Tool failed"));
-        Assert.assertFalse(output.contains("• Command failed"));
+        Assert.assertTrue(output.contains("Rejected"));
+        Assert.assertFalse(output.contains("Tool failed"));
+        Assert.assertFalse(output.contains("Command failed"));
     }
 
     @Test
@@ -1188,6 +1196,87 @@ public class CodeCommandTest {
     }
 
     @Test
+    public void test_experimental_command_persists_workspace_flags() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-experimental-workspace");
+        CliProviderConfigManager manager = new CliProviderConfigManager(workspace);
+
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                ("/experimental\n"
+                        + "/experimental subagent off\n"
+                        + "/experimental agent-teams off\n"
+                        + "/experimental\n"
+                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
+        );
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList(
+                        "--ui", "tui",
+                        "--workspace", workspace.toString(),
+                        "--provider", "openai",
+                        "--protocol", "chat",
+                        "--model", "fake-model",
+                        "--api-key", "openai-cli-key"
+                ),
+                new StreamsTerminalIO(input, out, err)
+        );
+
+        Assert.assertEquals(0, exitCode);
+
+        CliWorkspaceConfig workspaceConfig = manager.loadWorkspaceConfig();
+        Assert.assertEquals(Boolean.FALSE, workspaceConfig.getExperimentalSubagentsEnabled());
+        Assert.assertEquals(Boolean.FALSE, workspaceConfig.getExperimentalAgentTeamsEnabled());
+    }
+
+    @Test
+    public void test_team_management_commands_render_persisted_team_state() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-team-management");
+        seedPersistedTeamState(workspace, "experimental-delivery-team");
+
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                ("/team list\n"
+                        + "/team status experimental-delivery-team\n"
+                        + "/team messages experimental-delivery-team 5\n"
+                        + "/team resume experimental-delivery-team\n"
+                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
+        );
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString()),
+                new StreamsTerminalIO(input, out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("teams:"));
+        Assert.assertTrue(output.contains("experimental-delivery-team"));
+        Assert.assertTrue(output.contains("team status:"));
+        Assert.assertTrue(output.contains("objective=Deliver a travel planner demo."));
+        Assert.assertTrue(output.contains("team messages:"));
+        Assert.assertTrue(output.contains("Define the backend contract first."));
+        Assert.assertTrue(output.contains("team resumed: experimental-delivery-team"));
+        Assert.assertTrue(output.contains("team board:"));
+        Assert.assertTrue(output.contains("lane Backend"));
+    }
+
+    @Test
     public void test_mcp_commands_persist_configs_and_render_statuses() throws Exception {
         Path home = Files.createTempDirectory("ai4j-cli-mcp-home");
         Path workspace = Files.createTempDirectory("ai4j-cli-mcp-workspace");
@@ -1344,7 +1433,7 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("• Commands"));
+        Assert.assertTrue(output.contains("Commands"));
         Assert.assertTrue(output.contains("(none)"));
         Assert.assertFalse(output.contains("Exit session"));
         Assert.assertFalse(output.contains("commands:"));
@@ -1565,7 +1654,7 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("• Replay"));
+        Assert.assertTrue(output.contains("Replay"));
         Assert.assertTrue(output.contains("first"));
         Assert.assertFalse(output.contains("history\n"));
         Assert.assertTrue(output.contains("Echo: second"));
@@ -2868,6 +2957,74 @@ public class CodeCommandTest {
             }
             return "";
         }
+    }
+
+    private static void seedPersistedTeamState(Path workspace, String teamId) throws Exception {
+        Path teamRoot = workspace.resolve(".ai4j").resolve("teams");
+        long now = System.currentTimeMillis();
+
+        AgentTeamTask backendTask = AgentTeamTask.builder()
+                .id("backend")
+                .memberId("backend")
+                .task("Define travel destination API")
+                .build();
+        AgentTeamTaskState backendState = AgentTeamTaskState.builder()
+                .taskId("backend")
+                .task(backendTask)
+                .status(AgentTeamTaskStatus.IN_PROGRESS)
+                .claimedBy("backend")
+                .phase("running")
+                .detail("Drafting OpenAPI paths and payloads.")
+                .percent(Integer.valueOf(40))
+                .heartbeatCount(2)
+                .updatedAtEpochMs(now)
+                .build();
+
+        AgentTeamTask qaTask = AgentTeamTask.builder()
+                .id("qa")
+                .memberId("qa")
+                .task("Prepare verification checklist")
+                .build();
+        AgentTeamTaskState qaState = AgentTeamTaskState.builder()
+                .taskId("qa")
+                .task(qaTask)
+                .status(AgentTeamTaskStatus.PENDING)
+                .phase("planned")
+                .percent(Integer.valueOf(0))
+                .updatedAtEpochMs(now - 1000L)
+                .build();
+
+        AgentTeamMessage message = AgentTeamMessage.builder()
+                .id("msg-1")
+                .fromMemberId("architect")
+                .toMemberId("backend")
+                .type("contract.note")
+                .taskId("backend")
+                .content("Define the backend contract first.")
+                .createdAt(now)
+                .build();
+
+        AgentTeamState state = AgentTeamState.builder()
+                .teamId(teamId)
+                .objective("Deliver a travel planner demo.")
+                .members(Arrays.asList(
+                        AgentTeamMemberSnapshot.builder().id("architect").name("Architect").description("System design").build(),
+                        AgentTeamMemberSnapshot.builder().id("backend").name("Backend").description("API implementation").build(),
+                        AgentTeamMemberSnapshot.builder().id("qa").name("QA").description("Verification").build()
+                ))
+                .taskStates(Arrays.asList(backendState, qaState))
+                .messages(Arrays.asList(message))
+                .lastOutput("Architecture and backend work are in progress.")
+                .lastRounds(3)
+                .lastRunStartedAt(now - 5000L)
+                .lastRunCompletedAt(0L)
+                .updatedAt(now)
+                .runActive(true)
+                .build();
+
+        new FileAgentTeamStateStore(teamRoot.resolve("state")).save(state);
+        new FileAgentTeamMessageBus(teamRoot.resolve("mailbox").resolve(teamId + ".jsonl"))
+                .restore(Arrays.asList(message));
     }
 
     private static int countSpinnerFrames(String output) {

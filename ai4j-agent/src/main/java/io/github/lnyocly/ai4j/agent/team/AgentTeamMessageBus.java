@@ -11,4 +11,6 @@ public interface AgentTeamMessageBus {
     List<AgentTeamMessage> historyFor(String memberId, int limit);
 
     void clear();
+
+    void restore(List<AgentTeamMessage> messages);
 }
