@@ -11,11 +11,45 @@
 
     <packaging>pom</packaging>
 
+    <name>ai4j-sdk</name>
+    <description>Parent POM for the ai4j multi-module SDK and Maven Central publication.</description>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/LnYo-Cly/ai4j/issues</url>
+    </issueManagement>
+
+    <url>https://github.com/LnYo-Cly/ai4j</url>
+
+    <developers>
+        <developer>
+            <id>LnYo-Cly</id>
+            <name>LnYo-Cly</name>
+            <email>lnyocly@gmail.com</email>
+            <url>https://github.com/LnYo-Cly/ai4j</url>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/LnYo-Cly/ai4j</url>
+        <connection>scm:git:https://github.com/LnYo-Cly/ai4j.git</connection>
+        <developerConnection>scm:git:https://github.com/LnYo-Cly/ai4j.git</developerConnection>
+    </scm>
+
     <properties>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <root.publish.skip>true</root.publish.skip>
     </properties>
 
     <modules>
@@ -48,7 +82,7 @@
                 <version>3.1.1</version>
                 <inherited>false</inherited>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${root.publish.skip}</skip>
                 </configuration>
             </plugin>
             <plugin>
@@ -57,10 +91,46 @@
                 <version>3.1.1</version>
                 <inherited>false</inherited>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${root.publish.skip}</skip>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <properties>
+                <root.publish.skip>false</root.publish.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.9.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
 
