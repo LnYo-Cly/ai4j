@@ -10,7 +10,7 @@
     <version>2.0.0</version>
 
     <name>ai4j-flowgram-spring-boot-starter</name>
-    <description>FlowGram Spring Boot integration starter for ai4j.</description>
+    <description>ai4j FlowGram 的 Spring Boot Starter，支持流程应用与 trace 集成。 Spring Boot starter for ai4j FlowGram workflow applications and trace integration.</description>
 
     <licenses>
         <license>
@@ -172,7 +172,25 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                    <tags>
+                                        <tag>
+                                            <name>Author</name>
+                                            <placement>a</placement>
+                                            <head>Author:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Description</name>
+                                            <placement>a</placement>
+                                            <head>Description:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Date</name>
+                                            <placement>a</placement>
+                                            <head>Date:</head>
+                                        </tag>
+                                    </tags>
                                 </configuration>
                             </execution>
                         </executions>

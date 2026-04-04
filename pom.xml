@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
 
     <name>ai4j-sdk</name>
-    <description>Parent POM for the ai4j multi-module SDK and Maven Central publication.</description>
+    <description>ai4j 多模块 SDK 的父 POM与发布入口。 Parent POM and publication entry for the ai4j multi-module SDK.</description>
 
     <licenses>
         <license>

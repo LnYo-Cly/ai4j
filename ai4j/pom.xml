@@ -10,7 +10,7 @@
     <version>2.0.0</version>
 
     <name>ai4j</name>
-    <description>一款JavaSDK用于快速接入AI大模型应用，整合多平台大模型，如OpenAi、Ollama、智谱Zhipu(ChatGLM)、深度求索DeepSeek、月之暗面Moonshot(Kimi)、腾讯混元Hunyuan、零一万物(01)、MiniMax、百川Baichuan等等，提供统一的输入输出(对齐OpenAi)消除差异化，优化函数调用(Tool Call)，优化RAG调用、支持向量数据库(Pinecone)，并且支持JDK1.8，为用户提供快速整合AI的能力。支持MCP协议，支持STDIO,SSE,Streamable HTTP; 支持MCP Server与MCP Client; 支持MCP网关; 支持自定义MCP数据源; 支持MCP自动重连</description>
+    <description>ai4j 核心 Java SDK，提供统一大模型接入、Tool Call、RAG 与 MCP 能力。 Core Java SDK for unified LLM access, tool calling, RAG, and MCP integration.</description>
 
 
     <properties>
@@ -287,7 +287,25 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                    <tags>
+                                        <tag>
+                                            <name>Author</name>
+                                            <placement>a</placement>
+                                            <head>Author:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Description</name>
+                                            <placement>a</placement>
+                                            <head>Description:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Date</name>
+                                            <placement>a</placement>
+                                            <head>Date:</head>
+                                        </tag>
+                                    </tags>
                                 </configuration>
                             </execution>
 

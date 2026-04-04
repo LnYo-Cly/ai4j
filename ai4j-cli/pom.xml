@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>ai4j-cli</name>
-    <description>ai4j 2.0 CLI / TUI 模块</description>
+    <description>ai4j CLI、TUI 与 ACP 宿主模块，用于 coding agent 与工作区自动化。 CLI, TUI, and ACP host for ai4j coding agents and workspace automation.</description>
 
     <licenses>
         <license>
@@ -165,7 +165,25 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                    <tags>
+                                        <tag>
+                                            <name>Author</name>
+                                            <placement>a</placement>
+                                            <head>Author:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Description</name>
+                                            <placement>a</placement>
+                                            <head>Description:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Date</name>
+                                            <placement>a</placement>
+                                            <head>Date:</head>
+                                        </tag>
+                                    </tags>
                                 </configuration>
                             </execution>
                         </executions>

@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>ai4j-agent</name>
-    <description>ai4j 2.0 通用 Agent 运行时模块</description>
+    <description>ai4j 通用 Agent 运行时模块，支持 ReAct、subagent、team、memory 与 trace。 Agent runtime module for ReAct, subagents, teams, memory, and tracing.</description>
 
     <licenses>
         <license>
@@ -119,7 +119,25 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                    <tags>
+                                        <tag>
+                                            <name>Author</name>
+                                            <placement>a</placement>
+                                            <head>Author:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Description</name>
+                                            <placement>a</placement>
+                                            <head>Description:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Date</name>
+                                            <placement>a</placement>
+                                            <head>Date:</head>
+                                        </tag>
+                                    </tags>
                                 </configuration>
                             </execution>
                         </executions>

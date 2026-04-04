@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>ai4j-coding</name>
-    <description>ai4j 2.0 Coding Agent 模块，承载工作区型编码代理、内置 coding tools 与后续 CLI/TUI 会话能力</description>
+    <description>ai4j Coding Agent 运行时模块，提供工作区感知工具、outer loop 与 compaction。 Coding agent runtime for workspace-aware tools, outer loops, and compaction.</description>
 
     <licenses>
         <license>
@@ -98,7 +98,25 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                    <tags>
+                                        <tag>
+                                            <name>Author</name>
+                                            <placement>a</placement>
+                                            <head>Author:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Description</name>
+                                            <placement>a</placement>
+                                            <head>Description:</head>
+                                        </tag>
+                                        <tag>
+                                            <name>Date</name>
+                                            <placement>a</placement>
+                                            <head>Date:</head>
+                                        </tag>
+                                    </tags>
                                 </configuration>
                             </execution>
                         </executions>

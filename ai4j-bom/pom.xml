@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <name>ai4j-bom</name>
-    <description>ai4j 2.0 版本对齐 BOM</description>
+    <description>ai4j 多模块版本对齐 BOM。 Bill of materials for aligning ai4j module versions.</description>
 
     <licenses>
         <license>
