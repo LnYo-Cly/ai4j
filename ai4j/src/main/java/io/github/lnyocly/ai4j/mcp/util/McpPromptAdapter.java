@@ -158,7 +158,7 @@ public class McpPromptAdapter {
             throws Exception {
         
         // 创建服务实例
-        Object serviceInstance = promptClass.newInstance();
+        Object serviceInstance = promptClass.getDeclaredConstructor().newInstance();
         
         // 准备方法参数
         Object[] methodArgs = preparePromptMethodArguments(method, arguments);

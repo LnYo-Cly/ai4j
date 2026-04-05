@@ -17,47 +17,48 @@ import java.nio.charset.StandardCharsets;
  */
 public class ContentTypeInterceptor implements Interceptor {
 
+    private static final MediaType EVENT_STREAM_MEDIA_TYPE = MediaType.get("text/event-stream");
+    private static final String NDJSON_CONTENT_TYPE = "application/x-ndjson";
+    private static final String SSE_CONTENT_TYPE = "text/event-stream";
+
     @Override
     public Response intercept(Chain chain) throws IOException {
-        // 发起请求并获取响应
         Response response = chain.proceed(chain.request());
-
-        // 检查Content-Type是否为application/x-ndjson
-        if (response.header("Content-Type") != null &&
-                response.header("Content-Type").contains("application/x-ndjson")) {
-
-            // 获取原始响应体
-            ResponseBody responseBody = response.body();
-            BufferedSource source = responseBody.source();
-            source.request(Long.MAX_VALUE); // 缓冲整个响应体
-            Buffer buffer = source.getBuffer();
-
-            // 读取响应体并将其按换行符分割，模拟处理 application/x-ndjson -> text/event-stream
-            String bodyString = buffer.clone().readString(StandardCharsets.UTF_8);
-            String[] ndjsonLines = bodyString.split("\n");
-
-            StringBuilder sseBody = new StringBuilder();
-            for (String jsonLine : ndjsonLines) {
-                if (!jsonLine.trim().isEmpty()) {
-                    // 这里简单处理，将ndjson的每一行当作SSE事件的data部分
-                    sseBody.append("data: ").append(jsonLine).append("\n\n");
-                }
-            }
-
-            // 创建新的响应体，替换掉原有的内容
-            ResponseBody modifiedBody = ResponseBody.create(
-                    MediaType.get("text/event-stream"),
-                    sseBody.toString()
-            );
-
-            // 返回修改后的响应，更新了Content-Type和响应体
-            return response.newBuilder()
-                    .header("Content-Type", "text/event-stream")
-                    .body(modifiedBody)
-                    .build();
+        if (!isNdjsonResponse(response)) {
+            return response;
         }
 
-        return response;
+        ResponseBody responseBody = response.body();
+        if (responseBody == null) {
+            return response;
+        }
+
+        return response.newBuilder()
+                .header("Content-Type", SSE_CONTENT_TYPE)
+                .body(ResponseBody.create(toSseBody(readBody(responseBody)), EVENT_STREAM_MEDIA_TYPE))
+                .build();
     }
 
+    private boolean isNdjsonResponse(Response response) {
+        String contentType = response.header("Content-Type");
+        return contentType != null && contentType.contains(NDJSON_CONTENT_TYPE);
+    }
+
+    private String readBody(ResponseBody responseBody) throws IOException {
+        BufferedSource source = responseBody.source();
+        source.request(Long.MAX_VALUE);
+        Buffer buffer = source.getBuffer();
+        return buffer.clone().readString(StandardCharsets.UTF_8);
+    }
+
+    private String toSseBody(String ndjsonBody) {
+        StringBuilder sseBody = new StringBuilder();
+        String[] ndjsonLines = ndjsonBody.split("\n");
+        for (String jsonLine : ndjsonLines) {
+            if (!jsonLine.trim().isEmpty()) {
+                sseBody.append("data: ").append(jsonLine).append("\n\n");
+            }
+        }
+        return sseBody.toString();
+    }
 }

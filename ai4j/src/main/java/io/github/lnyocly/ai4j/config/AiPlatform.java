@@ -14,4 +14,6 @@ public class AiPlatform {
     private String transcriptionUrl;
     private String translationUrl;
     private String realtimeUrl;
+    private String rerankApiHost;
+    private String rerankUrl;
 }

@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.mcp.entity;
 
+import io.github.lnyocly.ai4j.mcp.util.McpTypeSupport;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,23 +50,37 @@ public class McpServerReference {
     private String cwd;
     
     /**
-     * 传输类型：stdio, http
+     * 传输类型：stdio, sse, streamable_http
      */
-    private String transport = "stdio";
-    
+    private String type;
+
     /**
-     * HTTP传输时的URL
+     * 旧版传输类型字段，保留兼容
+     */
+    @Deprecated
+    @Builder.Default
+    private String transport = McpTypeSupport.TYPE_STDIO;
+
+    /**
+     * HTTP/SSE传输时的URL
      */
     private String url;
+
+    /**
+     * 自定义HTTP头
+     */
+    private Map<String, String> headers;
     
     /**
      * 是否启用
      */
+    @Builder.Default
     private Boolean enabled = true;
     
     /**
      * 连接超时（毫秒）
      */
+    @Builder.Default
     private Long connectTimeout = 30000L;
     
     /**
@@ -76,6 +91,7 @@ public class McpServerReference {
     /**
      * 优先级
      */
+    @Builder.Default
     private Integer priority = 0;
     
     /**
@@ -95,18 +111,39 @@ public class McpServerReference {
                 .name(name)
                 .command(command)
                 .args(args)
-                .transport("stdio")
+                .type(McpTypeSupport.TYPE_STDIO)
+                .transport(McpTypeSupport.TYPE_STDIO)
                 .build();
     }
     
     /**
-     * 创建HTTP传输的服务器引用
+     * 创建Streamable HTTP传输的服务器引用
      */
     public static McpServerReference http(String name, String url) {
         return McpServerReference.builder()
                 .name(name)
                 .url(url)
+                .type(McpTypeSupport.TYPE_STREAMABLE_HTTP)
                 .transport("http")
                 .build();
+    }
+
+    /**
+     * 创建SSE传输的服务器引用
+     */
+    public static McpServerReference sse(String name, String url) {
+        return McpServerReference.builder()
+                .name(name)
+                .url(url)
+                .type(McpTypeSupport.TYPE_SSE)
+                .transport(McpTypeSupport.TYPE_SSE)
+                .build();
+    }
+
+    /**
+     * 获取归一化后的传输类型
+     */
+    public String getResolvedType() {
+        return McpTypeSupport.resolveType(this);
     }
 }

@@ -7,15 +7,30 @@ import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
 import io.github.lnyocly.ai4j.network.DispatcherProvider;
 import io.github.lnyocly.ai4j.service.AiConfig;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.service.factor.FreeAiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
-import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.service.factory.AiServiceFactory;
+import io.github.lnyocly.ai4j.service.factory.AiServiceRegistry;
+import io.github.lnyocly.ai4j.service.factory.DefaultAiServiceFactory;
+import io.github.lnyocly.ai4j.service.factory.DefaultAiServiceRegistry;
+import io.github.lnyocly.ai4j.service.factory.FreeAiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
+import io.github.lnyocly.ai4j.rag.NoopReranker;
+import io.github.lnyocly.ai4j.rag.RagContextAssembler;
+import io.github.lnyocly.ai4j.rag.Reranker;
+import io.github.lnyocly.ai4j.service.spi.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import io.github.lnyocly.ai4j.vector.store.VectorStore;
+import io.github.lnyocly.ai4j.vector.store.milvus.MilvusVectorStore;
+import io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore;
+import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
+import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +52,9 @@ import java.security.NoSuchAlgorithmException;
         OpenAiConfigProperties.class,
         OkHttpConfigProperties.class,
         PineconeConfigProperties.class,
+        QdrantConfigProperties.class,
+        MilvusConfigProperties.class,
+        PgVectorConfigProperties.class,
         ZhipuConfigProperties.class,
         DeepSeekConfigProperties.class,
         MoonshotConfigProperties.class,
@@ -48,6 +66,7 @@ import java.security.NoSuchAlgorithmException;
         SearXNGConfigProperties.class,
         DashScopeConfigProperties.class,
         DoubaoConfigProperties.class,
+        JinaConfigProperties.class,
 })
 
 public class AiConfigAutoConfiguration {
@@ -57,6 +76,9 @@ public class AiConfigAutoConfiguration {
 
     // 鍚戦噺鏁版嵁搴撻厤缃?
     private final PineconeConfigProperties pineconeConfigProperties;
+    private final QdrantConfigProperties qdrantConfigProperties;
+    private final MilvusConfigProperties milvusConfigProperties;
+    private final PgVectorConfigProperties pgVectorConfigProperties;
 
     // searxng閰嶇疆
     private final SearXNGConfigProperties searXNGConfigProperties;
@@ -74,13 +96,17 @@ public class AiConfigAutoConfiguration {
     private final BaichuanConfigProperties baichuanConfigProperties;
     private final DashScopeConfigProperties dashScopeConfigProperties;
     private final DoubaoConfigProperties doubaoConfigProperties;
+    private final JinaConfigProperties jinaConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
+        this.qdrantConfigProperties = qdrantConfigProperties;
+        this.milvusConfigProperties = milvusConfigProperties;
+        this.pgVectorConfigProperties = pgVectorConfigProperties;
         this.searXNGConfigProperties = searXNGConfigProperties;
         this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
@@ -93,6 +119,7 @@ public class AiConfigAutoConfiguration {
         this.baichuanConfigProperties = baichuanConfigProperties;
         this.dashScopeConfigProperties = dashScopeConfigProperties;
         this.doubaoConfigProperties = doubaoConfigProperties;
+        this.jinaConfigProperties = jinaConfigProperties;
     }
 
     @Bean
@@ -101,10 +128,20 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
-    public FreeAiService getFreeAiService() {
+    public AiServiceFactory aiServiceFactory() {
+        return new DefaultAiServiceFactory();
+    }
+
+    @Bean
+    public AiServiceRegistry aiServiceRegistry(AiServiceFactory aiServiceFactory) {
         AiConfig aiConfig = new AiConfig();
         aiConfig.setPlatforms(BeanUtil.copyToList(aiConfigProperties.getPlatforms(), AiPlatform.class));
-        return new FreeAiService(configuration, aiConfig);
+        return DefaultAiServiceRegistry.from(configuration, aiConfig, aiServiceFactory);
+    }
+
+    @Bean
+    public FreeAiService getFreeAiService(AiServiceRegistry aiServiceRegistry) {
+        return new FreeAiService(aiServiceRegistry);
     }
 
     @Bean
@@ -112,11 +149,53 @@ public class AiConfigAutoConfiguration {
         return new PineconeService(configuration);
     }
 
+    @Bean
+    @ConditionalOnMissingBean(PineconeVectorStore.class)
+    public PineconeVectorStore pineconeVectorStore(PineconeService pineconeService) {
+        return new PineconeVectorStore(pineconeService);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.qdrant", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(QdrantVectorStore.class)
+    public QdrantVectorStore qdrantVectorStore() {
+        return new QdrantVectorStore(configuration);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.milvus", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(MilvusVectorStore.class)
+    public MilvusVectorStore milvusVectorStore() {
+        return new MilvusVectorStore(configuration);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.pgvector", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(PgVectorStore.class)
+    public PgVectorStore pgVectorStore() {
+        return new PgVectorStore(configuration);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RagContextAssembler ragContextAssembler() {
+        return new DefaultRagContextAssembler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public Reranker ragReranker() {
+        return new NoopReranker();
+    }
+
     @PostConstruct
     private void init() {
         initOkHttp();
 
         initPineconeConfig();
+        initQdrantConfig();
+        initMilvusConfig();
+        initPgVectorConfig();
 
         initSearXNGConfig();
 
@@ -131,6 +210,7 @@ public class AiConfigAutoConfiguration {
         initBaichuanConfig();
         initDashScopeConfig();
         initDoubaoConfig();
+        initJinaConfig();
     }
 
 
@@ -228,6 +308,54 @@ public class AiConfigAutoConfiguration {
         configuration.setPineconeConfig(pineconeConfig);
     }
 
+    private void initQdrantConfig() {
+        QdrantConfig qdrantConfig = new QdrantConfig();
+        qdrantConfig.setEnabled(qdrantConfigProperties.isEnabled());
+        qdrantConfig.setHost(qdrantConfigProperties.getHost());
+        qdrantConfig.setApiKey(qdrantConfigProperties.getApiKey());
+        qdrantConfig.setVectorName(qdrantConfigProperties.getVectorName());
+        qdrantConfig.setUpsert(qdrantConfigProperties.getUpsert());
+        qdrantConfig.setQuery(qdrantConfigProperties.getQuery());
+        qdrantConfig.setDelete(qdrantConfigProperties.getDelete());
+
+        configuration.setQdrantConfig(qdrantConfig);
+    }
+
+    private void initMilvusConfig() {
+        MilvusConfig milvusConfig = new MilvusConfig();
+        milvusConfig.setEnabled(milvusConfigProperties.isEnabled());
+        milvusConfig.setHost(milvusConfigProperties.getHost());
+        milvusConfig.setToken(milvusConfigProperties.getToken());
+        milvusConfig.setDbName(milvusConfigProperties.getDbName());
+        milvusConfig.setPartitionName(milvusConfigProperties.getPartitionName());
+        milvusConfig.setIdField(milvusConfigProperties.getIdField());
+        milvusConfig.setVectorField(milvusConfigProperties.getVectorField());
+        milvusConfig.setContentField(milvusConfigProperties.getContentField());
+        milvusConfig.setOutputFields(milvusConfigProperties.getOutputFields());
+        milvusConfig.setUpsert(milvusConfigProperties.getUpsert());
+        milvusConfig.setSearch(milvusConfigProperties.getSearch());
+        milvusConfig.setDelete(milvusConfigProperties.getDelete());
+
+        configuration.setMilvusConfig(milvusConfig);
+    }
+
+    private void initPgVectorConfig() {
+        PgVectorConfig pgVectorConfig = new PgVectorConfig();
+        pgVectorConfig.setEnabled(pgVectorConfigProperties.isEnabled());
+        pgVectorConfig.setJdbcUrl(pgVectorConfigProperties.getJdbcUrl());
+        pgVectorConfig.setUsername(pgVectorConfigProperties.getUsername());
+        pgVectorConfig.setPassword(pgVectorConfigProperties.getPassword());
+        pgVectorConfig.setTableName(pgVectorConfigProperties.getTableName());
+        pgVectorConfig.setIdColumn(pgVectorConfigProperties.getIdColumn());
+        pgVectorConfig.setDatasetColumn(pgVectorConfigProperties.getDatasetColumn());
+        pgVectorConfig.setVectorColumn(pgVectorConfigProperties.getVectorColumn());
+        pgVectorConfig.setContentColumn(pgVectorConfigProperties.getContentColumn());
+        pgVectorConfig.setMetadataColumn(pgVectorConfigProperties.getMetadataColumn());
+        pgVectorConfig.setDistanceOperator(pgVectorConfigProperties.getDistanceOperator());
+
+        configuration.setPgVectorConfig(pgVectorConfig);
+    }
+
     /**
      * 鍒濆鍖朌eepSeek 閰嶇疆淇℃伅
      */
@@ -284,6 +412,7 @@ public class AiConfigAutoConfiguration {
         ollamaConfig.setApiKey(ollamaConfigProperties.getApiKey());
         ollamaConfig.setChatCompletionUrl(ollamaConfigProperties.getChatCompletionUrl());
         ollamaConfig.setEmbeddingUrl(ollamaConfigProperties.getEmbeddingUrl());
+        ollamaConfig.setRerankUrl(ollamaConfigProperties.getRerankUrl());
 
         configuration.setOllamaConfig(ollamaConfig);
     }
@@ -346,8 +475,21 @@ public class AiConfigAutoConfiguration {
         doubaoConfig.setChatCompletionUrl(doubaoConfigProperties.getChatCompletionUrl());
         doubaoConfig.setImageGenerationUrl(doubaoConfigProperties.getImageGenerationUrl());
         doubaoConfig.setResponsesUrl(doubaoConfigProperties.getResponsesUrl());
+        doubaoConfig.setRerankApiHost(doubaoConfigProperties.getRerankApiHost());
+        doubaoConfig.setRerankUrl(doubaoConfigProperties.getRerankUrl());
 
         configuration.setDoubaoConfig(doubaoConfig);
     }
+
+    private void initJinaConfig() {
+        JinaConfig jinaConfig = new JinaConfig();
+        jinaConfig.setApiHost(jinaConfigProperties.getApiHost());
+        jinaConfig.setApiKey(jinaConfigProperties.getApiKey());
+        jinaConfig.setRerankUrl(jinaConfigProperties.getRerankUrl());
+
+        configuration.setJinaConfig(jinaConfig);
+    }
 }
+
+
 

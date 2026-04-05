@@ -1,0 +1,13 @@
+{
+  "name": "default",
+  "brand": "#7cc6fe",
+  "accent": "#f5b14c",
+  "success": "#8fd694",
+  "warning": "#f4d35e",
+  "danger": "#ef6f6c",
+  "text": "#f3f4f6",
+  "muted": "#9ca3af",
+  "panelBorder": "#4b5563",
+  "panelTitle": "#f5b14c",
+  "badgeForeground": "#111827"
+}

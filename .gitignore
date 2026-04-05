@@ -37,6 +37,24 @@ build/
 ### Local tooling ###
 .claude/
 AGENTS.md
+node_modules/
+dist/
+.rsbuild/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+### Scratch / temp ###
+*.class
+.tmp*/
+.tmp*
+tmp/
+tmp-*/
+tmp-*.png
+tmp-*.txt
+tmp-*.log
 
 ### Mac OS ###
 .DS_Store
@@ -44,3 +62,10 @@ AGENTS.md
 /ai4j/.gitignore
 /ai4j/src/main/resources/新建文本文档 (2).txt
 /ai4j-spring-boot-stater/.gitignore
+.ai4j/
+.docs/
+docs/
+APIResponse.md
+AGENT.md
+ai4j-release-package.log
+javadoc-ai4j.log

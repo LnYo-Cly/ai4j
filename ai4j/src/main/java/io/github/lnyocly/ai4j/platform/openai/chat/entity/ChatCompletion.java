@@ -1,11 +1,11 @@
 package io.github.lnyocly.ai4j.platform.openai.chat.entity;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.listener.StreamExecutionOptions;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import lombok.*;
 
@@ -113,6 +113,13 @@ public class ChatCompletion {
     private Boolean parallelToolCalls = true;
 
     /**
+     * Agent runtime helper: preserve streamed tool calls for runtime execution
+     * instead of provider-side auto invocation.
+     */
+    @JsonIgnore
+    private Boolean passThroughToolCalls;
+
+    /**
      * 一个 object，指定模型必须输出的格式。
      *
      * 设置为 { "type": "json_object" } 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
@@ -171,6 +178,9 @@ public class ChatCompletion {
     @JsonIgnore
     @Singular("extraBody")
     private Map<String, Object> extraBody;
+
+    @JsonIgnore
+    private StreamExecutionOptions streamExecution;
 
     /**
      * Jackson 序列化时自动调用，将 extraBody 的内容展开到顶层

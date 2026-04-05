@@ -1,0 +1,13 @@
+{
+  "name": "amber",
+  "brand": "#ffcc66",
+  "accent": "#ff8a3d",
+  "success": "#c7f9a8",
+  "warning": "#ffd166",
+  "danger": "#ff6b6b",
+  "text": "#f8f5ec",
+  "muted": "#c8b89d",
+  "panelBorder": "#7c5c3b",
+  "panelTitle": "#ffcc66",
+  "badgeForeground": "#241a10"
+}

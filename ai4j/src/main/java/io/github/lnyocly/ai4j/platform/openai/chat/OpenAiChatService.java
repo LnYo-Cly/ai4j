@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
@@ -27,6 +28,7 @@ import java.util.List;
  */
 @Slf4j
 public class OpenAiChatService implements IChatService {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
 
     private final OpenAiConfig openAiConfig;
     private final OkHttpClient okHttpClient;
@@ -48,6 +50,7 @@ public class OpenAiChatService implements IChatService {
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion)  throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
@@ -80,8 +83,8 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
+                    .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
+                    .post(jsonBody(requestString))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
@@ -98,6 +101,10 @@ public class OpenAiChatService implements IChatService {
 
                 // 判断是否为函数调用返回
                 if("tool_calls".equals(finishReason)){
+                    if (passThroughToolCalls) {
+                        chatCompletionResponse.setUsage(allUsage);
+                        return chatCompletionResponse;
+                    }
                     ChatMessage message = choice.getMessage();
                     List<ToolCall> toolCalls = message.getToolCalls();
 
@@ -143,6 +150,7 @@ public class OpenAiChatService implements IChatService {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
         chatCompletion.setStream(true);
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         StreamOptions streamOptions = chatCompletion.getStreamOptions();
         if(streamOptions == null){
             chatCompletion.setStreamOptions(new StreamOptions(true));
@@ -175,19 +183,23 @@ public class OpenAiChatService implements IChatService {
 
             Request request = new Request.Builder()
                     .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
+                    .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
+                    .post(jsonBody(jsonString))
                     .build();
-
-
-            factory.newEventSource(request, eventSourceListener);
-            eventSourceListener.getCountDownLatch().await();
+            StreamExecutionSupport.execute(
+                    eventSourceListener,
+                    chatCompletion.getStreamExecution(),
+                    () -> factory.newEventSource(request, eventSourceListener)
+            );
 
             finishReason = eventSourceListener.getFinishReason();
             List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
             // 需要调用函数
             if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
+                if (passThroughToolCalls) {
+                    return;
+                }
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
@@ -215,4 +227,9 @@ public class OpenAiChatService implements IChatService {
     public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         chatCompletionStream(null, null, chatCompletion, eventSourceListener);
     }
+
+    private RequestBody jsonBody(String json) {
+        return RequestBody.create(json, JSON_MEDIA_TYPE);
+    }
 }
+

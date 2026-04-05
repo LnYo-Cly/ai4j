@@ -123,7 +123,7 @@ public class McpToolAdapter {
             }
             
             // Create service instance
-            Object serviceInstance = serviceClass.newInstance();
+            Object serviceInstance = serviceClass.getDeclaredConstructor().newInstance();
             
             // Parse arguments
             Object[] methodArgs = parseMethodArguments(method, arguments);
@@ -311,7 +311,7 @@ public class McpToolAdapter {
         
         try {
             // Parse JSON arguments
-            Map<String, Object> argMap = JSON.parseObject(arguments, Map.class);
+            Map<String, Object> argMap = JSON.parseObject(arguments);
             Object[] methodArgs = new Object[parameters.length];
             
             for (int i = 0; i < parameters.length; i++) {

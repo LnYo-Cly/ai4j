@@ -2,7 +2,6 @@ package io.github.lnyocly.ai4j.platform.openai.chat.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author cly

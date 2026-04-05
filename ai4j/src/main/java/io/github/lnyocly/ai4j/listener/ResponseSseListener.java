@@ -3,18 +3,17 @@ package io.github.lnyocly.ai4j.listener;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.Response;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseStreamEvent;
 import lombok.Getter;
-import okhttp3.sse.EventSourceListener;
+import okhttp3.sse.EventSource;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 
-public abstract class ResponseSseListener extends EventSourceListener {
+public abstract class ResponseSseListener extends AbstractManagedStreamListener {
 
     
+    @Override
     protected void error(Throwable t, okhttp3.Response response) {
     }
 
@@ -45,14 +44,12 @@ public abstract class ResponseSseListener extends EventSourceListener {
     @Getter
     private String currFunctionArguments = "";
 
-    @Getter
-    private CountDownLatch countDownLatch = new CountDownLatch(1);
-
     public void accept(ResponseStreamEvent event) {
         this.currEvent = event;
         this.events.add(event);
         this.currText = "";
         this.currFunctionArguments = "";
+        markActivity();
         applyEvent(event);
         this.onEvent();
     }
@@ -158,8 +155,7 @@ public abstract class ResponseSseListener extends EventSourceListener {
     }
 
     public void complete() {
-        countDownLatch.countDown();
-        countDownLatch = new CountDownLatch(1);
+        finishAttempt();
     }
 
     public void onError(Throwable t, okhttp3.Response response) {
@@ -167,9 +163,13 @@ public abstract class ResponseSseListener extends EventSourceListener {
     }
 
     @Override
-    public void onFailure(@NotNull okhttp3.sse.EventSource eventSource, @Nullable Throwable t, @Nullable okhttp3.Response response) {
-        this.error(t, response);
+    public void onClosed(@NotNull EventSource eventSource) {
+        attachEventSource(eventSource);
         complete();
+    }
+
+    @Override
+    protected void retry(Throwable t, int attempt, int maxAttempts) {
     }
 }
 

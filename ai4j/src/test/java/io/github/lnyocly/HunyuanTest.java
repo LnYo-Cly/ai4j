@@ -14,12 +14,13 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.ObjectUtils;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
@@ -40,15 +41,21 @@ public class HunyuanTest {
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
+        String apiKey = System.getenv("HUNYUAN_API_KEY");
+        if (isBlank(apiKey)) {
+            apiKey = System.getProperty("hunyuan.api.key");
+        }
+        Assume.assumeTrue("Skip because Hunyuan API key is not configured", !isBlank(apiKey));
+
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
-        hunyuanConfig.setApiKey("abc.123456");
+        hunyuanConfig.setApiKey(apiKey);
 
         Configuration configuration = new Configuration();
         configuration.setHunyuanConfig(hunyuanConfig);
 
 
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
-        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient okHttpClient = new OkHttpClient
                 .Builder()
@@ -67,6 +74,10 @@ public class HunyuanTest {
 
         chatService = aiService.getChatService(PlatformType.HUNYUAN);
 
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
 
@@ -109,7 +120,7 @@ public class HunyuanTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -136,7 +147,7 @@ public class HunyuanTest {
     @Test
     public void test_chatCompletions_function() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("gpt-4o-mini")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("查询洛阳明天的天气，并告诉我火车是否发车"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -158,7 +169,7 @@ public class HunyuanTest {
 
         // 构造请求参数
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("yi-large-fc")
+                .model("hunyuan-lite")
                 .message(ChatMessage.withUser("查询洛阳明天的天气"))
                 .functions("queryWeather", "queryTrainInfo")
                 .build();
@@ -184,3 +195,5 @@ public class HunyuanTest {
 
 
 }
+
+

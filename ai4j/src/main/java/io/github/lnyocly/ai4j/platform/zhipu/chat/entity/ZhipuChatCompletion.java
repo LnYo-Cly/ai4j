@@ -37,18 +37,22 @@ public class ZhipuChatCompletion {
     @JsonProperty("request_id")
     private String requestId;
 
+    @Builder.Default
     @JsonProperty("do_sample")
     private Boolean doSample = true;
+    @Builder.Default
     private Boolean stream = false;
     /**
      * 采样温度，控制输出的随机性，必须为正数。值越大，会使输出更随机
      * [0.0, 1.0]
      */
+    @Builder.Default
     private Float temperature = 0.95f;
     /**
      * 核取样
      * [0.0, 1.0]
      */
+    @Builder.Default
     @JsonProperty("top_p")
     private Float topP = 0.7f;
 

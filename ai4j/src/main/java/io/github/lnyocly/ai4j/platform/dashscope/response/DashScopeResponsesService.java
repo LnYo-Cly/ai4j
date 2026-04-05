@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.config.DashScopeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.ResponseSseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.StreamOptions;
 import io.github.lnyocly.ai4j.platform.openai.response.ResponseEventParser;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.Response;
@@ -13,14 +14,14 @@ import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseRequest;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseStreamEvent;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IResponsesService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.tool.ResponseRequestToolResolver;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
-import okhttp3.sse.EventSources;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +39,7 @@ public class DashScopeResponsesService implements IResponsesService {
     public DashScopeResponsesService(Configuration configuration) {
         this.dashScopeConfig = configuration.getDashScopeConfig();
         this.okHttpClient = configuration.getOkHttpClient();
-        this.factory = EventSources.createFactory(okHttpClient);
+        this.factory = configuration.createRequestFactory();
     }
 
     @Override
@@ -47,6 +48,7 @@ public class DashScopeResponsesService implements IResponsesService {
         String key = resolveApiKey(apiKey);
         request.setStream(false);
         request.setStreamOptions(null);
+        request = ResponseRequestToolResolver.resolve(request);
 
         ObjectMapper mapper = new ObjectMapper();
         String body = mapper.writeValueAsString(request);
@@ -54,7 +56,7 @@ public class DashScopeResponsesService implements IResponsesService {
         Request httpRequest = new Request.Builder()
                 .header("Authorization", "Bearer " + key)
                 .url(url)
-                .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), body))
+                .post(RequestBody.create(body, MediaType.get(Constants.JSON_CONTENT_TYPE)))
                 .build();
 
         try (okhttp3.Response response = okHttpClient.newCall(httpRequest).execute()) {
@@ -80,6 +82,7 @@ public class DashScopeResponsesService implements IResponsesService {
         if (request.getStreamOptions() == null) {
             request.setStreamOptions(new StreamOptions(true));
         }
+        request = ResponseRequestToolResolver.resolve(request);
 
         ObjectMapper mapper = new ObjectMapper();
         String body = mapper.writeValueAsString(request);
@@ -87,11 +90,14 @@ public class DashScopeResponsesService implements IResponsesService {
         Request httpRequest = new Request.Builder()
                 .header("Authorization", "Bearer " + key)
                 .url(url)
-                .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), body))
+                .post(RequestBody.create(body, MediaType.get(Constants.JSON_CONTENT_TYPE)))
                 .build();
 
-        factory.newEventSource(httpRequest, convertEventSource(mapper, listener));
-        listener.getCountDownLatch().await();
+        StreamExecutionSupport.execute(
+                listener,
+                request.getStreamExecution(),
+                () -> factory.newEventSource(httpRequest, convertEventSource(mapper, listener))
+        );
     }
 
     @Override
@@ -151,7 +157,7 @@ public class DashScopeResponsesService implements IResponsesService {
 
     private String resolveUrl(String baseUrl, String path) {
         String host = (baseUrl == null || "".equals(baseUrl)) ? dashScopeConfig.getApiHost() : baseUrl;
-        return ValidateUtil.concatUrl(host, path);
+        return UrlUtils.concatUrl(host, path);
     }
 
     private String resolveApiKey(String apiKey) {
@@ -162,13 +168,12 @@ public class DashScopeResponsesService implements IResponsesService {
         return new EventSourceListener() {
             @Override
             public void onOpen(@NotNull EventSource eventSource, @NotNull okhttp3.Response response) {
-                // no-op
+                listener.onOpen(eventSource, response);
             }
 
             @Override
             public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable okhttp3.Response response) {
-                listener.onError(t, response);
-                listener.complete();
+                listener.onFailure(eventSource, t, response);
             }
 
             @Override
@@ -191,7 +196,7 @@ public class DashScopeResponsesService implements IResponsesService {
 
             @Override
             public void onClosed(@NotNull EventSource eventSource) {
-                listener.complete();
+                listener.onClosed(eventSource);
             }
         };
     }
@@ -205,4 +210,5 @@ public class DashScopeResponsesService implements IResponsesService {
                 || "response.incomplete".equals(type);
     }
 }
+
 

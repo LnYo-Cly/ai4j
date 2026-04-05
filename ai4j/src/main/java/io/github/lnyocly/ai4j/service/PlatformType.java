@@ -22,6 +22,7 @@ public enum PlatformType {
     BAICHUAN("baichuan"),
     DASHSCOPE("dashscope"),
     DOUBAO("doubao"),
+    JINA("jina"),
     ;
     private final String platform;
 

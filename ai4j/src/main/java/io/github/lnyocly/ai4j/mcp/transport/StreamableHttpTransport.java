@@ -1,11 +1,8 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
 import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.mcp.entity.McpNotification;
-import io.github.lnyocly.ai4j.mcp.entity.McpRequest;
-import io.github.lnyocly.ai4j.mcp.entity.McpResponse;
+import io.github.lnyocly.ai4j.mcp.util.McpMessageCodec;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -103,7 +100,7 @@ public class StreamableHttpTransport implements McpTransport {
                 log.debug("发送消息到MCP端点: {}", jsonMessage);
                 
                 RequestBody body = RequestBody.create(
-                    MediaType.parse("application/json"), 
+                    MediaType.get("application/json"), 
                     jsonMessage
                 );
 
@@ -131,11 +128,11 @@ public class StreamableHttpTransport implements McpTransport {
                 
                 Request request = requestBuilder.build();
                 
-                Response response = httpClient.newCall(request).execute();
-                try {
-                    if (!response.isSuccessful()) {
-                        throw new IOException("HTTP请求失败: " + response.code() + " " + response.message());
-                    }
+                    Response response = httpClient.newCall(request).execute();
+                    try {
+                        if (!response.isSuccessful()) {
+                        throw new IOException(McpTransportSupport.buildHttpFailureMessage(response));
+                        }
                     
                     // 检查会话ID
                     String newSessionId = response.header("mcp-session-id");
@@ -160,11 +157,11 @@ public class StreamableHttpTransport implements McpTransport {
                 }
                 
             } catch (Exception e) {
-                log.error("发送Streamable HTTP消息失败", e);
+                log.debug("发送Streamable HTTP消息失败: {}", McpTransportSupport.safeMessage(e), e);
                 if (messageHandler != null) {
                     messageHandler.onError(e);
                 }
-                throw new RuntimeException("发送Streamable HTTP消息失败", e);
+                throw new RuntimeException(McpTransportSupport.safeMessage(e), e);
                 }
             }
         });
@@ -192,7 +189,7 @@ public class StreamableHttpTransport implements McpTransport {
                 messageHandler.handleMessage(message);
             }
         } catch (Exception e) {
-            log.error("解析JSON响应失败", e);
+            log.debug("解析JSON响应失败: {}", McpTransportSupport.safeMessage(e), e);
             if (messageHandler != null) {
                 messageHandler.onError(e);
             }
@@ -219,14 +216,14 @@ public class StreamableHttpTransport implements McpTransport {
                             messageHandler.handleMessage(message);
                         }
                     } catch (Exception e) {
-                        log.error("解析SSE数据失败: {}", data, e);
+                        log.debug("解析SSE数据失败: {} -> {}", McpTransportSupport.clip(data, 120), McpTransportSupport.safeMessage(e), e);
                     }
                 } else if (line.startsWith("id: ")) {
                     lastEventId = line.substring(4);
                 }
             }
         } catch (Exception e) {
-            log.error("处理SSE响应失败", e);
+            log.debug("处理SSE响应失败: {}", McpTransportSupport.safeMessage(e), e);
             if (messageHandler != null) {
                 messageHandler.onError(e);
             }
@@ -300,18 +297,7 @@ public class StreamableHttpTransport implements McpTransport {
     }
 
     public static McpMessage parseMcpMessage(String jsonString) {
-        JSONObject jsonObject = JSON.parseObject(jsonString);
-        if (jsonObject.containsKey("method")) {
-            if (jsonObject.containsKey("id")) {
-                return JSON.parseObject(jsonString, McpRequest.class);
-            } else {
-                return JSON.parseObject(jsonString, McpNotification.class);
-            }
-        } else if (jsonObject.containsKey("id")) {
-            return JSON.parseObject(jsonString, McpResponse.class);
-        } else {
-            throw new IllegalArgumentException("Unrecognized MCP message: " + jsonString);
-        }
+        return McpMessageCodec.parseMessage(jsonString);
     }
 
 }

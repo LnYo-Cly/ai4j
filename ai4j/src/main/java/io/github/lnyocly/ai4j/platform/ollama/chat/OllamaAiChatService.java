@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaChatCompletion;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.ollama.chat.entity.OllamaMessage;
@@ -23,8 +24,8 @@ import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -269,6 +270,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         chatCompletion.setStream(false);
         chatCompletion.setStreamOptions(null);
 
@@ -337,8 +339,8 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
 
             Request.Builder builder = new Request.Builder()
-                    .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+                    .url(UrlUtils.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
+                    .post(RequestBody.create(requestString, MediaType.get(Constants.JSON_CONTENT_TYPE)));
 
             if(StringUtils.isNotBlank(apiKey)) {
                 builder.header("Authorization", "Bearer " + apiKey);
@@ -364,6 +366,12 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
                 // 判断是否为函数调用返回
                 if("tool_calls".equals(finishReason)){
+                    if (passThroughToolCalls) {
+                        ollamaChatCompletionResponse.setDoneReason("tool_calls");
+                        ollamaChatCompletionResponse.setEvalCount(allUsage.getCompletionTokens());
+                        ollamaChatCompletionResponse.setPromptEvalCount(allUsage.getPromptTokens());
+                        return this.convertChatCompletionResponse(ollamaChatCompletionResponse);
+                    }
                     OllamaMessage message = ollamaChatCompletionResponse.getMessage();
 
                     List<ToolCall> toolCalls = message.getToolCalls();
@@ -417,6 +425,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(true);
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
         if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
             //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
@@ -474,8 +483,8 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             requestString = JSON.toJSONString(jsonObject);
 
             Request.Builder builder = new Request.Builder()
-                    .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString));
+                    .url(UrlUtils.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
+                    .post(RequestBody.create(requestString, MediaType.get(Constants.JSON_CONTENT_TYPE)));
 
             if(StringUtils.isNotBlank(apiKey)) {
                 builder.header("Authorization", "Bearer " + apiKey);
@@ -483,14 +492,20 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
             Request request = builder.build();
 
-            factory.newEventSource(request, convertEventSource(eventSourceListener));
-            eventSourceListener.getCountDownLatch().await();
+            StreamExecutionSupport.execute(
+                    eventSourceListener,
+                    chatCompletion.getStreamExecution(),
+                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+            );
 
             finishReason = eventSourceListener.getFinishReason();
             List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
             // 需要调用函数
             if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
+                if (passThroughToolCalls) {
+                    return;
+                }
                 // 创建tool响应消息
                 OllamaMessage responseMessage = new OllamaMessage();
                 responseMessage.setRole(ChatMessageType.ASSISTANT.getRole());
@@ -528,3 +543,4 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         this.chatCompletionStream(null, null, chatCompletion, eventSourceListener);
     }
 }
+

@@ -1,0 +1,42 @@
+﻿{
+  "version.label": {
+    "message": "当前版本",
+    "description": "current 版本标签"
+  },
+  "sidebar.tutorialSidebar.category.Getting Started": {
+    "message": "快速开始",
+    "description": "旧键名兼容：快速开始"
+  },
+  "sidebar.tutorialSidebar.category.Guides": {
+    "message": "场景指南",
+    "description": "旧键名兼容：场景指南"
+  },
+  "sidebar.tutorialSidebar.category.MCP": {
+    "message": "MCP",
+    "description": "MCP 分类"
+  },
+  "sidebar.tutorialSidebar.category.Agent": {
+    "message": "Agent 智能体",
+    "description": "旧键名兼容：Agent 分类"
+  },
+  "sidebar.tutorialSidebar.category.Deployment": {
+    "message": "部署",
+    "description": "旧键名兼容：部署分类"
+  },
+  "sidebar.tutorialSidebar.category.快速开始": {
+    "message": "快速开始",
+    "description": "中文键名：快速开始"
+  },
+  "sidebar.tutorialSidebar.category.场景指南": {
+    "message": "场景指南",
+    "description": "中文键名：场景指南"
+  },
+  "sidebar.tutorialSidebar.category.Agent 智能体": {
+    "message": "Agent 智能体",
+    "description": "中文键名：Agent 智能体"
+  },
+  "sidebar.tutorialSidebar.category.部署": {
+    "message": "部署",
+    "description": "中文键名：部署"
+  }
+}

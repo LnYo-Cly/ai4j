@@ -13,7 +13,7 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,6 +26,8 @@ import java.util.List;
  * @Date 2025/2/28 15:52
  */
 public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParameterConvert<OllamaEmbedding>, EmbeddingResultConvert<OllamaEmbeddingResponse> {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+
     private final OllamaConfig ollamaConfig;
     private final OkHttpClient okHttpClient;
 
@@ -46,8 +48,8 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
         String jsonString = JSON.toJSONString(convertEmbeddingRequest(embeddingReq));
 
         Request.Builder builder = new Request.Builder()
-                .url(ValidateUtil.concatUrl(baseUrl, ollamaConfig.getEmbeddingUrl()))
-                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString));
+                .url(UrlUtils.concatUrl(baseUrl, ollamaConfig.getEmbeddingUrl()))
+                .post(RequestBody.create(jsonString, JSON_MEDIA_TYPE));
         if(StringUtils.isNotBlank(apiKey)) {
             builder.header("Authorization", "Bearer " + apiKey);
         }
@@ -68,13 +70,17 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
 
     @Override
     public OllamaEmbedding convertEmbeddingRequest(Embedding embeddingRequest) {
-        // 判断embeddingRequest.getInput() object的类型，是String还是List<String>
-        if (embeddingRequest.getInput() instanceof List) {
-            return OllamaEmbedding.builder().model(embeddingRequest.getModel()).input((List<String>) embeddingRequest.getInput()).build();
-        }else {
-            return OllamaEmbedding.builder().model(embeddingRequest.getModel()).input((String) embeddingRequest.getInput()).build();
+        Object input = embeddingRequest.getInput();
+        if (input instanceof List<?>) {
+            return OllamaEmbedding.builder()
+                    .model(embeddingRequest.getModel())
+                    .input(castStringList(input))
+                    .build();
         }
-
+        return OllamaEmbedding.builder()
+                .model(embeddingRequest.getModel())
+                .input((String) input)
+                .build();
     }
 
     @Override
@@ -95,4 +101,10 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
         builder.data(embeddingObjects);
         return builder.build();
     }
+
+    @SuppressWarnings("unchecked")
+    private List<String> castStringList(Object input) {
+        return (List<String>) input;
+    }
 }
+

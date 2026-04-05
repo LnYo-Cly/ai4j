@@ -1,8 +1,12 @@
 package io.github.lnyocly.ai4j.exception;
 
-public class CommonException extends RuntimeException{
+/**
+ * Legacy exception kept for 1.x compatibility.
+ */
+public class CommonException extends Ai4jException {
 
-    public CommonException(String msg){
+    public CommonException(String msg) {
         super(msg);
     }
 }
+

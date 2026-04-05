@@ -4,7 +4,7 @@ import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.listener.RealtimeListener;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IRealtimeService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -34,7 +34,7 @@ public class OpenAiRealtimeService implements IRealtimeService {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost(); // url为HTTPS不影响
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
 
-        String url = ValidateUtil.concatUrl(baseUrl, openAiConfig.getRealtimeUrl(), "?model=" + model);
+        String url = UrlUtils.concatUrl(baseUrl, openAiConfig.getRealtimeUrl(), "?model=" + model);
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer " + apiKey)
@@ -49,3 +49,4 @@ public class OpenAiRealtimeService implements IRealtimeService {
         return this.createRealtimeClient(null, null, model, realtimeListener);
     }
 }
+

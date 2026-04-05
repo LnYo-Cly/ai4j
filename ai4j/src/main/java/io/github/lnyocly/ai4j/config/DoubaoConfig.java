@@ -19,5 +19,7 @@ public class DoubaoConfig {
     private String chatCompletionUrl = "chat/completions";
     private String imageGenerationUrl = "images/generations";
     private String responsesUrl = "responses";
+    private String rerankApiHost = "https://api-knowledgebase.mlp.cn-beijing.volces.com/";
+    private String rerankUrl = "api/knowledge/service/rerank";
 }
 

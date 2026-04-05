@@ -17,11 +17,11 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
-import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
-import io.github.lnyocly.ai4j.utils.TikaUtil;
-import io.github.lnyocly.ai4j.vector.VertorDataEntity;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.document.RecursiveCharacterTextSplitter;
+import io.github.lnyocly.ai4j.document.TikaUtil;
+import io.github.lnyocly.ai4j.vector.VectorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
@@ -209,3 +209,6 @@ public class DeepSeekTest {
 
 
 }
+
+
+

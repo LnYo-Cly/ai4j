@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
 import io.github.lnyocly.ai4j.mcp.config.McpServerConfig;
+import io.github.lnyocly.ai4j.mcp.util.McpTypeSupport;
 
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class TransportConfig {
      */
     public static TransportConfig sse(McpServerConfig.McpServerInfo serverInfo) {
         TransportConfig config = new TransportConfig();
-        config.type = "sse";
+        config.type = McpTypeSupport.TYPE_SSE;
         config.url = serverInfo.getUrl();
         config.headers = serverInfo.getHeaders();
         return config;
@@ -98,8 +99,17 @@ public class TransportConfig {
      */
     public static TransportConfig streamableHttp(String url) {
         TransportConfig config = new TransportConfig();
-        config.type = "streamable_http";
+        config.type = McpTypeSupport.TYPE_STREAMABLE_HTTP;
         config.url = url;
+        return config;
+    }
+
+    /**
+     * 创建 Streamable HTTP 传输配置
+     */
+    public static TransportConfig streamableHttp(McpServerConfig.McpServerInfo serverInfo) {
+        TransportConfig config = streamableHttp(serverInfo.getUrl());
+        config.headers = serverInfo.getHeaders();
         return config;
     }
     
@@ -108,6 +118,21 @@ public class TransportConfig {
      */
     public static TransportConfig http(String url) {
         return streamableHttp(url);
+    }
+
+    /**
+     * 根据 MCP server 配置创建传输配置
+     */
+    public static TransportConfig fromServerInfo(McpServerConfig.McpServerInfo serverInfo) {
+        String normalizedType = McpTypeSupport.resolveType(serverInfo);
+
+        if (McpTypeSupport.isStdio(normalizedType)) {
+            return stdio(serverInfo.getCommand(), serverInfo.getArgs(), serverInfo.getEnv());
+        }
+        if (McpTypeSupport.isSse(normalizedType)) {
+            return sse(serverInfo);
+        }
+        return streamableHttp(serverInfo);
     }
     
     // Builder模式支持

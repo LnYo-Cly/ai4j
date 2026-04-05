@@ -13,7 +13,7 @@ import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageStreamEvent;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageUsage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IImageService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @Date 2026/1/31
  */
 public class DoubaoImageService implements IImageService {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
 
     private final DoubaoConfig doubaoConfig;
     private final OkHttpClient okHttpClient;
@@ -72,8 +73,8 @@ public class DoubaoImageService implements IImageService {
 
         Request request = new Request.Builder()
                 .header("Authorization", "Bearer " + apiKey)
-                .url(ValidateUtil.concatUrl(baseUrl, doubaoConfig.getImageGenerationUrl()))
-                .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
+                .url(UrlUtils.concatUrl(baseUrl, doubaoConfig.getImageGenerationUrl()))
+                .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
                 .build();
 
         try (Response response = okHttpClient.newCall(request).execute()) {
@@ -108,8 +109,8 @@ public class DoubaoImageService implements IImageService {
 
         Request request = new Request.Builder()
                 .header("Authorization", "Bearer " + apiKey)
-                .url(ValidateUtil.concatUrl(baseUrl, doubaoConfig.getImageGenerationUrl()))
-                .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
+                .url(UrlUtils.concatUrl(baseUrl, doubaoConfig.getImageGenerationUrl()))
+                .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
                 .build();
 
         factory.newEventSource(request, convertEventSource(mapper, listener));
@@ -199,3 +200,4 @@ public class DoubaoImageService implements IImageService {
         return value == null || value.isNull() ? null : value.asLong();
     }
 }
+

@@ -35,6 +35,12 @@ public class Configuration {
 
     private PineconeConfig pineconeConfig;
 
+    private QdrantConfig qdrantConfig;
+
+    private MilvusConfig milvusConfig;
+
+    private PgVectorConfig pgVectorConfig;
+
     private SearXNGConfig searXNGConfig;
 
     private McpConfig mcpConfig;
@@ -42,4 +48,6 @@ public class Configuration {
     private DashScopeConfig dashScopeConfig;
 
     private DoubaoConfig doubaoConfig;
+
+    private JinaConfig jinaConfig;
 }
