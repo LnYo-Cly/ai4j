@@ -2,15 +2,18 @@
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
+const siteUrl = process.env.DOCS_SITE_URL ?? 'https://lnyo-cly.github.io';
+const siteBaseUrl = process.env.DOCS_SITE_BASE_URL ?? '/ai4j/';
+
 const config: Config = {
   title: 'AI4J 文档站',
   tagline: '面向 JDK8 的 Java 大模型 SDK、Coding Agent 与 Agent 框架',
   favicon: 'img/favicon.ico',
   future: {v4: true},
-  url: 'https://docs.ai4j.dev',
-  baseUrl: '/',
+  url: siteUrl,
+  baseUrl: siteBaseUrl,
   organizationName: 'LnYo-Cly',
-  projectName: 'ai4j-sdk',
+  projectName: 'ai4j',
   onBrokenLinks: 'throw',
   i18n: {
     defaultLocale: 'zh-Hans',

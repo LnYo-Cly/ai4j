@@ -1,7 +1,38 @@
-![Maven Central](https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=blue)
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:6A5ACD,100:2E86C1&height=180&section=header&text=ai4j&fontSize=46&fontColor=ffffff&animation=fadeIn&desc=Java%20AI%20Agentic%20SDK%20for%20JDK%208%2B&descAlignY=68" alt="ai4j banner" />
+</p>
+
+<p align="center">
+  <a href="https://search.maven.org/artifact/io.github.lnyo-cly/ai4j">
+    <img src="https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=2E86C1&label=Maven%20Central" alt="Maven Central" />
+  </a>
+  <a href="https://lnyo-cly.github.io/ai4j/">
+    <img src="https://img.shields.io/badge/Docs-GitHub%20Pages-0A7EA4" alt="Docs" />
+  </a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-1F6FEB" alt="License" />
+  </a>
+  <img src="https://img.shields.io/badge/JDK-8%2B-2EA043" alt="JDK 8+" />
+  <img src="https://img.shields.io/badge/Agentic-Enabled-6F42C1" alt="Agentic Enabled" />
+  <img src="https://img.shields.io/badge/MCP-Supported-0F766E" alt="MCP Supported" />
+  <img src="https://img.shields.io/badge/RAG-Built--in-B45309" alt="RAG Built-in" />
+  <img src="https://img.shields.io/badge/CLI%20%2F%20TUI%20%2F%20ACP-Built--in-475569" alt="CLI TUI ACP Built-in" />
+</p>
+
 # ai4j
-Since SpringAI requires JDK 17 and Spring Boot 3,  but many applications still use JDK 8 version at present, so AI4J that can support JDK 8 is used to access large models such as OpenAI.  
-An Java SDK for quickly integrating AI large model applications. It integrates multiple platform large models such as OpenAI, Ollama, Zhipu (ChatGLM), DeepSeek, Moonshot (Kimi), Tencent Hunyuan, Lingyi (01), etc. It provides a unified input and output (aligned with OpenAI), eliminates differences, optimizes function calls (Tool Call), optimizes RAG calls, and supports vector databases (Pinecone). It also supports JDK 1.8, providing users with the ability to quickly integrate AI.
+A Java AI Agentic development toolkit for JDK 8+, combining foundational AI capabilities with higher-level agent development capabilities.  
+It covers multi-provider model access, unified I/O, Tool Calling, MCP, RAG, unified `VectorStore`, ChatMemory, agent runtime, coding agent, CLI / TUI / ACP, and FlowGram integration, helping Java applications grow from basic model integration to more complete agentic application development.
+
+This repository has evolved into a multi-module SDK. In addition to the core `ai4j` module, it now provides `ai4j-agent`, `ai4j-coding`, `ai4j-cli`, `ai4j-spring-boot-starter`, `ai4j-flowgram-spring-boot-starter`, and `ai4j-bom`. If you only need the basic LLM integration layer, start with `ai4j`. If you need agent runtime, coding agent, CLI / ACP, Spring Boot, or FlowGram integration, add the corresponding modules.
+
+## Positioning Compared with Common Java AI Options
+
+| Option | Java baseline | Application style | Primary focus |
+| --- | --- | --- | --- |
+| `ai4j` | `JDK 8+` | Plain Java / Spring | Unified model access, Tool / MCP / RAG, agent runtime, coding agent, CLI / TUI / ACP |
+| `Spring AI` | `Java 17+` | `Spring Boot 3.x` | Spring-native AI integration, model access, Tool Calling, MCP, and RAG |
+| `Spring AI Alibaba` | `Java 17+` | `Spring Boot 3.x` | Spring and Alibaba Cloud AI ecosystem integration |
+| `LangChain4j` | `Java 17+` | Plain Java / Spring / Quarkus and more | General Java abstractions for LLM, agent, and RAG integration, plus AI Services |
 
 ## Supported platforms
 + OpenAi
@@ -21,7 +52,11 @@ An Java SDK for quickly integrating AI large model applications. It integrates m
 ## Features
 + Supports Spring and ordinary Java applications. Supports applications above Java 8.
 + Multi-platform and multi-service.
++ Provides `ai4j-agent` as the general agent runtime, with ReAct, subagents, agent teams, memory, tracing, and tool loop support.
 + Built-in Coding Agent CLI / TUI with interactive repository sessions, provider profiles, workspace model override, and session/process management.
++ Provides `ai4j-coding` as the coding agent runtime, with workspace-aware tools, outer loop, checkpoint compaction, subagent, and team collaboration support.
++ Provides `ai4j-flowgram-spring-boot-starter` for integrating FlowGram workflows and trace in Spring Boot applications.
++ Provides `ai4j-bom` for version alignment across multiple ai4j modules.
 + Unified input and output.
 + Unified error handling.
 + Supports streaming output. Supports streaming output of function call parameters.
@@ -46,7 +81,9 @@ AI4J now includes `ai4j-cli`, which can be used directly as a local coding agent
 + CLI and TUI interaction modes
 + provider profile persistence
 + workspace-level model override
++ subagent and agent team collaboration
 + session persistence, resume, fork, history, tree, events, replay
++ team board, team messages, and team resume for collaboration visibility
 + process management and buffered logs
 
 ### Build
@@ -154,7 +191,22 @@ Recommended workflow:
 
 # Quick start
 ## Import
+### Module selection
++ Use `ai4j` for the core LLM / Tool Call / MCP / RAG capabilities
++ Use `ai4j-agent` for the general agent runtime
++ Use `ai4j-coding` for coding agent, workspace tools, and outer loop
++ Use `ai4j-cli` for the local CLI / TUI / ACP host
++ Use `ai4j-spring-boot-starter` for Spring Boot auto-configuration
++ Use `ai4j-flowgram-spring-boot-starter` for FlowGram workflow integration
++ Use `ai4j-bom` when you want version alignment across multiple modules
+
 ### Gradle
+```groovy
+implementation platform("io.github.lnyo-cly:ai4j-bom:${project.version}")
+implementation "io.github.lnyo-cly:ai4j"
+implementation "io.github.lnyo-cly:ai4j-agent"
+```
+
 ```groovy
 implementation group: 'io.github.lnyo-cly', name: 'ai4j', version: '${project.version}'
 ```
@@ -165,6 +217,33 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
 
 
 ### Maven
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-bom</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+```xml
+<!-- Recommended for multi-module usage -->
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-agent</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-coding</artifactId>
+</dependency>
+```
+
 ```xml
 <!-- Non-Spring application -->
 <dependency>
