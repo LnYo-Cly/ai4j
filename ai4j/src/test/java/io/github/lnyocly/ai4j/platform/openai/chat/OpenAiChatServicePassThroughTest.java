@@ -11,10 +11,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class OpenAiChatServicePassThroughTest {
@@ -113,6 +115,79 @@ public class OpenAiChatServicePassThroughTest {
         }
     }
 
+    @Test
+    public void chatCompletionShouldKeepLegacyFunctionAutoLoopWorking() throws Exception {
+        final AtomicInteger requestCount = new AtomicInteger();
+        final AtomicReference<String> secondRequestBody = new AtomicReference<String>();
+        final String firstResponseJson = "{"
+                + "\"id\":\"resp_legacy_tool_1\","
+                + "\"object\":\"chat.completion\","
+                + "\"created\":1710000000,"
+                + "\"model\":\"gpt-test\","
+                + "\"choices\":[{"
+                + "\"index\":0,"
+                + "\"message\":{"
+                + "\"role\":\"assistant\","
+                + "\"content\":\"\","
+                + "\"tool_calls\":[{"
+                + "\"id\":\"call_weather_1\","
+                + "\"type\":\"function\","
+                + "\"function\":{"
+                + "\"name\":\"weather\","
+                + "\"arguments\":\"{\\\"city\\\":\\\"Hangzhou\\\"}\""
+                + "}"
+                + "}]"
+                + "},"
+                + "\"finish_reason\":\"tool_calls\""
+                + "}],"
+                + "\"usage\":{"
+                + "\"prompt_tokens\":10,"
+                + "\"completion_tokens\":5,"
+                + "\"total_tokens\":15"
+                + "}"
+                + "}";
+        final String secondResponseJson = "{"
+                + "\"id\":\"resp_legacy_tool_2\","
+                + "\"object\":\"chat.completion\","
+                + "\"created\":1710000001,"
+                + "\"model\":\"gpt-test\","
+                + "\"choices\":[{"
+                + "\"index\":0,"
+                + "\"message\":{"
+                + "\"role\":\"assistant\","
+                + "\"content\":\"Hangzhou is sunny and 25C.\""
+                + "},"
+                + "\"finish_reason\":\"stop\""
+                + "}],"
+                + "\"usage\":{"
+                + "\"prompt_tokens\":12,"
+                + "\"completion_tokens\":7,"
+                + "\"total_tokens\":19"
+                + "}"
+                + "}";
+
+        OpenAiChatService service = new OpenAiChatService(configurationWithJsonResponses(
+                requestCount,
+                secondRequestBody,
+                firstResponseJson,
+                secondResponseJson
+        ));
+        ChatCompletion completion = ChatCompletion.builder()
+                .model("gpt-test")
+                .messages(Collections.singletonList(ChatMessage.withUser("What is the weather in Hangzhou?")))
+                .functions("weather")
+                .build();
+
+        ChatCompletionResponse response = service.chatCompletion(completion);
+
+        Assert.assertNotNull(response);
+        Assert.assertEquals(2, requestCount.get());
+        Assert.assertEquals("stop", response.getChoices().get(0).getFinishReason());
+        Assert.assertEquals("Hangzhou is sunny and 25C.", response.getChoices().get(0).getMessage().getContent().getText());
+        Assert.assertTrue(secondRequestBody.get().contains("\"tool_call_id\":\"call_weather_1\""));
+        Assert.assertTrue(secondRequestBody.get().contains("\"role\":\"tool\""));
+    }
+
     private Configuration configurationWithJsonResponse(String responseJson, AtomicInteger requestCount) {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost("https://unit.test/");
@@ -123,6 +198,41 @@ public class OpenAiChatServicePassThroughTest {
                     if (requestCount != null) {
                         requestCount.incrementAndGet();
                     }
+                    return new Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(ResponseBody.create(responseJson, MediaType.get("application/json")))
+                            .build();
+                })
+                .build();
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+        configuration.setOkHttpClient(okHttpClient);
+        return configuration;
+    }
+
+    private Configuration configurationWithJsonResponses(AtomicInteger requestCount,
+                                                         AtomicReference<String> secondRequestBody,
+                                                         String firstResponseJson,
+                                                         String secondResponseJson) {
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiHost("https://unit.test/");
+        openAiConfig.setApiKey("config-api-key");
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    int current = requestCount.incrementAndGet();
+                    if (current == 2 && secondRequestBody != null) {
+                        Buffer buffer = new Buffer();
+                        if (chain.request().body() != null) {
+                            chain.request().body().writeTo(buffer);
+                        }
+                        secondRequestBody.set(buffer.readUtf8());
+                    }
+                    String responseJson = current == 1 ? firstResponseJson : secondResponseJson;
                     return new Response.Builder()
                             .request(chain.request())
                             .protocol(Protocol.HTTP_1_1)

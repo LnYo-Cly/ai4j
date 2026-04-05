@@ -70,88 +70,93 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        chatCompletion.setStream(false);
-        chatCompletion.setStreamOptions(null);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            chatCompletion.setStream(false);
+            chatCompletion.setStreamOptions(null);
 
-        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
-            chatCompletion.setTools(tools);
-            if(tools == null){
+            if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+                List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+                chatCompletion.setTools(tools);
+                if(tools == null){
+                    chatCompletion.setParallelToolCalls(null);
+                }
+            }
+            if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+            }else{
                 chatCompletion.setParallelToolCalls(null);
             }
-        }
-        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
 
-        }else{
-            chatCompletion.setParallelToolCalls(null);
-        }
+            // 总token消耗
+            Usage allUsage = new Usage();
+            String finishReason = "first";
 
-        // 总token消耗
-        Usage allUsage = new Usage();
-        String finishReason = "first";
+            while ("first".equals(finishReason) || "tool_calls".equals(finishReason)) {
 
-        while ("first".equals(finishReason) || "tool_calls".equals(finishReason)) {
+                finishReason = null;
 
-            finishReason = null;
+                Generation gen = new Generation();
+                GenerationParam param = convertChatCompletionObject(chatCompletion);
+                param.setApiKey(apiKey);
+                GenerationResult result = gen.call(param);
 
-            Generation gen = new Generation();
-            GenerationParam param = convertChatCompletionObject(chatCompletion);
-            param.setApiKey(apiKey);
-            GenerationResult result = gen.call(param);
+                DashScopeResult dashScopeResult = new DashScopeResult();
+                dashScopeResult.setGenerationResult(result);
+                dashScopeResult.setObject("chat.completion");
+                dashScopeResult.setModel(chatCompletion.getModel());
+                dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
 
-            DashScopeResult dashScopeResult = new DashScopeResult();
-            dashScopeResult.setGenerationResult(result);
-            dashScopeResult.setObject("chat.completion");
-            dashScopeResult.setModel(chatCompletion.getModel());
-            dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
+                GenerationOutput.Choice choice = result.getOutput().getChoices().get(0);
+                finishReason = choice.getFinishReason();
 
-            GenerationOutput.Choice choice = result.getOutput().getChoices().get(0);
-            finishReason = choice.getFinishReason();
+                GenerationUsage usage = result.getUsage();
+                allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getOutputTokens());
+                allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
+                allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getInputTokens());
 
-            GenerationUsage usage = result.getUsage();
-            allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getOutputTokens());
-            allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
-            allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getInputTokens());
-
-            // 判断是否为函数调用返回
-            if ("tool_calls".equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    ChatCompletionResponse chatCompletionResponse = convertChatCompletionResponse(dashScopeResult);
-                    chatCompletionResponse.setUsage(allUsage);
-                    return chatCompletionResponse;
-                }
-                Message message = choice.getMessage();
-                List<ToolCallBase> toolCalls = message.getToolCalls();
-
-                List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-                messages.add(MessageUtil.convert(message));
-
-                // 添加 tool 消息
-                for (ToolCallBase toolCall : toolCalls) {
-                    if (toolCall.getType().equals("function")) {
-                        String functionName = ((ToolCallFunction)toolCall).getFunction().getName();
-                        String arguments = ((ToolCallFunction) toolCall).getFunction().getArguments();
-                        String functionResponse = ToolUtil.invoke(functionName, arguments);
-                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                // 判断是否为函数调用返回
+                if ("tool_calls".equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        ChatCompletionResponse chatCompletionResponse = convertChatCompletionResponse(dashScopeResult);
+                        chatCompletionResponse.setUsage(allUsage);
+                        return chatCompletionResponse;
                     }
+                    Message message = choice.getMessage();
+                    List<ToolCallBase> toolCalls = message.getToolCalls();
+
+                    List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                    messages.add(MessageUtil.convert(message));
+
+                    // 添加 tool 消息
+                    for (ToolCallBase toolCall : toolCalls) {
+                        if (toolCall.getType().equals("function")) {
+                            String functionName = ((ToolCallFunction)toolCall).getFunction().getName();
+                            String arguments = ((ToolCallFunction) toolCall).getFunction().getArguments();
+                            String functionResponse = ToolUtil.invoke(functionName, arguments);
+                            messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                        }
+                    }
+                    chatCompletion.setMessages(messages);
+
+                } else {
+                    ChatCompletionResponse chatCompletionResponse = convertChatCompletionResponse(dashScopeResult);
+                    // 其他情况直接返回
+                    chatCompletionResponse.setUsage(allUsage);
+
+                    return chatCompletionResponse;
+
                 }
-                chatCompletion.setMessages(messages);
-
-            } else {
-                ChatCompletionResponse chatCompletionResponse = convertChatCompletionResponse(dashScopeResult);
-                // 其他情况直接返回
-                chatCompletionResponse.setUsage(allUsage);
-
-                return chatCompletionResponse;
 
             }
 
+
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-
-        return null;
     }
 
     @Override
@@ -161,98 +166,103 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
-        chatCompletion.setStream(true);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        StreamOptions streamOptions = chatCompletion.getStreamOptions();
-        if (streamOptions == null) {
-            chatCompletion.setStreamOptions(new StreamOptions(true));
-        }
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            if (apiKey == null || "".equals(apiKey)) apiKey = dashScopeConfig.getApiKey();
+            chatCompletion.setStream(true);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            StreamOptions streamOptions = chatCompletion.getStreamOptions();
+            if (streamOptions == null) {
+                chatCompletion.setStreamOptions(new StreamOptions(true));
+            }
 
-        if ((chatCompletion.getFunctions() != null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices() != null && !chatCompletion.getMcpServices().isEmpty())) {
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            if ((chatCompletion.getFunctions() != null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices() != null && !chatCompletion.getMcpServices().isEmpty())) {
+                //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+                List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
 
 
-            chatCompletion.setTools(tools);
-            if (tools == null) {
+                chatCompletion.setTools(tools);
+                if (tools == null) {
+                    chatCompletion.setParallelToolCalls(null);
+                }
+            }
+
+            if (chatCompletion.getTools() != null && !chatCompletion.getTools().isEmpty()) {
+
+            } else {
                 chatCompletion.setParallelToolCalls(null);
             }
-        }
 
-        if (chatCompletion.getTools() != null && !chatCompletion.getTools().isEmpty()) {
+            String finishReason = "first";
 
-        } else {
-            chatCompletion.setParallelToolCalls(null);
-        }
+            while ("first".equals(finishReason) || "tool_calls".equals(finishReason)) {
 
-        String finishReason = "first";
+                finishReason = null;
+                eventSourceListener.setFinishReason(null);
+                Generation gen = new Generation();
+                GenerationParam param = convertChatCompletionObject(chatCompletion);
+                param.setApiKey(apiKey);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> gen.streamCall(param, new ResultCallback<GenerationResult>() {
+                            @SneakyThrows
+                            @Override
+                            public void onEvent(GenerationResult message) {
+                                log.info("{}", JSON.toJSONString(message));
+                                DashScopeResult dashScopeResult = new DashScopeResult();
+                                dashScopeResult.setGenerationResult(message);
+                                dashScopeResult.setObject("chat.completion.chunk");
+                                dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
+                                dashScopeResult.setModel(chatCompletion.getModel());
+                                ObjectMapper objectMapper = new ObjectMapper();
+                                eventSourceListener.onEvent(eventSource, message.getRequestId(), null, objectMapper.writeValueAsString(convertChatCompletionResponse(dashScopeResult)));
+                            }
 
-        while ("first".equals(finishReason) || "tool_calls".equals(finishReason)) {
+                            @Override
+                            public void onComplete() {
+                                eventSourceListener.onClosed(eventSource);
+                            }
 
-            finishReason = null;
-            eventSourceListener.setFinishReason(null);
-            Generation gen = new Generation();
-            GenerationParam param = convertChatCompletionObject(chatCompletion);
-            param.setApiKey(apiKey);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> gen.streamCall(param, new ResultCallback<GenerationResult>() {
-                        @SneakyThrows
-                        @Override
-                        public void onEvent(GenerationResult message) {
-                            log.info("{}", JSON.toJSONString(message));
-                            DashScopeResult dashScopeResult = new DashScopeResult();
-                            dashScopeResult.setGenerationResult(message);
-                            dashScopeResult.setObject("chat.completion.chunk");
-                            dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
-                            dashScopeResult.setModel(chatCompletion.getModel());
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            eventSourceListener.onEvent(eventSource, message.getRequestId(), null, objectMapper.writeValueAsString(convertChatCompletionResponse(dashScopeResult)));
-                        }
+                            @Override
+                            public void onError(Exception e) {
+                                eventSourceListener.onFailure(eventSource, e, null);
+                            }
+                        })
+                );
 
-                        @Override
-                        public void onComplete() {
-                            eventSourceListener.onClosed(eventSource);
-                        }
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
-                        @Override
-                        public void onError(Exception e) {
-                            eventSourceListener.onFailure(eventSource, e, null);
-                        }
-                    })
-            );
+                // 需要调用函数
+                if ("tool_calls".equals(finishReason) && !toolCalls.isEmpty()) {
+                    if (passThroughToolCalls) {
+                        return;
+                    }
+                    // 创建tool响应消息
+                    ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                    List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                    messages.add(responseMessage);
 
-            // 需要调用函数
-            if ("tool_calls".equals(finishReason) && !toolCalls.isEmpty()) {
-                if (passThroughToolCalls) {
-                    return;
+                    // 封装tool结果消息
+                    for (ToolCall toolCall : toolCalls) {
+                        String functionName = toolCall.getFunction().getName();
+                        String arguments = toolCall.getFunction().getArguments();
+                        String functionResponse = ToolUtil.invoke(functionName, arguments);
+
+                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                    }
+                    eventSourceListener.setToolCalls(new ArrayList<>());
+                    eventSourceListener.setToolCall(null);
+                    chatCompletion.setMessages(messages);
                 }
-                // 创建tool响应消息
-                ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-                List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-                messages.add(responseMessage);
-
-                // 封装tool结果消息
-                for (ToolCall toolCall : toolCalls) {
-                    String functionName = toolCall.getFunction().getName();
-                    String arguments = toolCall.getFunction().getArguments();
-                    String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                    messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
-                }
-                eventSourceListener.setToolCalls(new ArrayList<>());
-                eventSourceListener.setToolCall(null);
-                chatCompletion.setMessages(messages);
             }
 
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
     }
 
     @Override

@@ -51,6 +51,7 @@ const sidebars: SidebarsConfig = {
         'ai-basics/service-factory-and-registry',
         'ai-basics/unified-service-entry',
         'ai-basics/memory-and-tool-boundaries',
+        'ai-basics/skills',
         'ai-basics/platform-adaptation',
         'ai-basics/request-and-response-conventions',
         'ai-basics/provider-and-model-extension',

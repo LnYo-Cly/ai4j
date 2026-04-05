@@ -67,52 +67,57 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, false);
-        ZhipuChatCompletion zhipuChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String token = resolveToken(resolvedApiKey);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, false);
+            ZhipuChatCompletion zhipuChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String token = resolveToken(resolvedApiKey);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            ZhipuChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    token,
-                    zhipuChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
-
-            Choice choice = response.getChoices().get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    response.setObject("chat.completion");
-                    return convertChatCompletionResponse(response);
+            while (requiresFollowUp(finishReason)) {
+                ZhipuChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        token,
+                        zhipuChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
 
-                zhipuChatCompletion.setMessages(appendToolMessages(
-                        zhipuChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage().getToolCalls()
-                ));
-                continue;
+                Choice choice = response.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        response.setObject("chat.completion");
+                        return convertChatCompletionResponse(response);
+                    }
+
+                    zhipuChatCompletion.setMessages(appendToolMessages(
+                            zhipuChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                response.setObject("chat.completion");
+                restoreOriginalRequest(chatCompletion, zhipuChatCompletion);
+                return convertChatCompletionResponse(response);
             }
 
-            response.setUsage(allUsage);
-            response.setObject("chat.completion");
-            restoreOriginalRequest(chatCompletion, zhipuChatCompletion);
-            return convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -122,40 +127,45 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        ZhipuChatCompletion zhipuChatCompletion = convertChatCompletionObject(chatCompletion);
-        String token = resolveToken(resolvedApiKey);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            ZhipuChatCompletion zhipuChatCompletion = convertChatCompletionObject(chatCompletion);
+            String token = resolveToken(resolvedApiKey);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, token, zhipuChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, token, zhipuChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                zhipuChatCompletion.setMessages(appendStreamToolMessages(
+                        zhipuChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            zhipuChatCompletion.setMessages(appendStreamToolMessages(
-                    zhipuChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, zhipuChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, zhipuChatCompletion);
     }
 
     @Override

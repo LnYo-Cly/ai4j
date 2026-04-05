@@ -147,6 +147,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = hunyuanConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
         boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
@@ -315,6 +317,9 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
 
         return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override
@@ -324,6 +329,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = hunyuanConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
         chatCompletion.setStream(true);
@@ -466,6 +473,9 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         // 补全原始请求
         chatCompletion.setMessages(hunyuanChatCompletion.getMessages());
         chatCompletion.setTools(hunyuanChatCompletion.getTools());
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override

@@ -123,49 +123,54 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, false);
-        LingyiChatCompletion lingyiChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, false);
+            LingyiChatCompletion lingyiChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            LingyiChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    resolvedApiKey,
-                    lingyiChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
-
-            Choice choice = response.getChoices().get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
-                    return convertChatCompletionResponse(response);
+            while (requiresFollowUp(finishReason)) {
+                LingyiChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        lingyiChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
-                lingyiChatCompletion.setMessages(appendToolMessages(
-                        lingyiChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage().getToolCalls()
-                ));
-                continue;
+
+                Choice choice = response.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
+                        return convertChatCompletionResponse(response);
+                    }
+                    lingyiChatCompletion.setMessages(appendToolMessages(
+                            lingyiChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
+                return convertChatCompletionResponse(response);
             }
 
-            response.setUsage(allUsage);
-            restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
-            return convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -175,39 +180,44 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        LingyiChatCompletion lingyiChatCompletion = convertChatCompletionObject(chatCompletion);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            LingyiChatCompletion lingyiChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, lingyiChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, lingyiChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                lingyiChatCompletion.setMessages(appendStreamToolMessages(
+                        lingyiChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            lingyiChatCompletion.setMessages(appendStreamToolMessages(
-                    lingyiChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, lingyiChatCompletion);
     }
 
     @Override

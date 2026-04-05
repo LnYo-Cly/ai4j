@@ -3,7 +3,10 @@ package io.github.lnyocly.ai4j.coding.prompt;
 import io.github.lnyocly.ai4j.coding.skill.CodingSkillDescriptor;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandSupport;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
+import io.github.lnyocly.ai4j.skill.SkillDescriptor;
+import io.github.lnyocly.ai4j.skill.Skills;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class CodingContextPromptAssembler {
@@ -48,22 +51,30 @@ public final class CodingContextPromptAssembler {
     }
 
     private static void appendSkillGuidance(StringBuilder builder, List<CodingSkillDescriptor> availableSkills) {
-        if (availableSkills == null || availableSkills.isEmpty()) {
+        String skillPrompt = Skills.buildAvailableSkillsPrompt(toSkillDescriptors(availableSkills));
+        if (isBlank(skillPrompt)) {
             return;
         }
-        builder.append("Some reusable coding skills are installed. Do not read every skill file up front. ")
-                .append("When the task clearly matches a skill, read that SKILL.md with read_file first and then follow it.\n");
-        builder.append("<available_skills>\n");
+        builder.append(skillPrompt).append("\n");
+    }
+
+    private static List<SkillDescriptor> toSkillDescriptors(List<CodingSkillDescriptor> availableSkills) {
+        if (availableSkills == null || availableSkills.isEmpty()) {
+            return null;
+        }
+        List<SkillDescriptor> descriptors = new ArrayList<SkillDescriptor>();
         for (CodingSkillDescriptor skill : availableSkills) {
             if (skill == null) {
                 continue;
             }
-            builder.append("- name: ").append(firstNonBlank(skill.getName(), "skill")).append("\n");
-            builder.append("  path: ").append(firstNonBlank(skill.getSkillFilePath(), "(missing)")).append("\n");
-            builder.append("  description: ").append(firstNonBlank(skill.getDescription(), "No description available.")).append("\n");
+            descriptors.add(SkillDescriptor.builder()
+                    .name(skill.getName())
+                    .description(skill.getDescription())
+                    .skillFilePath(skill.getSkillFilePath())
+                    .source(skill.getSource())
+                    .build());
         }
-        builder.append("</available_skills>\n");
-        builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse read_file instead of asking for a dedicated skill tool.\n");
+        return descriptors;
     }
 
     private static String firstNonBlank(String... values) {

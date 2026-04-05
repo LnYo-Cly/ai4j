@@ -268,6 +268,8 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
@@ -413,6 +415,9 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
 
         return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override
@@ -422,6 +427,8 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
         chatCompletion.setStream(true);
@@ -536,6 +543,9 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
         // 补全原始请求
         chatCompletion.setMessages(ollamaMessagesToChatMessages(ollamaChatCompletion.getMessages()));
         chatCompletion.setTools(ollamaChatCompletion.getTools());
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override

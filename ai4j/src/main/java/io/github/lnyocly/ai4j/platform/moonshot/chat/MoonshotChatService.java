@@ -129,49 +129,54 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, false);
-        MoonshotChatCompletion moonshotChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, false);
+            MoonshotChatCompletion moonshotChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            MoonshotChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    resolvedApiKey,
-                    moonshotChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
-
-            Choice choice = response.getChoices().get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
-                    return convertChatCompletionResponse(response);
+            while (requiresFollowUp(finishReason)) {
+                MoonshotChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        moonshotChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
-                moonshotChatCompletion.setMessages(appendToolMessages(
-                        moonshotChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage().getToolCalls()
-                ));
-                continue;
+
+                Choice choice = response.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
+                        return convertChatCompletionResponse(response);
+                    }
+                    moonshotChatCompletion.setMessages(appendToolMessages(
+                            moonshotChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
+                return convertChatCompletionResponse(response);
             }
 
-            response.setUsage(allUsage);
-            restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
-            return convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -181,39 +186,44 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        MoonshotChatCompletion moonshotChatCompletion = convertChatCompletionObject(chatCompletion);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            MoonshotChatCompletion moonshotChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, moonshotChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, moonshotChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                moonshotChatCompletion.setMessages(appendStreamToolMessages(
+                        moonshotChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            moonshotChatCompletion.setMessages(appendStreamToolMessages(
-                    moonshotChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, moonshotChatCompletion);
     }
 
     @Override

@@ -131,49 +131,54 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        prepareChatCompletion(chatCompletion, false);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            prepareChatCompletion(chatCompletion, false);
 
-        DeepSeekChatCompletion deepSeekChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String finishReason = FIRST_FINISH_REASON;
+            DeepSeekChatCompletion deepSeekChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            DeepSeekChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    resolvedApiKey,
-                    deepSeekChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
-
-            Choice choice = response.getChoices().get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
-                    return convertChatCompletionResponse(response);
+            while (requiresFollowUp(finishReason)) {
+                DeepSeekChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        deepSeekChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
-                deepSeekChatCompletion.setMessages(appendToolMessages(
-                        deepSeekChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage().getToolCalls()
-                ));
-                continue;
+
+                Choice choice = response.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
+                        return convertChatCompletionResponse(response);
+                    }
+                    deepSeekChatCompletion.setMessages(appendToolMessages(
+                            deepSeekChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
+                return convertChatCompletionResponse(response);
             }
 
-            response.setUsage(allUsage);
-            restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
-            return convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -183,39 +188,44 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        DeepSeekChatCompletion deepSeekChatCompletion = convertChatCompletionObject(chatCompletion);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            DeepSeekChatCompletion deepSeekChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, deepSeekChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, deepSeekChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                deepSeekChatCompletion.setMessages(appendStreamToolMessages(
+                        deepSeekChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            deepSeekChatCompletion.setMessages(appendStreamToolMessages(
-                    deepSeekChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, deepSeekChatCompletion);
     }
 
     @Override

@@ -66,51 +66,56 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        prepareChatCompletion(chatCompletion, false);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            prepareChatCompletion(chatCompletion, false);
 
-        BaichuanChatCompletion baichuanChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String finishReason = FIRST_FINISH_REASON;
+            BaichuanChatCompletion baichuanChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            BaichuanChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    resolvedApiKey,
-                    baichuanChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
-
-            Choice choice = response.getChoices().get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    response.setObject("chat.completion");
-                    restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
-                    return this.convertChatCompletionResponse(response);
+            while (requiresFollowUp(finishReason)) {
+                BaichuanChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        baichuanChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
-                baichuanChatCompletion.setMessages(appendToolMessages(
-                        baichuanChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage().getToolCalls()
-                ));
-                continue;
+
+                Choice choice = response.getChoices().get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        response.setObject("chat.completion");
+                        restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
+                        return this.convertChatCompletionResponse(response);
+                    }
+                    baichuanChatCompletion.setMessages(appendToolMessages(
+                            baichuanChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                response.setObject("chat.completion");
+                restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
+                return this.convertChatCompletionResponse(response);
             }
 
-            response.setUsage(allUsage);
-            response.setObject("chat.completion");
-            restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
-            return this.convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -120,39 +125,44 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        BaichuanChatCompletion baichuanChatCompletion = convertChatCompletionObject(chatCompletion);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            BaichuanChatCompletion baichuanChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, baichuanChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, baichuanChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                baichuanChatCompletion.setMessages(appendStreamToolMessages(
+                        baichuanChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            baichuanChatCompletion.setMessages(appendStreamToolMessages(
-                    baichuanChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, baichuanChatCompletion);
     }
 
     @Override

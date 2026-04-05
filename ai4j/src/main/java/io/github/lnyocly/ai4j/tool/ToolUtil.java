@@ -2,7 +2,7 @@ package io.github.lnyocly.ai4j.tool;
 
 /**
  * @Author cly
- * @Description 统一工具管理器，支持传统Function工具、本地MCP工具和远程MCP服务
+ * @Description 统一工具管理器，支持 built-in tool、传统Function工具、本地MCP工具和远程MCP服务
  */
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.annotation.FunctionParameter;
@@ -46,6 +46,9 @@ public class ToolUtil {
     // === 初始化状态 ===
     private static volatile boolean initialized = false;
 
+    private static final ThreadLocal<Deque<BuiltInToolContext>> builtInToolContextStack =
+            new ThreadLocal<Deque<BuiltInToolContext>>();
+
     /**
      * 本地MCP工具信息类
      */
@@ -67,9 +70,18 @@ public class ToolUtil {
      * 统一工具调用入口（支持自动识别用户上下文）
      */
     public static String invoke(String functionName, String argument) {
+        return invoke(functionName, argument, currentBuiltInToolContext());
+    }
+
+    public static String invoke(String functionName, String argument, BuiltInToolContext builtInToolContext) {
         ensureInitialized();
 
         try {
+            String builtInResult = BuiltInToolExecutor.invoke(functionName, argument, builtInToolContext);
+            if (builtInResult != null) {
+                return builtInResult;
+            }
+
             // 1. 检查是否为用户工具调用
             String userId = extractUserIdFromFunctionName(functionName);
             
@@ -96,6 +108,38 @@ public class ToolUtil {
         } else {
             return invoke(functionName, argument);
         }
+    }
+
+    public static void pushBuiltInToolContext(BuiltInToolContext context) {
+        if (context == null) {
+            return;
+        }
+        Deque<BuiltInToolContext> stack = builtInToolContextStack.get();
+        if (stack == null) {
+            stack = new ArrayDeque<BuiltInToolContext>();
+            builtInToolContextStack.set(stack);
+        }
+        stack.push(context);
+    }
+
+    public static void popBuiltInToolContext() {
+        Deque<BuiltInToolContext> stack = builtInToolContextStack.get();
+        if (stack == null || stack.isEmpty()) {
+            builtInToolContextStack.remove();
+            return;
+        }
+        stack.pop();
+        if (stack.isEmpty()) {
+            builtInToolContextStack.remove();
+        }
+    }
+
+    private static BuiltInToolContext currentBuiltInToolContext() {
+        Deque<BuiltInToolContext> stack = builtInToolContextStack.get();
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+        return stack.peek();
     }
     
 

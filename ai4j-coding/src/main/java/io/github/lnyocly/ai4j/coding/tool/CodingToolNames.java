@@ -1,29 +1,24 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import io.github.lnyocly.ai4j.tool.BuiltInTools;
+
 import java.util.Set;
 
 public final class CodingToolNames {
 
-    public static final String BASH = "bash";
-    public static final String READ_FILE = "read_file";
-    public static final String WRITE_FILE = "write_file";
-    public static final String APPLY_PATCH = "apply_patch";
+    public static final String BASH = BuiltInTools.BASH;
+    public static final String READ_FILE = BuiltInTools.READ_FILE;
+    public static final String WRITE_FILE = BuiltInTools.WRITE_FILE;
+    public static final String APPLY_PATCH = BuiltInTools.APPLY_PATCH;
 
     private CodingToolNames() {
     }
 
     public static Set<String> allBuiltIn() {
-        return unmodifiableSet(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH);
+        return BuiltInTools.allCodingToolNames();
     }
 
     public static Set<String> readOnlyBuiltIn() {
-        return unmodifiableSet(BASH, READ_FILE);
-    }
-
-    private static Set<String> unmodifiableSet(String... values) {
-        return Collections.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(values)));
+        return BuiltInTools.readOnlyCodingToolNames();
     }
 }

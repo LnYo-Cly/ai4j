@@ -48,96 +48,101 @@ public class OpenAiChatService implements IChatService {
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion)  throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        chatCompletion.setStream(false);
-        chatCompletion.setStreamOptions(null);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
+            if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            chatCompletion.setStream(false);
+            chatCompletion.setStreamOptions(null);
 
-        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
-            chatCompletion.setTools(tools);
-            if(tools == null){
-                chatCompletion.setParallelToolCalls(null);
-            }
-        }
-        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
-
-        }else{
-            chatCompletion.setParallelToolCalls(null);
-        }
-
-
-        // 总token消耗
-        Usage allUsage = new Usage();
-        String finishReason = "first";
-
-        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
-
-            finishReason = null;
-
-            // 构造请求
-            ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(chatCompletion);
-
-            Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + apiKey)
-                    .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
-                    .post(jsonBody(requestString))
-                    .build();
-
-            Response execute = okHttpClient.newCall(request).execute();
-            if (execute.isSuccessful() && execute.body() != null){
-                ChatCompletionResponse chatCompletionResponse = mapper.readValue(execute.body().string(), ChatCompletionResponse.class);
-
-                Choice choice = chatCompletionResponse.getChoices().get(0);
-                finishReason = choice.getFinishReason();
-
-                Usage usage = chatCompletionResponse.getUsage();
-                allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
-                allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
-                allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
-
-                // 判断是否为函数调用返回
-                if("tool_calls".equals(finishReason)){
-                    if (passThroughToolCalls) {
-                        chatCompletionResponse.setUsage(allUsage);
-                        return chatCompletionResponse;
-                    }
-                    ChatMessage message = choice.getMessage();
-                    List<ToolCall> toolCalls = message.getToolCalls();
-
-                    List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-                    messages.add(message);
-
-                    // 添加 tool 消息
-                    for (ToolCall toolCall : toolCalls) {
-                        String functionName = toolCall.getFunction().getName();
-                        String arguments = toolCall.getFunction().getArguments();
-                        String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
-                    }
-                    chatCompletion.setMessages(messages);
-
-                }else{
-                    // 其他情况直接返回
-                    chatCompletionResponse.setUsage(allUsage);
-
-
-                    return chatCompletionResponse;
-
+            if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+                //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+                List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+                chatCompletion.setTools(tools);
+                if(tools == null){
+                    chatCompletion.setParallelToolCalls(null);
                 }
+            }
+            if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
 
             }else{
-                return null;
+                chatCompletion.setParallelToolCalls(null);
             }
 
+
+            // 总token消耗
+            Usage allUsage = new Usage();
+            String finishReason = "first";
+
+            while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
+
+                finishReason = null;
+
+                // 构造请求
+                ObjectMapper mapper = new ObjectMapper();
+                String requestString = mapper.writeValueAsString(chatCompletion);
+
+                Request request = new Request.Builder()
+                        .header("Authorization", "Bearer " + apiKey)
+                        .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
+                        .post(jsonBody(requestString))
+                        .build();
+
+                Response execute = okHttpClient.newCall(request).execute();
+                if (execute.isSuccessful() && execute.body() != null){
+                    ChatCompletionResponse chatCompletionResponse = mapper.readValue(execute.body().string(), ChatCompletionResponse.class);
+
+                    Choice choice = chatCompletionResponse.getChoices().get(0);
+                    finishReason = choice.getFinishReason();
+
+                    Usage usage = chatCompletionResponse.getUsage();
+                    allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
+                    allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
+                    allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
+
+                    // 判断是否为函数调用返回
+                    if("tool_calls".equals(finishReason)){
+                        if (passThroughToolCalls) {
+                            chatCompletionResponse.setUsage(allUsage);
+                            return chatCompletionResponse;
+                        }
+                        ChatMessage message = choice.getMessage();
+                        List<ToolCall> toolCalls = message.getToolCalls();
+
+                        List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                        messages.add(message);
+
+                        // 添加 tool 消息
+                        for (ToolCall toolCall : toolCalls) {
+                            String functionName = toolCall.getFunction().getName();
+                            String arguments = toolCall.getFunction().getArguments();
+                            String functionResponse = ToolUtil.invoke(functionName, arguments);
+
+                            messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                        }
+                        chatCompletion.setMessages(messages);
+
+                    }else{
+                        // 其他情况直接返回
+                        chatCompletionResponse.setUsage(allUsage);
+
+
+                        return chatCompletionResponse;
+
+                    }
+
+                }else{
+                    return null;
+                }
+
+            }
+
+
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-
-        return null;
     }
 
     @Override
@@ -147,80 +152,85 @@ public class OpenAiChatService implements IChatService {
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
-        chatCompletion.setStream(true);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
-        StreamOptions streamOptions = chatCompletion.getStreamOptions();
-        if(streamOptions == null){
-            chatCompletion.setStreamOptions(new StreamOptions(true));
-        }
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
+            if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
+            chatCompletion.setStream(true);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+            StreamOptions streamOptions = chatCompletion.getStreamOptions();
+            if(streamOptions == null){
+                chatCompletion.setStreamOptions(new StreamOptions(true));
+            }
 
-        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
+                //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
+                List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
 
 
-            chatCompletion.setTools(tools);
-            if(tools == null){
+                chatCompletion.setTools(tools);
+                if(tools == null){
+                    chatCompletion.setParallelToolCalls(null);
+                }
+            }
+
+            if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+
+            }else{
                 chatCompletion.setParallelToolCalls(null);
             }
-        }
 
-        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+            String finishReason = "first";
 
-        }else{
-            chatCompletion.setParallelToolCalls(null);
-        }
+            while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
-        String finishReason = "first";
+                finishReason = null;
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonString = mapper.writeValueAsString(chatCompletion);
 
-        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
+                Request request = new Request.Builder()
+                        .header("Authorization", "Bearer " + apiKey)
+                        .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
+                        .post(jsonBody(jsonString))
+                        .build();
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, eventSourceListener)
+                );
 
-            finishReason = null;
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonString = mapper.writeValueAsString(chatCompletion);
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
-            Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + apiKey)
-                    .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getChatCompletionUrl()))
-                    .post(jsonBody(jsonString))
-                    .build();
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, eventSourceListener)
-            );
+                // 需要调用函数
+                if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
+                    if (passThroughToolCalls) {
+                        return;
+                    }
+                    // 创建tool响应消息
+                    ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                    List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
+                    messages.add(responseMessage);
 
-            // 需要调用函数
-            if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
-                if (passThroughToolCalls) {
-                    return;
+                    // 封装tool结果消息
+                    for (ToolCall toolCall : toolCalls) {
+                        String functionName = toolCall.getFunction().getName();
+                        String arguments = toolCall.getFunction().getArguments();
+                        String functionResponse = ToolUtil.invoke(functionName, arguments);
+
+                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                    }
+                    eventSourceListener.setToolCalls(new ArrayList<>());
+                    eventSourceListener.setToolCall(null);
+                    chatCompletion.setMessages(messages);
                 }
-                // 创建tool响应消息
-                ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
 
-                List<ChatMessage> messages = new ArrayList<>(chatCompletion.getMessages());
-                messages.add(responseMessage);
-
-                // 封装tool结果消息
-                for (ToolCall toolCall : toolCalls) {
-                    String functionName = toolCall.getFunction().getName();
-                    String arguments = toolCall.getFunction().getArguments();
-                    String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                    messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
-                }
-                eventSourceListener.setToolCalls(new ArrayList<>());
-                eventSourceListener.setToolCall(null);
-                chatCompletion.setMessages(messages);
             }
 
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
     }
 
     @Override

@@ -46,11 +46,12 @@ sidebar_position: 1
 2. [服务工厂与多实例注册表](/docs/ai-basics/service-factory-and-registry)
 3. [统一服务入口与调用方式](/docs/ai-basics/unified-service-entry)
 4. [Memory 与 Tool 分层边界](/docs/ai-basics/memory-and-tool-boundaries)
-5. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
-6. [统一请求与返回读取约定](/docs/ai-basics/request-and-response-conventions)
-7. `Chat` 或 `Responses` 其中一条主线
-8. 需要图片、音频、Embedding、Rerank 时再看对应服务页
-9. 需要联网增强、RAG 或网络栈扩展时再看对应专题
+5. [Skill 主题](/docs/ai-basics/skills)
+6. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
+7. [统一请求与返回读取约定](/docs/ai-basics/request-and-response-conventions)
+8. `Chat` 或 `Responses` 其中一条主线
+9. 需要图片、音频、Embedding、Rerank 时再看对应服务页
+10. 需要联网增强、RAG 或网络栈扩展时再看对应专题
 
 如果你已经知道自己要做什么，可以直接跳到对应专题。
 
@@ -67,6 +68,7 @@ sidebar_position: 1
 - `Configuration`
 - `PlatformType`
 - Memory 与 Tool 分层边界
+- Skill 主题
 - 各服务接口如何选择
 - 各类返回结果怎么读取
 - 统一请求/返回约定
@@ -144,6 +146,7 @@ sidebar_position: 1
 先看：
 
 - [Memory 与 Tool 分层边界](/docs/ai-basics/memory-and-tool-boundaries)
+- [Skill 主题](/docs/ai-basics/skills)
 - [Chat（Tool / Function 调用）](/docs/ai-basics/chat/tool-calling)
 
 ### 4.5 想做联网增强
@@ -198,3 +201,4 @@ sidebar_position: 1
 
 - [模块架构与包地图](/docs/ai-basics/architecture-and-package-map)
 - [Memory 与 Tool 分层边界](/docs/ai-basics/memory-and-tool-boundaries)
+- [Skill 主题](/docs/ai-basics/skills)

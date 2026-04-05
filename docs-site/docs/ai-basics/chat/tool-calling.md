@@ -58,6 +58,36 @@ ChatCompletion request = ChatCompletion.builder()
 - `functions(...)` 是显式白名单。
 - 不传就不暴露（避免权限过宽）。
 
+从这次实现开始，基础 chat 层也可以直接复用内置 coding tools：
+
+- `read_file`
+- `write_file`
+- `apply_patch`
+- `bash`
+
+如果你要配合 `skill` 使用，最常见的暴露方式就是：
+
+```java
+ChatCompletion request = ChatCompletion.builder()
+        .model("MiniMax-M2.7")
+        .messages(messages)
+        .functions("read_file", "bash")
+        .build();
+```
+
+或者按需显式传 `tools(...)`：
+
+```java
+ChatCompletion request = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .messages(messages)
+        .tools(BuiltInTools.tools(
+                BuiltInTools.READ_FILE,
+                BuiltInTools.BASH
+        ))
+        .build();
+```
+
 ## 3. MCP 工具暴露
 
 除了本地 Function，还可以暴露 MCP 服务工具：
@@ -92,6 +122,15 @@ ChatCompletion request = ChatCompletion.builder()
 5. 直到 `finish_reason=stop`
 
 你不需要手写循环控制器。
+
+这也意味着基础 `AiService / IChatService` 现在已经可以直接承载 skill 使用链路：
+
+1. 先通过 `Skills.discoverDefault(...)` 发现 skill
+2. 用 `Skills.appendAvailableSkillsPrompt(...)` 把 skill 清单追加进 prompt
+3. 暴露 `read_file`，必要时再暴露 `bash / write_file / apply_patch`
+4. 让 SDK 自动处理 tool loop
+
+完整说明见：[Skill 主题](/docs/ai-basics/skills)
 
 ## 6. 并行工具调用
 

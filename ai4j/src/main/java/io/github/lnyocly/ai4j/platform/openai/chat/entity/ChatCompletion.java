@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.listener.StreamExecutionOptions;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
+import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
 import lombok.*;
 
 import java.util.*;
@@ -118,6 +119,9 @@ public class ChatCompletion {
      */
     @JsonIgnore
     private Boolean passThroughToolCalls;
+
+    @JsonIgnore
+    private BuiltInToolContext builtInToolContext;
 
     /**
      * 一个 object，指定模型必须输出的格式。

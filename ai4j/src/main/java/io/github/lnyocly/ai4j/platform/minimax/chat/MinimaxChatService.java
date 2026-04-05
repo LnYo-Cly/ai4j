@@ -125,56 +125,61 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, false);
-        MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
-        Usage allUsage = new Usage();
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, false);
+            MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            MinimaxChatCompletionResponse response = executeChatCompletionRequest(
-                    resolvedBaseUrl,
-                    resolvedApiKey,
-                    minimaxChatCompletion
-            );
-            if (response == null) {
-                break;
-            }
+            while (requiresFollowUp(finishReason)) {
+                MinimaxChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        minimaxChatCompletion
+                );
+                if (response == null) {
+                    break;
+                }
 
-            List<Choice> choices = response.getChoices();
-            if (choices == null || choices.isEmpty()) {
+                List<Choice> choices = response.getChoices();
+                if (choices == null || choices.isEmpty()) {
+                    response.setUsage(allUsage);
+                    restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+                    return convertChatCompletionResponse(response);
+                }
+
+                Choice choice = choices.get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+                        return convertChatCompletionResponse(response);
+                    }
+                    minimaxChatCompletion.setMessages(appendToolMessages(
+                            minimaxChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage() == null ? Collections.<ToolCall>emptyList() : choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
                 response.setUsage(allUsage);
                 restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
                 return convertChatCompletionResponse(response);
             }
 
-            Choice choice = choices.get(0);
-            finishReason = choice.getFinishReason();
-            mergeUsage(allUsage, response.getUsage());
-
-            if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
-                if (passThroughToolCalls) {
-                    response.setUsage(allUsage);
-                    restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
-                    return convertChatCompletionResponse(response);
-                }
-                minimaxChatCompletion.setMessages(appendToolMessages(
-                        minimaxChatCompletion.getMessages(),
-                        choice.getMessage(),
-                        choice.getMessage() == null ? Collections.<ToolCall>emptyList() : choice.getMessage().getToolCalls()
-                ));
-                continue;
-            }
-
-            response.setUsage(allUsage);
-            restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
-            return convertChatCompletionResponse(response);
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        return null;
     }
 
     @Override
@@ -184,39 +189,44 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        String resolvedBaseUrl = resolveBaseUrl(baseUrl);
-        String resolvedApiKey = resolveApiKey(apiKey);
-        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
-        prepareChatCompletion(chatCompletion, true);
-        MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
-        String finishReason = FIRST_FINISH_REASON;
+            prepareChatCompletion(chatCompletion, true);
+            MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        while (requiresFollowUp(finishReason)) {
-            Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, minimaxChatCompletion);
-            StreamExecutionSupport.execute(
-                    eventSourceListener,
-                    chatCompletion.getStreamExecution(),
-                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
-            );
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, minimaxChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-            if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
-                continue;
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
+                }
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                minimaxChatCompletion.setMessages(appendStreamToolMessages(
+                        minimaxChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
-            if (passThroughToolCalls) {
-                return;
-            }
 
-            minimaxChatCompletion.setMessages(appendStreamToolMessages(
-                    minimaxChatCompletion.getMessages(),
-                    toolCalls
-            ));
-            resetToolCallState(eventSourceListener);
+            restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
     }
 
     @Override
