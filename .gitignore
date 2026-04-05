@@ -64,6 +64,7 @@ tmp-*.log
 /ai4j-spring-boot-stater/.gitignore
 .ai4j/
 .docs/
+docs/
 APIResponse.md
 AGENT.md
 ai4j-release-package.log
