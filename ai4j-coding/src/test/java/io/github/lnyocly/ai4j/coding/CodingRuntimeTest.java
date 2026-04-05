@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.definition.BuiltInCodingAgentDefinitions;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
@@ -130,6 +131,44 @@ public class CodingRuntimeTest {
             List<CodingSessionLink> links = linkStore.listLinksByParentSessionId(session.getSessionId());
             assertEquals(1, links.size());
             assertEquals(result.getTaskId(), links.get(0).getTaskId());
+        }
+    }
+
+    @Test
+    public void shouldFallbackToAssistantMemoryWhenDelegateOutputTextIsBlank() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("runtime-sync-memory-fallback").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit runtime sync workspace fallback")
+                .build();
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("")
+                .memoryItems(Collections.<Object>singletonList(AgentInputItem.message("assistant", "delegate plan ready from memory")))
+                .build());
+        CodingTaskManager taskManager = new InMemoryCodingTaskManager();
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .codingOptions(CodingAgentOptions.builder()
+                        .autoContinueEnabled(false)
+                        .build())
+                .taskManager(taskManager)
+                .build();
+
+        try (CodingSession session = agent.newSession()) {
+            CodingDelegateResult result = session.delegate(CodingDelegateRequest.builder()
+                    .definitionName("plan")
+                    .input("Draft a short implementation plan.")
+                    .build());
+
+            assertEquals(CodingTaskStatus.COMPLETED, result.getStatus());
+            assertEquals("delegate plan ready from memory", result.getOutputText());
+            CodingTask task = taskManager.getTask(result.getTaskId());
+            assertNotNull(task);
+            assertEquals("delegate plan ready from memory", task.getOutputText());
         }
     }
 

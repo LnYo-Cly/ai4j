@@ -80,6 +80,25 @@ public class ChatModelClientTest {
     }
 
     @Test
+    public void test_stream_aggregates_minimax_style_fragmented_tool_calls() throws Exception {
+        FakeFragmentedMiniMaxChatService chatService = new FakeFragmentedMiniMaxChatService();
+        ChatModelClient client = new ChatModelClient(chatService);
+
+        AgentModelResult result = client.createStream(AgentPrompt.builder()
+                        .model("MiniMax-M2.7")
+                        .build(),
+                new AgentModelStreamListener() {
+                });
+
+        Assert.assertEquals(1, result.getToolCalls().size());
+        Assert.assertEquals("delegate_plan", result.getToolCalls().get(0).getName());
+        Assert.assertEquals(
+                "{\"task\": \"Create a short implementation plan for adding a hello endpoint demo app in this empty workspace.\"}",
+                result.getToolCalls().get(0).getArguments()
+        );
+    }
+
+    @Test
     public void test_stream_propagates_stream_execution_options() throws Exception {
         FakeChatService chatService = new FakeChatService();
         ChatModelClient client = new ChatModelClient(chatService);
@@ -314,6 +333,35 @@ public class ChatModelClientTest {
             ChatCompletionResponse response = new ChatCompletionResponse();
             response.setChoices(Collections.singletonList(choice));
             return response;
+        }
+    }
+
+    private static class FakeFragmentedMiniMaxChatService implements IChatService {
+        @Override
+        public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public ChatCompletionResponse chatCompletion(ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) {
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"id\":\"call_1\",\"type\":\"function\",\"function\":{\"name\":\"delegate_plan\",\"arguments\":\"{\\\"task\\\": \\\"Create a short implementation plan\"}}]},\"finish_reason\":null}]}");
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"function\":{\"arguments\":\" for adding a hello endpoint demo app in this empty workspace.\"}}]},\"finish_reason\":null}]}");
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"function\":{\"arguments\":\"\\\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}");
+            eventSourceListener.onEvent(null, null, null, "[DONE]");
+            eventSourceListener.onClosed(null);
+        }
+
+        @Override
+        public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) {
+            throw new UnsupportedOperationException("not used");
         }
     }
 }

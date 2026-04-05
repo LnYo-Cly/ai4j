@@ -62,3 +62,7 @@ tmp-*.log
 /ai4j/.gitignore
 /ai4j/src/main/resources/新建文本文档 (2).txt
 /ai4j-spring-boot-stater/.gitignore
+.ai4j/
+.docs/
+APIResponse.md
+AGENT.md

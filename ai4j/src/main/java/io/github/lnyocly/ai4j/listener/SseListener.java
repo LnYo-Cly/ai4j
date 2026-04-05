@@ -167,24 +167,15 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
         // tool_calls回答已经结束
         if("tool_calls".equals(finishReason)){
-            if(toolCall != null) {
-                if (firstMessageToolCall != null) {
-                    argument.append(StrUtil.emptyIfNull(safeToolArguments(firstMessageToolCall)));
-                }
-                if (toolCall.getFunction() != null) {
-                    toolCall.getFunction().setArguments(argument.toString());
-                }
-                toolCalls.add(toolCall);
-                toolCall = null;
-            } else if(!isEmpty(messageToolCalls)) {
-                toolCalls = new ArrayList<>(messageToolCalls);
-                if(showToolArgs){
-                    this.currStr = safeToolArguments(firstMessageToolCall);
-                    this.send();
-                }
+            if (toolCall != null) {
+                consumeFragmentedToolCalls(messageToolCalls);
+                finalizeCurrentToolCall();
+            } else if (shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
+                addCompleteToolCalls(messageToolCalls);
+            } else {
+                consumeFragmentedToolCalls(messageToolCalls);
+                finalizeCurrentToolCall();
             }
-            argument.setLength(0);
-            currToolName = "";
             return;
         }
         // 消息回答完毕
@@ -246,62 +237,11 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
         }else{
             // 函数调用回答
-
-            // 完整工具调用模式（一次性返回完整信息）
-            // 特征检测：content 为空字符串 + toolCalls 包含完整函数名和参数
-            // 部分平台（如 Ollama、豆包）采用此模式，一条 data 可能携带一个或多个完整的 tool call
-            if(responseMessage.getContent()!=null
-               && "".equals(responseMessage.getContent().getText())){
-                // 遍历所有完整的 tool calls
-                List<ToolCall> completeToolCalls = messageToolCalls;
-                for (ToolCall completeToolCall : completeToolCalls) {
-                    if (completeToolCall == null || completeToolCall.getFunction() == null) {
-                        continue;
-                    }
-                    currToolName = completeToolCall.getFunction().getName();
-                    toolCalls.add(completeToolCall);
-
-                    if(showToolArgs){
-                        this.currStr = StrUtil.emptyIfNull(completeToolCall.getFunction().getArguments());
-                        this.send();
-                    }
-                }
-            }else{
-                // 第一条ToolCall表示，不含参数信息
-                if(firstMessageToolCall == null) {
-                    return;
-                }
-                if(StrUtil.isNotBlank(firstMessageToolCall.getId())) {
-                    if( toolCall == null ){
-                        // 第一个函数
-                        toolCall = firstMessageToolCall;
-                        argument.append(StrUtil.emptyIfNull(safeToolArguments(firstMessageToolCall)));
-                    }else {
-                        if (toolCall.getFunction() != null) {
-                            toolCall.getFunction().setArguments(argument.toString());
-                        }
-                        argument.setLength(0);
-                        toolCalls.add(toolCall);
-                        toolCall = firstMessageToolCall;
-                    }
-
-                    currToolName = safeToolName(firstMessageToolCall);
-                    if(showToolArgs){
-                        this.send();
-                    }
-
-                }else {
-                    argument.append(StrUtil.emptyIfNull(safeToolArguments(firstMessageToolCall)));
-                    if(showToolArgs){
-                        this.currStr = safeToolArguments(firstMessageToolCall);
-                        this.send();
-                    }
-                }
+            if (shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
+                addCompleteToolCalls(messageToolCalls);
+            } else {
+                consumeFragmentedToolCalls(messageToolCalls);
             }
-
-
-
-
         }
 
 
@@ -348,6 +288,153 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
     private boolean isEmpty(List<?> values) {
         return values == null || values.isEmpty();
+    }
+
+    private boolean shouldTreatAsCompleteToolCalls(ChatMessage responseMessage, List<ToolCall> messageToolCalls) {
+        if (responseMessage == null || responseMessage.getContent() == null) {
+            return false;
+        }
+        if (!"".equals(responseMessage.getContent().getText()) || isEmpty(messageToolCalls)) {
+            return false;
+        }
+        for (ToolCall call : messageToolCalls) {
+            if (!hasToolName(call) || !hasStructuredJsonObjectArguments(call)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void addCompleteToolCalls(List<ToolCall> completeToolCalls) {
+        if (isEmpty(completeToolCalls)) {
+            return;
+        }
+        for (ToolCall completeToolCall : completeToolCalls) {
+            if (completeToolCall == null || completeToolCall.getFunction() == null || !hasToolName(completeToolCall)) {
+                continue;
+            }
+            currToolName = safeToolName(completeToolCall);
+            toolCalls.add(completeToolCall);
+            if (showToolArgs) {
+                this.currStr = StrUtil.emptyIfNull(completeToolCall.getFunction().getArguments());
+                this.send();
+            }
+        }
+        argument.setLength(0);
+        currToolName = "";
+    }
+
+    private void consumeFragmentedToolCalls(List<ToolCall> messageToolCalls) {
+        if (isEmpty(messageToolCalls)) {
+            return;
+        }
+        for (ToolCall currentToolCall : messageToolCalls) {
+            if (currentToolCall == null || currentToolCall.getFunction() == null) {
+                continue;
+            }
+            String argumentsDelta = StrUtil.emptyIfNull(safeToolArguments(currentToolCall));
+            if (hasToolIdentity(currentToolCall)) {
+                if (toolCall == null) {
+                    startToolCall(currentToolCall, argumentsDelta);
+                } else if (isSameToolCall(toolCall, currentToolCall)) {
+                    mergeToolIdentity(toolCall, currentToolCall);
+                    argument.append(argumentsDelta);
+                } else {
+                    finalizeCurrentToolCall();
+                    startToolCall(currentToolCall, argumentsDelta);
+                }
+                if (showToolArgs) {
+                    this.currStr = argumentsDelta;
+                    this.send();
+                }
+                continue;
+            }
+            if (toolCall != null) {
+                argument.append(argumentsDelta);
+                if (showToolArgs) {
+                    this.currStr = argumentsDelta;
+                    this.send();
+                }
+            }
+        }
+    }
+
+    private void startToolCall(ToolCall currentToolCall, String argumentsDelta) {
+        toolCall = currentToolCall;
+        argument.setLength(0);
+        argument.append(StrUtil.emptyIfNull(argumentsDelta));
+        currToolName = safeToolName(currentToolCall);
+    }
+
+    private void finalizeCurrentToolCall() {
+        if (toolCall == null) {
+            argument.setLength(0);
+            currToolName = "";
+            return;
+        }
+        if (toolCall.getFunction() != null) {
+            toolCall.getFunction().setArguments(argument.toString());
+        }
+        toolCalls.add(toolCall);
+        toolCall = null;
+        argument.setLength(0);
+        currToolName = "";
+    }
+
+    private void mergeToolIdentity(ToolCall target, ToolCall source) {
+        if (target == null || source == null) {
+            return;
+        }
+        if (StrUtil.isBlank(target.getId()) && StrUtil.isNotBlank(source.getId())) {
+            target.setId(source.getId());
+        }
+        if (StrUtil.isBlank(target.getType()) && StrUtil.isNotBlank(source.getType())) {
+            target.setType(source.getType());
+        }
+        if (target.getFunction() == null || source.getFunction() == null) {
+            return;
+        }
+        if (StrUtil.isBlank(target.getFunction().getName()) && StrUtil.isNotBlank(source.getFunction().getName())) {
+            target.getFunction().setName(source.getFunction().getName());
+        }
+    }
+
+    private boolean hasToolIdentity(ToolCall call) {
+        return call != null
+                && (StrUtil.isNotBlank(call.getId()) || hasToolName(call));
+    }
+
+    private boolean hasToolName(ToolCall call) {
+        return call != null
+                && call.getFunction() != null
+                && StrUtil.isNotBlank(call.getFunction().getName());
+    }
+
+    private boolean isSameToolCall(ToolCall left, ToolCall right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (StrUtil.isNotBlank(left.getId()) && StrUtil.isNotBlank(right.getId())) {
+            return left.getId().equals(right.getId());
+        }
+        if (left.getFunction() == null || right.getFunction() == null) {
+            return false;
+        }
+        return StrUtil.isNotBlank(left.getFunction().getName())
+                && left.getFunction().getName().equals(right.getFunction().getName());
+    }
+
+    private boolean hasStructuredJsonObjectArguments(ToolCall call) {
+        String arguments = safeToolArguments(call);
+        if (StringUtils.isBlank(arguments)) {
+            return false;
+        }
+        try {
+            JsonNode node = new ObjectMapper().readTree(arguments);
+            return node != null && node.isObject();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     @Override

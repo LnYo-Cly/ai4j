@@ -11,11 +11,11 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
 import io.github.lnyocly.ai4j.coding.definition.CodingSessionMode;
 import io.github.lnyocly.ai4j.coding.definition.StaticCodingAgentDefinitionRegistry;
-import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.task.CodingTask;
 import io.github.lnyocly.ai4j.coding.task.CodingTaskManager;
 import io.github.lnyocly.ai4j.coding.task.CodingTaskStatus;
 import io.github.lnyocly.ai4j.coding.task.InMemoryCodingTaskManager;
+import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import org.junit.Rule;
 import org.junit.Test;
@@ -197,6 +197,9 @@ public class CodingAgentBuilderTest {
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
                 .workspaceContext(workspaceContext)
+                .codingOptions(CodingAgentOptions.builder()
+                        .autoContinueEnabled(false)
+                        .build())
                 .taskManager(taskManager)
                 .build();
 

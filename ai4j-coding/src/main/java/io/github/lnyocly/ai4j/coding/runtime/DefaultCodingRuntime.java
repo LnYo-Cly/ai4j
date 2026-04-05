@@ -1,7 +1,11 @@
 package io.github.lnyocly.ai4j.coding.runtime;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentSession;
+import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
@@ -30,6 +34,7 @@ import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -232,10 +237,11 @@ public class DefaultCodingRuntime implements CodingRuntime {
             childSession = createChildSession(parentSession, definition, childSessionId, seedState);
             saveTask(updateTask(taskId, CodingTaskStatus.RUNNING, progress("running", "Delegated session is running.", 50, System.currentTimeMillis()), startedAt, 0L, null, null));
             CodingAgentResult result = childSession.run(composeInput(request));
+            String outputText = resolveDelegateOutputText(result, childSession);
             long endedAt = System.currentTimeMillis();
             CodingTask completed = saveTask(updateTask(taskId, CodingTaskStatus.COMPLETED,
                     progress("completed", "Delegated session completed.", 100, endedAt), startedAt, endedAt,
-                    result == null ? null : result.getOutputText(), null));
+                    outputText, null));
             return buildDelegateResult(completed, null);
         } catch (Exception ex) {
             long endedAt = System.currentTimeMillis();
@@ -405,6 +411,80 @@ public class DefaultCodingRuntime implements CodingRuntime {
             return base;
         }
         return base + "\n\n" + extra;
+    }
+
+    private String resolveDelegateOutputText(CodingAgentResult result, CodingSession childSession) {
+        String direct = trimToNull(result == null ? null : result.getOutputText());
+        if (direct != null) {
+            return direct;
+        }
+        if (childSession == null) {
+            return null;
+        }
+        try {
+            return resolveLatestAssistantMessage(childSession.exportState() == null ? null : childSession.exportState().getMemorySnapshot());
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String resolveLatestAssistantMessage(MemorySnapshot snapshot) {
+        if (snapshot == null || snapshot.getItems() == null || snapshot.getItems().isEmpty()) {
+            return null;
+        }
+        List<Object> items = snapshot.getItems();
+        for (int i = items.size() - 1; i >= 0; i--) {
+            JSONObject object = toJSONObject(items.get(i));
+            if (!"message".equals(object.getString("type")) || !"assistant".equals(object.getString("role"))) {
+                continue;
+            }
+            String text = trimToNull(extractMessageText(object.getJSONArray("content")));
+            if (text != null) {
+                return text;
+            }
+        }
+        return null;
+    }
+
+    private String extractMessageText(JSONArray content) {
+        if (content == null || content.isEmpty()) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < content.size(); i++) {
+            JSONObject part = content.getJSONObject(i);
+            if (part == null) {
+                continue;
+            }
+            String partType = part.getString("type");
+            if ("input_text".equals(partType) || "output_text".equals(partType)) {
+                String text = trimToNull(part.getString("text"));
+                if (text != null) {
+                    if (builder.length() > 0) {
+                        builder.append(' ');
+                    }
+                    builder.append(text);
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    private JSONObject toJSONObject(Object raw) {
+        if (raw instanceof JSONObject) {
+            return (JSONObject) raw;
+        }
+        if (raw instanceof Map) {
+            return new JSONObject((Map<?, ?>) raw);
+        }
+        if (raw == null) {
+            return new JSONObject();
+        }
+        try {
+            return JSON.parseObject(JSON.toJSONString(raw));
+        } catch (Exception ignored) {
+            return new JSONObject();
+        }
     }
 
     private String firstNonBlank(String... values) {
