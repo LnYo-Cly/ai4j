@@ -424,7 +424,7 @@ public final class CliMcpRuntimeManager implements AutoCloseable {
             config.setHeaders(definition.getHeaders());
 
             McpTransport transport = McpTransportFactory.createTransport(definition.getType(), config);
-            McpClient client = new McpClient("ai4j-cli-" + server.getName(), "2.0.0", transport, false);
+            McpClient client = new McpClient("ai4j-cli-" + server.getName(), "2.1.0", transport, false);
             return new McpClientSessionAdapter(client);
         }
     }
@@ -458,4 +458,5 @@ public final class CliMcpRuntimeManager implements AutoCloseable {
         }
     }
 }
+
 

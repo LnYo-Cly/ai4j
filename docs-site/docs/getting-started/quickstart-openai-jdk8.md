@@ -18,7 +18,7 @@ sidebar_position: 3
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -293,3 +293,4 @@ IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder
 3. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
 4. [Ingestion Pipeline 文档入库流水线](/docs/ai-basics/rag/ingestion-pipeline)
 5. [多模态与 Function Call 指南](/docs/getting-started/multimodal-and-function-call)
+

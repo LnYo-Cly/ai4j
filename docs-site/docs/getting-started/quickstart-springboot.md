@@ -16,7 +16,7 @@ sidebar_position: 4
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -267,3 +267,4 @@ src/main/java
 5. [Ingestion Pipeline 文档入库流水线](/docs/ai-basics/rag/ingestion-pipeline)
 6. [多模态与 Function Call 指南](/docs/getting-started/multimodal-and-function-call)
 7. [常见问题与排障手册](/docs/getting-started/troubleshooting)
+

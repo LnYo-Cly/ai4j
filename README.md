@@ -187,13 +187,13 @@ mvn -pl ai4j-cli -am -DskipTests package
 产物：
 
 ```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
 ```
 
 ### one-shot 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -203,7 +203,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ### 交互式 CLI 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -214,7 +214,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ### TUI 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -225,7 +225,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 ### ACP 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar acp `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar acp `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -927,3 +927,4 @@ public void test_chatCompletions_common_websearch_enhance() throws Exception {
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=LnYo-Cly/ai4j&type=Date" />
  </picture>
 </a>
+

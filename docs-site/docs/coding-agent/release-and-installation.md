@@ -23,13 +23,13 @@ mvn -pl ai4j-cli -am -DskipTests package
 产物位置：
 
 ```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
 ```
 
 直接运行方式：
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code --help
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code --help
 ```
 
 这条路径适合：
@@ -163,7 +163,7 @@ ai4j-cli-<version>/
 
 一个可维护的 Release 流程，建议至少包含下面几步：
 
-1. 打版本 tag，例如 `v2.0.0`
+1. 打版本 tag，例如 `v2.1.0`
 2. CI 构建 `ai4j-cli` fat jar
 3. 组装各平台压缩包
 4. 生成 `checksums.txt`
@@ -253,3 +253,4 @@ Release notes 至少应包含：
 1. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
 2. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
 3. [ACP 集成](/docs/coding-agent/acp-integration)
+

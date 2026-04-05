@@ -31,7 +31,7 @@ sidebar_position: 2
 ```powershell
 $env:ZHIPU_API_KEY="your-key"
 mvn -pl ai4j-flowgram-demo -am -DskipTests package
-java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.0.0.jar
+java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.1.0.jar
 ```
 
 默认端口和路径：
@@ -167,3 +167,4 @@ demo 自带一个 `LLM` 节点例子。关键点是：
 2. [API 与运行时](/docs/flowgram/api-and-runtime)
 3. [内置节点](/docs/flowgram/builtin-nodes)
 4. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+

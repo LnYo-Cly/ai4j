@@ -5,7 +5,7 @@
 ```powershell
 $env:ZHIPU_API_KEY="your-key"
 cmd /c "mvn -pl ai4j-flowgram-demo -am -DskipTests package"
-java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.0.0.jar
+java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.1.0.jar
 ```
 
 The demo exposes FlowGram REST APIs under `/flowgram`.
@@ -167,3 +167,4 @@ On a verified local run with `glm-4.7`, the workflow completed with:
   "result": "FlowGram spring boot"
 }
 ```
+

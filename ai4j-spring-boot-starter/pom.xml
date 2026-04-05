@@ -6,7 +6,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 
     <name>ai4j-spring-boot-starter</name>
     <description>ai4j 核心 SDK 的 Spring Boot Starter，简化自动配置与集成。 Spring Boot starter for configuring and integrating the ai4j core SDK.</description>
@@ -214,4 +214,5 @@
 
 
 </project>
+
 

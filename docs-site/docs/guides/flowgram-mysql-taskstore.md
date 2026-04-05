@@ -35,13 +35,13 @@ sidebar_position: 3
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-flowgram-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 
   <dependency>
@@ -310,3 +310,4 @@ curl "http://127.0.0.1:8080/flowgram/tasks/{taskId}/report"
 2. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 3. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)
 4. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+

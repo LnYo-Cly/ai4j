@@ -45,13 +45,13 @@ sidebar_position: 2
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-agent</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 
   <dependency>
@@ -263,3 +263,4 @@ String answer = agent.newSession()
 1. [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
 2. [最小 ReAct Agent](/docs/agent/minimal-react-agent)
 3. [自定义 Agent 开发指南](/docs/agent/custom-agent-development)
+

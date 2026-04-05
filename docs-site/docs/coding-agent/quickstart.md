@@ -17,7 +17,7 @@ mvn -pl ai4j-cli -am -DskipTests package
 产物：
 
 ```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
 ```
 
 ---
@@ -25,7 +25,7 @@ ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
 ## 2. 最小 one-shot
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -43,7 +43,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ## 3. 持续会话
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -68,7 +68,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ## 4. 启动 TUI
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -89,7 +89,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 ## 5. 启动 ACP
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar acp `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar acp `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -141,3 +141,4 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar acp `
 6. [会话、流式与进程](/docs/coding-agent/session-runtime)
 7. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
 8. [Prompt 组装与上下文来源](/docs/coding-agent/prompt-assembly)
+

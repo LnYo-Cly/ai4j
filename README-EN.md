@@ -95,13 +95,13 @@ mvn -pl ai4j-cli -am -DskipTests package
 Artifact:
 
 ```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
 ```
 
 ### one-shot example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -111,7 +111,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ### interactive CLI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -122,7 +122,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ### TUI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -586,3 +586,4 @@ Please use the GitHub Issue page to report issues. Describe as specifically as p
 
 # Support
 If you find this project helpful to you, please give it a star⭐。
+

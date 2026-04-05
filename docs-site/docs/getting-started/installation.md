@@ -50,7 +50,7 @@ sidebar_position: 1
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -60,7 +60,7 @@ sidebar_position: 1
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -70,7 +70,7 @@ sidebar_position: 1
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-flowgram-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -87,7 +87,7 @@ sidebar_position: 1
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-cli</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -103,7 +103,7 @@ sidebar_position: 1
     <dependency>
       <groupId>io.github.lnyo-cly</groupId>
       <artifactId>ai4j-bom</artifactId>
-      <version>2.0.0</version>
+      <version>2.1.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -143,7 +143,7 @@ Gradle 项目同样建议用 BOM 对齐版本：
 
 ```gradle
 dependencies {
-    implementation platform('io.github.lnyo-cly:ai4j-bom:2.0.0')
+    implementation platform('io.github.lnyo-cly:ai4j-bom:2.1.0')
     implementation 'io.github.lnyo-cly:ai4j'
 }
 ```
@@ -152,7 +152,7 @@ dependencies {
 
 ```gradle
 dependencies {
-    implementation platform('io.github.lnyo-cly:ai4j-bom:2.0.0')
+    implementation platform('io.github.lnyo-cly:ai4j-bom:2.1.0')
     implementation 'io.github.lnyo-cly:ai4j-spring-boot-starter'
 }
 ```
@@ -242,3 +242,4 @@ ai:
 6. [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
 7. [多模态与 Function Call](/docs/getting-started/multimodal-and-function-call)
 8. [常见问题与排障手册](/docs/getting-started/troubleshooting)
+

@@ -13,9 +13,9 @@ sidebar_position: 2
 当前仓库里的版本基线可以直接归纳成下面几条：
 
 - 核心 SDK 基线：JDK `1.8+`
-- 当前根工程版本：`2.0.0`
+- 当前根工程版本：`2.1.0`
 - Spring Boot starter 编译基线：`2.3.12.RELEASE`
-- 文档中的 Maven 坐标和 BOM 坐标均以 `2.0.0` 为当前版本示例
+- 文档中的 Maven 坐标和 BOM 坐标均以 `2.1.0` 为当前版本示例
 
 ---
 
@@ -26,7 +26,7 @@ sidebar_position: 2
 | `ai4j` | JDK `1.8+` | 最基础的统一 AI SDK 入口 |
 | `ai4j-spring-boot-starter` | Spring Boot `2.3.12.RELEASE` 基线 | 文档示例按 Spring Boot 2.x 写法组织 |
 | `ai4j-flowgram-spring-boot-starter` | JDK `1.8+` + Spring Boot 场景 | 适合工作流和低代码平台，不是首调入口 |
-| `ai4j-bom` | 与根工程 `2.0.0` 对齐 | 用于统一模块版本 |
+| `ai4j-bom` | 与根工程 `2.1.0` 对齐 | 用于统一模块版本 |
 
 ---
 
@@ -114,3 +114,4 @@ spring-boot.version = 2.3.12.RELEASE
 1. [安装与环境准备](/docs/getting-started/installation)
 2. [JDK8 + OpenAI 最小示例](/docs/getting-started/quickstart-openai-jdk8)
 3. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
+

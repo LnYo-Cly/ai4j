@@ -7,7 +7,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-flowgram-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 
     <name>ai4j-flowgram-spring-boot-starter</name>
     <description>ai4j FlowGram 的 Spring Boot Starter，支持流程应用与 trace 集成。 Spring Boot starter for ai4j FlowGram workflow applications and trace integration.</description>
@@ -228,3 +228,4 @@
         </profile>
     </profiles>
 </project>
+

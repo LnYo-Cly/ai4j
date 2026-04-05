@@ -247,7 +247,7 @@ public class AcpJsonRpcServer implements Closeable {
                 "protocolVersion", protocolVersion,
                 "agentInfo", newMap(
                         "name", "ai4j-cli",
-                        "version", "2.0.0"
+                        "version", "2.1.0"
                 ),
                 "agentCapabilities", newMap(
                         "loadSession", Boolean.TRUE,
@@ -2510,3 +2510,4 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 }
+

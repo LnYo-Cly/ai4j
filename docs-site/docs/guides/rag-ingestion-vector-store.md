@@ -35,7 +35,7 @@ sidebar_position: 4
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 </dependencies>
 ```
@@ -380,3 +380,4 @@ DenseRetriever
 2. [Chunking 分块策略](/docs/ai-basics/rag/chunking-strategies)
 3. [混合检索与 Rerank 实战工作流](/docs/ai-basics/rag/hybrid-retrieval-and-rerank-workflow)
 4. [引用、来源追踪与前端展示](/docs/ai-basics/rag/citations-trace-and-ui-integration)
+

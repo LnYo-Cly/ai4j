@@ -32,7 +32,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -71,7 +71,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-agent</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -85,7 +85,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-coding</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -110,7 +110,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -122,7 +122,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-flowgram-spring-boot-starter</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -136,7 +136,7 @@ sidebar_position: 2
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -156,7 +156,7 @@ sidebar_position: 2
     <dependency>
       <groupId>io.github.lnyo-cly</groupId>
       <artifactId>ai4j-bom</artifactId>
-      <version>2.0.0</version>
+      <version>2.1.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -235,3 +235,4 @@ mvn -pl ai4j -Prelease -DskipTests package
 4. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
 5. [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
 6. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
+

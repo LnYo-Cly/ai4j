@@ -39,7 +39,7 @@ sidebar_position: 1
   <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
   </dependency>
 
   <dependency>
@@ -278,3 +278,4 @@ Response response = responsesService.create(request);
 1. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
 2. [ChatMemory 会话管理模式](/docs/ai-basics/chat/chat-memory-session-management)
 3. [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
+
