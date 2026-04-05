@@ -66,3 +66,5 @@ tmp-*.log
 .docs/
 APIResponse.md
 AGENT.md
+ai4j-release-package.log
+javadoc-ai4j.log
