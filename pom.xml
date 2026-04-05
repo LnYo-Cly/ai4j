@@ -131,6 +131,9 @@
                         <configuration>
                             <publishingServerId>LnYo-Cly</publishingServerId>
                             <tokenAuth>true</tokenAuth>
+                            <excludeArtifacts>
+                                <excludeArtifact>ai4j-flowgram-demo</excludeArtifact>
+                            </excludeArtifacts>
                         </configuration>
                     </plugin>
                 </plugins>
