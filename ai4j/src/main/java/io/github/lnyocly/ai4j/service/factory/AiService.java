@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.service.factory;
 
+import io.github.lnyocly.ai4j.agentflow.AgentFlow;
+import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
@@ -54,6 +56,10 @@ public class AiService {
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    public AgentFlow getAgentFlow(AgentFlowConfig agentFlowConfig) {
+        return new AgentFlow(configuration, agentFlowConfig);
     }
 
     public IChatService getChatService(PlatformType platform) {
