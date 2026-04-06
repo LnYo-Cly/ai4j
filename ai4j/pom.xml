@@ -7,7 +7,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
     <packaging>jar</packaging>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 
     <name>ai4j</name>
     <description>ai4j 核心 Java SDK，提供统一大模型接入、Tool Call、RAG 与 MCP 能力。 Core Java SDK for unified LLM access, tool calling, RAG, and MCP integration.</description>
