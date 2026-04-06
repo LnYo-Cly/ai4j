@@ -21,7 +21,7 @@
 
 # ai4j
 一款面向 JDK8+ 的 Java AI Agentic 开发套件，既提供统一的大模型调用与常用 AI 基座能力，也提供更完善的智能体式 Agent 开发能力。  
-覆盖多平台模型接入、统一输入输出、Tool Call、MCP、RAG、统一 `VectorStore`、ChatMemory、Agent Runtime、Coding Agent、CLI / TUI / ACP、FlowGram 集成等能力，帮助 Java 应用从基础模型接入扩展到更完整的 agentic 应用开发。
+覆盖多平台模型接入、统一输入输出、Tool Call、MCP、RAG、统一 `VectorStore`、ChatMemory、Agent Runtime、Coding Agent、CLI / TUI / ACP、FlowGram 集成，以及 Dify / Coze / n8n 等已发布 AgentFlow 端点接入能力，帮助 Java 应用从基础模型接入扩展到更完整的 agentic 应用开发。
 
 当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要 Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
 
@@ -33,12 +33,6 @@
 | `Spring AI` | `Java 17+` | `Spring Boot 3.x` | Spring 原生 AI 集成、模型访问、Tool Calling、MCP、RAG |
 | `Spring AI Alibaba` | `Java 17+` | `Spring Boot 3.x` | Spring 与阿里云 AI 生态整合 |
 | `LangChain4j` | `Java 17+` | 普通 Java / Spring / Quarkus 等 | 通用 Java LLM / Agent / RAG 抽象、AI Services、多框架集成 |
-
-## 计划列表
-- [x] 对接MCP，支持STDIO,SSE,Streamable HTTP;
-- [x] 对接 flowgram.ai 工作流组件
-- [ ] 对接dify平台
-- [ ] 对接coze平台
 
 ## 支持的平台
 + OpenAi(包含与OpenAi请求格式相同/兼容的平台)
@@ -52,11 +46,6 @@
 + MiniMax
 + Baichuan
 
-## 待添加
-+ LLM(Qwen、Llama、Mistral...)
-+ MLLM(Gemini、InternVL...)
-+ t2i(stable diffusion、imagen...)
-
 ## 支持的服务
 + Chat Completions（流式与非流式）
 + Responses
@@ -66,10 +55,16 @@
 + Image
 + Realtime
 
+## 已适配的 AgentFlow / 工作流平台
++ Dify（Chat / Workflow）
++ Coze（Chat / Workflow）
++ n8n（Webhook Workflow）
+
 ## 特性
 + 支持MCP服务，内置MCP网关，支持建立动态MCP数据源。
 + 支持Spring以及普通Java应用、支持Java 8以上的应用
 + 多平台、多服务
++ 提供 `AgentFlow` 能力，可直接接入 Dify、Coze、n8n 等已发布 Agent / Workflow 端点
 + 提供 `ai4j-agent` 通用 Agent 运行时，支持 ReAct、subagent、agent teams、memory、trace 与 tool loop
 + 内置 Coding Agent CLI / TUI，支持本地代码仓交互式会话、provider profile、workspace model override、session/process 管理
 + 提供 `ai4j-coding` Coding Agent 运行时，支持 workspace tools、outer loop、checkpoint compaction、subagent 与 team 协作
@@ -187,13 +182,13 @@ mvn -pl ai4j-cli -am -DskipTests package
 产物：
 
 ```text
-ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.2.0-jar-with-dependencies.jar
 ```
 
 ### one-shot 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -203,7 +198,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
 ### 交互式 CLI 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -214,7 +209,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
 ### TUI 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -225,7 +220,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
 ### ACP 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar acp `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar acp `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
