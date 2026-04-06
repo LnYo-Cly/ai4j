@@ -49,6 +49,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <root.publish.skip>true</root.publish.skip>
     </properties>
 
@@ -132,6 +133,7 @@
                             <publishingServerId>LnYo-Cly</publishingServerId>
                             <tokenAuth>true</tokenAuth>
                             <excludeArtifacts>
+                                <excludeArtifact>ai4j-sdk</excludeArtifact>
                                 <excludeArtifact>ai4j-flowgram-demo</excludeArtifact>
                             </excludeArtifacts>
                         </configuration>
