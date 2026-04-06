@@ -98,22 +98,22 @@ AI4J now includes `ai4j-cli`, which can be used directly as a local coding agent
 + team board, team messages, and team resume for collaboration visibility
 + process management and buffered logs
 
-### Build
+### Install
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh
+```
 
 ```powershell
-mvn -pl ai4j-cli -am -DskipTests package
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex
 ```
 
-Artifact:
-
-```text
-ai4j-cli/target/ai4j-cli-2.2.0-jar-with-dependencies.jar
-```
+The installer downloads `ai4j-cli` from Maven Central and creates the `ai4j` command. Java 8+ must already be installed on the machine.
 
 ### one-shot example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -123,7 +123,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
 ### interactive CLI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -134,12 +134,40 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
 ### TUI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar tui `
+ai4j tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
   --base-url https://open.bigmodel.cn/api/coding/paas/v4 `
   --workspace .
+```
+
+### ACP example
+
+```powershell
+ai4j acp `
+  --provider openai `
+  --protocol responses `
+  --model gpt-5-mini `
+  --workspace .
+```
+
+### Build from source (optional)
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package
+```
+
+Artifact:
+
+```text
+ai4j-cli/target/ai4j-cli-<version>-jar-with-dependencies.jar
+```
+
+If you want to run the locally built artifact directly:
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-<version>-jar-with-dependencies.jar code --help
 ```
 
 ### Current protocol rules

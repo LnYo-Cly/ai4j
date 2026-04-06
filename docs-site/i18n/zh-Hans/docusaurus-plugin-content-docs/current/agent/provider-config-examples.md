@@ -12,6 +12,8 @@ sidebar_position: 5
 
 所有示例都使用占位符，不要把真实密钥提交进仓库。
 
+以下命令示例默认已经通过安装脚本拿到了 `ai4j` 命令；如果你仍想从源码运行，只需要把 `ai4j` 替换成 `java -jar .\\ai4j-cli\\target\\ai4j-cli-<version>-jar-with-dependencies.jar`。
+
 ---
 
 ## 1. Zhipu（Coding Endpoint）
@@ -19,7 +21,7 @@ sidebar_position: 5
 ### 1.1 启动命令
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+ai4j tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -52,7 +54,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 ### 2.1 one-shot 样例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -90,7 +92,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ### 3.1 启动命令
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider openai `
   --protocol chat `
   --model deepseek-chat `

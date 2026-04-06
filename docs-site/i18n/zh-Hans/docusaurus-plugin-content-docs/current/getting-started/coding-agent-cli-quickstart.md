@@ -14,26 +14,40 @@ sidebar_position: 6
 
 ---
 
-## 1. 基本启动
+## 1. 安装 `ai4j` 命令
 
-先打包：
+推荐先通过文档站托管脚本安装 `ai4j-cli`。脚本会从 Maven Central 下载 `ai4j-cli` fat jar，并在本地生成 `ai4j` 命令。
+
+### 1.1 macOS / Linux
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh
+```
+
+### 1.2 Windows PowerShell
 
 ```powershell
-mvn -pl ai4j-cli -am -DskipTests package
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex
 ```
 
-产物：
+安装完成后建议先执行：
 
-```text
-ai4j-cli/target/ai4j-cli-2.0.0-jar-with-dependencies.jar
+```bash
+ai4j --help
 ```
+
+同一套安装同时支持：
+
+- `ai4j code`
+- `ai4j tui`
+- `ai4j acp`
 
 ---
 
 ## 2. 最小 one-shot 示例
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -51,7 +65,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ## 3. 进入交互式 coding session
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -79,7 +93,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
 ## 4. 启动 TUI shell
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+ai4j tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -99,7 +113,18 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 
 ---
 
-## 5. 你接下来该看哪一页
+## 5. 从源码打包运行（可选）
+
+如果你正在开发 `ai4j-cli` 本身，或者想使用本地源码构建产物，也可以继续走 jar 启动方式：
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package
+java -jar .\ai4j-cli\target\ai4j-cli-<version>-jar-with-dependencies.jar code --help
+```
+
+---
+
+## 6. 你接下来该看哪一页
 
 如果你已经能跑起来，建议继续看：
 

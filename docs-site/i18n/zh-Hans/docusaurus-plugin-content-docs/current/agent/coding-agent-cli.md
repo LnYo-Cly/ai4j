@@ -31,20 +31,34 @@ sidebar_position: 2
 
 ## 2. 启动方式
 
-### 2.1 one-shot
+### 2.1 安装 `ai4j` 命令
+
+推荐先通过文档站托管脚本安装 `ai4j-cli`，这样后续启动 `code` / `tui` / `acp` 都直接使用 `ai4j` 命令即可。
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh
+```
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex
+```
+
+安装脚本会从 Maven Central 下载 `ai4j-cli`，默认安装到 `~/.ai4j`（Windows 为 `%USERPROFILE%\.ai4j`）。
+
+### 2.2 one-shot
+
+```powershell
+ai4j code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
   --prompt "Read README and summarize the project structure"
 ```
 
-### 2.2 interactive CLI
+### 2.3 interactive CLI
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
+ai4j code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -52,10 +66,10 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar code `
   --workspace .
 ```
 
-### 2.3 TUI shell
+### 2.4 TUI shell
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
+ai4j tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -67,6 +81,15 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.0.0-jar-with-dependencies.jar tui `
 
 - `code`：默认走普通 CLI / REPL；
 - `tui`：进入 JLine 驱动的 richer shell，支持 slash palette、按键补全和更完整的 transcript 管理。
+
+### 2.5 从源码打包运行（可选）
+
+如果你正在修改 `ai4j-cli` 源码，可以继续使用本地构建产物：
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package
+java -jar .\ai4j-cli\target\ai4j-cli-<version>-jar-with-dependencies.jar code --help
+```
 
 ---
 
