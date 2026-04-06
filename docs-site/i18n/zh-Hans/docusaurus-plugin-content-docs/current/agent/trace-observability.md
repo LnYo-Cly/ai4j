@@ -29,6 +29,8 @@ sidebar_position: 9
   - 给模型 usage 做成本估算的可选配置
 - `TraceExporter`
   - 导出接口
+- `AgentFlowTraceBridge`
+  - 监听 `AgentFlowTraceListener`，把 Dify / Coze / n8n 调用投影成统一 `TraceSpan`
 - `ConsoleTraceExporter`
   - 打印 `TRACE {...}`
 - `InMemoryTraceExporter`
@@ -131,12 +133,19 @@ Agent agent = Agents.react()
   - 一条 team task 的生命周期
 - `MEMORY`
   - 一次 memory compact / compress
+- `AGENT_FLOW`
+  - 一次外部 Dify / Coze / n8n published endpoint 调用
 - `FLOWGRAM_TASK`
   - 给 FlowGram runtime 复用的任务级 span 类型
 - `FLOWGRAM_NODE`
   - 给 FlowGram runtime 复用的节点级 span 类型
 
-其中 `FLOWGRAM_TASK / FLOWGRAM_NODE` 是 trace 核心模型里的通用类型，当前 `AgentTraceListener` 本身不直接产出它们；FlowGram 侧走的是独立 runtime event + projection 链路。
+其中：
+
+- `AGENT_FLOW`
+  - 来自 `AgentFlowTraceBridge`
+- `FLOWGRAM_TASK / FLOWGRAM_NODE`
+  - 是 trace 核心模型里的通用类型，当前 `AgentTraceListener` 本身不直接产出；FlowGram 侧走的是独立 runtime event + projection 链路
 
 ## 5. 状态模型
 
@@ -254,6 +263,32 @@ Agent agent = Agents.react()
 - 压缩发生在哪个 step
 
 如果你在 Coding Agent 里看 compact 诊断，这一层语义和 agent trace 是能对齐的。
+
+### 6.6 AgentFlow 外部端点调用
+
+`AgentFlow` 本身在 `ai4j` 层只发中立 lifecycle hook：
+
+- start
+- stream event
+- complete
+- error
+
+如果你引入 `ai4j-agent`，可以通过 `AgentFlowTraceBridge` 把它桥接成 `AGENT_FLOW` span。
+
+它覆盖的不是内部 agent runtime，而是：
+
+- Dify chat/workflow
+- Coze chat/workflow
+- n8n webhook workflow
+
+默认映射策略是：
+
+- 一次外部调用 -> 一个 `AGENT_FLOW` span
+- stream 中间增量 -> span event
+- usage -> `TraceMetrics`
+- 最终 output/status/taskId/conversationId/workflowRunId -> attributes
+
+这意味着当系统里同时存在“本地 Agent runtime”与“外部托管 Agent / Workflow 调用”时，最终仍能汇总到同一套 exporter，而不是一半有观测、一半是黑盒。
 
 ## 7. 默认记录策略
 
@@ -446,6 +481,8 @@ Agent agent = Agents.react()
 - `langfuse.trace.output`
 - `langfuse.trace.metadata`
 
+`AGENT_FLOW` span 在 Langfuse 里会按 `chain` 语义导出，因此它更适合表现“一个已编排外部流程的调用”，而不是伪装成底层 `generation`。
+
 ## 10. 脱敏与裁剪
 
 线上建议至少做两件事：
@@ -513,6 +550,7 @@ Agent trace 和 FlowGram trace 不应该混成一层。
 - `AgentTraceListenerTest`
 - `AgentTraceUsageTest`
 - `CodeActRuntimeWithTraceTest`
+- `AgentFlowTraceBridgeTest`
 
 ## 14. 继续阅读
 

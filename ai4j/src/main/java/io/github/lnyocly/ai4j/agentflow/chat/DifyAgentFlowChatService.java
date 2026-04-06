@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,10 +29,18 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
 
     @Override
     public AgentFlowChatResponse chat(AgentFlowChatRequest request) throws Exception {
-        JSONObject body = buildRequestBody(request, "blocking");
-        String url = joinedUrl(requireBaseUrl(), "v1/chat-messages");
-        JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
-        return mapBlockingResponse(response);
+        AgentFlowTraceContext traceContext = startTrace("chat", false, request);
+        try {
+            JSONObject body = buildRequestBody(request, "blocking");
+            String url = joinedUrl(requireBaseUrl(), "v1/chat-messages");
+            JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
+            AgentFlowChatResponse chatResponse = mapBlockingResponse(response);
+            traceComplete(traceContext, chatResponse);
+            return chatResponse;
+        } catch (Exception ex) {
+            traceError(traceContext, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -39,6 +48,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
         if (listener == null) {
             throw new IllegalArgumentException("listener is required");
         }
+        final AgentFlowTraceContext traceContext = startTrace("chat", true, request);
         JSONObject body = buildRequestBody(request, "streaming");
         String url = joinedUrl(requireBaseUrl(), "v1/chat-messages");
         Request httpRequest = jsonRequestBuilder(url).post(jsonBody(body)).build();
@@ -109,6 +119,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                             .raw(payload == null ? data : payload)
                             .build();
                     listener.onEvent(event);
+                    traceEvent(traceContext, event);
 
                     if ("error".equals(eventType)) {
                         throw new AgentFlowException("Dify stream error: " + (payload == null ? data : payload.toJSONString()));
@@ -124,12 +135,14 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                         closed.set(true);
                         eventSource.cancel();
                         latch.countDown();
                     }
                 } catch (Throwable ex) {
                     failure.set(ex);
+                    traceError(traceContext, ex);
                     listener.onError(ex);
                     closed.set(true);
                     eventSource.cancel();
@@ -151,6 +164,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                     }
                     latch.countDown();
                 }
@@ -166,6 +180,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                     error = new AgentFlowException("Dify stream failed");
                 }
                 failure.set(error);
+                traceError(traceContext, error);
                 listener.onError(error);
                 closed.set(true);
                 latch.countDown();

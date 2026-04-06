@@ -86,6 +86,19 @@ AgentFlow agentFlow = aiService.getAgentFlow(AgentFlowConfig.builder()
 
 `AgentFlowConfig` 描述的不是模型参数，而是第三方发布端点所需的接入上下文。
 
+它现在还额外支持：
+
+- `traceListeners`
+
+这组 listener 用来接收 `AgentFlow` 的调用生命周期事件，包括：
+
+- 调用开始
+- stream 中间事件
+- 调用完成
+- 调用失败
+
+这一层只暴露中立事件，不直接依赖 `ai4j-agent` 的 `TraceSpan` 类型。这样 `ai4j` 保持底层模块定位不变，是否桥接到 trace/exporter，由上层自行决定。
+
 ### 3.3 `AgentFlow`
 
 一个轻量 facade，只做两件事：
@@ -294,7 +307,91 @@ chat 与 workflow 都有 listener：
 
 这层设计的重点不是把所有第三方协议强行揉成完全一致，而是把公共字段稳定下来，同时保留原始细节。
 
-## 9. 这层能力和 ai4j 其他模块的关系
+## 9. Trace 与可观测
+
+`AgentFlow` 现在可以把自己的生命周期事件接到现有 trace 体系里，但接法是分层的：
+
+- `ai4j`
+  - 只产出 `AgentFlowTraceListener` 事件
+- `ai4j-agent`
+  - 提供 `AgentFlowTraceBridge`
+  - 把这些事件投影成统一的 `TraceSpan`
+
+这样做的原因是：
+
+- `ai4j` 不能反向依赖 `ai4j-agent`
+- `AgentFlow` 需要保持为独立能力层，不和 Agent runtime 强耦合
+- 但上层又希望复用既有的 `ConsoleTraceExporter / JsonlTraceExporter / OpenTelemetryTraceExporter / LangfuseTraceExporter`
+
+### 9.1 直接接入 trace exporter
+
+```java
+TraceExporter exporter = new CompositeTraceExporter(
+        new ConsoleTraceExporter(),
+        new JsonlTraceExporter("logs/agentflow-trace.jsonl")
+);
+
+AgentFlow agentFlow = aiService.getAgentFlow(AgentFlowConfig.builder()
+        .type(AgentFlowType.DIFY)
+        .baseUrl("https://api.dify.ai")
+        .apiKey("app-xxx")
+        .traceListeners(Collections.singletonList(
+                new AgentFlowTraceBridge(exporter, TraceConfig.builder().build())
+        ))
+        .build());
+```
+
+这里的桥接关系很明确：
+
+- `AgentFlowTraceListener`
+  - 是核心层 hook
+- `AgentFlowTraceBridge`
+  - 是 `ai4j-agent` 里的 trace projection
+- `TraceExporter`
+  - 决定最终打到哪里
+
+### 9.2 当前会投哪些 trace 语义
+
+桥接后会产出 `AGENT_FLOW` span，统一覆盖：
+
+- `chat()` blocking
+- `chatStream()` streaming
+- `workflow().run()` blocking
+- `workflow().runStream()` streaming
+- `n8n workflow webhook` blocking
+
+span attributes 重点包含：
+
+- provider 类型
+- operation 类型
+- streaming 标识
+- 端点配置摘要，例如 `baseUrl / webhookUrl / botId / workflowId`
+- 请求输入摘要
+- 最终 output / status / taskId / conversationId / workflowRunId`
+
+stream 场景下，增量事件不会拆成很多独立 span，而是追加为 span event：
+
+- `agentflow.chat.event`
+- `agentflow.workflow.event`
+
+这样读时间线时可以同时看到：
+
+- 一次外部托管 Agent / Workflow 调用总耗时
+- 中间收到过哪些 provider stream 事件
+- 最终 token usage 与输出结果
+
+### 9.3 和 Agent runtime trace 的关系
+
+这条链路和 `AgentTraceListener` 是并列关系，不是替代关系：
+
+- `AgentTraceListener`
+  - 处理 ai4j 自己的 agent runtime 事件
+- `AgentFlowTraceBridge`
+  - 处理外部 Dify / Coze / n8n 端点调用
+
+这样最终 exporter 看到的是统一的 `TraceSpan` 模型，但来源仍然清晰可分。
+
+## 10. 这层能力和 ai4j 其他模块的关系
 
 `AgentFlow` 与下面这些能力是并列关系，不是替代关系：
 

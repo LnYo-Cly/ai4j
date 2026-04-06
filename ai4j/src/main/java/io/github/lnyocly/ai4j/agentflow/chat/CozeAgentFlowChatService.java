@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -31,65 +32,73 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
 
     @Override
     public AgentFlowChatResponse chat(AgentFlowChatRequest request) throws Exception {
-        JSONObject createResponse = executeObject(buildCreateRequest(request, false));
-        assertCozeSuccess(createResponse);
+        AgentFlowTraceContext traceContext = startTrace("chat", false, request);
+        try {
+            JSONObject createResponse = executeObject(buildCreateRequest(request, false));
+            assertCozeSuccess(createResponse);
 
-        JSONObject createData = createResponse.getJSONObject("data");
-        String chatId = createData == null ? null : createData.getString("id");
-        String conversationId = firstNonBlank(
-                createData == null ? null : createData.getString("conversation_id"),
-                defaultConversationId(request.getConversationId())
-        );
-        if (isBlank(chatId)) {
-            throw new AgentFlowException("Coze chat id is missing");
-        }
+            JSONObject createData = createResponse.getJSONObject("data");
+            String chatId = createData == null ? null : createData.getString("id");
+            String conversationId = firstNonBlank(
+                    createData == null ? null : createData.getString("conversation_id"),
+                    defaultConversationId(request.getConversationId())
+            );
+            if (isBlank(chatId)) {
+                throw new AgentFlowException("Coze chat id is missing");
+            }
 
-        JSONObject chatData = pollChat(conversationId, chatId);
-        String status = chatData.getString("status");
-        if (!"completed".equals(status)) {
-            throw new AgentFlowException("Coze chat finished with status: " + status);
-        }
+            JSONObject chatData = pollChat(conversationId, chatId);
+            String status = chatData.getString("status");
+            if (!"completed".equals(status)) {
+                throw new AgentFlowException("Coze chat finished with status: " + status);
+            }
 
-        JSONObject messageResponse = executeObject(buildMessageListRequest(conversationId, chatId));
-        assertCozeSuccess(messageResponse);
+            JSONObject messageResponse = executeObject(buildMessageListRequest(conversationId, chatId));
+            assertCozeSuccess(messageResponse);
 
-        JSONArray messages = messageResponse.getJSONArray("data");
-        StringBuilder content = new StringBuilder();
-        String messageId = null;
-        if (messages != null) {
-            for (int i = messages.size() - 1; i >= 0; i--) {
-                JSONObject message = messages.getJSONObject(i);
-                if (message == null) {
-                    continue;
-                }
-                if (!"assistant".equals(message.getString("role"))) {
-                    continue;
-                }
-                String messageContent = message.getString("content");
-                if (!isBlank(messageContent)) {
-                    if (content.length() > 0) {
-                        content.insert(0, "\n");
+            JSONArray messages = messageResponse.getJSONArray("data");
+            StringBuilder content = new StringBuilder();
+            String messageId = null;
+            if (messages != null) {
+                for (int i = messages.size() - 1; i >= 0; i--) {
+                    JSONObject message = messages.getJSONObject(i);
+                    if (message == null) {
+                        continue;
                     }
-                    content.insert(0, messageContent);
-                    if (messageId == null) {
-                        messageId = message.getString("id");
+                    if (!"assistant".equals(message.getString("role"))) {
+                        continue;
+                    }
+                    String messageContent = message.getString("content");
+                    if (!isBlank(messageContent)) {
+                        if (content.length() > 0) {
+                            content.insert(0, "\n");
+                        }
+                        content.insert(0, messageContent);
+                        if (messageId == null) {
+                            messageId = message.getString("id");
+                        }
                     }
                 }
             }
+
+            Map<String, Object> raw = new LinkedHashMap<String, Object>();
+            raw.put("chat", chatData);
+            raw.put("messages", messages);
+
+            AgentFlowChatResponse chatResponse = AgentFlowChatResponse.builder()
+                    .content(content.toString())
+                    .conversationId(conversationId)
+                    .messageId(messageId)
+                    .taskId(chatId)
+                    .usage(usageFromCoze(chatData.getJSONObject("usage")))
+                    .raw(raw)
+                    .build();
+            traceComplete(traceContext, chatResponse);
+            return chatResponse;
+        } catch (Exception ex) {
+            traceError(traceContext, ex);
+            throw ex;
         }
-
-        Map<String, Object> raw = new LinkedHashMap<String, Object>();
-        raw.put("chat", chatData);
-        raw.put("messages", messages);
-
-        return AgentFlowChatResponse.builder()
-                .content(content.toString())
-                .conversationId(conversationId)
-                .messageId(messageId)
-                .taskId(chatId)
-                .usage(usageFromCoze(chatData.getJSONObject("usage")))
-                .raw(raw)
-                .build();
     }
 
     @Override
@@ -97,6 +106,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
         if (listener == null) {
             throw new IllegalArgumentException("listener is required");
         }
+        final AgentFlowTraceContext traceContext = startTrace("chat", true, request);
         Request httpRequest = buildCreateRequest(request, true);
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -136,6 +146,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 .raw(data)
                                 .build();
                         listener.onEvent(event);
+                        traceEvent(traceContext, event);
 
                         AgentFlowChatResponse responsePayload = AgentFlowChatResponse.builder()
                                 .content(content.toString())
@@ -147,6 +158,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 .build();
                         completionRef.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                         closed.set(true);
                         eventSource.cancel();
                         latch.countDown();
@@ -201,7 +213,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                         }
                     }
 
-                    listener.onEvent(AgentFlowChatEvent.builder()
+                    AgentFlowChatEvent event = AgentFlowChatEvent.builder()
                             .type(eventType)
                             .contentDelta(delta)
                             .conversationId(conversationIdRef.get())
@@ -209,9 +221,12 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                             .taskId(chatIdRef.get())
                             .usage(usageRef.get())
                             .raw(payload == null ? data : payload)
-                            .build());
+                            .build();
+                    listener.onEvent(event);
+                    traceEvent(traceContext, event);
                 } catch (Throwable ex) {
                     failure.set(ex);
+                    traceError(traceContext, ex);
                     listener.onError(ex);
                     closed.set(true);
                     eventSource.cancel();
@@ -233,6 +248,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 .build();
                         completionRef.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                     }
                     latch.countDown();
                 }
@@ -248,6 +264,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                     error = new AgentFlowException("Coze stream failed");
                 }
                 failure.set(error);
+                traceError(traceContext, error);
                 listener.onError(error);
                 closed.set(true);
                 latch.countDown();

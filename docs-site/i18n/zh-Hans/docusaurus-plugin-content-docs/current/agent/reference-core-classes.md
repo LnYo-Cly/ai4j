@@ -345,7 +345,7 @@ sidebar_position: 14
 - `TraceMetrics`
   - `durationMillis/promptTokens/completionTokens/totalTokens/inputCost/outputCost/totalCost/currency`
 - `TraceSpanType`
-  - `RUN/STEP/MODEL/TOOL/HANDOFF/TEAM_TASK/MEMORY/FLOWGRAM_TASK/FLOWGRAM_NODE`
+  - `RUN/STEP/MODEL/TOOL/HANDOFF/TEAM_TASK/MEMORY/AGENT_FLOW/FLOWGRAM_TASK/FLOWGRAM_NODE`
 - `TraceSpanStatus`
   - `OK/ERROR/CANCELED`
 - `TraceConfig`
@@ -366,6 +366,9 @@ sidebar_position: 14
 - `AgentTraceListener`
   - 把 `AgentEvent` 映射成 trace
   - 当前覆盖 `MODEL_REASONING`、`MODEL_RETRY`、`HANDOFF_*`、`TEAM_*`、`MEMORY_COMPRESS`
+- `AgentFlowTraceBridge`
+  - 把 `AgentFlowTraceListener` 生命周期事件映射成 `AGENT_FLOW` span
+  - 适合把 Dify / Coze / n8n 这类已发布端点调用接进同一套 exporter
 
 用途：
 

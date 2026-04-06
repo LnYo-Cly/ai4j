@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -30,10 +31,18 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
 
     @Override
     public AgentFlowWorkflowResponse run(AgentFlowWorkflowRequest request) throws Exception {
-        JSONObject body = buildRequestBody(request, "blocking");
-        String url = joinedUrl(requireBaseUrl(), "v1/workflows/run");
-        JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
-        return mapWorkflowResponse(response);
+        AgentFlowTraceContext traceContext = startTrace("workflow", false, request);
+        try {
+            JSONObject body = buildRequestBody(request, "blocking");
+            String url = joinedUrl(requireBaseUrl(), "v1/workflows/run");
+            JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
+            AgentFlowWorkflowResponse workflowResponse = mapWorkflowResponse(response);
+            traceComplete(traceContext, workflowResponse);
+            return workflowResponse;
+        } catch (Exception ex) {
+            traceError(traceContext, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -41,6 +50,7 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
         if (listener == null) {
             throw new IllegalArgumentException("listener is required");
         }
+        final AgentFlowTraceContext traceContext = startTrace("workflow", true, request);
 
         JSONObject body = buildRequestBody(request, "streaming");
         String url = joinedUrl(requireBaseUrl(), "v1/workflows/run");
@@ -111,7 +121,7 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                         throw new AgentFlowException("Dify workflow stream error: " + (payload == null ? data : payload.toJSONString()));
                     }
 
-                    listener.onEvent(AgentFlowWorkflowEvent.builder()
+                    AgentFlowWorkflowEvent event = AgentFlowWorkflowEvent.builder()
                             .type(eventType)
                             .status(status)
                             .outputText(outputText)
@@ -121,7 +131,9 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                             .done(done)
                             .usage(usageRef.get())
                             .raw(payload == null ? data : payload)
-                            .build());
+                            .build();
+                    listener.onEvent(event);
+                    traceEvent(traceContext, event);
 
                     if (done) {
                         AgentFlowWorkflowResponse responsePayload = AgentFlowWorkflowResponse.builder()
@@ -135,12 +147,14 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                         closed.set(true);
                         eventSource.cancel();
                         latch.countDown();
                     }
                 } catch (Throwable ex) {
                     failure.set(ex);
+                    traceError(traceContext, ex);
                     listener.onError(ex);
                     closed.set(true);
                     eventSource.cancel();
@@ -162,6 +176,7 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                     }
                     latch.countDown();
                 }
@@ -177,6 +192,7 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                     error = new AgentFlowException("Dify workflow stream failed");
                 }
                 failure.set(error);
+                traceError(traceContext, error);
                 listener.onError(error);
                 closed.set(true);
                 latch.countDown();

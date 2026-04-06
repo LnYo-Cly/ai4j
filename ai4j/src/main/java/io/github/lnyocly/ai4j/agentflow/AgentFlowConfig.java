@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agentflow;
 
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceListener;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -43,4 +45,7 @@ public class AgentFlowConfig {
 
     @Builder.Default
     private Map<String, String> headers = Collections.emptyMap();
+
+    @Builder.Default
+    private List<AgentFlowTraceListener> traceListeners = Collections.emptyList();
 }

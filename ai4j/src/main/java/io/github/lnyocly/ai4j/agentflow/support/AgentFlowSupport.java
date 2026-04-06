@@ -5,6 +5,8 @@ import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceListener;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -20,7 +22,9 @@ import okhttp3.sse.EventSource;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class AgentFlowSupport {
 
@@ -311,5 +315,98 @@ public abstract class AgentFlowSupport {
 
     protected boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    protected AgentFlowTraceContext startTrace(String operation, boolean streaming, Object request) {
+        AgentFlowTraceContext context = AgentFlowTraceContext.builder()
+                .executionId(UUID.randomUUID().toString())
+                .type(agentFlowConfig.getType())
+                .operation(operation)
+                .streaming(streaming)
+                .startedAt(System.currentTimeMillis())
+                .baseUrl(agentFlowConfig.getBaseUrl())
+                .webhookUrl(agentFlowConfig.getWebhookUrl())
+                .botId(agentFlowConfig.getBotId())
+                .workflowId(agentFlowConfig.getWorkflowId())
+                .appId(agentFlowConfig.getAppId())
+                .configuredUserId(agentFlowConfig.getUserId())
+                .configuredConversationId(agentFlowConfig.getConversationId())
+                .request(request)
+                .build();
+        notifyTraceStart(context);
+        return context;
+    }
+
+    protected void traceEvent(AgentFlowTraceContext context, Object event) {
+        List<AgentFlowTraceListener> listeners = traceListeners();
+        if (context == null || event == null || listeners.isEmpty()) {
+            return;
+        }
+        for (AgentFlowTraceListener listener : listeners) {
+            if (listener == null) {
+                continue;
+            }
+            try {
+                listener.onEvent(context, event);
+            } catch (Throwable ignored) {
+                // Trace listeners must never break the primary AgentFlow call path.
+            }
+        }
+    }
+
+    protected void traceComplete(AgentFlowTraceContext context, Object response) {
+        List<AgentFlowTraceListener> listeners = traceListeners();
+        if (context == null || listeners.isEmpty()) {
+            return;
+        }
+        for (AgentFlowTraceListener listener : listeners) {
+            if (listener == null) {
+                continue;
+            }
+            try {
+                listener.onComplete(context, response);
+            } catch (Throwable ignored) {
+                // Trace listeners must never break the primary AgentFlow call path.
+            }
+        }
+    }
+
+    protected void traceError(AgentFlowTraceContext context, Throwable throwable) {
+        List<AgentFlowTraceListener> listeners = traceListeners();
+        if (context == null || throwable == null || listeners.isEmpty()) {
+            return;
+        }
+        for (AgentFlowTraceListener listener : listeners) {
+            if (listener == null) {
+                continue;
+            }
+            try {
+                listener.onError(context, throwable);
+            } catch (Throwable ignored) {
+                // Trace listeners must never break the primary AgentFlow call path.
+            }
+        }
+    }
+
+    private void notifyTraceStart(AgentFlowTraceContext context) {
+        List<AgentFlowTraceListener> listeners = traceListeners();
+        if (context == null || listeners.isEmpty()) {
+            return;
+        }
+        for (AgentFlowTraceListener listener : listeners) {
+            if (listener == null) {
+                continue;
+            }
+            try {
+                listener.onStart(context);
+            } catch (Throwable ignored) {
+                // Trace listeners must never break the primary AgentFlow call path.
+            }
+        }
+    }
+
+    private List<AgentFlowTraceListener> traceListeners() {
+        List<AgentFlowTraceListener> listeners = agentFlowConfig.getTraceListeners();
+        return listeners == null ? Collections.<AgentFlowTraceListener>emptyList() : listeners;
     }
 }

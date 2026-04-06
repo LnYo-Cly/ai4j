@@ -8,6 +8,7 @@ public enum TraceSpanType {
     HANDOFF,
     TEAM_TASK,
     MEMORY,
+    AGENT_FLOW,
     FLOWGRAM_TASK,
     FLOWGRAM_NODE
 }

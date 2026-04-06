@@ -239,6 +239,7 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                     return "generation";
                 case TOOL:
                     return "tool";
+                case AGENT_FLOW:
                 case FLOWGRAM_TASK:
                     return "chain";
                 default:

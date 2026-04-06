@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
+import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -30,23 +31,31 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
 
     @Override
     public AgentFlowWorkflowResponse run(AgentFlowWorkflowRequest request) throws Exception {
-        JSONObject response = executeObject(buildRunRequest(request, false));
-        assertCozeSuccess(response);
+        AgentFlowTraceContext traceContext = startTrace("workflow", false, request);
+        try {
+            JSONObject response = executeObject(buildRunRequest(request, false));
+            assertCozeSuccess(response);
 
-        Object dataValue = response.get("data");
-        Object parsedData = parseWorkflowData(dataValue);
-        Map<String, Object> outputs = parsedData instanceof JSONObject
-                ? new LinkedHashMap<String, Object>((JSONObject) parsedData)
-                : Collections.<String, Object>emptyMap();
+            Object dataValue = response.get("data");
+            Object parsedData = parseWorkflowData(dataValue);
+            Map<String, Object> outputs = parsedData instanceof JSONObject
+                    ? new LinkedHashMap<String, Object>((JSONObject) parsedData)
+                    : Collections.<String, Object>emptyMap();
 
-        return AgentFlowWorkflowResponse.builder()
-                .status("completed")
-                .outputText(extractText(parsedData))
-                .outputs(outputs)
-                .workflowRunId(response.getString("execute_id"))
-                .usage(usageFromCoze(response.getJSONObject("usage")))
-                .raw(response)
-                .build();
+            AgentFlowWorkflowResponse workflowResponse = AgentFlowWorkflowResponse.builder()
+                    .status("completed")
+                    .outputText(extractText(parsedData))
+                    .outputs(outputs)
+                    .workflowRunId(response.getString("execute_id"))
+                    .usage(usageFromCoze(response.getJSONObject("usage")))
+                    .raw(response)
+                    .build();
+            traceComplete(traceContext, workflowResponse);
+            return workflowResponse;
+        } catch (Exception ex) {
+            traceError(traceContext, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -54,6 +63,7 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
         if (listener == null) {
             throw new IllegalArgumentException("listener is required");
         }
+        final AgentFlowTraceContext traceContext = startTrace("workflow", true, request);
 
         Request httpRequest = buildRunRequest(request, true);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -97,14 +107,16 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                         done = true;
                     }
 
-                    listener.onEvent(AgentFlowWorkflowEvent.builder()
+                    AgentFlowWorkflowEvent event = AgentFlowWorkflowEvent.builder()
                             .type(eventType)
                             .status(done ? "completed" : null)
                             .outputText(outputText)
                             .done(done)
                             .usage(usageRef.get())
                             .raw(payload == null ? data : payload)
-                            .build());
+                            .build();
+                    listener.onEvent(event);
+                    traceEvent(traceContext, event);
 
                     if (done) {
                         AgentFlowWorkflowResponse responsePayload = AgentFlowWorkflowResponse.builder()
@@ -115,12 +127,14 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                         closed.set(true);
                         eventSource.cancel();
                         latch.countDown();
                     }
                 } catch (Throwable ex) {
                     failure.set(ex);
+                    traceError(traceContext, ex);
                     listener.onError(ex);
                     closed.set(true);
                     eventSource.cancel();
@@ -140,6 +154,7 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 .build();
                         completion.set(responsePayload);
                         listener.onComplete(responsePayload);
+                        traceComplete(traceContext, responsePayload);
                     }
                     latch.countDown();
                 }
@@ -155,6 +170,7 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                     error = new AgentFlowException("Coze workflow stream failed");
                 }
                 failure.set(error);
+                traceError(traceContext, error);
                 listener.onError(error);
                 closed.set(true);
                 latch.countDown();
