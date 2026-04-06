@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j;
 
 import cn.hutool.core.bean.BeanUtil;
+import io.github.lnyocly.ai4j.agentflow.AgentFlow;
+import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -30,6 +32,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -40,6 +43,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @Author cly
@@ -67,6 +72,7 @@ import java.security.NoSuchAlgorithmException;
         DashScopeConfigProperties.class,
         DoubaoConfigProperties.class,
         JinaConfigProperties.class,
+        AgentFlowProperties.class
 })
 
 public class AiConfigAutoConfiguration {
@@ -97,10 +103,11 @@ public class AiConfigAutoConfiguration {
     private final DashScopeConfigProperties dashScopeConfigProperties;
     private final DoubaoConfigProperties doubaoConfigProperties;
     private final JinaConfigProperties jinaConfigProperties;
+    private final AgentFlowProperties agentFlowProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -120,6 +127,7 @@ public class AiConfigAutoConfiguration {
         this.dashScopeConfigProperties = dashScopeConfigProperties;
         this.doubaoConfigProperties = doubaoConfigProperties;
         this.jinaConfigProperties = jinaConfigProperties;
+        this.agentFlowProperties = agentFlowProperties;
     }
 
     @Bean
@@ -142,6 +150,30 @@ public class AiConfigAutoConfiguration {
     @Bean
     public FreeAiService getFreeAiService(AiServiceRegistry aiServiceRegistry) {
         return new FreeAiService(aiServiceRegistry);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ai.agentflow", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean
+    public AgentFlowRegistry agentFlowRegistry(AiService aiService) {
+        Map<String, AgentFlow> agentFlows = new LinkedHashMap<String, AgentFlow>();
+        if (agentFlowProperties.getProfiles() != null) {
+            for (Map.Entry<String, AgentFlowProperties.EndpointProperties> entry : agentFlowProperties.getProfiles().entrySet()) {
+                if (entry.getValue() == null) {
+                    continue;
+                }
+                agentFlows.put(entry.getKey(), aiService.getAgentFlow(toAgentFlowConfig(entry.getValue())));
+            }
+        }
+        return new AgentFlowRegistry(agentFlows, agentFlowProperties.getDefaultName());
+    }
+
+    @Bean
+    @ConditionalOnBean(AgentFlowRegistry.class)
+    @ConditionalOnProperty(prefix = "ai.agentflow", name = "default-name")
+    @ConditionalOnMissingBean(AgentFlow.class)
+    public AgentFlow agentFlow(AgentFlowRegistry agentFlowRegistry) {
+        return agentFlowRegistry.getDefault();
     }
 
     @Bean
@@ -488,6 +520,23 @@ public class AiConfigAutoConfiguration {
         jinaConfig.setRerankUrl(jinaConfigProperties.getRerankUrl());
 
         configuration.setJinaConfig(jinaConfig);
+    }
+
+    private AgentFlowConfig toAgentFlowConfig(AgentFlowProperties.EndpointProperties properties) {
+        return AgentFlowConfig.builder()
+                .type(properties.getType())
+                .baseUrl(properties.getBaseUrl())
+                .webhookUrl(properties.getWebhookUrl())
+                .apiKey(properties.getApiKey())
+                .botId(properties.getBotId())
+                .workflowId(properties.getWorkflowId())
+                .appId(properties.getAppId())
+                .userId(properties.getUserId())
+                .conversationId(properties.getConversationId())
+                .pollIntervalMillis(properties.getPollIntervalMillis())
+                .pollTimeoutMillis(properties.getPollTimeoutMillis())
+                .headers(properties.getHeaders())
+                .build();
     }
 }
 

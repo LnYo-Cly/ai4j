@@ -21,7 +21,7 @@
 
 # ai4j
 A Java AI Agentic development toolkit for JDK 8+, combining foundational AI capabilities with higher-level agent development capabilities.  
-It covers multi-provider model access, unified I/O, Tool Calling, MCP, RAG, unified `VectorStore`, ChatMemory, agent runtime, coding agent, CLI / TUI / ACP, and FlowGram integration, helping Java applications grow from basic model integration to more complete agentic application development.
+It covers multi-provider model access, unified I/O, Tool Calling, MCP, RAG, unified `VectorStore`, ChatMemory, agent runtime, coding agent, CLI / TUI / ACP, FlowGram integration, and integration with published AgentFlow endpoints such as Dify, Coze, and n8n, helping Java applications grow from basic model integration to more complete agentic application development.
 
 This repository has evolved into a multi-module SDK. In addition to the core `ai4j` module, it now provides `ai4j-agent`, `ai4j-coding`, `ai4j-cli`, `ai4j-spring-boot-starter`, `ai4j-flowgram-spring-boot-starter`, and `ai4j-bom`. If you only need the basic LLM integration layer, start with `ai4j`. If you need agent runtime, coding agent, CLI / ACP, Spring Boot, or FlowGram integration, add the corresponding modules.
 
@@ -36,22 +36,34 @@ This repository has evolved into a multi-module SDK. In addition to the core `ai
 
 ## Supported platforms
 + OpenAi
++ Jina (Rerank / Jina-compatible Rerank)
 + Zhipu
 + DeepSeek
 + Moonshot
 + Tencent Hunyuan
 + Lingyi AI
 + Ollama
-+ To be added(Qwen Llama MiniMax...)
++ MiniMax
++ Baichuan
 
 ## Supported services
 + Chat Completions（streaming and non-streaming）
++ Responses
 + Embedding
-+ To be added
++ Rerank
++ Audio
++ Image
++ Realtime
+
+## Supported AgentFlow / hosted workflow platforms
++ Dify (chat / workflow)
++ Coze (chat / workflow)
++ n8n (webhook workflow)
 
 ## Features
 + Supports Spring and ordinary Java applications. Supports applications above Java 8.
 + Multi-platform and multi-service.
++ Provides `AgentFlow` support for integrating published Agent / Workflow endpoints from Dify, Coze, and n8n.
 + Provides `ai4j-agent` as the general agent runtime, with ReAct, subagents, agent teams, memory, tracing, and tool loop support.
 + Built-in Coding Agent CLI / TUI with interactive repository sessions, provider profiles, workspace model override, and session/process management.
 + Provides `ai4j-coding` as the coding agent runtime, with workspace-aware tools, outer loop, checkpoint compaction, subagent, and team collaboration support.
@@ -95,13 +107,13 @@ mvn -pl ai4j-cli -am -DskipTests package
 Artifact:
 
 ```text
-ai4j-cli/target/ai4j-cli-2.1.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.2.0-jar-with-dependencies.jar
 ```
 
 ### one-shot example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -111,7 +123,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
 ### interactive CLI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -122,7 +134,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar code `
 ### TUI example
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.2.0-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
