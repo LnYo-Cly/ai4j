@@ -72,6 +72,55 @@ public class JdbcChatMemoryTest {
         assertEquals(1, memory.getItems().get(0).getImageUrls().size());
     }
 
+    @Test
+    public void shouldPersistSummaryEntriesAcrossInstances() {
+        String jdbcUrl = jdbcUrl("summary");
+
+        JdbcChatMemory first = new JdbcChatMemory(JdbcChatMemoryConfig.builder()
+                .jdbcUrl(jdbcUrl)
+                .sessionId("chat-4")
+                .policy(new SummaryChatMemoryPolicy(
+                        SummaryChatMemoryPolicyConfig.builder()
+                                .summarizer(new ChatMemorySummarizer() {
+                                    @Override
+                                    public String summarize(ChatMemorySummaryRequest request) {
+                                        StringBuilder summary = new StringBuilder();
+                                        if (request != null && request.getItemsToSummarize() != null) {
+                                            for (ChatMemoryItem item : request.getItemsToSummarize()) {
+                                                if (item == null) {
+                                                    continue;
+                                                }
+                                                summary.append(item.getRole()).append(":").append(item.getText()).append(";");
+                                            }
+                                        }
+                                        return summary.toString();
+                                    }
+                                })
+                                .maxRecentMessages(2)
+                                .summaryTriggerMessages(3)
+                                .summaryTextPrefix("SUMMARY:\n")
+                                .build()))
+                .build());
+
+        first.addSystem("system");
+        first.addUser("u1");
+        first.addAssistant("a1");
+        first.addUser("u2");
+        first.addAssistant("a2");
+
+        JdbcChatMemory second = new JdbcChatMemory(JdbcChatMemoryConfig.builder()
+                .jdbcUrl(jdbcUrl)
+                .sessionId("chat-4")
+                .build());
+
+        List<ChatMemoryItem> items = second.getItems();
+        assertEquals(4, items.size());
+        assertTrue(items.get(1).isSummary());
+        assertTrue(items.get(1).getText().startsWith("SUMMARY:\n"));
+        assertEquals("u2", items.get(2).getText());
+        assertEquals("a2", items.get(3).getText());
+    }
+
     private String jdbcUrl(String suffix) {
         return "jdbc:h2:mem:ai4j_chat_memory_" + suffix + ";MODE=MYSQL;DB_CLOSE_DELAY=-1";
     }
