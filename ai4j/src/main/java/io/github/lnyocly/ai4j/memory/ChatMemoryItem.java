@@ -30,6 +30,8 @@ public class ChatMemoryItem {
 
     private List<ToolCall> toolCalls;
 
+    private boolean summary;
+
     public static ChatMemoryItem system(String text) {
         return ChatMemoryItem.builder()
                 .role(ChatMessageType.SYSTEM.getRole())
@@ -87,6 +89,14 @@ public class ChatMemoryItem {
                 .role(ChatMessageType.TOOL.getRole())
                 .toolCallId(toolCallId)
                 .text(output)
+                .build();
+    }
+
+    public static ChatMemoryItem summary(String role, String text) {
+        return ChatMemoryItem.builder()
+                .role(role)
+                .text(text)
+                .summary(true)
                 .build();
     }
 
@@ -172,6 +182,7 @@ public class ChatMemoryItem {
                 .imageUrls(copyStrings(source.getImageUrls()))
                 .toolCallId(source.getToolCallId())
                 .toolCalls(copyToolCalls(source.getToolCalls()))
+                .summary(source.isSummary())
                 .build();
     }
 

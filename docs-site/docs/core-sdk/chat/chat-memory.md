@@ -35,6 +35,10 @@ sidebar_position: 15
 - `ChatMemoryPolicy`
 - `UnboundedChatMemoryPolicy`
 - `MessageWindowChatMemoryPolicy`
+- `SummaryChatMemoryPolicy`
+- `SummaryChatMemoryPolicyConfig`
+- `ChatMemorySummarizer`
+- `ChatMemorySummaryRequest`
 
 默认行为：
 
@@ -49,6 +53,16 @@ sidebar_position: 15
 如果你需要控制上下文增长，可以显式切换到：
 
 - `MessageWindowChatMemoryPolicy`
+- `SummaryChatMemoryPolicy`
+
+`SummaryChatMemoryPolicy` 适合更长的多轮对话：
+
+- 永远保留非摘要 `system` 消息
+- 保留最近 N 条原始消息
+- 把更早的消息压缩成一条 summary 消息
+- summary 本身下一次还可以继续被合并压缩
+
+它本身不绑定具体模型，而是通过 `ChatMemorySummarizer` 回调接入你的总结实现。
 
 ## 2. 什么时候该用它
 
@@ -65,6 +79,60 @@ sidebar_position: 15
 - 你要 Coding Agent / ReAct / CodeAct 级别的状态管理
 
 如果你只是想给基础 `Chat / Responses` 会话加持久化，而不是升级到完整 Agent runtime，现在可以继续用 `ChatMemory`，只需要把实现从 `InMemoryChatMemory` 换成 `JdbcChatMemory`。
+
+## 3. 摘要压缩策略
+
+如果你不想只做“窗口裁剪”，而是希望把更早的上下文合并成一段摘要，可以这样配置：
+
+```java
+ChatMemorySummarizer summarizer = new ChatMemorySummarizer() {
+    @Override
+    public String summarize(ChatMemorySummaryRequest request) {
+        try {
+            List<ChatMessage> summaryMessages = new ArrayList<ChatMessage>();
+            summaryMessages.add(ChatMessage.withSystem(
+                    "Summarize the earlier conversation for future turns. Keep user requirements, decisions, constraints, unresolved questions, and factual context."
+            ));
+            if (request.getExistingSummary() != null && !request.getExistingSummary().trim().isEmpty()) {
+                summaryMessages.add(ChatMessage.withAssistant(
+                        "Existing summary:\n" + request.getExistingSummary()
+                ));
+            }
+            if (request.getItemsToSummarize() != null) {
+                for (ChatMemoryItem item : request.getItemsToSummarize()) {
+                    summaryMessages.add(item.toChatMessage());
+                }
+            }
+            ChatCompletionResponse response = chatService.chatCompletion(
+                    ChatCompletion.builder()
+                            .model("gpt-4o-mini")
+                            .messages(summaryMessages)
+                            .build()
+            );
+            return response.getChoices().get(0).getMessage().getContent().getText();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to summarize chat memory", e);
+        }
+    }
+};
+
+ChatMemory memory = new InMemoryChatMemory(
+        new SummaryChatMemoryPolicy(
+                SummaryChatMemoryPolicyConfig.builder()
+                        .summarizer(summarizer)
+                        .maxRecentMessages(12)
+                        .summaryTriggerMessages(20)
+                        .summaryRole("assistant")
+                        .summaryTextPrefix("Summary of earlier conversation:\n")
+                        .build()
+        )
+);
+```
+
+这套策略和 `MessageWindowChatMemoryPolicy` 的区别是：
+
+- `MessageWindow`：直接丢掉更早消息
+- `SummaryChatMemoryPolicy`：把更早消息压缩成一条可继续滚动更新的 summary
 
 ## 3. Chat 链路最小示例
 

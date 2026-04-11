@@ -89,4 +89,45 @@ public class InMemoryChatMemoryTest {
         assertNotNull(item.getImageUrls());
         assertEquals(1, item.getImageUrls().size());
     }
+
+    @Test
+    public void shouldCompactMessagesWithSummaryPolicy() {
+        InMemoryChatMemory memory = new InMemoryChatMemory(
+                new SummaryChatMemoryPolicy(
+                        SummaryChatMemoryPolicyConfig.builder()
+                                .summarizer(new ChatMemorySummarizer() {
+                                    @Override
+                                    public String summarize(ChatMemorySummaryRequest request) {
+                                        StringBuilder summary = new StringBuilder();
+                                        if (request != null && request.getItemsToSummarize() != null) {
+                                            for (ChatMemoryItem item : request.getItemsToSummarize()) {
+                                                if (item == null) {
+                                                    continue;
+                                                }
+                                                summary.append(item.getRole()).append(":").append(item.getText()).append(";");
+                                            }
+                                        }
+                                        return summary.toString();
+                                    }
+                                })
+                                .maxRecentMessages(2)
+                                .summaryTriggerMessages(3)
+                                .summaryTextPrefix("SUMMARY:\n")
+                                .build()
+                )
+        );
+
+        memory.addSystem("system");
+        memory.addUser("u1");
+        memory.addAssistant("a1");
+        memory.addUser("u2");
+        memory.addAssistant("a2");
+
+        List<ChatMemoryItem> items = memory.getItems();
+        assertEquals(4, items.size());
+        assertTrue(items.get(1).isSummary());
+        assertTrue(items.get(1).getText().startsWith("SUMMARY:\n"));
+        assertEquals("u2", items.get(2).getText());
+        assertEquals("a2", items.get(3).getText());
+    }
 }
