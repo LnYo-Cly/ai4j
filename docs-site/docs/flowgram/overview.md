@@ -4,179 +4,164 @@ sidebar_position: 1
 
 # Agentic 工作流平台总览
 
-这一专题的准确定位是：基于字节开源 `Flowgram` 工作流开发框架，AI4J 在其之上实现了 runtime、节点执行和后端 API，从而可以开发自己的 `AI Agent` 工作流平台。
+先把一个关键边界说清楚：
 
-所以这里讲的重点不是 “Flowgram 这个名字本身”，而是 AI4J 如何把它落成一套可运行、可扩展、可对接前端画布的 `Agentic 工作流平台`。
+- `Flowgram.ai` 本身是字节开源的前端工作流/画布库
+- AI4J 在这之上补的是后端 runtime、Spring Boot starter、节点执行、任务 API，以及前后端对接示例
 
----
+所以这一章讲的重点不是“Flowgram.ai 前端库本身怎么用”，而是 AI4J 如何围绕它落成一套可运行的工作流平台后端。
 
-## 1. 它解决什么问题
+这条线对应的是：
 
-Flowgram 主要面向三类场景：
+- `ai4j-flowgram-spring-boot-starter/`
+- `ai4j-flowgram-demo/`
+- `ai4j-flowgram-webapp-demo/`
 
-- 想把 AI 能力封装成可视化节点流；
-- 想把普通 HTTP / Tool / LLM / 变量处理组合成可配置流程；
-- 想给前端流程编辑器提供一个稳定的后端执行 API。
+如果 `Agent` 解决的是“通用智能体 runtime 怎么做”，那么 `Flowgram` 这条线解决的就是“如何围绕 `Flowgram.ai` 这样的前端画布，把这些能力落成一套可视化节点工作流平台后端和执行层”。
 
-如果你的需求是：
+## 1. 三分钟理解 Flowgram
 
-- 直接写 Java 代码做智能体推理与工具循环，请看 `Agent`；
-- 直接在本地仓库里当 coding assistant 使用，请看 `Coding Agent`；
-- 想做“可视化节点编排 + 后端执行服务”，再来看 `Flowgram`。
+先记住这四句话：
 
----
+- `Flowgram` 不是 `Agent` 的另一层 UI 壳
+- 它面向的是节点图、任务 API、平台后端和前端画布对接
+- 它的强项是稳定流程、明确 schema 和平台化运行
+- 它更适合“节点流先于自由推理”的场景
 
-## 2. 组成结构
+一句话定义可以概括成：
 
-当前 Flowgram 的可用形态主要有两层：
+> 一个基于 Flowgram 工作流框架、由 AI4J 提供后端 runtime、节点执行和平台接入能力的可视化工作流平台后端。
 
-### 2.1 Starter
+## 2. 它到底解决什么问题
+
+当你的任务更适合画成流程图，而不是完全交给模型自由决定下一步时，你需要解决的问题通常是：
+
+- 节点输入输出 schema 怎么稳定
+- 后端怎么运行、校验、取消、查询任务
+- LLM、HTTP、Tool、变量处理怎么组合成可执行节点流
+- 前端画布和后端 runtime 怎么对接
+- 节点如何扩展，平台如何演进
+
+`Flowgram` 这一层就是把这些问题平台化。
+
+## 3. 模块路径和组成方式
+
+这一层最好按“前端是谁、后端是谁”来理解：
+
+- 上游前端库：`Flowgram.ai`
+- AI4J 后端接入层：`ai4j-flowgram-spring-boot-starter`
+- AI4J 后端示例：`ai4j-flowgram-demo`
+- AI4J 前后端联调示例：`ai4j-flowgram-webapp-demo`
+
+### 3.1 Starter
 
 `ai4j-flowgram-spring-boot-starter`
 
 它负责：
 
-- 自动装配运行时；
-- 自动注册内置节点执行器；
-- 暴露 `/flowgram` REST API；
-- 接管任务运行、校验、结果查询与取消。
+- 自动装配 runtime
+- 注册内置节点执行器
+- 暴露 `/flowgram` 任务 API
+- 组织节点执行与任务生命周期
 
-### 2.2 Demo
+### 3.2 Demo
 
 `ai4j-flowgram-demo`
 
-它提供：
+它负责：
 
-- 一个可直接启动的 Spring Boot 示例；
-- 一个默认的 `LLM` 节点调用入口；
-- 一个模拟接口 `GET /flowgram/demo/mock/weather`，便于测试 `HTTP` 节点。
+- 给你一个可直接启动的 Spring Boot 示例
+- 提供最短的后端验证路径
+- 用真实 REST API 帮你跑通 `run -> result -> report`
 
-### 2.3 WebApp Demo
+### 3.3 WebApp Demo
 
 `ai4j-flowgram-webapp-demo`
 
-它提供：
+它负责：
 
-- 基于字节 Flowgram 编辑器的前端画布示例；
-- `runtime plugin` 的 server 模式接法；
-- 前端 schema 到后端 runtime schema 的适配示例。
+- 演示如何把 `Flowgram.ai` 前端画布接到 AI4J 后端 runtime
+- 演示前端画布如何接后端 runtime
+- 演示 schema 适配和前后端联动
 
----
+## 4. 这条线的核心能力是什么
 
-## 3. 当前 API 入口
+从当前 starter、demo 和相关文档看，这条线的重点能力包括：
 
-后端默认通过下面这些接口暴露任务能力：
+- 任务 API：`run / validate / result / report / cancel`
+- 节点执行：`Start`、`End`、`LLM`、`Variable`、`Code`、`Tool`、`HTTP`、`KnowledgeRetrieve`
+- 前后端对接：画布 schema 到 runtime schema 的适配
+- 平台后端：Spring Boot 方式接入、配置、任务存储、扩展节点
 
-- `POST /flowgram/tasks/run`
-- `POST /flowgram/tasks/validate`
-- `GET /flowgram/tasks/{taskId}/report`
-- `GET /flowgram/tasks/{taskId}/result`
-- `POST /flowgram/tasks/{taskId}/cancel`
+## 5. 和相邻模块的边界
 
-默认根路径来自：
+### 5.1 和 Agent 的边界
 
-- `ai4j.flowgram.api.base-path`
+`Agent` 更适合：
 
-默认值是：
+- 多轮推理
+- 工具决策由模型主导
+- runtime 自由度更高
 
-- `/flowgram`
+`Flowgram` 更适合：
 
----
+- 节点图天然更稳定的流程
+- 输入输出 schema 需要更明确
+- 平台需要对前端画布暴露可执行后端 API
 
-## 4. 当前内置能力
+一个偏 runtime，自由度更高；一个偏平台流程，结构更强。
 
-从自动装配代码和测试可以确认，当前 Flowgram 已覆盖这些节点能力：
+同时还要再加一条边界：
 
-- `Start`
-- `End`
-- `LLM`
-- `Variable`
-- `Code`
-- `Tool`
-- `HTTP`
-- `KnowledgeRetrieve`
+- `Flowgram.ai` 负责前端画布与交互
+- AI4J `Flowgram` 这条线负责后端 runtime、任务 API 和节点执行
 
-其中：
+### 5.2 和 Coding Agent 的边界
 
-- `HTTP`、`Variable`、`Code`、`Tool`、`KnowledgeRetrieve` 由 starter 自动注册执行器；
-- `LLM` 节点由 `FlowGramLlmNodeRunner` 负责；
-- `Start / End` 属于工作流运行时的结构节点；
-- 你也可以自己注册新的节点类型。
+`Coding Agent` 面向本地代码仓任务交付。
 
----
+`Flowgram` 面向可视化流程平台后端。
 
-## 5. 配置入口
+如果你在做“让 agent 帮我读改本地仓库”，先看 `Coding Agent`。如果你在做“给前端流程编辑器一个稳定的执行引擎”，先看 `Flowgram`。
 
-Flowgram 的关键配置集中在：
+### 5.3 和 Core SDK 的边界
 
-```yaml
-ai4j:
-  flowgram:
-    enabled: true
-    default-service-id: glm-coding
-    stream-progress: false
-    report-node-details: true
-    task-retention: 1h
-    api:
-      base-path: /flowgram
-    task-store:
-      type: memory
-    cors:
-      allowed-origins: []
-    auth:
-      enabled: false
-      header-name: Authorization
-```
+`Core SDK` 提供模型、工具、`MCP`、RAG 等基座能力。
 
-当前默认任务存储是内存版。
+`Flowgram` 则把其中一部分能力按“节点运行 + 后端任务 API”的方式重新组织出来。
 
----
+## 6. 什么时候该选 Flowgram
 
-## 6. 你应该从哪一页开始
+更适合：
 
-建议先按场景判断自己属于哪条线，再进入具体 API 或扩展页。
+- 任务天然是流程图
+- 前端会画节点
+- 希望后端以任务 API 形式稳定执行
+- 想把 LLM、HTTP、Tool、知识检索统一装进一个平台后端
 
-优先看：
+不一定优先：
 
-1. [Flowgram 使用路径与场景选择](/docs/flowgram/use-cases-and-paths)
-2. [快速开始](/docs/flowgram/quickstart)
-3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-4. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
+- 完全自由推理的智能体任务
+- 本地代码仓交互式编码场景
+- 只想直接写少量 Java 调模型代码
 
-### 6.1 普通使用者
+## 7. 推荐阅读顺序
 
-先看：
+1. [Why Flowgram](/docs/flowgram/why-flowgram)
+2. [Flowgram Quickstart](/docs/flowgram/quickstart)
+3. [Architecture](/docs/flowgram/architecture)
+4. [Runtime](/docs/flowgram/runtime)
+5. [Frontend / Backend Integration](/docs/flowgram/frontend-backend-integration)
+6. [Built-in Nodes](/docs/flowgram/built-in-nodes)
+7. [Custom Nodes](/docs/flowgram/custom-nodes)
+8. [Agent / Tool / Knowledge Integration](/docs/flowgram/agent-tool-knowledge-integration)
 
-1. [Flowgram 使用路径与场景选择](/docs/flowgram/use-cases-and-paths)
-2. [快速开始](/docs/flowgram/quickstart)
-3. [API 与运行时](/docs/flowgram/api-and-runtime)
-4. [内置节点](/docs/flowgram/builtin-nodes)
-5. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-6. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
+## 8. 当前边界
 
-### 6.2 扩展开发者
+现阶段这条线仍有这些边界：
 
-再看：
+- 任务存储默认是内存实现
+- `Agent` 与 `MCP` 目前没有单独的内置专属节点体系
+- 更复杂的权限模型、持久化任务存储、远程节点市场仍不属于当前 MVP 范围
 
-1. [Flowgram 使用路径与场景选择](/docs/flowgram/use-cases-and-paths)
-2. [自定义节点扩展](/docs/flowgram/custom-node-extension)
-3. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
-4. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)
-5. [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)
-6. `Agent` 章节里的 `Workflow` / `Trace`
-
----
-
-## 7. 当前边界
-
-现阶段 Flowgram 文档和实现仍有这些边界：
-
-- 任务存储默认是内存实现；
-- `Agent` 与 `MCP` 当前没有内置专属节点；
-- 更复杂的权限模型、持久化任务存储、远程节点市场还不在当前 MVP 范围内。
-
----
-
-## 8. 下一步
-
-建议先从 [Flowgram 使用路径与场景选择](/docs/flowgram/use-cases-and-paths) 开始。
+如果你是第一次进入这一章，下一页建议先看 [Why Flowgram](/docs/flowgram/why-flowgram)。

@@ -253,8 +253,8 @@ CodingAgent agent = CodingAgents.builder()
 
 ## 8. 相关专题
 
-1. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
-2. [MCP 对接](/docs/coding-agent/mcp-integration)
-3. [Skills 使用与组织](/docs/coding-agent/skills)
+1. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
+2. [Skills 使用与组织](/docs/coding-agent/skills)
+3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 4. [命令参考](/docs/coding-agent/command-reference)
 5. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)

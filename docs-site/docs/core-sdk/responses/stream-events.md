@@ -112,3 +112,8 @@ IDE 控制台可能缓冲，建议：
 
 如果你要自动处理“函数参数流 -> 执行工具 -> 再请求模型”，
 建议在 Agent runtime 层实现，不要把流程硬写在 Controller。
+
+## 10. 继续阅读
+
+- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)

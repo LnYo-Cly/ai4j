@@ -10,11 +10,11 @@ sidebar_position: 99
 
 1. [Coding Agent 总览](/docs/coding-agent/overview)
 2. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-3. [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
+3. [Install and Release](/docs/coding-agent/install-and-release)
 4. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-5. [ACP 集成](/docs/coding-agent/acp-integration)
+5. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 
 如果你当前停留在“第一次接 AI4J SDK”的阶段，建议回到：
 
-- [安装与环境准备](/docs/getting-started/installation)
-- [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
+- [Start Here / Why AI4J](/docs/start-here/why-ai4j)
+- [Core SDK / Overview](/docs/core-sdk/overview)

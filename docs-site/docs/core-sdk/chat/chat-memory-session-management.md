@@ -256,3 +256,8 @@ public class ChatSessionService {
   - 负责“这个会话对象归谁管、何时创建、何时删除、如何并发控制”
 
 这样边界最清晰，也最符合 `ai4j` 当前轻量设计。
+
+## 10. 继续阅读
+
+- [Memory / Overview](/docs/core-sdk/memory/overview)
+- [Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)

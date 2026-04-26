@@ -127,18 +127,18 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar acp `
 - `/processes`
 - `/process`
 
-完整流程见 [ACP 集成](/docs/coding-agent/acp-integration)。
+完整说明见 [MCP and ACP](/docs/coding-agent/mcp-and-acp)。
 
 ---
 
 ## 6. 推荐下一步
 
 1. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-2. [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
+2. [发布、安装与 GitHub Release](/docs/coding-agent/install-and-release)
 3. [配置体系](/docs/coding-agent/configuration)
-4. [Runtime 架构](/docs/coding-agent/runtime-architecture)
-5. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
-6. [会话、流式与进程](/docs/coding-agent/session-runtime)
-7. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
-8. [Prompt 组装与上下文来源](/docs/coding-agent/prompt-assembly)
+4. [Architecture](/docs/coding-agent/architecture)
+5. [会话、流式与进程](/docs/coding-agent/session-runtime)
+6. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
+7. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
+8. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 

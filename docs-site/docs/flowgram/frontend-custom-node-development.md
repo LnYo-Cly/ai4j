@@ -283,7 +283,7 @@ const BACKEND_TYPE_MAP: Record<string, string> = {
 
 ## 9. 继续阅读
 
-1. [自定义节点扩展](/docs/flowgram/custom-node-extension)
-2. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)
+1. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
+2. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 

@@ -245,6 +245,6 @@ Dense / BM25 召回
 ## 8. 推荐阅读
 
 1. [统一服务入口与调用方式](/docs/ai-basics/unified-service-entry)
-2. [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
+2. [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
 3. [RAG 与知识库增强总览](/docs/ai-basics/rag/overview)
 4. [RAG 架构、分块与索引设计](/docs/ai-basics/rag/architecture-and-indexing)

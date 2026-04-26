@@ -6,6 +6,8 @@ sidebar_position: 5
 
 本页收敛 AI4J 接入阶段最常见问题，并给出“先看哪里、再做什么”的排障顺序。
 
+> Legacy note: 本页保留为历史排障长文。当前正式排障入口优先从 [Start Here / Troubleshooting](/docs/start-here/troubleshooting) 和 [FAQ](/docs/faq) 进入。
+
 ## 1. 测试被跳过（Skipped）
 
 现象：`Tests run: x, Skipped: x`。

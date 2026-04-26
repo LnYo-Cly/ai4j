@@ -81,4 +81,7 @@ Embedding 产物通常直接写入 Pinecone：
 - `List<List<Float>>` -> 向量
 - 原文 -> metadata.content
 
-完整流程见：`Pinecone 向量检索工作流`。
+按当前 canonical 主线继续看：
+
+- [Search & RAG / Embedding](/docs/core-sdk/search-and-rag/embedding)
+- [Search & RAG / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)

@@ -78,3 +78,8 @@ sidebar_position: 22
 - 在 AgentBuilder 或业务配置中按场景注入
 
 这样切换成本最低，也最符合开源组件可扩展性。
+
+## 8. 继续阅读
+
+- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
+- [Model Access / Request and Response Conventions](/docs/core-sdk/model-access/request-and-response-conventions)

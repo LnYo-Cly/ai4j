@@ -257,7 +257,7 @@ starter 默认会注册：
 
 ## 8. 继续阅读
 
-1. [内置节点](/docs/flowgram/builtin-nodes)
-2. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+1. [内置节点](/docs/flowgram/built-in-nodes)
+2. [自定义节点扩展](/docs/flowgram/custom-nodes)
 3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 4. [引用、Trace 与前端展示](/docs/ai-basics/rag/citations-trace-and-ui-integration)

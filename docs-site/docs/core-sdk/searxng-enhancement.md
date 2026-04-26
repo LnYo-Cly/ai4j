@@ -108,3 +108,8 @@ ChatCompletionResponse response = webEnhanced.chatCompletion(request);
 - 搜索引擎过多
 - SearXNG 服务器性能不足
 - 网络链路不稳定
+
+## 10. 继续阅读
+
+- [Search & RAG / Overview](/docs/core-sdk/search-and-rag/overview)
+- [Search & RAG / Online Search](/docs/core-sdk/search-and-rag/online-search)

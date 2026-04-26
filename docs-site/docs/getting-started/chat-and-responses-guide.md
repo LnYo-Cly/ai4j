@@ -6,6 +6,8 @@ sidebar_position: 6
 
 这页聚焦你最常用的两条链路：`Chat Completions` 和 `Responses API`，包含同步、流式、工具调用差异和选型建议。
 
+> Legacy note: 本页保留为历史长文对比。当前正式入口优先从 [Core SDK / Model Access](/docs/core-sdk/model-access/overview)、[Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses) 与 [Streaming](/docs/core-sdk/model-access/streaming) 进入。
+
 ## 1. 一句话区别
 
 - `Chat`：消息对话模型，兼容性和迁移性强。

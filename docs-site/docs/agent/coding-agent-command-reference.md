@@ -10,4 +10,4 @@ sidebar_position: 4
 
 1. [命令参考](/docs/coding-agent/command-reference)
 2. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-3. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
+3. [配置体系](/docs/coding-agent/configuration)

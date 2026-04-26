@@ -320,7 +320,7 @@ private AiServiceRegistry aiServiceRegistry;
 
 更详细的自动配置过程，继续看：
 
-- [Spring Boot 自动配置与属性绑定](/docs/getting-started/spring-boot-autoconfiguration)
+- [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
 
 ---
 
@@ -375,5 +375,5 @@ IRerankService localRerank = aiServiceRegistry.getRerankService("local-ollama");
 
 1. [统一服务入口与调用方式](/docs/ai-basics/unified-service-entry)
 2. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
-3. [Spring Boot 自动配置与属性绑定](/docs/getting-started/spring-boot-autoconfiguration)
+3. [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
 4. [模块架构与包地图](/docs/ai-basics/architecture-and-package-map)

@@ -252,5 +252,5 @@ Release notes 至少应包含：
 
 1. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
 2. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-3. [ACP 集成](/docs/coding-agent/acp-integration)
+3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 

@@ -72,7 +72,7 @@ ChatCompletion request = ChatCompletion.builder()
         .build();
 ```
 
-完整用法见：[ChatMemory：基础会话上下文](/docs/core-sdk/chat/chat-memory)。
+如果你要按当前 canonical 主线补齐上下文能力，建议连读：[Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)。
 
 ## 5. 平台覆写参数
 
@@ -109,4 +109,7 @@ ChatCompletion request = ChatCompletion.builder()
 - 需要实时展示中间结果
 - 需要尽早判断是否中止请求
 
-下一页：`Chat（流式）`。
+继续阅读建议：
+
+- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+- [Tools / Function Calling](/docs/core-sdk/tools/function-calling)

@@ -8,7 +8,7 @@ sidebar_position: 5
 
 如果你还没定义前端节点，先看：
 
-- [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
+- [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
 
 ---
 
@@ -229,5 +229,5 @@ public FlowGramNodeExecutor transformNodeExecutor() {
 继续看：
 
 1. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-2. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)
+2. [Flowgram Runtime](/docs/flowgram/runtime)
 2. [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)

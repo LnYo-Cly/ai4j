@@ -225,7 +225,7 @@ UI-only 节点当前包括：
 
 ## 10. 推荐阅读
 
-1. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
-2. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+1. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
+2. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
 

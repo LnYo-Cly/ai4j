@@ -6,6 +6,8 @@ sidebar_position: 4
 
 历史主题来源：在 Ollama 运行 DeepSeek / Qwen / Llama。
 
+> Legacy note: 本页保留为历史本地模型长文。当前正式入口优先从 [Quickstart for Java](/docs/start-here/quickstart-java)、[Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat) 和 [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry) 进入。
+
 本页重点：**业务代码尽量不改，只替换模型后端**。
 
 ## 1. 基础配置

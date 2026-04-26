@@ -6,6 +6,8 @@ sidebar_position: 4
 
 本页关注的是：如何把 AI4J 直接接进一个 Spring Boot 项目，并完成第一个同步请求、第一个流式接口，以及第一条知识库入库链路。
 
+> Legacy note: 本页保留为历史长文示例。当前 Spring Boot 正式入口优先从 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) 和 [Spring Boot / Overview](/docs/spring-boot/overview) 进入。
+
 ---
 
 ## 1. 依赖
@@ -56,7 +58,7 @@ public IChatService chatService() {
 
 如果你已经能注入成功，但想继续搞清楚 starter 到底自动创建了哪些 Bean、属性怎么绑定、为什么 `AiServiceRegistry` 和 `FreeAiService` 也会同时出现，继续看：
 
-- [Spring Boot 自动配置与属性绑定](/docs/getting-started/spring-boot-autoconfiguration)
+- [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
 
 ---
 
@@ -167,7 +169,7 @@ public String weather() throws Exception {
 }
 ```
 
-更完整的 Function / MCP 工具接法，建议继续看 [多模态与 Function Call 指南](/docs/getting-started/multimodal-and-function-call)。
+更完整的 Function / MCP 工具接法，建议继续看 [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling) 和 [Core SDK / MCP / Overview](/docs/core-sdk/mcp/overview)。
 
 ---
 
@@ -260,11 +262,10 @@ src/main/java
 
 ## 11. 下一步阅读
 
-1. [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
-2. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
-3. [ChatMemory 与 sessionId 管理](/docs/ai-basics/chat/chat-memory-session-management)
-4. [Spring Boot 自动配置与属性绑定](/docs/getting-started/spring-boot-autoconfiguration)
-5. [Ingestion Pipeline 文档入库流水线](/docs/ai-basics/rag/ingestion-pipeline)
-6. [多模态与 Function Call 指南](/docs/getting-started/multimodal-and-function-call)
-7. [常见问题与排障手册](/docs/getting-started/troubleshooting)
+1. [Spring Boot / Quickstart](/docs/spring-boot/quickstart)
+2. [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
+3. [Core SDK / Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)
+4. [Core SDK / Search & RAG / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
+5. [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling)
+6. [Start Here / Troubleshooting](/docs/start-here/troubleshooting)
 

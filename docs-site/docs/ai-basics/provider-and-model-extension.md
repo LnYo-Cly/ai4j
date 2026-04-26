@@ -239,4 +239,4 @@ aiService.getChatService(PlatformType.Xxx)
 
 1. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
 2. [统一请求与返回读取约定](/docs/ai-basics/request-and-response-conventions)
-3. [Getting Started / 平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
+3. [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)

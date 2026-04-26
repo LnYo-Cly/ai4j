@@ -6,6 +6,8 @@ sidebar_position: 5
 
 这页不再讲“怎么跑第一个请求”，而是讲 `ai4j-spring-boot-starter` 在 Spring Boot 里到底做了什么。
 
+> Legacy note: 本页保留为历史源码导读。当前 Spring Boot 正式主线优先从 [Spring Boot / Overview](/docs/spring-boot/overview)、[Auto Configuration](/docs/spring-boot/auto-configuration) 和 [Configuration Reference](/docs/spring-boot/configuration-reference) 进入。
+
 如果你已经能用 `@Autowired AiService` 发请求，但想继续搞清楚：
 
 - 哪些 Bean 是 starter 自动创建的
@@ -392,7 +394,7 @@ ai:
 
 ## 13. 推荐继续阅读
 
-1. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
-2. [服务工厂与多实例注册表](/docs/ai-basics/service-factory-and-registry)
-3. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
-4. [VectorStore 与存储后端](/docs/ai-basics/rag/vector-store-and-storage-backends)
+1. [Spring Boot / Quickstart](/docs/spring-boot/quickstart)
+2. [Spring Boot / Bean Extension](/docs/spring-boot/bean-extension)
+3. [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+4. [Core SDK / Search & RAG / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)

@@ -3,6 +3,7 @@
 
 # Production
 /build
+/build-*
 /build-next
 
 # Generated files

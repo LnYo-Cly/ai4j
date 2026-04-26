@@ -6,7 +6,9 @@ sidebar_position: 3
 
 本页目标：在一个普通 JDK8 项目里，完整打通同步、流式、Tool 和基础知识库入库四条最小链路。
 
-如果你是 Spring Boot 项目，不要从这一页开始，直接看 [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)。
+> Legacy note: 本页保留为历史长文示例。当前非 Spring 正式入口优先从 [Quickstart for Java](/docs/start-here/quickstart-java) 进入。
+
+如果你是 Spring Boot 项目，不要从这一页开始，直接看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)。
 
 ---
 
@@ -288,9 +290,9 @@ IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder
 
 ## 10. 下一步阅读
 
-1. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
-2. [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
-3. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
-4. [Ingestion Pipeline 文档入库流水线](/docs/ai-basics/rag/ingestion-pipeline)
-5. [多模态与 Function Call 指南](/docs/getting-started/multimodal-and-function-call)
+1. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+2. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
+3. [Core SDK / Memory](/docs/core-sdk/memory/overview)
+4. [Core SDK / Search & RAG / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
+5. [Core SDK / Model Access / Multimodal](/docs/core-sdk/model-access/multimodal)
 

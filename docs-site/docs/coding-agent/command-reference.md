@@ -777,5 +777,5 @@ sidebar_position: 11
 
 1. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
 2. [配置体系](/docs/coding-agent/configuration)
-3. [MCP 对接](/docs/coding-agent/mcp-integration)
+3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 4. [会话、流式与进程](/docs/coding-agent/session-runtime)

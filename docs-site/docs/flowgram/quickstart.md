@@ -163,8 +163,8 @@ demo 自带一个 `LLM` 节点例子。关键点是：
 
 下一步建议看：
 
-1. [Agentic 工作流平台使用路径与场景选择](/docs/flowgram/use-cases-and-paths)
-2. [API 与运行时](/docs/flowgram/api-and-runtime)
-3. [内置节点](/docs/flowgram/builtin-nodes)
-4. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+1. [Architecture](/docs/flowgram/architecture)
+2. [Runtime](/docs/flowgram/runtime)
+3. [Built-in Nodes](/docs/flowgram/built-in-nodes)
+4. [Custom Nodes](/docs/flowgram/custom-nodes)
 

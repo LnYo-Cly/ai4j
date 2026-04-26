@@ -25,7 +25,7 @@ sidebar_position: 3
 
 先看：
 
-- [最小 ReAct Agent](/docs/agent/minimal-react-agent)
+- [最小 ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 
 这是默认起点，也是绝大多数业务 Agent 的第一步。
 
@@ -39,8 +39,8 @@ sidebar_position: 3
 
 先看：
 
-- [CodeAct Runtime](/docs/agent/codeact-runtime)
-- [CodeAct 自定义沙箱](/docs/agent/codeact-custom-sandbox)
+- [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
+- [CodeAct 自定义沙箱](/docs/agent/runtimes/codeact-custom-sandbox)
 
 ### 路径 3：有显式分支、循环、条件路由
 
@@ -52,7 +52,7 @@ sidebar_position: 3
 
 先看：
 
-- [Workflow StateGraph](/docs/agent/workflow-stategraph)
+- [Workflow StateGraph](/docs/agent/orchestration/stategraph)
 - [天气工作流 Cookbook](/docs/agent/weather-workflow-cookbook)
 
 ### 路径 4：主 Agent 委派子 Agent
@@ -65,7 +65,7 @@ sidebar_position: 3
 
 先看：
 
-- [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
+- [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff)
 
 ### 路径 5：多角色协作
 
@@ -77,8 +77,8 @@ sidebar_position: 3
 
 先看：
 
-- [Agent Teams](/docs/agent/agent-teams)
-- [Agent Teams API Reference](/docs/agent/agent-teams-api-reference)
+- [Agent Teams](/docs/agent/orchestration/teams)
+- [Agent Teams API Reference](/docs/agent/orchestration/teams-api-reference)
 
 ---
 
@@ -196,9 +196,9 @@ AI4J Agent 更适合按下面顺序演进：
 
 ## 9. 推荐阅读
 
-1. [最小 ReAct Agent](/docs/agent/minimal-react-agent)
-2. [自定义 Agent 开发指南](/docs/agent/custom-agent-development)
-3. [Runtime 实现详解](/docs/agent/runtime-implementations)
-4. [Workflow StateGraph](/docs/agent/workflow-stategraph)
-5. [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
-6. [Agent Teams](/docs/agent/agent-teams)
+1. [最小 ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
+2. [Agent 架构总览](/docs/agent/architecture)
+3. [Runtime 实现详解](/docs/agent/runtimes/runtime-implementations)
+4. [Workflow StateGraph](/docs/agent/orchestration/stategraph)
+5. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff)
+6. [Agent Teams](/docs/agent/orchestration/teams)
