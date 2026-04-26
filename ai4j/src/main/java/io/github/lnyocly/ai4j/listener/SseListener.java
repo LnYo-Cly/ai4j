@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.listener;
 
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -15,15 +16,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
 import okhttp3.sse.EventSource;
-import okhttp3.sse.EventSourceListener;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @Author cly
@@ -32,7 +30,7 @@ import java.util.concurrent.CountDownLatch;
  */
 
 @Slf4j
-public abstract class SseListener extends EventSourceListener {
+public abstract class SseListener extends AbstractManagedStreamListener {
     /**
      * 异常回调
      */
@@ -101,36 +99,16 @@ public abstract class SseListener extends EventSourceListener {
      */
     private final StringBuilder argument = new StringBuilder();
     @Getter
-    private CountDownLatch countDownLatch = new CountDownLatch(1);
-
-    @Getter
     @Setter
     private String finishReason = null;
-
-    @Getter
-    private EventSource eventSource = null;
-    public boolean isAllFieldsNull(Object obj) throws IllegalAccessException {
-        for (Field field : obj.getClass().getDeclaredFields()) {
-            field.setAccessible(true); // 设置私有属性可访问
-            if (field.get(obj) != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public void onFailure(@NotNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-        this.error(t, response);
-        countDownLatch.countDown();
-    }
 
     @Override
     public void onEvent(@NotNull EventSource eventSource, @Nullable String id, @Nullable String type, @NotNull String data) {
         // 封装SSE消息对象
         currData = data;
-        if(this.eventSource == null) {
-            this.eventSource = eventSource;
+        markActivity();
+        if (getEventSource() == null) {
+            attachEventSource(eventSource);
         }
 
         if ("[DONE]".equalsIgnoreCase(data)) {
@@ -170,24 +148,15 @@ public abstract class SseListener extends EventSourceListener {
             return;
         }
         ChatMessage responseMessage = choices.get(0).getDelta();
-
-
-        // 判断ChatMessage responseMessage的对象属性是否全是null，使用util，responseMessage本身不是空
-        try {
-            // delta":{} && “usage”:{xxxxxx} && finish_reason:null
-            // (isAllFieldsNull(responseMessage) || responseMessage.getContent()==null || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) &&
-            if ((isAllFieldsNull(responseMessage) || (responseMessage.getContent()!= null && StringUtils.isBlank(responseMessage.getContent().getText()))) && choices.get(0).getFinishReason() == null && !isAllFieldsNull(this.usage)) {
-                this.currStr = "";
-                this.send();
-                return;
-            }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+        if (responseMessage == null) {
+            return;
         }
+        List<ToolCall> messageToolCalls = responseMessage.getToolCalls();
+        ToolCall firstMessageToolCall = firstToolCall(messageToolCalls);
 
         finishReason = choices.get(0).getFinishReason();
 
-        // ollama 函数调用
+        // Ollama 在工具调用时返回 stop 而非 tool_calls
         if("stop".equals(finishReason)
                 && responseMessage.getContent()!=null
                 && "".equals(responseMessage.getContent().getText())
@@ -198,22 +167,15 @@ public abstract class SseListener extends EventSourceListener {
 
         // tool_calls回答已经结束
         if("tool_calls".equals(finishReason)){
-            if(toolCall == null && responseMessage.getToolCalls()!=null) {
-                toolCalls = responseMessage.getToolCalls();
-                if(showToolArgs){
-                    this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
-                    this.send();
-                }
-                return;
+            if (toolCall != null) {
+                consumeFragmentedToolCalls(messageToolCalls);
+                finalizeCurrentToolCall();
+            } else if (shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
+                addCompleteToolCalls(messageToolCalls);
+            } else {
+                consumeFragmentedToolCalls(messageToolCalls);
+                finalizeCurrentToolCall();
             }
-
-            if(toolCall != null) {
-                argument.append(StrUtil.emptyIfNull(responseMessage.getToolCalls().get(0).getFunction().getArguments()));
-                toolCall.getFunction().setArguments(argument.toString());
-                toolCalls.add(toolCall);
-            }
-            argument.setLength(0);
-            currToolName = "";
             return;
         }
         // 消息回答完毕
@@ -235,13 +197,13 @@ public abstract class SseListener extends EventSourceListener {
         if(ChatMessageType.ASSISTANT.getRole().equals(responseMessage.getRole())
                 && (responseMessage.getContent()==null || StringUtils.isEmpty(responseMessage.getContent().getText()))
                 && StringUtils.isEmpty(responseMessage.getReasoningContent())
-                && responseMessage.getToolCalls() == null){
+                && isEmpty(messageToolCalls)){
             // 空消息忽略
             return;
         }
 
 
-        if(responseMessage.getToolCalls() == null ) {
+        if(isEmpty(messageToolCalls)) {
 
 
             // 判断是否为混元的tool最后一条说明性content，用于忽略
@@ -275,48 +237,11 @@ public abstract class SseListener extends EventSourceListener {
 
         }else{
             // 函数调用回答
-
-            if(responseMessage.getContent()!=null
-               && "".equals(responseMessage.getContent().getText())){
-                // ollama的函数调用
-                currToolName = responseMessage.getToolCalls().get(0).getFunction().getName();
-                toolCalls.add(responseMessage.getToolCalls().get(0));
-
-                if(showToolArgs){
-                    this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
-                    this.send();
-                }
-            }else{
-                // 第一条ToolCall表示，不含参数信息
-                if(StrUtil.isNotBlank(responseMessage.getToolCalls().get(0).getId())) {
-                    if( toolCall == null ){
-                        // 第一个函数
-                        toolCall = responseMessage.getToolCalls().get(0);
-                        argument.append(StrUtil.emptyIfNull(responseMessage.getToolCalls().get(0).getFunction().getArguments()));
-                    }else {
-                        toolCall.getFunction().setArguments(argument.toString());
-                        argument.setLength(0);
-                        toolCalls.add(toolCall);
-                        toolCall = responseMessage.getToolCalls().get(0);
-                    }
-
-                    currToolName = responseMessage.getToolCalls().get(0).getFunction().getName();
-                    if(showToolArgs){
-                        this.send();
-                    }
-
-                }else {
-                    argument.append(responseMessage.getToolCalls().get(0).getFunction().getArguments());
-                    if(showToolArgs){
-                        this.currStr = responseMessage.getToolCalls().get(0).getFunction().getArguments();
-                        this.send();
-                    }
-                }
+            if (shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
+                addCompleteToolCalls(messageToolCalls);
+            } else {
+                consumeFragmentedToolCalls(messageToolCalls);
             }
-
-
-
-
         }
 
 
@@ -326,8 +251,286 @@ public abstract class SseListener extends EventSourceListener {
 
     @Override
     public void onClosed(@NotNull EventSource eventSource) {
-        countDownLatch.countDown();
-        countDownLatch = new CountDownLatch(1);
+        attachEventSource(eventSource);
+        finishAttempt();
+        clearCancelRequested();
 
     }
+
+    @Override
+    protected void resetRetryState() {
+        finishReason = null;
+        currData = "";
+        currStr = "";
+        currToolName = "";
+    }
+
+    private ToolCall firstToolCall(List<ToolCall> calls) {
+        if (isEmpty(calls)) {
+            return null;
+        }
+        return calls.get(0);
+    }
+
+    private String safeToolArguments(ToolCall call) {
+        if (call == null || call.getFunction() == null) {
+            return "";
+        }
+        return StrUtil.emptyIfNull(call.getFunction().getArguments());
+    }
+
+    private String safeToolName(ToolCall call) {
+        if (call == null || call.getFunction() == null) {
+            return "";
+        }
+        return StrUtil.emptyIfNull(call.getFunction().getName());
+    }
+
+    private boolean isEmpty(List<?> values) {
+        return values == null || values.isEmpty();
+    }
+
+    private boolean shouldTreatAsCompleteToolCalls(ChatMessage responseMessage, List<ToolCall> messageToolCalls) {
+        if (responseMessage == null || responseMessage.getContent() == null) {
+            return false;
+        }
+        if (!"".equals(responseMessage.getContent().getText()) || isEmpty(messageToolCalls)) {
+            return false;
+        }
+        for (ToolCall call : messageToolCalls) {
+            if (!hasToolName(call) || !hasStructuredJsonObjectArguments(call)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void addCompleteToolCalls(List<ToolCall> completeToolCalls) {
+        if (isEmpty(completeToolCalls)) {
+            return;
+        }
+        for (ToolCall completeToolCall : completeToolCalls) {
+            if (completeToolCall == null || completeToolCall.getFunction() == null || !hasToolName(completeToolCall)) {
+                continue;
+            }
+            currToolName = safeToolName(completeToolCall);
+            toolCalls.add(completeToolCall);
+            if (showToolArgs) {
+                this.currStr = StrUtil.emptyIfNull(completeToolCall.getFunction().getArguments());
+                this.send();
+            }
+        }
+        argument.setLength(0);
+        currToolName = "";
+    }
+
+    private void consumeFragmentedToolCalls(List<ToolCall> messageToolCalls) {
+        if (isEmpty(messageToolCalls)) {
+            return;
+        }
+        for (ToolCall currentToolCall : messageToolCalls) {
+            if (currentToolCall == null || currentToolCall.getFunction() == null) {
+                continue;
+            }
+            String argumentsDelta = StrUtil.emptyIfNull(safeToolArguments(currentToolCall));
+            if (hasToolIdentity(currentToolCall)) {
+                if (toolCall == null) {
+                    startToolCall(currentToolCall, argumentsDelta);
+                } else if (isSameToolCall(toolCall, currentToolCall)) {
+                    mergeToolIdentity(toolCall, currentToolCall);
+                    argument.append(argumentsDelta);
+                } else {
+                    finalizeCurrentToolCall();
+                    startToolCall(currentToolCall, argumentsDelta);
+                }
+                if (showToolArgs) {
+                    this.currStr = argumentsDelta;
+                    this.send();
+                }
+                continue;
+            }
+            if (toolCall != null) {
+                argument.append(argumentsDelta);
+                if (showToolArgs) {
+                    this.currStr = argumentsDelta;
+                    this.send();
+                }
+            }
+        }
+    }
+
+    private void startToolCall(ToolCall currentToolCall, String argumentsDelta) {
+        toolCall = currentToolCall;
+        argument.setLength(0);
+        argument.append(StrUtil.emptyIfNull(argumentsDelta));
+        currToolName = safeToolName(currentToolCall);
+    }
+
+    private void finalizeCurrentToolCall() {
+        if (toolCall == null) {
+            argument.setLength(0);
+            currToolName = "";
+            return;
+        }
+        if (toolCall.getFunction() != null) {
+            toolCall.getFunction().setArguments(argument.toString());
+        }
+        toolCalls.add(toolCall);
+        toolCall = null;
+        argument.setLength(0);
+        currToolName = "";
+    }
+
+    private void mergeToolIdentity(ToolCall target, ToolCall source) {
+        if (target == null || source == null) {
+            return;
+        }
+        if (StrUtil.isBlank(target.getId()) && StrUtil.isNotBlank(source.getId())) {
+            target.setId(source.getId());
+        }
+        if (StrUtil.isBlank(target.getType()) && StrUtil.isNotBlank(source.getType())) {
+            target.setType(source.getType());
+        }
+        if (target.getFunction() == null || source.getFunction() == null) {
+            return;
+        }
+        if (StrUtil.isBlank(target.getFunction().getName()) && StrUtil.isNotBlank(source.getFunction().getName())) {
+            target.getFunction().setName(source.getFunction().getName());
+        }
+    }
+
+    private boolean hasToolIdentity(ToolCall call) {
+        return call != null
+                && (StrUtil.isNotBlank(call.getId()) || hasToolName(call));
+    }
+
+    private boolean hasToolName(ToolCall call) {
+        return call != null
+                && call.getFunction() != null
+                && StrUtil.isNotBlank(call.getFunction().getName());
+    }
+
+    private boolean isSameToolCall(ToolCall left, ToolCall right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (StrUtil.isNotBlank(left.getId()) && StrUtil.isNotBlank(right.getId())) {
+            return left.getId().equals(right.getId());
+        }
+        if (left.getFunction() == null || right.getFunction() == null) {
+            return false;
+        }
+        return StrUtil.isNotBlank(left.getFunction().getName())
+                && left.getFunction().getName().equals(right.getFunction().getName());
+    }
+
+    private boolean hasStructuredJsonObjectArguments(ToolCall call) {
+        String arguments = safeToolArguments(call);
+        if (StringUtils.isBlank(arguments)) {
+            return false;
+        }
+        try {
+            JsonNode node = new ObjectMapper().readTree(arguments);
+            return node != null && node.isObject();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    @Override
+    protected Throwable resolveFailure(@Nullable Throwable t, @Nullable Response response) {
+        if (t != null && StringUtils.isNotBlank(t.getMessage())) {
+            return t;
+        }
+        String message = resolveFailureMessage(t, response);
+        if (StringUtils.isBlank(message)) {
+            return t == null ? new CommonException("stream request failed") : t;
+        }
+        return new CommonException(message);
+    }
+
+    protected String resolveFailureMessage(@Nullable Throwable t, @Nullable Response response) {
+        if (t != null && StringUtils.isNotBlank(t.getMessage())) {
+            return t.getMessage().trim();
+        }
+        String responseMessage = responseMessage(response);
+        if (StringUtils.isNotBlank(responseMessage)) {
+            return responseMessage;
+        }
+        if (response != null) {
+            String statusLine = (response.code() + " " + StrUtil.emptyIfNull(response.message())).trim();
+            if (StringUtils.isNotBlank(statusLine)) {
+                return statusLine;
+            }
+        }
+        return t == null ? "stream request failed" : t.getClass().getSimpleName();
+    }
+
+    private String responseMessage(@Nullable Response response) {
+        if (response == null) {
+            return null;
+        }
+        try {
+            okhttp3.ResponseBody peekedBody = response.peekBody(8192L);
+            if (peekedBody == null) {
+                return null;
+            }
+            String payload = StringUtils.trimToNull(peekedBody.string());
+            if (payload == null) {
+                return null;
+            }
+            String extracted = extractStructuredErrorMessage(payload);
+            return extracted == null ? StringUtils.abbreviate(payload, 320) : extracted;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String extractStructuredErrorMessage(String payload) {
+        if (StringUtils.isBlank(payload)) {
+            return null;
+        }
+        try {
+            JsonNode root = new ObjectMapper().readTree(payload);
+            String message = firstJsonText(
+                    root.path("error").path("message"),
+                    root.path("error"),
+                    root.path("message"),
+                    root.path("msg"),
+                    root.path("detail"),
+                    root.path("Response").path("Error").path("Message"),
+                    root.path("Response").path("Error"),
+                    root.path("error_msg")
+            );
+            return StringUtils.trimToNull(message);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String firstJsonText(JsonNode... nodes) {
+        if (nodes == null) {
+            return null;
+        }
+        for (JsonNode node : nodes) {
+            if (node == null || node.isMissingNode() || node.isNull()) {
+                continue;
+            }
+            if (node.isTextual()) {
+                String text = StringUtils.trimToNull(node.asText());
+                if (text != null) {
+                    return text;
+                }
+                continue;
+            }
+            if (node.isObject()) {
+                String text = firstJsonText(node.path("message"), node.path("Message"), node.path("msg"), node.path("detail"));
+                if (text != null) {
+                    return text;
+                }
+            }
+        }
+        return null;
+    }
+
 }

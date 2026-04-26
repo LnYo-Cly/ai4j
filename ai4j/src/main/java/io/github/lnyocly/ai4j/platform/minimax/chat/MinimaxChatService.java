@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.platform.minimax.chat;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.MinimaxConfig;
@@ -9,6 +8,7 @@ import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletion;
 import io.github.lnyocly.ai4j.platform.minimax.chat.entity.MinimaxChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
@@ -20,9 +20,13 @@ import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
-import okhttp3.*;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * @Author : isxuwl
@@ -38,20 +43,27 @@ import java.util.List;
  * @Description: Minimax
  */
 public class MinimaxChatService implements IChatService, ParameterConvert<MinimaxChatCompletion>, ResultConvert<MinimaxChatCompletionResponse> {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+    private static final String TOOL_CALLS_FINISH_REASON = "tool_calls";
+    private static final String FIRST_FINISH_REASON = "first";
+
     private final MinimaxConfig minimaxConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;
+    private final ObjectMapper objectMapper;
 
     public MinimaxChatService(Configuration configuration) {
         this.minimaxConfig = configuration.getMinimaxConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
+        this.objectMapper = new ObjectMapper();
     }
 
     public MinimaxChatService(Configuration configuration, MinimaxConfig minimaxConfig) {
         this.minimaxConfig = minimaxConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -65,15 +77,13 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         minimaxChatCompletion.setTemperature(chatCompletion.getTemperature());
         minimaxChatCompletion.setTopP(chatCompletion.getTopP());
         minimaxChatCompletion.setStream(chatCompletion.getStream());
-        minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
-        if(chatCompletion.getMaxCompletionTokens() != null){
-            minimaxChatCompletion.setMaxTokens(chatCompletion.getMaxCompletionTokens());
-        }
+        minimaxChatCompletion.setMaxTokens(resolveMaxTokens(chatCompletion));
+        minimaxChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return minimaxChatCompletion;
     }
 
     @Override
-    public EventSourceListener convertEventSource(SseListener eventSourceListener) {
+    public EventSourceListener convertEventSource(final SseListener eventSourceListener) {
         return new EventSourceListener() {
             @Override
             public void onOpen(@NotNull EventSource eventSource, @NotNull Response response) {
@@ -91,20 +101,7 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
                     eventSourceListener.onEvent(eventSource, id, type, data);
                     return;
                 }
-
-                ObjectMapper mapper = new ObjectMapper();
-                MinimaxChatCompletionResponse chatCompletionResponse = null;
-                String s = null;
-                try {
-                    chatCompletionResponse = mapper.readValue(data, MinimaxChatCompletionResponse.class);
-                    ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
-                    s = mapper.writeValueAsString(response);
-                } catch (JsonProcessingException e) {
-                    throw new CommonException("Minimax Chat 对象JSON序列化出错");
-                }
-
-
-                eventSourceListener.onEvent(eventSource, id, type, s);
+                eventSourceListener.onEvent(eventSource, id, type, serializeStreamResponse(data));
             }
 
             @Override
@@ -113,7 +110,6 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
             }
         };
     }
-
 
     @Override
     public ChatCompletionResponse convertChatCompletionResponse(MinimaxChatCompletionResponse minimaxChatCompletionResponse) {
@@ -124,113 +120,66 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         chatCompletionResponse.setModel(minimaxChatCompletionResponse.getModel());
         chatCompletionResponse.setChoices(minimaxChatCompletionResponse.getChoices());
         chatCompletionResponse.setUsage(minimaxChatCompletionResponse.getUsage());
-
         return chatCompletionResponse;
     }
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = minimaxConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = minimaxConfig.getApiKey();
-        chatCompletion.setStream(false);
-        chatCompletion.setStreamOptions(null);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
+            prepareChatCompletion(chatCompletion, false);
+            MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
+            Usage allUsage = new Usage();
+            String finishReason = FIRST_FINISH_REASON;
 
-        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
-            chatCompletion.setTools(tools);
-            if(tools == null){
-                chatCompletion.setParallelToolCalls(null);
-            }
-        }
-        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
-
-        }else{
-            chatCompletion.setParallelToolCalls(null);
-        }
-
-
-        // 转换 请求参数
-        MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
-
-/*
-        // 如含有function，则添加tool
-        if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
-            minimaxChatCompletion.setTools(tools);
-        }
-*/
-
-        // 总token消耗
-        Usage allUsage = new Usage();
-
-        String finishReason = "first";
-
-        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
-
-            finishReason = null;
-
-            // 构造请求
-            ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(minimaxChatCompletion);
-
-            Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, minimaxConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
-                    .build();
-
-            Response execute = okHttpClient.newCall(request).execute();
-            if (execute.isSuccessful() && execute.body() != null){
-                MinimaxChatCompletionResponse minimaxChatCompletionResponse = mapper.readValue(execute.body().string(), MinimaxChatCompletionResponse.class);
-
-                Choice choice = minimaxChatCompletionResponse.getChoices().get(0);
-                finishReason = choice.getFinishReason();
-
-                Usage usage = minimaxChatCompletionResponse.getUsage();
-                allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
-                allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
-                allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
-
-                // 判断是否为函数调用返回
-                if("tool_calls".equals(finishReason)){
-                    ChatMessage message = choice.getMessage();
-                    List<ToolCall> toolCalls = message.getToolCalls();
-
-                    List<ChatMessage> messages = new ArrayList<>(minimaxChatCompletion.getMessages());
-                    messages.add(message);
-
-                    // 添加 tool 消息
-                    for (ToolCall toolCall : toolCalls) {
-                        String functionName = toolCall.getFunction().getName();
-                        String arguments = toolCall.getFunction().getArguments();
-                        String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                        messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
-                    }
-                    minimaxChatCompletion.setMessages(messages);
-
-                }else{// 其他情况直接返回
-
-                    // 设置包含tool的总token数
-                    minimaxChatCompletionResponse.setUsage(allUsage);
-                    //deepSeekChatCompletionResponse.setObject("chat.completion");
-
-                    // 恢复原始请求数据
-                    chatCompletion.setMessages(minimaxChatCompletion.getMessages());
-                    chatCompletion.setTools(minimaxChatCompletion.getTools());
-
-                    return this.convertChatCompletionResponse(minimaxChatCompletionResponse);
-
+            while (requiresFollowUp(finishReason)) {
+                MinimaxChatCompletionResponse response = executeChatCompletionRequest(
+                        resolvedBaseUrl,
+                        resolvedApiKey,
+                        minimaxChatCompletion
+                );
+                if (response == null) {
+                    break;
                 }
 
+                List<Choice> choices = response.getChoices();
+                if (choices == null || choices.isEmpty()) {
+                    response.setUsage(allUsage);
+                    restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+                    return convertChatCompletionResponse(response);
+                }
+
+                Choice choice = choices.get(0);
+                finishReason = choice.getFinishReason();
+                mergeUsage(allUsage, response.getUsage());
+
+                if (TOOL_CALLS_FINISH_REASON.equals(finishReason)) {
+                    if (passThroughToolCalls) {
+                        response.setUsage(allUsage);
+                        restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+                        return convertChatCompletionResponse(response);
+                    }
+                    minimaxChatCompletion.setMessages(appendToolMessages(
+                            minimaxChatCompletion.getMessages(),
+                            choice.getMessage(),
+                            choice.getMessage() == null ? Collections.<ToolCall>emptyList() : choice.getMessage().getToolCalls()
+                    ));
+                    continue;
+                }
+
+                response.setUsage(allUsage);
+                restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+                return convertChatCompletionResponse(response);
             }
 
+            return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-
-        return null;
     }
 
     @Override
@@ -240,86 +189,179 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
-        if(baseUrl == null || "".equals(baseUrl)) baseUrl = minimaxConfig.getApiHost();
-        if(apiKey == null || "".equals(apiKey)) apiKey = minimaxConfig.getApiKey();
-        chatCompletion.setStream(true);
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
+            String resolvedBaseUrl = resolveBaseUrl(baseUrl);
+            String resolvedApiKey = resolveApiKey(apiKey);
+            boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
+            prepareChatCompletion(chatCompletion, true);
+            MinimaxChatCompletion minimaxChatCompletion = convertChatCompletionObject(chatCompletion);
+            String finishReason = FIRST_FINISH_REASON;
 
-        if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
-            //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
-            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
-            chatCompletion.setTools(tools);
-            if(tools == null){
-                chatCompletion.setParallelToolCalls(null);
-            }
-        }
-        if (chatCompletion.getTools()!=null && !chatCompletion.getTools().isEmpty()){
+            while (requiresFollowUp(finishReason)) {
+                Request request = buildChatCompletionRequest(resolvedBaseUrl, resolvedApiKey, minimaxChatCompletion);
+                StreamExecutionSupport.execute(
+                        eventSourceListener,
+                        chatCompletion.getStreamExecution(),
+                        () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+                );
 
-        }else{
-            chatCompletion.setParallelToolCalls(null);
-        }
-
-
-        // 转换 请求参数
-        MinimaxChatCompletion minimaxChatCompletion = this.convertChatCompletionObject(chatCompletion);
-
-/*        // 如含有function，则添加tool
-        if(minimaxChatCompletion.getFunctions()!=null && !minimaxChatCompletion.getFunctions().isEmpty()){
-            List<Tool> tools = ToolUtil.getAllFunctionTools(minimaxChatCompletion.getFunctions());
-            minimaxChatCompletion.setTools(tools);
-        }*/
-
-        String finishReason = "first";
-
-        while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
-
-            finishReason = null;
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonString = mapper.writeValueAsString(minimaxChatCompletion);
-
-            Request request = new Request.Builder()
-                    .header("Authorization", "Bearer " + apiKey)
-                    .url(ValidateUtil.concatUrl(baseUrl, minimaxConfig.getChatCompletionUrl()))
-                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
-                    .build();
-
-
-            factory.newEventSource(request, convertEventSource(eventSourceListener));
-            eventSourceListener.getCountDownLatch().await();
-
-            finishReason = eventSourceListener.getFinishReason();
-            List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
-
-            // 需要调用函数
-            if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
-                // 创建tool响应消息
-                ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
-
-                List<ChatMessage> messages = new ArrayList<>(minimaxChatCompletion.getMessages());
-                messages.add(responseMessage);
-
-                // 封装tool结果消息
-                for (ToolCall toolCall : toolCalls) {
-                    String functionName = toolCall.getFunction().getName();
-                    String arguments = toolCall.getFunction().getArguments();
-                    String functionResponse = ToolUtil.invoke(functionName, arguments);
-
-                    messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+                finishReason = eventSourceListener.getFinishReason();
+                List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
+                if (!TOOL_CALLS_FINISH_REASON.equals(finishReason) || toolCalls.isEmpty()) {
+                    continue;
                 }
-                eventSourceListener.setToolCalls(new ArrayList<>());
-                eventSourceListener.setToolCall(null);
-                minimaxChatCompletion.setMessages(messages);
+                if (passThroughToolCalls) {
+                    return;
+                }
+
+                minimaxChatCompletion.setMessages(appendStreamToolMessages(
+                        minimaxChatCompletion.getMessages(),
+                        toolCalls
+                ));
+                resetToolCallState(eventSourceListener);
             }
 
+            restoreOriginalRequest(chatCompletion, minimaxChatCompletion);
+        } finally {
+            ToolUtil.popBuiltInToolContext();
         }
-
-        // 补全原始请求
-        chatCompletion.setMessages(minimaxChatCompletion.getMessages());
-        chatCompletion.setTools(minimaxChatCompletion.getTools());
     }
 
     @Override
     public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         this.chatCompletionStream(null, null, chatCompletion, eventSourceListener);
     }
+
+    private String serializeStreamResponse(String data) {
+        try {
+            MinimaxChatCompletionResponse chatCompletionResponse =
+                    objectMapper.readValue(data, MinimaxChatCompletionResponse.class);
+            ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
+            return objectMapper.writeValueAsString(response);
+        } catch (JsonProcessingException e) {
+            throw new CommonException("Minimax Chat 对象JSON序列化出错");
+        }
+    }
+
+    private void prepareChatCompletion(ChatCompletion chatCompletion, boolean stream) {
+        chatCompletion.setStream(stream);
+        if (!stream) {
+            chatCompletion.setStreamOptions(null);
+        }
+        attachTools(chatCompletion);
+    }
+
+    private void attachTools(ChatCompletion chatCompletion) {
+        if (hasPendingTools(chatCompletion)) {
+            List<Tool> tools = ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices());
+            chatCompletion.setTools(tools);
+            if (tools == null) {
+                chatCompletion.setParallelToolCalls(null);
+            }
+        }
+        if (chatCompletion.getTools() == null || chatCompletion.getTools().isEmpty()) {
+            chatCompletion.setParallelToolCalls(null);
+        }
+    }
+
+    private boolean hasPendingTools(ChatCompletion chatCompletion) {
+        return (chatCompletion.getFunctions() != null && !chatCompletion.getFunctions().isEmpty())
+                || (chatCompletion.getMcpServices() != null && !chatCompletion.getMcpServices().isEmpty());
+    }
+
+    private boolean requiresFollowUp(String finishReason) {
+        return FIRST_FINISH_REASON.equals(finishReason) || TOOL_CALLS_FINISH_REASON.equals(finishReason);
+    }
+
+    private MinimaxChatCompletionResponse executeChatCompletionRequest(
+            String baseUrl,
+            String apiKey,
+            MinimaxChatCompletion minimaxChatCompletion
+    ) throws Exception {
+        Request request = buildChatCompletionRequest(baseUrl, apiKey, minimaxChatCompletion);
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return objectMapper.readValue(response.body().string(), MinimaxChatCompletionResponse.class);
+            }
+        }
+        return null;
+    }
+
+    private Request buildChatCompletionRequest(String baseUrl, String apiKey, MinimaxChatCompletion minimaxChatCompletion)
+            throws JsonProcessingException {
+        String requestBody = objectMapper.writeValueAsString(minimaxChatCompletion);
+        return new Request.Builder()
+                .header("Authorization", "Bearer " + apiKey)
+                .url(UrlUtils.concatUrl(baseUrl, minimaxConfig.getChatCompletionUrl()))
+                .post(RequestBody.create(requestBody, JSON_MEDIA_TYPE))
+                .build();
+    }
+
+    private void mergeUsage(Usage target, Usage usage) {
+        if (usage == null) {
+            return;
+        }
+        target.setCompletionTokens(target.getCompletionTokens() + usage.getCompletionTokens());
+        target.setTotalTokens(target.getTotalTokens() + usage.getTotalTokens());
+        target.setPromptTokens(target.getPromptTokens() + usage.getPromptTokens());
+    }
+
+    private List<ChatMessage> appendToolMessages(
+            List<ChatMessage> messages,
+            ChatMessage assistantMessage,
+            List<ToolCall> toolCalls
+    ) {
+        List<ChatMessage> updatedMessages = new ArrayList<ChatMessage>(messages);
+        updatedMessages.add(assistantMessage);
+        appendToolResponses(updatedMessages, toolCalls);
+        return updatedMessages;
+    }
+
+    private List<ChatMessage> appendStreamToolMessages(List<ChatMessage> messages, List<ToolCall> toolCalls) {
+        List<ChatMessage> updatedMessages = new ArrayList<ChatMessage>(messages);
+        updatedMessages.add(ChatMessage.withAssistant(toolCalls));
+        appendToolResponses(updatedMessages, toolCalls);
+        return updatedMessages;
+    }
+
+    private void appendToolResponses(List<ChatMessage> messages, List<ToolCall> toolCalls) {
+        for (ToolCall toolCall : toolCalls) {
+            if (toolCall == null || toolCall.getFunction() == null) {
+                continue;
+            }
+            String functionName = toolCall.getFunction().getName();
+            String arguments = toolCall.getFunction().getArguments();
+            String functionResponse = ToolUtil.invoke(functionName, arguments);
+            messages.add(ChatMessage.withTool(functionResponse, toolCall.getId()));
+        }
+    }
+
+    private void resetToolCallState(SseListener eventSourceListener) {
+        eventSourceListener.setToolCalls(new ArrayList<ToolCall>());
+        eventSourceListener.setToolCall(null);
+    }
+
+    private void restoreOriginalRequest(ChatCompletion chatCompletion, MinimaxChatCompletion minimaxChatCompletion) {
+        chatCompletion.setMessages(minimaxChatCompletion.getMessages());
+        chatCompletion.setTools(minimaxChatCompletion.getTools());
+    }
+
+    private String resolveBaseUrl(String baseUrl) {
+        return (baseUrl == null || "".equals(baseUrl)) ? minimaxConfig.getApiHost() : baseUrl;
+    }
+
+    private String resolveApiKey(String apiKey) {
+        return (apiKey == null || "".equals(apiKey)) ? minimaxConfig.getApiKey() : apiKey;
+    }
+
+    @SuppressWarnings("deprecation")
+    private Integer resolveMaxTokens(ChatCompletion chatCompletion) {
+        if (chatCompletion.getMaxCompletionTokens() != null) {
+            return chatCompletion.getMaxCompletionTokens();
+        }
+        return chatCompletion.getMaxTokens();
+    }
 }
+

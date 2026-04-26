@@ -34,9 +34,67 @@ build/
 ### VS Code ###
 .vscode/
 
+### Local tooling ###
+.claude/
+AGENTS.md
+node_modules/
+dist/
+.rsbuild/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+### Scratch / temp ###
+*.class
+.tmp*/
+.tmp*
+tmp/
+tmp-*/
+tmp-*.png
+tmp-*.txt
+tmp-*.log
+
+**/.flattened-pom.xml
+
 ### Mac OS ###
 .DS_Store
 /.idea/
 /ai4j/.gitignore
 /ai4j/src/main/resources/新建文本文档 (2).txt
 /ai4j-spring-boot-stater/.gitignore
+.ai4j/
+.docs/
+docs/
+APIResponse.md
+AGENT.md
+ai4j-release-package.log
+javadoc-ai4j.log
+
+!AGENTS.md
+!docs/
+docs/*
+!docs/README.md
+!docs/01-GOVERNANCE/
+!docs/01-GOVERNANCE/**
+!docs/03-ARCHITECTURE/
+!docs/03-ARCHITECTURE/**
+!docs/04-DEVELOPMENT/
+!docs/04-DEVELOPMENT/**
+!docs/05-TEST-QA/
+!docs/05-TEST-QA/**
+!docs/06-INTEGRATIONS/
+!docs/06-INTEGRATIONS/**
+!docs/07-OPERATIONS/
+!docs/07-OPERATIONS/**
+!docs/08-SECURITY/
+!docs/08-SECURITY/**
+!docs/09-PLANNING/
+!docs/09-PLANNING/**
+!docs/10-WALKTHROUGH/
+!docs/10-WALKTHROUGH/**
+!docs/11-REFERENCE/
+!docs/11-REFERENCE/**
+!docs/99-TMP/
+!docs/99-TMP/**

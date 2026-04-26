@@ -1,0 +1,21 @@
+server:
+  port: 18080
+
+ai:
+  platforms:
+    - id: minimax-coding
+      platform: minimax
+      api-key: ${MINIMAX_API_KEY:}
+      api-host: https://api.minimax.chat/
+      chat-completion-url: v1/text/chatcompletion_v2
+    - id: glm-coding
+      platform: zhipu
+      api-key: ${ZHIPU_API_KEY:}
+      api-host: https://open.bigmodel.cn/api/paas/
+      chat-completion-url: v4/chat/completions
+
+ai4j:
+  flowgram:
+    default-service-id: minimax-coding
+    api:
+      base-path: /flowgram

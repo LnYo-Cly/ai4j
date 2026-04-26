@@ -1,0 +1,13 @@
+{
+  "name": "ocean",
+  "brand": "#66d9ef",
+  "accent": "#7aa2f7",
+  "success": "#9ece6a",
+  "warning": "#e0af68",
+  "danger": "#f7768e",
+  "text": "#e6edf3",
+  "muted": "#8b9bb4",
+  "panelBorder": "#355070",
+  "panelTitle": "#66d9ef",
+  "badgeForeground": "#0b1320"
+}

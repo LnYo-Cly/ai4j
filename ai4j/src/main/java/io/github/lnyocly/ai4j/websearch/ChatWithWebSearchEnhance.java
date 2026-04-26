@@ -8,7 +8,7 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Content;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGRequest;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGResponse;
@@ -84,7 +84,7 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
 
         Request request = new Request.Builder()
-                .url(ValidateUtil.concatUrl(searXNGConfig.getUrl(), "?format=json&q=" + query + "&engines=" + searXNGConfig.getEngines()))
+                .url(UrlUtils.concatUrl(searXNGConfig.getUrl(), "?format=json&q=" + query + "&engines=" + searXNGConfig.getEngines()))
                 .get()
                 .build();
 
@@ -111,3 +111,4 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
     }
 }
+

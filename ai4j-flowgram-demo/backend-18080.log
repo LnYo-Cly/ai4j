@@ -1,0 +1,48 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] ai4j-sdk                                                           [pom]
+[INFO] ai4j-core                                                          [jar]
+[INFO] ai4j-model                                                         [jar]
+[INFO] ai4j-agent                                                         [jar]
+[INFO] ai4j                                                               [jar]
+[INFO] ai4j-spring-boot-starter                                           [jar]
+[INFO] ai4j-flowgram-spring-boot-starter                                  [jar]
+[INFO] ai4j-flowgram-demo                                                 [jar]
+[INFO] 
+[INFO] --------------------< io.github.lnyo-cly:ai4j-sdk >---------------------
+[INFO] Building ai4j-sdk 2.0.0                                            [1/8]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:2.3.12.RELEASE:run (default-cli) > test-compile @ ai4j-sdk >>>
+[INFO] 
+[INFO] <<< spring-boot:2.3.12.RELEASE:run (default-cli) < test-compile @ ai4j-sdk <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:2.3.12.RELEASE:run (default-cli) @ ai4j-sdk ---
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for ai4j-sdk 2.0.0:
+[INFO] 
+[INFO] ai4j-sdk ........................................... FAILURE [  1.107 s]
+[INFO] ai4j-core .......................................... SKIPPED
+[INFO] ai4j-model ......................................... SKIPPED
+[INFO] ai4j-agent ......................................... SKIPPED
+[INFO] ai4j ............................................... SKIPPED
+[INFO] ai4j-spring-boot-starter ........................... SKIPPED
+[INFO] ai4j-flowgram-spring-boot-starter .................. SKIPPED
+[INFO] ai4j-flowgram-demo ................................. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.351 s
+[INFO] Finished at: 2026-03-28T17:19:49+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:2.3.12.RELEASE:run (default-cli) on project ai4j-sdk: Unable to find a suitable main class, please add a 'mainClass' property -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

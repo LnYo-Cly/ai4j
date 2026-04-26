@@ -21,6 +21,8 @@ public enum PlatformType {
     MINIMAX("minimax"),
     BAICHUAN("baichuan"),
     DASHSCOPE("dashscope"),
+    DOUBAO("doubao"),
+    JINA("jina"),
     ;
     private final String platform;
 

@@ -7,7 +7,7 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
-import io.github.lnyocly.ai4j.utils.ValidateUtil;
+import io.github.lnyocly.ai4j.network.UrlUtils;
 import okhttp3.*;
 
 /**
@@ -39,8 +39,8 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
 
         Request request = new Request.Builder()
                 .header("Authorization", "Bearer " + apiKey)
-                .url(ValidateUtil.concatUrl(baseUrl, openAiConfig.getEmbeddingUrl()))
-                .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), jsonString))
+                .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getEmbeddingUrl()))
+                .post(RequestBody.create(jsonString, MediaType.get(Constants.APPLICATION_JSON)))
                 .build();
         Response execute = okHttpClient.newCall(request).execute();
         if (execute.isSuccessful() && execute.body() != null) {
@@ -54,3 +54,4 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
         return embedding(null, null, embeddingReq);
     }
 }
+

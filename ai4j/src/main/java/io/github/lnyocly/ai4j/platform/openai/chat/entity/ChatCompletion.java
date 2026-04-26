@@ -1,11 +1,13 @@
 package io.github.lnyocly.ai4j.platform.openai.chat.entity;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.listener.StreamExecutionOptions;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
+import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
 import lombok.*;
 
 import java.util.*;
@@ -112,6 +114,16 @@ public class ChatCompletion {
     private Boolean parallelToolCalls = true;
 
     /**
+     * Agent runtime helper: preserve streamed tool calls for runtime execution
+     * instead of provider-side auto invocation.
+     */
+    @JsonIgnore
+    private Boolean passThroughToolCalls;
+
+    @JsonIgnore
+    private BuiltInToolContext builtInToolContext;
+
+    /**
      * 一个 object，指定模型必须输出的格式。
      *
      * 设置为 { "type": "json_object" } 以启用 JSON 模式，该模式保证模型生成的消息是有效的 JSON。
@@ -161,6 +173,26 @@ public class ChatCompletion {
     @JsonProperty("parameters")
     @Singular
     private Map<String, Object> parameters;
+
+    /**
+     * 额外的请求体参数，用于扩展不同平台的特定字段
+     * 使用 @JsonAnyGetter 使其内容在序列化时展开到 JSON 顶层
+     * 如果 extraBody 中的字段与现有字段同名，extraBody 中的值会覆盖现有值
+     */
+    @JsonIgnore
+    @Singular("extraBody")
+    private Map<String, Object> extraBody;
+
+    @JsonIgnore
+    private StreamExecutionOptions streamExecution;
+
+    /**
+     * Jackson 序列化时自动调用，将 extraBody 的内容展开到顶层
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getExtraBody() {
+        return extraBody;
+    }
 
 
     public static class ChatCompletionBuilder {

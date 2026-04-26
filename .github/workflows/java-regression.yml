@@ -1,0 +1,80 @@
+name: java-regression
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - 'pom.xml'
+      - 'ai4j/**'
+      - 'ai4j-agent/**'
+      - 'ai4j-coding/**'
+      - 'ai4j-cli/**'
+      - 'ai4j-spring-boot-starter/**'
+      - 'ai4j-flowgram-spring-boot-starter/**'
+      - 'ai4j-bom/**'
+      - '.github/workflows/java-regression.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-smoke:
+    name: package-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Monorepo package smoke
+        run: mvn -B -ntp -DskipTests package
+
+  module-tests:
+    name: module-tests (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - ai4j
+          - ai4j-agent
+          - ai4j-coding
+          - ai4j-cli
+          - ai4j-spring-boot-starter
+          - ai4j-flowgram-spring-boot-starter
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Run module test gate
+        run: mvn -B -ntp -pl ${{ matrix.module }} -am -DskipTests=false test
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-${{ matrix.module }}
+          path: |
+            **/target/surefire-reports/**
+          if-no-files-found: ignore

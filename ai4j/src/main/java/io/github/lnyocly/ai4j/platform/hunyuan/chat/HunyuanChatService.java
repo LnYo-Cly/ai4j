@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.hunyuan.HunyuanConstant;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.entity.HunyuanChatCompletion;
 import io.github.lnyocly.ai4j.platform.hunyuan.chat.entity.HunyuanChatCompletionResponse;
@@ -20,9 +21,9 @@ import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
-import io.github.lnyocly.ai4j.utils.BearerTokenUtils;
-import io.github.lnyocly.ai4j.utils.JsonObjectUtil;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.auth.BearerTokenUtils;
+import io.github.lnyocly.ai4j.platform.hunyuan.support.HunyuanJsonUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
 import okhttp3.*;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
@@ -39,6 +40,8 @@ import java.util.List;
  * @Date 2024/8/30 19:24
  */
 public class HunyuanChatService implements IChatService, ParameterConvert<HunyuanChatCompletion>, ResultConvert<HunyuanChatCompletionResponse> {
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+
     private final HunyuanConfig hunyuanConfig;
     private final OkHttpClient okHttpClient;
     private final EventSource.Factory factory;
@@ -67,6 +70,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         hunyuanChatCompletion.setTools(chatCompletion.getTools());
         hunyuanChatCompletion.setFunctions(chatCompletion.getFunctions());
         hunyuanChatCompletion.setToolChoice(chatCompletion.getToolChoice());
+        hunyuanChatCompletion.setExtraBody(chatCompletion.getExtraBody());
         return hunyuanChatCompletion;
     }
 
@@ -93,7 +97,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                 ObjectMapper mapper = new ObjectMapper();
                 HunyuanChatCompletionResponse hunyuanChatCompletionResponse = null;
                 try {
-                    hunyuanChatCompletionResponse = mapper.readValue(JsonObjectUtil.toSnakeCaseJson(data), HunyuanChatCompletionResponse.class);
+                    hunyuanChatCompletionResponse = mapper.readValue(HunyuanJsonUtil.toSnakeCaseJson(data), HunyuanChatCompletionResponse.class);
                 } catch (JsonProcessingException e) {
                     throw new CommonException("解析混元Hunyuan Chat Completion Response失败");
                 }
@@ -143,8 +147,11 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
     @Override
     public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = hunyuanConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
         chatCompletion.setStream(false);
 
 
@@ -236,7 +243,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
             // 将修改后的 JSON 对象转为字符串
             requestString = jsonObject.toJSONString();
-            requestString = JsonObjectUtil.toCamelCaseWithUppercaseJson(requestString);
+            requestString = HunyuanJsonUtil.toCamelCaseWithUppercaseJson(requestString);
             String authorization = BearerTokenUtils.getAuthorization(apiKey,HunyuanConstant.ChatCompletions,requestString);
 
             Request request = new Request.Builder()
@@ -245,13 +252,13 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     .header("X-TC-Version", HunyuanConstant.Version)
                     .header("X-TC-Timestamp", String.valueOf(System.currentTimeMillis() / 1000))
                     .url(baseUrl)
-                    .post(RequestBody.create(MediaType.parse(Constants.JSON_CONTENT_TYPE), requestString))
+                    .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
                     .build();
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
                 String responseString = execute.body().string();
-                responseString = JsonObjectUtil.toSnakeCaseJson(responseString);
+                responseString = HunyuanJsonUtil.toSnakeCaseJson(responseString);
                 responseString = JSON.parseObject(responseString).get("response").toString();
 
                 HunyuanChatCompletionResponse hunyuanChatCompletionResponse = mapper.readValue(responseString, HunyuanChatCompletionResponse.class);
@@ -266,6 +273,12 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
                 // 判断是否为函数调用返回
                 if("tool_calls".equals(finishReason)){
+                    if (passThroughToolCalls) {
+                        hunyuanChatCompletionResponse.setUsage(allUsage);
+                        hunyuanChatCompletionResponse.setObject("chat.completion");
+                        hunyuanChatCompletionResponse.setModel(hunyuanChatCompletion.getModel());
+                        return this.convertChatCompletionResponse(hunyuanChatCompletionResponse);
+                    }
                     ChatMessage message = choice.getMessage();
                     List<ToolCall> toolCalls = message.getToolCalls();
 
@@ -304,6 +317,9 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
 
         return null;
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override
@@ -313,9 +329,12 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
     @Override
     public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
+        ToolUtil.pushBuiltInToolContext(chatCompletion.getBuiltInToolContext());
+        try {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = hunyuanConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = hunyuanConfig.getApiKey();
         chatCompletion.setStream(true);
+        boolean passThroughToolCalls = Boolean.TRUE.equals(chatCompletion.getPassThroughToolCalls());
 
         if((chatCompletion.getFunctions()!=null && !chatCompletion.getFunctions().isEmpty()) || (chatCompletion.getMcpServices()!=null && !chatCompletion.getMcpServices().isEmpty())){
             //List<Tool> tools = ToolUtil.getAllFunctionTools(chatCompletion.getFunctions());
@@ -402,7 +421,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
             // 将修改后的 JSON 对象转为字符串
             requestString = jsonObject.toJSONString();
-            requestString = JsonObjectUtil.toCamelCaseWithUppercaseJson(requestString);
+            requestString = HunyuanJsonUtil.toCamelCaseWithUppercaseJson(requestString);
             String authorization = BearerTokenUtils.getAuthorization(apiKey,HunyuanConstant.ChatCompletions,requestString);
 
             Request request = new Request.Builder()
@@ -412,17 +431,23 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     .header("X-TC-Timestamp", String.valueOf(System.currentTimeMillis() / 1000))
                     .header("Accept", Constants.SSE_CONTENT_TYPE)
                     .url(baseUrl)
-                    .post(RequestBody.create(MediaType.parse(Constants.APPLICATION_JSON), requestString))
+                    .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
                     .build();
 
-            factory.newEventSource(request, convertEventSource(eventSourceListener));
-            eventSourceListener.getCountDownLatch().await();
+            StreamExecutionSupport.execute(
+                    eventSourceListener,
+                    chatCompletion.getStreamExecution(),
+                    () -> factory.newEventSource(request, convertEventSource(eventSourceListener))
+            );
 
             finishReason = eventSourceListener.getFinishReason();
             List<ToolCall> toolCalls = eventSourceListener.getToolCalls();
 
             // 需要调用函数
             if("tool_calls".equals(finishReason) && !toolCalls.isEmpty()){
+                if (passThroughToolCalls) {
+                    return;
+                }
                 // 创建tool响应消息
                 ChatMessage responseMessage = ChatMessage.withAssistant(eventSourceListener.getToolCalls());
                 responseMessage.setContent(Content.ofText(" "));
@@ -448,6 +473,9 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         // 补全原始请求
         chatCompletion.setMessages(hunyuanChatCompletion.getMessages());
         chatCompletion.setTools(hunyuanChatCompletion.getTools());
+        } finally {
+            ToolUtil.popBuiltInToolContext();
+        }
     }
 
     @Override
@@ -455,3 +483,5 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
         this.chatCompletionStream(null, null, chatCompletion, eventSourceListener);
     }
 }
+
+

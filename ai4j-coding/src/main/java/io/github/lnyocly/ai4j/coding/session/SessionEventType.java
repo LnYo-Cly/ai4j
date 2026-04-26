@@ -1,0 +1,23 @@
+package io.github.lnyocly.ai4j.coding.session;
+
+public enum SessionEventType {
+    SESSION_CREATED,
+    SESSION_SAVED,
+    SESSION_RESUMED,
+    SESSION_FORKED,
+    USER_MESSAGE,
+    ASSISTANT_MESSAGE,
+    TOOL_CALL,
+    TOOL_RESULT,
+    TASK_CREATED,
+    TASK_UPDATED,
+    TEAM_MESSAGE,
+    COMPACT,
+    AUTO_CONTINUE,
+    AUTO_STOP,
+    BLOCKED,
+    PROCESS_STARTED,
+    PROCESS_UPDATED,
+    PROCESS_STOPPED,
+    ERROR
+}

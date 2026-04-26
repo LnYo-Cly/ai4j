@@ -1,0 +1,163 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.testrun-panel-form {
+  .runtime-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 12px 12px 0;
+  }
+
+  .runtime-summary-item {
+    border: 1px solid rgba(82, 100, 154, 0.13);
+    border-radius: 10px;
+    background: #f7f9fc;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .value {
+      font-size: 13px;
+      color: #111827;
+      word-break: break-word;
+    }
+  }
+
+  .testrun-panel-input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 12px 8px 0;
+
+    .title {
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+      flex: 1;
+    }
+  }
+
+
+  .error {
+    color: red;
+    font-size: 14px;
+  }
+
+  .code-editor-container {
+    min-height: 200px;
+    max-height: 400px;
+    background: #fff;
+    padding: 8px 8px 8px 4px;
+    border-radius: 4px;
+    border: 1px solid #52649a0f;
+
+    :global(.cm-editor) {
+      height: 100% !important;
+      overflow: auto !important;
+    }
+
+    :global(.cm-scroller) {
+      min-height: 200px !important;
+      max-height: 400px !important;
+    }
+
+    :global(.cm-content) {
+      min-height: 200px !important;
+      max-height: 400px !important;
+    }
+  }
+}
+
+.testrun-panel-running {
+  width: 100%;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+
+  .text {
+    font-size: 18px;
+  }
+}
+
+.button {
+  border-radius: 8px;
+  min-width: 160px;
+  height: 40px;
+}
+
+
+.testrun-panel-container {
+  background: rgb(255, 255, 255);
+  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+  border: 1px solid rgba(82, 100, 154, 0.13);
+  padding: 8px 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+
+  .testrun-panel-header {
+    background: var(#fcfcff);
+    border-bottom: 1px solid rgba(82, 100, 154, 0.13);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    display: flex;
+    height: 40px;
+    justify-content: space-between;
+    min-height: 40px;
+    width: 100%;
+    align-items: center;
+
+    .testrun-panel-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 8px 8px 8px 16px;
+    }
+
+    .testrun-panel-close {
+      margin: 8px 16px 8px 8px;
+    }
+  }
+
+  .testrun-panel-content {
+    height: calc(100% - 40px);
+    margin: 8px 8px 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: auto;
+    margin-bottom: 72px;
+  }
+
+  .testrun-panel-footer {
+    border-top: 1px solid rgba(82, 100, 154, 0.13);
+    position: absolute;
+    background: #fbfbfb;
+    height: 62px;
+    bottom: 0;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 16px;
+    width: 100%;
+  }
+}

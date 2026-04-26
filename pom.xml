@@ -7,14 +7,61 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-sdk</artifactId>
 
-    <version>1.4.3</version>
+    <version>2.3.0</version>
 
     <packaging>pom</packaging>
 
+    <name>ai4j-sdk</name>
+    <description>ai4j 多模块 SDK 的父 POM与发布入口。 Parent POM and publication entry for the ai4j multi-module SDK.</description>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/LnYo-Cly/ai4j/issues</url>
+    </issueManagement>
+
+    <url>https://github.com/LnYo-Cly/ai4j</url>
+
+    <developers>
+        <developer>
+            <id>LnYo-Cly</id>
+            <name>LnYo-Cly</name>
+            <email>lnyocly@gmail.com</email>
+            <url>https://github.com/LnYo-Cly/ai4j</url>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/LnYo-Cly/ai4j</url>
+        <connection>scm:git:https://github.com/LnYo-Cly/ai4j.git</connection>
+        <developerConnection>scm:git:https://github.com/LnYo-Cly/ai4j.git</developerConnection>
+    </scm>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <root.publish.skip>true</root.publish.skip>
+    </properties>
 
     <modules>
         <module>ai4j</module>
+        <module>ai4j-agent</module>
+        <module>ai4j-coding</module>
+        <module>ai4j-cli</module>
         <module>ai4j-spring-boot-starter</module>
+        <module>ai4j-flowgram-spring-boot-starter</module>
+        <module>ai4j-flowgram-demo</module>
+        <module>ai4j-bom</module>
     </modules>
 
     <build>
@@ -22,21 +69,79 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
                 <configuration>
-                    <skip>true</skip>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.1</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>${root.publish.skip}</skip>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.1</version>
+                <inherited>false</inherited>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${root.publish.skip}</skip>
                 </configuration>
             </plugin>
         </plugins>
     </build>
 
-
-
+    <profiles>
+        <profile>
+            <id>release</id>
+            <properties>
+                <root.publish.skip>false</root.publish.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <configuration>
+                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <keyname>cly</keyname>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.4.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>LnYo-Cly</publishingServerId>
+                            <tokenAuth>true</tokenAuth>
+                            <excludeArtifacts>
+                                <excludeArtifact>ai4j-sdk</excludeArtifact>
+                                <excludeArtifact>ai4j-flowgram-demo</excludeArtifact>
+                            </excludeArtifacts>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
+
+

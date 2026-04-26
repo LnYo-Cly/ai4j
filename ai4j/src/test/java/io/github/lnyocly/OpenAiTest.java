@@ -5,7 +5,7 @@ import io.github.lnyocly.ai4j.annotation.FunctionCall;
 import io.github.lnyocly.ai4j.annotation.FunctionParameter;
 import io.github.lnyocly.ai4j.annotation.FunctionRequest;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -20,12 +20,12 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingObject;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.EmbeddingResponse;
 import io.github.lnyocly.ai4j.service.*;
-import io.github.lnyocly.ai4j.service.factor.AiService;
-import io.github.lnyocly.ai4j.utils.OkHttpUtil;
-import io.github.lnyocly.ai4j.utils.RecursiveCharacterTextSplitter;
-import io.github.lnyocly.ai4j.utils.ServiceLoaderUtil;
-import io.github.lnyocly.ai4j.utils.TikaUtil;
-import io.github.lnyocly.ai4j.vector.VertorDataEntity;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.document.RecursiveCharacterTextSplitter;
+import io.github.lnyocly.ai4j.service.spi.ServiceLoaderUtil;
+import io.github.lnyocly.ai4j.document.TikaUtil;
+import io.github.lnyocly.ai4j.vector.VectorDataEntity;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
@@ -516,9 +516,9 @@ public class OpenAiTest {
         List<List<Float>> vectors = embedding.getData().stream().map(EmbeddingObject::getEmbedding).collect(Collectors.toList());
 
         // 存储转存
-        VertorDataEntity vertorDataEntity = new VertorDataEntity();
-        vertorDataEntity.setVector(vectors);
-        vertorDataEntity.setContent(strings);
+        VectorDataEntity vectorDataEntity = new VectorDataEntity();
+        vectorDataEntity.setVector(vectors);
+        vectorDataEntity.setContent(strings);
 
 
         /**
@@ -695,3 +695,6 @@ public class OpenAiTest {
         }
     }
 }
+
+
+

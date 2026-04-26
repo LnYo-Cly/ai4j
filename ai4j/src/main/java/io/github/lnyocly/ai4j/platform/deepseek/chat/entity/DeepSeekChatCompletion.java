@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.platform.deepseek.chat.entity;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,6 +14,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author cly
@@ -74,6 +76,7 @@ public class DeepSeekChatCompletion {
     /**
      * 如果设置为 True，将会以 SSE（server-sent events）的形式以流式发送消息增量。消息流以 data: [DONE] 结尾
      */
+    @Builder.Default
     private Boolean stream = false;
 
     /**
@@ -129,6 +132,19 @@ public class DeepSeekChatCompletion {
      */
     @JsonProperty("top_logprobs")
     private Integer topLogprobs;
+
+    /**
+     * 额外的请求体参数，用于扩展不同平台的特定字段
+     * 使用 @JsonAnyGetter 使其内容在序列化时展开到 JSON 顶层
+     */
+    @JsonIgnore
+    @Singular("extraBody")
+    private Map<String, Object> extraBody;
+
+    @JsonAnyGetter
+    public Map<String, Object> getExtraBody() {
+        return extraBody;
+    }
 
     public static class DeepSeekChatCompletionBuilder {
         private List<String> functions;

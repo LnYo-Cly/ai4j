@@ -1,0 +1,13 @@
+{
+  "name": "matrix",
+  "brand": "#66ff99",
+  "accent": "#3ddc97",
+  "success": "#98fb98",
+  "warning": "#e6ff5c",
+  "danger": "#ff5f6d",
+  "text": "#ddffe7",
+  "muted": "#7aa387",
+  "panelBorder": "#24593d",
+  "panelTitle": "#66ff99",
+  "badgeForeground": "#06110a"
+}

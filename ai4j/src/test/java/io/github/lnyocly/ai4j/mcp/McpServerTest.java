@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.mcp;
 import io.github.lnyocly.ai4j.mcp.server.McpServer;
 import io.github.lnyocly.ai4j.mcp.server.McpServerFactory;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
-import io.github.lnyocly.ai4j.utils.ToolUtil;
+import io.github.lnyocly.ai4j.tool.ToolUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,3 +184,4 @@ public class McpServerTest {
         }
     }
 }
+

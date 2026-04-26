@@ -3,9 +3,6 @@ package io.github.lnyocly.ai4j.service;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
-import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
-import okhttp3.sse.EventSource;
-import okhttp3.sse.EventSourceListener;
 
 /**
  * @Author cly

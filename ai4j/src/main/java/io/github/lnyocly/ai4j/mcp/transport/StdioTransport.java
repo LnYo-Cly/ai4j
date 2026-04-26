@@ -1,8 +1,8 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.mcp.entity.*;
+import io.github.lnyocly.ai4j.mcp.util.McpMessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,12 +64,12 @@ public class StdioTransport implements McpTransport {
                     executor.submit(this::messageReadLoop);
                     
                 } catch (Exception e) {
-                    log.error("启动MCP进程失败", e);
+                    log.debug("启动MCP进程失败: {}", McpTransportSupport.safeMessage(e), e);
                     running.set(false);
                     if (messageHandler != null) {
                         messageHandler.onError(e);
                     }
-                    throw new RuntimeException("启动MCP进程失败", e);
+                    throw new RuntimeException(McpTransportSupport.safeMessage(e), e);
                 }
             }
         });
@@ -228,11 +228,11 @@ public class StdioTransport implements McpTransport {
                     throw new IOException("写入数据时发生错误");
                 }
             } catch (Exception e) {
-                log.error("发送消息失败", e);
+                log.debug("发送消息失败: {}", McpTransportSupport.safeMessage(e), e);
                 if (messageHandler != null) {
                     messageHandler.onError(e);
                 }
-                throw new RuntimeException("发送消息失败", e);
+                throw new RuntimeException(McpTransportSupport.safeMessage(e), e);
             }
         });
     }
@@ -325,24 +325,7 @@ public class StdioTransport implements McpTransport {
      */
     private McpMessage parseMessage(String jsonString) {
         try {
-            JSONObject jsonObject = JSON.parseObject(jsonString);
-            
-            // 判断消息类型
-            if (jsonObject.containsKey("method")) {
-                if (jsonObject.containsKey("id")) {
-                    // 请求消息
-                    return JSON.parseObject(jsonString, McpRequest.class);
-                } else {
-                    // 通知消息
-                    return JSON.parseObject(jsonString, McpNotification.class);
-                }
-            } else if (jsonObject.containsKey("id")) {
-                // 响应消息
-                return JSON.parseObject(jsonString, McpResponse.class);
-            }
-            
-            log.debug("无法识别的消息格式: {}", jsonString);
-            return null;
+            return McpMessageCodec.parseMessage(jsonString);
         } catch (Exception e) {
             log.debug("解析消息失败: {}", jsonString, e);
             return null;
