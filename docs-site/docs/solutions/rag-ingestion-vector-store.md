@@ -1,44 +1,63 @@
 # RAG Ingestion Vector Store
 
-这个案例给的是一条标准 RAG 入库主线：文档进库、向量化、统一检索，再把证据结果交回模型或上层 runtime。
+这个方案回答的是：当你已经决定做 RAG，第一条最标准、最稳的工程路径是什么。
 
 ## 1. 适合什么场景
 
-- 企业知识库
-- 文档问答
-- FAQ / Wiki / 制度库
-- Flowgram 的知识检索节点
-- Agent 的外部知识增强
+- 企业知识库问答
+- PDF / Word / 网页等文档入库
+- 想先把 ingestion、embedding、vector store、检索链打通
 
-如果你的目标是“先把知识库能力搭稳，再决定上层怎么调用”，这页比单独看某个向量库更有价值。
+这是 RAG 的标准基线，不绑定某个特定向量库品牌。
 
-## 2. 技术链路
+## 2. 核心模块组合
 
-核心组合是：
+主链通常是：
 
+- 文档加载 / 清洗 / 分块
 - `IngestionPipeline`
 - `VectorStore`
 - `RagService`
-- `Qdrant / Milvus / pgvector`
+- 可选 `Reranker` / citations / trace
 
-这意味着重点不在单个库，而在统一抽象下的入库和查询主线。
+它的重点是建立一条“可演进的标准 RAG 管线”，而不是只做某个厂商 demo。
 
-## 3. 这页适合先学什么
+## 3. 这条方案的优点
 
-你应该先建立三件事的关系：
+- 向量库选择更自由
+- 便于后续升级 rerank、citation、trace
+- 入库链和检索链清晰分离
+- 更适合作为团队的 RAG 基线方案
 
-- 文档如何进库
-- 查询结果如何保留来源信息
-- 这条知识链如何再接到 Agent 或 Flowgram
+## 4. 什么时候不够
 
-## 4. 先补哪些主线页
+下面这些情况需要继续细化：
+
+- 已经指定使用 Pinecone
+- 需要公网搜索增强
+- 需要高证据要求的专业领域方案
+
+这时继续看：
+
+- [Pinecone Vector Workflow](/docs/solutions/pinecone-vector-workflow)
+- [SearXNG Web Search](/docs/solutions/searxng-web-search)
+- [Legal Assistant](/docs/solutions/legal-assistant)
+
+## 5. 先补哪些主线页
 
 1. [Core SDK / Search & RAG](/docs/core-sdk/search-and-rag/overview)
-2. [Core SDK / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
-3. [Core SDK / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)
+2. [Core SDK / Package Map](/docs/core-sdk/package-map)
+3. [Spring Boot / Bean Extension](/docs/spring-boot/bean-extension)
 
-## 5. 深入实现细节
+## 6. 继续看实现细节
 
-如果你要看完整 `application.yml`、多种向量库配置和示例代码，继续看旧实现细节页：
+如果你要看：
+
+- 完整 ingestion 流水线
+- 文档处理器
+- 向量库存储样例
+- 检索验证与 rerank 升级
+
+继续看深页：
 
 - [旧路径案例页](/docs/guides/rag-ingestion-vector-store)

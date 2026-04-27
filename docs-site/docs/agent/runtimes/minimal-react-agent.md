@@ -1,25 +1,82 @@
 # Minimal ReAct Agent
 
-`Minimal ReAct Agent` 是 `Agent` 章节里最适合起步的 runtime 入口。
+`Minimal ReAct Agent` 是 `Agent` 章节最稳的起点，因为它代表的是默认 runtime 主线，而不是玩具示例。
 
-## 1. 适合什么场景
+## 1. 它对应的真实实现是什么
 
-- 少量工具调用
-- 没有代码执行沙箱
-- 不需要显式 workflow 或 team 协作
+入口：
 
-如果你的任务只是“让模型按需决定是否调用工具并给出结果”，通常先从这里开始最稳。
+- `Agents.react()`
+- `ReActRuntime`
+- `BaseAgentRuntime`
 
-## 2. 这页应该帮你建立什么心智
+这里的 `ReActRuntime` 很轻，它真正复用的是 `BaseAgentRuntime` 的通用 loop 语义：
 
-先记住三点：
+- 组 prompt
+- 请求模型
+- 读取 tool calls
+- 执行工具
+- 回写 memory
+- 决定是否继续
 
-- `ReAct` 是默认通用 runtime，不等于玩具示例
-- 重点先把 model、tool registry、memory 边界跑通
-- 大部分业务 Agent 都应该先在这一层验证，再决定要不要升级到 `CodeAct` 或编排层
+所以学会最小 ReAct，其实是在学 `Agent` 的默认运行心智。
 
-## 3. 推荐下一步
+## 2. 什么时候先选它
 
-1. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Trace](/docs/agent/observability/trace)
+最适合下面这些场景：
+
+- 文本任务 + 少量工具调用
+- 不需要代码执行沙箱
+- 不需要显式节点图
+- 你想先验证“模型会不会正确地按需调工具”
+
+对大多数业务 Agent 来说，这都是第一站。
+
+## 3. 最小示例
+
+```java
+Agent agent = Agents.react()
+        .modelClient(new ResponsesModelClient(responsesService))
+        .model("doubao-seed-1-8-251228")
+        .systemPrompt("你是一个严谨的助手")
+        .toolRegistry(java.util.Arrays.asList("queryWeather"), null)
+        .build();
+```
+
+这段代码已经包含了最关键的四个面：
+
+- model client
+- runtime
+- tool surface
+- memory
+
+## 4. 为什么它值得先跑通
+
+因为后面的大多数复杂能力，都是在这条主线上叠加出来的：
+
+- `CodeAct`：在默认 loop 上换成“产出代码并执行”
+- `StateGraph`：在默认 loop 之外再加显式编排
+- `SubAgent`：把某些工具调用委派给别的 Agent
+- `Teams`：把单 Agent 扩成多成员协作
+
+如果最小 ReAct 都没跑稳，后面所有扩展都会更难排障。
+
+## 5. 跑通后重点看什么
+
+建议验证：
+
+- `AgentResult.getSteps()` 是否符合预期
+- `toolCalls` 和 `toolResults` 是否完整
+- memory 是否正确保留 tool output
+- stream 模式下 reasoning / response / tool 事件是否可观测
+
+## 6. 什么时候该升级
+
+当你出现下面这些信号时，再考虑离开最小 ReAct：
+
+- 工具链很多，文本 loop 不稳定
+- 任务更适合先写代码再执行
+- 任务天然像流程图
+- 需要明确的主从委派或 team 协作
+
+下一页建议看 [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)。

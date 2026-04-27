@@ -1,41 +1,69 @@
 # Solutions 总览
 
-`Solutions` 这一章专门承接“组合场景”和“落地案例”，不承担基座说明职责。
+`Solutions` 这一章承接的是“组合场景”和“落地案例”，不承担基座说明职责。
 
-## 1. 为什么要单独拆出案例层
+它的定位很明确：
 
-如果把案例和产品说明混在同一条导航里，会同时伤害两类读者：
+- 前面的主线章节负责解释模块、边界、能力
+- `Solutions` 负责告诉你，具体业务问题该怎样组合这些能力
 
-- 新用户会看不清 AI4J 的主能力线
-- 老用户找落地方案时又要穿过大量概念说明
+## 1. 为什么单独拆一层案例
 
-所以这里单独承接“已经知道自己要解决什么问题，现在想看一条实际方案怎么组织”的阅读阶段。
+如果把案例和产品说明混在一起，会同时伤害两类读者：
 
-## 2. 这一章主要分哪几类场景
+- 新读者会分不清哪些是产品主线，哪些只是某个落地组合
+- 老读者想找解决方案时，又要重新穿过大量概念页
 
-- `Spring Boot` 接入与会话持久化
-- `RAG` 入库、检索、重排和证据化回答
+所以 `Solutions` 更像“带路页”：
+
+- 先帮你快速选路线
+- 再把你导回真正需要的主线和深页
+
+## 2. 这一章覆盖哪些问题类型
+
+- Spring Boot 接入与会话持久化
+- Agent 会话持久化与压缩
+- RAG 入库、检索、重排和证据化输出
 - 联网搜索增强
-- `Flowgram` 平台后端与任务存储
-- 网络层与基础设施扩展
+- Flowgram 任务平台后端
+- 网络栈和基础设施扩展
 
-## 3. 怎么读这一章
+## 3. 怎么读这一章才对
 
-建议先在对应主线里建立心智，再回来读案例：
+不要把案例页当成 SSoT。
 
-- Spring 项目：先看 [Spring Boot / Overview](/docs/spring-boot/overview)
-- RAG 项目：先看 [Core SDK / Search & RAG](/docs/core-sdk/search-and-rag/overview)
-- Agent 项目：先看 [Agent / Overview](/docs/agent/overview)
-- Flowgram 项目：先看 [Flowgram / Overview](/docs/flowgram/overview)
+更稳的阅读方式是：
 
-## 4. 快速选案例
+1. 先在对应主线建立心智
+2. 再回到案例页选择组合方式
+3. 最后进入旧路径深页看具体配置和代码
+
+推荐起点：
+
+- Spring 项目：看 [Spring Boot / Overview](/docs/spring-boot/overview)
+- Agent 项目：看 [Agent / Overview](/docs/agent/overview)
+- RAG 项目：看 [Core SDK / Search & RAG](/docs/core-sdk/search-and-rag/overview)
+- Flowgram 项目：看 [Flowgram / Overview](/docs/flowgram/overview)
+
+## 4. 快速选路线
 
 - 只想做多轮聊天 + MySQL 持久化：看 [Spring Boot + MySQL Chat Memory](/docs/solutions/springboot-mysql-chat-memory)
 - 需要持久化 Agent 会话：看 [Spring Boot + JDBC Agent Memory](/docs/solutions/springboot-jdbc-agent-memory)
-- 想做标准 RAG 入库与向量检索：看 [RAG Ingestion Vector Store](/docs/solutions/rag-ingestion-vector-store)
-- 已经确定使用 Pinecone：看 [Pinecone Vector Workflow](/docs/solutions/pinecone-vector-workflow)
-- 需要联网搜索增强：看 [SearXNG Web Search](/docs/solutions/searxng-web-search)
-- 需要流式 + 搜索 + RAG 的组合应用：看 [DeepSeek Stream Search RAG](/docs/solutions/deepseek-stream-search-rag)
+- 想搭标准 RAG 入库与检索流水线：看 [RAG Ingestion Vector Store](/docs/solutions/rag-ingestion-vector-store)
+- 已经确定底层使用 Pinecone：看 [Pinecone Vector Workflow](/docs/solutions/pinecone-vector-workflow)
+- 需要公网联网搜索增强：看 [SearXNG Web Search](/docs/solutions/searxng-web-search)
+- 需要流式输出 + 搜索 + RAG 组合链：看 [DeepSeek Stream Search RAG](/docs/solutions/deepseek-stream-search-rag)
 - 要做高证据要求的法律助手：看 [Legal Assistant](/docs/solutions/legal-assistant)
 - 要把 Flowgram 任务落到 MySQL：看 [Flowgram MySQL Task Store](/docs/solutions/flowgram-mysql-taskstore)
 - 要调优 OkHttp 并发和连接池：看 [SPI Dispatcher ConnectionPool](/docs/solutions/spi-dispatcher-connectionpool)
+
+## 5. 这些案例页怎么组织
+
+本章每一页都优先回答四件事：
+
+- 这个方案解决什么问题
+- 该用哪些模块组合
+- 不适合什么场景
+- 读完后该回到哪条主线继续深入
+
+这样它既能做入门导购，也能做面试时的架构提纲。

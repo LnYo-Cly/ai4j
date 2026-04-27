@@ -326,7 +326,12 @@ ACP 当前对文本增量的处理方式非常直接：
 
 ## 8. 权限确认
 
-如果使用 `--approval manual`，宿主会收到 `session/request_permission`。
+如果当前审批模式不是 `auto`，并且这次 Tool 调用命中了审批规则，宿主会收到 `session/request_permission`。
+
+按当前实现理解：
+
+- `manual`：每次 Tool 调用都会触发
+- `safe`：当前主要是 `apply_patch` 和部分 `bash` 动作会触发
 
 当前支持的选项有：
 

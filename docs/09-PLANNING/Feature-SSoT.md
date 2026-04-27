@@ -1,18 +1,18 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-04-28
+> Last updated: 2026-04-27
 > Single source of truth for active delivery work in this repository.
 
 ## Active Features
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| none | none | - | - | - | - | - |
 
 ## Completed Features
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-015 | docs-site Sidebar Path Completion | 2026-04-27 | `docs/10-WALKTHROUGH/2026-04-27-docs-site-sidebar-path-completion.md` |
 | F-001 | Harness bootstrap | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-harness-bootstrap.md` |
 | F-002 | Java PR regression CI | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-java-pr-regression-ci.md` |
 | F-003 | docs-site IA redesign | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-docs-site-ia-redesign.md` |
@@ -26,6 +26,7 @@
 | F-011 | docs-site Solutions canonical cleanup | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-solutions-canonical-cleanup.md` |
 | F-012 | docs-site ai-basics crosslink cleanup | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-ai-basics-crosslink-cleanup.md` |
 | F-013 | docs-site getting-started legacy demotion | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-getting-started-legacy-demotion.md` |
+| F-014 | docs-site Coding Agent approval deepening | 2026-04-27 | `docs/10-WALKTHROUGH/2026-04-27-docs-site-coding-agent-approval-deepening.md` |
 
 ## Legacy Import Queue
 

@@ -1,50 +1,111 @@
 # Flowgram Runtime
 
-`runtime` 是当前 `Flowgram` 子树里关于后端执行层的 canonical 入口。
+`runtime` 是 `Flowgram` 子树里关于后端执行层的 canonical 入口。
 
-这里讲的不是 `Flowgram.ai` 前端库本身，而是 AI4J 围绕它补起来的后端 runtime、任务 API、task store、trace projection 和执行链路。
+这里讲的不是 `Flowgram.ai` 前端库本身，而是 AI4J 围绕它补起来的：
 
-## 1. 这页应该帮你建立什么心智
+- task API
+- runtime service
+- node execution
+- task store
+- report / result / trace projection
 
-先记住这一条主链：
+## 1. 先记住主链
 
 ```text
-Flowgram.ai 前端画布
-  -> schema / runtime plugin / server client
-  -> AI4J Flowgram task APIs
+Flowgram.ai front-end
+  -> schema / client
+  -> FlowGramTaskController
   -> FlowGramRuntimeFacade
   -> FlowGramRuntimeService
-  -> LLM runner / node executors / task store
+  -> LLM runner / node executors
+  -> task store / report / result
 ```
 
-也就是说：
+这条链决定了 `Flowgram` 的本质是平台后端，而不是单纯 UI 演示。
 
-- `Flowgram.ai` 负责前端画布和交互
-- AI4J `Flowgram` runtime 负责后端执行和平台任务生命周期
+## 2. 真实代码锚点
 
-## 2. Runtime 这一层重点关注什么
+后端核心执行：
 
-- `/flowgram/tasks/run`、`validate`、`result`、`report`、`cancel`
-- 任务状态保存在哪里
-- 节点怎么被执行器真正跑起来
-- trace 和 report 如何给前端消费
-- 前端 schema 怎样适配到后端 runtime schema
+- `ai4j-agent/.../flowgram/FlowGramRuntimeService`
+- `FlowGramLlmNodeRunner`
+- `FlowGramNodeExecutor`
 
-## 3. 和相邻页面怎么分工
+Spring Boot 接入：
+
+- `FlowGramAutoConfiguration`
+- `FlowGramTaskController`
+- `FlowGramRuntimeFacade`
+- `FlowGramTaskStore`
+- `JdbcFlowGramTaskStore`
+
+## 3. Runtime 这一层主要回答什么
+
+- 任务如何被提交与取消
+- schema 如何校验
+- 节点如何被调度执行
+- 执行状态如何被保存
+- result / report / trace projection 如何返回给前端
+
+这也是它和普通 `Agent` 章节最不同的地方。
+
+## 4. Task API 的价值
+
+`Flowgram` 的平台化价值，很大一部分来自 task API，而不是只来自节点执行。
+
+当前主入口包括：
+
+- `run`
+- `validate`
+- `result`
+- `report`
+- `cancel`
+
+这意味着前端画布、测试脚本、平台宿主都能围绕统一任务协议工作，而不是各写一套临时接口。
+
+## 5. Task store 怎么看
+
+runtime 只解决“跑起来”还不够。
+
+一旦要进入平台形态，就必须考虑：
+
+- 任务状态能否持久化
+- report 是否能跨进程读取
+- 失败或取消之后如何恢复观察
+
+对应的关键抽象就是：
+
+- `FlowGramTaskStore`
+- `InMemoryFlowGramTaskStore`
+- `JdbcFlowGramTaskStore`
+
+如果你的场景是 demo、本地开发，内存 store 就够。
+如果你的场景是平台后端或多实例，JDBC store 更贴近真实需求。
+
+## 6. 节点执行层怎么接
+
+节点执行主要分两类：
+
+- `LLM` 节点：走 `FlowGramLlmNodeRunner`
+- 其他节点：走 `FlowGramNodeExecutor`
+
+这让系统天然支持两种扩展：
+
+- 换模型接入策略
+- 增加或覆盖节点执行器
+
+## 7. 和相邻页面的关系
 
 - [Frontend / Backend Integration](/docs/flowgram/frontend-backend-integration)
-  解释前端 `Flowgram.ai` 画布如何接到 AI4J 后端 runtime
+  解释前端画布怎样接到 task API
 - [Built-in Nodes](/docs/flowgram/built-in-nodes)
-  解释运行时里有哪些现成节点
+  解释现在已有的节点能力
 - [Custom Nodes](/docs/flowgram/custom-nodes)
-  解释当内置节点不够时该怎么扩展
+  解释当内置节点不够时怎样扩展
 
-## 4. 继续深入时该看哪里
+## 8. 推荐下一步
 
-如果你要看从画布到后端执行的完整过程，继续看：
-
-- [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-
-如果你要继续沿着 canonical 主线往下走，下一页建议看：
-
-- [Built-in Nodes](/docs/flowgram/built-in-nodes)
+1. [Built-in Nodes](/docs/flowgram/built-in-nodes)
+2. [Custom Nodes](/docs/flowgram/custom-nodes)
+3. [Frontend / Backend Integration](/docs/flowgram/frontend-backend-integration)

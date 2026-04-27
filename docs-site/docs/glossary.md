@@ -10,6 +10,23 @@ sidebar_position: 999
 
 ## A
 
+### AI 基座
+
+在这套文档里，“AI 基座”不是营销词，而是一个结构化定位。
+
+它表示 AI4J 不只提供单点模型调用，还把这些层面放进统一体系：
+
+- 模型调用
+- `Tool / Function Call`
+- `Skill`
+- `MCP`
+- 上层 `Spring Boot / Agent / Coding Agent / Flowgram`
+
+如果你要先看这套分层从哪里开始，优先看：
+
+- [Why AI4J](/docs/start-here/why-ai4j)
+- [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
+
 ### ACP
 
 `ACP` 是 `Coding Agent` 的宿主集成协议，用于 IDE、桌面应用或自定义前端与 `ai4j-cli acp` 通过结构化 JSON-RPC 通信。
@@ -82,6 +99,17 @@ AI4J 面向本地代码仓交付的一套工程化入口，包含：
 ---
 
 ## F
+
+### Function Call
+
+`Function Call` 指模型能够按工具 schema 选择并调用某个本地能力的那条调用语义。
+
+在 AI4J 语境里，它通常是大多数用户理解第一条 Tool 主线的入口。
+
+对应文档：
+
+- [First Tool Call](/docs/start-here/first-tool-call)
+- [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling)
 
 ### Flowgram
 
@@ -243,7 +271,9 @@ AI4J Agent 的默认通用运行时，适合：
 
 ### Skill
 
-`Coding Agent` 中的一类可发现说明文件，通常以 `SKILL.md` 形式存在。
+`Skill` 首先属于 AI4J 基座里的说明资产能力，在 `Coding Agent` 里再进一步产品化。
+
+它通常以 `SKILL.md` 形式存在。
 
 它不是工具协议，而是供模型按需读取和复用的任务说明、模板或工作流指引。
 

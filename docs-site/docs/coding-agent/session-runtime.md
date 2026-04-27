@@ -163,10 +163,19 @@ compact 的内部机制和字段说明，建议直接连读：
 含义可以简单理解为：
 
 - `auto`：默认自动放行；
-- `safe`：更保守地处理有风险的工具调用；
-- `manual`：每次敏感工具都要求确认。
+- `safe`：当前主要拦 `apply_patch` 和部分高风险 `bash` 动作；
+- `manual`：当前每次 Tool 调用都要求确认。
 
-在 CLI/TUI 下，审批通过终端交互完成；在 ACP 下，审批通过 `session/request_permission` 往返完成。
+还要注意两点：
+
+- 在 CLI/TUI 下，审批通过终端交互完成
+- 在 ACP 下，审批通过 `session/request_permission` 往返完成
+
+也就是说，这里不是 shell hook，而是 Tool executor 调用前的一层 runtime 拦截。
+
+更完整的实现链路见：
+
+- [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
 
 ---
 

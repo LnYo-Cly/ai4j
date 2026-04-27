@@ -47,6 +47,16 @@ AI4J 是一套面向 Java 生态的工程化 AI 基座。
 4. [Core SDK / Skills](/docs/core-sdk/skills/overview)
 5. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
 
+### 1.4 你是为了面试复习或架构表达
+
+建议按这个顺序：
+
+1. [Why AI4J](/docs/start-here/why-ai4j)
+2. [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
+3. [Choose Your Path](/docs/start-here/choose-your-path)
+4. [Core SDK / Overview](/docs/core-sdk/overview)
+5. 再按重点阅读 `Spring Boot / Agent / Coding Agent / Flowgram`
+
 ## 2. 文档结构
 
 ### 2.1 Start Here
@@ -94,5 +104,6 @@ AI4J 是一套面向 Java 生态的工程化 AI 基座。
 - 参数含义与默认行为写清楚
 - 高风险能力明确安全边界
 - 对“框架保证 vs 模型依赖”明确标注
+- canonical page 优先负责入口解释，深页再负责细节展开
 
 如果你只想先建立整体心智模型，下一页建议直接看 [Why AI4J](/docs/start-here/why-ai4j)。

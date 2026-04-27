@@ -1,45 +1,57 @@
 # SPI Dispatcher ConnectionPool
 
-这个案例解决的是“默认 OkHttp 并发与连接池策略不够，需要按自身业务并发模型扩展网络层”。
+这个方案讲的不是模型能力，而是当你已经进入生产并发和网络治理阶段时，AI4J 的 HTTP 栈该怎么扩展。
 
 ## 1. 适合什么场景
 
-- 高并发问答
-- 多租户平台
-- 网关环境
-- 需要统一控制并发、连接池、keep-alive 的系统
+- 高并发调用模型
+- 多 provider 共用一套网络池
+- 想按业务流量模型定制 OkHttp
 
-这类问题通常不会出现在第一个 demo 里，但一旦进入真实生产流量，就会变得非常关键。
+它的重点是网络层扩展，而不是 AI 能力本身。
 
-## 2. 技术链路
+## 2. 核心模块组合
 
-核心组合是：
+这条方案的主链是：
 
 - `DispatcherProvider`
 - `ConnectionPoolProvider`
-- `ServiceLoader` / SPI
+- `ServiceLoader`
 - `OkHttpClient.Builder`
 
-这说明它不是业务功能案例，而是底层网络栈治理案例。
+这说明 AI4J 并没有把网络层写死，而是显式留出了 SPI 扩展点。
 
-## 3. 为什么值得单独看
+## 3. 为什么这条线重要
 
-很多团队会把网络层调优直接写死在应用代码里。
+当你开始进入生产并发治理，真正要关心的往往是：
 
-AI4J 这里更推荐的路线是：
+- provider 并发上限
+- 每主机连接复用
+- 网络稳定性与隔离
+- 不同业务流量模型之间的影响
 
-- 沿现有 SPI 扩展点接入
-- 保持 `Core SDK` 与 `Spring Boot` 的统一抽象
-- 不为了并发调优去修改 SDK 源码
+这时 “AI SDK 能不能调起来” 已经不是核心问题，HTTP 栈治理才是。
 
-## 4. 先补哪些主线页
+## 4. 什么时候不用先看它
 
-1. [Core SDK / Extension](/docs/core-sdk/extension/overview)
-2. [Core SDK / SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
-3. [Spring Boot / Bean Extension](/docs/spring-boot/bean-extension)
+如果你还在验证功能，或者仍然处于单机低并发阶段，不必先花精力看这一页。
 
-## 5. 深入实现细节
+先把功能面跑通，再处理网络池和并发治理，成本更低。
 
-如果你要看 SPI 接口、Spring Boot 自动装配加载方式和完整示例，继续看旧实现细节页：
+## 5. 先补哪些主线页
+
+1. [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+2. [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
+3. [Core SDK / SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
+
+## 6. 继续看实现细节
+
+如果你要看：
+
+- 自定义 `DispatcherProvider`
+- 自定义 `ConnectionPoolProvider`
+- SPI 注册方式
+
+继续看深页：
 
 - [旧路径案例页](/docs/guides/spi-dispatcher-connectionpool)

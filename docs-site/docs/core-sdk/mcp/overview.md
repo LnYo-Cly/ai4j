@@ -2,7 +2,19 @@
 
 `MCP` 在 AI4J 里属于基座能力，但不是 `Tools` 的子目录。
 
-## 1. 它到底解决什么
+## 1. 先确定它在整套体系里的位置
+
+这里讲的是协议化外部能力接入。
+
+它先属于 `Core SDK`，然后才可能被上层：
+
+- `Agent`
+- `Coding Agent`
+- `Flowgram`
+
+复用成更具体的运行时能力。
+
+## 2. 它到底解决什么
 
 `MCP` 解决的是：模型如何以协议化方式连接外部能力系统。
 
@@ -15,7 +27,7 @@
 - gateway
 - server publish
 
-## 2. 为什么它和 `Tools` 平级
+## 3. 为什么它和 `Tools` 平级
 
 因为本地函数工具和协议化外部能力是两条不同的能力线：
 
@@ -24,7 +36,18 @@
 
 这也是为什么 `MCP` 不应该被塞进 `Tools` 章节下面。
 
-## 3. 读这一章之前最好先分清什么
+## 4. 什么时候应该优先想到 MCP
+
+更适合 MCP 的情况通常是：
+
+- 能力不在本地 JVM 内部
+- 你希望按协议统一接外部工具面
+- 未来可能要接多服务、多 transport、多能力源
+- 你希望 `tool / resource / prompt` 不只是零散临时代码
+
+如果只是本地 Java 函数，优先看 `Tools`。
+
+## 5. 读这一章之前最好先分清什么
 
 最容易讲乱的三件事是：
 
@@ -34,7 +57,7 @@
 
 如果这三者没有先分清，后面很容易把 `MCP` 误看成“另一种函数调用”，或者把 `Skill` 误看成“不会执行的工具”。
 
-## 4. 推荐阅读顺序
+## 6. 推荐阅读顺序
 
 1. [Positioning and When to Use](/docs/core-sdk/mcp/positioning-and-when-to-use)
 2. [Protocol Capabilities](/docs/core-sdk/mcp/protocol-capabilities)
@@ -42,3 +65,5 @@
 4. [Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
 5. [Transport Types](/docs/core-sdk/mcp/transport-types)
 6. [Publish Your MCP Server](/docs/core-sdk/mcp/publish-your-mcp-server)
+
+如果你要讲清楚 AI4J 为什么把 `MCP` 单独成章，这一页和 `Tools` / `Skills` 的边界就是最核心的答案。
