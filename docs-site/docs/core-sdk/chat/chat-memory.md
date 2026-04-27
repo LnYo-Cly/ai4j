@@ -337,4 +337,5 @@ ChatMemory memory = new InMemoryChatMemory(
 
 ## 11. 继续阅读
 
-- [ChatMemory 与 sessionId 管理](/docs/core-sdk/chat/chat-memory-session-management)
+- [Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)
+- [Memory / Memory and Tool Boundaries](/docs/core-sdk/memory/memory-and-tool-boundaries)

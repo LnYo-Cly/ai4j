@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # 版本与兼容性
 
+> Legacy note: 本页保留为历史兼容性说明。当前正式入口优先从 [Quickstart for Java](/docs/start-here/quickstart-java)、[Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) 和 [Spring Boot / Overview](/docs/spring-boot/overview) 进入。
+
 这一页只回答一个问题：你当前的工程版本条件，适不适合直接接入 AI4J。
 
 ---
@@ -111,7 +113,7 @@ spring-boot.version = 2.3.12.RELEASE
 
 ## 7. 继续阅读
 
-1. [安装与环境准备](/docs/getting-started/installation)
-2. [JDK8 + OpenAI 最小示例](/docs/getting-started/quickstart-openai-jdk8)
-3. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
+1. [Start Here / Quickstart for Java](/docs/start-here/quickstart-java)
+2. [Start Here / Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+3. [Spring Boot / Overview](/docs/spring-boot/overview)
 

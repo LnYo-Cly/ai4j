@@ -4,129 +4,158 @@ sidebar_position: 1
 
 # Coding Agent 总览
 
-`Coding Agent` 是 AI4J 面向本地代码仓交付的一套工程化入口。
+`Coding Agent` 对应的是 `ai4j-coding/` 和 `ai4j-cli/` 这条产品化路径。
 
-它不是单独一个模型能力，而是一组围绕“读代码、改文件、跑命令、接工具、持续会话”的组合能力，当前有三种主要接入方式：
+如果 `Agent` 解决的是“通用智能体 runtime 怎么做”，那么 `Coding Agent` 解决的就是“如何把这套能力变成一个能在本地代码仓里稳定交付任务的产品入口”。
 
-- `CLI`：面向直接使用者；
-- `TUI`：面向更完整的交互体验；
-- `ACP`：面向 IDE、桌面应用和自定义宿主集成。
+## 1. 三分钟理解 Coding Agent
 
----
+先记住这五句话：
 
-## 1. 这部分文档解决什么问题
+- `Coding Agent` 不是通用 Agent 的别名
+- 它建立在 `Core SDK + Agent` 之上，但目标是本地代码仓交付
+- 它不仅有 runtime，还有 workspace-aware tools、session、approval、CLI / TUI / ACP 宿主
+- `ai4j-coding` 是 runtime，`ai4j-cli` 是直接给人或宿主使用的产品壳层
+- 它更像“本地 coding assistant 交付层”，而不是普通业务 Agent 框架
 
-这一类文档优先回答两类问题：
+一句话定义可以直接说成：
 
-1. 我怎么把 Coding Agent 跑起来并稳定使用？
-2. 我怎么扩展它，让它适配自己的工具链、技能目录、MCP 服务和宿主界面？
+> 一个建立在 `ai4j` 和 `ai4j-agent` 之上的、本地代码仓交付型 coding runtime 与宿主产品层。
 
-所以这一组文档会按“先会用，再扩展”的顺序组织。
+## 2. 它到底解决什么问题
 
----
+当你把 Agent 用在真实代码仓时，问题会马上从“模型会不会调工具”升级成：
 
-## 2. 能力地图
+- 工作区里能读什么、改什么、执行什么
+- 什么时候应该请求审批
+- 会话怎么保存、恢复、分叉、回放
+- 长上下文怎么 compact、checkpoint、继续跑
+- 终端怎么交互、宿主怎么接协议、进程怎么管理
 
-当前 Coding Agent 专题覆盖这些内容：
+这些都不是通用 `Agent` runtime 自动替你解决的，所以才需要 `Coding Agent` 这一层。
 
-- 启动与交互：CLI、TUI、ACP；
-- 发布与分发：fat jar、平台压缩包、GitHub Release、一键安装；
-- Runtime 架构：agent runtime、session runtime、host runtime、MCP runtime；
-- 会话能力：session、resume、fork、history、tree、events、replay、auto-continue、compact-after-continue；
-- 上下文压缩：tool-result microcompact、checkpoint compact、aggressive compact、session-memory fallback；
-- Prompt 组装：system、instructions、workspace 约束、skills、commands、memory；
-- 模型与配置：provider、protocol、profile、workspace override、stream、approval；
-- Provider 运营：全局 profile、workspace 绑定、模型切换、默认协议规则；
-- 内置工具：`bash`、`read_file`、`write_file`、`apply_patch`；
-- 可发现技能：workspace/global/custom roots 下的 `SKILL.md`；
-- MCP：全局注册、工作区启用、当前会话暂停/恢复/重连；
-- 扩展点：自定义 `toolRegistry`、`toolExecutor`、`ToolExecutorDecorator`、`CodingCliTuiFactory`。
+## 3. 模块路径和能力组成
 
----
+模块路径：
 
-## 3. 三种入口怎么选
+- `ai4j-coding/`：coding runtime
+- `ai4j-cli/`：CLI / TUI / ACP host
 
-### 3.1 CLI
+可以把它拆成四个能力面来看：
 
-适合：
+- runtime：outer loop、task policy、tool orchestration、context compaction
+- workspace：文件工具、shell/process、patch、任务上下文
+- session：save / resume / fork / history / replay / events / compacts
+- host：CLI、TUI、ACP、分发与安装
 
-- 直接在终端里使用；
-- 一次性任务或持续 REPL；
-- 想最快验证 provider / model / workspace 能否打通。
+这也是为什么 `Coding Agent` 不是单一模型能力，而是一整套围绕“仓库交付”组织起来的系统。
 
-入口文档：
+## 4. 三种主要入口怎么选
 
-- [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-
-### 3.2 TUI
+### CLI
 
 适合：
 
-- 需要更强的主缓冲区交互体验；
-- 需要 slash command、palette、状态栏、主题切换；
-- 希望在终端里长期使用 coding agent。
+- 一次性任务
+- 直接在终端里做持续 REPL
+- 先验证 provider / model / workspace 是否打通
 
-入口文档：
-
-- [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-- [TUI 定制与主题](/docs/coding-agent/tui-customization)
-
-### 3.3 ACP
+### TUI
 
 适合：
 
-- 要接 IDE 插件、桌面端或自定义宿主；
-- 要消费结构化会话事件，而不是只渲染终端文本；
-- 要在宿主侧接管权限审批、历史恢复和流式渲染。
+- 需要更强的交互体验
+- 需要 slash command、palette、状态栏、回放等终端 UI
+- 希望在终端里长期使用 coding agent
 
-入口文档：
+### ACP
 
-- [ACP 集成](/docs/coding-agent/acp-integration)
+适合：
 
----
+- IDE 插件
+- 桌面应用
+- 自定义宿主
 
-## 4. 建议阅读顺序
+它的重点不是渲染终端文本，而是传递结构化会话事件和权限交互。
 
-### 4.1 直接使用
+## 5. 和相邻模块的边界
 
-1. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-2. [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
-3. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-4. [Runtime 架构](/docs/coding-agent/runtime-architecture)
-5. [会话、流式与进程](/docs/coding-agent/session-runtime)
-6. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
-7. [Prompt 组装与上下文来源](/docs/coding-agent/prompt-assembly)
-8. [配置体系](/docs/coding-agent/configuration)
-9. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
-10. [命令参考](/docs/coding-agent/command-reference)
+### 5.1 和 Agent 的边界
 
-### 4.2 做扩展
+`Agent` 是通用 runtime。
 
-1. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
-2. [Runtime 架构](/docs/coding-agent/runtime-architecture)
-3. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
-4. [Prompt 组装与上下文来源](/docs/coding-agent/prompt-assembly)
-5. [Skills 使用与组织](/docs/coding-agent/skills)
-6. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
-7. [MCP 对接](/docs/coding-agent/mcp-integration)
-8. [ACP 集成](/docs/coding-agent/acp-integration)
-9. [TUI 定制与主题](/docs/coding-agent/tui-customization)
+`Coding Agent` 则是在这个 runtime 之上加入：
 
----
+- workspace-aware tools
+- approvals
+- session/process 管理
+- CLI / TUI / ACP
 
-## 5. 设计边界
+如果你在做服务端智能体或业务流程智能体，先看 `Agent`。如果你在做本地代码仓任务交付，先看 `Coding Agent`。
 
-为了避免读文档时概念混乱，可以先记住这几个边界：
+### 5.2 和 Core SDK 的边界
 
-- `Coding Agent` 解决的是“本地代码仓上的交付与交互”；
-- `BaseAgentRuntime` 保持底层单轮 tool-loop 语义，任务级自动继续在 `ai4j-coding` 的 outer loop 中实现；
-- `MCP` 是它可以接入的一类工具来源，但不是全部；
-- `Skill` 不是工具调用协议，而是供模型按任务读取和复用的说明/模板；
-- `ACP` 不是模型协议，而是 Coding Agent 的宿主集成协议；
-- `TUI` 不是另一个 Agent，只是另一层交互壳。
+`Core SDK` 负责模型、工具、`Skill`、`MCP`、memory、RAG 等基座能力。
 
----
+`Coding Agent` 负责把其中一部分能力产品化到“本地仓库交互”场景里。
 
-## 6. 下一步
+所以这里的 `Skill`、`MCP`、tools 都不是孤立存在的，而是被重新组织到了 coding workflow 中。
 
-建议先从 [Coding Agent 快速开始](/docs/coding-agent/quickstart) 开始。
+### 5.3 和 Flowgram 的边界
+
+`Coding Agent` 面向“读代码、改文件、跑命令、持续会话”。
+
+`Flowgram` 面向“节点图、后端任务 API、可视化工作流平台”。
+
+一个偏本地仓库任务交互，一个偏流程平台后端，不是同一条线。
+
+## 6. 你会在这一章学到什么
+
+这一组文档主要覆盖：
+
+- 如何最快跑起来
+- 如何安装和发布
+- 如何理解 architecture / session / compact
+- 如何管理配置、审批、Skills、MCP
+- 如何在 CLI / TUI / ACP 三种宿主方式下接入
+
+## 7. 推荐阅读顺序
+
+### 直接使用
+
+1. [Why Coding Agent](/docs/coding-agent/why-coding-agent)
+2. [Coding Agent Quickstart](/docs/coding-agent/quickstart)
+3. [Install and Release](/docs/coding-agent/install-and-release)
+4. [CLI / TUI](/docs/coding-agent/cli-and-tui)
+5. [Architecture](/docs/coding-agent/architecture)
+6. [Session Runtime](/docs/coding-agent/session-runtime)
+7. [Compact and Checkpoint](/docs/coding-agent/compact-and-checkpoint)
+8. [Configuration](/docs/coding-agent/configuration)
+9. [Tools and Approvals](/docs/coding-agent/tools-and-approvals)
+10. [Skills](/docs/coding-agent/skills)
+11. [MCP and ACP](/docs/coding-agent/mcp-and-acp)
+12. [Command Reference](/docs/coding-agent/command-reference)
+
+### 做扩展
+
+1. [Architecture](/docs/coding-agent/architecture)
+2. [Session Runtime](/docs/coding-agent/session-runtime)
+3. [Compact and Checkpoint](/docs/coding-agent/compact-and-checkpoint)
+4. [Configuration](/docs/coding-agent/configuration)
+5. [Tools and Approvals](/docs/coding-agent/tools-and-approvals)
+6. [Skills](/docs/coding-agent/skills)
+7. [MCP and ACP](/docs/coding-agent/mcp-and-acp)
+8. [Command Reference](/docs/coding-agent/command-reference)
+
+## 8. 最该先记住的边界
+
+为了避免概念混乱，先记住：
+
+- `Coding Agent` 解决的是本地代码仓交付与交互
+- `BaseAgentRuntime` 保持底层单轮 tool-loop 语义，任务级自动继续由 `ai4j-coding` 的 outer loop 负责
+- `MCP` 是它可接入的一类工具来源，但不是全部
+- `Skill` 不是工具协议，而是供模型按任务读取的说明/模板
+- `ACP` 不是模型协议，而是宿主集成协议
+- `TUI` 不是另一个 Agent，而是另一个交互壳
+
+如果你是第一次进入这一章，下一页建议先看 [Why Coding Agent](/docs/coding-agent/why-coding-agent)。

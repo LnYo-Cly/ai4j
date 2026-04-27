@@ -15,6 +15,8 @@ AI4J 当前已经给出两端参考：
 - 后端：`ai4j-flowgram-spring-boot-starter`
 - 前端：`ai4j-flowgram-webapp-demo`
 
+这里的前端基础是 `Flowgram.ai` 画布 / editor 能力，AI4J 负责的是与它对接的后端 runtime 与 server 侧协议。
+
 ---
 
 ## 1. 整体对接结构
@@ -329,8 +331,8 @@ Flowgram 前端画布
 
 ## 10. 继续阅读
 
-1. [前端自定义节点开发](/docs/flowgram/frontend-custom-node-development)
-2. [前端工作流如何在后端执行](/docs/flowgram/workflow-execution-pipeline)
-3. [Flowgram API 与运行时](/docs/flowgram/api-and-runtime)
-4. [自定义节点扩展](/docs/flowgram/custom-node-extension)
+1. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
+2. [Flowgram Runtime](/docs/flowgram/runtime)
+3. [Flowgram Overview](/docs/flowgram/overview)
+4. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
 5. [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)

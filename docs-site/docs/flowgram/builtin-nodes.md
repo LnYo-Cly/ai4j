@@ -266,4 +266,4 @@ starter 自动注册的执行器包括：
 
 - [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)
 - [引用、Trace 与前端展示](/docs/ai-basics/rag/citations-trace-and-ui-integration)
-- [自定义节点扩展](/docs/flowgram/custom-node-extension)
+- [自定义节点扩展](/docs/flowgram/custom-nodes)

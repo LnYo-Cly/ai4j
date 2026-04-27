@@ -91,4 +91,7 @@ SSE 分片粒度由平台决定，不一定“一个 token 一次回调”。
 - 对输出做长度上限，避免超长回包压垮前端。
 - 前端支持“停止生成”按钮并联动取消请求。
 
-下一页建议阅读：`Chat / Function Call 与 Tool 注册`。
+继续阅读建议：
+
+- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+- [Tools / Function Calling](/docs/core-sdk/tools/function-calling)

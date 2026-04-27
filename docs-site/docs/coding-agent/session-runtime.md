@@ -195,5 +195,5 @@ compact 的内部机制和字段说明，建议直接连读：
 ## 8. 继续阅读
 
 1. [命令参考](/docs/coding-agent/command-reference)
-2. [ACP 集成](/docs/coding-agent/acp-integration)
+2. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 3. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)

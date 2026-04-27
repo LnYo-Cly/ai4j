@@ -115,3 +115,8 @@ OkHttpClient client = new OkHttpClient.Builder()
 - 请求限流
 - 指数退避重试
 - 熔断降级
+
+## 9. 继续阅读
+
+- [Extension / Overview](/docs/core-sdk/extension/overview)
+- [Extension / SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)

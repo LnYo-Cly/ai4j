@@ -359,5 +359,5 @@ KnowledgeRetrieve -> LLM -> End
 
 1. [混合检索与 Rerank 实战工作流](/docs/ai-basics/rag/hybrid-retrieval-and-rerank-workflow)
 2. [RAG 与知识库增强总览](/docs/ai-basics/rag/overview)
-3. [Flowgram 内置节点](/docs/flowgram/builtin-nodes)
+3. [Flowgram 内置节点](/docs/flowgram/built-in-nodes)
 4. [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)

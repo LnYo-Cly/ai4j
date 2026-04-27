@@ -66,7 +66,7 @@ ResponseRequest request = ResponseRequest.builder()
         .build();
 ```
 
-完整用法见：[ChatMemory：基础会话上下文](/docs/core-sdk/chat/chat-memory)。
+如果你要按当前 canonical 主线补齐上下文能力，建议连读：[Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)。
 
 ## 5. 与 Chat 非流式的差异
 
@@ -102,4 +102,7 @@ ResponseRequest request = ResponseRequest.builder()
 
 部分模型在 Responses 下会产出更多中间语义项，建议用流式提升体验。
 
-下一页：`Responses（流式事件模型）`。
+继续阅读建议：
+
+- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)

@@ -249,6 +249,6 @@ Agent agent = Agents.react()
 
 ## 10. 下一步阅读
 
-1. [自定义 Agent 开发指南](/docs/agent/custom-agent-development)
-2. [Runtime 实现详解](/docs/agent/runtime-implementations)
-3. [Trace 与可观测性](/docs/agent/trace-observability)
+1. [Runtime 实现详解](/docs/agent/runtimes/runtime-implementations)
+2. [Tools and Registry](/docs/agent/tools-and-registry)
+3. [Trace 与可观测性](/docs/agent/observability/trace)

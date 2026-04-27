@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # 模块选择与 Maven Central 发布
 
+> Legacy note: 本页保留为历史模块长文。当前正式入口优先从 [Start Here / Architecture at a Glance](/docs/start-here/architecture-at-a-glance) 和 [Core SDK / Architecture and Module Map](/docs/core-sdk/architecture-and-module-map) 进入。
+
 这页解决三个常见问题：
 
 1. 我到底该引哪个模块
@@ -229,10 +231,10 @@ mvn -pl ai4j -Prelease -DskipTests package
 
 ## 7. 继续阅读
 
-1. [安装与环境准备](/docs/getting-started/installation)
-2. [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
-3. [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
-4. [ChatMemory：基础会话上下文](/docs/ai-basics/chat/chat-memory)
-5. [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
-6. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
+1. [Start Here / Why AI4J](/docs/start-here/why-ai4j)
+2. [Core SDK / Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)
+3. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
+4. [Core SDK / Memory](/docs/core-sdk/memory/overview)
+5. [Agent / Memory and State](/docs/agent/memory-and-state)
+6. [Coding Agent / Quickstart](/docs/coding-agent/quickstart)
 

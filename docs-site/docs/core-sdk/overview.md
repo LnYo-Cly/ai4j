@@ -1,96 +1,100 @@
-﻿---
-sidebar_position: 1
----
+# Core SDK 总览
 
-# 核心 SDK 总览
+`Core SDK` 是 AI4J 的唯一基座层，对应仓库里的核心模块是 `ai4j/`。
 
-这一章专门解决你提到的问题：文档不能散，必须细分且可落地。
+如果你只能先讲清楚一个部分，那应该先讲清楚这一层。因为后面的 `Spring Boot`、`Agent`、`Coding Agent`、`Flowgram`，本质上都在复用或扩展这里的能力。
 
-本章把 ai4j 的基础能力拆成可独立阅读的子模块，每个模块都包含：
+## 1. 先用一句话理解这一层
 
-- 能力边界（能做什么/不能做什么）
-- 核心类与关键参数
-- 同步与流式调用差异
-- 工程化建议与常见坑
+`Core SDK` 解决的是：在 Java 里，如何用一套连续的工程模型把模型调用、工具接入、协议扩展、会话上下文、RAG 和能力扩展组织起来。
 
-## 1. 设计目标
+所以它不是单独的“Chat 章节”，也不是“工具杂项区”，而是整个 AI4J 的基础能力总装层。
 
-ai4j 的核心目标是“**跨平台协议消歧**”：
+## 2. 这一层到底包含什么
 
-- 业务代码只依赖统一接口
-- 平台差异收敛在服务实现层
-- 模型切换成本最小化
+可以把 `Core SDK` 理解成七个并列能力面：
 
-统一入口由 `AiService` 提供，统一接口包括：
+- `Model Access`：`Chat`、`Responses`、流式、多模态、统一请求/返回约定
+- `Tools`：本地函数工具、注解式工具、执行模型、安全边界
+- `Skills`：可发现、按需加载的说明/模板/工作流资源
+- `MCP`：外部能力的协议化接入、网关、传输、发布语义
+- `Memory`：基础会话上下文，以及与工具边界的划分
+- `Search & RAG`：联网增强、`Embedding`、`Rerank`、向量存储、入库和检索
+- `Extension`：provider、模型、服务入口与网络栈扩展
 
-- `IChatService`
-- `IResponsesService`
-- `IEmbeddingService`
-- `IAudioService`
-- `IImageService`
-- `IRealtimeService`
+这七块合起来，才构成 AI4J 的基座。
 
-## 2. 阅读顺序（推荐）
+## 3. 代码里这层长什么样
 
-第一次接入建议按下面顺序阅读：
+在源码里，`ai4j/src/main/java/io/github/lnyocly/ai4j/` 下面已经能看到这套分层的主干：
 
-1. `平台与服务矩阵`
-2. `Chat / 非流式`
-3. `Chat / 流式`
-4. `ChatMemory / 基础会话上下文`
-5. `Responses / 流式事件模型`
-6. `Function Call 与工具注册`
-7. `多模态`
-8. `SPI、SearXNG、Pinecone`
+- `service`、`platform`
+- `tool`、`tools`
+- `skill`
+- `mcp`
+- `memory`
+- `rag`、`vector`、`rerank`、`websearch`、`document`
+- `network`、`config`、`interceptor`、`auth`
 
-## 3. 章节目录
+不需要一开始记住所有包名，但你应该先记住：这个模块不是只围绕某一个接口长出来的，而是围绕一整套基础能力面组织的。
 
-### 3.1 平台与协议层
+## 4. 什么属于 Core SDK，什么不属于
 
-- `平台与服务矩阵`
-- `Chat vs Responses 选型`
+属于这一层的，是“任何上层模块都可能复用的基础能力”。
 
-### 3.2 Chat Completions
+例如：
 
-- `非流式调用`
-- `流式调用`
-- `ChatMemory / 基础会话上下文`
-- `Function Call 与 Tool 注册`
-- `多模态（Vision）`
+- provider 与服务访问
+- `Function Call`
+- `Skill`
+- `MCP`
+- `ChatMemory`
+- RAG 与检索链
+- 扩展点和统一入口
 
-### 3.3 Responses API
+不属于这一层的，是更上层、更场景化的运行时：
 
-- `非流式调用`
-- `流式事件模型`
+- `Spring Boot` 的自动装配与 Bean 扩展
+- `Agent` 的 runtime、orchestration、trace
+- `Coding Agent` 的 workspace、session、approval、CLI / TUI / ACP
+- `Flowgram` 的节点图运行与平台后端接口
 
-### 3.4 其他服务
+这个边界很重要，因为它决定了文档阅读和代码定位都不会混层。
 
-- `Embedding`
-- `Audio`
-- `Image`
-- `Realtime`
+## 5. 为什么这层必须先学
 
-### 3.5 工程增强能力
+### 5.1 它决定你怎么解释整个项目
 
-- `SearXNG 联网搜索增强`
-- `Pinecone 向量检索工作流`
-- `SPI：Dispatcher 与 ConnectionPool`
+如果你能讲清楚 `Core SDK`，你基本就能讲清楚：
 
-## 4. 你可以得到什么
+- AI4J 不是一个单点 SDK
+- 上层模块为什么不是各写各的
+- `Function Call`、`Skill`、`MCP` 的归属为什么要分开
 
-读完这一章后，你应该可以：
+### 5.2 它是上层模块共享的能力底座
 
-- 用同一套实体在 OpenAI / 豆包 / DashScope / Ollama 间切换
-- 用 `ChatMemory` 统一维护 Chat / Responses 的会话上下文
-- 解释 Chat 与 Responses 的事件模型差异
-- 正确使用 tool/function/mcp 的暴露语义
-- 在项目里按“最小侵入”接入联网检索与向量检索
-- 按并发模型自定义 OkHttp Dispatcher 与连接池
+上层模块复用关系可以简化理解为：
 
-## 5. 对应代码入口
+- `Spring Boot` 复用这层的配置和能力装配
+- `Agent` 复用这层的模型访问、工具和 `MCP`
+- `Coding Agent` 复用这层的工具、`Skill`、`MCP` 和基础模型接入
+- `Flowgram` 复用这层的模型、工具、知识库和部分 agentic 能力
 
-- 服务工厂：`ai4j/src/main/java/io/github/lnyocly/ai4j/service/factory/AiService.java`
-- 平台枚举：`ai4j/src/main/java/io/github/lnyocly/ai4j/service/PlatformType.java`
-- 统一配置：`ai4j/src/main/java/io/github/lnyocly/ai4j/service/Configuration.java`
+所以这一层不是“读过就算”，而是后续所有专题的共同前提。
 
-本章后续页面会围绕这些入口逐层展开。
+## 6. 建议怎么读这一层
+
+推荐按下面顺序：
+
+1. [Strengths and Differentiators](/docs/core-sdk/strengths-and-differentiators)
+2. [Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)
+3. [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+4. [Model Access](/docs/core-sdk/model-access/overview)
+5. [Tools](/docs/core-sdk/tools/overview)
+6. [Skills](/docs/core-sdk/skills/overview)
+7. [MCP](/docs/core-sdk/mcp/overview)
+8. [Memory](/docs/core-sdk/memory/overview)
+9. [Search & RAG](/docs/core-sdk/search-and-rag/overview)
+10. [Extension](/docs/core-sdk/extension/overview)
+
+如果你是为了面试或架构表达，前 4 页就已经是最值得反复复述的主线。

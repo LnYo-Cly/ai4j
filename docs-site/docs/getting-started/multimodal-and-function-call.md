@@ -11,6 +11,8 @@ sidebar_position: 7
 
 并给出与 `Chat`、`Responses` 的配合方式。
 
+> Legacy note: 本页保留为历史长文组合指南。当前正式入口优先从 [Core SDK / Model Access / Multimodal](/docs/core-sdk/model-access/multimodal) 和 [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling) 进入。
+
 ## 1. Chat 多模态（Vision）
 
 ai4j 在 Chat 链路里统一了多模态消息结构，你可以直接传文本 + 图片地址（或 base64）。
@@ -216,7 +218,10 @@ Function 与 MCP 都会以工具形式进入模型上下文，但来源不同：
 .toolRegistry(functionNames, mcpServerIds)
 ```
 
-详细见：`MCP / Tool 暴露语义与安全边界`。
+详细见：
+
+- [Core SDK / MCP / Tool Exposure Semantics](/docs/core-sdk/mcp/tool-exposure-semantics)
+- [Core SDK / Tools / Tool Whitelist and Security](/docs/core-sdk/tools/tool-whitelist-and-security)
 
 ## 10. 最佳实践
 

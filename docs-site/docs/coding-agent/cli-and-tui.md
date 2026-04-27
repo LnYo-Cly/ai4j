@@ -6,7 +6,7 @@ sidebar_position: 3
 
 `code` 和 `tui` 使用同一套 Coding Agent 会话、工具、模型和 MCP 运行时，差别主要在交互壳层。
 
-如果你是直接在终端里使用 AI4J Coding Agent，这一页应该是主入口；如果你要接 IDE 或自定义宿主，则继续看 [ACP 集成](/docs/coding-agent/acp-integration)。
+如果你是直接在终端里使用 AI4J Coding Agent，这一页应该是主入口；如果你要接 IDE 或自定义宿主，则继续看 [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)。
 
 ---
 
@@ -251,8 +251,8 @@ palette 适合做两件事：
 ## 9. 继续阅读
 
 1. [配置体系](/docs/coding-agent/configuration)
-2. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
-3. [会话、流式与进程](/docs/coding-agent/session-runtime)
-4. [ACP 集成](/docs/coding-agent/acp-integration)
+2. [会话、流式与进程](/docs/coding-agent/session-runtime)
+3. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
+4. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 5. [命令参考](/docs/coding-agent/command-reference)
 

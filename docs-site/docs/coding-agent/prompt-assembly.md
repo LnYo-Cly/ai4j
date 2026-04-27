@@ -273,5 +273,5 @@ MCP 工具也不是通过拼 prompt 注入的。
 1. [会话、流式与进程](/docs/coding-agent/session-runtime)
 2. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
 3. [Skills 使用与组织](/docs/coding-agent/skills)
-4. [MCP 对接](/docs/coding-agent/mcp-integration)
+4. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 5. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)

@@ -126,3 +126,8 @@ Reranker reranker = aiService.getModelReranker(
 - namespace 级专用管理操作
 - 已有旧项目已经大量使用 `PineconeQuery / PineconeDelete`
 - 你在封装 Pinecone 专用能力，而不是统一 RAG 能力
+
+## 9. 继续阅读
+
+- [Search & RAG / Overview](/docs/core-sdk/search-and-rag/overview)
+- [Search & RAG / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)

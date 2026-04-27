@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # 平台与服务能力矩阵
 
+> Legacy note: 本页保留为历史能力清单。当前正式主线优先从 [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry) 与 [Core SDK / Model Access](/docs/core-sdk/model-access/overview) 进入。
+
 这页用于回答一个核心问题：**ai4j 到底统一了什么，以及每个平台当前支持到什么程度**。
 
 ## 1. ai4j 的核心价值：消除接口协议歧义
@@ -163,7 +165,7 @@ IChatService legacy = FreeAiService.getChatService("tenant-a-openai");
 - 如果你要结构化事件流（reasoning / output item / function args）：优先 `Responses`。
 - 如果你已经有候选集合，只想做精排：优先 `Rerank`。
 
-详细对比见：[Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)。
+详细对比见：[Core SDK / Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)。
 
 ## 8. 建议的工程分层
 

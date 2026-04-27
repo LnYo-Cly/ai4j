@@ -6,7 +6,9 @@ sidebar_position: 1
 
 本页目标：让你在 10 分钟内完成依赖接入，并明确应该从哪条接入路径开始。
 
-如果你想进一步区分每个模块应该怎么引、哪些模块会发布到 Maven Central、根聚合工程和 demo 模块各自做什么，继续看 [模块选择与 Maven Central 发布](/docs/getting-started/modules-and-maven-central)。
+> Legacy note: 本页保留为历史长文入口。当前正式入口优先从 [Start Here](/docs/start-here/why-ai4j)、[Quickstart for Java](/docs/start-here/quickstart-java)、[Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) 或 [Coding Agent Overview](/docs/coding-agent/overview) 进入。
+
+如果你想先从当前主线理解真实模块分层、模块职责边界，以及根聚合工程和 demo 模块各自做什么，继续看 [Start Here / Architecture at a Glance](/docs/start-here/architecture-at-a-glance) 和 [Core SDK / Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)。
 
 ---
 
@@ -22,10 +24,10 @@ sidebar_position: 1
 
 最短起步建议：
 
-- 非 Spring：先看 [JDK8 + OpenAI 最小示例](/docs/getting-started/quickstart-openai-jdk8)
-- Spring Boot：先看 [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
+- 非 Spring：先看 [Quickstart for Java](/docs/start-here/quickstart-java)
+- Spring Boot：先看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
 - Coding Agent：先看 [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-- 本地模型：看 [Ollama 本地模型接入](/docs/getting-started/quickstart-ollama)
+- 本地模型：看 [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 
 ---
 
@@ -38,7 +40,7 @@ sidebar_position: 1
 | Spring Boot | `2.x` | 当前 starter POM 以 `2.3.12.RELEASE` 为编译基线 |
 | Node.js | `18+` | 仅文档站构建需要，业务运行不依赖 |
 
-更细的兼容边界见 [版本与兼容性](/docs/getting-started/version-compatibility)。
+当前主线里的环境基线，优先看 [Quickstart for Java](/docs/start-here/quickstart-java)、[Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) 和 [Spring Boot / Overview](/docs/spring-boot/overview)。
 
 ---
 
@@ -79,7 +81,7 @@ sidebar_position: 1
 如果你是想把 AI4J 当成可执行的 Coding Agent 来用，而不是作为普通业务 SDK 依赖，直接看：
 
 - [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-- [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
+- [发布、安装与 GitHub Release](/docs/coding-agent/install-and-release)
 
 作为 Maven 坐标时，它对应：
 
@@ -234,12 +236,10 @@ ai:
 
 ## 8. 下一步阅读
 
-1. [版本与兼容性](/docs/getting-started/version-compatibility)
-2. [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
-3. [JDK8 + OpenAI 最小示例](/docs/getting-started/quickstart-openai-jdk8)
-4. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
-5. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-6. [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
-7. [多模态与 Function Call](/docs/getting-started/multimodal-and-function-call)
-8. [常见问题与排障手册](/docs/getting-started/troubleshooting)
+1. [Quickstart for Java](/docs/start-here/quickstart-java)
+2. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+3. [Core SDK / Overview](/docs/core-sdk/overview)
+4. [Spring Boot / Overview](/docs/spring-boot/overview)
+5. [Coding Agent / Overview](/docs/coding-agent/overview)
+6. [Start Here / Troubleshooting](/docs/start-here/troubleshooting)
 

@@ -8,7 +8,7 @@ sidebar_position: 3
 
 请使用新的正式文档：
 
-1. [ACP 集成](/docs/coding-agent/acp-integration)
+1. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 2. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-3. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
+3. [配置体系](/docs/coding-agent/configuration)
 4. [命令参考](/docs/coding-agent/command-reference)

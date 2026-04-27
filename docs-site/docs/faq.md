@@ -14,10 +14,10 @@ sidebar_position: 998
 
 优先顺序：
 
-1. [安装与环境准备](/docs/getting-started/installation)
-2. [平台与服务能力矩阵](/docs/getting-started/platforms-and-service-matrix)
-3. [JDK8 + OpenAI 最小示例](/docs/getting-started/quickstart-openai-jdk8)
-4. [Spring Boot 快速接入模式](/docs/getting-started/quickstart-springboot)
+1. [Why AI4J](/docs/start-here/why-ai4j)
+2. [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
+3. [Quickstart for Java](/docs/start-here/quickstart-java)
+4. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
 
 ---
 
@@ -27,7 +27,7 @@ sidebar_position: 998
 
 1. [Coding Agent 总览](/docs/coding-agent/overview)
 2. [Coding Agent 快速开始](/docs/coding-agent/quickstart)
-3. [发布、安装与 GitHub Release](/docs/coding-agent/release-and-installation)
+3. [发布、安装与 GitHub Release](/docs/coding-agent/install-and-release)
 4. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
 
 ---
@@ -48,7 +48,7 @@ sidebar_position: 998
 
 对应文档：
 
-- [Chat 与 Responses 实战指南](/docs/getting-started/chat-and-responses-guide)
+- [Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
 
 ---
 
@@ -113,8 +113,8 @@ MCP 可以成为 Agent 的工具来源，但 MCP 不等于 Agent。
 
 先看：
 
-1. [平台适配与统一接口](/docs/ai-basics/platform-adaptation)
-2. [新增 Provider 与模型适配](/docs/ai-basics/provider-and-model-extension)
+1. [Provider 扩展](/docs/core-sdk/extension/provider-extension)
+2. [Model 扩展](/docs/core-sdk/extension/model-extension)
 
 如果只是切换已有 provider 下的新模型名，通常不需要改 SDK 源码。
 
@@ -124,12 +124,12 @@ MCP 可以成为 Agent 的工具来源，但 MCP 不等于 Agent。
 
 如果是 1~2 个服务，先看：
 
-- [MCP Client 接入（单服务模式）](/docs/mcp/client-integration)
+- [MCP Client Integration](/docs/core-sdk/mcp/client-integration)
 
 如果是多服务统一管理，先看：
 
-- [MCP 配置与网关参考](/docs/mcp/configuration-and-gateway-reference)
-- [MCP Gateway 管理](/docs/mcp/gateway-management)
+- [Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
+- [Tool Exposure Semantics](/docs/core-sdk/mcp/tool-exposure-semantics)
 
 ---
 
@@ -153,7 +153,7 @@ MCP 可以成为 Agent 的工具来源，但 MCP 不等于 Agent。
 
 直接看：
 
-1. [Flowgram 使用路径与场景选择](/docs/flowgram/use-cases-and-paths)
+1. [Flowgram 总览](/docs/flowgram/overview)
 2. [Flowgram 快速开始](/docs/flowgram/quickstart)
 
 ---

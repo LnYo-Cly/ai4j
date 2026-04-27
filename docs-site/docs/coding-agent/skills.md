@@ -170,6 +170,6 @@ Coding Agent 不会在一开始把所有 Skill 正文全部塞进提示词。
 ## 8. 继续阅读
 
 1. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
-2. [MCP 对接](/docs/coding-agent/mcp-integration)
-3. [Prompt 组装与上下文来源](/docs/coding-agent/prompt-assembly)
-4. [Memory 记忆管理与压缩策略](/docs/agent/memory-management)
+2. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
+3. [Coding Agent Architecture](/docs/coding-agent/architecture)
+4. [Memory and State](/docs/agent/memory-and-state)
