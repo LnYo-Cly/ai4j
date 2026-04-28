@@ -4,180 +4,411 @@ sidebar_position: 2
 
 # System Prompt vs Instructions
 
-`systemPrompt` 和 `instructions` 在 Agent 中都很重要，但它们不是同一个字段的两种写法。
+这一页讲的不是泛泛的 prompt engineering，而是 AI4J Agent 里这两个字段在源码中的真实语义。
 
-如果把这两个概念混掉，会出现三个问题：
+如果这里理解错了，后面会连带把这些事情一起理解错：
 
-- 全局规则和任务规则混在一起
-- prompt 越写越长，难以复用
-- 切换 `ChatModelClient` 与 `ResponsesModelClient` 时，对实际协议映射产生误判
+- 为什么同一 Agent 在不同 runtime 下行为会变
+- 为什么 Chat 和 Responses 的请求形状不一样
+- 为什么 trace 里看到的 `systemPrompt` 和你写进去的字符串不完全一样
+- 为什么 `newSession()` 后 prompt 规则没有变
 
-## 1. 先给出最实用的区分
+## 1. 先抓住 6 个关键设计决策
 
-- `systemPrompt`：定义长期有效的全局角色、边界和固定约束
-- `instructions`：定义本次任务的具体目标、格式要求和局部策略
+### 1.1 这两个字段都不是“当前轮临时文本”，而是 AgentContext 的一部分
 
-最稳妥的工程习惯是：
+`AgentBuilder.build()` 会把两者都写进 `AgentContext`：
 
-> 把“谁在执行、长期必须遵守什么”放进 `systemPrompt`，把“这次要怎么做”放进 `instructions`。
+- `instructions`
+- `systemPrompt`
 
-## 2. 为什么要分成两个字段
+也就是说，这两者都属于“Agent 装配配置”，不是每一步动态重算的临时变量。
 
-从工程角度看，这不是语义洁癖，而是为了把两类变化频率不同的信息拆开：
+这带来的直接后果是：
 
-- 全局规则相对稳定
-- 任务要求频繁变化
+- 每一轮 `buildPrompt(...)` 都会重新把它们放进 prompt
+- 它们不是随着 memory 自动变化的
 
-拆开后的直接收益是：
+### 1.2 `systemPrompt` 会被 runtime 隐式扩写，`instructions` 不会
 
-- 系统级模板更容易复用
-- 单次任务不必重写整套角色设定
-- 更容易在 trace 中定位是“全局规则问题”还是“任务指令问题”
+`BaseAgentRuntime.buildPrompt(...)` 的关键逻辑是：
 
-## 3. 在 `AgentPrompt` 中的建模
+```java
+String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions());
+```
 
-源码：
+然后：
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentPrompt.java`
+```java
+.systemPrompt(systemPrompt)
+.instructions(context.getInstructions())
+```
 
-`AgentPrompt` 里这两个字段是明确分开的：
+所以：
+
+- 你的 `systemPrompt` 不是最终送给模型的完整系统文本
+- runtime 自己的策略提示会被拼到 `systemPrompt` 后面
+- `instructions` 保持独立字段，不参与这一步 merge
+
+### 1.3 这两个字段都会在每一步重复进入模型
+
+很多人会下意识地以为：
+
+- `systemPrompt` 是“初始化时用一次”
+- `instructions` 是“本轮只注入一次”
+
+当前实现不是这样。
+
+`BaseAgentRuntime.runInternal(...)` 每轮都会：
+
+1. `buildPrompt(...)`
+2. `executeModel(...)`
+
+而 `buildPrompt(...)` 每轮都会把：
 
 - `systemPrompt`
 - `instructions`
 
-这说明 runtime 在组 prompt 时已经预设了两种不同作用域的信息，而不是把所有文字都塞进一个大字符串。
+再次塞进 `AgentPrompt`。
 
-## 4. 在 `BaseAgentRuntime.buildPrompt(...)` 中如何组装
+这意味着：
 
-`BaseAgentRuntime.buildPrompt(...)` 会：
+- 写得越长，step 越多，重复 token 成本越高
+- 把动态上下文塞进这两个字段会非常浪费
 
-- 保留 `context.getSystemPrompt()`
-- 把 `runtimeInstructions()` 与之合并
-- 把 `context.getInstructions()` 单独保留到 `AgentPrompt`
+### 1.4 `newSession()` 只换 memory，不换这两者
 
-所以在 Agent 内部，最终会有三层不同来源的指令：
+`Agent.newSession()` 的实现只会替换：
 
-- 你的 `systemPrompt`
-- runtime 自己的策略指令
-- 你的 `instructions`
+- `memory`
 
-这三层之后再交给不同的 model client 做协议映射。
+不会替换：
 
-## 5. `ChatModelClient` 中的实际映射
+- `systemPrompt`
+- `instructions`
+- `runtime`
+- `modelClient`
+- `toolRegistry`
 
-`ChatModelClient.toChatCompletion(...)` 当前采用的做法是：
+所以 session 隔离的是状态，不是指令模板。
 
-1. 如果存在 `systemPrompt`，先加一条 system message
-2. 如果存在 `instructions`，再加一条 system message
+如果你想换 prompt 规则，应该重新 `build()` 一个 Agent，而不是只开新 session。
+
+### 1.5 trace 里记录的 `systemPrompt` 已经是 merge 之后的版本
+
+`AgentTraceListener` 在记录 `MODEL_REQUEST` 时，取的是：
+
+- `prompt.getSystemPrompt()`
+- `prompt.getInstructions()`
+
+而这里的 `prompt` 已经是 runtime build 过后的 `AgentPrompt`。
+
+因此 trace 里看到的：
+
+- `systemPrompt`
+
+通常已经包含了 runtime 注入的策略文本，而不是你最初传给 Builder 的那一份原文。
+
+### 1.6 Chat 和 Responses 对这两个字段的协议映射并不等价
+
+这不是实现细节，而是会直接影响你如何设计 prompt 结构。
+
+- Chat 路径：两者最终都会变成 system message
+- Responses 路径：`systemPrompt` 进 top-level `instructions`，`instructions` 变成前置 system item
+
+所以“这两个字段都差不多，随便放”是错误结论。
+
+## 2. 这两个字段在对象模型里到底在哪里
+
+源码上，这条链很清楚：
+
+```text
+AgentBuilder
+  -> AgentContext
+  -> AgentPrompt
+  -> ChatModelClient / ResponsesModelClient
+```
+
+最关键的 3 个对象是：
+
+| 对象 | 这里的职责 |
+| --- | --- |
+| `AgentContext` | 保存你配置进去的原始 `systemPrompt` / `instructions` |
+| `AgentPrompt` | runtime 每一步真正提交给 model client 的 prompt 快照 |
+| `ChatModelClient` / `ResponsesModelClient` | 把这两个字段翻译成底层协议 |
+
+`AgentPrompt` 本身把这两个字段分开建模：
+
+- `systemPrompt`
+- `instructions`
+
+说明框架作者从抽象层就没把它们视为同一件事。
+
+## 3. `BaseAgentRuntime` 里真正发生了什么
+
+### 3.1 最关键的一行是 `mergeText(...)`
+
+在 `BaseAgentRuntime.buildPrompt(...)` 中：
+
+```java
+String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions());
+```
+
+这行的含义非常具体：
+
+- 先取你配置的 `systemPrompt`
+- 再把 runtime 自己的系统级策略拼接进去
+- 两者之间用换行连接
+
+### 3.2 `instructions` 不参与 merge
+
+后面的 Builder 写法是：
+
+```java
+.systemPrompt(systemPrompt)
+.instructions(context.getInstructions())
+```
+
+所以当前默认 runtime 下，AI4J 保留了一个很明确的层次：
+
+1. 你的系统级设定
+2. runtime 的系统级策略
+3. 你的任务级说明
+
+### 3.3 为什么这个分层很重要
+
+因为 runtime 的系统策略不是可有可无的装饰。
+
+例如：
+
+- `ReActRuntime` 会补 `Use tools when necessary. Return concise final answers.`
+- `CodeActRuntime` 会补一大段 JSON/code protocol 约束
+
+如果你把所有任务要求都堆进 `systemPrompt`，后面看到模型行为异常时，很难分清到底是谁在起作用：
+
+- 你的系统设定
+- runtime 的附加策略
+- 你的任务说明
+
+## 4. Chat 路径中的真实映射
+
+`ChatModelClient.toChatCompletion(...)` 当前做法很直接：
+
+1. 如果有 `systemPrompt`，先加一条 system message
+2. 如果有 `instructions`，再加一条 system message
 3. 再把 `items` 转成后续消息
 
-这意味着在 Chat 路径下：
+也就是说，在 Chat 协议里：
 
-- `systemPrompt` 和 `instructions` 都会变成 system messages
-- 两者在协议层不是两个独立顶层字段
-- 顺序上 `systemPrompt` 在前，`instructions` 在后
+- 这两个字段最终不是两个顶层属性
+- 而是两条顺序相邻的 system messages
 
-对 Chat 来说，这种映射仍然有意义，因为它至少保留了两层逻辑上的分离。
+它们在协议层的差异主要只剩：
 
-## 6. `ResponsesModelClient` 中的实际映射
+- 顺序
+- 文本内容
 
-`ResponsesModelClient.toResponseRequest(...)` 的映射方式与 Chat 不完全一样：
+### 4.1 这对 prompt 设计意味着什么
 
-- `systemPrompt` 会映射到 `ResponseRequest.instructions`
-- `instructions` 会被插入为一条 `systemMessage(...)`，放到 `input` items 前面
+在 Chat 路径下，最稳的习惯是：
 
-这意味着在 Responses 路径下：
+- `systemPrompt` 放长期角色、长期边界、稳定策略
+- `instructions` 放本轮目标、格式要求、局部约束
 
-- `systemPrompt` 更像顶层全局指令
-- `instructions` 更像前置的任务输入上下文
+因为虽然协议层最后都是 system messages，但逻辑分层仍然存在，后续 trace 和迁移也更清楚。
 
-如果你更重视这两层语义分离，Responses 路径通常更容易表达这种结构。
+### 4.2 不要从“都变成 system message”推出“它们没区别”
 
-## 7. 怎么写才更稳
+区别至少还在 3 个地方：
 
-### 7.1 `systemPrompt` 应该放什么
+1. 语义意图不同
+2. 代码字段不同
+3. Responses 路径映射不同
+
+如果你以后会切 Responses 路径，这种区分尤其重要。
+
+## 5. Responses 路径中的真实映射
+
+`ResponsesModelClient.toResponseRequest(...)` 的处理方式不同：
+
+- `systemPrompt` -> `ResponseRequest.instructions`
+- `instructions` -> `buildItems(prompt)` 时插到 input 最前面的 `systemMessage(...)`
+
+这意味着在 Responses 协议里，二者真的落在两个不同层次：
+
+### `systemPrompt`
+
+更像：
+
+- 顶层、全局、请求级指令
+
+### `instructions`
+
+更像：
+
+- 输入序列里的前置任务说明
+
+### 5.1 为什么很多人会在 Responses 路径下写得更稳
+
+因为这条路径能更清楚地保持：
+
+- 全局规则
+- 任务规则
+
+的协议级分离，而不是把两者都压成消息序列。
+
+## 6. `CodeActRuntime` 下这件事为什么更关键
+
+在 `CodeActRuntime.buildPrompt(...)` 里，依然会做：
+
+```java
+String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions(context));
+```
+
+但这里的 `runtimeInstructions(context)` 不是一句短提示，而是一整段协议约束，包括：
+
+- 只能输出单个 JSON 对象
+- `type=code` / `type=final` 的格式
+- 语言约束
+- tool guide
+- 某些工具的专门说明
+
+这意味着到了 CodeAct：
+
+- `systemPrompt` 更像“宿主策略 + 用户全局策略”的承载层
+- `instructions` 更像“这次任务要达成什么”
+
+如果你把具体任务步骤、数据细节、短期上下文全塞进 `systemPrompt`，很快就会和 runtime protocol 文本混成一团。
+
+## 7. 这两个字段最适合各自承载什么
+
+### 7.1 `systemPrompt` 最适合放什么
 
 适合放：
 
-- 角色定义
-- 长期约束
-- 安全边界
-- 风格和输出优先级
+- 身份设定
+- 长期风格
+- 稳定优先级
+- 风险边界
 - 工具使用原则
 
-示例：
+例如：
 
 ```text
 You are an enterprise Java assistant.
-Never invent unverified facts.
-Use tools before answering when external evidence is required.
-Prefer concise conclusions followed by supporting evidence.
+Do not invent facts.
+Prefer tool-backed answers when external evidence is required.
+Return concise conclusions first.
 ```
 
-### 7.2 `instructions` 应该放什么
+这些内容的共同特点是：
+
+- 跨任务稳定
+- 不依赖当前用户输入
+- 每一步重复出现也合理
+
+### 7.2 `instructions` 最适合放什么
 
 适合放：
 
 - 当前任务目标
-- 本轮输出格式
-- 当前上下文约束
-- 本次步骤要求
+- 输出格式
+- 本轮约束
+- 失败时处理策略
 
-示例：
+例如：
 
 ```text
 Summarize today's weather for Beijing.
-Return JSON with fields city, summary, advice.
-If the tool fails, explain the retry action instead of fabricating weather data.
+Return strict JSON with fields city, summary, advice.
+If the tool fails, explain the failure instead of fabricating data.
 ```
 
-## 8. 最常见的错误写法
+这些内容的共同特点是：
 
-### 8.1 把动态上下文全塞进 `systemPrompt`
+- 与当前任务强相关
+- 可以随任务切换
+- 但仍然比单次用户输入更稳定
 
-后果：
+## 8. 真正不该放进来的东西是什么
 
-- prompt 膨胀
-- 全局模板难复用
-- 每个任务都像在重写系统规则
+### 8.1 不要把实时业务数据塞进 `systemPrompt`
 
-### 8.2 每轮都重写一整套全局规则
+例如：
 
-后果：
+- 当前查询结果
+- 临时表数据
+- 每轮变化的上下文摘要
 
-- token 成本升高
-- 规则管理混乱
-- 很难判断本次任务到底改了什么
+因为它们会在每一步被重复发送，既贵又乱。
 
-### 8.3 在 `instructions` 里塞长期身份设定
+### 8.2 不要把原始用户输入改写后再塞进 `instructions`
 
-后果：
+当前用户真正的动态输入应该走：
 
-- 跨轮不稳定
-- 模型的“角色层”与“任务层”混在一起
+- `AgentRequest.input`
+- 后续 memory items
 
-## 9. 一个实用模板
+而不是每次把用户问题手工再拼成一份 instructions。
 
-### 9.1 全局模板
+### 8.3 不要把 runtime protocol 再手工复制到自己的 `systemPrompt`
+
+尤其是 CodeAct。
+
+runtime 已经会注入自己的协议约束。你再复制一遍，很容易出现：
+
+- 冗余
+- 冲突
+- trace 中系统文本膨胀
+
+## 9. 最常见的误判和后果
+
+### 9.1 “`systemPrompt` 只会在最开始用一次”
+
+不成立。
+
+它会在每一步 prompt 重建时重复进入模型。
+
+### 9.2 “新 session 就会换一套 prompt 规则”
+
+不成立。
+
+`newSession()` 只换 memory，不换这两个字段。
+
+### 9.3 “trace 里看到的 systemPrompt 就是我原样写进去的那个字符串”
+
+不成立。
+
+trace 里看到的是 runtime merge 之后的 `AgentPrompt.systemPrompt`。
+
+### 9.4 “Chat 路径里两者都会变成 system message，所以随便放都行”
+
+不成立。
+
+你一旦切到 Responses、CodeAct 或做 trace 分析，这种偷懒写法马上会出问题。
+
+## 10. 一个更稳的实用模板
+
+### 全局模板
 
 ```java
 String systemPrompt = ""
         + "You are a production-facing assistant.\\n"
         + "Do not invent facts.\\n"
         + "Use tools when external evidence is required.\\n"
-        + "Answer with conclusion first, then supporting details.";
+        + "Keep answers concise and explicit about uncertainty.";
 ```
 
-### 9.2 单任务模板
+### 任务模板
 
 ```java
 String instructions = ""
-        + "Analyze the latest weather result.\\n"
-        + "Return strict JSON with fields city, summary, advice.\\n"
-        + "If the tool output is missing, explain the failure clearly.";
+        + "Summarize today's weather for Beijing.\\n"
+        + "Return JSON with fields city, summary, advice.\\n"
+        + "If the tool fails, explain the failure clearly.";
 ```
 
-### 9.3 接入方式
+### 接入方式
 
 ```java
 Agent agent = Agents.react()
@@ -188,30 +419,39 @@ Agent agent = Agents.react()
         .build();
 ```
 
-## 10. 与 runtime 指令的关系
+这个分层的优点不是“更优雅”，而是：
 
-你传入的 `systemPrompt` 并不是唯一的系统层约束。
+- 更容易迁移协议
+- 更容易看 trace
+- 更容易在多任务场景复用
 
-例如：
+## 11. 什么时候该优先选 Responses 路径
 
-- `ReActRuntime` 会注入自己的 `runtimeInstructions()`
-- `CodeActRuntime` 会注入严格的 JSON / code protocol 约束
+如果你特别在意下面这件事：
 
-因此如果你发现某个 runtime 下模型行为与预期不同，不能只检查自己写的 `systemPrompt`，还要看 runtime 自带的策略提示。
+> 系统级规则和任务级规则在协议层也要保持分离
 
-## 11. 什么时候应优先选 Responses 路径
+那么 `ResponsesModelClient` 往往更贴近你的意图。
 
-如果你特别关心：
+如果你更重视 chat 兼容性和传统消息序列心智，`ChatModelClient` 仍然完全可用，但你必须清楚：
 
-- `systemPrompt` 与 `instructions` 的协议层分离
-- 更强的结构化请求语义
+- 两者最后都会下沉成 system messages
 
-那么 `ResponsesModelClient` 往往更合适。
+## 12. 推荐阅读源码顺序
 
-如果你更重视传统 chat 兼容性，`ChatModelClient` 仍然是可行路径，只是要明确它最终会把两者都落成 system messages。
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentContext.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentPrompt.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/ReActRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/CodeActRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ChatModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ResponsesModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/AgentTraceListener.java`
 
-## 12. 继续阅读
+## 13. 继续阅读
 
 1. [Model Client Selection](/docs/agent/model-client-selection)
 2. [Quickstart](/docs/agent/quickstart)
 3. [Architecture](/docs/agent/architecture)
+4. [Runtime Implementations](/docs/agent/runtime-implementations)
