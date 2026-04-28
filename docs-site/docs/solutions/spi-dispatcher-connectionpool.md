@@ -55,3 +55,30 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/spi-dispatcher-connectionpool)
+
+## 7. 关键对象
+
+这条方案对应的关键对象很集中：
+
+- `DispatcherProvider`
+- `ConnectionPoolProvider`
+- `ServiceLoader`
+- `OkHttpClient.Builder`
+
+这组对象已经足够说明 AI4J 的 HTTP 栈为什么能进入正式扩展，而不是只能手工 patch 默认客户端。
+
+## 8. 什么时候值得进入这一层
+
+通常当你开始遇到下面的问题时，这条方案才会变成主线：
+
+- 多 provider 并发互相影响
+- 默认连接池不再匹配业务流量模型
+- 需要对不同业务流量做网络隔离和治理
+
+在此之前，优先把上层能力链跑通通常更合适。
+
+## 9. 实施时应先约束什么
+
+- 并发调度是否按 provider 或业务域隔离
+- 连接池参数是否与实际部署拓扑匹配
+- 扩展后是否仍能保持统一配置和可观测性

@@ -78,7 +78,7 @@ sidebar_position: 5
 - `runtimeName() -> "react"`
 - `runtimeInstructions()` 返回 “必要时使用工具，最终回答简洁”
 
-它复用了 `BaseAgentRuntime` 的全部循环，是最通用、最稳健的默认选择。
+它复用了 `BaseAgentRuntime` 的全部循环，是当前默认的通用实现。
 
 ## 4. CodeActRuntime：代码驱动的工具编排
 

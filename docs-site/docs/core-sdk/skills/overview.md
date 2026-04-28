@@ -63,3 +63,32 @@
 3. [Coding Agent / Skills](/docs/coding-agent/skills)
 
 如果你现在的困惑是“Skill 为什么不是 Tool”，建议先连读本章和 `Skill vs Tool vs MCP`，不要直接跳到更深的产品页。
+
+## 7. 关键对象
+
+`Skill` 的基座实现主线，至少要先认识三个对象：
+
+- `skill/Skills.java`：skill 的发现、筛选和读取入口
+- `skill/SkillDescriptor.java`：skill 元信息的结构化描述
+- `SKILL.md`：面向模型暴露的方法论与执行说明载体
+
+这三个层次分别解决“怎么找到”“怎么描述”“怎么被模型读取”。
+
+## 8. 这一层的设计重点
+
+- `Skill` 是说明资产，不承担函数执行
+- `Skill` 先属于 `Core SDK`，上层产品只是在此基础上做更完整的发现与交互体验
+- `Skill` 的价值在于按需加载，而不是把所有 SOP 永久塞进系统 prompt
+
+如果这一点没有讲清楚，后面很容易把 `Skill` 写成一堆无法治理的超长提示词，或者误拿它承担权限、连接、执行这些本不属于它的职责。
+
+## 9. 和上层产品化能力的关系
+
+`Coding Agent` 对 `Skill` 做的是产品化封装，而不是概念改写。
+
+也就是说：
+
+- `Core SDK` 负责 skill 的发现、描述和读取机制
+- 上层 runtime 负责何时暴露、如何交互、怎样和任务流结合
+
+这个关系讲清楚后，就不会再把 `Skill` 误解成某个产品层私有能力。

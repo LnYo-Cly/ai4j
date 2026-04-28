@@ -68,4 +68,24 @@ document / source data
 6. [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)
 7. [Citations and Trace](/docs/core-sdk/search-and-rag/citations-and-trace)
 
-如果你是为了面试或架构表达，至少先把“在线搜索、私域检索、重排、引用”这四段关系讲清楚。
+如果你是第一次建立这条链路的整体认知，至少先把“在线搜索、私域检索、重排、引用”这四段关系讲清楚。
+
+## 7. 关键对象
+
+如果你要把这一章从概念继续落到实现，优先看下面几类对象：
+
+- `rag/ingestion/IngestionPipeline.java`：入库流水线编排入口
+- `vector/store/VectorStore.java`：统一向量存储契约
+- `vector/store/VectorStoreCapabilities.java`：后端差异能力表达
+- `rag/Reranker.java`：候选精排抽象
+- `websearch/ChatWithWebSearchEnhance.java`：在线搜索增强入口
+
+这些对象基本覆盖了“入库、存储、召回增强、在线补充”四条主线。
+
+## 8. 阅读这一章时要抓住什么
+
+- 在线搜索不是私域知识库的替代，它更像实时外部信息增强
+- ingestion 和 retrieval 是两段不同工程问题，前者解决知识如何进入系统，后者解决知识如何被取回
+- 引用和 trace 依赖稳定的 document identity、chunk 切分和 metadata 设计，不能等到回答阶段再临时拼装
+
+如果先抓住这三条，再进入 `Embedding`、`Vector Store`、`Rerank` 的具体页面，就不会把 RAG 误看成“向量库接好就结束”的单点能力。

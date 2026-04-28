@@ -1,6 +1,6 @@
 # Minimal ReAct Agent
 
-`Minimal ReAct Agent` 是 `Agent` 章节最稳的起点，因为它代表的是默认 runtime 主线，而不是玩具示例。
+`Minimal ReAct Agent` 是 `Agent` 章节的推荐起点，因为它代表的是默认 runtime 主线，而不是简化示例。
 
 ## 1. 它对应的真实实现是什么
 

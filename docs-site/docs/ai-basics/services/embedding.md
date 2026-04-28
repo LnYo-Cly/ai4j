@@ -82,3 +82,32 @@ Embedding 产物通常直接写入 Pinecone：
 - 原文 -> metadata.content
 
 完整流程见：`Pinecone 向量检索工作流`。
+
+## 8. 关键对象
+
+如果你要继续对照源码，优先关注：
+
+- `IEmbeddingService`
+- `Embedding`
+- `EmbeddingResponse`
+- `AiService#getEmbeddingService(...)`
+
+这组对象分别对应统一服务接口、请求实体、返回实体和服务工厂入口。
+
+## 9. 这一层真正负责什么
+
+Embedding 这一层负责的是“把文本稳定映射成向量表征”，不直接负责：
+
+- 文档如何切分
+- metadata 如何设计
+- 召回结果如何重排
+
+也就是说，它是 RAG 的上游基础能力，而不是完整知识增强方案本身。
+
+## 10. 落地时优先确认什么
+
+- 同一索引内是否固定同一个 embedding 模型
+- 批量向量化的吞吐和超时策略是否稳定
+- 向量写入后，后续检索链是否仍然通过统一抽象消费
+
+这些点先收敛，后面接 Pinecone、Qdrant、Milvus 或 pgvector 才不会反复返工。

@@ -70,3 +70,23 @@ application.yml
 2. [Bean Extension](/docs/spring-boot/bean-extension)
 3. [Common Patterns](/docs/spring-boot/common-patterns)
 4. [Start Here / Troubleshooting](/docs/start-here/troubleshooting)
+
+## 7. 实际使用时先统一什么
+
+建议团队先统一三类约定：
+
+- 哪些 provider 走单实例配置，哪些走 `ai.platforms[]`
+- 哪些网络、向量和联网增强配置允许按环境覆盖
+- 哪些配置变化需要同步回归 `RAG`、`Tool` 或多实例路由链
+
+这样这页就不只是字段索引，而是配置治理的入口。
+
+## 8. 关键对象
+
+如果你要继续对照源码，优先关注：
+
+- 各类 `*ConfigProperties`
+- `AiConfigAutoConfiguration`
+- `Configuration`
+
+它们共同构成了“YAML -> 属性对象 -> 运行时配置 -> Bean 图”的完整路径。

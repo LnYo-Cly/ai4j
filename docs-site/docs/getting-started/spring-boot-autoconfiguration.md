@@ -281,7 +281,7 @@ RAG 链路至少同时依赖：
 - 一个 embedding provider
 - 一个 `VectorStore`
 
-而这两个在真实项目里都可能不是全局唯一。
+而这两个在实际系统里都可能不是全局唯一。
 
 所以 starter 没有直接创建“默认 `IngestionPipeline` Bean”，而是把：
 

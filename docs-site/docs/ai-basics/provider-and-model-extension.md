@@ -156,7 +156,7 @@ aiService.getChatService(PlatformType.Xxx)
 
 原因是：
 
-- Chat 是最通用的首调能力
+- Chat 是默认首调能力
 - 先把主路径打通，最容易验证网络、鉴权、JSON 映射是否正确
 - Audio / Realtime 往往更依赖平台特定协议和二进制处理
 

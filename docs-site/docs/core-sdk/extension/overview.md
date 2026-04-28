@@ -56,3 +56,35 @@
 2. [Model Extension](/docs/core-sdk/extension/model-extension)
 3. [Service Extension](/docs/core-sdk/extension/service-extension)
 4. [SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
+
+## 7. 扩展决策顺序
+
+真正动手扩展前，建议先按下面顺序判断：
+
+1. 这是新 provider，还是现有 provider 下的新模型
+2. 现有 service 契约还能不能承载这项能力
+3. 问题是在能力抽象层，还是只在底层网络与连接层
+4. 这次改动要不要同步进入 starter 的配置和装配体系
+
+这个顺序能显著减少“明明只该补 model，却误改 provider 总线”这类结构性错误。
+
+## 8. 关键对象
+
+如果要继续从文档进入源码，优先看下面这些入口：
+
+- `service/PlatformType.java`：provider 维度枚举
+- `service/factory/AiService.java`：能力工厂与 provider 分发中心
+- `service/factory/AiServiceRegistry.java`：注册与装配扩展点
+- starter 侧自动装配：负责把基座扩展接进 Spring 容器
+
+这组对象决定了扩展点为什么能成立，也决定了“新增能力应该改哪一层”这个问题最终该如何落地。
+
+## 9. 什么时候不要先动这一章
+
+如果你只是：
+
+- 使用现成 provider 发请求
+- 调整 prompt、tool 或 memory 组合
+- 排查某个具体 provider 的字段映射问题
+
+那通常应先回到对应能力页，而不是一上来就进入 extension。扩展页更适合处理“基础抽象本身不够用”的情况。

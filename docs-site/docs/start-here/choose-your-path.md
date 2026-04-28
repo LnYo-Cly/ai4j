@@ -10,7 +10,7 @@
 
 ## 1. 如果你暂时不确定，就走默认主线
 
-最稳的默认顺序是：
+推荐的默认顺序是：
 
 1. [Why AI4J](/docs/start-here/why-ai4j)
 2. [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
@@ -64,7 +64,7 @@
 3. [Core SDK / Skills](/docs/core-sdk/skills/overview)
 4. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
 
-如果你在面试或架构说明里经常把这些概念混掉，这条线应该优先走。
+如果你经常把这些概念混在一起，这条线应该优先走。
 
 ### 2.4 我想接 MCP
 
@@ -122,7 +122,7 @@
 - 它和 Agent、Coding Agent 的差别
 - 后端 runtime、节点、前后端集成怎么协同
 
-### 2.8 我是为了面试复习或架构复盘
+### 2.8 我想先建立体系化认知
 
 建议按这个顺序读：
 

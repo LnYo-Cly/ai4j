@@ -70,3 +70,20 @@
 如果你只想先抓住一句话，可以记成：
 
 > `Spring Boot` 这一层不重新发明 AI 能力，它负责把 AI4J 的基座能力稳定接入容器、配置和业务 Bean。
+
+## 7. 关键对象
+
+继续往代码下钻时，建议优先看：
+
+- `AiConfigAutoConfiguration`
+- `AiService`
+- `AiServiceRegistry`
+- Spring 容器中的 `VectorStore`、`Reranker`、`RagContextAssembler`
+
+这组对象分别对应自动装配入口、统一服务工厂、多实例路由和知识增强默认骨架。
+
+## 8. 阅读这一章时要抓住什么
+
+- 这一层讲的是容器接入，不重讲 `Core SDK` 基础语义
+- 默认 Bean 出现的原因，要回到自动装配和配置绑定来理解
+- 业务扩展优先在 Spring 层替换和组合，而不是绕开基座自行拼装

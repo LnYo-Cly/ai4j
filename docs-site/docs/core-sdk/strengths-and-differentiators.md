@@ -99,9 +99,9 @@ AI4J 的优势不是“所有场景都绝对更强”，而是它优化的目标
 - 完全不需要工具、协议扩展、RAG、runtime
 - 不在乎分层，只追求最小接入代码
 
-## 7. 如果你要用于面试，最值得复述哪几点
+## 7. 关键结论
 
-优先记住这四句：
+可以优先抓住这四点：
 
 1. AI4J 不是单点模型 SDK，而是 Java AI 基座
 2. 它把 `Function Call`、`Skill`、`MCP` 明确分层
@@ -109,3 +109,16 @@ AI4J 的优势不是“所有场景都绝对更强”，而是它优化的目标
 4. 它更偏工程化长期系统，而不是只跑 demo
 
 下一页建议继续看 [Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)，把这些优势和真实仓库模块一一对上。
+
+## 8. 这些差异点分别落在哪些模块
+
+如果要继续往源码落地，可以按下面的映射去找：
+
+- 基座连续能力面：`ai4j/`
+- Spring 容器化接入：`ai4j-spring-boot-starter/`
+- 智能体 runtime：`ai4j-agent/`
+- 代码仓任务 runtime：`ai4j-coding/`
+- 产品化宿主入口：`ai4j-cli/`
+- 可视化工作流后端集成：`ai4j-flowgram-spring-boot-starter/`
+
+也就是说，这一页讲的“差异点”并不是营销层概念，而是可以直接在仓库模块和包结构中找到对应落点的工程特征。

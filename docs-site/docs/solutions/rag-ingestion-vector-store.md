@@ -1,6 +1,6 @@
 # RAG Ingestion Vector Store
 
-这个方案回答的是：当你已经决定做 RAG，第一条最标准、最稳的工程路径是什么。
+这个方案回答的是：当你已经决定做 RAG，第一条标准工程路径应该是什么。
 
 ## 1. 适合什么场景
 
@@ -61,3 +61,34 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/rag-ingestion-vector-store)
+
+## 7. 关键对象
+
+如果你要从方案进一步进入实现，优先看这些对象：
+
+- `rag/ingestion/IngestionPipeline.java`
+- `vector/store/VectorStore.java`
+- `rag/Reranker.java`
+- `rag/RagService`
+
+这四类对象分别对应入库、存储、排序和检索服务主线。
+
+## 8. 这条方案最重要的边界
+
+这条方案真正要先立住的边界有三条：
+
+- ingestion 负责知识如何进入系统，不负责回答生成
+- vector store 负责候选存取，不决定最终回答策略
+- rerank 和 citations 是在基线之上逐步增强，而不是一开始就强绑定
+
+边界清楚后，后续替换向量库、加入重排或增加证据链时，成本会低很多。
+
+## 9. 落地时优先验证什么
+
+建议优先验证：
+
+1. 文档是否已稳定分块并成功向量化
+2. dataset / metadata 是否能支持后续过滤与引用
+3. 检索结果是否能稳定回指到原始文档
+
+这三件事比“先把回答修饰得更自然”更重要。

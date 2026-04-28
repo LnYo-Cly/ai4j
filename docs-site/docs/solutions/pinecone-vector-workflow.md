@@ -59,3 +59,30 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/pinecone-vector-workflow)
+
+## 7. 关键对象
+
+如果你准备直接看代码，优先关注：
+
+- `vector/store/pinecone/PineconeVectorStore.java`
+- `VectorStoreCapabilities`
+- `IngestionPipeline`
+- `RagService`
+
+这组对象能帮助你区分“Pinecone 特有配置”和“统一 RAG 抽象”。
+
+## 8. 为什么这一页单独成立
+
+相比通用 RAG 基线，Pinecone 场景通常更早遇到：
+
+- namespace 规划
+- 托管向量库接入策略
+- 外部网络与成本治理
+
+所以这页的重点不是重复 RAG 基线，而是把“特定后端约束”说清楚。
+
+## 9. 实施时优先确认什么
+
+- namespace 如何和租户、数据域或知识库边界对应
+- embedding 模型是否与已有索引保持一致
+- 检索与重排是否仍通过统一抽象组合，而不是写死到后端实现里

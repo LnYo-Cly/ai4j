@@ -47,7 +47,7 @@ AI4J 是一套面向 Java 生态的工程化 AI 基座。
 4. [Core SDK / Skills](/docs/core-sdk/skills/overview)
 5. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
 
-### 1.4 你是为了面试复习或架构表达
+### 1.4 你想先建立整体架构认知
 
 建议按这个顺序：
 

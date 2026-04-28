@@ -9,7 +9,7 @@
 - 多轮客服机器人
 - 同一用户会话需要跨实例恢复
 
-如果你当前只需要稳定的多轮上下文，而不需要工具循环、runtime state、handoff 或 team，这通常是最稳的第一站。
+如果你当前只需要稳定的多轮上下文，而不需要工具循环、runtime state、handoff 或 team，这通常是更合适的第一站。
 
 ## 2. 核心模块组合
 
@@ -66,3 +66,30 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/springboot-mysql-chat-memory)
+
+## 7. 关键对象
+
+这一页最值得继续看的对象通常是：
+
+- `memory/ChatMemory.java`
+- `memory/JdbcChatMemory.java`
+- `memory/MessageWindowChatMemoryPolicy.java`
+- Spring 容器中的 `DataSource`
+
+它们分别对应上下文契约、持久化实现、裁剪策略和数据库接入面。
+
+## 8. 这条方案真正解决的边界
+
+这条方案解决的是“多轮聊天的上下文如何稳定进入模型请求”，不解决：
+
+- 工具结果如何进入长期任务状态
+- Agent runtime 如何恢复执行上下文
+- 多角色协作如何管理共享记忆
+
+如果问题已经升级到这些层面，就说明该切到 agent memory 方案了。
+
+## 9. 实施时的注意事项
+
+- `sessionId` 必须有稳定绑定规则，否则数据库持久化没有意义
+- 历史消息的裁剪和压缩策略要先定，否则会话会无限膨胀
+- 持久化成功不等于语义正确，仍要验证记忆窗口是否符合业务预期

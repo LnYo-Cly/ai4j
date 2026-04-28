@@ -1,6 +1,6 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-04-27
+> Last updated: 2026-04-28
 > Single source of truth for active delivery work in this repository.
 
 ## Active Features
@@ -12,7 +12,12 @@
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-020 | docs-site hard technical tone polish | 2026-04-29 | `docs/10-WALKTHROUGH/2026-04-29-docs-site-hard-technical-tone-polish.md` |
+| F-019 | docs-site residual polish | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-residual-polish.md` |
+| F-018 | docs-site ai-basics legacy tree cleanup | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-ai-basics-legacy-tree-cleanup.md` |
+| F-017 | docs-site cross-tree quality cleanup | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-cross-tree-quality-cleanup.md` |
 | F-015 | docs-site Sidebar Path Completion | 2026-04-27 | `docs/10-WALKTHROUGH/2026-04-27-docs-site-sidebar-path-completion.md` |
+| F-016 | docs-site Core SDK deep page completion | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-core-sdk-deep-page-completion.md` |
 | F-001 | Harness bootstrap | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-harness-bootstrap.md` |
 | F-002 | Java PR regression CI | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-java-pr-regression-ci.md` |
 | F-003 | docs-site IA redesign | 2026-04-26 | `docs/10-WALKTHROUGH/2026-04-26-docs-site-ia-redesign.md` |

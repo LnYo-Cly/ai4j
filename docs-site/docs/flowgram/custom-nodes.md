@@ -26,7 +26,7 @@
 - `Flowgram.ai` 负责前端节点画布
 - AI4J 负责后端执行层
 
-所以自定义节点天然就是前后端共同设计的问题。
+因此自定义节点本质上是前后端共同设计的问题。
 
 ## 3. 后端扩展点在哪里
 
@@ -72,3 +72,24 @@
 1. [Frontend / Backend Integration](/docs/flowgram/frontend-backend-integration)
 2. [Runtime](/docs/flowgram/runtime)
 3. [Agent / Tool / Knowledge Integration](/docs/flowgram/agent-tool-knowledge-integration)
+
+## 8. 关键对象
+
+如果你要继续从文档进入实现，优先关注：
+
+- 前端节点 `type` 与 schema 定义
+- 后端 `FlowGramNodeExecutor`
+- 节点输入输出协议
+- Spring 容器中的 executor 注册方式
+
+这组对象共同决定一个节点是不是“前后端都能识别并真实执行”的正式平台节点。
+
+## 9. 真正需要先固定的东西
+
+在写执行逻辑之前，建议先固定：
+
+- 节点 `type` 是否可长期兼容
+- 输入输出字段是否足够稳定
+- 节点职责是否单一，不会演变成小型工作流
+
+这三点先定下来，后续节点扩展和平台治理都会轻很多。

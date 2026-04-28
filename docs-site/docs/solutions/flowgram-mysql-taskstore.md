@@ -57,3 +57,30 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/flowgram-mysql-taskstore)
+
+## 7. 关键对象
+
+如果你要继续看实现，优先关注：
+
+- `JdbcFlowGramTaskStore`
+- `FlowGramTaskController`
+- `FlowGramRuntimeFacade`
+- `FlowGramRuntimeService`
+
+它们分别对应任务持久化、外部 API、运行时门面和任务执行服务。
+
+## 8. 这条方案的核心边界
+
+这条方案解决的是“任务生命周期如何持久化并可查询”，不直接解决：
+
+- 节点本身的业务逻辑设计
+- 前端画布交互体验
+- 整个平台的权限与组织模型
+
+先把任务存储边界讲清楚，后续平台化设计才不会混层。
+
+## 9. 实施时优先确认什么
+
+- 任务状态字段是否足以支撑前端查询和运维排障
+- `report / result / trace projection` 的存储策略是否一致
+- JDBC store 切入后，是否仍保留与内存实现一致的运行时语义

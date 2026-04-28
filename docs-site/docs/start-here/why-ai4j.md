@@ -106,7 +106,7 @@ AI4J 很强调这三个概念的边界：
 - 你要在 Java 中统一接多个模型平台和多种 AI 服务
 - 你希望 `Tool`、`Skill`、`MCP`、RAG、Agent 有一条连续的上升路径
 - 你后续很可能要做 `Spring Boot` 集成、Agent runtime 或 Coding Agent
-- 你需要一套适合自学、面试复述和长期维护的清晰模块结构
+- 你需要一套适合技术 onboarding、架构说明和长期维护的清晰模块结构
 
 不太适合：
 
@@ -123,4 +123,4 @@ AI4J 很强调这三个概念的边界：
 3. [Quickstart for Java](/docs/start-here/quickstart-java) 或 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
 4. [Core SDK / Overview](/docs/core-sdk/overview)
 
-如果你是为了面试或架构表达，下一页最该看的是 [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)。
+如果你想先建立整体架构认知，下一页最该看的是 [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)。

@@ -67,3 +67,22 @@
 6. [Publish Your MCP Server](/docs/core-sdk/mcp/publish-your-mcp-server)
 
 如果你要讲清楚 AI4J 为什么把 `MCP` 单独成章，这一页和 `Tools` / `Skills` 的边界就是最核心的答案。
+
+## 7. 关键对象
+
+如果你准备从源码验证这一章的判断，优先看下面几个入口：
+
+- `config/McpConfig.java`：服务接入配置入口
+- `mcp/gateway/McpGateway.java`：多服务连接、目录和生命周期管理中心
+- `mcp/util/McpTypeSupport.java`：transport 类型归一化入口
+- `ChatCompletion.mcpServices` 与 `ResponseRequest.mcpServices`：请求侧服务白名单挂载点
+
+从这些对象已经可以看出，MCP 在 AI4J 里是完整的协议接入面，而不是一个零散的工具列表。
+
+## 8. 阅读这一章时要抓住什么
+
+- capability 与 tool projection 不是一回事，MCP tool 只是协议能力在请求链里的运行时投影
+- gateway 解决的是统一管理，请求白名单解决的是本次可见性，两者不能混成一个概念
+- transport 不是 capability 本身，但它决定接入方式、部署模型和连接治理
+
+把这三条先建立起来，再去看每一篇子页面时，就不会把 MCP 误解成“远程函数调用的另一种写法”。

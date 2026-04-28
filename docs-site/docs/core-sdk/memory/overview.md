@@ -63,3 +63,23 @@
 1. [Chat Memory](/docs/core-sdk/memory/chat-memory)
 2. [Memory and Tool Boundaries](/docs/core-sdk/memory/memory-and-tool-boundaries)
 3. [Agent / Memory and State](/docs/agent/memory-and-state)
+
+## 7. 关键对象
+
+如果你接下来要进一步看实现，建议先从这些类入手：
+
+- `memory/ChatMemory.java`：基础上下文存取契约
+- `memory/InMemoryChatMemory.java`：内存态实现
+- `memory/JdbcChatMemory.java`：持久化实现
+- `memory/MessageWindowChatMemoryPolicy.java`：窗口裁剪策略
+- `memory/SummaryChatMemoryPolicy.java`：摘要压缩策略
+
+这几个对象已经足够说明：AI4J 的 memory 不是单一容器，而是“存储实现 + 裁剪策略 + 压缩策略”的组合层。
+
+## 8. 这一层的设计重点
+
+- 会话上下文的持久方式和上下文压缩方式是分离的，可以分别替换
+- 这一层主要关心消息历史如何进入模型请求，而不是任务执行图如何管理长期状态
+- 只要业务仍然是“多轮上下文 + 适度压缩”，通常不需要立刻升级到更重的 agent memory
+
+因此，这一章的重点不是功能数量，而是边界控制得足够清楚：什么时候 `ChatMemory` 已经足够，什么时候才需要进入上层 runtime 的状态语义。

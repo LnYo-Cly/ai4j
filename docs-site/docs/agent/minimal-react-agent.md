@@ -6,7 +6,7 @@ sidebar_position: 2
 
 如果你是第一次在 AI4J 里做 Agent，不要先上 CodeAct、StateGraph 或 Teams。
 
-最稳的起点是一个最小 ReAct Agent：
+推荐先从一个最小 ReAct Agent 开始：
 
 - 一个模型客户端
 - 一个模型名
@@ -49,7 +49,7 @@ System.out.println(result.getOutputText());
 
 ## 2. 为什么先选 ReAct
 
-`ReActRuntime` 是当前默认、最稳的通用运行时。
+`ReActRuntime` 是当前默认的通用运行时。
 
 它适合：
 
@@ -102,7 +102,7 @@ Agent agent = Agents.react()
         .build();
 ```
 
-经验上：
+通常可以这样判断：
 
 - 你已经有稳定 Chat 服务时，先用 `ChatModelClient`
 - 你要走更事件化的新路径时，优先 `ResponsesModelClient`
@@ -252,3 +252,15 @@ Agent agent = Agents.react()
 1. [Runtime 实现详解](/docs/agent/runtimes/runtime-implementations)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
 3. [Trace 与可观测性](/docs/agent/observability/trace)
+
+## 11. 关键对象
+
+如果你要继续下钻源码，优先关注：
+
+- `Agents.react()`
+- `ReActRuntime`
+- `ChatModelClient` / `ResponsesModelClient`
+- `AgentRequest`
+- `AgentResult`
+
+这组对象已经覆盖了最小 ReAct Agent 的构造、执行和结果消费主线。

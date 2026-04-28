@@ -52,7 +52,26 @@ config
 - 同一层既处理 Web 参数，又处理检索、memory、模型调用
 - RAG、Tool、Workflow 没有显式目录或责任边界
 
-这类写法短期能跑，长期很难维护，也不利于面试和架构说明。
+这类写法短期能跑，长期很难维护，也不利于架构演进和代码治理。
+
+## 7. 关键对象
+
+如果你要把这一页落到代码结构，优先关注：
+
+- Spring 容器中的 `AiService`
+- 业务 `Service` 层的 AI4J 入口接口
+- `AiServiceRegistry` 的多实例路由场景
+- `ChatMemory`、Tool、RAG、Workflow 的独立业务模块
+
+这些对象共同决定“AI 能力是被组织起来”，还是“被散落在控制器里”。
+
+## 8. 这一页真正想建立的边界
+
+- Web 层只负责请求输入输出，不负责 AI 能力编排
+- AI4J 接入点应收敛到业务服务层，而不是散在多个 controller
+- Tool、RAG、Workflow 应是显式模块，而不是隐含在 prompt 或 util 类里
+
+把这三条边界立住后，Spring Boot 接入才会真正变成可维护系统，而不是能跑的示例。
 
 ## 5. 继续看哪些案例
 

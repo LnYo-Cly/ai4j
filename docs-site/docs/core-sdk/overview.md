@@ -97,4 +97,27 @@
 9. [Search & RAG](/docs/core-sdk/search-and-rag/overview)
 10. [Extension](/docs/core-sdk/extension/overview)
 
-如果你是为了面试或架构表达，前 4 页就已经是最值得反复复述的主线。
+如果你是第一次建立整体认知，前 4 页就是最值得优先读完的主线。
+
+## 7. 建议先抓住的关键对象
+
+如果你接下来要从文档进入源码，优先记住下面这些入口：
+
+- `service/factory/AiService.java`：模型与能力服务的统一工厂入口
+- `service/factory/AiServiceRegistry.java`：服务注册与分发表
+- `tool/ToolUtil.java`：本地工具 schema 暴露和执行适配入口
+- `skill/Skills.java`：skill 发现与读取入口
+- `mcp/gateway/McpGateway.java`：MCP 多服务管理中心
+- `memory/ChatMemory.java`：基础会话上下文契约
+- `rag/ingestion/IngestionPipeline.java`：RAG 入库流水线主入口
+
+这些对象分别对应七个能力面，能帮助你把“文档分章”和“源码分包”一一对上。
+
+## 8. 阅读这一层时要避免的误区
+
+- 不要把 `Chat` 当成整个基座的全部，模型访问只是主线之一
+- 不要把 `Tools`、`Skills`、`MCP` 混成一种概念，它们分别代表执行能力、说明资产和协议接入
+- 不要先从 demo 或 starter 反推基座，核心边界应当先在 `ai4j/` 里建立
+- 不要跳过 `Service Entry and Registry`，否则后面很难看懂 provider、RAG 和扩展点是如何收束的
+
+把这些边界先立住，后面进入 `Agent`、`Coding Agent` 和 `Flowgram` 时，阅读成本会明显降低。

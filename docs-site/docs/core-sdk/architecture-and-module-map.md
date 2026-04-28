@@ -2,7 +2,7 @@
 
 这一页把文档里的“分层”直接落到仓库真实模块上。
 
-如果你后面要读源码、做架构说明，或者准备面试，这一页应该能帮你回答三个问题：
+如果你后面要读源码、做架构说明，或者评估模块边界，这一页应该能帮你回答三个问题：
 
 1. 仓库里到底有哪些模块
 2. 模块之间的大致依赖方向是什么
@@ -156,3 +156,12 @@ ai4j-flowgram-demo          -> ai4j-flowgram-spring-boot-starter
 9. [Flowgram / Overview](/docs/flowgram/overview)
 
 如果你下一步想继续从代码结构往包结构下钻，建议继续看 [Package Map](/docs/core-sdk/package-map)。
+
+## 6. 还要特别注意两类相邻目录
+
+除了 Maven 主模块，仓库里还有两个阅读时很容易误判角色的目录：
+
+- `docs-site/`：它负责说明体系，不承载生产逻辑
+- `ai4j-flowgram-webapp-demo/`：它是前端演示面，用来配合 FlowGram 后端体验，不是 Java 核心运行时的一部分
+
+把这两类目录和 Maven 模块主线分开看，能避免把“文档站结构”或“前端 demo 结构”误认为后端生产分层。

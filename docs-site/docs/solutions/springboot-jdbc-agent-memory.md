@@ -67,3 +67,32 @@
 继续看深页：
 
 - [旧路径案例页](/docs/guides/springboot-jdbc-agent-memory)
+
+## 7. 关键对象
+
+这条方案最值得继续看的对象通常是：
+
+- `agent/memory/JdbcAgentMemory`
+- `WindowedMemoryCompressor`
+- Agent session 相关对象
+- Spring 容器中的 `DataSource`
+
+它们共同决定 Agent 会话如何被持久化、压缩和恢复。
+
+## 8. 和 `ChatMemory` 方案的真正区别
+
+与基础聊天记忆相比，这里持久化的不只是消息历史，还包括：
+
+- 工具交互后的上下文
+- runtime 相关状态
+- 更接近任务执行语义的会话骨架
+
+因此这条方案不只是“把 `ChatMemory` 换成 JDBC”，而是进入了更重的运行时层。
+
+## 9. 落地时的第一优先级
+
+建议优先验证：
+
+1. `sessionId` 与业务会话绑定是否稳定
+2. 压缩策略是否不会破坏后续工具推理
+3. 重启或跨实例后，Agent 是否能恢复到预期语义状态

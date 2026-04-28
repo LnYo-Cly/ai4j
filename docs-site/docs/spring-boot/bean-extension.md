@@ -55,3 +55,22 @@
 1. [Common Patterns](/docs/spring-boot/common-patterns)
 2. [Core SDK / Extension](/docs/core-sdk/extension/overview)
 3. [Core SDK / Search & RAG](/docs/core-sdk/search-and-rag/overview)
+
+## 7. 关键对象
+
+继续往实现下钻时，建议优先关注：
+
+- Spring 容器里的默认 `AiService`
+- 各类 `VectorStore` Bean
+- 默认 `Reranker` 与 `RagContextAssembler`
+- 业务自定义 Bean 的覆盖位置
+
+这几类对象能帮助你判断“该替换哪一层”，而不是盲目覆盖。
+
+## 8. 扩展时应优先遵守什么
+
+- 优先替换统一抽象后的 Bean，而不是修改底层 provider 私有实现
+- 多个同类型 Bean 并存时，显式声明选择策略
+- 让业务路由逻辑留在服务层，不要回流到 controller 或 util 类
+
+这样扩展之后，Spring 层的自定义能力仍然保持在 AI4J 的统一工程模型内，而不会逐步演变成旁路体系。

@@ -114,7 +114,7 @@ RagTrace trace = ragResult.getTrace();
 
 ## 3. 前端怎么展示引用
 
-### 3.1 最稳的 UI 结构
+### 3.1 推荐的 UI 结构
 
 建议拆成两块：
 
