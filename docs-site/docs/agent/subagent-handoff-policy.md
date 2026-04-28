@@ -4,67 +4,97 @@ sidebar_position: 8
 
 # SubAgent 与 Handoff Policy
 
-SubAgent 解决的是“把某一类专业任务从主 Agent 中拆出去，以工具调用的形式委派给另一个 Agent”。
+SubAgent 的核心，不是“主 Agent 调另一个 Agent”，而是把另一个 `Agent` 包装成一个受治理的工具面。
 
-它不是 Team 的轻量版，也不是普通函数工具的别名。它的本质是：把另一个 `Agent` 封装成一个可治理的 tool surface，再用 `HandoffPolicy` 控制这条委派链能否发生、能走多深、失败后如何处理。
+从源码上看，这条链路分成两层：
 
-## 1. SubAgent 解决什么问题
+- `StaticSubAgentRegistry` 负责把 subagent 变成 function tool
+- `SubAgentToolExecutor` 负责拦截、治理、执行和 fallback
 
-当一个 Agent 同时承担下面几类职责时，往往会开始失控：
+因此 SubAgent 的本质不是“多 Agent 聊天”，而是“带 handoff policy 的工具委派”。
 
-- 决策与路由
-- 领域检索
-- 格式化输出
-- 代码审查或专项分析
+## 1. 先抓住 3 个关键设计决策
 
-如果继续把所有能力都塞进一个 system prompt，常见后果是：
+### 1.1 SubAgent 先是 tool surface，后才是协作能力
 
-- 上下文越来越混杂
-- 工具面不断膨胀
-- 失败责任不清
-- 某个专项能力无法独立演化
+`AgentBuilder.build()` 在装配阶段会做两步非常关键的事情：
 
-SubAgent 的设计目标是把“专项能力”拆成独立 Agent，但仍让主 Agent 以熟悉的工具调用方式使用它。
+1. 把 subagent tools 合并进最终 `toolRegistry`
+2. 用 `SubAgentToolExecutor` 包装原始 `ToolExecutor`
 
-## 2. 它和普通工具、Teams 的边界
+也就是说，SubAgent 不是挂在 runtime 旁边的侧边逻辑，而是进入了标准的“模型可见工具面 + 工具执行面”链路。
 
-| 能力 | 核心抽象 | 适合什么场景 | 不适合什么场景 |
+### 1.2 治理点放在执行器，而不是注册器
+
+`StaticSubAgentRegistry` 只负责：
+
+- 定义工具 schema
+- 调用真正的 subagent
+
+真正的策略控制，如：
+
+- 是否允许 handoff
+- 最大深度
+- timeout
+- retry
+- deny / fallback
+
+都在 `SubAgentToolExecutor`。
+
+这说明 AI4J 对 SubAgent 的理解很明确：
+
+- registry 负责暴露能力
+- executor 负责治理能力
+
+### 1.3 session 语义是 subagent 设计的一部分
+
+`SubAgentSessionMode` 不只是一个可选小开关，而是直接决定子代理是：
+
+- 每次 fresh session 执行
+- 还是把多次 handoff 压到同一个 session 里累积 memory
+
+因此 SubAgent 不是“另一个 Agent 实例”这么简单，而是“带明确 session policy 的 delegated runtime”。
+
+## 2. 它和普通工具、Agent Teams 的边界
+
+| 能力 | 核心抽象 | 适合什么问题 | 不适合什么问题 |
 | --- | --- | --- | --- |
-| 普通工具 | `ToolExecutor` | 一个同步函数调用就能完成的能力 | 需要独立提示词、独立 memory 的复杂子任务 |
-| SubAgent | `SubAgentDefinition` + `HandoffPolicy` | 主 Agent 把专项任务委派给另一个 Agent | 多成员共享任务板、消息总线、主动协作 |
-| Agent Teams | `AgentTeam` | 多角色长期协作、任务依赖、团队状态持久化 | 单次主从委派 |
+| 普通工具 | `ToolExecutor` | 一次同步函数就能解决的问题 | 需要独立 prompt、独立 memory 的子任务 |
+| SubAgent | `SubAgentDefinition` + `HandoffPolicy` | 把复杂专项能力封装成可委派工具 | 多成员共享任务板、消息总线、主动协作 |
+| Agent Teams | `AgentTeam` | 显式团队协作与任务调度 | 单次主从委派 |
 
-记住一个判断标准：
+SubAgent 最适合的场景是：
 
-- 你只是想“把一个复杂能力包装成一个工具”，用 SubAgent
-- 你需要“多个成员围绕任务板协作”，用 Agent Teams
+- 你仍然想保留“主 Agent 决策”
+- 但某个能力已经复杂到不适合再写成普通工具函数
 
-## 3. 核心对象关系
+## 3. `AgentBuilder` 是怎么把 SubAgent 装进去的
 
-SubAgent 主线涉及下面几个对象：
+SubAgent 真正进入系统，是在 `AgentBuilder.build()` 里。
 
-| 对象 | 角色 | 关键职责 |
-| --- | --- | --- |
-| `SubAgentDefinition` | 子代理定义 | 描述 name、description、toolName、agent、sessionMode |
-| `StaticSubAgentRegistry` | 注册器 | 把定义转换成可暴露工具，并负责真实调用 |
-| `SubAgentToolExecutor` | 执行器包装层 | 拦截子代理工具调用，应用 handoff policy |
-| `HandoffPolicy` | 治理策略 | 控制是否允许、深度、重试、超时、失败动作 |
-| `HandoffContext` | 深度上下文 | 通过 `ThreadLocal` 记录嵌套委派深度 |
-| `SubAgentSessionMode` | 会话模式 | 决定每次新建 session 还是复用已有 session |
+核心装配顺序是：
 
-装配关系如下：
+1. 先拿到 `baseToolRegistry`
+2. `resolveSubAgentRegistry()`
+   - 显式传了 `subAgentRegistry` 就用它
+   - 否则若有 `subAgentDefinitions`，就创建 `StaticSubAgentRegistry`
+3. `resolveToolRegistry(...)`
+   - 用 `CompositeToolRegistry(baseToolRegistry, new StaticToolRegistry(subRegistry.getTools()))`
+   - 把 subagent tools 合并进模型可见工具面
+4. 解析原始 `ToolExecutor`
+5. 如果有 subagent registry，再用 `new SubAgentToolExecutor(...)` 包一层
 
-```text
-AgentBuilder
-  -> resolveSubAgentRegistry()
-  -> StaticSubAgentRegistry
-  -> CompositeToolRegistry(base tools + subagent tools)
-  -> SubAgentToolExecutor(delegate executor + handoff policy)
-```
+这条链有一个很重要的副作用：
 
-## 4. `SubAgentDefinition` 的真实语义
+- 原始 `ToolExecutor` 不需要认识 subagent tools
+- 因为 subagent tool 名会先被包装器拦截
+- 非 subagent tool 才继续委托给原执行器
 
-`SubAgentDefinition` 的字段并不多，但每个字段都对应实际运行语义：
+所以 SubAgent 的集成点非常干净：它不会污染普通工具执行器的实现。
+
+## 4. `SubAgentDefinition` 的语义比字段表更重要
+
+字段只有 5 个：
 
 - `name`
 - `description`
@@ -72,74 +102,86 @@ AgentBuilder
 - `agent`
 - `sessionMode`
 
-其中默认值需要特别注意：
+但真正重要的是默认行为。
 
-- `sessionMode` 默认是 `SubAgentSessionMode.NEW_SESSION`
+### 4.1 `sessionMode` 默认是 `NEW_SESSION`
 
-这意味着，如果你什么都不配，SubAgent 的默认行为是：
+这意味着如果你什么都不配，SubAgent 的默认语义是：
 
-- 每次 handoff 都新建一个 `AgentSession`
-- 不复用子代理 memory
-- 不共享上一次委派的对话历史
+- 每次 handoff 独立新建一个 `AgentSession`
+- 子代理不会继承上一次 handoff 的 memory
 
-这对隔离性更安全，但不适合需要长期记忆的子代理。
+它偏向隔离和可预测，而不是长期上下文连续性。
 
-## 5. 子代理如何被“变成工具”
+### 4.2 `name` 不是纯展示字段
 
-`StaticSubAgentRegistry` 会把每个 `SubAgentDefinition` 变成一个 function tool。
+如果没有显式给 `toolName`，`StaticSubAgentRegistry` 会按 `name` 生成默认工具名。
+
+所以 `name` 不只是文档标签，还影响最终暴露给模型的工具名字。
+
+## 5. `StaticSubAgentRegistry` 到底做了什么
+
+这层的职责可以概括成三句话：
+
+- 把定义变成工具
+- 把工具调用变成 subagent 输入
+- 把 subagent 输出压平成工具结果字符串
 
 ### 5.1 工具名生成规则
 
-如果你没有显式提供 `toolName`，注册器会自动生成：
+未显式指定 `toolName` 时，默认名是：
 
 ```text
 subagent_<normalized name>
 ```
 
-标准化规则包括：
+normalize 规则包括：
 
-- 转小写
-- 非 `[a-z0-9_]` 字符替换成 `_`
+- 小写化
+- 非 `[a-z0-9_]` 字符改成 `_`
 - 合并连续 `_`
 - 去掉首尾 `_`
-- 若首字符是数字，自动补 `agent_`
+- 如果首字符是数字，自动补 `agent_`
 
-因此 `name` 不只是展示字段，它还可能决定默认工具名。
+此外，构造 registry 时如果工具名重复，会直接抛：
 
-### 5.2 自动生成的参数 schema
-
-生成的工具 schema 固定要求：
-
-- `task`：必填
-- `context`：可选
-
-也就是说，主模型看到的不是“直接运行另一个 Agent”，而是一个普通函数工具：
-
-```json
-{
-  "task": "请完成这个专项任务",
-  "context": "可选补充上下文"
-}
+```text
+duplicate subagent tool name
 ```
 
-### 5.3 返回值结构
+所以 tool name collision 在初始化阶段就会被拦住。
 
-`StaticSubAgentRegistry.execute(...)` 的返回值不是原始 `AgentResult`，而是一个 JSON 字符串，包含：
+### 5.2 暴露给模型的 schema 其实非常窄
+
+自动生成的 function tool 只暴露两个字段：
+
+- `task`，必填
+- `context`，可选
+
+这说明 SubAgent 的设计不是“把完整 Agent API 暴露给模型”，而是刻意把 handoff 输入面收窄成一个最小委派协议。
+
+### 5.3 返回值不是 `AgentResult`
+
+`execute(...)` 最终返回的是 JSON 字符串，包含：
 
 - `subagent`
 - `toolName`
 - `output`
 - `steps`
 
-这样做的意义是把子代理执行结果压平回主 Agent 的工具结果通道，而不是把整个运行时对象向上层泄漏。
+这非常关键，因为主 Agent 最终看到的仍然是一个普通工具结果，而不是嵌套的 Agent 对象图。
 
-## 6. 输入是怎么传给子代理的
+SubAgent 在系统里的定位，从头到尾都被压在“工具结果通道”里。
 
-`StaticSubAgentRegistry.resolveInput(...)` 会优先这样解释工具参数：
+## 6. 输入到底是怎么传给 subagent 的
 
-1. 先取 `task`
-2. 若没有 `task`，再尝试 `input`
-3. 若同时有 `task` 和 `context`，会拼成：
+`StaticSubAgentRegistry.resolveInput(...)` 的逻辑很具体：
+
+1. 如果 arguments 为空，返回空字符串
+2. 尝试把 arguments 解析成 JSON
+3. 优先取 `task`
+4. 若无 `task`，再尝试 `input`
+5. 若同时存在 `task` 和 `context`，拼成：
 
 ```text
 <task>
@@ -148,235 +190,294 @@ Context:
 <context>
 ```
 
-如果参数根本不是合法 JSON，就把原始 arguments 直接当作输入字符串。
+6. 若不是合法 JSON，直接把原始 arguments 当输入
 
-这意味着 SubAgent 的主输入协议很简单，但你仍然可以通过 `context` 注入额外背景，而不用把所有信息都挤进一行 `task`。
+这说明 SubAgent 的输入协议有两个特点：
 
-## 7. Session 模式如何影响行为
+- 面向委派任务，而不是面向结构化复杂参数
+- 对参数格式有容错，但最终都会折叠成一个字符串输入
 
-`SubAgentSessionMode` 只有两个值：
+## 7. `SubAgentToolExecutor` 才是 handoff 的控制中枢
 
-- `NEW_SESSION`
-- `REUSE_SESSION`
+所有真正重要的 handoff 语义，都在这里。
 
-### 7.1 `NEW_SESSION`
+### 7.1 普通工具不会被污染
 
-每次 handoff 都：
+入口逻辑很简单：
 
-- `agent.newSession()`
-- 执行一轮任务
-- 不保留上次委派的上下文
+- 命中 subagent tool -> `executeSubAgent(...)`
+- 否则 -> `delegate.execute(call)`
 
-优点：
+因此这不是全局工具代理器，而是“只代理 subagent tools 的选择性拦截器”。
 
-- 隔离性好
-- 行为更可预测
-- 并发下没有会话共享副作用
+### 7.2 handoff 从一开始就在发事件
 
-### 7.2 `REUSE_SESSION`
+无论走不走策略，都会先发：
 
-`StaticSubAgentRegistry` 会按 `toolName` 缓存 `AgentSession`，并在调用时：
+- `HANDOFF_START`
 
-- `computeIfAbsent(...)` 复用 session
-- 对同一个 session 进行 `synchronized` 保护
+结束时会发：
 
-这说明 `REUSE_SESSION` 的真实语义不是“无限并发共享上下文”，而是：
+- `HANDOFF_END`
 
-- 同一子代理工具可持续积累记忆
-- 但同一 session 的并发执行会被串行化
+而且 payload 会带：
 
-适合场景：
+- `handoffId`
+- `callId`
+- `tool`
+- `subagent`
+- `status`
+- `depth`
+- `sessionMode`
+- `attempts`
+- `durationMillis`
+- `output`
+- `error`
 
-- 子代理需要在多次委派间保持长期上下文
-- 可以接受该子代理实例的串行执行语义
+所以 handoff 在可观测层是一等事件，不是普通工具调用的附带日志。
 
-## 8. `HandoffPolicy` 默认值与治理语义
+## 8. handoff lifecycle 的真实执行链
 
-`HandoffPolicy` 的默认值如下：
+`executeSubAgent(...)` 可以拆成 7 个步骤。
 
-| 字段 | 默认值 | 语义 |
-| --- | --- | --- |
-| `enabled` | `true` | 开启策略治理 |
-| `maxDepth` | `1` | 只允许 lead -> subagent 一层嵌套 |
-| `maxRetries` | `0` | 子代理失败后不自动重试 |
-| `timeoutMillis` | `0L` | 不做超时截断 |
-| `allowedTools` | `null` | 不做显式 allow-list |
-| `deniedTools` | `null` | 不做显式 deny-list |
-| `onDenied` | `FAIL` | 被策略拒绝时默认失败 |
-| `onError` | `FAIL` | 子代理异常时默认失败 |
-| `inputFilter` | `null` | 默认不改写输入 |
+### 8.1 先判断 `enabled`
 
-这套默认值体现的原则很清楚：
+如果 `policy.isEnabled() == false`，会直接走 `executeWithoutPolicy(...)`。
 
-- 默认允许使用 SubAgent
-- 但默认不允许无限递归
-- 默认不吞掉错误
+但这里要注意一个容易忽略的细节：
 
-## 9. `SubAgentToolExecutor` 到底拦截了什么
+- `enabled=false` 不是完全绕过 wrapper
+- 仍然会发 handoff events
+- 仍然会调用 `executeOnce(...)`
 
-`SubAgentToolExecutor.execute(...)` 的执行分支非常明确：
+而 `executeOnce(...)` 依然读取 `policy.getTimeoutMillis()`
 
-1. 如果调用命中 subagent tool：
-   - 进入 handoff policy 流程
-2. 如果没命中：
-   - 直接委托给下游 `delegate.execute(call)`
+所以“禁用 policy”更准确的语义是：
 
-也就是说，它不是替代原始工具执行器，而是在原始执行链前面增加一层“只有命中 subagent tool 才生效”的拦截器。
+- 关闭 deny / filter / retry / onDenied / onError 这类治理分支
+- 不是完全移除整个 handoff wrapper
 
-这是一个很重要的边界：
+### 8.2 计算下一层深度
 
-- 普通工具仍由原始执行器负责
-- 只有子代理工具才会走 handoff 逻辑
+深度是通过：
 
-## 10. 策略检查与失败分支
+- `HandoffContext.currentDepth() + 1`
 
-当调用命中某个子代理工具后，`SubAgentToolExecutor` 会做以下检查：
+计算的。
 
-### 10.1 深度控制
+真正执行时会用：
 
-通过 `HandoffContext` 维护当前嵌套深度，若超过 `maxDepth` 则拒绝执行。
+- `HandoffContext.runWithDepth(depth, ...)`
 
-默认 `maxDepth = 1` 的含义不是“只能执行一次工具”，而是：
+把深度写进一个 `ThreadLocal`。
 
-- 允许主 Agent 委派给子代理
-- 不允许子代理再继续 handoff 给下一层子代理
+所以 handoff depth 不是显式参数层层传，而是运行时上下文。
 
-### 10.2 工具 allow/deny
+### 8.3 先做 admission control
 
-如果配置了：
+`denyReason(...)` 会按顺序检查：
 
 - `allowedTools`
 - `deniedTools`
+- `maxDepth`
 
-则当前 `toolName` 会先经过白名单 / 黑名单判断。
+注意这里检查的是：
 
-### 10.3 输入过滤
+- `toolName`
 
-`inputFilter` 可以在真正 handoff 前改写参数。适合做：
+不是 subagent `name`。
+
+因此 allow/deny 列表的配置对象，是暴露给模型的工具名，不是内部角色名。
+
+### 8.4 再做输入过滤
+
+如果配置了 `inputFilter`，会对 `AgentToolCall` 做一次改写。
+
+这层适合做：
 
 - 脱敏
-- 裁剪冗长上下文
-- 注入额外治理字段
+- 长上下文裁剪
+- 注入策略字段
 
-### 10.4 超时执行
+而且如果 filter 返回 `null`，执行器会回退使用原始 call，不会把 handoff 直接吞掉。
 
-当 `timeoutMillis > 0` 时，`SubAgentToolExecutor` 会把执行提交给内部线程池，并通过 `future.get(timeoutMillis, ...)` 控制单次 handoff 时长。
+### 8.5 执行尝试次数是 `maxRetries + 1`
 
-### 10.5 错误重试
+真正的 attempts 计算是：
 
-`maxRetries` 控制的是首次失败后的补充重试次数，不包含第一次执行。
+```java
+int attempts = Math.max(1, policy.getMaxRetries() + 1);
+```
 
-## 11. `FALLBACK_TO_PRIMARY` 的真实语义
+所以：
 
-`HandoffFailureAction` 允许把 `onDenied` 或 `onError` 配成 `FALLBACK_TO_PRIMARY`。
+- `maxRetries = 0` -> 实际尝试 1 次
+- `maxRetries = 2` -> 实际尝试 3 次
 
-这时如果存在 `delegate`，执行器会改走：
+这是典型的“retry count 不包含首次尝试”的语义。
+
+### 8.6 timeout 是每次 attempt 的 timeout
+
+`executeOnce(...)` 里如果 `timeoutMillis > 0`，会：
+
+- 提交到内部 cached thread pool
+- `future.get(timeoutMillis, TimeUnit.MILLISECONDS)`
+
+因此 timeout 是单次 handoff attempt 的超时，不是整个多次 retry 总耗时上限。
+
+### 8.7 成功、失败、fallback 都会发 `HANDOFF_END`
+
+不管最终是：
+
+- completed
+- failed
+- fallback
+
+都会明确发结束事件，并写入对应 status。
+
+这让 handoff 在 trace 里是闭环的。
+
+## 9. Session 模式不是性能开关，而是状态语义
+
+### 9.1 `NEW_SESSION`
+
+每次执行都：
+
+- `agent.newSession()`
+- `session.run(...)`
+
+特点是：
+
+- 强隔离
+- 无历史泄漏
+- 对并发更友好
+
+### 9.2 `REUSE_SESSION`
+
+`StaticSubAgentRegistry` 会按 `toolName` 缓存 `AgentSession`，并且：
+
+- `computeIfAbsent(...)`
+- `synchronized(session)`
+
+这意味着两个非常具体的语义：
+
+1. memory 会跨多次 handoff 累积
+2. 同一个 subagent tool 的并发调用会串行化
+
+所以 `REUSE_SESSION` 不是“更高吞吐”，而是“更强连续性，但牺牲并发独立性”。
+
+## 10. `HandoffPolicy` 默认值到底意味着什么
+
+默认值如下：
+
+| 字段 | 默认值 | 真正含义 |
+| --- | --- | --- |
+| `enabled` | `true` | handoff 默认受策略层管理 |
+| `maxDepth` | `1` | 默认只允许 lead -> subagent 一层 |
+| `maxRetries` | `0` | 默认不重试 |
+| `timeoutMillis` | `0L` | 默认不做超时截断 |
+| `allowedTools` | `null` | 默认不做 allow-list |
+| `deniedTools` | `null` | 默认不做 deny-list |
+| `onDenied` | `FAIL` | 默认拒绝即失败 |
+| `onError` | `FAIL` | 默认异常即失败 |
+| `inputFilter` | `null` | 默认不改写输入 |
+
+这组默认值背后的策略倾向很清楚：
+
+- SubAgent 默认可用
+- 但默认不开放递归 handoff
+- 也默认不自动吞错或自动降级
+
+## 11. `FALLBACK_TO_PRIMARY` 的语义必须说清
+
+当 `onDenied` 或 `onError` 设成 `FALLBACK_TO_PRIMARY` 时，执行器会：
 
 ```java
 delegate.execute(call)
 ```
 
-这不是“切回主 Agent 自己思考”，而是：
+这意味着 fallback 的真实语义是：
 
-- 对同名工具调用，交还给原始 `ToolExecutor`
+- 把同一个 `AgentToolCall` 交回原始工具执行链
 
-常见用途包括：
+它不是：
 
-- 某个子代理只在部分环境启用
-- 生产环境暂时关闭 handoff，但保留普通工具兜底
-- 子代理异常时回退到传统实现
+- 让主 Agent 自己重思考一遍
+- 或让 subagent 降级成普通文本回答
 
-## 12. 一份正确的接入示例
+这要求一个前提：
 
-```java
-SubAgentDefinition weather = SubAgentDefinition.builder()
-        .name("weather specialist")
-        .description("Collect weather facts and return concise summaries.")
-        .toolName("delegate_weather")
-        .agent(weatherAgent)
-        .sessionMode(SubAgentSessionMode.NEW_SESSION)
-        .build();
+- 你的原始 `delegate` 必须真的能处理这个同名工具调用
 
-Agent lead = Agents.react()
-        .modelClient(managerClient)
-        .model("manager-model")
-        .subAgent(weather)
-        .handoffPolicy(HandoffPolicy.builder()
-                .maxDepth(1)
-                .timeoutMillis(15000L)
-                .onError(HandoffFailureAction.FAIL)
-                .build())
-        .build();
-```
+否则 fallback 配了也没有意义。
 
-这个配置表达的是：
+## 12. 一个很容易忽略的设计细节
 
-- 主 Agent 把天气专项能力封装成一个工具
-- 每次委派都使用独立 session
-- 不允许子代理继续无限递归 handoff
-- 单次 handoff 最多运行 15 秒
+`AgentBuilder` 在创建默认 `ToolUtilExecutor` 时，传入的 allowed tool names 来自：
 
-## 13. 什么时候该用 SubAgent，什么时候别用
+- `baseToolRegistry`
 
-适合用 SubAgent：
+而不是合并后的 subagent registry。
 
-- 某个能力需要独立 system prompt
-- 某个能力需要自己的工具白名单
-- 主 Agent 只想“委托并拿回结果”
-- 你希望把专项能力模块化为可复用组件
+这正说明默认工具执行器不需要认识 subagent tools，因为：
 
-不适合用 SubAgent：
+- subagent tool 会先被 `SubAgentToolExecutor` 拦截
+- 只有没命中的普通工具才走 delegate
 
-- 需要多个成员共享任务状态
-- 需要消息总线
-- 需要任务认领、转派、保活
-- 需要持久化团队运行快照
+这是一个很干净的分层设计。
 
-这些已经超出了 handoff 的边界，应进入 Agent Teams。
+## 13. 适合什么场景，不适合什么场景
 
-## 14. 失败语义与工程边界
+适合：
 
-### 14.1 SubAgent 不是权限系统本身
+- 想保留一个主 Agent 做全局决策
+- 某些专项能力已经复杂到值得独立成 Agent
+- 希望这些专项能力还能继续拥有自己的 prompt、memory、tooling
 
-`HandoffPolicy` 提供的是 handoff 治理，不替代真正的工具权限控制。真正的执行权限仍然应当落在 `ToolExecutor` 一侧。
+不适合：
 
-### 14.2 `REUSE_SESSION` 不等于高并发共享
+- 需要显式团队协作
+- 需要任务认领、消息广播、状态恢复
+- 需要多个成员平等协作而不是主从委派
 
-它会复用上下文，但同一工具实例上的调用会同步执行。不要把它当作“高吞吐共享 Agent 池”。
+这类场景应该进入 Agent Teams。
 
-### 14.3 `maxDepth=1` 是安全默认值
+## 14. 当前实现的几个真实限制
 
-如果你把深度放开，就必须同时明确：
+### 14.1 SubAgent 仍然走字符串输入输出协议
 
-- 哪些子代理能继续 handoff
-- 如何避免循环委派
-- 如何做 trace 与审计
+即使参数表面上是 JSON，真正喂给子代理的仍然是一个字符串 input。
 
-否则很容易出现链路不可控的问题。
+因此它更像“结构化委派入口 + 文本任务体”，而不是强类型 RPC。
+
+### 14.2 `REUSE_SESSION` 只按 `toolName` 复用
+
+不是按用户、不是按任务、不是按 tenant。
+
+所以如果你的系统需要更细粒度的 session 隔离，不能直接把默认 `REUSE_SESSION` 当成完整方案。
+
+### 14.3 policy 的 allow/deny 是按工具名，不是按角色名
+
+这要求你在设计工具名时保持稳定且有治理意义，否则后续策略配置会很混乱。
 
 ## 15. 推荐阅读源码入口
 
-建议按下面顺序阅读：
-
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/SubAgentDefinition.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/SubAgentSessionMode.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/StaticSubAgentRegistry.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/SubAgentToolExecutor.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/HandoffPolicy.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/HandoffContext.java`
 
 ## 16. 推荐验证用例
-
-这几组测试基本覆盖了 SubAgent 的行为契约：
 
 - `ai4j-agent/src/test/java/io/github/lnyocly/agent/SubAgentRuntimeTest.java`
 - `ai4j-agent/src/test/java/io/github/lnyocly/agent/SubAgentParallelFallbackTest.java`
 - `ai4j-agent/src/test/java/io/github/lnyocly/agent/HandoffPolicyTest.java`
 
-## 17. 下一步读什么
-
-读完这一页后，建议继续：
+## 17. 继续阅读
 
 1. [Tools and Registry](/docs/agent/tools-and-registry)
 2. [Agent Teams](/docs/agent/agent-teams)
-3. [Trace 与可观测性](/docs/agent/observability/trace)
+3. [Trace 与可观测性](/docs/agent/trace-observability)

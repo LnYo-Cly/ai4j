@@ -4,357 +4,401 @@ sidebar_position: 7
 
 # CodeAct 运行时
 
-`CodeActRuntime` 解决的不是“让模型顺便写点代码”，而是把“模型产出代码、运行时代码执行、代码内部继续调工具、执行结果再决定后续推理”收敛成一个稳定的 runtime。
+`CodeActRuntime` 不是“ReAct 再加一个代码工具”，而是一条不同的执行链。
 
-这意味着 CodeAct 不是 ReAct 的别名，也不是普通 function call 的语法糖。它是一条独立执行链。
+它把模型输出的稳定中间表示，从：
 
-## 1. CodeAct 解决什么问题
+- `tool_calls`
 
-普通 ReAct 适合“模型直接决定调用哪个工具，再根据工具结果继续回答”。
+改成了：
 
-但有一类任务仅靠直接工具调用很难写好：
+- `{"type":"code","language":"...","code":"..."}`
+- `{"type":"final","output":"..."}`
 
-- 需要在本轮里循环调用多个工具
-- 需要在代码中做中间态计算、聚合、排序、格式化
-- 需要先取原始结果，再用脚本做转换
-- 需要模型把“计划”落成可执行代码而不是直接自然语言
+这意味着 CodeAct 的本质不是 native function-calling，而是一个由 runtime 强制约束的 prompt 协议，再通过 `CodeExecutor` 把代码和工具桥接起来。
 
-CodeAct 的价值，就是把“推理”和“执行”之间增加了一层代码媒介。
+## 1. 先抓住 3 个关键设计决策
 
-## 2. 它和 ReAct 的边界
+理解 `CodeActRuntime`，先抓住 3 个真正决定行为的点。
 
-可以把两者理解成两种不同的运行策略。
+### 1.1 它不是 native tool-calling 路线
 
-| 运行时 | 模型直接输出什么 | Runtime 主要做什么 | 适合什么任务 |
-| --- | --- | --- | --- |
-| `ReActRuntime` | 文本 + tool calls | 调工具、回灌 memory、继续 loop | 一般问答、检索、工具调用 |
-| `CodeActRuntime` | JSON 包裹的代码或最终答案 | 执行代码、把结果写回 memory、决定是否再总结 | 计算、批量工具编排、数据转换 |
+`CodeActRuntime.buildPrompt(...)` 构造 `AgentPrompt` 时，并没有把工具 schema 塞进 prompt 的 `tools` 字段。
 
-如果任务需要显式脚本执行与中间计算，应该进入 CodeAct；如果只是单步工具调用或简单多轮推理，停留在 ReAct 更合适。
+它真正做的是：
 
-## 3. 核心对象与职责
+- 合并 `systemPrompt`
+- 注入一段 `runtimeInstructions(...)`
+- 把工具名和说明拼成文本 guide
 
-CodeAct 主线涉及下面几个核心类：
+也就是说，CodeAct 不是让模型直接发 provider 原生 `tool_calls`，而是让模型：
 
-| 类 | 角色 | 关键职责 |
-| --- | --- | --- |
-| `CodeActRuntime` | CodeAct 主循环 | 解析模型 JSON、执行代码、决定是否继续 loop |
-| `CodeActOptions` | 运行策略开关 | 当前核心开关是 `reAct` |
-| `CodeExecutor` | 执行器抽象 | 真正执行 Python / JavaScript 代码 |
-| `CodeExecutionRequest` | 代码执行入参 | 传入语言、代码、工具名、工具执行器、user |
-| `CodeExecutionResult` | 代码执行结果 | 暴露 `result`、`stdout`、`error`、`success` |
-| `NashornCodeExecutor` | Java 8 默认执行器 | 以 Nashorn 运行 ES5 风格 JavaScript |
-| `GraalVmCodeExecutor` | 高版本 Java 默认执行器 | 承载 Python / JavaScript 多语言执行 |
+1. 先输出一个 JSON code message
+2. 再由 runtime 解释这段 code message
+3. 再由 `CodeExecutor` 在宿主里调工具
 
-在 `AgentBuilder.build()` 中，如果你没有显式提供 `codeExecutor(...)`，默认选择逻辑是：
+这和 ReAct 的根本区别，不在“是否会调用工具”，而在“模型和工具之间有没有经过代码这一层中间表示”。
 
-- Java 8：`NashornCodeExecutor`
-- 高于 Java 8：`GraalVmCodeExecutor`
+### 1.2 代码执行不是额外附属功能，而是主循环核心
 
-这不是文档约定，而是 `AgentBuilder.createDefaultCodeExecutor()` 的实际行为。
-
-## 4. 模型输出协议
-
-`CodeActRuntime` 约定模型输出一个 JSON 对象，主要有两种形态。
-
-### 4.1 请求执行代码
-
-```json
-{"type":"code","language":"python","code":"..."}
-```
-
-在 Java 8 / Nashorn 路径下，对应语言通常是：
-
-```json
-{"type":"code","language":"js","code":"..."}
-```
-
-### 4.2 输出最终答案
-
-```json
-{"type":"final","output":"..."}
-```
-
-### 4.3 解析失败时会发生什么
-
-`CodeActRuntime.parseMessage(...)` 会尝试从模型输出中提取首个 JSON object。
-
-这带来两个事实：
-
-- 从契约上讲，模型应只输出 JSON 对象
-- 从实现上讲，如果输出里混入了额外文本，但仍能提取到合法 JSON，runtime 仍可能继续运行
-
-如果最终无法解析出合法 JSON，runtime 会把该输出当作普通文本结果处理，而不是继续执行代码。
-
-所以“只输出 JSON”是正确用法，而“解析失败回退为普通文本”是容错兜底，不应当依赖它设计主流程。
-
-## 5. 执行链路
-
-`CodeActRuntime` 的执行步骤可以概括为：
-
-1. 从 `AgentMemory` 组装 prompt
-2. 自动拼接 CodeAct 专用系统指令
-3. 请求模型，拿到文本输出
-4. 解析 JSON：
-   - `type=final`：直接结束
-   - `type=code`：进入代码执行
-   - 解析失败：按普通文本结束
-5. 构造一个名为 `code` 的 `AgentToolCall`
-6. 调用 `CodeExecutor.execute(CodeExecutionRequest)`
-7. 把执行结果转成 `CODE_RESULT: ...` 或 `CODE_ERROR: ...` 的 system message 写回 memory
-8. 根据 `CodeActOptions.reAct` 决定：
-   - 直接返回执行结果
-   - 还是继续下一轮，让模型输出最终自然语言答案
-
-简化后的链路如下：
+在 `runInternal(...)` 里，只要模型输出 `type=code`，运行链就会进入：
 
 ```text
-model output JSON
-  -> parseMessage(...)
-  -> CodeExecutionRequest(language, code, toolNames, toolExecutor, user)
-  -> codeExecutor.execute(...)
+parseMessage
+  -> build AgentToolCall(name=code)
+  -> codeExecutor.execute(CodeExecutionRequest)
   -> memory.addSystemMessage(CODE_RESULT / CODE_ERROR)
-  -> direct final output or next model step
+  -> next step or final output
 ```
 
-## 6. Runtime 自动追加了哪些指令
+所以 CodeAct 不是“模型写一段代码，顺便执行一下”，而是 runtime 把代码执行本身纳入了主循环。
 
-`CodeActRuntime.runtimeInstructions(...)` 会根据执行器类型自动补一段运行时协议。
+### 1.3 最终输出不一定经过模型总结
 
-### 6.1 Java 8 / Nashorn 路径
+默认 `CodeActOptions.reAct = false`。
 
-当 `context.getCodeExecutor()` 是 `NashornCodeExecutor` 时，runtime 会明确要求模型：
+这意味着代码执行成功后，runtime 会优先尝试直接返回：
 
-- 使用 JavaScript
-- 输出 `{"type":"code","language":"js","code":"..."}`
-- 遵循 Nashorn 兼容语法
-- 不使用 `Promise`、`async/await`、模板字符串、`let/const`、箭头函数
+- `result`
+- `stdout`
+- `toolOutput`
 
-这相当于把 Java 8 的执行器边界提前暴露给模型，避免模型生成宿主无法运行的语法。
+很多场景下，最终答案根本不会再回模型润色，而是代码结果直接成为 `AgentResult.outputText`。
 
-### 6.2 高版本 Java / GraalVM 路径
+所以要判断一段输出是“模型总结的”还是“执行器直接回的”，必须看 `reAct` 和执行结果结构，不能只看最终文本。
 
-当不是 Nashorn 时，runtime 默认要求模型生成 Python：
+## 2. 它到底解决什么问题
 
-- 输出 `{"type":"code","language":"python","code":"..."}`
-- 使用 Python 语法
-- 通过工具名或 `callTool(...)` 调工具
+ReAct 适合：
 
-这也是为什么很多 CodeAct 示例在 Java 17+ 环境里默认展示 Python，而不是 JavaScript。
+- 模型判断该不该调工具
+- 调一次或少量几次工具
+- 工具结果直接回灌给模型继续推理
 
-## 7. 代码里如何调工具
+但有一类任务，用纯文本 tool loop 会逐渐不稳定：
 
-`CodeExecutionRequest` 会把以下能力传给执行器：
+- 同一轮内要循环调用多个工具
+- 需要在工具结果之间做聚合、排序、转换
+- 需要构造临时中间变量，而不是只拼自然语言
+- 希望“先执行，再决定怎么回答”
 
-- `toolNames`
-- `toolExecutor`
+CodeAct 的价值，就是把这种任务从“模型直接推理”转换成“模型生成可执行过程”。
+
+## 3. 和 ReAct 的真正边界
+
+| 运行时 | 模型的主输出 | 工具如何进入链路 | 谁决定最终答案 |
+| --- | --- | --- | --- |
+| `ReActRuntime` | 文本 + native tool calls | runtime 直接执行 tool call | 通常由模型 |
+| `CodeActRuntime` | JSON code/final message | 代码经 `CodeExecutor` 间接调工具 | 可能是执行器，也可能是模型 |
+
+因此什么时候切到 CodeAct，不是看“任务复杂不复杂”，而是看：
+
+- 你需要的是“工具调用”
+- 还是“工具调用之间的显式可执行过程”
+
+如果后者更重要，就该进入 CodeAct。
+
+## 4. `runInternal()` 的真实生命周期
+
+从源码看，`CodeActRuntime.runInternal(...)` 可以拆成 6 个阶段。
+
+### 4.1 Phase 1: 初始化和 step loop
+
+开始时它会：
+
+- 读 `AgentOptions.maxSteps`
+- 读 `CodeActOptions.reAct`
+- 校验 `memory`
+- 校验 `codeExecutor`
+- 把用户输入写进 `AgentMemory`
+
+然后进入 step loop。
+
+这里要特别注意：
+
+- `maxSteps <= 0` 时没有步数上限
+
+所以 CodeAct 默认并不是生产安全的保守配置。和 ReAct 一样，如果不显式限制步数，失败修复或空转都可能持续发生。
+
+### 4.2 Phase 2: 组 prompt，但不是注册工具
+
+`buildPrompt(...)` 只会把这些字段放进 `AgentPrompt`：
+
+- `model`
+- `items`
+- `systemPrompt`
+- `instructions`
+- 采样参数
+- `reasoning`
+- `store`
 - `user`
+- `extraBody`
 
-因此代码运行时不是在“孤立脚本”里，而是在一个带工具桥接能力的执行环境里。
+它不会注入 `tools`。
 
-当前推荐的两种调用方式是：
+取而代之的是 `runtimeInstructions(...)` 会拼一段强约束协议，要求模型：
 
-1. 直接用工具名调用
-2. 使用 `callTool("toolName", args)`
+- 只能输出单个 JSON 对象
+- 需要执行时输出 `type=code`
+- 完成时输出 `type=final`
+- 使用特定语言
+- 用工具名或 `callTool(...)` 调工具
 
-例如：
+所以 CodeAct 是“工具文档文本化 + 执行桥接”，不是“provider 原生工具暴露”。
 
-```python
-cities = ["Beijing", "Shanghai", "Shenzhen"]
-lines = []
+### 4.3 Phase 3: 解析模型输出
 
-for city in cities:
-    weather = queryWeather(location=city, type="daily", days=1)
-    lines.append(f"{city}: {weather}")
+模型返回文本后，runtime 会调用 `parseMessage(...)`：
 
-__codeact_result = "\n".join(lines)
-```
+- 先从文本里提取首个 JSON object
+- 再读取 `type/language/code/output`
 
-这里要注意两个实现细节：
+这里有个很关键的容错边界：
 
-- 如果代码显式返回值，runtime 会优先把返回值作为结果
-- 如果无法直接 `return`，应当赋值给 `__codeact_result`
+- 契约要求模型只输出 JSON
+- 但实现允许“外面包了点别的文本，只要能抽出一个 JSON 也继续跑”
 
-## 8. `reAct` 开关到底控制什么
+如果 JSON 抽不出来，`message == null`，runtime 会直接把原文本当最终输出。
 
-`CodeActOptions` 当前只有一个关键开关：
+这意味着：
 
-```java
-CodeActOptions.builder().reAct(true).build()
-```
+- 解析失败的退路不是重试协议
+- 而是直接退回“普通文本 Agent”
 
-它控制的是“代码执行成功后，是否还要再回模型做一轮自然语言整理”。
+所以如果模型经常偏离 JSON 协议，CodeAct 的行为会迅速退化。
 
-### 8.1 `reAct = false`
+### 4.4 Phase 4: `type=code` 时进入执行桥
 
-这是默认行为。
+当 `message.type == "code"` 且 `message.code != null` 时，runtime 会：
 
-当代码执行成功时，runtime 会优先按下面顺序生成最终输出：
+1. 构造一个逻辑上的 `AgentToolCall`
+   - `name = "code"`
+   - `callId = code_execution_<step>`
+2. 发一个 `TOOL_CALL` 事件
+3. 构造 `CodeExecutionRequest`
+4. 调用 `codeExecutor.execute(...)`
 
-1. `result.getResult()`
-2. `stdout`
-3. 结构化 `toolOutput`
+这个 `AgentToolCall(name=code)` 的作用，不是给模型用，而是为了把 CodeAct 的执行行为也纳入统一的 tool event / trace 体系。
 
-也就是说，只要执行器已经拿到了足够结果，runtime 会直接返回，不再走一轮模型总结。
+换句话说，CodeAct 在观测层看起来像“执行了一个 code tool”，但这个 tool 实际上是 runtime 内建桥接。
 
-适合场景：
+### 4.5 Phase 5: 把执行结果重新写回 memory
 
-- 代码结果本身已经是最终答案
-- 追求低延迟、低 token 成本
-- 输出格式已经在代码里被整理好
-
-### 8.2 `reAct = true`
-
-当代码执行成功时，runtime 会把 `CODE_RESULT: ...` 写回 memory，并设置 `finalizeRequested = true`。
-
-下一轮会额外插入一条系统消息，要求模型：
-
-- 不要再输出代码
-- 使用最新 `CODE_RESULT`
-- 只输出 `{"type":"final","output":"..."}`
-
-适合场景：
-
-- 代码结果需要再转成人类可读总结
-- 需要自然语言解释、归纳、风险提示
-- 希望模型把原始数据整理成正式回答
-
-## 9. 执行结果如何被组装
-
-`CodeActRuntime.buildToolOutput(...)` 会把执行结果组织成一个 JSON 对象，可能包含：
+执行结果会先被 `buildToolOutput(...)` 组装成 JSON，可能包含：
 
 - `result`
 - `stdout`
 - `error`
 
-对应的 memory 回写形式是：
+然后 runtime 会把它写成一条 system message：
 
-- 成功：`CODE_RESULT: {"result":"...","stdout":"..."}`
-- 失败：`CODE_ERROR: {"error":"...","stdout":"..."}`
+- 成功：`CODE_RESULT: {...}`
+- 失败：`CODE_ERROR: {...}`
 
-随后 runtime 再用下面的优先级决定最终输出：
+这一步很关键，因为后续模型看到的不是 JVM 对象，而是已经被转成文本协议的执行反馈。
 
-1. 成功且 `result` 非空时，直接返回 `result`
-2. 否则使用 `stdout`
-3. 再否则使用结构化 `toolOutput`
-4. 错误时优先返回 `CODE_ERROR: ...`
+CodeAct 的“自我修复”能力，本质上就建立在这条反馈链上。
 
-这解释了一个常见现象：有时你以为“模型总结了结果”，实际上答案只是代码返回值直接透传。
+### 4.6 Phase 6: 选择直接结束还是继续一轮
 
-## 10. 失败恢复是怎么实现的
+执行结果出来后，runtime 会走两条不同分支。
 
-CodeAct 的失败恢复不是外部补丁，而是 runtime 内建的循环语义。
+#### `reAct = false`
 
-当代码执行失败时：
+runtime 会尝试直接返回：
 
-1. 执行器返回 `error`
-2. runtime 写入 `CODE_ERROR: ...`
-3. memory 保留这条错误信息
-4. 下一轮模型可以基于错误重新生成代码
+1. `resolveDirectOutput(...)`
+2. `resolveFallbackOutput(...)`
 
-这意味着 CodeAct 的修复能力来自两层：
+只要其中之一非空，就直接结束，不再继续调模型。
 
-- runtime 会把错误回灌，而不是吞掉
-- 模型是否能修复，取决于 prompt、错误信息质量和 `maxSteps`
+#### `reAct = true`
 
-因此生产上至少要显式设置：
+runtime 不直接把成功执行结果当最终答案，而是：
 
-```java
-.options(AgentOptions.builder().maxSteps(4).build())
+- 设 `finalizeRequested = true`
+- 把 `CODE_RESULT` 留在 memory 里
+- 让模型下一轮输出 `type=final`
+
+如果模型在 finalize mode 里还继续产 `type=code`，runtime 会再插入一条 system message：
+
+```text
+FINALIZE_MODE: Do not output code. Use the latest CODE_RESULT ...
 ```
 
-否则可能出现：
+这说明 `reAct=true` 并不只是“多跑一轮”，而是 runtime 会主动收紧协议，强迫模型从执行阶段切到总结阶段。
 
-- 一步内来不及修复
-- 或 `maxSteps=0` 导致无界循环
+## 5. `runtimeInstructions(...)` 暴露了真实执行边界
 
-## 11. 一份正确的接入示例
+这段方法比很多文档都更真实，因为它直接告诉了模型允许做什么。
 
-```java
-Agent agent = Agents.codeAct()
-        .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .systemPrompt("You are a weather assistant. Use Python only when tool orchestration is needed.")
-        .toolRegistry(
-                java.util.Arrays.asList("queryWeather"),
-                java.util.Collections.<String>emptyList()
-        )
-        .options(AgentOptions.builder()
-                .maxSteps(4)
-                .build())
-        .codeActOptions(CodeActOptions.builder()
-                .reAct(true)
-                .build())
-        .build();
+### 5.1 Java 8 路径其实是 JavaScript 模式
+
+当执行器是 `NashornCodeExecutor` 时，runtime 明确要求：
+
+- 用 `js`
+- 语法兼容 Nashorn ES5
+- 不要 `Promise`
+- 不要 `async/await`
+- 不要模板字符串
+- 不要 `let/const`
+- 不要箭头函数
+
+这说明 Java 8 下的 CodeAct 其实不是“功能缩水的 Python 模式”，而是另一套明确的语言契约。
+
+### 5.2 高版本 Java 默认其实偏 Python 模式
+
+当执行器不是 Nashorn 时，runtime 默认要求模型输出 Python。
+
+所以在 Java 17+ 环境里，CodeAct 的主心智模型更接近：
+
+- Python 作为执行中间语言
+- Java 作为宿主和工具桥
+
+### 5.3 工具能力是文本暴露，不是 schema 暴露
+
+`runtimeInstructions(...)` 会遍历当前 `toolRegistry`，把工具名和描述拼成：
+
+```text
+Available tools: toolA - ..., toolB - ...
 ```
 
-这个配置表达的是：
+这意味着 CodeAct 的工具发现不是靠 provider 校验 schema，而是靠 prompt 协议约束。
 
-- 运行时切换到 `CodeActRuntime`
-- 工具白名单只有 `queryWeather`
-- 代码执行成功后，再回模型整理最终回答
-- 总步数限制为 4，避免无界重试
+它的好处是：
 
-## 12. 什么时候要自定义 `CodeExecutor`
+- 执行桥更灵活
 
-内置执行器解决的是“跑得起来”，不是“隔离到可以直接进生产”。
+它的代价是：
 
-你应该在下面这些场景自定义 `CodeExecutor`：
+- 参数正确性更依赖模型遵循文本说明
+- 也更依赖执行器容错
 
-- 需要进程级或容器级隔离
-- 需要限制 CPU、内存、文件系统、网络
-- 需要审计代码执行输入输出
-- 需要多租户环境下的资源配额
-- 需要替换默认语言支持或运行镜像
+## 6. `CodeExecutionRequest` 真正把什么桥接进来了
 
-这也是 [CodeAct Custom Sandbox](/docs/agent/codeact-custom-sandbox) 存在的意义。
+每次执行都把这些信息传进 `CodeExecutor`：
 
-## 13. 边界与限制
+- `language`
+- `code`
+- `toolNames`
+- `toolExecutor`
+- `user`
 
-CodeAct 很强，但边界也要说清。
+因此执行器不是“单纯跑字符串代码”，而是在一个带宿主工具桥的环境里运行。
 
-### 13.1 它不负责强安全隔离
+这意味着代码里能做的事情取决于两层：
 
-默认执行器不是安全沙箱。真正的权限边界、资源约束、文件与网络策略，应在自定义执行器中完成。
+1. runtime 给了哪些工具名
+2. 执行器如何把这些工具暴露成可调用对象
 
-### 13.2 它不是 workflow 引擎
+所以 CodeAct 的能力边界，不能只看模型，也不能只看 runtime，必须同时看 `CodeExecutor`。
 
-CodeAct 擅长“在一次 runtime loop 中用代码编排工具”，但它不替代显式状态图、节点依赖和长期任务编排。
+## 7. 输出选择逻辑比表面更细
 
-### 13.3 它对提示词和工具契约更敏感
+很多人会以为“代码返回什么，最终就是什么”，但当前实现更细。
 
-相比 ReAct，CodeAct 对以下因素更依赖：
+### 7.1 `resolveDirectOutput(...)` 很保守
 
-- 工具 schema 是否稳定
-- 错误信息是否清楚
-- 系统提示词是否明确要求 JSON 协议
-- 模型是否擅长生成当前执行器可运行的代码
+只有在以下条件同时成立时才会直接用 `result`：
 
-如果这些前提不稳，CodeAct 会比 ReAct 更容易偏航。
+- `execResult.isSuccess()`
+- `result` 非空
+- `trim` 后非空
+- 不是 `"undefined"`
+- 不是 `"null"`
 
-## 14. 推荐阅读源码入口
+因此“代码执行成功”并不等于“一定有 direct output”。
 
-如果你要继续看源码，优先从下面几处入手：
+### 7.2 `reAct=false` 也不一定马上结束
+
+如果 direct output 和 fallback output 都为空，runtime 不会立刻返回，而是继续下一轮。
+
+也就是说，非总结模式下，成功执行后仍可能继续 loop。
+
+这是一个很容易被忽略的点：
+
+- `reAct=false` 不等于“一次执行后一定终止”
+- 它只是“如果已经有可返回结果，则优先直接终止”
+
+### 7.3 `stdout` 和 `toolOutput` 也可能成为最终答案
+
+这解释了为什么有些 CodeAct 输出看起来像原始日志或结构化 JSON，而不是自然语言总结。
+
+## 8. 失败恢复是怎么形成的
+
+CodeAct 的恢复能力，不是靠外部 retry 框架，而是靠运行时把失败写回 memory。
+
+失败后链路是：
+
+```text
+exec error
+  -> CODE_ERROR system message
+  -> model sees error on next step
+  -> model emits patched code
+```
+
+因此失败恢复的质量，主要取决于 4 件事：
+
+- `maxSteps` 是否足够
+- 错误信息是否足够具体
+- system prompt 是否要求模型修复而不是放弃
+- 执行器是否把异常压成了可读文本
+
+这也是为什么 CodeAct 往往比 ReAct 更吃“协议清晰度”。
+
+## 9. 和安全隔离的边界一定要分开
+
+`CodeActRuntime` 负责的是：
+
+- 代码协议
+- 循环推进
+- 结果回灌
+
+它不负责：
+
+- 进程隔离
+- 文件系统限制
+- 网络权限治理
+- CPU / 内存配额
+
+这些都应该由 `CodeExecutor` 及其宿主环境承担。
+
+所以内置执行器解决的是“可运行”，不是“可直接上生产”。
+
+## 10. 适合什么任务，不适合什么任务
+
+适合：
+
+- 批量工具调用
+- 工具结果聚合和结构化转换
+- 中间变量很多的任务
+- “先执行、再总结”优于“边想边答”的任务
+
+不适合：
+
+- 只需要 1 到 2 次简单工具调用
+- 不允许引入代码执行环境
+- 对工具参数约束极强、必须依赖 provider 原生 schema 校验的场景
+
+如果任务本质还是普通 tool loop，继续用 ReAct 往往更稳。
+
+## 11. 推荐阅读源码入口
 
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/CodeActRuntime.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/CodeActOptions.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/CodeExecutor.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/GraalVmCodeExecutor.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/NashornCodeExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/GraalVmCodeExecutor.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
 
-## 15. 推荐验证用例
-
-建议直接对照这些测试看行为契约：
+## 12. 推荐验证用例
 
 - `ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActRuntimeTest.java`
 - `ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActRuntimeWithTraceTest.java`
 
-## 16. 下一步读什么
-
-读完这一页后，建议继续：
+## 13. 继续阅读
 
 1. [CodeAct Custom Sandbox](/docs/agent/codeact-custom-sandbox)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
 3. [Memory and State](/docs/agent/memory-and-state)
-4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+4. [Runtime Implementations](/docs/agent/runtime-implementations)
