@@ -106,6 +106,6 @@ objective
 
 ## 8. 推荐下一步
 
-1. [Teams API Reference](/docs/agent/orchestration/teams-api-reference)
-2. [Trace](/docs/agent/observability/trace)
+1. [Teams API Reference](/docs/agent/agent-teams-api-reference)
+2. [Trace](/docs/agent/trace-observability)
 3. [Reference Core Classes](/docs/agent/reference-core-classes)

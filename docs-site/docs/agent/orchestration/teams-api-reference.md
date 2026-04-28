@@ -106,6 +106,6 @@
 
 ## 8. 这页之后看什么
 
-- 想回到能力定位：看 [Teams](/docs/agent/orchestration/teams)
-- 想看过程观测：看 [Trace](/docs/agent/observability/trace)
+- 想回到能力定位：看 [Teams](/docs/agent/agent-teams)
+- 想看过程观测：看 [Trace](/docs/agent/trace-observability)
 - 想看更完整类索引：看 [Reference Core Classes](/docs/agent/reference-core-classes)

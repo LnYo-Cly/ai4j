@@ -679,5 +679,5 @@ AgentTeamResult result = team.run("Review the latest release candidate and summa
 
 1. [Agent Teams API Reference](/docs/agent/agent-teams-api-reference)
 2. [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
-3. [StateGraph](/docs/agent/orchestration/stategraph)
-4. [Trace 与可观测性](/docs/agent/observability/trace)
+3. [Workflow StateGraph](/docs/agent/workflow-stategraph)
+4. [Trace 与可观测性](/docs/agent/trace-observability)

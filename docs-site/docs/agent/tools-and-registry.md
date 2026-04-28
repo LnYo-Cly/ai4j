@@ -1,143 +1,34 @@
 # Tools and Registry
 
-在 `Agent` 层，工具问题不再只是“函数怎么声明”，而是下面四件事如何被稳定治理：
+在 `ai4j-agent` 里，工具体系真正解决的不是“函数怎么暴露给模型”，而是四个边界如何拆开：
 
-- 模型能看到哪些工具
-- 哪些工具调用可以真正执行
-- 工具调用在哪一层被校验、审批、拦截和审计
+- 模型能看见什么工具
+- 宿主允许执行什么工具
+- 哪一层负责结构校验，哪一层负责审批和拦截
 - 工具结果如何重新进入 Agent loop
 
-这页解释的不是某个函数工具怎么写，而是 `ai4j-agent` 如何把工具暴露面和执行面拆开，并让 ReAct / CodeAct / SubAgent / MCP 共享一套治理边界。
+如果这四件事没有拆开，最终结果通常是：
 
-## 1. 它解决什么问题
+- schema 暴露和权限审批混在一起
+- 不同 runtime 各自实现一套工具治理
+- 工具失败后如何继续推理没有统一语义
 
-如果没有独立的工具架构，业务层通常会把三种逻辑混在一起：
+`ai4j-agent` 的设计选择非常明确：
 
-- 给模型暴露 tool schema
-- 执行本地函数或远程能力
-- 在调用前后做权限、审计、回写和失败处理
-
-这会导致两个直接问题：
-
-- 模型“看见的能力”和宿主“允许执行的能力”边界不清
-- 权限审批只能零散塞进业务代码，而不是挂在统一执行面
-
-`ai4j-agent` 的做法是把这三件事拆开：
-
-- `AgentToolRegistry` 负责声明面
+- `AgentToolRegistry` 负责暴露面
 - `ToolExecutor` 负责执行面
-- `BaseAgentRuntime` 负责把 tool call 纳入主循环
+- `BaseAgentRuntime` 负责把工具调用纳入主循环
 
-## 2. 设计原则
+## 1. 最短对象图：先把角色看清
 
-### 2.1 工具可见性和工具执行必须分离
-
-模型是否知道一个工具存在，和系统是否允许执行这个工具，不应该由同一个对象隐式决定。
-
-因此 `AgentToolRegistry` 只返回 schema 列表，`ToolExecutor` 才真正执行 `AgentToolCall`。这样做的好处是：
-
-- 白名单暴露更明确
-- 执行期可以做额外审批
-- 同一工具面可以复用不同执行策略
-
-### 2.2 结构校验不等于权限控制
-
-`AgentToolCallSanitizer` 只验证调用是否“像一个可执行的调用”，例如：
-
-- 工具名是否为空
-- `arguments` 是否是 JSON object
-- 某些内置工具是否缺参数
-
-它不是权限系统，也不是审批系统。真正的授权边界应放在 `ToolExecutor` 或其包装器中。
-
-### 2.3 工具调用必须回到 Agent 主循环
-
-工具执行不是离散动作。模型返回 tool call 后，runtime 会：
-
-1. 归一化 tool call
-2. 校验 tool call
-3. 执行 tool call
-4. 把结果写回 `AgentMemory`
-5. 继续下一轮推理
-
-所以工具层本质上是 Agent loop 的一部分，而不是 loop 旁边的附属能力。
-
-### 2.4 工具面可以由多种来源合并
-
-本地函数、MCP 工具、subagent handoff surface、team tools 最终都可以被折叠进同一个“模型可见工具面”。
-
-这样做的好处是：
-
-- 模型只面对统一 tool surface
-- 上层协作能力可以复用同一套工具治理链路
-- 文档和运行时边界都更清晰
-
-## 3. 核心抽象
-
-### 3.1 `AgentToolRegistry`
-
-源码：
+源码入口：
 
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolRegistry.java`
-
-接口非常窄：
-
-```java
-public interface AgentToolRegistry {
-    List<Object> getTools();
-}
-```
-
-它只回答一个问题：当前 Agent 要把哪些工具 schema 暴露给模型。
-
-典型实现：
-
-- `StaticToolRegistry`
-- `CompositeToolRegistry`
-- `ToolUtilRegistry`
-
-### 3.2 `ToolExecutor`
-
-源码：
-
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
 
-接口也很窄：
-
-```java
-public interface ToolExecutor {
-    String execute(AgentToolCall call) throws Exception;
-}
-```
-
-它回答的是另一个问题：当模型真的发起工具调用时，系统如何执行。
-
-典型实现：
-
-- `ToolUtilExecutor`
-- `SubAgentToolExecutor`
-- `AgentTeamToolExecutor`
-- 业务自定义包装执行器
-
-### 3.3 `AgentToolCall` 与 `AgentToolResult`
-
-源码：
-
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolCall.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolResult.java`
-
-二者分别承载：
-
-- 工具名
-- 参数 JSON 字符串
-- `callId`
-- 结果输出字符串
-
-Agent runtime 并不要求工具结果必须是特定 Java 类型；它默认把执行结果视为字符串，再回灌给 memory 和模型。
-
-## 4. 代码路径与对象关系
-
-工具主链可以压缩成下面这条路径：
+最小对象关系可以压缩成一条链：
 
 ```text
 AgentBuilder
@@ -147,194 +38,261 @@ AgentBuilder
   -> BaseAgentRuntime.runInternal()
   -> AgentToolCallSanitizer
   -> ToolExecutor.execute(call)
-  -> AgentMemory.addToolOutput(...)
+  -> AgentMemory.addToolOutput(callId, output)
 ```
 
-关键源码位置如下。
+这个拆分非常重要，因为它让“可见工具面”和“实际执行权”不再是同一个对象的隐式副作用。
 
-### 4.1 Registry 侧
+## 2. `AgentToolRegistry` 只负责一件事：给模型看 schema
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolRegistry.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/StaticToolRegistry.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/CompositeToolRegistry.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolUtilRegistry.java`
-
-### 4.2 Executor 侧
-
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolUtilExecutor.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/subagent/SubAgentToolExecutor.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/tool/AgentTeamToolExecutor.java`
-
-### 4.3 Runtime 消费侧
-
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/CodeActRuntime.java`
-
-## 5. 默认装配是怎么工作的
-
-`AgentBuilder.build()` 对工具层的处理非常具体，不是模糊“自动装配”。
-
-### 5.1 你没有传 `toolRegistry(...)`
-
-默认使用：
+`AgentToolRegistry` 接口很窄：
 
 ```java
-StaticToolRegistry.empty()
+public interface AgentToolRegistry {
+    List<Object> getTools();
+}
 ```
 
-这意味着当前 Agent 对模型暴露空工具面。
+它不执行工具，也不判断权限。它只回答：
 
-### 5.2 你传的是 `toolRegistry(List<String> functions, List<String> mcpServices)`
+- 当前 Agent 打算把哪些工具 schema 传给模型
 
-这条便捷路径会走：
+常见实现包括：
 
+- `StaticToolRegistry`
+- `CompositeToolRegistry`
 - `ToolUtilRegistry`
-- `ToolUtil.getAllTools(functionList, mcpServerIds)`
+- `AgentTeamToolRegistry`
 
-也就是说，Builder 并没有自己解析工具，而是把函数工具和 MCP 服务 ID 交给 `ToolUtil` 汇总成统一 tool list。
+这里的核心设计原则是：模型看到什么，不等于系统一定允许执行什么。
 
-### 5.3 你没有显式传 `toolExecutor(...)`
+## 3. `ToolExecutor` 才是执行边界，也是权限边界
 
-Builder 会：
-
-1. 从 registry 中提取当前可见工具名
-2. 用这些工具名构造 `ToolUtilExecutor`
-
-`ToolUtilExecutor.execute(...)` 的行为是：
-
-- 如果 `allowedToolNames` 不为空，只允许执行白名单内工具
-- 真正执行时走 `ToolUtil.invoke(call.getName(), call.getArguments())`
-
-这意味着默认行为不是“Agent 可以调用所有工具”，而是“Agent 只能调用当前 registry 已经暴露的工具”。
-
-### 5.4 你配置了 subagent
-
-Builder 会做两件事：
-
-1. 用 `CompositeToolRegistry` 合并基础工具与 subagent tool surface
-2. 用 `SubAgentToolExecutor` 包装原有执行器
-
-此时工具面已经不只是本地函数或 MCP，还包含了 handoff surface。
-
-## 6. Runtime 如何消费 tool call
-
-`BaseAgentRuntime.runInternal()` 中，工具调用链条是明确可追踪的。
-
-### 6.1 模型响应阶段
-
-模型通过 `AgentModelClient` 返回 `AgentModelResult`，其中可能带有 `toolCalls`。
-
-### 6.2 归一化阶段
-
-runtime 会把模型返回值标准化为 `AgentToolCall`：
-
-- 为空的 `callId` 自动补齐为 `tool_step_<step>_<index>`
-- 空工具名会被清洗
-
-### 6.3 校验阶段
-
-`AgentToolCallSanitizer.validationError(...)` 负责基础结构校验。
-
-需要特别强调：
-
-- 这里不是审批
-- 这里不是鉴权
-- 这里不是资源配额控制
-
-它只决定“这个调用从结构上能不能进入执行器”。
-
-### 6.4 执行阶段
-
-对合法调用，runtime 会进入：
+`ToolExecutor` 同样很窄：
 
 ```java
-toolExecutor.execute(call)
+public interface ToolExecutor {
+    String execute(AgentToolCall call) throws Exception;
+}
 ```
 
-这里才是最合理的权限拦截点。原因很直接：
+它解决的是另一个问题：
 
-- 此时已经拿到了规范化工具名
-- 此时已经拿到了结构合法的参数 JSON
-- 此时仍处在统一 Agent loop 中，失败语义、事件和 memory 回写都还能保持一致
+- 当模型真的发起工具调用时，系统怎么执行
 
-### 6.5 回写阶段
-
-执行结果会被包装成 `AgentToolResult`，然后：
-
-- 追加到 `toolResults`
-- 写入 `AgentMemory.addToolOutput(callId, output)`
-- 通过 `TOOL_RESULT` 事件向外发射
-
-之后模型再读取这些结果，继续下一轮推理。
-
-## 7. 权限审批、拦截、Hook 应该放哪一层
-
-这是最容易被文档写错的地方。
-
-### 7.1 Agent 通用工具审批的真实拦截点
-
-对普通 Agent 来说，最稳定的拦截点是：
-
-```java
-ToolExecutor.execute(AgentToolCall call)
-```
-
-如果你要做下面这些事情，都应该优先包在 `ToolExecutor` 外面：
+这也是做以下治理的最佳位置：
 
 - 权限审批
 - allow-list / deny-list
 - 参数重写
 - 审计日志
-- 失败重试
-- 远程代理转发
+- 远程代理
 - 沙箱执行
+- 重试和超时控制
 
-示例：
+如果你要解释“ai4j 的工具权限审批是怎么拦截的”，最准确的答案是：
+
+- 普通 Agent 工具链的稳定拦截点在 `ToolExecutor.execute(...)`
+- 不是 `AgentToolCallSanitizer`
+- 也不是某个通用 hook
+
+## 4. 默认 Builder 装配路径比看起来更具体
+
+`AgentBuilder.build()` 的默认逻辑不是“自动帮你把工具接好”，而是一条明确的决策链。
+
+### 4.1 你没有传 `toolRegistry(...)`
+
+默认走：
 
 ```java
-ToolExecutor guardedExecutor = call -> {
-    permissionService.check(call.getName(), call.getArguments());
+StaticToolRegistry.empty()
+```
+
+这意味着模型看不到任何工具。
+
+### 4.2 你用了便捷方法 `toolRegistry(List<String> functions, List<String> mcpServices)`
+
+Builder 会创建：
+
+- `ToolUtilRegistry`
+
+而 `ToolUtilRegistry` 背后再通过 `ToolUtil.getAllTools(functionList, mcpServerIds)` 合并：
+
+- 本地函数工具
+- MCP 服务工具
+
+也就是说，MCP 在这里不是“tools 的一个子类页面问题”，而是统一工具暴露面的一种来源。
+
+### 4.3 你没有显式传 `toolExecutor(...)`
+
+Builder 会先从“基础 registry”里提取工具名，再尝试创建 `ToolUtilExecutor`。
+
+这一步有两个重要后果：
+
+- 默认执行器只允许执行 registry 已经暴露的工具名
+- 如果基础 registry 里解析不出工具名，默认执行器可能是 `null`
+
+第二点非常容易踩坑。因为 `resolveToolNames(...)` 只会从 `Tool` 类型对象里抽名字；如果你提供的是自定义 schema 对象，又没有自己传 `ToolExecutor`，Builder 并不会神奇地知道怎么执行。
+
+### 4.4 subagent 是怎么接进来的
+
+当配置了 subagent registry 后，Builder 会：
+
+- 用 `CompositeToolRegistry` 合并原始工具面和 subagent tool surface
+- 用 `SubAgentToolExecutor` 包装原执行器
+
+这说明 subagent 治理不是注册表层面的例外，而是执行器侧的专门包装器。
+
+## 5. runtime 如何消费工具调用
+
+主链在 `BaseAgentRuntime.runInternal()` 里。
+
+### 5.1 模型先返回 `toolCalls`
+
+模型客户端把响应折叠成 `AgentModelResult`，其中可包含：
+
+- `outputText`
+- `memoryItems`
+- `toolCalls`
+
+### 5.2 runtime 先做归一化
+
+`normalizeToolCalls(...)` 会补齐缺失的 `callId`，格式默认是：
+
+- `tool_step_<step>_<index>`
+
+这一步的意义不是好看，而是保证工具结果回写 memory 时有稳定引用。
+
+### 5.3 再做结构校验
+
+`AgentToolCallSanitizer.validationError(...)` 只做结构合法性验证，例如：
+
+- 工具名不能为空
+- `arguments` 必须是 JSON object
+- `bash` 不同 action 的必要字段是否存在
+- `read_file.path` 是否为空
+- `apply_patch.patch` 是否为空
+
+它解决的是“这个调用像不像一个可执行调用”，不是“你允不允许它执行”。
+
+### 5.4 然后进入执行器
+
+通过校验的调用最终统一进入：
+
+```java
+toolExecutor.execute(call)
+```
+
+工具异常不会默认把整个 Agent 打崩。`BaseAgentRuntime.executeTool(...)` 会把异常包成：
+
+- `TOOL_ERROR: { ... }`
+
+然后继续把这个错误结果回灌给 memory 和后续轮次。这是典型的“模型可恢复失败语义”。
+
+### 5.5 最后重新进入 memory
+
+不管是正常结果还是包装后的错误结果，都会调用：
+
+```java
+memory.addToolOutput(callId, output)
+```
+
+工具执行因此不是 loop 外围动作，而是 loop 自身的一部分。
+
+## 6. 审批、拦截、Hook 到底该放哪层
+
+这是最容易被写模糊的地方。
+
+### 6.1 普通 Agent 的正确拦截点
+
+如果你要做审批或访问控制，优先包在执行器外层：
+
+```java
+ToolExecutor guarded = call -> {
+    approvalService.check(call.getName(), call.getArguments());
     auditService.record(call);
     return delegate.execute(call);
 };
 ```
 
-### 7.2 为什么不是靠 `AgentToolCallSanitizer`
+这层的优势非常直接：
 
-因为 sanitizer 的职责太窄，它只做“结构合法性”判断。把业务授权塞进去会产生三个问题：
+- 已经拿到规范化后的工具名
+- 已经拿到结构合法的参数 JSON
+- 仍然处在统一 Agent loop 中，错误、审计、trace、memory 回写都不会失真
 
-- 校验规则和业务策略耦合
-- 无法复用到不同执行器
-- 错误语义会和普通参数错误混在一起
+### 6.2 为什么不放在 `AgentToolCallSanitizer`
 
-### 7.3 为什么不是靠通用 `hook`
+因为 sanitizer 的职责太窄。把业务授权逻辑塞进去会造成：
 
-在当前 `ai4j-agent` 架构里：
+- 结构错误和权限拒绝混成一类错误
+- 不同执行器无法共享同一套授权逻辑
+- 代码层次错位，后续更难扩展
 
-- `Agent` 通用工具链没有一个统一的“工具审批 hook”抽象
-- `Team` 层有 `planApproval` 和 `hooks`
-- `SubAgent` 层有 `HandoffPolicy`
+### 6.3 为什么不是靠一个通用 hook
 
-因此，如果你问“普通 Agent 工具调用怎么拦截”，答案不是“靠 hook”，而是“靠 `ToolExecutor` 包装层”。
+当前 `ai4j-agent` 并没有为普通 Agent 提供统一的“工具审批 hook”抽象。
 
-### 7.4 `SubAgent` 的例外
+有审批/策略概念的是：
 
-`SubAgentToolExecutor` 在通用执行器之上又增加了一层 handoff 治理，包括：
+- Team 层的 `planApproval` 和 `hooks`
+- SubAgent 层的 `HandoffPolicy`
+
+而普通 Agent 的工具治理，本质上就是执行器包装问题。
+
+## 7. `SubAgentToolExecutor` 和 `AgentTeamToolExecutor` 说明了什么
+
+这两个类非常能代表 ai4j 的工具设计哲学。
+
+### 7.1 `SubAgentToolExecutor`
+
+它不是把 handoff 逻辑塞进 registry，而是在执行期做更强治理，例如：
 
 - `allowedTools`
 - `deniedTools`
 - `maxDepth`
 - `timeoutMillis`
+- `inputFilter`
 - `onDenied`
 - `onError`
-- `inputFilter`
 
-这说明 handoff 场景的审批治理仍然落在执行器侧，只是换成了更专门的执行器包装器。
+也就是说，subagent 并没有推翻“registry 负责暴露、executor 负责治理”的边界。
 
-## 8. 典型用法
+### 7.2 `AgentTeamToolExecutor`
 
-### 8.1 便捷装配函数工具和 MCP 工具
+它只拦截 `team_*` 工具：
+
+- `team_send_message`
+- `team_broadcast`
+- `team_list_tasks`
+- `team_claim_task`
+- `team_release_task`
+- `team_reassign_task`
+- `team_heartbeat_task`
+
+其他工具会直接委托给原始执行器。如果没有 delegate，而成员又调用了非 team 工具，它会直接抛错。
+
+这再次证明：
+
+- Team 工具不是独立 runtime 魔法
+- 而是统一工具执行链上的一层包装
+
+## 8. `parallelToolCalls` 的真实含义
+
+`BaseAgentRuntime.runInternal()` 会在满足两个条件时并行执行工具：
+
+- `context.getParallelToolCalls() == true`
+- 当前轮合法 tool call 数量大于 1
+
+这会对执行器提出一个硬要求：
+
+- 你的 `ToolExecutor` 必须线程安全
+
+如果执行器内部复用可变状态、共享临时文件或依赖单线程顺序，那么一开并行就会出问题。这个问题通常不是模型层报错，而是工具层 race condition。
+
+## 9. 典型接入方式
+
+### 9.1 用 `ToolUtil` + MCP 快速拼出统一工具面
 
 ```java
 Agent agent = Agents.react()
@@ -347,12 +305,12 @@ Agent agent = Agents.react()
         .build();
 ```
 
-适用场景：
+适合：
 
-- 你已经在 `ToolUtil` 和 MCP 配置里注册了能力
-- 想按当前 Agent 的职责做最小白名单暴露
+- 工具已经在 `ToolUtil` 或 MCP 服务注册好
+- 只想给当前 Agent 暴露最小白名单
 
-### 8.2 自定义执行器做审批和审计
+### 9.2 自定义执行器做审批和审计
 
 ```java
 ToolExecutor guardedExecutor = call -> {
@@ -368,12 +326,12 @@ Agent agent = Agents.builder()
         .build();
 ```
 
-适用场景：
+适合：
 
-- 你要对工具调用做运行时审批
-- 你不希望审批逻辑散落在每个函数工具内部
+- 权限审批不想散落在各个工具函数内部
+- 想把拒绝、审计、失败信息统一纳入 loop
 
-### 8.3 自定义 registry 与 executor 完全分离
+### 9.3 schema 和执行完全分离
 
 ```java
 AgentToolRegistry registry = new StaticToolRegistry(myToolSchemas);
@@ -387,98 +345,45 @@ Agent agent = Agents.builder()
         .build();
 ```
 
-适用场景：
+适合：
 
 - schema 来源不是 `ToolUtil`
-- 真正执行要走网关、远程服务或隔离沙箱
+- 真正执行要走远程网关、沙箱或代理进程
 
-## 9. 扩展点
+## 10. 失败边界和容易误判的点
 
-工具层最重要的扩展点有四个。
+### 10.1 工具结果默认是字符串语义
 
-### 9.1 自定义 `AgentToolRegistry`
+`ToolExecutor.execute(...)` 返回值是 `String`。复杂对象最终都要被你自己序列化成字符串，再让模型消费。
 
-适合控制模型暴露面，例如：
+### 10.2 默认执行器只对默认工具体系友好
 
-- 多租户按租户暴露不同工具
-- 按用户角色裁剪工具面
-- 动态拼装本地工具和远程工具
+如果你用自定义 registry，但没有显式提供 executor，Builder 很可能帮不了你。因为默认执行器的创建逻辑假设自己能理解 registry 里的工具对象。
 
-### 9.2 自定义 `ToolExecutor`
+### 10.3 工具白名单只约束默认执行器
 
-适合控制执行语义，例如：
+`ToolUtilExecutor` 会校验 `allowedToolNames`，但只对它自己生效。你换成自定义执行器后，白名单、黑名单、审批全部由你负责。
 
-- 审批
-- 限流
-- 记录审计轨迹
-- 调用外部沙箱
-- 失败降级
+### 10.4 工具失败默认不终止 Agent
 
-### 9.3 组合 registry
+这通常是正确的，因为模型还能根据 `TOOL_ERROR` 决定重试、改参或换路线。但如果你的业务要求“某些工具失败必须立即中止”，那就应该在执行器里显式实现，而不是假设 runtime 会替你做。
 
-`CompositeToolRegistry` 允许把多个工具源合并成一个统一视图。
+## 11. 调试优先看这些入口
 
-这对本地函数 + MCP + subagent 共存的场景尤其重要。
+出现“模型能看到工具但调不起来”“审批逻辑失效”“工具返回了但下一轮没用上”时，先看：
 
-### 9.4 执行器包装器
+- `AgentBuilder.build()` 最终生成的 `toolRegistry` 和 `toolExecutor` 是什么
+- `AgentToolCallSanitizer.validationError(...)` 是否把调用拦成了结构错误
+- `ToolExecutor.execute(...)` 是否真的执行到了目标逻辑
+- `BaseAgentRuntime.executeTool(...)` 是否把异常包装成了 `TOOL_ERROR`
+- `memory.addToolOutput(...)` 是否拿到了稳定的 `callId`
 
-`ToolExecutor` 很适合做装饰器式扩展，因为接口稳定而且单一。
+这几处比看最终自然语言输出更接近根因。
 
-可以自然叠加：
+## 12. 继续阅读
 
-- `ApprovalExecutor`
-- `AuditExecutor`
-- `RetryExecutor`
-- `RemoteProxyExecutor`
-
-## 10. 边界、限制与失败语义
-
-### 10.1 默认工具结果是字符串语义
-
-`ToolExecutor.execute(...)` 返回 `String`。因此复杂对象结果最终仍需序列化为字符串，再回灌给模型。
-
-### 10.2 默认执行器依赖 `ToolUtil`
-
-如果你走 `toolRegistry(List<String>, List<String>)` 这条便捷路径，最终会依赖：
-
-- `ToolUtilRegistry`
-- `ToolUtilExecutor`
-- `ToolUtil.getAllTools(...)`
-- `ToolUtil.invoke(...)`
-
-这说明它适合快速接入，但不是所有工具体系的唯一抽象。
-
-### 10.3 白名单控制只约束默认执行器
-
-`ToolUtilExecutor` 会用 `allowedToolNames` 做校验，但如果你替换了自定义执行器，白名单控制就由你自己负责。
-
-### 10.4 并行调用要求执行器线程安全
-
-如果启用了 `parallelToolCalls`，多个工具调用可能并行进入同一个执行器。此时执行器内部必须自行保证线程安全和资源隔离。
-
-### 10.5 工具失败默认写回模型，而不是中止 runtime
-
-普通工具异常会被 runtime 包装成 `TOOL_ERROR` 风格输出，写回 memory 并交给后续轮次处理。这是“模型可恢复”的失败语义，而不是“立即崩溃”的失败语义。
-
-## 11. 和相邻能力的区别
-
-| 能力 | 职责 | 与当前页的关系 |
-| --- | --- | --- |
-| `ToolUtil` | 工具注册与调用基础设施 | 是最常见的工具来源，不是 Agent loop 本身 |
-| `MCP` | 外部能力接入协议 | 可通过 `ToolUtilRegistry` 暴露到 Agent 工具面 |
-| `Skill` | 更高层能力组织方式 | 最终仍可能折叠成可见工具面，但不等于 `AgentToolRegistry` |
-| `SubAgent` | 委派给其他 Agent 执行 | 通过 `SubAgentToolExecutor` 进入同一工具治理链 |
-| `Team` | 多成员协作 | 会引入 team-specific tool surface 和计划审批机制 |
-
-最关键的判断是：
-
-- 想定义“模型看到什么”，看 registry
-- 想定义“系统真的怎么执行”，看 executor
-- 想定义“调用失败后如何继续推理”，看 runtime
-
-## 12. 建议继续阅读
-
-1. [Agent Architecture](/docs/agent/architecture)
-2. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
+1. [Memory and State](/docs/agent/memory-and-state)
+2. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
 3. [Subagent Handoff Policy](/docs/agent/subagent-handoff-policy)
-4. [Trace Observability](/docs/agent/trace-observability)
+4. [Agent Teams](/docs/agent/agent-teams)
+5. [Trace Observability](/docs/agent/trace-observability)

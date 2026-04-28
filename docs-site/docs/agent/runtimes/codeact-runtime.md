@@ -103,4 +103,4 @@ runtime 再根据 `type` 决定：
 - 代码引擎能力受运行时限制
 - 你需要更认真设计沙箱、超时和审计
 
-所以 `CodeAct` 的下一页不是更炫的能力，而是 [CodeAct Custom Sandbox](/docs/agent/runtimes/codeact-custom-sandbox)。
+所以 `CodeAct` 的下一页不是更炫的能力，而是 [CodeAct Custom Sandbox](/docs/agent/codeact-custom-sandbox)。

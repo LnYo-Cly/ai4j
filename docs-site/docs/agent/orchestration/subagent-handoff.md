@@ -110,6 +110,6 @@
 
 ## 8. 推荐下一步
 
-1. [Teams](/docs/agent/orchestration/teams)
+1. [Teams](/docs/agent/agent-teams)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Trace](/docs/agent/observability/trace)
+3. [Trace](/docs/agent/trace-observability)

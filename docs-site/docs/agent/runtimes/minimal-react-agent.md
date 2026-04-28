@@ -79,4 +79,4 @@ Agent agent = Agents.react()
 - 任务天然像流程图
 - 需要明确的主从委派或 team 协作
 
-下一页建议看 [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)。
+下一页建议看 [Runtime Implementations](/docs/agent/runtime-implementations)。

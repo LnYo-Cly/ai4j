@@ -1,89 +1,26 @@
 # Memory and State
 
-在 `Agent` 架构里，state 不是附属功能，而是 runtime 能否持续运行的前提。
+在 `ai4j-agent` 里，memory 不是“聊天记录附件”，而是 Agent loop 的状态源。
 
-如果没有稳定的状态语义，下面这些能力都无法成立：
+只要进入多步推理，runtime 每一轮都要回答四个问题：
 
-- 多轮推理
-- 工具结果回灌
-- CodeAct 代码执行闭环
-- session 隔离
-- 长任务压缩与恢复
+- 当前轮之前的上下文从哪里取
+- 模型输出的哪些内容要进入下一轮
+- 工具结果如何回灌给模型
+- 长会话如何在不丢关键信息的前提下裁剪
 
-这页关注的不是“怎么把聊天记录存下来”，而是 `ai4j-agent` 如何把运行时状态建模为 `AgentMemory`，并让 runtime、session、压缩器、持久化后端围绕它协同工作。
+这套语义统一落在 `AgentMemory` 上。理解 memory，才能真正看清 ReAct、CodeAct、Team runtime 为什么能持续运行，而不是“一次请求 + 一次响应”的聊天封装。
 
-## 1. 它解决什么问题
+## 1. 状态模型先看最短定义
 
-仅靠消息列表做上下文时，系统通常会遇到四类问题：
-
-- 用户输入、模型输出、工具输出没有统一存储语义
-- 下一轮 prompt 不知道该从哪里重新组装
-- 长会话无法压缩，只能无限追加
-- 同一个 Agent 难以安全地派生多个独立 session
-
-`ai4j-agent` 的方案是把“运行时上下文”从 runtime 主循环中抽离出来，交给 `AgentMemory` 管理。runtime 每一步都读写 memory，而不是自己持有一份隐式历史。
-
-## 2. 设计原则
-
-### 2.1 Memory 是状态源，不是日志附件
-
-在 `BaseAgentRuntime.runInternal()` 中，memory 不是只在开头写入一次，也不是只在结束时保存一次。它是每一轮循环都要参与的状态源：
-
-- 输入进入 memory
-- 模型输出进入 memory
-- 工具输出进入 memory
-- 下一轮 prompt 从 memory 重建
-
-因此它和普通“消息历史日志”不是一个层级的东西。
-
-### 2.2 状态以 item 形式保留，而不是直接拼接长字符串
-
-`AgentMemory` 存的是 `List<Object>` 形式的 items，而不是一整段已经拼好的 prompt 文本。
-
-这样做的好处是：
-
-- runtime 可以统一构造 `AgentPrompt`
-- 工具结果可以用结构化 item 表示
-- 压缩器可以基于 item 级别裁剪和摘要
-- 不同模型协议可以复用同一份 memory 语义
-
-### 2.3 Summary 与 recent items 分离
-
-memory 不是只能“全量保留”或“直接丢弃”。`summary` 和 `items` 被拆成两个层次：
-
-- `summary` 保存压缩后的长期语义
-- `items` 保存当前窗口内的原始上下文
-
-这让“历史摘要 + 最近窗口”成为基础实现路径，而不需要把所有长任务都退化成一堆原始消息。
-
-### 2.4 Session 隔离通过 memory supplier 实现
-
-`Agent.newSession()` 的关键动作不是复制 runtime，而是为新 session 换一份 memory。
-
-这意味着 session 是否真正隔离，本质上取决于：
-
-- `memorySupplier` 是否每次返回新实例
-- 持久化 memory 是否使用不同 `sessionId`
-
-### 2.5 压缩是 memory 的职责，不是 runtime 的职责
-
-`InMemoryAgentMemory` 和 `JdbcAgentMemory` 都允许挂 `MemoryCompressor`，而 runtime 并不负责决定怎么裁剪历史。
-
-这样做的好处是：
-
-- 压缩策略和执行策略分离
-- ReAct / CodeAct / Team 可以共享同一套 memory 策略
-- 压缩实现可以按业务更换，而不必改 runtime
-
-## 3. 核心抽象
-
-### 3.1 `AgentMemory`
-
-源码：
+源码入口：
 
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/AgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/InMemoryAgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/JdbcAgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
 
-接口定义了三类写入和三类读取能力：
+`AgentMemory` 接口非常克制：
 
 ```java
 public interface AgentMemory {
@@ -96,333 +33,264 @@ public interface AgentMemory {
 }
 ```
 
-这说明 Agent 只关心三种状态输入：
+它只建模三类写入：
 
 - 用户输入
 - 模型输出 items
 - 工具输出
 
-### 3.2 `InMemoryAgentMemory`
+这说明 memory 不是给 UI 做 transcript 展示的二级副本，而是 Agent 下一轮 prompt 的直接来源。
 
-源码：
+## 2. 真实执行链：状态如何进入下一轮
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/InMemoryAgentMemory.java`
+真正的主链在 `BaseAgentRuntime.runInternal()`：
 
-它是默认实现，适合本地开发和单进程短任务。核心结构包括：
+```text
+AgentRequest.input
+  -> memory.addUserInput(...)
+  -> buildPrompt(items = memory.getItems())
+  -> modelClient.create(...)
+  -> memory.addOutputItems(modelResult.getMemoryItems())
+  -> toolExecutor.execute(...)
+  -> memory.addToolOutput(callId, output)
+  -> buildPrompt(items = memory.getItems())
+```
 
-- `items`
-- `summary`
-- `compressor`
+这里最关键的结论有两个：
 
-每次写入后都会调用 `maybeCompress()`。
+- runtime 不维护一份独立的“隐藏历史”，下一轮上下文总是重新从 `memory.getItems()` 取回
+- 工具结果和模型输出不是旁路数据，而是正式进入下一轮状态
 
-### 3.3 `JdbcAgentMemory`
+因此，memory 的行为会直接改变 Agent 的推理轨迹，而不只是影响“历史是否可查看”。
 
-源码：
+## 3. `AgentMemory` 解决的不是存储，而是状态统一
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/JdbcAgentMemory.java`
+如果只维护一个字符串 prompt，会很快遇到三个问题：
 
-它提供持久化 memory，实现特点是：
+- 用户输入、模型输出、工具输出没有统一数据面
+- 压缩时只能裁整段文本，无法保留结构化 item
+- 不同 runtime 很难共享一套上下文语义
 
-- 通过 `sessionId` 区分会话
-- 支持 `DataSource` 或 `jdbcUrl`
-- 支持同样的 `MemoryCompressor`
-- 读写语义尽量和 `InMemoryAgentMemory` 保持一致
+`ai4j-agent` 选择按 `List<Object>` 保留 item，而不是预先拼成大文本。这样做有三个直接收益：
 
-### 3.4 `MemoryCompressor`
+- `BaseAgentRuntime.buildPrompt()` 可以统一构造 `AgentPrompt`
+- 工具输出可以以 `function_call_output` 语义重回模型
+- 压缩器可以在 item 级别裁剪，而不是在最终 prompt 文本上做不可逆处理
 
-源码：
+## 4. `summary` 的地位比“摘要字段”更高
+
+很多项目会把 summary 当成 metadata，但 `ai4j-agent` 的做法更激进。
+
+无论是 `InMemoryAgentMemory.getItems()` 还是 `JdbcAgentMemory.getItems()`，只要 `summary` 非空，都会先插入一条：
+
+```java
+AgentInputItem.systemMessage(summary)
+```
+
+然后再追加原始 items。
+
+这意味着：
+
+- summary 会进入模型上下文，不只是给宿主应用看
+- summary 的提示强度接近一条 system-level memory item
+- 如果摘要写坏，后续所有轮次都可能被它持续带偏
+
+这也是为什么 memory 压缩不是“可有可无的小优化”，而是影响推理质量的核心路径。
+
+## 5. `InMemoryAgentMemory`：默认实现的真实语义
+
+`AgentBuilder.build()` 默认使用：
+
+```java
+Supplier<AgentMemory> resolvedMemorySupplier =
+        memorySupplier == null ? InMemoryAgentMemory::new : memorySupplier;
+```
+
+也就是说，不显式配置时，每个 Agent 会拿到一份进程内 memory。
+
+### 5.1 写入行为
+
+`InMemoryAgentMemory` 的三类写入都很直接：
+
+- `addUserInput(String)` 会包装成 `AgentInputItem.userMessage(...)`
+- `addOutputItems(...)` 直接追加模型返回的 memory items
+- `addToolOutput(callId, output)` 会包装成 `AgentInputItem.functionCallOutput(...)`
+
+其中有一个重要边界：
+
+- `callId == null` 时，工具输出会被直接忽略
+
+正常情况下 runtime 的 `normalizeToolCalls()` 会补齐缺失的 `callId`，默认格式是 `tool_step_<step>_<index>`，但如果你绕过 runtime 自己写链路，这个约束必须自己保证。
+
+### 5.2 压缩触发时机
+
+`InMemoryAgentMemory` 每次写入后都会同步调用 `maybeCompress()`。
+
+这意味着：
+
+- 压缩发生在写路径上
+- 压缩异常会直接影响当前请求
+- 压缩器必须被当成关键路径代码来写
+
+一个容易忽略的细节是：
+
+- `setCompressor(...)` 只替换压缩器引用，不会立刻重压现有状态
+
+也就是说，内存实现只有在下一次 `addUserInput`、`addOutputItems`、`addToolOutput` 时，新的压缩器才真正生效。
+
+### 5.3 `snapshot()/restore()` 只是实现级能力
+
+`InMemoryAgentMemory` 暴露了 `snapshot()` 和 `restore()`，但它们不在 `AgentMemory` 接口里。
+
+这说明 runtime 层只依赖统一的读写契约，而“快照导出/恢复”是具体存储实现附加出来的工程能力，不是所有 memory backend 都被强制要求支持的公共 API。
+
+## 6. `JdbcAgentMemory`：它提供恢复能力，也带来写放大
+
+`JdbcAgentMemory` 不是在 `InMemoryAgentMemory` 上简单套一层持久化，而是重新定义了一套明确的持久化边界。
+
+### 6.1 构造约束
+
+构造时会做几类强校验：
+
+- `sessionId` 不能为空
+- `tableName` 必须通过 SQL identifier 正则校验
+- `dataSource` 和 `jdbcUrl` 至少提供一个
+
+如果 `initializeSchema = true`，构造阶段还会自动尝试建表。
+
+### 6.2 读写模型
+
+它的读写模式不是 append-only，而是：
+
+1. `loadSnapshot()`
+2. 在内存里修改 snapshot
+3. `replaceSnapshot(...)`
+
+`replaceSnapshot(...)` 的实现是：
+
+- 先按 `session_id` 删除旧记录
+- 再重新写入 summary 记录
+- 再批量写入 item 记录
+
+这代表 `JdbcAgentMemory` 当前的设计优先级是：
+
+- 保持和内存实现一致的语义
+- 保持恢复路径简单
+- 允许 summary 和 items 一起原子替换
+
+而不是：
+
+- 最小增量写
+- 极限高频吞吐
+
+对长会话、高 QPS 或大体量工具输出场景，这个写放大成本要单独评估。
+
+### 6.3 `setCompressor(...)` 的行为和内存实现不同
+
+`JdbcAgentMemory.setCompressor(...)` 会立刻执行：
+
+```java
+replaceSnapshot(applyCompressor(loadSnapshot()))
+```
+
+也就是说，JDBC 实现切换压缩器时，会当场重写当前持久化状态；内存实现则不会。这是两个实现最容易被误判的差异之一。
+
+### 6.4 summary 在数据库里的存储方式
+
+JDBC 实现把 snapshot 拆成两类 entry：
+
+- `entry_type = item`
+- `entry_type = summary`
+
+summary 不是冗余字符串拼在 item 里，而是单独存一条记录；但在 `getItems()` 阶段，它仍然会重新转成 `systemMessage(summary)` 注入上下文。
+
+## 7. 压缩器契约：压缩的是 snapshot，不是单条消息
+
+源码入口：
 
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/MemoryCompressor.java`
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/WindowedMemoryCompressor.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/MemorySnapshot.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/WindowedMemoryCompressor.java`
 
-压缩器处理的不是单个 item，而是一份 snapshot：
+压缩器处理的是：
 
 - `items`
 - `summary`
 
-这为“保留最近窗口 + 合成历史摘要”提供了标准插槽。
+而不是“单条消息进来时怎么裁一刀”。这给了实现者足够的自由度去做：
 
-### 3.5 `AgentSession`
+- 保留最近窗口
+- 把旧上下文折叠进 summary
+- 对某些工具输出保留原文，对另一些工具输出只留摘要
 
-源码：
+### 7.1 内置 `WindowedMemoryCompressor`
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java`
+默认内置窗口压缩器只做一件事：
 
-`AgentSession` 不是另一套 runtime，而是同一个 runtime + 新的 context/memory 组合。
+- 超过 `maxItems` 时，仅保留最后 N 条 item
 
-## 4. 运行时读写流程
+它不会自动生成摘要，也不会修改已有 summary。
 
-### 4.1 用户输入如何进入状态
+所以它更像“硬裁窗口”，而不是“长期记忆策略”。如果你的 Agent 需要跨多轮保持结论、约束、先前工具发现，单纯的窗口压缩通常不够。
 
-`BaseAgentRuntime.runInternal()` 在收到 `AgentRequest` 后，会先调用：
+## 8. Session 隔离并不是 runtime 复制，而是 memory 复制
 
-```java
-memory.addUserInput(request.getInput())
-```
+`Agent.newSession()` 的关键动作不是克隆 runtime，而是从 `memorySupplier` 再取一份 memory。
 
-如果输入是 `String`，`InMemoryAgentMemory` 会把它转成 `AgentInputItem.userMessage(...)`。
+这会带来一个非常重要的判断标准：
 
-### 4.2 模型输出如何进入状态
+- session 是否隔离，不取决于 `AgentSession` 这个类名
+- 取决于 `memorySupplier` 每次是否真的返回新的状态容器
 
-模型执行完成后，如果 `AgentModelResult` 包含 `memoryItems`，runtime 会调用：
+如果你把 `memorySupplier` 写成共享单例，即使表面上拿到了两个 session，它们仍会串状态。
 
-```java
-memory.addOutputItems(modelResult.getMemoryItems())
-```
+对 `JdbcAgentMemory` 来说，还要额外满足：
 
-这意味着并不是只有用户消息和工具消息会被保留，模型侧标准化后的输出 item 也会进入同一状态源。
+- 不能复用同一个 `sessionId`
 
-### 4.3 工具结果如何进入状态
+否则即使对象实例是新的，也仍然会落到同一份持久化快照上。
 
-工具执行完成后，runtime 会调用：
+## 9. memory 的边界：它不是所有运行态
 
-```java
-memory.addToolOutput(callId, output)
-```
+为了避免误用，需要把 memory 和其他概念分开。
 
-`InMemoryAgentMemory` 会把它转成：
+### 9.1 它不是全部 runtime state
 
-- `AgentInputItem.functionCallOutput(callId, output)`
+`AgentMemory` 只负责可回灌给模型的上下文状态。step 计数、事件流、线程执行状态、工具线程池之类的运行期信息，并不都存在这里。
 
-因此工具结果不是额外旁路数据，而是正式参与后续 prompt 的上下文 item。
+### 9.2 它不是 `ChatMemory`
 
-### 4.4 下一轮 prompt 如何读取状态
+`ChatMemory` 更偏普通多轮对话上下文；`AgentMemory` 面向的是 Agent loop 内部的输入、模型输出、工具输出和压缩策略。
 
-`BaseAgentRuntime.buildPrompt(...)` 会从：
+### 9.3 它也不是 Coding runtime 的完整 session
 
-```java
-memory.getItems()
-```
+`ai4j-coding` 里的 session 还会包含进程、文件系统、checkpoint、compact 等宿主态信息。它比 `AgentMemory` 更宽，不能混为一谈。
 
-重新取回上下文。
+## 10. 自定义实现时真正要守住的约束
 
-这一步非常关键，因为它说明 Agent runtime 不持有“内部隐藏历史”，所有可见状态都必须能从 memory 重新构造出来。
+如果你要自己实现 Redis、MongoDB 或业务侧会话存储，最低限度要守住下面这些语义：
 
-## 5. `summary` 的真实语义
+- `getItems()` 必须返回可直接参与下一轮 prompt 的 items
+- `addToolOutput()` 应把工具结果转换成模型能理解的 item 语义
+- `summary` 和 recent items 不能互相覆盖成不可恢复的单层文本
+- 压缩必须在错误语义上保持可预期，不能静默吞掉状态
+- session 隔离边界必须和你的业务会话 ID 保持一致
 
-很多系统会把 summary 当成独立字段保存，但不清楚它何时真正进入模型输入。
+如果其中任意一条做偏，表面上 Agent 还能跑，但长期行为会开始漂移。
 
-在 `InMemoryAgentMemory.getItems()` 和 `JdbcAgentMemory.getItems()` 里，summary 的处理方式是：
+## 11. 调试这块时先看哪几个点
 
-- 如果 summary 为空，直接返回 items
-- 如果 summary 不为空，先插入一条 `systemMessage(summary)`，再追加 items
+出现“模型忘事”“工具结果没回灌”“多 session 串状态”“长任务越跑越歪”时，先查下面几个入口：
 
-这意味着：
+- `BaseAgentRuntime.runInternal()` 是否真的调用了 `memory.addUserInput / addOutputItems / addToolOutput`
+- `memory.getItems()` 返回的列表里，summary 是否被注入成了 `systemMessage`
+- 自定义 `memorySupplier` 是否复用了单例
+- `JdbcAgentMemory` 的 `sessionId` 是否被错误复用
+- 压缩器是否把关键 item 直接裁掉而没有进 summary
 
-- summary 不是只给 UI 看
-- summary 会重新进入模型上下文
-- 它的提示强度等价于一条 system-level memory item
+这些地方比看前端聊天记录更接近真实问题源头。
 
-这也是为什么压缩质量会直接影响后续推理质量。
-
-## 6. Session 隔离是怎么实现的
-
-`Agent.newSession()` 的代码语义很简单：
-
-1. 从 `memorySupplier` 获取一份新 memory
-2. 用 `baseContext.toBuilder().memory(memory).build()` 构造 session context
-3. 返回新的 `AgentSession`
-
-这意味着：
-
-- runtime 复用
-- modelClient 复用
-- tool registry / executor 复用
-- memory 独立
-
-这也是当前 Agent session 隔离的核心机制。
-
-### 6.1 需要特别注意的地方
-
-如果你的 `memorySupplier` 返回的是共享单例，多个 session 仍然会串状态。
-
-如果你使用 `JdbcAgentMemory`，即使实例是新建的，只要 `sessionId` 一样，也仍然会共享同一份持久化状态。
-
-## 7. InMemory 与 JDBC 的实现差异
-
-### 7.1 `InMemoryAgentMemory`
-
-特点：
-
-- 全部状态保存在进程内
-- 写入成本低
-- 进程退出后状态丢失
-- 压缩直接在写入路径同步执行
-
-适合：
-
-- 本地开发
-- 单进程短任务
-- 快速验证 runtime 行为
-
-### 7.2 `JdbcAgentMemory`
-
-特点：
-
-- 会话状态按 `sessionId` 落库
-- 支持跨进程恢复
-- 可配 `DataSource` 或 JDBC 直连
-- 同样支持压缩器
-
-更重要的一个实现细节是：
-
-- 每次写入都会先 `loadSnapshot()`
-- 然后生成新 snapshot
-- 最后 `replaceSnapshot(...)` 删除旧记录并整份重写
-
-这说明 `JdbcAgentMemory` 当前更偏向正确性和一致语义，而不是高频增量写优化。对长会话、高 QPS 或超大 item 集合场景，需要自行评估数据库写放大成本。
-
-## 8. 压缩机制如何工作
-
-### 8.1 压缩触发时机
-
-`InMemoryAgentMemory` 每次 `addUserInput`、`addOutputItems`、`addToolOutput` 后都会执行 `maybeCompress()`。
-
-`JdbcAgentMemory` 也会在写入新 snapshot 前先调用 `applyCompressor(...)`。
-
-这意味着压缩是同步写路径的一部分，不是后台异步任务。
-
-### 8.2 `WindowedMemoryCompressor`
-
-内置窗口压缩器的行为非常直接：
-
-- 如果 item 数量未超过 `maxItems`，不处理
-- 如果超过，只保留最后 `maxItems` 条
-- `summary` 原样保留
-
-它适合：
-
-- 短任务
-- 成本敏感场景
-- 不要求长期语义总结
-
-### 8.3 更稳的工程做法
-
-生产环境更常见的方案通常不是“纯窗口”，而是：
-
-- 旧上下文进入摘要
-- 最近窗口保留原始 item
-- 特定工具输出按类型做选择性保留
-
-这也是 `MemorySnapshot(items, summary)` 这种设计存在的意义。
-
-## 9. 典型用法
-
-### 9.1 默认内存会话
-
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("gpt-4.1")
-        .build();
-```
-
-如果没有显式传 `memorySupplier(...)`，Builder 默认使用 `InMemoryAgentMemory::new`。
-
-### 9.2 使用窗口压缩
-
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("gpt-4.1")
-        .memorySupplier(() -> new InMemoryAgentMemory(
-                new WindowedMemoryCompressor(20)
-        ))
-        .build();
-```
-
-### 9.3 使用 JDBC 持久化 memory
-
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("gpt-4.1")
-        .memorySupplier(() -> new JdbcAgentMemory(
-                JdbcAgentMemoryConfig.builder()
-                        .dataSource(dataSource)
-                        .sessionId("agent-session-001")
-                        .compressor(new WindowedMemoryCompressor(20))
-                        .build()
-        ))
-        .build();
-```
-
-### 9.4 打开独立 session
-
-```java
-AgentSession sessionA = agent.newSession();
-AgentSession sessionB = agent.newSession();
-```
-
-前提是你的 `memorySupplier` 真正返回独立 memory，否则这两个 session 只是在 API 层分开，状态仍可能共享。
-
-## 10. 扩展点
-
-### 10.1 自定义 `AgentMemory`
-
-适合：
-
-- Redis 持久化
-- 统一会话平台
-- 分布式缓存
-- 特定租户隔离方案
-
-### 10.2 自定义 `MemoryCompressor`
-
-适合：
-
-- 摘要 + 窗口
-- 分阶段压缩
-- 按工具类型裁剪结果
-- 长任务恢复优化
-
-### 10.3 自定义 session 标识策略
-
-对持久化 memory 来说，`sessionId` 决定恢复与隔离边界。它通常应该和业务会话 ID、工单 ID、任务 ID 或用户会话主键对齐。
-
-## 11. 边界、限制与失败语义
-
-### 11.1 `AgentMemory` 不等于全部 runtime state
-
-`AgentMemory` 保存的是可回灌给模型的上下文状态。step 计数、线程状态、临时执行控制等运行时元数据，并不都存放在 `AgentMemory` 中。
-
-### 11.2 `AgentMemory` 不等于 `ChatMemory`
-
-两者边界应该明确区分：
-
-- `ChatMemory` 解决基础多轮会话上下文
-- `AgentMemory` 解决 Agent loop 内的输入、输出、工具结果与压缩语义
-
-### 11.3 `AgentMemory` 也不等于 `CodingSession`
-
-`Coding Agent` 的 session 还包含：
-
-- 进程状态
-- 文件系统操作历史
-- checkpoint / compact 元数据
-- 宿主事件账本
-
-所以 `CodingSession` 比 `AgentMemory` 更宽。
-
-### 11.4 压缩失败会直接影响写入
-
-由于压缩发生在同步写路径上，自定义 `MemoryCompressor` 一旦抛异常，就会直接让当前写入失败。压缩器必须被视为 runtime 关键路径代码，而不是可随意失败的旁路插件。
-
-### 11.5 `callId == null` 时不会写入工具结果
-
-`addToolOutput(callId, output)` 的两个默认实现都要求 `callId` 非空；否则直接忽略。正常情况下 runtime 已经会在 tool call 归一化阶段补齐 `callId`，但自定义链路仍应保持这一约束。
-
-## 12. 和相邻页面的关系
-
-这页回答的是：
-
-- Agent runtime 如何保存和恢复状态
-- memory 在 loop 中如何读写
-- session 隔离语义是什么
-
-更细的实现和策略，请继续看：
+## 12. 继续阅读
 
 1. [Memory 管理与压缩策略](/docs/agent/memory-management)
 2. [Tools and Registry](/docs/agent/tools-and-registry)

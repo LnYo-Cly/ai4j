@@ -77,5 +77,5 @@
 ## 7. 推荐下一步
 
 1. [Tools and Registry](/docs/agent/tools-and-registry)
-2. [Trace](/docs/agent/observability/trace)
+2. [Trace](/docs/agent/trace-observability)
 3. [Coding Agent / Tools and Approvals](/docs/coding-agent/tools-and-approvals)
