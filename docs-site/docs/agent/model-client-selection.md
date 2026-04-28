@@ -4,193 +4,438 @@ sidebar_position: 3
 
 # Model Client Selection
 
-`AgentModelClient` 是 Agent runtime 与具体模型协议之间的适配层。
+`AgentModelClient` 决定的不是“你用哪个 provider”，而是：
 
-当前最重要的两个实现是：
+> Agent runtime 组装好的 `AgentPrompt`，最终以什么协议形态发给模型。
+
+当前最核心的两个实现是：
 
 - `ChatModelClient`
 - `ResponsesModelClient`
 
-选型问题的本质不是“哪个好”，而是：
+它们不是“老协议”和“新协议”这么简单，也不是无损等价的两个壳。真正的差异落在：
 
-- 你的 provider 当前更稳定支持哪种协议
-- 你的 Agent 是否需要更强的结构化 output 语义
-- 你的流式消费方需要什么粒度的事件
+- prompt 字段如何映射
+- tools 如何透传
+- stream 时能吐出哪些中间信号
+- 最终 `memoryItems` 长什么样
+- 哪些高级字段在某条路径上其实根本没被下推
 
-## 1. 代码上的真实边界
+## 1. 先抓住 6 个关键设计决策
 
-源码路径：
+### 1.1 这是协议适配选择，不是 runtime 选择
 
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentModelClient.java`
-- `model/ChatModelClient.java`
-- `model/ResponsesModelClient.java`
+`BaseAgentRuntime` 只依赖：
 
-`AgentRuntime` 并不直接依赖 `IChatService` 或 `IResponsesService`，它只依赖 `AgentModelClient`。因此：
+- `AgentModelClient`
 
-- runtime 不关心底层是 Chat 还是 Responses
-- 协议差异被收敛在 model client 中
-- 选型是协议层决策，不是 runtime 层决策
+它并不直接依赖：
 
-## 2. `ChatModelClient` 如何映射 prompt
+- `IChatService`
+- `IResponsesService`
 
-`ChatModelClient.toChatCompletion(...)` 的行为可以概括为：
+因此：
 
-- `systemPrompt` 变成一条 system message
-- `instructions` 再变成一条 system message
-- `items` 被逐条转换成 chat messages
-- 如果存在 tools，会注入 `tools`，并开启 `passThroughToolCalls`
+- ReAct / CodeAct / DeepResearch 是 runtime 语义选择
+- Chat / Responses 是模型协议选择
 
-因此在 Chat 路径下：
+这两层不要混。
 
-- `systemPrompt` 和 `instructions` 最终都会落到消息序列里
-- 两者都以 system message 形式出现
-- 二者的语义区分存在，但它们在协议层并不是两个独立顶级字段
+### 1.2 `systemPrompt` 和 `instructions` 在两条路径上不是等价映射
 
-## 3. `ResponsesModelClient` 如何映射 prompt
+这几乎是整页最重要的事实。
 
-`ResponsesModelClient.toResponseRequest(...)` 的映射方式与 Chat 不完全对称：
+#### Chat 路径
 
-- `systemPrompt` 映射到 `ResponseRequest.instructions`
-- `instructions` 被插入为一条 `systemMessage(...)`，放到 `input` items 前面
-- `items` 原样进入 `input`
-- `tools`、`toolChoice`、`parallelToolCalls` 等作为顶级字段传入
+- `systemPrompt` -> 一条 system message
+- `instructions` -> 再追加一条 system message
 
-这意味着在 Responses 路径下：
+#### Responses 路径
 
-- `systemPrompt` 和 `instructions` 的协议位置是分离的
-- `systemPrompt` 更像顶层全局指令
-- `instructions` 更像作为输入上下文的一部分被前置注入
-
-如果文档不把这点讲清楚，用户很容易误以为两个 client 的 prompt 映射完全一样。
-
-## 4. Tool calling 在两条路径上的差异
-
-### 4.1 `ChatModelClient`
-
-当 prompt 中带 tools 时，`ChatModelClient` 会显式设置：
-
-- `builder.tools(...)`
-- `builder.passThroughToolCalls(true)`
-
-流式模式下也会继续设置 `passThroughToolCalls(true)`。
-
-这表示：
-
-- 底层 chat provider 不应自己吞掉工具调用并继续闭环
-- tool calls 会回到 Agent runtime
-- 真正执行工具的是 `ToolExecutor`
-
-### 4.2 `ResponsesModelClient`
-
-Responses 路径下，tool calls 来自 response output 结构，再由：
-
-- `ResponseUtil.extractToolCalls(response)`
-
-提取为 `AgentToolCall`。
-
-Agent runtime 拿到这些 tool calls 后，后续治理逻辑和 Chat 路径一致，都会进入统一的 `ToolExecutor` 执行面。
-
-## 5. 流式语义的真实差异
-
-这部分最容易被泛化描述误导，所以这里按当前实现写清楚。
-
-### 5.1 底层协议差异
-
-- Chat 协议更接近消息增量流
-- Responses 协议底层是事件流，output 可以包含更结构化的内容
-
-### 5.2 当前 Agent 适配层差异
-
-在当前 `ai4j-agent` 实现里：
-
-- `ChatModelClient` 在流式过程中会分别向上发：
-  - `onReasoningDelta(...)`
-  - `onDeltaText(...)`
-  - `onToolCall(...)`
-- `ResponsesModelClient` 当前流式适配主要向上发：
-  - `onDeltaText(...)`
-  - `onRetry(...)`
-  - `onError(...)`
+- `systemPrompt` -> `ResponseRequest.instructions`
+- `instructions` -> 被包装成 `systemMessage(...)` 并插到 input items 最前面
 
 也就是说：
 
-> Responses 底层协议更结构化，但当前 `ResponsesModelClient` 暴露给 Agent 级 listener 的流式信息，主要仍是文本增量；完整结构化 output 与 tool calls 会在流结束后统一进入最终 `AgentModelResult`。
+- Chat 路径里两者都落在 message 序列中
+- Responses 路径里两者落在两个不同协议位置
 
-这一点非常重要，因为它直接影响你如何设计实时 UI 和 trace 面板。
+### 1.3 Responses 路径会下推更多顶层字段
 
-## 6. 什么时候优先选 `ResponsesModelClient`
+`ResponsesModelClient.toResponseRequest(...)` 会直接把这些字段推下去：
 
-- 你已经主要使用 Responses 协议
-- 你希望工具、output、reasoning 等最终结果更贴近结构化 response 语义
-- 你更重视 top-level `instructions` / `tools` / `reasoning` 这类字段表达
-- 你愿意接受当前 Agent 级流式回调并不会把所有底层事件都一一向上透出
+- `tools`
+- `toolChoice`
+- `parallelToolCalls`
+- `temperature`
+- `topP`
+- `maxOutputTokens`
+- `reasoning`
+- `store`
+- `user`
+- `extraBody`
 
-## 7. 什么时候优先选 `ChatModelClient`
+而 `ChatModelClient.toChatCompletion(...)` 只下推其中一部分。
 
-- 你已有大量 Chat Completion 兼容链路
-- 你更依赖经典消息序列语义
-- 你在当前 Agent 实现里更需要流式 reasoning / tool call 的直接回调
-- 你的 provider 在 Chat 协议上的兼容性更成熟
+这意味着某些 Agent 级配置，在 Chat 路径下其实是“写进 prompt 了，但没变成协议级顶层参数”。
 
-## 8. 一个实用选择表
+### 1.4 Chat 路径的 toolChoice 约束更窄
 
-| 需求 | 更适合的选择 |
-| --- | --- |
-| 最小迁移成本接入已有 chat provider | `ChatModelClient` |
-| 更贴近 responses 结构化语义 | `ResponsesModelClient` |
-| 需要在 Agent 级流式监听里更早拿到 reasoning/tool-call 回调 | `ChatModelClient` |
-| 更强调最终 response output 的统一结构 | `ResponsesModelClient` |
-
-## 9. 是否可以在同一系统里混用
-
-可以，而且在复杂系统里很常见。
-
-例如：
-
-- 简单问答 Agent 用 `ChatModelClient`
-- 更强调结构化结果或后续处理的 Agent 用 `ResponsesModelClient`
-
-只要你理解它们的 prompt 映射和流式回调差异，混用没有问题。
-
-## 10. 示例
-
-### 10.1 Chat 路径
+`ChatModelClient` 只有在：
 
 ```java
-Agent weatherAgent = Agents.react()
+prompt.getToolChoice() instanceof String
+```
+
+时才会设置 `builder.toolChoice(...)`。
+
+而 `ResponsesModelClient` 是把 `toolChoice` 原样传下去。
+
+如果你在用更复杂的 tool choice 结构，Responses 路径表达力更完整。
+
+### 1.5 两条路径的 `memoryItems` 形状不一样
+
+`ChatModelClient.toModelResult(...)` 会自己构造 memory items：
+
+- 纯文本回答 -> `assistant` message
+- 带 tool calls -> `assistantToolCallsMessage(...)`
+
+`ResponsesModelClient.toModelResult(...)` 则直接把：
+
+- `response.getOutput()`
+
+原样塞进 `memoryItems`。
+
+所以同样一轮调用：
+
+- Chat 路径得到的是转换后的统一消息形态
+- Responses 路径保留的是更贴近原始 response output 的 item 列表
+
+### 1.6 Stream 能看到什么，不取决于底层协议强不强，而取决于当前适配器吐出了什么
+
+很多人会先入为主地以为：
+
+- Responses 协议更结构化
+- 所以 Agent 级 stream 一定更丰富
+
+当前实现并不是这样。
+
+要看当前 client 的 `createStream(...)` 真正回调了什么。
+
+## 2. `ChatModelClient` 到底做了什么
+
+### 2.1 Prompt 如何被翻译成 chat completion
+
+`toChatCompletion(...)` 的核心映射是：
+
+1. `systemPrompt` 变第一条 system message
+2. `instructions` 变第二条 system message
+3. `items` 逐条转成 `ChatMessage`
+4. `tools` 转成 `List<Tool>`
+5. 非空 tools 时设置 `passThroughToolCalls(true)`
+
+它真正下推的 top-level 字段包括：
+
+- `model`
+- `messages`
+- `stream`
+- `streamExecution`
+- `temperature`
+- `topP`
+- `maxCompletionTokens`
+- `user`
+- `parallelToolCalls`
+- `toolChoice`（仅字符串）
+- `tools`
+- `extraBody`
+
+### 2.2 哪些 Agent 字段在 Chat 路径没有被协议级下推
+
+当前 `ChatModelClient` 没有显式下推：
+
+- `reasoning`
+- `store`
+
+因此如果你把这两项当成强协议参数使用，Responses 路径会更符合直觉。
+
+### 2.3 `items` 并不是简单字符串拼接
+
+`ChatModelClient.convertToMessage(...)` 支持的输入形态比“用户文本”更复杂。
+
+它会处理：
+
+- 普通 `ChatMessage`
+- `type=message` 的 map
+- `type=function_call_output` 的 map
+- 多模态 `input_text`
+- 多模态 `input_image`
+
+这说明 Chat 路径并不只会吃纯文本消息；它内部已经在做一层 item -> chat message 的协议归一化。
+
+### 2.4 Chat 流式路径会保留 reasoning delta
+
+`StreamingSseListener.send()` 里会区分：
+
+- `isReasoning() == true` -> `onReasoningDelta(delta)`
+- 否则 -> `onDeltaText(delta)`
+
+因此在当前 Agent 适配层里，Chat 路径能更早把 reasoning token 级增量抛上来。
+
+这对实时调试面板和 trace 时间线很有价值。
+
+## 3. `ResponsesModelClient` 到底做了什么
+
+### 3.1 Prompt 如何被翻译成 response request
+
+`toResponseRequest(...)` 的映射顺序是：
+
+1. `model`
+2. `input(buildItems(prompt))`
+3. `tools`
+4. `toolChoice`
+5. `parallelToolCalls`
+6. `temperature`
+7. `topP`
+8. `maxOutputTokens`
+9. `reasoning`
+10. `store`
+11. `user`
+12. `stream`
+13. `streamExecution`
+14. `systemPrompt -> instructions`
+15. `extraBody`
+
+这条路径对 `AgentPrompt` 顶层字段的保留明显更完整。
+
+### 3.2 `instructions` 会被前插成 input item，而不是顶层 instructions
+
+`buildItems(prompt)` 的逻辑是：
+
+- 先复制 `prompt.getItems()`
+- 如果有 `instructions`
+- 在 index `0` 插入 `AgentInputItem.systemMessage(...)`
+
+所以 Responses 路径里：
+
+- `systemPrompt` 是 request-level instruction
+- `instructions` 是 input item 里的前置 system message
+
+这和 Chat 路径里“两个 system message 顺排”完全不是一回事。
+
+### 3.3 Responses 流式路径当前更像“文本增量 + 最终统一收口”
+
+`ResponsesModelClient.createStream(...)` 当前直接回调的是：
+
+- `onDeltaText(...)`
+- `onRetry(...)`
+- `onError(...)`
+- `onComplete(...)`
+
+它不会像 Chat 路径那样单独发 reasoning delta。
+
+更重要的是，tool calls 不是在流中间直接通过 stream listener 吐出来的，而是：
+
+- 等流结束
+- `ResponseSseListener.getResponse()`
+- 再统一走 `toModelResult(response)`
+- 最终由 runtime 从 `AgentModelResult.toolCalls` 继续处理
+
+所以在当前实现里，Responses 路径更偏：
+
+- 流中看文本
+- 流后看完整结构
+
+## 4. 两条路径最终如何回到统一的 Agent 语义
+
+虽然协议不同，但 runtime 最终只认 `AgentModelResult`。
+
+### Chat 路径
+
+`toModelResult(ChatCompletionResponse)` 会抽出：
+
+- `outputText`
+- `reasoningText`
+- `toolCalls`
+- `memoryItems`
+- `rawResponse`
+
+### Responses 路径
+
+`toModelResult(Response)` 会抽出：
+
+- `outputText`
+- `toolCalls`
+- `memoryItems`
+- `rawResponse`
+
+这里最关键的统一动作是：
+
+- 不同 provider response
+  -> 统一投影成 `AgentModelResult`
+
+runtime 后续并不关心它来自 Chat 还是 Responses。
+
+## 5. Stream 行为真正差在哪
+
+### 5.1 Chat 路径
+
+当前能较早暴露：
+
+- reasoning delta
+- text delta
+- retry
+
+最终再在 `onComplete(...)` 给出统一 `AgentModelResult`。
+
+### 5.2 Responses 路径
+
+当前主要暴露：
+
+- text delta
+- retry
+
+结构化结果、tool calls、最终 output 是在流结束后统一返回。
+
+### 5.3 两条路径都不是“流中直接执行工具”
+
+虽然 `AgentModelStreamListener` 有：
+
+- `onToolCall(AgentToolCall call)`
+
+但当前这两个 client 并没有在 streaming 过程中真正调用这个回调来提前透出工具。
+
+实际工具执行仍然依赖：
+
+1. `createStream(...)` 完成
+2. 生成最终 `AgentModelResult`
+3. `BaseAgentRuntime` 从结果里拿 `toolCalls`
+4. 再进入统一 tool loop
+
+所以不要误判成“Chat stream 一边吐 token，一边已经在 runtime 内部并行执行工具了”。
+
+## 6. 取消流和线程中断的语义
+
+这两条路径都有一个很相似的设计：
+
+- 维护一个 `ACTIVE_STREAMS`
+- key 是当前 `Thread`
+- value 是底层 SSE listener
+
+并提供：
+
+- `cancelActiveStream(Thread thread)`
+
+在 `createStream(...)` 里，如果线程被中断：
+
+- 会先 cancel stream
+- 再抛 `InterruptedException`
+
+这说明当前流取消语义是：
+
+- 线程级取消
+- 不是单独的 request id / run id 取消协议
+
+这在 CLI / session runtime 里很好用，但也意味着你要理解取消边界是“线程”，不是“任意逻辑任务”。
+
+## 7. 什么时候优先选 Chat
+
+更适合 Chat 的典型场景：
+
+- 你已有成熟的 chat-completions 兼容链路
+- 你更依赖 message 序列心智
+- 你要在 Agent 级流式回调里更早看到 reasoning delta
+- 你当前更看重经典对话和工具循环，而不是 response 顶层字段的完整表达
+
+## 8. 什么时候优先选 Responses
+
+更适合 Responses 的典型场景：
+
+- 你想更完整地下推 `reasoning`、`store`、`toolChoice`
+- 你更希望保留 response output item 的结构
+- 你后续处理更偏结构化结果，而不是纯消息流
+- 你接受“流中主要看文本，结构化信息在结尾统一收口”
+
+## 9. 最容易被说错的几件事
+
+### 9.1 “Responses 一定比 Chat 更高级”
+
+不成立。
+
+它们是两条不同协议线，不是简单的高低级关系。
+
+### 9.2 “Chat 和 Responses 在 prompt 映射上是等价的”
+
+不成立。
+
+尤其是：
+
+- `systemPrompt`
+- `instructions`
+- `reasoning`
+- `store`
+- `toolChoice`
+
+这些字段的实际协议位置和保真度都不同。
+
+### 9.3 “Responses 流式天然就能把所有结构化事件实时透给 Agent UI”
+
+不成立。
+
+当前 `ResponsesModelClient` 的 Agent 级 stream 适配主要仍然是文本增量。
+
+### 9.4 “Chat 路径会在 stream 中直接把工具执行完”
+
+不成立。
+
+当前两个 client 的工具执行都还是在 runtime 收到最终 `AgentModelResult` 后统一推进。
+
+## 10. 一个实用的选择表
+
+| 关注点 | 更适合 |
+| --- | --- |
+| 更成熟的 chat 兼容接入 | `ChatModelClient` |
+| 更完整的 response top-level 字段下推 | `ResponsesModelClient` |
+| 流式 reasoning 可见性 | `ChatModelClient` |
+| 更贴近 response output item 结构 | `ResponsesModelClient` |
+| 复杂 `toolChoice` / `reasoning` / `store` 表达 | `ResponsesModelClient` |
+
+## 11. 示例
+
+### Chat 路径
+
+```java
+Agent agent = Agents.react()
         .modelClient(new ChatModelClient(chatService))
         .model("your-chat-model")
-        .toolRegistry(java.util.Arrays.asList("queryWeather"), null)
+        .systemPrompt("You are a concise assistant.")
+        .options(AgentOptions.builder().maxSteps(1).build())
         .build();
 ```
 
-### 10.2 Responses 路径
+### Responses 路径
 
 ```java
-Agent formatAgent = Agents.react()
+Agent agent = Agents.react()
         .modelClient(new ResponsesModelClient(responsesService))
         .model("gpt-4.1")
-        .instructions("Return strict JSON.")
+        .systemPrompt("You are a concise assistant.")
+        .options(AgentOptions.builder().maxSteps(1).build())
         .build();
 ```
 
-## 11. 最常见的误解
+表面上看只差一行，但协议语义并不一样。
 
-### 11.1 “Responses 一定比 Chat 更高级”
+## 12. 推荐阅读源码顺序
 
-不成立。它们是不同协议，不是简单上下级关系。
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentPrompt.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ChatModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ResponsesModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
 
-### 11.2 “Responses 流式等于当前 Agent 级 listener 会完整透出所有底层事件”
+## 13. 继续阅读
 
-不成立。底层协议更丰富，但当前 `ResponsesModelClient` 的 Agent 级流式适配主要向上抛文本增量。
-
-### 11.3 “Chat 进入 Agent 后 provider 会自己把工具执行完”
-
-不成立。带 tools 时，`ChatModelClient` 会开启 `passThroughToolCalls`，把工具调用交回 Agent runtime。
-
-## 12. 继续阅读
-
-1. [System Prompt vs Instructions](/docs/agent/system-prompt-vs-instructions)
-2. [Quickstart](/docs/agent/quickstart)
-3. [Architecture](/docs/agent/architecture)
-4. [Tools and Registry](/docs/agent/tools-and-registry)
+1. [Quickstart](/docs/agent/quickstart)
+2. [System Prompt vs Instructions](/docs/agent/system-prompt-vs-instructions)
+3. [Tools and Registry](/docs/agent/tools-and-registry)
+4. [Runtime Implementations](/docs/agent/runtime-implementations)

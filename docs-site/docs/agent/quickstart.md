@@ -1,34 +1,126 @@
 # Agent Quickstart
 
-这页的目标不是把整个 `ai4j-agent` 章节讲完，而是用最短路径先打通一条真实可运行链路：
+这页的目标不是展示“最短 demo”，而是帮你先跑通一条最小但真实的 Agent 主链。
 
-- 模型请求能发出去
-- Agent runtime 能进入 step loop
-- 工具能被暴露给模型
-- 工具结果能回灌到下一轮
-- 最终结果能从 `AgentResult` 读出来
+所谓真实，是指这条链里至少要经过：
 
-只要这条主链成立，后面再讨论 runtime 选型、memory 压缩、workflow 编排才有意义。
+- `AgentBuilder` 默认装配
+- `AgentRuntime` step loop
+- `AgentModelClient` 协议适配
+- `AgentMemory` 写入与回灌
+- `AgentResult` 收口
 
-## 1. 起步前你至少要准备什么
+如果这条线还没跑通，就不应该先上：
 
-最小可运行 Agent 至少需要四类输入：
+- workflow
+- subagent
+- team
+- 自定义审批
+- trace 平台接入
 
-- 一个 `AgentModelClient`
-- 一个模型名
-- 可选的工具暴露面
-- 一次 `AgentRequest`
+## 1. 先抓住 4 个关键设计决策
 
-这里最容易混淆的是：
+### 1.1 Quickstart 先验证的是“运行链成立”，不是“功能堆满”
 
-- `modelClient` 不是模型名，它是模型协议适配器
-- `toolRegistry(...)` 不是工具执行器，它只决定模型看见什么
-- `Agent` 不是直接调用 `IChatService` / `IResponsesService`
+最小 quickstart 的任务只有一个：
 
-## 2. 最小 ReAct Agent
+> 证明一次 Agent run 能从输入走到最终输出。
+
+因此第一版示例不应该一上来就依赖：
+
+- 多个工具
+- 外部审批
+- 复杂 memory
+- workflow 编排
+
+否则你根本分不清问题出在哪一层。
+
+### 1.2 `modelClient(...)` 是必填依赖，模型名不是
+
+`AgentBuilder.build()` 真正硬性要求的是：
+
+- `modelClient != null`
+
+如果没传，它会直接抛：
+
+```text
+IllegalStateException: modelClient is required
+```
+
+而 `model(...)` 虽然在 Builder 阶段不会立即拦住你，但 `BaseAgentRuntime.buildPrompt(...)` 会在运行时检查：
+
+```text
+IllegalStateException: model is required
+```
+
+也就是说：
+
+- `modelClient` 决定怎么发请求
+- `model` 决定请求发给谁
+
+两者缺一都不行。
+
+### 1.3 默认 `maxSteps = 0`，不是安全默认值
+
+`AgentOptions.builder().build()` 的默认值里：
+
+- `maxSteps = 0`
+
+而 `BaseAgentRuntime.runInternal(...)` 的语义是：
+
+- `maxSteps > 0` 才认为有硬上限
+- 否则 loop 不设步数上限
+
+所以 quickstart 示例里最好显式带上：
+
+```java
+.options(AgentOptions.builder().maxSteps(1).build())
+```
+
+或：
+
+```java
+.options(AgentOptions.builder().maxSteps(2).build())
+```
+
+不要把“实验方便”误当成“生产安全默认值”。
+
+### 1.4 `toolRegistry(List<String>, List<String>)` 是便利入口，不是底层唯一入口
+
+你最容易在 quickstart 里看到的是：
+
+```java
+.toolRegistry(Arrays.asList("queryWeather"), null)
+```
+
+但这个 API 本质上是一个反射装配入口，会尝试创建：
+
+- `ToolUtilRegistry`
+- `ToolUtilExecutor`
+
+如果相关 integration 模块不在 classpath 中，`build()` 会失败。
+
+所以真正更稳的理解方式是：
+
+- 这是 demo / 快速接线入口
+- 不是唯一的正式工程接法
+
+## 2. 第一条正确验证路径：先跑无工具 Agent
+
+最小 quickstart 最推荐先做“无工具验证”。
+
+原因很简单：
+
+- 不依赖 ToolUtil
+- 不依赖工具白名单
+- 不依赖工具执行
+- 只验证模型协议 + runtime loop + memory 回写
+
+示例：
 
 ```java
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
@@ -37,157 +129,227 @@ import io.github.lnyocly.ai4j.agent.model.ResponsesModelClient;
 Agent agent = Agents.react()
         .modelClient(new ResponsesModelClient(responsesService))
         .model("gpt-4.1")
-        .systemPrompt("You are a careful assistant.")
-        .instructions("Use tools only when necessary.")
-        .toolRegistry(java.util.Arrays.asList("queryWeather"), null)
+        .systemPrompt("You are a concise assistant.")
+        .options(AgentOptions.builder().maxSteps(1).build())
         .build();
 
 AgentResult result = agent.run(AgentRequest.builder()
-        .input("请给出北京今天的天气摘要")
+        .input("用一句话介绍 AI4J Agent")
         .build());
 
 System.out.println(result.getOutputText());
+System.out.println(result.getSteps());
 ```
 
-如果你已经有 `Chat` 协议接入，也可以替换为：
+这一步如果没过，问题通常只会落在：
+
+- provider 凭证 / baseUrl
+- `modelClient` 协议接法
+- 模型名
+- 最基础 runtime 运行
+
+## 3. 第二条验证路径：再加最小工具白名单
+
+无工具 Agent 跑通以后，再加工具才有意义。
+
+示例：
 
 ```java
 Agent agent = Agents.react()
-        .modelClient(new ChatModelClient(chatService))
-        .model("your-chat-model")
+        .modelClient(new ResponsesModelClient(responsesService))
+        .model("gpt-4.1")
+        .systemPrompt("You are a weather assistant.")
+        .instructions("Use queryWeather when weather information is needed.")
         .toolRegistry(java.util.Arrays.asList("queryWeather"), null)
+        .options(AgentOptions.builder().maxSteps(2).build())
         .build();
-```
 
-## 3. 这段代码背后真实发生了什么
-
-`Agents.react()` 不只是语法糖，它等价于：
-
-- 创建一个 `AgentBuilder`
-- 预装 `ReActRuntime`
-
-`build()` 时，`AgentBuilder` 还会继续解析默认依赖：
-
-- `runtime` 默认 `ReActRuntime`
-- `memorySupplier` 默认 `InMemoryAgentMemory::new`
-- `toolRegistry` 默认 `StaticToolRegistry.empty()`
-- 若未显式提供 `toolExecutor`，按当前工具名解析 `ToolUtilExecutor`
-
-因此 quickstart 的真正价值不是“代码短”，而是一次把装配语义、工具语义和主循环语义全部跑通。
-
-## 4. 先跑通什么，再往上加复杂度
-
-最推荐的顺序是：
-
-### 4.1 先验证模型调用本身
-
-确认：
-
-- `modelClient` 能成功请求目标 provider
-- `model(...)` 使用的模型名有效
-- 不带工具时也能返回正常文本
-
-### 4.2 再验证工具暴露
-
-确认：
-
-- `toolRegistry(...)` 中的工具名真能被 `ToolUtil` 解析
-- 模型在需要时会返回 tool call
-- `ToolExecutor` 能执行这些工具
-
-### 4.3 再验证闭环
-
-确认：
-
-- 工具结果进入 `AgentMemory`
-- Agent 会继续下一轮，而不是在 tool call 后停住
-- `AgentResult.getToolCalls()` 与 `getToolResults()` 能反映实际执行链
-
-只有这三层都成立，才说明最小 Agent runtime 真正可用。
-
-## 5. `AgentResult` 里应该看什么
-
-最小 quickstart 跑通后，不要只看 `outputText`。至少还应检查：
-
-- `outputText`
-- `toolCalls`
-- `toolResults`
-- `steps`
-- `rawResponse`
-
-对调试最有价值的通常是：
-
-- 是否真的产生了 tool call
-- 工具有没有执行
-- 最终经历了几步
-
-## 6. 一个更完整的最小验证示例
-
-```java
 AgentResult result = agent.run(AgentRequest.builder()
         .input("请给出北京今天的天气摘要")
         .build());
-
-System.out.println("steps = " + result.getSteps());
-System.out.println("toolCalls = " + result.getToolCalls());
-System.out.println("toolResults = " + result.getToolResults());
-System.out.println("answer = " + result.getOutputText());
 ```
 
-如果模型没有发出工具调用，但你本来预期它会发，那么问题通常不在 runtime 本身，而在：
+这里验证的不是“系统里有没有天气工具”，而是下面 3 件事是否同时成立：
 
-- prompt 没有驱动模型用工具
-- 工具没有正确暴露
-- 当前模型或 provider 对 tool calling 支持不一致
+1. 工具 schema 能被暴露给模型
+2. 模型真的会返回 tool call
+3. `ToolExecutor` 能执行，并把结果写回 memory
 
-## 7. Quickstart 最常见的错误
+## 4. 这段代码背后真实发生了什么
 
-### 7.1 只写了模型名，没写 `modelClient`
+quickstart 最有价值的地方，不在代码行数，而在于它刚好覆盖了默认装配链。
 
-`modelClient` 是必填依赖。没有它，`AgentBuilder.build()` 会直接失败。
+### 4.1 `Agents.react()` 不是神秘入口
 
-### 7.2 把 Core SDK 直接调用误当成 Agent
+它本质上只是进入 `AgentBuilder` 并默认使用 `ReActRuntime`。
 
-直接调 `IChatService` 或 `IResponsesService` 还不是 Agent。只有进入 `AgentRuntime` 主循环，才叫真正进入 Agent 层。
+### 4.2 `AgentBuilder.build()` 会补哪些默认值
 
-### 7.3 工具在 SDK 层存在，但没加入 `toolRegistry`
+当前默认装配包括：
 
-工具存在于系统里，不等于模型就能看到。模型可见工具面必须显式经过 `toolRegistry(...)`。
+- `runtime` -> `ReActRuntime`
+- `memorySupplier` -> `InMemoryAgentMemory::new`
+- `toolRegistry` -> `StaticToolRegistry.empty()`
+- `codeExecutor` -> Java 8 用 `NashornCodeExecutor`，更高版本用 `GraalVmCodeExecutor`
+- `options` -> `AgentOptions.builder().build()`
+- `codeActOptions` -> `CodeActOptions.builder().build()`
+- `eventPublisher` -> 新建 `AgentEventPublisher`
 
-### 7.4 一开始就叠加 workflow / subagent / team
+如果你还配置了：
 
-先验证单 Agent 再叠复杂度，排障效率会高很多。
+- `traceExporter(...)`
 
-## 8. 什么时候该从 quickstart 升级
+Builder 会顺便把 `AgentTraceListener` 挂上去。
 
-当下面任何一个条件成立时，就不应继续停留在 quickstart 心智：
+### 4.3 `run(...)` 后真正进入哪条链
 
-- 需要判断 `ChatModelClient` 还是 `ResponsesModelClient`
-- 需要长期 session 和记忆压缩
-- 需要自定义工具审批、审计、沙箱
-- 需要切到 `CodeActRuntime`
-- 需要 `StateGraph`、`SubAgent` 或 `Team`
+运行路径大致是：
 
-这时你需要进入下一层页面，而不是继续往 quickstart 代码里堆条件。
+```text
+Agent.run(...)
+  -> ReActRuntime.run(...)
+  -> BaseAgentRuntime.runInternal(...)
+  -> memory.addUserInput(...)
+  -> buildPrompt(...)
+  -> modelClient.create(...)
+  -> memory.addOutputItems(...)
+  -> normalizeToolCalls(...)
+  -> execute tools if needed
+  -> final AgentResult
+```
 
-## 9. 下一步读什么
+如果这条链你还没看懂，quickstart 最好不要继续加新能力。
 
-### 想先判断协议层怎么选
+## 5. Quickstart 应该先验证什么
 
-看 [Model Client Selection](/docs/agent/model-client-selection)
+### 5.1 先看是不是能跑完一轮
 
-### 想理解主循环和装配链
+最小要求：
 
-看 [Architecture](/docs/agent/architecture)
+- 不报异常
+- `AgentResult.outputText` 有值
+- `AgentResult.steps` 是合理值
 
-### 想理解状态怎样跨步保留
+### 5.2 再看是不是意外进入多轮
 
-看 [Memory and State](/docs/agent/memory-and-state)
+如果你明明只想要一轮纯问答，却发现：
 
-### 想理解工具如何暴露和治理
+- `steps > 1`
 
-看 [Tools and Registry](/docs/agent/tools-and-registry)
+通常说明：
 
-### 想继续看 runtime 选型
+- prompt 诱导了工具行为
+- 或模型输出被解释成了继续循环的条件
 
-看 [Runtime Implementations](/docs/agent/runtime-implementations)
+### 5.3 工具版再看有没有完整闭环
+
+工具版不能只看最终答案，还要看：
+
+- `toolCalls`
+- `toolResults`
+- `steps`
+
+因为最终答案有时候看起来“像是对的”，但实际上根本没触发工具。
+
+## 6. `AgentResult` 里最值得看的字段
+
+`AgentResult` 当前字段很少：
+
+- `outputText`
+- `rawResponse`
+- `toolCalls`
+- `toolResults`
+- `steps`
+
+对应的排障价值是：
+
+| 字段 | 主要用途 |
+| --- | --- |
+| `outputText` | 看最终回答 |
+| `rawResponse` | 看 provider 原始响应结构 |
+| `toolCalls` | 看模型到底想调什么工具 |
+| `toolResults` | 看工具有没有真的执行，以及产出了什么 |
+| `steps` | 看 loop 跑了几轮 |
+
+## 7. Quickstart 最常见的错误，其实分别指向哪一层
+
+### 7.1 只传模型名，不传 `modelClient`
+
+这不是模型问题，而是协议适配层没装上。
+
+### 7.2 直接调 Core SDK 服务就以为进入了 Agent
+
+直接调 `IChatService` / `IResponsesService` 还不是 Agent。
+
+只有进入 `AgentRuntime` 主循环，才算真正进入 Agent 层。
+
+### 7.3 工具存在，但模型看不见
+
+这通常不是工具实现没写，而是你没把工具放进：
+
+- `toolRegistry`
+
+### 7.4 `toolRegistry(List<String>, List<String>)` 一调用就抛错
+
+这通常不是 runtime 问题，而是：
+
+- `ToolUtilRegistry`
+- `ToolUtilExecutor`
+
+对应模块没有进入 classpath。
+
+### 7.5 一上来就把 workflow / subagent / team 全叠上去
+
+这会把排障面从：
+
+- 一个 Agent
+
+瞬间扩大成：
+
+- runtime
+- tool surface
+- handoff
+- task board
+- message bus
+
+这不是快，而是更难定位。
+
+## 8. 什么时候 quickstart 已经不够用了
+
+如果你已经遇到下面这些问题之一，就说明该离开 quickstart 了：
+
+- 想判断 `ChatModelClient` 还是 `ResponsesModelClient` 更适合
+- 想理解 `systemPrompt` 和 `instructions` 到底怎么映射
+- 想做工具审批、拦截、审计
+- 想上更长会话或 memory 压缩
+- 想把 Agent 节点编排进 workflow
+- 想切到 CodeAct / SubAgent / Team
+
+quickstart 的使命是帮你先把入口打通，不是承载全部复杂度。
+
+## 9. 推荐的最小验证顺序
+
+1. 先跑无工具 Agent
+2. 再加一个最小工具白名单
+3. 再打开 trace 看 step / model / tool
+4. 再考虑 memory / workflow / subagent / team
+
+这个顺序看起来慢，实际上排障速度最快。
+
+## 10. 推荐阅读源码顺序
+
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agents.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agent.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentOptions.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/ReActRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentResult.java`
+
+## 11. 下一步读什么
+
+1. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+2. [Model Client Selection](/docs/agent/model-client-selection)
+3. [Tools and Registry](/docs/agent/tools-and-registry)
+4. [Memory and State](/docs/agent/memory-and-state)
+5. [Runtime Implementations](/docs/agent/runtime-implementations)
