@@ -2,193 +2,319 @@
 sidebar_position: 1
 ---
 
-# Agent 架构总览
+# Agent Overview
 
-`Agent` 对应仓库里的 `ai4j-agent/` 模块。
+`ai4j-agent` 是 AI4J 在 Core SDK 之上的通用 Agent runtime 模块。
 
-如果 `Core SDK` 解决的是“模型和能力怎么接”，那么 `Agent` 解决的就是“推理循环、工具调用、记忆、编排和观测怎么组织成一个可持续运行的智能体 runtime”。
+如果 `ai4j` Core SDK 解决的是“如何统一访问模型、工具、MCP、RAG 与基础 memory”，那么 `ai4j-agent` 解决的就是“这些能力如何在一个多步、可持续、可观测的运行时里协同工作”。
 
-如果你的目标是直接把本地代码仓跑成一个可交互的编码助手，请先看 [Coding Agent 专题](/docs/coding-agent/overview)。
+这一章的核心主题不是模型接入，而是 runtime 组织：
 
-## 1. 三分钟理解 Agent
+- 一轮结束后是否继续
+- 工具调用如何闭环
+- 状态怎样跨步保存
+- 何时需要 workflow、subagent、team
+- 事件如何被 trace、CLI、TUI 或 ACP 消费
 
-先记住这四句话：
+如果你的目标是做本地代码仓助手，而不是通用业务 Agent，请优先阅读 [Coding Agent](/docs/coding-agent/overview)。
 
-- `Agent` 是通用智能体 runtime，不是聊天接口的别名
-- 它建立在 `Core SDK` 之上，但不替代 `Core SDK`
-- 它重点解决 `runtime + tool loop + memory + orchestration + trace`
-- 它适合业务智能体、任务编排和多步骤推理，不等于本地 coding assistant 产品
+## 1. Agent 在整个仓库里的位置
 
-如果你要向别人解释 AI4J 的上层模块，`Agent` 的一句话定义应该是：
+仓库中的相邻模块大致可以这样理解：
 
-> 一个建立在 `ai4j` 基座之上的通用智能体运行时层。
+| 模块 | 主要职责 |
+| --- | --- |
+| `ai4j/` | 模型访问、Function Tool、MCP、RAG、向量、Audio/Image、基础 `ChatMemory` |
+| `ai4j-agent/` | Agent runtime、tool loop、state、workflow、subagent、team、trace |
+| `ai4j-coding/` | 面向代码仓任务的 outer loop、workspace-aware tools、session/compact/checkpoint |
+| `ai4j-cli/` | CLI、TUI、ACP host |
+| `ai4j-flowgram-*` | 图式工作流、任务 API、可视化节点后端整合 |
 
-## 2. 它到底解决什么问题
+因此 `Agent` 不是“聊天接口升级版”，而是上层运行时。
 
-当你已经能调用模型和工具后，真正的难点通常会转成这些问题：
+## 2. 什么时候需要进入 Agent
 
-- 多轮推理什么时候继续、什么时候停止
-- 工具该暴露哪些、怎么执行、怎么治理
-- 会话记忆如何保存、压缩和恢复
-- 单 Agent、SubAgent、Team、StateGraph 什么时候该选哪种编排方式
-- 过程怎么 trace、怎么审计、怎么调试
+当问题仍然只是“一次模型请求如何发出去”时，Core SDK 已经足够。
 
-`Agent` 这一层就是为了把这些 runtime 级问题收敛起来，而不是让每个业务项目自己再写一套 step loop。
+当问题开始变成下面这些 runtime 级问题时，就应该进入 Agent：
 
-## 3. 模块路径和能力地图
+- 需要多步推理，而不是单次问答
+- 需要模型自己决定是否调用工具
+- 需要把工具结果回灌到下一轮推理
+- 需要显式的 session 和状态隔离
+- 需要 trace、event、retry、step budget
+- 需要 StateGraph、SubAgent、Team 这类更高层编排
 
-源码主模块：
+一句话判断：
+
+> 当问题从“如何请求模型”升级为“如何组织运行时”时，就该进入 `Agent`。
+
+## 3. 这章最核心的五个设计目标
+
+### 3.1 让模型协议与执行策略解耦
+
+`AgentModelClient` 负责模型协议，`AgentRuntime` 负责执行策略。这样：
+
+- 模型可以切换 `Chat` / `Responses`
+- runtime 可以切换 `ReAct` / `CodeAct` / `DeepResearch`
+- provider 变更不会污染主循环
+
+### 3.2 让工具声明面与执行面分离
+
+`AgentToolRegistry` 只决定模型看见哪些工具，`ToolExecutor` 才决定工具如何执行。
+
+这样做的直接好处是：
+
+- 工具白名单清晰
+- 权限审批可落在执行面
+- MCP、本地函数、subagent tool surface 可以统一暴露
+
+### 3.3 让 memory 成为状态源
+
+runtime 每一轮都从 `AgentMemory` 读取上下文，并把新输入、模型输出、工具结果回写进去。
+
+这让：
+
+- session 可恢复
+- 压缩策略可替换
+- workflow / subagent / team 能围绕同一状态源协同
+
+### 3.4 让 runtime 策略可替换
+
+Agent 不假设所有任务都适合一种执行方式。
+
+- `ReActRuntime` 适合标准工具循环
+- `CodeActRuntime` 适合代码驱动的工具编排
+- `DeepResearchRuntime` 适合规划增强型流程
+
+### 3.5 让可观测性内建，而不是事后拼接
+
+`STEP_START`、`MODEL_REQUEST`、`MODEL_RESPONSE`、`TOOL_CALL`、`TOOL_RESULT`、`FINAL_OUTPUT` 等事件都来自 runtime 内部，而不是外围猜测。
+
+## 4. 代码地图
+
+主路径：
 
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent`
 
-阅读源码时，最值得先记住的是这几块：
+建议按下面顺序阅读。
 
-- `runtime`：`ReAct`、`CodeAct`、`DeepResearch` 等运行时策略
-- `tool`：tool registry、executor、sanitizer、Function/MCP bridge
-- `memory`：agent memory 与压缩
-- `workflow`：顺序流与状态图编排
-- `subagent`：handoff 与代理委派
-- `team`：多成员协作
-- `trace`：事件与 span 观测
-- `model`：`AgentModelClient`、`ChatModelClient`、`ResponsesModelClient`
+### 4.1 入口与装配
 
-核心入口类包括：
-
-- `Agent`
+- `Agents`
 - `AgentBuilder`
+- `Agent`
 - `AgentSession`
 - `AgentContext`
-- `Agents`
 
-## 4. 和相邻模块的边界
+### 4.2 模型适配
 
-### 4.1 和 Core SDK 的边界
+- `model/AgentModelClient`
+- `model/ChatModelClient`
+- `model/ResponsesModelClient`
 
-`Core SDK` 负责：
+### 4.3 运行时策略
 
-- 模型访问
-- `Function Call`
-- `Skill`
-- `MCP`
+- `runtime/BaseAgentRuntime`
+- `runtime/ReActRuntime`
+- `runtime/CodeActRuntime`
+- `runtime/DeepResearchRuntime`
+
+### 4.4 工具治理
+
+- `tool/AgentToolRegistry`
+- `tool/ToolExecutor`
+- `tool/ToolUtilRegistry`
+- `tool/ToolUtilExecutor`
+- `tool/AgentToolCallSanitizer`
+
+### 4.5 状态与压缩
+
+- `memory/AgentMemory`
+- `memory/InMemoryAgentMemory`
+- `memory/JdbcAgentMemory`
+- `memory/MemoryCompressor`
+
+### 4.6 编排与协作
+
+- `workflow/*`
+- `subagent/*`
+- `team/*`
+
+### 4.7 观测
+
+- `event/*`
+- `trace/*`
+
+## 5. 最重要的对象关系
+
+可以把 Agent 看成下面这条主链：
+
+```text
+Agents.builder()/react()/codeAct()/deepResearch()
+  -> AgentBuilder.build()
+  -> AgentContext
+  -> AgentRuntime.run(...)
+  -> AgentModelClient
+  -> AgentToolRegistry / ToolExecutor
+  -> AgentMemory
+  -> AgentEventPublisher
+```
+
+其中三条最关键的边界是：
+
+- `AgentBuilder` 负责装配，不负责执行循环
+- `AgentToolRegistry` 负责声明面，不负责权限执行
+- `AgentMemory` 负责上下文状态，不等于全部运行时状态
+
+这三条边界是理解后续页面的基础。
+
+## 6. 当前支持的主要能力面
+
+### 6.1 单 Agent
+
+最小可运行形态。适合：
+
+- 业务问答
+- 工具辅助任务
+- 标准多轮推理
+
+### 6.2 Session
+
+通过 `Agent.newSession()` 派生独立 memory。适合：
+
+- 用户会话隔离
+- 长任务分叉
+- 同一 Agent 配置复用
+
+### 6.3 Runtime 策略切换
+
+通过 `Agents.react()`、`Agents.codeAct()`、`Agents.deepResearch()` 或自定义 runtime 完成。
+
+### 6.4 Workflow / StateGraph
+
+适合“显式状态流转比自由推理更重要”的任务。
+
+### 6.5 SubAgent / Team
+
+适合把任务拆给其他 Agent 或多个成员协作执行的场景。
+
+### 6.6 Trace
+
+适合：
+
+- 调试
+- 回放
+- 审计
+- 运行时可视化
+
+## 7. 与相邻模块的边界
+
+### 7.1 与 Core SDK 的边界
+
+Core SDK 负责：
+
+- provider 接入
+- Function Tool
+- MCP
 - `ChatMemory`
-- RAG 与扩展点
+- RAG / Search / Vector
 
-`Agent` 在这之上增加的是：
+Agent 负责：
 
 - step loop
-- tool decision/runtime policy
-- agent memory
+- tool governance
+- state continuation
 - orchestration
 - trace
 
-所以 `Agent` 不是“更高级的 SDK 页面”，而是上层 runtime。
+因此 Agent 不是对 Core SDK 的替代，而是建立在 Core SDK 之上的运行时层。
 
-### 4.2 和 Coding Agent 的边界
+### 7.2 与 Coding Agent 的边界
 
 `Agent` 是通用智能体 runtime。
 
-`Coding Agent` 则是在 `Agent` 之上继续针对本地代码仓任务增加：
+`Coding Agent` 在此之上继续增加：
 
 - workspace-aware tools
-- approvals
-- session/process 管理
-- CLI / TUI / ACP 宿主
+- approval 模型
+- session persistence / compact / checkpoint
+- CLI / TUI / ACP host
 
-如果你要做业务智能体、workflow agent 或服务端 runtime，先看 `Agent`。如果你要直接做本地代码仓交互产品，先看 `Coding Agent`。
+如果你要做的是业务 Agent、平台 Agent 或服务端智能流程，先看 `Agent`；如果你要做的是本地代码仓助手，先看 `Coding Agent`。
 
-### 4.3 和 Flowgram 的边界
+### 7.3 与 Flowgram 的边界
 
-`Agent` 偏自由推理与 runtime 组织。
+`Agent` 更适合模型在运行时自由决定下一步。
 
-`Flowgram` 偏可视化节点图、稳定输入输出 schema、后端任务 API 与平台接入。
+`Flowgram` 更适合：
 
-如果你的任务天然更适合“节点图 + 明确流转”，优先看 `Flowgram`。如果更适合“模型在 runtime 中按需决定下一步”，优先看 `Agent`。
+- 显式节点图
+- 稳定输入输出 schema
+- 平台化任务 API
+- 可视化编辑与后端执行分层
 
-## 5. 运行时怎么选
-
-### ReActRuntime
-
-适合大多数通用业务 Agent：
-
-- 文本任务 + 工具调用
-- 多轮推理但不需要代码执行环境
-- 接入成本最低
-
-### CodeActRuntime
-
-适合复杂工具链和结构化任务：
-
-- 一次生成代码，代码内部多次调用工具
-- 批量工具调用和数据加工更稳定
-- 可以配合自定义沙箱
-
-### DeepResearchRuntime
-
-适合研究型或规划优先任务：
-
-- 先规划
-- 再分阶段收集证据
-- 最后结构化汇总
-
-## 6. 这层最容易混的三道边界
-
-读 `Agent` 时，最容易混掉的是三层 memory：
-
-- `ChatMemory`：`Core SDK` 的基础会话上下文
-- `AgentMemory`：`Agent` runtime 的记忆层
-- `CodingSession`：`Coding Agent` 的长期任务会话状态
-
-如果这三层经常混掉，建议连读：
-
-- [Core SDK / Memory Boundaries](/docs/core-sdk/memory/memory-and-tool-boundaries)
-- [Agent / Memory and State](/docs/agent/memory-and-state)
-
-## 7. 最小示例（可运行）
+## 8. 一个最小可运行路径
 
 ```java
 Agent agent = Agents.react()
         .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .systemPrompt("你是一个严谨的助手")
-        .instructions("需要时再调用工具")
+        .model("gpt-4.1")
+        .systemPrompt("You are a careful assistant.")
+        .instructions("Use tools only when necessary.")
         .toolRegistry(java.util.Arrays.asList("queryWeather"), null)
         .build();
 
 AgentResult result = agent.run(AgentRequest.builder()
         .input("请给出北京今天的天气摘要")
         .build());
-
-System.out.println(result.getOutputText());
 ```
 
-## 8. 推荐阅读顺序
+这段代码对应的真实语义是：
 
-建议按这个顺序进入：
+- `ResponsesModelClient` 负责模型协议
+- `ReActRuntime` 负责主循环
+- `toolRegistry(...)` 控制可见工具
+- 默认 memory 为 `InMemoryAgentMemory`
+
+## 9. 阅读路径
+
+### 9.1 想先搞清楚 Agent 为什么存在
 
 1. [Why Agent](/docs/agent/why-agent)
-2. [Agent Quickstart](/docs/agent/quickstart)
-3. [Architecture](/docs/agent/architecture)
-4. [Model Client Selection](/docs/agent/model-client-selection)
-5. [Memory and State](/docs/agent/memory-and-state)
-6. [Tools and Registry](/docs/agent/tools-and-registry)
-7. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
-8. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
-9. [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
-10. [CodeAct Custom Sandbox](/docs/agent/runtimes/codeact-custom-sandbox)
-11. [StateGraph](/docs/agent/orchestration/stategraph)
-12. [SubAgent Handoff](/docs/agent/orchestration/subagent-handoff)
-13. [Teams](/docs/agent/orchestration/teams)
-14. [Trace](/docs/agent/observability/trace)
-15. [Reference Core Classes](/docs/agent/reference-core-classes)
+2. [Architecture](/docs/agent/architecture)
 
-## 9. 如果你要拿它做生产能力
+### 9.2 想先跑通一个最小可用 Agent
 
-建议至少能回答这几个问题：
+1. [Quickstart](/docs/agent/quickstart)
+2. [Model Client Selection](/docs/agent/model-client-selection)
+3. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
 
-- 你的任务更适合 `ReAct`、`CodeAct` 还是 `DeepResearch`
-- 哪些工具应该暴露，哪些不应该暴露
-- 记忆层在哪里压缩、在哪里持久化
-- 任务是单 Agent、StateGraph、SubAgent 还是 Team
-- trace 和回归验证准备怎么做
+### 9.3 想理解 runtime 内部怎么工作
 
-如果你是第一次进入这一章，下一页建议直接看 [Why Agent](/docs/agent/why-agent)。
+1. [Architecture](/docs/agent/architecture)
+2. [Runtime Implementations](/docs/agent/runtime-implementations)
+3. [Tools and Registry](/docs/agent/tools-and-registry)
+4. [Memory and State](/docs/agent/memory-and-state)
+
+### 9.4 想看更高层编排
+
+1. [StateGraph](/docs/agent/orchestration/stategraph)
+2. [Subagent Handoff Policy](/docs/agent/subagent-handoff-policy)
+3. [Agent Teams](/docs/agent/agent-teams)
+
+### 9.5 想看观测和调试
+
+1. [Trace Observability](/docs/agent/trace-observability)
+2. [Reference Core Classes](/docs/agent/reference-core-classes)
+
+## 10. 这一章不回答什么
+
+这一章不直接回答：
+
+- 本地代码仓审批怎么做
+- CLI / TUI / ACP 宿主细节
+- Coding Agent 的 outer loop、checkpoint、compact
+- Flowgram 平台后端如何建模
+
+这些内容应分别到 `coding-agent` 或 `flowgram` 章节中理解。
