@@ -1,14 +1,23 @@
-﻿---
+---
 sidebar_position: 8
 ---
 
 # CodeAct：自定义代码沙箱执行器
 
-你要补全“CodeAct 使用自定义沙箱”的内容，这页按可落地实现来写。
+这页讲的不是“怎么把代码跑起来”，而是 CodeAct 在 AI4J 里的真实执行边界，以及你应该在哪一层替换成自己的沙箱。
 
-## 1. 先明确：CodeAct 的沙箱扩展点在哪里
+如果这个边界没看清，最容易出现两类误判：
 
-扩展点只有一个：`CodeExecutor`。
+- 以为默认 `CodeExecutor` 已经是强隔离沙箱
+- 以为自定义执行器只是在“换个解释器”，不会影响 Agent 收口语义
+
+这两种理解都不对。
+
+## 1. 先抓住 6 个关键设计决策
+
+### 1.1 CodeAct 的唯一代码执行扩展点就是 `CodeExecutor`
+
+当前接口非常窄：
 
 ```java
 public interface CodeExecutor {
@@ -16,222 +25,486 @@ public interface CodeExecutor {
 }
 ```
 
-`CodeActRuntime` 不关心你是本地解释器、容器、还是远程沙箱服务，只要你返回标准 `CodeExecutionResult` 即可。
+`CodeActRuntime` 并不关心你是：
 
-## 2. 默认执行器与边界
+- 本地解释器
+- 容器
+- 远程沙箱服务
+- 外部作业系统
 
-默认是 `GraalVmCodeExecutor`，支持 Python(GraalPy) 与 JS。
+它只关心两件事：
 
-优点：
+1. 你拿到 `CodeExecutionRequest`
+2. 你返回标准 `CodeExecutionResult`
 
-- 开箱即用
-- 能直接调用 AI4J 工具
+### 1.2 默认执行器不是“强安全沙箱”，只是默认宿主实现
 
-边界：
+`AgentBuilder` 的默认 `CodeExecutor` 选择是：
 
-- 默认不是强隔离容器沙箱
-- 生产高风险场景建议替换为你自己的执行器
+- Java 8 -> `NashornCodeExecutor`
+- 更高版本 -> `GraalVmCodeExecutor`
 
-## 3. `CodeExecutionRequest` 里你能拿到什么
+这层默认实现的定位是：
 
-- `language`：代码语言（python/js）
-- `code`：模型生成代码
-- `toolNames`：当前允许的工具名
-- `toolExecutor`：工具执行器（可用于 `callTool`）
-- `user`：当前用户上下文
-- `timeoutMs`：可用超时时间
+- 让 CodeAct 开箱可跑
+- 给模型提供代码执行 + 工具桥接能力
 
-## 4. `CodeExecutionResult` 合同（很关键）
+它不是：
 
-- `result`：最终结果（建议优先放最终可消费值）
-- `stdout`：标准输出
-- `error`：错误信息
+- 容器级隔离
+- syscall 级隔离
+- 多租户强安全执行环境
 
-`error` 为空表示成功；非空表示失败，Runtime 会把失败信息回写 memory（`CODE_ERROR`）。
+### 1.3 默认语言能力和 Java 版本强绑定
 
-## 5. 接入自定义执行器
+当前默认执行器的语言边界非常具体：
 
-```java
-Agent agent = Agents.codeAct()
-        .modelClient(modelClient)
-        .model("doubao-seed-1-8-251228")
-        .codeExecutor(new MySandboxCodeExecutor())
-        .codeActOptions(CodeActOptions.builder().reAct(true).build())
-        .build();
+- `NashornCodeExecutor` 只接受 JavaScript
+- `GraalVmCodeExecutor` 当前只接受 Python
+
+如果语言不匹配，会直接返回错误结果，而不是自动切换。
+
+所以“CodeAct 支持 Python 和 JS”这句话本身不完整，必须补上前提：
+
+- 取决于当前注入的是哪一个 `CodeExecutor`
+
+### 1.4 工具调用桥接发生在执行器内部，不在 runtime 外面
+
+`CodeActRuntime` 会把：
+
+- `toolNames`
+- `toolExecutor`
+- `user`
+
+打进 `CodeExecutionRequest`。
+
+默认执行器再把它们桥接成：
+
+- `callTool(...)`
+- 每个工具名对应的 helper function
+
+也就是说，CodeAct 的“代码里调工具”不是 runtime 直接解释 Python/JS，而是执行器自己把工具桥接埋进执行环境。
+
+### 1.5 `CodeExecutionResult` 的合同会直接改变 Agent 收口语义
+
+`CodeExecutionResult` 只有 3 个字段：
+
+- `stdout`
+- `result`
+- `error`
+
+但这 3 个字段并不只是给你记录日志，它们会直接影响：
+
+- 这次执行被判定成功还是失败
+- runtime 最终返回什么
+- `reAct=true` 时下一轮模型看到什么
+
+### 1.6 `CodeActOptions.reAct` 改变的不是执行器接口，而是执行后收口路径
+
+`CodeActOptions.reAct` 默认值是：
+
+- `false`
+
+这意味着默认 CodeAct 更偏“执行即收口”。
+
+只有当：
+
+- `reAct = true`
+
+时，执行结果才会继续回到模型，让模型再产出最终自然语言回答。
+
+## 2. 当前执行链到底怎么走
+
+理解自定义沙箱，先看默认链路：
+
+```text
+CodeActRuntime
+  -> model 产出 {"type":"code", ...} 或 {"type":"final", ...}
+  -> 构造 CodeExecutionRequest
+  -> CodeExecutor.execute(...)
+  -> CodeExecutionResult
+  -> runtime 决定直接收口 or 再回模型
 ```
 
-## 6. 实现模式 A：本地进程沙箱（推荐起步）
+关键步骤是：
 
-适合先在单机环境做可控执行。
+1. 模型先输出 code/final JSON 协议
+2. `CodeActRuntime` 解析成 `CodeActMessage`
+3. 如果是 `type=code`
+4. runtime 构造一条名为 `code` 的 `AgentToolCall`
+5. 再把代码执行真正委托给 `CodeExecutor`
+6. 执行结果转成 `CODE_RESULT` 或 `CODE_ERROR`
+7. 决定是否直接结束，或继续一轮
 
-### 6.1 核心思路
+所以你替换 `CodeExecutor`，本质上是在替换这条链的“代码执行引擎”，不是替换整个 CodeAct runtime。
 
-1. 校验语言与工具白名单
-2. 把代码写入临时文件
-3. 用受限命令启动子进程（如 `python -I`）
-4. 超时杀进程
-5. 收集 stdout/stderr 构造 `CodeExecutionResult`
+## 3. 默认执行器到底做了什么
 
-### 6.2 示例骨架
+### 3.1 `NashornCodeExecutor`
+
+主要特征：
+
+- 仅支持 JavaScript
+- 用 JDK `ScriptEngine` 跑 Nashorn
+- 开单线程池 + `Future.get(timeout)` 做超时
+- 把工具桥接注入成：
+  - `callTool(name, args)`
+  - 每个工具名对应的 JS helper function
+- 支持通过 `return` 或 `__codeact_result` 返回最终结果
+
+它是：
+
+- 解释器内执行
+- 宿主线程级超时
+
+不是：
+
+- 进程级隔离
+- 文件系统 / 网络 / 系统调用隔离
+
+### 3.2 `GraalVmCodeExecutor`
+
+主要特征：
+
+- 当前只支持 Python
+- 用 GraalPy `Context` 执行
+- 同样用单线程池 + timeout
+- 注入 `tools.call(...)` 桥接
+- 自动生成每个工具名对应的 Python helper function
+- 最终从 `__codeact_result` 或函数返回值里提取结果
+
+它的安全边界同样是：
+
+- 宿主内执行
+- 不是强安全沙箱
+
+### 3.3 默认执行器一个容易忽略的细节
+
+两个默认执行器都会根据 `user` 做工具名重写：
+
+- `user_<user>_tool_<name>`
+
+前提是 `user` 非空。
+
+这说明当前 CodeAct 工具桥接不仅传参数，也把用户上下文掺进了工具名解析逻辑。
+
+如果你自定义执行器，最好明确自己要不要保留这层语义。
+
+## 4. `CodeExecutionRequest` 里你真正拿到什么
+
+当前字段包括：
+
+- `language`
+- `code`
+- `toolNames`
+- `toolExecutor`
+- `user`
+- `timeoutMs`
+
+这些字段分别回答的是：
+
+| 字段 | 真正意义 |
+| --- | --- |
+| `language` | 模型声称要执行什么语言 |
+| `code` | 模型生成的代码文本 |
+| `toolNames` | 当前允许暴露给代码环境的工具名集合 |
+| `toolExecutor` | 宿主实际工具执行入口 |
+| `user` | 当前用户上下文 |
+| `timeoutMs` | 这轮执行期望的超时预算 |
+
+最重要的两个字段其实是：
+
+- `toolNames`
+- `toolExecutor`
+
+因为它们决定你是做“纯计算沙箱”，还是“带工具桥接的宿主型执行器”。
+
+## 5. `CodeExecutionResult` 合同为什么这么关键
+
+### 5.1 成功与否不是靠异常，而是靠 `error`
+
+`CodeExecutionResult.isSuccess()` 的定义是：
 
 ```java
-public class ProcessSandboxCodeExecutor implements CodeExecutor {
-
-    @Override
-    public CodeExecutionResult execute(CodeExecutionRequest request) throws Exception {
-        if (request == null || request.getCode() == null) {
-            return CodeExecutionResult.builder().error("code is required").build();
-        }
-
-        String language = normalize(request.getLanguage());
-        if (!"python".equals(language)) {
-            return CodeExecutionResult.builder().error("only python is allowed").build();
-        }
-
-        Path tempDir = Files.createTempDirectory("ai4j-codeact-");
-        Path script = tempDir.resolve("main.py");
-        Files.write(script, request.getCode().getBytes(StandardCharsets.UTF_8));
-
-        ProcessBuilder pb = new ProcessBuilder("python", "-I", script.toString());
-        pb.directory(tempDir.toFile());
-        Process process = pb.start();
-
-        long timeout = request.getTimeoutMs() == null ? 8000L : request.getTimeoutMs();
-        boolean finished = process.waitFor(timeout, TimeUnit.MILLISECONDS);
-        if (!finished) {
-            process.destroyForcibly();
-            return CodeExecutionResult.builder().error("code execution timeout").build();
-        }
-
-        String stdout = read(process.getInputStream());
-        String stderr = read(process.getErrorStream());
-
-        return CodeExecutionResult.builder()
-                .stdout(stdout)
-                .result(stdout == null ? null : stdout.trim())
-                .error(stderr == null || stderr.trim().isEmpty() ? null : stderr)
-                .build();
-    }
-
-    private String normalize(String lang) {
-        if (lang == null) {
-            return "python";
-        }
-        return lang.trim().toLowerCase();
-    }
-
-    private String read(InputStream input) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (sb.length() > 0) {
-                    sb.append('\n');
-                }
-                sb.append(line);
-            }
-            return sb.toString();
-        }
-    }
-}
+return error == null || error.isEmpty();
 ```
 
-> 这里是“最小版骨架”，生产上还要补资源限制与隔离策略。
+也就是说，runtime 判定成功失败的第一依据不是有没有抛异常，而是你返回的 `error`。
 
-## 7. 实现模式 B：远程沙箱服务
+如果你吃掉异常但忘了填 `error`，runtime 会把这次执行误判为成功。
 
-适合开源组件场景：SDK 不直接执行不可信代码，而是调用外部执行服务。
+### 5.2 `stdout` 和 `result` 不是一回事
 
-### 7.1 思路
+这两个字段的语义应该分清：
 
-- `CodeExecutor` 里只做 HTTP RPC
-- 请求体包含 `language/code/timeout/tool-policy`
-- 返回统一 `result/stdout/error`
+- `stdout`
+  - 过程输出
+- `result`
+  - 最终想交给 runtime 消费的值
 
-### 7.2 示例骨架
+如果你把所有结果都塞进 `stdout`，runtime 在 `reAct=false` 的时候可能只能退回到更弱的 fallback 行为。
 
-```java
-public class RemoteSandboxCodeExecutor implements CodeExecutor {
+### 5.3 `error` 不只是给日志看
 
-    private final OkHttpClient client;
-    private final String endpoint;
+当执行失败时，`CodeActRuntime` 会构造：
 
-    public RemoteSandboxCodeExecutor(OkHttpClient client, String endpoint) {
-        this.client = client;
-        this.endpoint = endpoint;
-    }
+- `CODE_ERROR: ...`
 
-    @Override
-    public CodeExecutionResult execute(CodeExecutionRequest request) throws Exception {
-        String body = JSON.toJSONString(request);
-        Request httpRequest = new Request.Builder()
-                .url(endpoint)
-                .post(RequestBody.create(MediaType.parse("application/json"), body))
-                .build();
+并写回 memory。
 
-        try (Response response = client.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                return CodeExecutionResult.builder().error("sandbox http error: " + response.code()).build();
-            }
-            String json = response.body() == null ? "" : response.body().string();
-            return JSON.parseObject(json, CodeExecutionResult.class);
-        }
-    }
-}
+这意味着 `error` 会直接影响下一轮模型对执行失败的理解。
+
+## 6. `reAct=false` 和 `reAct=true` 的真实差异
+
+### 6.1 `reAct=false`
+
+这是默认模式。
+
+执行器返回后，runtime 会尽可能直接结束。
+
+优先级大致是：
+
+1. 先尝试取成功执行的 `result`
+2. 否则退回 `stdout`
+3. 再不行退回工具输出 JSON
+4. 失败时退回 `CODE_ERROR`
+
+所以在 `reAct=false` 下，你的执行器返回值质量会直接决定最终用户答案质量。
+
+### 6.2 `reAct=true`
+
+执行器返回后，runtime 不会立即把结果当最终答案。
+
+它会把：
+
+- `CODE_RESULT: ...`
+  或
+- `CODE_ERROR: ...`
+
+以 system message 的形式写回 memory，再让模型继续一轮，把结果整理成：
+
+```json
+{"type":"final","output":"..."}
 ```
 
-## 8. 工具调用在自定义沙箱里怎么做
+所以 `reAct=true` 的收益是：
 
-你有两种策略：
+- 答案更自然
+- 模型能对执行结果再解释
 
-1. **Host 回调模式**：沙箱内代码通过桥接函数调用 `request.getToolExecutor()`
-2. **先禁用工具**：沙箱只做纯计算，不允许工具调用
+代价是：
 
-建议开源默认策略：
+- 多一轮 token
+- 多一轮延迟
 
-- 默认只开白名单工具
-- 参数做 JSON Schema 校验
-- 高风险工具默认禁用
+## 7. 什么时候应该自定义 `CodeExecutor`
 
-## 9. 与 `CodeActOptions.reAct` 的配合
+你通常在下面几种情况下该换掉默认执行器：
 
-- `reAct=false`：你的执行器返回结果后可直接结束
-- `reAct=true`：执行结果会再回给模型整理为自然语言
+### 7.1 需要真正的隔离边界
 
-这两种模式对“执行器实现”没有破坏性差异，执行器只需保证 `CodeExecutionResult` 正确。
+例如：
 
-## 10. 生产安全清单（强烈建议）
+- 多租户执行
+- 不可信代码
+- 生产合规要求
 
-1. 时间限制：每次执行必须有 timeout。
-2. 资源限制：CPU/内存/进程数。
-3. 文件系统限制：只允许临时目录。
-4. 网络限制：默认无外网（除非明确需要）。
-5. 工具限制：白名单 + 参数校验。
-6. 审计日志：记录代码摘要、工具调用、耗时、退出状态。
+### 7.2 需要进程 / 容器 / K8s / 远程执行环境
 
-## 11. 观测建议
+默认宿主内解释器已经不够。
 
-结合 trace + 事件流看三段耗时：
+### 7.3 需要更严格的资源治理
 
-- `MODEL`：代码生成时间
-- `TOOL(type=code)`：沙箱执行时间
-- 下一轮 `MODEL`：结果整理时间（`reAct=true` 时）
+例如：
 
-## 12. 常见坑
+- CPU
+- 内存
+- 文件系统
+- 网络
+- 子进程数量
 
-1. `error` 字段不填导致失败被误判为成功。
-2. 忽略 `timeoutMs` 导致执行悬挂。
-3. 自定义执行器没处理编码，中文输出乱码。
-4. 工具白名单缺失，出现越权调用。
+### 7.4 需要更可控的审计链路
 
-## 13. 关联源码与测试
+例如：
 
-- `CodeExecutor`
-- `CodeExecutionRequest`
-- `CodeExecutionResult`
-- `GraalVmCodeExecutor`
-- `CodeActRuntime`
-- `CodeActRuntimeTest`
-- `CodeActRuntimeWithTraceTest`
+- 执行前静态检查
+- 执行后产出审计记录
+- 代码片段归档
 
-你可以先实现一个最小 `ProcessSandboxCodeExecutor` 跑通，再演进到远程沙箱。
+## 8. 两种更靠谱的实现模式
+
+### 8.1 模式 A：本地进程沙箱
+
+适合：
+
+- 单机部署
+- 起步验证
+- 比宿主内解释器更强一些的隔离
+
+核心思路：
+
+1. 校验 `language`
+2. 生成临时工作目录
+3. 把代码落盘
+4. 用受限解释器进程执行
+5. 超时杀进程
+6. 收集 stdout/stderr
+7. 构造标准 `CodeExecutionResult`
+
+这条路线的优点是：
+
+- 简单
+- 可控
+- 比宿主内执行更容易管超时和清理
+
+缺点是：
+
+- 仍然不是容器级隔离
+
+### 8.2 模式 B：远程沙箱服务
+
+适合：
+
+- 平台化执行
+- 多租户环境
+- 需要统一审计和资源池
+
+核心思路：
+
+- `CodeExecutor` 本地只做 RPC client
+- 远程服务负责真正执行
+- 返回统一的 `CodeExecutionResult`
+
+这条路线最大的好处是：
+
+- SDK 不直接执行不可信代码
+- 隔离与审计都能集中治理
+
+## 9. 工具桥接在自定义沙箱里应该怎么做
+
+这里有两条路线，必须自己选清楚。
+
+### 9.1 纯计算模式
+
+不开放工具调用。
+
+这时你可以：
+
+- 忽略 `toolExecutor`
+- 只允许纯代码计算
+
+优点是安全模型最简单。
+
+### 9.2 宿主桥接模式
+
+把 `toolExecutor` 暴露给代码环境中的桥接函数。
+
+这时要明确处理：
+
+- 工具白名单
+- 参数序列化
+- 用户上下文
+- 超时与并发
+- 越权调用
+
+一个非常现实的建议是：
+
+- 开源默认策略应偏保守
+- 默认不开高风险工具
+- 参数校验不能只靠模型自觉
+
+## 10. 一个更稳的实现骨架应该考虑什么
+
+无论本地还是远程，至少要把下面这些点写进实现：
+
+### 10.1 语言校验
+
+不要相信模型一定会遵守你希望的语言。
+
+### 10.2 超时
+
+`request.getTimeoutMs()` 不该被忽略。
+
+### 10.3 编码
+
+stdout / stderr / result 的编码必须稳定，否则中文输出极易乱码。
+
+### 10.4 结果归一化
+
+明确：
+
+- 哪些值进 `result`
+- 哪些值进 `stdout`
+- 什么情况下填 `error`
+
+### 10.5 工具调用治理
+
+如果开放工具桥接，执行器本身就是安全边界的一部分。
+
+## 11. 生产环境最少要补哪些安全约束
+
+至少应明确：
+
+1. 时间限制
+2. CPU / 内存上限
+3. 文件系统范围
+4. 网络访问策略
+5. 工具白名单
+6. 参数校验
+7. 审计日志
+8. 清理策略
+
+默认执行器只覆盖了其中非常小的一部分。
+
+## 12. 观测时应该看哪几段
+
+如果 trace 已打开，CodeAct 最值得分三段看：
+
+1. 第一轮 `MODEL`
+   看模型生成代码用了多久。
+2. `TOOL(type=code)`
+   看沙箱执行本身用了多久。
+3. 下一轮 `MODEL`
+   只在 `reAct=true` 时存在，用来看模型如何整理执行结果。
+
+如果这三段混在一起看，很难知道慢点到底在模型还是执行器。
+
+## 13. 最常见的坑
+
+### 13.1 返回了错误，但没填 `error`
+
+runtime 会误判成功。
+
+### 13.2 忽略 `timeoutMs`
+
+执行悬挂时，Agent 体验会非常差。
+
+### 13.3 把 `stdout` 当最终结果
+
+在 `reAct=false` 模式下，这会让最终收口变得不可控。
+
+### 13.4 开了工具桥接，但没做白名单和参数治理
+
+这相当于把宿主能力直接暴露给模型生成代码。
+
+### 13.5 以为默认执行器已经是生产安全沙箱
+
+它不是。
+
+## 14. 推荐阅读源码顺序
+
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/CodeExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/CodeExecutionRequest.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/CodeExecutionResult.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/NashornCodeExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/codeact/GraalVmCodeExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/CodeActRuntime.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActRuntimeTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActRuntimeWithTraceTest.java`
+
+## 15. 继续阅读
+
+1. [CodeAct Runtime](/docs/agent/codeact-runtime)
+2. [Runtime Implementations](/docs/agent/runtime-implementations)
+3. [Tools and Registry](/docs/agent/tools-and-registry)
+4. [Trace 与可观测性](/docs/agent/trace-observability)
