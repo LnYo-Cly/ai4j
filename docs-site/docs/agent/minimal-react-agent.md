@@ -4,93 +4,81 @@ sidebar_position: 2
 
 # 最小 ReAct Agent
 
-这一页讲的不是“最短 demo”，而是 AI4J 中最小且正确的 Agent 构造路径。
+这页讲的不是“最短 demo”，而是 AI4J Agent 层最小但完整的运行闭环。
 
-所谓“最小”，不是把所有能力都塞进一个例子，而是只保留真正构成 Agent loop 的几项要素：
+所谓“最小”，不是只剩几行代码，而是只保留真正构成 Agent loop 的必要部件：
 
 - 一个 `AgentModelClient`
-- 一个明确的 `model`
-- 一个可替换的 `AgentRuntime`
-- 一个可持续累积状态的 `AgentMemory`
-- 可选的工具白名单
+- 一个 `model`
+- 一个 `AgentRuntime`
+- 一个 `AgentMemory`
+- 可选的工具声明面与执行面
 
-如果你还没有把这一层跑通，不应该先进入 CodeAct、StateGraph、SubAgent 或 Agent Teams。
+如果这一层还没跑通，不应该先上 CodeAct、SubAgent、StateGraph 或 Agent Teams。
 
-## 1. 这页解决什么问题
+## 1. 先抓住 3 个关键设计决策
 
-很多工程第一次接 Agent 时，会把下面几类概念混在一起：
+### 1.1 ReAct 不是“一个模式”，而是默认 runtime
 
-- “一次模型调用” 和 “多步 Agent loop”
-- “模型能看到哪些工具” 和 “工具真正怎么执行”
-- “单轮输出” 和 “带记忆的持续会话”
-- “ReAct 风格工具循环” 和 “代码执行型 runtime”
+`Agents.react()` 本质上不是一个完全不同的产品入口，而是对 `AgentBuilder` 的一层快捷封装。
 
-最小 ReAct Agent 的意义，就是先把默认主线跑通，再决定要不要往上叠加更复杂的编排层。
+从 `AgentBuilder.build()` 的默认装配看：
 
-## 2. 为什么先从 ReAct 开始
+- `runtime == null` 时默认使用 `ReActRuntime`
+- `memorySupplier == null` 时默认使用 `InMemoryAgentMemory::new`
+- `toolRegistry == null` 时默认使用 `StaticToolRegistry.empty()`
 
-`Agents.react()` 是当前 AI4J Agent 层的默认入口。它最终仍然走 `AgentBuilder.build()`，只是把 runtime 预设为 ReAct 主线。
+也就是说，ReAct 不是额外插件，而是 Agent 层默认主线。
 
-在 `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java` 中，`build()` 的默认装配顺序是：
+### 1.2 最小 Agent 即使没有工具也仍然成立
 
-1. `runtime == null` 时使用 `ReActRuntime`
-2. `memorySupplier == null` 时使用 `InMemoryAgentMemory`
-3. `toolRegistry == null` 时使用 `StaticToolRegistry.empty()`
-4. 未显式提供 `ToolExecutor` 时，按当前工具白名单创建默认执行器
-5. 配置了 subagent 时，再用 `SubAgentToolExecutor` 包装工具执行链
+很多人第一次接 Agent，会以为“没有 tool call 就不算 Agent”。
 
-也就是说，ReAct 不是额外模式，而是 AgentBuilder 的默认执行语义。
+这在 AI4J 里不对。
 
-它适合下面这些任务：
+即使 `toolRegistry` 是空的，最小 ReAct Agent 仍然具备：
 
-- 模型自行判断是否需要调用工具
-- 工具结果回灌后继续下一轮推理
-- 会话状态保存在 memory 中
-- 不需要执行模型生成的代码
-- 不需要显式状态图或多人协作
+- 统一的 `AgentPrompt` 组装
+- `AgentMemory` 状态累积
+- step loop
+- streaming / event / trace 接入点
 
-## 3. AI4J 里的 ReAct 是什么
+工具只是让 loop 更有外部操作能力，不是 Agent 成立的前提。
 
-AI4J 的 `ReActRuntime` 是现代 tool-calling 语义下的 ReAct 风格循环，不是论文式显式 `Thought -> Action -> Observation` 文本协议。
+### 1.3 Session 隔离只换 memory，不换整套运行环境
 
-它的主循环更接近下面这条链路：
+`Agent.newSession()` 的实现非常重要：
 
-```text
-Agent.run(request)
-  -> ReActRuntime.run(...)
-  -> BaseAgentRuntime.runInternal(...)
-  -> buildPrompt(memory + tools + prompts)
-  -> modelClient.create(...)
-  -> normalizeToolCalls(...)
-  -> toolExecutor.execute(...)
-  -> memory.addToolOutput(...)
-  -> next step or final output
+```java
+AgentMemory memory = memorySupplier == null ? baseContext.getMemory() : memorySupplier.get();
+AgentContext sessionContext = baseContext.toBuilder().memory(memory).build();
 ```
 
-这样设计的原因很明确：
+这意味着新 session 会复用：
 
-- 可以直接复用 provider 原生 `tool_calls / function_call_output`
-- 工具参数校验、并行调用、事件流、trace 更容易统一
-- 同一套基础设施可以继续承载 SubAgent、MCP、Agent Teams
+- 同一个 runtime
+- 同一个 model client
+- 同一个 tool registry
+- 同一个 tool executor
 
-因此，“最小 ReAct Agent” 的重点不是复刻论文提示词，而是建立一个稳定的运行时闭环。
+只替换 `memory`。
 
-## 4. 最小对象关系
+所以 session 的边界是“状态隔离”，不是“运行环境隔离”。
 
-最小 ReAct Agent 涉及的核心对象如下：
+## 2. 这页真正解决什么问题
 
-| 对象 | 角色 | 你什么时候要关心它 |
-| --- | --- | --- |
-| `Agents.react()` | 快速入口 | 需要默认 ReAct runtime 时 |
-| `AgentBuilder` | 装配器 | 需要理解默认值和扩展点时 |
-| `Agent` | 执行入口 | 直接 `run(...)`、`runStream(...)`、`newSession()` |
-| `ReActRuntime` | 默认 loop 策略 | 需要理解工具循环何时继续、何时停止时 |
-| `AgentModelClient` | 模型适配层 | Chat / Responses / 自定义协议接入 |
-| `AgentToolRegistry` | 工具声明面 | 控制模型“看得到什么工具” |
-| `ToolExecutor` | 工具执行面 | 权限审批、拦截、审计、真正执行 |
-| `AgentMemory` | 状态源 | 历史输入、模型输出、工具结果都在这里 |
+最小 ReAct Agent 的价值，不是教你拼一段 demo，而是先把下面几组概念拆开：
 
-一个最小 Agent 真正跑起来时，依赖关系是：
+- 一次模型调用 vs 多步 Agent loop
+- 工具暴露面 vs 工具执行面
+- 单次运行 vs 会话持续
+- runtime 策略 vs 模型协议
+
+把这些边界先理顺，后面的 CodeAct、SubAgent、Teams 才不会越学越乱。
+
+## 3. 最小对象图
+
+最小 ReAct Agent 涉及的核心对象并不多，但关系必须先看清：
 
 ```text
 Agents.react()
@@ -103,9 +91,85 @@ Agents.react()
   -> AgentToolRegistry + ToolExecutor
 ```
 
-## 5. 最小可用示例
+其中最关键的职责分工是：
 
-从工程角度看，最小可用组合应该至少显式设置：
+| 对象 | 真正职责 |
+| --- | --- |
+| `AgentBuilder` | 装配默认依赖和执行链 |
+| `Agent` | 暴露 `run(...)`、`runStream(...)`、`newSession()` |
+| `ReActRuntime` | 决定 loop 如何推进 |
+| `AgentModelClient` | 适配底层模型协议 |
+| `AgentMemory` | 保存输入、输出、工具结果 |
+| `AgentToolRegistry` | 告诉模型“有哪些工具” |
+| `ToolExecutor` | 决定工具“真正怎么执行” |
+
+最容易混淆的就是最后两项。AI4J 从设计上就把“声明能力”和“执行能力”拆开了。
+
+## 4. `AgentBuilder` 默认装配链到底做了什么
+
+理解最小 ReAct Agent，最值得直接读的类其实是 `AgentBuilder`。
+
+它在 `build()` 里做的不是简单 `new Agent(...)`，而是一整套默认装配：
+
+1. 解析 runtime
+   - 默认 `ReActRuntime`
+2. 解析 memory supplier
+   - 默认 `InMemoryAgentMemory::new`
+3. 解析基础工具注册器
+   - 默认 `StaticToolRegistry.empty()`
+4. 若配置了 SubAgent，再合并 subagent tools
+5. 若未显式提供 `ToolExecutor`，尝试基于工具名创建默认执行器
+6. 解析默认 `CodeExecutor`
+   - Java 8 -> `NashornCodeExecutor`
+   - 更高版本 -> `GraalVmCodeExecutor`
+7. 构造 `AgentContext`
+
+这条装配链说明了一件很重要的事：
+
+- ReAct Agent 的最小可运行状态，不需要你自己手动拼装一堆对象
+- 但一旦你要治理工具、替换 memory、插入 subagent 或切换 runtime，就必须回到 `AgentBuilder` 理解默认行为
+
+## 5. `ReActRuntime` 在当前实现里到底有多“薄”
+
+很多人会以为 ReActRuntime 自己有很多复杂逻辑，但实际上当前实现非常薄：
+
+- `runtimeName() -> "react"`
+- `runtimeInstructions() -> "Use tools when necessary. Return concise final answers."`
+
+真正的主循环几乎都在 `BaseAgentRuntime`。
+
+这有两个直接含义：
+
+1. ReAct 是“最贴近框架默认能力”的 runtime
+2. 你调 ReAct 行为时，很多问题其实应该回去看 `BaseAgentRuntime`
+
+## 6. 最小执行链是怎么跑起来的
+
+最小 ReAct Agent 的一次 `run(...)`，关键流程如下：
+
+1. `Agent.run(request)`
+2. `ReActRuntime.run(...)`
+3. `BaseAgentRuntime.runInternal(...)`
+4. 把用户输入写进 `AgentMemory`
+5. `buildPrompt(...)` 组装 `AgentPrompt`
+6. `AgentModelClient.create(...)` 或 `createStream(...)`
+7. 若模型返回 `memoryItems`，写回 memory
+8. 归一化 `toolCalls`
+9. 校验工具调用
+10. 调 `ToolExecutor.execute(...)`
+11. 把工具结果回写 memory
+12. 无工具调用则结束，否则下一轮继续
+
+这条链路最关键的地方在于：
+
+- 工具结果不是直接返回给业务层
+- 而是先写进 memory，再决定下一轮 prompt 长什么样
+
+所以 Agent 的本质不是“一问一答”，而是“输出反过来塑造下一轮输入”。
+
+## 7. 最小可用示例到底应该验证什么
+
+从工程角度，最小可用示例至少要显式设置：
 
 - `modelClient(...)`
 - `model(...)`
@@ -122,204 +186,165 @@ Agent agent = Agents.react()
 AgentResult result = agent.run(AgentRequest.builder()
         .input("用一句话介绍 AI4J Agent")
         .build());
-
-System.out.println(result.getOutputText());
 ```
 
-这个例子跑通后，你已经验证了下面几件事：
+这个例子真正验证的是：
 
-- `AgentModelClient` 能正常请求模型
-- `ReActRuntime` 的主循环可以执行
-- `AgentMemory` 能承载输入与输出
-- 最终结果能从 `AgentResult` 取回
+- 模型链路是否打通
+- runtime 是否能运行
+- `AgentMemory` 是否正常累积输入输出
+- `AgentResult` 是否能正确收口
 
-这里有一个需要说清的事实：
+它并不是在验证工具调用，因为这一步还没引入工具。
 
-- `AgentBuilder.build()` 只强制要求 `modelClient`
-- 但从工程实践看，`model(...)` 仍然应当显式传入，避免运行时依赖 provider 默认模型
+## 8. “空工具 Agent” 和“带工具 Agent”的边界
 
-## 6. 加工具之前，先理解“空工具 Agent”
+### 8.1 不带工具时
 
-即使不配置任何工具，ReAct Agent 依然成立。
+你得到的是：
 
-这时它只是：
+- 一个带 memory 的模型运行时
+- 一个可多步推进的 loop
+- 一个可插入 trace / stream / event 的执行入口
 
-- 有 loop 能力的模型运行时
-- 有 memory 的多轮执行入口
-- 可以接 trace / event / streaming
+### 8.2 带工具时
 
-它和直接调用 Core SDK 的差别在于，后续你随时可以继续叠加：
+你才真正进入：
 
-- 工具白名单
-- Session
-- 内存压缩
-- SubAgent
-- Teams
+- 工具暴露面
+- 参数校验
+- 工具执行
+- 工具结果回灌
 
-而不需要把调用方式整体推倒重写。
+因此学习顺序应该是：
 
-## 7. 最小工具接入应该怎么做
+1. 先跑通空工具 Agent
+2. 再接最小工具白名单
+3. 再讨论治理和扩展
 
-真正需要工具时，建议先从严格白名单开始，而不是把所有可用能力一次性暴露出去。
+否则很容易把问题混在一起。
 
-```java
-Agent agent = Agents.react()
-        .modelClient(new ChatModelClient(chatService))
-        .model("gpt-4o-mini")
-        .systemPrompt("你是一个严谨的天气助手")
-        .instructions("只在必要时调用工具，最终回答保持简洁。")
-        .toolRegistry(
-                java.util.Arrays.asList("queryWeather"),
-                java.util.Collections.<String>emptyList()
-        )
-        .options(AgentOptions.builder()
-                .maxSteps(6)
-                .build())
-        .build();
-```
+## 9. 工具接入为什么一定要先理解 `Registry` 和 `Executor`
 
-然后执行：
+这几乎是整个 Agent 层最重要的边界之一。
 
-```java
-AgentResult result = agent.run(AgentRequest.builder()
-        .input("给出北京今天的天气摘要")
-        .build());
-```
+### 9.1 `AgentToolRegistry`
 
-这里的设计重点不是“加了一个天气工具”，而是分清两层职责：
+它回答的问题只有一个：
 
-- `toolRegistry(...)` 决定模型可见工具面
-- `ToolExecutor` 决定工具真正如何执行
+> 模型能看到哪些工具？
 
-这也是 AI4J 权限审批、执行拦截、参数治理可以落地的基础。
+### 9.2 `ToolExecutor`
 
-## 8. 便捷 `toolRegistry(...)` API 的边界
+它回答的问题也只有一个：
 
-`AgentBuilder` 提供的便捷写法：
+> 当模型真的发起调用时，系统怎么执行它？
+
+这种拆分带来的工程收益非常大：
+
+- 工具白名单可以稳定存在
+- 权限审批不必写在 schema 里
+- 审计、限流、沙箱、代理转发可以挂在执行面
+
+所以如果你的目标是做权限治理，重点永远在 `ToolExecutor`，不是在“把工具藏起来”。
+
+## 10. 便捷 `toolRegistry(List<String>, List<String>)` 的真实边界
+
+`AgentBuilder` 提供了一个很顺手的入口：
 
 ```java
 .toolRegistry(Arrays.asList("queryWeather"), Collections.<String>emptyList())
 ```
 
-本质上不是核心抽象，而是基于反射去创建：
+但它本质上是一个反射式 convenience API，会尝试初始化：
 
 - `ToolUtilRegistry`
 - `ToolUtilExecutor`
 
-如果对应集成模块不在 classpath 中，`build()` 会抛出 `IllegalStateException`。
+如果对应模块不在 classpath 中，`build()` 会直接抛 `IllegalStateException`。
 
-所以要区分两个层次：
+所以这条 API 更适合：
 
-- 写 demo、快速接工具，用便捷 API
-- 做稳定集成、权限治理、自定义执行链时，显式提供 `AgentToolRegistry` 和 `ToolExecutor`
+- 快速 demo
+- 已知工具模块完整可用的场景
 
-## 9. 执行链路到底发生了什么
+如果你在做稳定工程集成，应该显式提供：
 
-最小 ReAct Agent 运行一轮时，关键流程如下：
+- `AgentToolRegistry`
+- `ToolExecutor`
 
-1. `Agent.run(...)` 把输入写入 `AgentMemory`
-2. `BaseAgentRuntime.buildPrompt(...)` 把 memory、system prompt、instructions、tools 组装成 `AgentPrompt`
-3. `AgentModelClient.create(...)` 请求模型
-4. 如果模型返回普通文本且没有工具调用，本轮结束
-5. 如果模型返回 `tool_calls`，runtime 会先做归一化和参数校验
-6. 合法工具调用交给 `ToolExecutor.execute(...)`
-7. 工具结果以 output item 的形式回写 memory
-8. 下一轮重新组 prompt，直到没有新的工具调用或达到停止条件
+## 11. 默认值和失败语义里最容易踩的坑
 
-这就是 Agent 和一次性 Chat/Responses 调用的根本区别：结果不是“一问一答”，而是“模型输出驱动下一轮执行”。
+### 11.1 `maxSteps = 0` 不是安全默认值
 
-## 10. 什么时候再引入 Session
+`BaseAgentRuntime.runInternal(...)` 中：
 
-`Agent` 和 `AgentSession` 的边界很重要。
+- `maxSteps > 0` 才算有步数上限
+- 否则 loop 没有硬限制
 
-如果只是一次任务：
+这对实验方便，但对生产通常不合适。
 
-```java
-AgentResult result = agent.run(request);
+### 11.2 工具错误默认会被写回 memory，而不是直接抛出
+
+`executeTool(...)` 会捕获异常，并构造成：
+
+```text
+TOOL_ERROR: {"error":"...","tool":"...","callId":"..."}
 ```
 
-如果要维持持续对话：
+然后继续主循环。
 
-```java
-AgentSession session = agent.newSession();
-session.run("先记住我在北京");
-session.run("现在根据这个前提继续回答");
-```
+这意味着默认语义是：
 
-但要知道 `newSession()` 的语义非常具体：
+- 工具失败优先作为“可恢复上下文”
+- 而不是“立即终止整轮运行”
 
-- 会复用同一个 runtime
-- 会复用同一个 model client
-- 会复用同一个 tool registry / tool executor
-- 只替换 `AgentMemory`
+### 11.3 并行工具调用依赖执行器线程安全
 
-因此它隔离的是会话状态，不是整套运行环境。
+只有在下面两个条件都成立时才会并行：
 
-## 11. 默认值与失败语义
+- `parallelToolCalls == true`
+- 同一轮合法 tool calls 数量大于 1
 
-最小 ReAct Agent 跑通后，通常最容易忽略以下几个默认行为。
+并行是 runtime 自己开的线程池，所以你自定义的 `ToolExecutor` 必须自己满足线程安全。
 
-### 11.1 `maxSteps` 默认不是生产安全值
+## 12. `Agent` 和 `AgentSession` 的真实边界
 
-`AgentOptions.maxSteps` 默认是 `0`，语义是“不限制步数”。
+### `Agent`
 
-这对实验方便，但对生产环境通常不合适。建议一开始就显式设置上限，例如 `4`、`6`、`8`。
+更像“共享配置和默认依赖的运行入口”。
 
-### 11.2 工具失败默认不会立刻终止整个运行
+### `AgentSession`
 
-在 `BaseAgentRuntime` 中，工具异常通常会被转换成错误结果回写 memory，而不是直接把整条链路打断。
+更像“在相同运行环境下换了一块新的 memory”。
 
-这意味着：
+因此：
 
-- 模型有机会基于错误结果继续修正
-- 但如果你希望某些工具错误立即失败，应该在执行层自己实现更严格的策略
+- 想换用户上下文或会话状态，用 `newSession()`
+- 想换 runtime、工具面、执行权限或模型配置，重新 `build()` 一个 Agent 更清晰
 
-### 11.3 并行工具调用要求执行器线程安全
+## 13. 什么时候该离开“最小 ReAct”
 
-当 `parallelToolCalls == true` 且一轮中存在多个合法工具调用时，runtime 可能并行执行它们。
-
-如果你自定义了 `ToolExecutor`，就要自己保证：
-
-- 线程安全
-- 幂等性
-- 正确的超时与资源回收
-
-## 12. 什么时候不该再停留在最小 ReAct
-
-当需求升级到下面这些场景时，继续停留在“最小 ReAct”就不够了：
+继续停留在最小 ReAct 不够用，通常是因为你已经遇到下面这些情况之一：
 
 - 需要执行模型生成的代码：进入 [CodeAct Runtime](/docs/agent/codeact-runtime)
-- 需要显式节点、条件分支、状态推进：进入 [StateGraph](/docs/agent/orchestration/stategraph)
+- 需要显式节点和状态推进：进入 [Workflow StateGraph](/docs/agent/workflow-stategraph)
 - 需要主从委派：进入 [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
-- 需要团队级协作、任务板、消息总线：进入 [Agent Teams](/docs/agent/agent-teams)
+- 需要团队协作：进入 [Agent Teams](/docs/agent/agent-teams)
 
-关键判断标准不是“功能多不多”，而是当前任务是否已经超出单一 ReAct loop 的边界。
+判断标准不是“功能多不多”，而是当前问题是否还属于单一 tool loop。
 
-## 13. 推荐阅读源码入口
+## 14. 推荐阅读源码顺序
 
-如果你要从文档继续下钻源码，建议按下面顺序看：
-
-- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agents.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agent.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/ReActRuntime.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolRegistry.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java`
 
-## 14. 推荐验证用例
-
-如果你想确认这一层行为，不要只看 demo，优先看测试：
-
-- `ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActRuntimeTest.java`
-- `ai4j-agent/src/test/java/io/github/lnyocly/agent/SubAgentRuntimeTest.java`
-- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamTest.java`
-
-虽然这些测试覆盖的是更高层功能，但它们都建立在同一套 `AgentBuilder + Runtime + ToolExecutor + Memory` 主线上。
-
-## 15. 下一步读什么
-
-读完这一页后，建议继续：
+## 15. 继续阅读
 
 1. [Agent Architecture](/docs/agent/architecture)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
