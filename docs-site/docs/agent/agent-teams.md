@@ -2,165 +2,154 @@
 sidebar_position: 11
 ---
 
-# Agent Teams 详解（队员管理 + 任务管理 + 信息管理）
+# Agent Teams
 
-本页是 AI4J Agent Teams 的完整使用与设计说明，重点覆盖：
+`AgentTeam` 是 AI4J 在单 Agent 之上的团队编排层。
 
-- 如何只配置 `leadAgent` 就跑起来；
-- 如何管理队员、任务、消息；
-- 如何让队员通过 `team_*` 工具主动协作；
-- 如何把 Team 状态和消息落盘并显式恢复；
-- 如何在工程上做回退、治理与排障。
+它解决的不是“再多开几个 Agent 实例”，而是把多角色协作过程显式建模为：
 
----
+- 规划器
+- 任务板
+- 成员执行
+- 消息总线
+- 团队工具
+- 状态快照与恢复
+
+如果 SubAgent 代表“主 Agent 把一个专项任务委派出去”，那么 Agent Teams 代表“多个成员围绕同一个目标持续协作”。
 
 ## 1. Agent Teams 解决什么问题
 
-当一个目标需要多角色协作时（例如：采集 -> 分析 -> 格式化 -> 风险校验），单 Agent 往往会出现：
+单 Agent 在下面这些场景里通常不够用：
 
-- 上下文混杂，角色边界不清；
-- 任务依赖不透明，失败重试困难；
-- 结果可以生成，但过程不可审计。
+- 一个目标需要分多个角色完成
+- 任务之间存在依赖关系
+- 需要显式记录谁在做什么
+- 需要成员间主动发消息、转派任务、保活任务
+- 需要保留团队运行快照，用于恢复或审计
 
-Agent Teams 的设计目标是把“多角色协作过程”结构化：
+把这些能力直接塞进一个大 prompt，会很快变成不可维护的黑盒。
 
-- Lead 负责规划、调度、汇总；
-- Members 负责执行任务；
-- TaskBoard 负责任务状态与依赖；
-- MessageBus 负责成员间信息流转。
+Agent Teams 的设计目标，是把“协作过程”从提示词技巧提升为结构化运行时。
 
----
+## 2. 它和 SubAgent / Workflow 的边界
 
-## 2. 与 SubAgent 的边界
+| 能力 | 核心模式 | 适合什么场景 | 不负责什么 |
+| --- | --- | --- | --- |
+| `SubAgent` | 主从 handoff | 主 Agent 把专项能力封装成工具委派出去 | 团队状态、任务板、消息总线 |
+| `AgentTeam` | 团队协作 | 多成员围绕同一 objective 协作 | 显式状态图级别的节点 DSL |
+| `Workflow / StateGraph` | 图式编排 | 需要节点、边、条件路由、状态推进 | 成员级消息协作与团队治理 |
 
-- **SubAgent**：主从 handoff 模式，偏“委派工具调用”。
-- **Agent Teams**：共享任务板模式，偏“团队协同执行”。
+这三个能力不是互斥关系，但抽象层级不同：
 
-简单记忆：
+- SubAgent 偏委派
+- Team 偏协作
+- Workflow 偏图式编排
 
-- SubAgent 更像“主 Agent 调子代理工具”；
-- Teams 更像“项目组协作”。
+## 3. 核心对象关系
 
----
+Agent Teams 的核心对象如下：
 
-## 3. 执行模型（当前实现）
+| 对象 | 角色 | 关键职责 |
+| --- | --- | --- |
+| `AgentTeamBuilder` | 装配入口 | 组装 lead/planner/synthesizer、members、options、storage |
+| `AgentTeam` | 团队运行时 | 执行规划、派发、汇总、状态恢复、团队工具注入 |
+| `AgentTeamPlanner` | 规划器抽象 | 把 objective 变成结构化任务集合 |
+| `AgentTeamSynthesizer` | 汇总器抽象 | 把成员结果合成为最终输出 |
+| `AgentTeamTaskBoard` | 任务板 | 维护任务状态、依赖、认领与回收 |
+| `AgentTeamMessageBus` | 消息总线 | 保存成员消息、提供快照与恢复 |
+| `AgentTeamToolRegistry` | 团队工具声明面 | 暴露 `team_*` 协作工具 |
+| `AgentTeamToolExecutor` | 团队工具执行面 | 拦截并执行 `team_*` 协作动作 |
+| `AgentTeamStateStore` | 状态存储 | 保存和恢复团队运行快照 |
 
-执行链路：
+运行时的核心链路可以简化为：
 
 ```text
 Objective
-  -> Planner 产出任务 JSON
-  -> TaskBoard 规范化 id / dependsOn
-  -> 按轮次挑选 READY 任务（可并发）
-  -> 成员执行并写回 task state + message
-  -> Synthesizer 汇总最终输出
+  -> Planner
+  -> AgentTeamTaskBoard
+  -> dispatch ready tasks to members
+  -> member session + team_* tools
+  -> MessageBus / TaskBoard updates
+  -> Synthesizer
+  -> AgentTeamResult
 ```
 
-关键特性：
+## 4. Builder 的默认与回退规则
 
-- 依赖驱动状态流转；
-- 支持并发派发；
-- 支持失败继续（可配置）；
-- 支持消息历史注入到成员 prompt；
-- 支持任务认领超时回收（可配置）。
+`AgentTeamBuilder` 不只是收集参数，它还定义了 Team 的默认装配语义。
 
----
+### 4.1 成员是必填项
 
-## 4. 快速开始：只配置一个 `leadAgent`
+`AgentTeam` 构造时会检查 `members`，至少需要一个成员，否则直接抛异常。
 
-当前推荐默认写法是“单 Lead 模式”。
+### 4.2 planner 的回退规则
 
-```java
-Agent lead = Agents.react()
-        .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .systemPrompt("你是一个团队负责人，先规划再汇总")
-        .build();
+在 `AgentTeam` 构造函数中：
 
-Agent researcher = Agents.react()
-        .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .build();
+1. 如果显式设置了 `planner(...)`，优先使用
+2. 否则取 `plannerAgent(...)`
+3. 若仍为空，则回退到 `leadAgent(...)`
+4. 还为空则抛出异常
 
-Agent formatter = Agents.react()
-        .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .build();
+### 4.3 synthesizer 的回退规则
 
-AgentTeam team = Agents.team()
-        .leadAgent(lead)
-        .member(AgentTeamMember.builder()
-                .id("researcher")
-                .name("资料员")
-                .description("负责事实收集")
-                .agent(researcher)
-                .build())
-        .member(AgentTeamMember.builder()
-                .id("formatter")
-                .name("整理员")
-                .description("负责输出格式化")
-                .agent(formatter)
-                .build())
-        .build();
+汇总器回退顺序稍复杂：
 
-AgentTeamResult result = team.run("给出北京天气简报并格式化输出");
-System.out.println(result.getOutput());
-```
+1. 如果显式设置了 `synthesizer(...)`，优先使用
+2. 否则取 `synthesizerAgent(...)`
+3. 若为空，则回退到 `leadAgent(...)`
+4. 若 `leadAgent` 也为空但 `plannerAgent` 不为空，则回退到 `plannerAgent`
+5. 仍为空则抛出异常
 
-说明：
+这意味着最常见的接法是：只给一个 `leadAgent`，然后把 planner / synthesizer 都复用它。
 
-- 未显式配置 `plannerAgent/synthesizerAgent` 时，会回退到 `leadAgent`；
-- 你也可以分别覆盖 planner 与 synthesizer。
+### 4.4 `buildAgent()` 的含义
 
----
+`AgentTeamBuilder.buildAgent()` 不返回 `AgentTeam`，而是返回一个普通 `Agent` 外壳：
 
-## 5. 高级模式：覆盖 Planner/Synthesizer
+- runtime 是 `AgentTeamAgentRuntime`
+- memory 是新的 `InMemoryAgentMemory`
 
-适合做模型分工优化：
+它的用途是把 Team 以 Agent 形态嵌入其它编排层，而不是替代 `build()`。
 
-- Planner 用推理更强模型；
-- Synthesizer 用成本更低模型。
+## 5. 一条完整的执行链
 
-```java
-AgentTeam team = Agents.team()
-        .leadAgent(lead)
-        .plannerAgent(plannerAgent)          // 可选覆盖
-        .synthesizerAgent(synthAgent)        // 可选覆盖
-        .member(...)
-        .build();
-```
+Agent Teams 一次 `run(objective)` 的主流程如下：
 
-优先级：
+1. 由 planner 生成任务计划
+2. `AgentTeamTaskBoard` 标准化任务状态与依赖关系
+3. 找出当前 `READY` 任务
+4. 根据 `parallelDispatch` 与 `maxConcurrency` 派发给成员
+5. 每个成员新建 session 执行任务输入
+6. 若启用了团队工具，把 `team_*` 工具注入成员上下文
+7. 成员输出回写到 task board，并通过 message bus 发送结果消息
+8. 当任务结束或达到轮次上限后，由 synthesizer 汇总最终输出
 
-1. 自定义 `planner/synthesizer`（接口实现）
-2. `plannerAgent/synthesizerAgent`
-3. `leadAgent`
+这条链路的关键不是“有多个 Agent”，而是 Team 把协作状态显式化了。
 
----
+## 6. 成员执行时到底发生了什么
 
-## 6. 队员管理（Member Management）
+每个任务派发给成员时，`AgentTeam` 会：
 
-控制接口：`AgentTeamControl`
+1. 为成员创建或获取 `AgentSession`
+2. 基于 objective、task、context、历史消息拼装成员输入
+3. 如果 `enableMemberTeamTools = true`：
+   - 将原始工具注册器与 `AgentTeamToolRegistry` 合并
+   - 将原始执行器包装成 `AgentTeamToolExecutor(this, memberId, taskId, originalExecutor)`
+4. 运行成员 Agent
 
-- `registerMember(...)`
-- `unregisterMember(...)`
-- `listMembers()`
+这个实现有两个重要含义：
 
-可通过 `AgentTeamOptions.allowDynamicMemberRegistration` 控制是否允许运行期增删成员。
+- 团队工具不是全局宿主工具，而是按成员任务上下文注入
+- `AgentTeamToolExecutor` 持有 `defaultTaskId`，成员调用团队工具时即使不显式传 `taskId`，也可以回落到当前任务
 
-实践建议：
+## 7. 任务板模型
 
-- 生产环境把成员 ID 作为稳定主键（不要动态变更）；
-- 成员 description 要写“能力边界”，避免规划器误分配；
-- 禁止“同能力重复成员”时可在构建阶段做校验。
+Team 的任务不是松散字符串，而是结构化对象。
 
----
+### 7.1 `AgentTeamTask`
 
-## 7. 任务管理（Task Management）
-
-### 7.1 任务模型
-
-`AgentTeamTask` 字段：
+核心字段包括：
 
 - `id`
 - `memberId`
@@ -168,20 +157,20 @@ AgentTeam team = Agents.team()
 - `context`
 - `dependsOn`
 
-推荐规划输出（JSON）：
+典型规划输出：
 
 ```json
 {
   "tasks": [
-    {"id": "collect", "memberId": "researcher", "task": "收集天气事实"},
-    {"id": "format", "memberId": "formatter", "task": "格式化输出", "dependsOn": ["collect"]}
+    {"id": "collect", "memberId": "researcher", "task": "收集事实"},
+    {"id": "format", "memberId": "formatter", "task": "整理输出", "dependsOn": ["collect"]}
   ]
 }
 ```
 
-### 7.2 状态机
+### 7.2 任务状态
 
-`AgentTeamTaskStatus`：
+`AgentTeamTaskStatus` 目前包括：
 
 - `PENDING`
 - `READY`
@@ -190,21 +179,11 @@ AgentTeam team = Agents.team()
 - `FAILED`
 - `BLOCKED`
 
-### 7.3 运行时任务控制 API
+这使得 Team 不只是“谁来做”，还显式维护“现在做到哪里”。
 
-- `listTaskStates()`
-- `claimTask(taskId, memberId)`
-- `releaseTask(taskId, memberId, reason)`
-- `reassignTask(taskId, fromMemberId, toMemberId)`
-- `heartbeatTask(taskId, memberId)`
+### 7.3 运行态快照
 
-### 7.4 超时回收
-
-`AgentTeamOptions.taskClaimTimeoutMillis` > 0 时，运行中会自动回收长时间无心跳的任务认领。
-
-### 7.5 任务运行态可观测字段
-
-`listTaskStates()` 返回的 `AgentTeamTaskState` 现在不只是一个粗粒度状态枚举，还会带上适合 UI / IDE 展示的运行态字段：
+`AgentTeamTaskState` 不只是一个状态枚举，还包含更适合宿主 UI / CLI 展示的字段，例如：
 
 - `phase`
 - `detail`
@@ -215,95 +194,11 @@ AgentTeam team = Agents.team()
 - `claimedBy`
 - `durationMillis`
 
-典型语义如下：
+这些字段的意义不是伪造精确进度条，而是暴露统一的运行态协议。
 
-- 规划后：`phase=planned`, `percent=0`
-- 依赖满足：`phase=ready`, `percent=5`
-- 成员执行中：`phase=running`, `percent=15`
-- 成员主动保活：`phase=heartbeat`, `heartbeatCount + 1`
-- 完成 / 失败 / 阻塞：`percent=100`
+## 8. `team_*` 工具为何存在
 
-这几个字段的目的不是伪造“精确进度条”，而是给 CLI、TUI、ACP 宿主一个统一的结构化运行态快照。
-
-### 7.6 Team task 控制动作也会发事件
-
-除了规划、派发、完成这些主流程事件外，下面这些运行时控制动作现在也会统一发出 `TEAM_TASK_UPDATED`：
-
-- `claimTask(...)`
-- `releaseTask(...)`
-- `reassignTask(...)`
-- `heartbeatTask(...)`
-
-这意味着：
-
-- 终端可以看到任务被认领、转派、保活的过程；
-- ACP 宿主可以继续只消费标准 `tool_call_update`，但 `rawOutput` 里会拿到更完整的任务字段；
-- 你不需要自己再额外拼一层“团队任务状态同步协议”。
-
----
-
-## 8. 信息管理（Message Management）
-
-### 8.1 消息模型
-
-`AgentTeamMessage` 字段：
-
-- `id`
-- `fromMemberId`
-- `toMemberId`（`*` 表示广播）
-- `type`
-- `taskId`
-- `content`
-- `createdAt`
-
-### 8.2 消息控制 API
-
-- `publishMessage(...)`
-- `sendMessage(from, to, type, taskId, content)`
-- `broadcastMessage(from, type, taskId, content)`
-- `listMessages()`
-- `listMessagesFor(memberId, limit)`
-
-### 8.3 消息历史注入
-
-开启 `includeMessageHistoryInDispatch=true` 时，成员执行 prompt 会带上近期团队消息，有助于跨成员协同。
-
----
-
-### 8.4 持久化 MessageBus（文件邮箱）
-
-默认 `MessageBus` 是内存实现：`InMemoryAgentTeamMessageBus`。  
-如果你给 `AgentTeamBuilder` 提供 `storageDirectory(...)`，当前实现会自动切到文件邮箱：
-
-- mailbox 文件：`<storageDirectory>/mailbox/<teamId>.jsonl`
-- 每条消息按一行 JSON 追加
-- 新建同 `teamId` 的 Team 时，会自动读回已有邮箱内容
-
-也可以手动覆盖：
-
-```java
-AgentTeam team = Agents.team()
-        .teamId("travel-team")
-        .messageBus(new FileAgentTeamMessageBus(Paths.get(".ai4j/teams/mailbox/travel-team.jsonl")))
-        .member(...)
-        .build();
-```
-
-这层能力的作用很直接：
-
-- 消息不再只存在 JVM 内存里；
-- Team 重建后还能继续查看历史消息；
-- trace、审计、宿主 UI 都能拿到稳定的协作记录。
-
----
-
-## 9. 队员主动协作：`team_*` 内置工具
-
-当前版本支持把 Team 工具自动注入到成员运行时（默认开启）：
-
-`AgentTeamOptions.enableMemberTeamTools = true`
-
-可用工具：
+`AgentTeamToolRegistry` 默认暴露以下协作工具：
 
 - `team_send_message`
 - `team_broadcast`
@@ -313,48 +208,74 @@ AgentTeam team = Agents.team()
 - `team_reassign_task`
 - `team_heartbeat_task`
 
-这意味着：成员不必被动等待 Lead 指令，模型可以在执行中主动协作。
+这意味着成员不是只能“被动完成分配任务”，而是可以在执行过程中：
 
----
+- 给其他成员发消息
+- 广播信息
+- 查看任务板
+- 认领任务
+- 释放任务
+- 转派任务
+- 上报心跳
 
-## 10. Team 状态持久化与显式恢复
+团队协作从提示词层上升到了结构化工具层。
 
-这次增强后，`AgentTeam` 不再只是一次性的内存对象。当前可用能力包括：
+## 9. `AgentTeamToolExecutor` 如何工作
 
-- 稳定标识：`teamId(...)`
-- 状态落盘：`stateStore(...)` 或 `storageDirectory(...)`
-- 运行快照：`snapshotState()`
-- 显式恢复：`loadPersistedState()` / `restoreState(...)`
-- 清理：`clearPersistedState()`
+`AgentTeamToolExecutor` 只拦截 `team_*` 工具，其他调用直接委托给原始 `delegate.execute(call)`。
 
-最简单的写法是只给一个 `teamId` 和 `storageDirectory`：
+其行为可以概括为：
 
-```java
-Path root = Paths.get(".ai4j/teams");
+1. 解析 JSON arguments
+2. 判断当前 action 对应哪个团队控制接口
+3. 从参数中解析 `taskId`
+4. 若没有显式 `taskId`，回退到构造时注入的 `defaultTaskId`
+5. 执行控制动作
+6. 返回 JSON 结果
 
-AgentTeam team = Agents.team()
-        .teamId("travel-team")
-        .storageDirectory(root)
-        .member(...)
-        .build();
+返回 JSON 中至少包含：
 
-team.run("deliver the travel workspace");
+- `action`
+- `ok`
+- `memberId`
 
-AgentTeam sameTeam = Agents.team()
-        .teamId("travel-team")
-        .storageDirectory(root)
-        .member(...)
-        .build();
+某些动作还会包含：
 
-AgentTeamState restored = sameTeam.loadPersistedState();
-```
+- `taskId`
+- `toMemberId`
+- `taskState`
+- `tasks`
 
-当前默认文件布局：
+这让 `team_*` 工具既可供模型理解，也可以被宿主直接消费。
 
-- state 文件：`<storageDirectory>/state/<teamId>.json`
-- mailbox 文件：`<storageDirectory>/mailbox/<teamId>.jsonl`
+## 10. 消息总线的设计目的
 
-`AgentTeamState` 快照里包含：
+`AgentTeamMessageBus` 不是为了“让团队看起来更智能”，而是为了解决协作过程中的信息显式化。
+
+消息模型 `AgentTeamMessage` 包含：
+
+- `id`
+- `fromMemberId`
+- `toMemberId`
+- `type`
+- `taskId`
+- `content`
+- `createdAt`
+
+这带来几个直接好处：
+
+- 团队协作过程可审计
+- 任务结果可以消息化回流给 lead
+- 宿主可以展示成员之间的通信轨迹
+- 历史消息可以重新注入后续任务
+
+## 11. 持久化与恢复
+
+Agent Teams 的一个关键优势是运行快照可恢复。
+
+### 11.1 `snapshotState()`
+
+返回 `AgentTeamState`，其中包含：
 
 - `teamId`
 - `objective`
@@ -368,76 +289,123 @@ AgentTeamState restored = sameTeam.loadPersistedState();
 - `updatedAt`
 - `runActive`
 
-这套恢复机制的边界也要说清：
+### 11.2 `loadPersistedState()`
 
-- 它恢复的是 Team 的运行快照，不是从磁盘重新构造成员 Agent；
-- 你仍然要在 builder 里重新提供成员、planner、synthesizer；
-- `loadPersistedState()` 负责把任务状态、消息历史、上次输出重新挂回 Team 对象。
+如果配置了 `stateStore`，会：
 
-如果你需要完全自定义存储，也可以直接传 `stateStore(...)`：
+1. 从存储层按 `teamId` 读取状态
+2. 调用 `restoreState(...)`
+3. 恢复消息、任务状态、上次输出和轮次元数据
+
+### 11.3 `clearPersistedState()`
+
+会清理内存中的团队状态，并在有状态存储时删除对应持久化记录。
+
+### 11.4 `storageDirectory(...)` 的默认文件布局
+
+如果 builder 只配置了 `storageDirectory(...)`，`AgentTeam` 会自动使用：
+
+- 状态文件：`<storageDirectory>/state/<teamId>.json`
+- 邮箱文件：`<storageDirectory>/mailbox/<teamId>.jsonl`
+
+也就是说，message bus 和 state store 都可以从一个目录约定自动派生。
+
+### 11.5 恢复边界
+
+需要明确：
+
+- 恢复的是团队运行快照
+- 不是把成员 Agent 本身从磁盘反序列化“复活”
+
+你仍然需要重新提供：
+
+- members
+- planner / plannerAgent / leadAgent
+- synthesizer / synthesizerAgent / leadAgent
+
+## 12. `AgentTeamOptions` 默认值与调参
+
+`AgentTeamOptions` 的默认值非常关键，因为它们决定了 Team 的默认协作性格。
+
+| 字段 | 默认值 | 含义 |
+| --- | --- | --- |
+| `parallelDispatch` | `true` | 默认并发派发 ready 任务 |
+| `maxConcurrency` | `4` | 最大并发成员执行数 |
+| `continueOnMemberError` | `true` | 某成员失败时默认继续推进其他任务 |
+| `broadcastOnPlannerFailure` | `true` | 规划失败时默认广播失败信息 |
+| `failOnUnknownMember` | `false` | 规划引用未知成员时默认不立即终止 |
+| `includeOriginalObjectiveInDispatch` | `true` | 成员输入默认包含总目标 |
+| `includeTaskContextInDispatch` | `true` | 成员输入默认包含任务 context |
+| `includeMessageHistoryInDispatch` | `true` | 成员输入默认包含近期团队消息 |
+| `messageHistoryLimit` | `20` | 默认注入最近 20 条消息 |
+| `enableMessageBus` | `true` | 默认启用消息总线 |
+| `allowDynamicMemberRegistration` | `true` | 默认允许运行期增删成员 |
+| `requirePlanApproval` | `false` | 默认不强制计划审批 |
+| `maxRounds` | `64` | 最多运行 64 轮 |
+| `taskClaimTimeoutMillis` | `0L` | 默认关闭任务认领超时回收 |
+| `enableMemberTeamTools` | `true` | 默认向成员暴露 `team_*` 工具 |
+
+这组默认值说明 Team 默认是：
+
+- 偏协作
+- 偏容错
+- 偏可观察
+
+而不是“严格串行、一步错就全部失败”的保守模型。
+
+## 13. 一份正确的接入示例
 
 ```java
+Path storage = Paths.get(".ai4j/teams");
+
 AgentTeam team = Agents.team()
-        .teamId("travel-team")
-        .stateStore(new FileAgentTeamStateStore(Paths.get(".ai4j/custom-team-state")))
-        .member(...)
+        .teamId("weather-team")
+        .leadAgent(leadAgent)
+        .member(AgentTeamMember.builder()
+                .id("researcher")
+                .name("Researcher")
+                .description("Collect facts and raw weather data.")
+                .agent(researcherAgent)
+                .build())
+        .member(AgentTeamMember.builder()
+                .id("formatter")
+                .name("Formatter")
+                .description("Turn task outputs into concise final text.")
+                .agent(formatterAgent)
+                .build())
+        .storageDirectory(storage)
+        .options(AgentTeamOptions.builder()
+                .parallelDispatch(true)
+                .maxConcurrency(2)
+                .enableMemberTeamTools(true)
+                .maxRounds(16)
+                .build())
         .build();
+
+AgentTeamResult result = team.run("给出北京天气简报，并输出可读结论。");
 ```
 
----
+这个示例体现的不是“两个成员就够了”，而是：
 
-## 11. AgentTeamOptions 参数建议
+- planner / synthesizer 可由 leadAgent 兜底
+- 团队状态与邮箱自动落到约定目录
+- 成员执行时可使用 `team_*` 协作工具
 
-### 调度
+## 14. Plan Approval 与 Hook
 
-- `parallelDispatch`: 默认 `true`
-- `maxConcurrency`: 默认 `4`
-- `maxRounds`: 默认 `64`
+Team 并不是只能靠默认策略运行。
 
-### 容错
+### 14.1 `planApproval(...)`
 
-- `continueOnMemberError`: 默认 `true`
-- `broadcastOnPlannerFailure`: 默认 `true`
-- `failOnUnknownMember`: 默认 `false`
+适合在规划完成后、真正派发前做治理，例如：
 
-### 任务上下文注入
+- 是否允许某些成员被使用
+- 计划是否包含空任务
+- 任务依赖是否越权
 
-- `includeOriginalObjectiveInDispatch`: 默认 `true`
-- `includeTaskContextInDispatch`: 默认 `true`
+### 14.2 `hook(...)`
 
-### 消息相关
-
-- `enableMessageBus`: 默认 `true`
-- `includeMessageHistoryInDispatch`: 默认 `true`
-- `messageHistoryLimit`: 默认 `20`
-
-### 治理
-
-- `requirePlanApproval`: 默认 `false`
-- `allowDynamicMemberRegistration`: 默认 `true`
-
-### Team 扩展
-
-- `taskClaimTimeoutMillis`: 默认 `0`（关闭）
-- `enableMemberTeamTools`: 默认 `true`
-
----
-
-## 12. Hook 与 PlanApproval
-
-### 11.1 PlanApproval
-
-在派发前审批规划结果：
-
-```java
-.planApproval((objective, plan, members, options) -> {
-    return plan != null && plan.getTasks() != null && !plan.getTasks().isEmpty();
-})
-```
-
-### 11.2 Hook
-
-监听团队执行关键阶段：
+适合在关键节点挂审计、埋点和告警逻辑，例如：
 
 - `beforePlan`
 - `afterPlan`
@@ -446,66 +414,58 @@ AgentTeam team = Agents.team()
 - `afterSynthesis`
 - `onMessage`
 
-可用于：审计、埋点、告警、指标上报。
+这两个扩展点让 Team 成为可治理运行时，而不只是协作 demo。
 
----
+## 15. 失败语义与工程边界
 
-## 13. 常见问题
+### 15.1 Team 不是无限自组织系统
 
-### Q1：队员只能是 ReAct Agent 吗？
+虽然成员能主动调用 `team_*` 工具，但整个团队仍然受：
 
-不是。任何 `Agent` 都可以作为成员，包括：
+- `maxRounds`
+- `maxConcurrency`
+- `taskClaimTimeoutMillis`
+- `requirePlanApproval`
 
-- `Agents.react()`
-- `Agents.codeAct()`
-- 自定义 `runtime(...)` 的 Agent
+等配置约束。
 
-前提是该 runtime 使用 `toolRegistry/toolExecutor` 机制，才能使用 `team_*` 工具。
+### 15.2 任务失败并不总是中断全局
 
-### Q2：为什么我看到任务阻塞？
+默认 `continueOnMemberError = true`，因此单个成员失败后，其他任务仍可能继续执行。
 
-常见原因：
+这更适合长任务容错，但如果你的业务语义要求“一个成员失败就整体失败”，应该显式收紧策略。
 
-- 依赖任务失败或未完成；
-- 任务依赖写错 id；
-- `maxRounds` 太小导致提前结束。
+### 15.3 状态恢复不是热重启 Agent 进程
 
-### Q3：是否支持生产级追踪？
+`loadPersistedState()` 恢复的是团队视角的数据快照，而不是把每个成员 Agent 之前的 JVM 执行栈恢复回来。
 
-支持。可结合 `AgentTraceListener` + exporter，把 Team 链路接入你的观测系统。
+## 16. 推荐阅读源码入口
 
-### Q4：`loadPersistedState()` 能否把整个 Team 从磁盘“自动复活”？
+建议按下面顺序阅读：
 
-不能。当前实现恢复的是运行快照，不是成员 Agent 的序列化镜像。
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeam.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamOptions.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/tool/AgentTeamToolRegistry.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/tool/AgentTeamToolExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamTaskBoard.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/FileAgentTeamStateStore.java`
 
-你需要：
+## 17. 推荐验证用例
 
-- 用相同 `teamId`
-- 重新提供成员 / planner / synthesizer
-- 再调用 `loadPersistedState()`
+建议结合以下测试一起阅读：
 
-这样可以把任务状态、消息历史、上次输出恢复回来。
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamTaskBoardTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/FileAgentTeamStateStoreTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamPersistenceTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/DoubaoAgentTeamBestPracticeTest.java`
 
----
+## 18. 下一步读什么
 
-## 14. 对应测试与验证命令
+读完这一页后，建议继续：
 
-主要测试：
-
-- `AgentTeamTest`
-- `AgentTeamTaskBoardTest`
-- `FileAgentTeamStateStoreTest`
-- `AgentTeamPersistenceTest`
-- `DoubaoAgentTeamBestPracticeTest`
-
-运行示例：
-
-```bash
-mvn -pl ai4j-agent -DskipTests=false "-Dtest=AgentTeamTest,AgentTeamTaskBoardTest,FileAgentTeamStateStoreTest,AgentTeamPersistenceTest" test
-```
----
-
-## 附录：完整类/函数/变量明细
-
-- 若你需要逐类查看 Agent Teams 的全部字段与方法，请参考：
-  - [Agent Teams 全量 API 参考（类/函数/变量 + Demo + 预期）](./agent-teams-api-reference)
+1. [Agent Teams API Reference](/docs/agent/agent-teams-api-reference)
+2. [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
+3. [StateGraph](/docs/agent/orchestration/stategraph)
+4. [Trace 与可观测性](/docs/agent/observability/trace)
