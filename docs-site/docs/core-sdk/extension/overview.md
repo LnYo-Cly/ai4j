@@ -1,90 +1,142 @@
 # Extension 总览
 
-`Extension` 这一章讲的是：当默认能力不够时，你应该沿哪条线扩展，而不是绕开基座自己另搭一套。
+`extension` 这一章讲的不是“哪里能塞自定义代码”，而是 **AI4J 当前把哪些变化看成基座内正式扩展，哪些变化仍然要求你进入工厂和配置主链改代码**。
 
-## 1. 先确定它在 Core SDK 里的位置
+这点必须先说清，因为 AI4J 目前并不是所有扩展面都采用同一种机制：
 
-扩展点不是附属补丁，而是基座设计的一部分。
+| 扩展面 | 当前实现形态 | 真实入口 |
+| --- | --- | --- |
+| Provider extension | 代码内分发扩展，不是通用 SPI | `service/PlatformType.java`、`service/factory/AiService.java` |
+| Model extension | 现有 provider 内部能力扩展 | 请求对象 + provider service 实现 |
+| Service extension | 代码内能力面扩展，不是通用 SPI | `service/*.java`、`AiService`、`AiServiceRegistry`、`FreeAiService` |
+| HTTP stack extension | 真正的 SPI 扩展 | `network/*Provider.java`、`META-INF/services/*`、`AiConfigAutoConfiguration.initOkHttp()` |
 
-如果 `Core SDK` 不提供清楚的扩展面，那么后面的：
+## 1. 这一章在 Core SDK 里的位置
 
-- `Spring Boot`
-- `Agent`
-- `Coding Agent`
-- `Flowgram`
+如果 `service-entry-and-registry` 讲的是“从哪里拿 service”，那 `extension` 讲的就是：
 
-都会被迫各自绕开基座写平台特化代码。
+- 当现有平台不够时，该改哪一层
+- 哪些改动只影响单个 provider
+- 哪些改动会膨胀成全 SDK 的抽象变更
+- 哪些底层行为已经有正式 SPI，可以不碰 provider 主链
 
-## 2. 当前有哪些扩展面
+这一章仍然属于 `ai4j/` 基座本身。它不是 Spring Boot、Agent 或 Coding Agent 的补丁说明页。
+
+## 2. 先看真实执行链
+
+AI4J 当前的扩展链路，大体上是下面这条：
+
+1. 构造 `Configuration`
+2. 把 provider 配置放进 `Configuration` 对应字段
+3. 通过 `AiService` 或 `AiServiceRegistry` 选择平台
+4. 由 `AiService` 内部各个 `create*Service(...)` 方法按 `PlatformType` 分发到具体实现
+5. 具体 provider service 再把统一请求对象投影到外部平台协议
+
+多实例场景则多了一层：
+
+1. `DefaultAiServiceRegistry.from(...)` 读取 `AiConfig.platforms`
+2. 为每个 `AiPlatform` 复制一份 scoped `Configuration`
+3. `applyPlatformConfig(...)` 把该实例的 provider 配置写回 scoped `Configuration`
+4. 生成 `AiServiceRegistration(id, platformType, aiService)`
+
+这里有两个非常实际的后果：
+
+- provider 维度的扩展，必须进入 `PlatformType`、`AiService` 和 `DefaultAiServiceRegistry`
+- service 实例默认不是缓存单例，`AiService.getChatService(...)` 这类入口每次都会新建具体 service
+
+第二点意味着，如果你的扩展实现依赖昂贵初始化，应该把共享资源收敛到 `Configuration` 或 `OkHttpClient`，而不是假设 `AiService` 会帮你复用具体 service 对象。
+
+## 3. 四条扩展线分别解决什么问题
+
+### Provider extension
+
+你在增加一个新的平台边界，例如新的 `PlatformType`、新的 provider 配置对象、以及它支持的各类 service 实现。
+
+这类改动一定会进入工厂分发主链。
+
+### Model extension
+
+你仍然停留在同一个 provider 下，只是在补模型名、请求字段、返回字段或同一能力面的变体。
+
+这类改动通常不该触碰 `PlatformType`。
+
+### Service extension
+
+你在新增一条新的顶层能力面，而不是给现有能力补字段。
+
+这类改动会扩大 SDK 的公共抽象面，代价通常高于 model extension 和 provider extension。
+
+### HTTP stack extension
+
+你不想改模型协议本身，只想控制底层 `OkHttp` 的并发调度和连接池策略。
+
+这类改动已经被做成正式 SPI，是当前这一章里最接近“插件化”的扩展面。
+
+## 4. 当前实现里，哪些是“真 SPI”，哪些不是
+
+这是这一章最容易被误读的地方。
+
+### 不是通用 SPI 的部分
 
 - provider 扩展
-- model 扩展
-- service 扩展
-- HTTP / connection SPI 扩展
+- 顶层 service 扩展
 
-这些扩展面共同回答的是：你如何在不破坏 AI4J 分层的前提下，把新平台、新模型或新底层网络能力接进来。
+虽然仓库里有 `AiServiceFactory` 这样的抽象，但 provider 能力矩阵本身仍然写死在 `AiService.createChatService(...)`、`createResponsesService(...)`、`createImageService(...)` 等 `switch` 分发里。
 
-## 3. 为什么它属于基座
+也就是说，今天新增 provider 不是“注册一个实现就自动可见”，而是要进入主线工厂代码。
 
-因为扩展点不是上层 runtime 的补丁，而是基础工程模型的一部分。
+### 真正通过 SPI 生效的部分
 
-如果这层没有设计好，后面的 `Spring Boot`、`Agent`、`Coding Agent`、`Flowgram` 就都只能各自绕路。
+- `DispatcherProvider`
+- `ConnectionPoolProvider`
 
-## 4. 一条原则
+Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `ServiceLoaderUtil.load(...)` 加载这两个扩展点，并把返回的 `Dispatcher` 与 `ConnectionPool` 注入统一的 `OkHttpClient.Builder`。
 
-尽量沿 AI4J 已经定义好的抽象扩展，而不是直接绕开基座写平台私货。
+## 5. 扩展决策顺序
 
-更直接地说：
+遇到“现有 SDK 不够用”时，先按下面顺序判断：
 
-- 想接新 provider，先看 provider/model/service 扩展
-- 想改底层 HTTP 行为，再看 SPI / HTTP stack
+1. 这是新平台，还是同平台内的新模型
+2. 现有 `Chat / Responses / Embedding / Image / Audio / Realtime / Rerank` 契约还能不能承载它
+3. 问题出在请求语义，还是只出在网络栈
+4. 这次改动要不要覆盖多实例注册表和 Spring Boot 自动装配
 
-## 5. 什么时候应该先看这一章
+按这个顺序判断，能避免两类常见结构错误：
 
-更适合直接进入 `extension` 的情况包括：
+- 明明只是模型变化，却把 `PlatformType` 和工厂层一起膨胀
+- 明明只是并发和连接治理问题，却跑去新增 provider 分支
 
-- 你要接一个新的模型平台
-- 你要补一个当前没有的能力接口实现
-- 你要调整底层 HTTP / 连接层策略
-- 你要做企业内平台接入，但不想破坏 AI4J 主分层
+## 6. 需要特别注意的默认行为
 
-如果你只是普通使用现有平台，这一章可以后看，不必一开始就进入。
+### `PlatformType.getPlatform(...)` 的容错并不严格
 
-## 6. 推荐阅读顺序
+这个方法在找不到匹配值时会回退到 `OPENAI`。这对快速 demo 可能方便，但对正式扩展不安全，因为拼错 provider 名字时可能不会立即暴露。
+
+相比之下，`DefaultAiServiceRegistry.resolvePlatformType(...)` 遇到未知平台会直接抛出 `Unsupported ai platform ...`，这才是更适合正式配置的行为。
+
+### starter 的 HTTP SPI 不是可有可无
+
+`ServiceLoaderUtil.load(...)` 找不到实现时会直接抛 `IllegalStateException`。默认实现之所以能工作，不是因为代码里写了 `new DefaultDispatcherProvider()` 兜底，而是因为 `ai4j/src/main/resources/META-INF/services/` 已经注册了默认实现。
+
+所以这层对打包结果敏感。缺失 `META-INF/services` 时，Spring Boot 启动就会在 `initOkHttp()` 阶段失败。
+
+## 7. 什么时候不要进这一章
+
+如果你只是：
+
+- 调一个现有 provider 发起请求
+- 改 prompt、tool、memory 组合
+- 排查某个字段为什么没有发出去
+
+那通常应该先回到对应能力页，而不是上来就看扩展文档。`extension` 更适合“当前抽象不够了”的场景。
+
+## 8. 推荐阅读顺序
 
 1. [Provider Extension](/docs/core-sdk/extension/provider-extension)
 2. [Model Extension](/docs/core-sdk/extension/model-extension)
 3. [Service Extension](/docs/core-sdk/extension/service-extension)
 4. [SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
 
-## 7. 扩展决策顺序
+## 9. 这一页的结论
 
-真正动手扩展前，建议先按下面顺序判断：
-
-1. 这是新 provider，还是现有 provider 下的新模型
-2. 现有 service 契约还能不能承载这项能力
-3. 问题是在能力抽象层，还是只在底层网络与连接层
-4. 这次改动要不要同步进入 starter 的配置和装配体系
-
-这个顺序能显著减少“明明只该补 model，却误改 provider 总线”这类结构性错误。
-
-## 8. 关键对象
-
-如果要继续从文档进入源码，优先看下面这些入口：
-
-- `service/PlatformType.java`：provider 维度枚举
-- `service/factory/AiService.java`：能力工厂与 provider 分发中心
-- `service/factory/AiServiceRegistry.java`：注册与装配扩展点
-- starter 侧自动装配：负责把基座扩展接进 Spring 容器
-
-这组对象决定了扩展点为什么能成立，也决定了“新增能力应该改哪一层”这个问题最终该如何落地。
-
-## 9. 什么时候不要先动这一章
-
-如果你只是：
-
-- 使用现成 provider 发请求
-- 调整 prompt、tool 或 memory 组合
-- 排查某个具体 provider 的字段映射问题
-
-那通常应先回到对应能力页，而不是一上来就进入 extension。扩展页更适合处理“基础抽象本身不够用”的情况。
+> AI4J 当前的扩展面并不对称。provider 和顶层 service 仍然走 `PlatformType + AiService + Registry` 这条代码主链，HTTP 并发与连接治理才是已经正式 SPI 化的部分。真正开始扩展前，先判断你碰到的是平台边界、模型变体、能力新增，还是网络栈治理问题。

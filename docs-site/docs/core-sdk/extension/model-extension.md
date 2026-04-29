@@ -1,111 +1,170 @@
 # Model Extension
 
-`Model Extension` 解决的是：**在现有 provider 体系不变的前提下，如何补进新的模型能力，而不打穿上层调用抽象。**
+`model extension` 解决的是：**在不新增 `PlatformType`、不新增顶层 service 的前提下，把新的模型能力吸收到现有 provider 与现有契约中。**
 
-这件事表面上像“小改动”，但如果边界判断错了，最后很容易把业务代码打成一堆 provider 分支。
+这是 AI4J 里最常见、也最容易被误判的一类扩展。
 
-## 1. 先分清它和 provider extension 的区别
+## 1. 先明确它和 provider / service extension 的边界
 
-- `Provider Extension`：新增一个平台接入面
-- `Model Extension`：仍然在现有平台下工作，只是补新的模型族、字段或能力变体
+只要下面两件事还成立，优先按 model extension 处理：
 
-如果你还在同一个 `PlatformType` 里，只是模型名、少量字段、或者 provider 已有能力矩阵在扩展，通常都应该先按 model extension 理解。
+- 平台边界没有变，仍然属于同一个 provider
+- 调用心智仍然属于现有 `Chat`、`Responses`、`Embedding`、`Image`、`Audio`、`Realtime` 或 `Rerank`
 
-## 2. 源码入口
+一旦你必须新增 `PlatformType`，那已经更像 provider extension。  
+一旦你发现现有能力面根本装不下新的交互语义，那就要重新考虑 service extension。
 
-这一层最该看的不是某个文档示例，而是：
+## 2. 当前代码里，这类变化通常落在哪里
 
-- `service/PlatformType.java`
-- `service/factory/AiService.java`
-- 对应请求对象：`ChatCompletion`、`ResponseRequest`、`Embedding`
+model extension 最常落在这几类对象上：
 
-为什么？
+- 统一请求对象，例如 `ChatCompletion`、`ResponseRequest`
+- provider 侧请求映射与结果解析
+- provider 配置对象中的模型相关字段
 
-因为模型扩展真正要回答的是：
+也就是说，它的主战场通常在：
 
-- 现有服务接口够不够
-- 现有请求对象够不够
-- 现有 provider service 需不需要补字段映射
+- 请求对象能不能表达新能力
+- provider service 会不会把这些字段真正发出去
+- 返回结果会不会被现有 listener / converter 正确吸收
 
-## 3. 三种常见的 model extension 场景
+而不是 `PlatformType` 或 `AiService` 的总分发层。
 
-### 3.1 最轻的一类：只新增模型名
+## 3. 三种典型的 model extension 场景
+
+### 3.1 只是新增模型名
+
+这是最轻的一类。
+
+如果某个 provider 的现有 service 已经支持目标协议，而变化只是：
+
+- 模型字符串变了
+- 默认 `apiHost` 变了
+- 某个调用方要切到新模型
+
+那通常不需要改基座抽象，只需要正确配置并走现有 service。
+
+### 3.2 请求或返回多了有限的 provider 差异
 
 例如：
 
-- provider 现有 chat service 已经支持
-- 只是业务上换一个新模型名
+- 新模型需要新的推理参数
+- 新模型支持新的输出格式控制
+- 新模型在流式事件里多了某些字段
 
-这种情况下，往往不需要改基座抽象，只需要：
+这时真正要检查的是：
 
-- 配置模型名
-- 调整调用策略
+- 统一请求对象是否需要新增字段
+- 对应 provider service 是否有序列化/反序列化更新
 
-### 3.2 中等复杂度：新增少量请求字段或返回差异
+如果只改请求对象、不改 provider 映射，实现上最常见的结果就是“字段看起来加了，但平台端根本没收到”。
 
-例如：
-
-- 新模型支持新的 reasoning / response format 选项
-- 新模型对 tool choice、输出格式、流式控制有额外要求
-
-这时通常要改的是：
-
-- 请求对象的可承载字段
-- provider service 的序列化映射
-
-但仍然不一定需要新增 provider。
-
-### 3.3 已经不是 model extension，而是 service extension
+### 3.3 名义上是新模型，实际上已经冲破旧契约
 
 如果你发现：
 
-- 输入输出语义都变了
-- 调用心智不再是 `Chat` / `Responses` 现有模式
-- 事件模型发生质变
+- 输入不再像现有请求模型
+- 返回不再像现有事件或结果对象
+- 调用方对状态消费方式已经完全变了
 
-那就别再把它硬称成“加个模型”，它更可能已经是新的 service 面。
+那这往往不再是单纯的 model extension。继续把它硬塞进现有 service，通常只会让抽象逐渐变形。
 
-## 4. AI4J 这层最重要的设计原则
+## 4. 先看 provider 支持矩阵，再决定改哪里
 
-**模型变化尽量留在 provider service 内部，不要把 provider 特判传播到业务层。**
+AI4J 当前不同 service 面的 provider 覆盖并不对称。
 
-这意味着：
+例如：
 
-- 业务层优先依赖统一接口
-- provider 差异收敛在 `AiService` 分发后的具体实现里
-- 只有现有接口真的承载不了，才升级为 service extension
+- `Chat` 覆盖的 provider 明显更多
+- `Responses` 目前只对少数 provider 暴露
 
-## 5. 为什么这对文档读者重要
+这带来一个很实际的判断：
 
-很多人看 SDK 时容易误以为：
+- 如果新增模型仍然属于现有 `Chat` 能力，通常优先留在 `Chat` 路径内
+- 如果目标能力只在 `Responses` 语义下成立，那要先确认该 provider 是否已进入 `createResponsesService(...)`
 
-- “新增模型”就等于“SDK 需要大改”
+所以 model extension 不是“加个 model 字符串”这么简单，而是要先看它落在现有哪条 service 主线里。
 
-实际上更准确的判断是：
+## 5. 这类扩展最应该保持的原则
 
-- 模型变化有没有打破现有服务契约
+### provider 差异尽量收敛在 provider service 内部
 
-只要服务契约没破，模型扩展通常就是可控的、局部的。
+上层调用方最好继续只依赖统一请求对象和统一 service 接口。
 
-## 6. 常见坑
+如果每新增一个模型，业务代码都要写一批：
 
-### 6.1 把 provider 新模型当成新 provider
+- `if openai`
+- `if deepseek`
+- `if dashscope`
 
-这会把 `PlatformType` 和工厂分发 unnecessarily 膨胀。
+那说明 model extension 没有被收敛好，而是在向业务层泄漏 provider 差异。
 
-### 6.2 把模型差异直接暴露到业务代码
+### 现有契约还能成立，就不要升级抽象层级
 
-后面一旦模型换代，业务层会充满 provider 特判。
+这是 AI4J 里很重要的一条经验线。
 
-### 6.3 明明已经是新服务语义，还假装只是“改个 model 名”
+只要现有 `Chat`、`Responses` 等契约仍然成立，优先把变化留在：
 
-这会让抽象层长期扭曲。
+- provider 请求映射
+- provider 返回解析
+- provider 配置字段
 
-## 7. 设计摘要
+而不是立刻膨胀成新的 provider 或新的 service。
 
-> 在 AI4J 里，model extension 的关键不是“能不能填一个新 model 字符串”，而是判断现有 `Chat` / `Responses` / `Embedding` 契约是否还成立。只要契约没破，变化应尽量被吸收在 provider service 内部，而不是扩散到业务层。
+## 6. 当前实现里容易忽略的几个后果
 
-## 8. 继续阅读
+### 并不是所有字段都会自动发到 provider
 
-- [Extension / Provider Extension](/docs/core-sdk/extension/provider-extension)
-- [Extension / Service Extension](/docs/core-sdk/extension/service-extension)
+统一请求对象存在的意义，是给 SDK 提供一个稳定建模面，而不是保证所有字段都自动穿透到外部平台。
+
+所以当你为新模型补字段时，必须同时验证：
+
+- provider service 是否读取了该字段
+- provider payload builder 是否把它真正写入请求
+- 流式或非流式返回路径是否也需要同步调整
+
+### 现有工厂分支不一定需要变化
+
+很多 model extension 都不该去碰 `AiService`。  
+如果你没有新增平台，也没有新增顶层能力面，但却开始改 `PlatformType` 或 `create*Service(...)`，通常说明扩展层级判断错了。
+
+### service 对象默认按次创建
+
+`AiService` 当前没有启用 service 缓存，获取具体 service 时会按次创建实例。  
+这意味着模型扩展中的状态，不应偷偷依赖某个 provider service 被长时间复用。
+
+## 7. 排障时先看哪一段
+
+### 新模型名生效了，但新字段像没效果
+
+先看 provider service 的请求映射，而不是先怪配置层。  
+这类问题往往是统一请求对象已经补了字段，但 provider 侧序列化没有跟上。
+
+### 业务侧被迫加很多 provider 分支
+
+先反思是不是把本该留在 provider service 内部的差异暴露出来了。  
+model extension 的目标本来就是吸收差异，而不是传播差异。
+
+### 你已经开始改 `PlatformType`
+
+这通常是一个警告信号：你也许已经从 model extension 滑向了 provider extension。
+
+## 8. 一条实用判断线
+
+如果这次改动主要集中在：
+
+- 请求/返回对象
+- provider service
+- provider 配置字段
+
+而不用改：
+
+- `PlatformType`
+- `DefaultAiServiceRegistry.applyPlatformConfig(...)`
+- starter 的整套 provider 属性装配
+
+那它大概率就是 model extension。
+
+## 9. 这一页的结论
+
+> 在 AI4J 里，model extension 的核心不是“能不能换一个 model 字符串”，而是现有 provider 与现有顶层契约能否继续承载这项变化。只要平台边界和能力语义没变，最稳的做法就是把差异收敛在请求对象和 provider 适配层内部，而不是过早抬升到 provider 或 service 级扩展。
