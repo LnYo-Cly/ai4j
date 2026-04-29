@@ -1,127 +1,196 @@
 # Client Integration
 
-这页讲的是“**我怎么把一个 MCP 服务接进来，并让当前请求真正用上它**”。重点不是协议概念，而是接入路径、生命周期和白名单。
+这一页讲的不是协议概念，而是 **AI4J 怎么把一个 MCP 服务真正接进请求链**。
 
-## 1. 从请求入口看，MCP 是怎么挂上的
+关键问题只有三个：
 
-AI4J 里最关键的不是“有个 MCP client”，而是**当前请求是否显式选择了某个 MCP 服务**。
+1. 服务怎么连上
+2. 服务能力怎么被缓存和发现
+3. 本次请求怎么显式开放它
 
-请求侧的两个关键挂载点是：
+对应源码主线是：
 
-- `ChatCompletion.mcpServices`
-- `ResponseRequest.mcpServices`
+- `mcp/client/McpClient.java`
+- `mcp/gateway/McpGateway.java`
+- `platform/openai/chat/entity/ChatCompletion.java`
+- `platform/openai/response/entity/ResponseRequest.java`
+- `tool/ToolUtil.java`
 
-它们的语义不是“直接原样发给 provider”，而是：
+## 1. 接入的起点不是 provider，而是 `McpClient`
 
-1. 当前请求声明本次允许使用哪些 MCP 服务
-2. 发送前由本地 runtime 解析这些服务的可见能力
-3. 再把解析结果组装进 provider `tools`
+AI4J 里，单个 MCP 服务的实际宿主是 `McpClient`。
 
-所以从第一步开始，AI4J 就把 MCP 设计成了**服务白名单驱动**，不是“网关里有啥就全开啥”。
+`McpClient.connect()` 做的事比“建立连接”多得多：
 
-## 2. 关键源码入口
+1. `transport.start()` 启动具体 transport
+2. 发送 `initialize`
+3. 发送 `notifications/initialized`
+4. 成功后才把 `connected` 置为 true
+5. 如果 transport 需要心跳，则启动低频健康检查
 
-- 请求对象：`ChatCompletion.java`、`ResponseRequest.java`
-- 服务引用对象：`mcp/entity/McpServerReference.java`
-- 全局网关：`mcp/gateway/McpGateway.java`
-- transport 类型归一化：`mcp/util/McpTypeSupport.java`
+这意味着在 AI4J 的语义里，“transport 已连通” 还不算真正可用；必须完成初始化握手，能力目录才可信。
 
-这些类连起来，就是 client integration 的完整主线。
+## 2. 初始化时客户端会声明哪些能力
 
-## 3. 一个最小接入心智
+`McpClient.initialize()` 当前会显式声明这些 client capability：
 
-如果你现在只接 1 个 MCP 服务，最小接入理解方式是：
+- `sampling`
+- `roots.listChanged`
+- `tools.listChanged`
+- `resources.subscribe`
+- `resources.listChanged`
+- `prompts.listChanged`
 
-1. 明确这个服务的 `serviceId`
-2. 确认 transport 是 `stdio`、`sse` 还是 `streamable_http`
-3. 初始化 `McpGateway`
-4. 在请求里显式写 `mcpServices("serviceId")`
+并且默认请求协议版本 `2025-03-26`。
 
-从架构角度说，**先选服务，再暴露能力**，而不是反过来。
+这几点很重要，因为它说明 AI4J 接入第三方 MCP 不是“只支持 tools/call 的最小客户端”，而是按完整 capability 面去做握手。
 
-## 4. `McpServerReference` 有什么用
+## 3. 服务能力怎么被客户端缓存
 
-`McpServerReference` 是请求侧对 MCP 服务的统一引用对象。它不是一个“漂亮的 DTO”，而是把服务连接方式和基础元信息绑定起来。
+`McpClient` 维护三份缓存：
 
-当前可以直接看出三种常见工厂：
+- `availableTools`
+- `availableResources`
+- `availablePrompts`
 
-- `McpServerReference.stdio(...)`
-- `McpServerReference.http(...)`
-- `McpServerReference.sse(...)`
+第一次访问时分别通过：
 
-这说明 AI4J 不要求你在业务代码里到处手写 transport 字符串，而是希望你把“服务是什么、怎么连”收敛成一个稳定对象。
+- `tools/list`
+- `resources/list`
+- `prompts/list`
 
-## 5. `McpGateway` 在接入时扮演什么角色
+拉取远端目录，之后复用本地缓存。
 
-对单服务场景来说，你可以把 `McpGateway` 看成：
+收到这些通知时缓存会失效：
 
-- MCP client 容器
-- 可用能力查询入口
-- 服务生命周期的统一宿主
+- `notifications/tools/list_changed`
+- `notifications/resources/list_changed`
+- `notifications/prompts/list_changed`
 
-对于 client integration，这有两个直接好处：
+所以 AI4J 当前对远端能力目录的心智是：
 
-- 不需要每次请求都重新连接服务
-- 请求侧可以只关心 `serviceId` 白名单，而不用重复处理 transport 和连接细节
+- 默认按缓存读
+- 收到通知再失效
 
-## 6. 一次真实请求会发生什么
+不是每次请求都重新全量拉目录。
 
-一条典型链路可以这样理解：
+## 4. 请求是怎么显式绑定 MCP 服务的
 
-1. 宿主启动或初始化 `McpGateway`
-2. gateway 连接好一个或多个 MCP 服务
-3. 你在 `ChatCompletion` / `ResponseRequest` 中写 `mcpServices(...)`
-4. 发送前 `ToolUtil.getAllTools(..., mcpServices)` 去拿这些服务的可见工具
-5. 这些能力被转成 provider 侧 `tools`
-6. 模型返回 tool call，再由当前 runtime 决定是否执行、如何执行
+真正把服务引入本次模型请求的入口，是请求对象上的：
 
-所以 client integration 的真正难点不是“连上没有”，而是**让这条链在宿主里保持边界稳定**。
+- `ChatCompletion.mcpServices(...)`
+- `ResponseRequest.mcpServices(...)`
 
-## 7. 哪些问题必须在接入时想清楚
+当前实现里，这两个字段都是 `List<String>`，也就是：
 
-### 7.1 生命周期
+- 传的是 `serviceId`
+- 不是直接把完整 `McpServerReference` 对象塞进请求
 
-- 谁初始化服务
-- 谁关闭服务
-- 失败后如何重连
+这点很关键。AI4J 当前稳定支持的请求语义是：
 
-### 7.2 可见性
+1. 先由宿主把服务注册到 `McpGateway`
+2. 再由请求用 `serviceId` 白名单挑选本次开放哪些服务
 
-- 当前请求开放哪些服务
-- 哪些服务是全局的，哪些是用户级的
+## 5. provider 发送前真正发生了什么
 
-### 7.3 权限
+以 `OpenAiChatService` 为代表，provider 适配层发送前会调用：
 
-- 第三方服务自身有什么真实权限
-- 模型是否只应看到其中一小部分能力
+`ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices())`
 
-### 7.4 错误处理
+这一步会把：
 
-- 服务挂了是直接失败，还是降级
-- 返回错误如何体现在 tool 调用链里
+- 本地 function tools
+- 请求指定的 MCP services
 
-这些问题的优先级都高于“先把 demo 跑起来”。
+合并成一组 provider 可见 `Tool`。
 
-## 8. 一个常见错误接法
+如果 `mcpServices` 为空，MCP 服务不会自动进入本次请求。
 
-很多人会这样做：
+这也是 AI4J 当前最重要的安全默认值之一。
 
-- 先连 5 个服务
-- 然后默认全部挂给模型
+## 6. `McpGateway` 在 client integration 里扮演什么角色
 
-这几乎一定会带来后续问题：
+`McpGateway` 是多服务宿主，但即便只接一个服务，也最好把它视为正式运行时组件。
 
-- 暴露面过大
-- 能力边界不清
-- 很难追踪某次请求实际使用了哪个服务
+它至少承担：
 
-AI4J 现在这套 `mcpServices(...)` 设计，本质上就是在阻止这种“全开式接入”。
+- 保存 `serviceId -> McpClient`
+- 初始化和关闭客户端
+- 刷新可用工具目录
+- 维护 `tool -> client` 映射
+- 为 `ToolUtil` 提供统一查询和调用入口
 
-## 9. 设计摘要
+所以真正的接入关系不是：
 
-> AI4J 的 MCP client integration 不是把远端服务直接塞进 provider，而是先把服务接到 `McpGateway`，再由请求侧通过 `mcpServices` 做显式白名单，最后把可见能力转换成 provider `tools`。这样 transport、生命周期和能力暴露面是分层治理的。
+`request -> remote service`
 
-## 10. 继续阅读
+而是：
 
-- [MCP / Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
-- [MCP / Tool Exposure Semantics](/docs/core-sdk/mcp/tool-exposure-semantics)
+`request -> ToolUtil -> McpGateway -> McpClient -> transport -> remote service`
+
+## 7. 执行阶段如何回到远端服务
+
+当模型返回 tool call 后，执行链最终会经过 `ToolUtil.invoke(...)`。
+
+对全局工具，它的优先级是：
+
+1. 先尝试本地 MCP tool
+2. 再尝试传统本地 function tool
+3. 最后尝试 `McpGateway.callTool(...)`
+
+这说明 “MCP tool 最终长得像普通 tool” 并不意味着执行链完全相同。AI4J 仍然保留了本地能力和远端能力的优先分流。
+
+## 8. 断连、失败和重连时会发生什么
+
+`McpClient` 的失败路径不是静默的：
+
+- `onDisconnected(...)` 会清空缓存
+- 停止心跳
+- 停止 transport
+- 取消所有 pending request
+- 如果 `autoReconnect=true`，默认 5 秒后安排一次重连
+
+这意味着接入第三方服务时要明确一个事实：
+
+- MCP 连接不是“配完即永久稳定”
+- 它在运行时可能掉线、重连、重新初始化
+
+如果你的业务需要严格的一致性或事务性，这些失败面必须在宿主层补治理。
+
+## 9. 目前实现里几个容易误解的点
+
+### 不是所有 transport 都需要同样的保活策略
+
+- `StdioTransport.needsHeartbeat()` 是 `false`
+- `SseTransport.needsHeartbeat()` 也是 `false`
+- `StreamableHttpTransport.needsHeartbeat()` 才是 `true`
+
+所以不要把“心跳存在”误解成所有 MCP 接入的统一行为。
+
+### 请求里没有传 `mcpServices`，不会自动开放
+
+哪怕 gateway 里已经初始化了很多服务，本次请求仍然可能一个 MCP tool 都看不见。
+
+### `McpServerReference` 目前更多是服务定义对象，不是请求面主入口
+
+当前实际请求面还是 `serviceId` 列表。文档里如果把二者混成一回事，会给使用者错误预期。
+
+## 10. 推荐的接入顺序
+
+对正式项目，建议按下面顺序接：
+
+1. 先单独验证 transport 能连接
+2. 确认 `initialize` 握手能完成
+3. 在 gateway 中注册服务
+4. 只给一个最小 `serviceId` 白名单做请求测试
+5. 再补资源、提示词或多服务组合
+
+不要一开始就：
+
+- 接多个服务
+- 默认全部开放
+- 再在 provider 侧回头查问题
+
+## 11. 这一页的结论
+
+> AI4J 的 MCP client integration 是“先把服务接到 `McpGateway`，再由请求用 `mcpServices` 显式开放”。`McpClient` 负责真正的握手、缓存和断连处理；provider 只看到最后被投影出来的 tools，而不是直接面对远端服务。

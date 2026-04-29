@@ -1,124 +1,195 @@
 # Gateway and Multi-service
 
-一旦你接的不止一个 MCP 服务，就不该继续停留在“单 client 心智”。这时真正重要的不是每个服务各自会不会调，而是**谁来统一管理这些服务**。在 AI4J 里，这个角色就是 `McpGateway`。
+只要接入的 MCP 服务不止一个，真正重要的问题就不再是“单个 client 会不会调”，而是：
 
-## 1. `McpGateway` 到底是什么
+- 谁来统一持有这些连接
+- 谁来维护工具目录
+- 谁来区分全局服务和用户服务
+- 谁来处理配置源变更
 
-从源码看，`mcp/gateway/McpGateway.java` 至少承担了四个职责：
+在 AI4J 里，这个角色就是 `McpGateway`。
 
-1. 管理多个 `McpClient`
-2. 维护工具名到客户端的映射关系
-3. 负责初始化、加载配置、启动服务
-4. 向上暴露统一的“可用工具”和调用入口
+## 1. `McpGateway` 的职责比“服务列表”大得多
 
-所以 gateway 不是“工具列表集合”，而是 **MCP 运行时调度中心**。
+从实现看，`McpGateway` 至少负责：
 
-## 2. 为什么多服务必须有网关
+1. 管理 `serviceId -> McpClient`
+2. 管理工具映射和缓存
+3. 从配置文件或配置源加载服务
+4. 为请求层提供统一的可用工具查询
+5. 为执行层提供统一的工具调用入口
+6. 区分全局服务和用户级服务
 
-单服务时，你可能还能靠一些局部对象把事情串起来；但只要进入多服务，立刻会出现这些问题：
+这意味着 gateway 不是“一个 Map 包装器”，而是 MCP 的运行时控制面。
 
-- 当前请求到底该看见哪些服务
-- 服务断连之后由谁负责重连
-- 同名或相似工具如何组织
-- 多租户或多用户场景怎么隔离
+## 2. 初始化时到底发生什么
 
-这些问题如果散落在业务代码里手写分支，很快就会失控。
+`McpGateway.initialize(...)` 当前有两条路径：
 
-`McpGateway` 的价值就在于：**把这些横切问题统一收进一个正式 runtime 组件。**
+### 使用默认配置文件
 
-## 3. AI4J 里的关键设计点
+如果没有显式设置 `configSource`，它会：
 
-### 3.1 全局实例
+1. 加载 `mcp-servers-config.json`
+2. 遍历已启用服务
+3. 为每个服务创建 `McpClient`
+4. 调用 `addMcpClient(...)`
+5. 启动完后把自己设成全局实例
 
-源码里有：
+### 使用动态配置源
 
-- `getInstance()`
-- `setGlobalInstance(...)`
-- `clearGlobalInstance()`
+如果先 `setConfigSource(...)`，则会：
 
-这说明 AI4J 已经把 gateway 视为宿主级共享组件，而不是每次请求临时 new 的对象。
+1. 把 gateway 绑定到 `McpConfigSource`
+2. 初始化时执行 `loadAll(configSource)`
+3. 后续继续监听配置增删改事件
 
-### 3.2 client registry
+所以 gateway 不只是“启动时扫一遍配置”，而是已经具备长期运行的配置治理入口。
 
-`McpGateway` 内部维护的是：
+## 3. `addMcpClient(...)` 真正做了什么
 
-- client key -> `McpClient`
-- tool name -> client 映射
+添加客户端不是简单 put 进 Map。`addMcpClientInternal(...)` 当前会：
 
-这意味着它既知道“有哪些服务”，也知道“某个能力属于哪个服务”。
+1. 把 client 放入 `mcpClients`
+2. 立刻执行 `client.connect().join()`
+3. 再执行 `toolRegistry.refresh(mcpClients).join()`
+4. 如果之前已有旧 client，则断开旧连接
+5. 失败时回滚映射并清理新 client
 
-### 3.3 config source
+这说明 gateway 在设计上追求的是：
 
-它不仅能从默认配置文件 `mcp-servers-config.json` 初始化，还支持：
+- client 连接成功后才算接入完成
+- 工具目录刷新与连接状态联动
+- 替换失败时尽量恢复旧状态
 
-- `McpConfigSource`
-- `FileMcpConfigSource`
-- 动态 rebind / loadAll
+## 4. gateway 如何管理工具目录
 
-这说明 AI4J 并不是只面向静态 demo 配置，而是给正式配置源治理留了入口。
+`McpGatewayToolRegistry` 做了两件核心工作：
 
-## 4. 全局服务与用户级服务怎么区分
+- 聚合所有已连接 client 的 `tools/list`
+- 构建 `tool -> clientId` 映射
 
-这部分是很多文档最容易写漏，但工程上非常关键的一点。
+刷新逻辑是：
 
-在源码里，client key 已经区分了：
+1. 遍历所有 `mcpClients`
+2. 只处理 `client.isConnected()` 的客户端
+3. 并发拉取每个 client 的 `getAvailableTools()`
+4. 转成 OpenAI `Tool.Function`
+5. 覆盖写入新的 cache 和映射
 
-- 全局服务：`serviceId`
-- 用户级服务：`user_{userId}_service_{serviceId}`
+也就是说，gateway 的可见工具目录并不是静态配置，而是“当前连接状态下的聚合快照”。
 
-工具侧也有对应的用户级 key 语义。
+## 5. 全局服务和用户服务是怎么区分的
 
-这说明 AI4J 对多服务的理解不是“多连几个第三方”，而是已经把 **用户级能力隔离** 作为正式问题来对待。
+AI4J 对多租户不是只停留在概念层。
 
-## 5. Gateway 和请求白名单是什么关系
+`McpGatewayKeySupport` 当前明确约定：
 
-很多人会误以为有了 gateway，就说明所有已连接服务都默认对模型可见。
+- 用户服务 key：`user_{userId}_service_{serviceId}`
+- 用户工具 key：`user_{userId}_tool_{toolName}`
 
-这不对。
+这让 gateway 能同时处理：
 
-更准确的关系是：
+- 全局共享服务
+- 用户专属服务
 
-- `McpGateway` 负责管理服务和能力目录
-- `mcpServices(...)` 负责决定本次请求开放哪些服务
+而且两者不会共用同一套 key 空间。
 
-也就是说：
+## 6. `getAvailableTools(...)` 和 `getUserAvailableTools(...)` 的区别
 
-- gateway 负责“有哪些能力”
-- 请求白名单负责“这次给模型看哪些能力”
+### `getAvailableTools()`
 
-两者缺一不可。
+返回全局聚合缓存；如果缓存为空，会触发一次 `toolRegistry.refresh(...)`。
 
-## 6. 什么时候你应该从“单服务接法”升级到 gateway 思维
+### `getAvailableTools(serviceIds)`
 
-出现这些情况时，就不该再把 MCP 当成局部接入：
+如果传入 `serviceIds`，就只对这些全局服务做过滤并转换。
 
-- 同时接 2 个以上 MCP 服务
-- 服务需要按租户、用户、工作区动态启停
-- 你需要统一处理配置变更、重连、关闭
-- 你需要追踪某个 tool 到底来自哪个服务
+### `getUserAvailableTools(serviceIds, userId)`
 
-只要命中一条，就应该把 `McpGateway` 当成正式基础设施。
+会同时返回：
 
-## 7. 它和 Agent / Coding Agent 的关系
+- 该用户前缀下的专属服务工具
+- 过滤后的全局服务工具
 
-`McpGateway` 仍然属于 Core SDK 基座层，它不负责：
+这意味着用户级工具不是“覆盖全局工具”，而是与全局工具合并暴露。
+
+## 7. 一个必须明确写出来的现实约束
+
+当前远端全局工具映射规则是：
+
+- 全局工具：`toolName -> clientId`
+- 用户工具：`user_{userId}_tool_{toolName} -> clientId`
+
+这带来一个工程后果：
+
+- 用户工具命名空间有隔离
+- 全局远端工具命名空间没有服务前缀隔离
+
+也就是说，如果两个全局 MCP 服务都暴露 `search`，后写入的映射会覆盖前者。`McpGatewayToolRegistry` 不会自动改名，也不会为远端服务拼 `serviceName_toolName`。
+
+这是当前多服务设计里最需要在文档中讲清楚的限制之一。
+
+## 8. gateway 和请求白名单是什么关系
+
+`McpGateway` 管的是“系统里已接入哪些服务”，但最终本次请求开放哪些服务，仍然由：
+
+- `ChatCompletion.mcpServices(...)`
+- `ResponseRequest.mcpServices(...)`
+
+决定。
+
+两者关系可以记成：
+
+- gateway：目录和连接控制面
+- `mcpServices`：请求级暴露控制面
+
+有 gateway 不代表默认开放；有请求白名单也必须先有 gateway 才有服务可选。
+
+## 9. 配置源动态变更时会发生什么
+
+`McpGatewayConfigSourceBinding` 已经把配置源事件和 gateway 操作接起来了：
+
+- `onConfigAdded` -> 创建 client 并接入
+- `onConfigUpdated` -> 创建新 client 并替换
+- `onConfigRemoved` -> `removeMcpClient(...)`
+
+这说明 AI4J 已经考虑到 MCP 服务不是永远静态的。
+
+如果你把 gateway 只当成“应用启动阶段初始化一次”的组件，会错过这层动态治理能力。
+
+## 10. gateway 不负责什么
+
+它虽然很核心，但它不负责：
 
 - agent loop
-- 人机审批
-- 长任务 checkpoint
+- tool approval
+- prompt 策略
+- provider 响应编排
 
-但它会成为上层 runtime 的重要依赖，因为所有外部协议能力最终都要先有一个稳定的网关宿主。
+这些属于更上层运行时。
 
-所以你可以把它理解成：
+gateway 的边界是：
 
-- Core SDK 里的外部能力底座
-- 上层 Agent runtime 的协议输入面
+- 接入服务
+- 管连接
+- 管目录
+- 管路由
 
-## 8. 设计摘要
+把审批、权限解释或 agent 任务状态直接塞进 gateway，会把层次做乱。
 
-> AI4J 用 `McpGateway` 统一管理多服务 MCP 连接、配置源、工具目录和用户级隔离；而具体某次请求是否能看到某个服务，还要再经过 `mcpServices` 白名单控制。所以 gateway 解决的是“管理”，不是“默认全开”。
+## 11. 调试多服务问题时该先看哪里
 
-## 9. 继续阅读
+建议按这个顺序排查：
 
-- [MCP / Client Integration](/docs/core-sdk/mcp/client-integration)
-- [MCP / Tool Exposure Semantics](/docs/core-sdk/mcp/tool-exposure-semantics)
+1. `McpGateway.getStatus()` 看 client 数量、连接数、工具数
+2. `toolRegistry.snapshotMappings()` 看工具映射是否符合预期
+3. 检查请求里的 `mcpServices` 是否真的包含目标服务
+4. 检查是否出现远端全局同名工具覆盖
+5. 再回头看具体 transport 日志
+
+如果一开始就只盯 provider 的 tool call，很容易把问题误判成模型行为异常。
+
+## 12. 这一页的结论
+
+> `McpGateway` 是 AI4J 的 MCP 控制面：它管理多服务连接、配置源、工具目录、用户级隔离和调用路由。它解决的是“服务如何被统一治理”，而不是“本次请求默认开放什么”。同时要注意，当前远端全局工具没有服务名前缀隔离，同名工具在多服务场景下会互相覆盖。

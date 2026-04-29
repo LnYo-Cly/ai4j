@@ -1,103 +1,166 @@
 # Tool Exposure Semantics
 
-这一页只讲一件事：**MCP 的能力在什么条件下会变成模型可见的 tool。**
+这一页只讲一件事：**MCP 的能力在 AI4J 里究竟在什么条件下会变成模型可见的 tool。**
 
-这件事如果没讲透，MCP 就会看起来像“连上就全开”的黑箱系统，但 AI4J 现在的设计并不是这样。
+如果这层语义没讲清楚，MCP 很容易被误解成：
 
-## 1. 先给一句总规则
+- 只要接上就自动全开
+- gateway 里有什么，模型就能看见什么
+- 所有 capability 最终都等价于 tool
 
-AI4J 当前的 MCP 暴露遵循两条硬边界：
+这些理解在 AI4J 当前实现里都不准确。
 
-1. 传什么服务，暴露什么服务
-2. 不显式传入的能力，不应该自动可见
+## 1. 先给出总规则
 
-也就是说：
+AI4J 当前的 MCP tool 暴露遵循三段式：
 
-- `McpGateway` 里连着什么 ≠ 模型都能看见什么
-- 某个第三方服务存在 ≠ 当前请求就默认开放它
+1. 服务先被 gateway 接入
+2. 请求再用 `mcpServices` 白名单选择服务
+3. 选中的服务工具被投影成 provider tool schema
 
-## 2. 运行时到底发生了什么
+所以可见性不是由“服务存在”决定，而是由“本次请求显式选择了哪些服务”决定。
 
-当请求写了 `mcpServices(...)` 之后，执行链大致是：
+## 2. 进入模型前，工具是怎么被解析的
 
-1. 当前请求先确定服务白名单
-2. `ToolUtil.getAllTools(functions, mcpServices)` 读取这些服务的可见能力
-3. `McpGateway` 返回工具定义
-4. 工具定义被转换成 provider 能理解的 `Tool.Function` schema
-5. provider 才真正看到这些 tool
+provider 发送前会调用：
 
-所以“暴露为 tool”是**运行时适配结果**，不是 MCP 概念本身。
+`ToolUtil.getAllTools(functions, mcpServices)`
 
-## 3. 为什么这层语义特别关键
+这一步会：
 
-因为它直接决定：
+1. 收集本地 function tools
+2. 判断 `mcpServices` 是否为空
+3. 如果有用户前缀 serviceId，则走 `getUserMcpTools(...)`
+4. 否则走 `getGlobalMcpTools(...)`
+5. 把返回的 `Tool.Function` 再包装成 provider `Tool`
 
-- 模型本次能看到哪些外部能力
-- 第三方系统是否被过度暴露
-- 多租户、多用户情况下是否还能保持边界稳定
+所以 MCP tool 在 provider 看来只是结果，不是原始来源。
 
-换句话说，**这层就是 MCP 的最小安全边界之一**。
+## 3. “可见服务”与“可用服务”是两回事
 
-## 4. 源码里最关键的几个点
+`McpGateway` 里可能已经初始化了很多服务，但如果本次请求没有写：
 
-- `ToolUtil#getAllTools(...)`
-- `ToolUtil#getGlobalMcpTools(...)`
-- `ToolUtil#getUserMcpTools(...)`
-- `McpGateway#getAvailableTools(...)`
-- `ToolUtil.generateApiFunctionName(...)`
+- `chatCompletion.mcpServices("github")`
+- 或 `responseRequest.mcpServices("github")`
 
-尤其是最后一个很重要，因为 MCP 工具最终会以 provider 允许的函数名规则暴露出去，所以 AI4J 会把 `serviceName + toolName` 做规范化处理。
+那这些服务不会自动进入本次 provider 请求。
 
-这不是小细节，而是让多服务场景下 tool 命名稳定、可追踪的前提。
+这意味着：
 
-## 5. 全局工具和用户级工具为什么要分开
+- gateway 解决“有什么”
+- 请求白名单解决“这次给模型看什么”
 
-从 `ToolUtil` 和 gateway 的 key 规则可以看出，AI4J 已经显式区分：
+两者职责完全不同。
 
-- 全局 MCP 工具
-- 用户级 MCP 工具
+## 4. 全局与用户级暴露的实际分流
 
-这说明“是否暴露”不仅是一个服务列表问题，还涉及：
+`ToolUtil.getAllTools(...)` 会先检查传入的 serviceId 是否长得像：
 
-- 暴露给谁
-- 同名工具在谁的上下文里生效
+`user_{userId}_service_{serviceId}`
 
-如果你不区分这层语义，后面权限隔离会非常难补。
+如果是，就会：
 
-## 6. 本地 Tool 和 MCP Tool 最后的共同点与不同点
+1. 提取 `userId`
+2. 提取真实 `serviceId`
+3. 调用 `gateway.getUserAvailableTools(serviceIds, userId)`
+
+这一步返回的是：
+
+- 用户专属服务工具
+- 符合过滤条件的全局工具
+
+所以用户请求上下文不是简单替换，而是“用户私有能力 + 全局能力”的组合暴露。
+
+## 5. 远端 tool 名称现在如何进入 provider
+
+远端工具最终的名字来自：
+
+- `McpToolDefinition.getName()`
+- `McpToolConversionSupport.convertToOpenAiTool(...)`
+
+AI4J 当前不会在 gateway 层自动给远端 tool 拼上服务名前缀。也就是说：
+
+- provider 看到的远端 tool 名字，就是服务端上报的那个名字
+
+这对使用者有两个直接影响：
+
+1. prompt 和日志里看到的名字会和服务端原名一致
+2. 多个服务如果暴露同名工具，映射可能发生覆盖
+
+## 6. 当前实现中的同名工具风险
+
+`McpGatewayToolRegistry` 对全局工具使用：
+
+- `toolName -> clientId`
+
+作为映射键。
+
+这意味着：
+
+- 同名全局工具不会共存
+- 后写入映射的 client 会覆盖先前映射
+- 调用 `gateway.callTool(toolName, ...)` 时只会命中一个 client
+
+相比之下，用户级工具会使用：
+
+- `user_{userId}_tool_{toolName}`
+
+作为路由键，所以隔离更完整。
+
+这也是为什么在多服务设计时，不应该假设 AI4J 已经替你做好了所有远端命名治理。
+
+## 7. 本地 Tool 与 MCP Tool 的共同点和不同点
 
 ### 共同点
 
-最终都会被 provider 看成某种 `tool schema`。
+进入 provider 前，都会被表示成 `Tool` / `Tool.Function`。
 
 ### 不同点
 
-- 本地 Tool 来自 JVM 内部声明
-- MCP Tool 来自外部服务能力目录
+本地 Tool：
 
-所以它们**最终表现相似**，但**来源和治理方式完全不同**。
+- 来自 JVM 内部扫描
+- 命名由本地类和注解决定
+- 执行通常在进程内完成
 
-这也是为什么文档里必须把 `Tool` 和 `MCP` 分开讲。
+MCP Tool：
 
-## 7. 工程上最容易做错的地方
+- 来自远端服务的 `tools/list`
+- 先经过 gateway 与请求白名单
+- 执行时需要再路由回具体 client
 
-### 7.1 以为 gateway 里有的全部都该暴露
+所以二者“长得一样”只是为了兼容 provider 接口，不代表治理方式一样。
 
-这直接违反当前白名单语义。
+## 8. capability 与 tool exposure 不是同义词
 
-### 7.2 把副作用强的 MCP 服务和只读服务混在一个 serviceId 下
+这一点尤其容易写错。
 
-这会让暴露边界很难控制。
+MCP 协议层有：
 
-### 7.3 工具命名不稳定
+- Tool capability
+- Resource capability
+- Prompt capability
 
-模型 prompt、日志、回归基线都会漂移。
+但当前直接进入 provider tool 暴露链的主要是 Tool capability。
 
-## 8. 设计摘要
+`resources/*` 和 `prompts/*` 仍然存在于协议层，只是没有被 AI4J 默认当作 provider 原生 tool 自动展开。
 
-> AI4J 的 MCP 暴露不是“已连接即已开放”，而是“请求白名单 -> gateway 能力目录 -> provider tool schema”三段式。MCP 工具最终会长得像 tool，但这个 tool 只是协议接入能力的运行时投影，不是 MCP 本体。
+所以“模型看见的 tools” 只是 MCP 能力面的一个投影，不是 MCP 全部能力的总和。
 
-## 9. 继续阅读
+## 9. 设计暴露面时的建议
 
-- [Tools / Tool Whitelist and Security](/docs/core-sdk/tools/tool-whitelist-and-security)
-- [MCP / Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
+### 只把当前任务真正需要的服务放进 `mcpServices`
+
+不要为了省事默认把所有服务都挂进去。
+
+### 远端服务尽量避免全局同名工具
+
+当前实现没有自动为远端全局工具做服务前缀隔离。
+
+### 高副作用服务和只读服务尽量拆开
+
+这样白名单更精确，也更容易做审计和审批。
+
+## 10. 这一页的结论
+
+> 在 AI4J 里，MCP tool 暴露不是“已连接即已开放”，而是“gateway 已接入 + 请求显式白名单 + 运行时 tool 投影”的结果。远端全局工具当前按原始 `toolName` 暴露，没有自动服务前缀隔离；因此多服务场景下的命名治理需要使用者自己设计清楚。
