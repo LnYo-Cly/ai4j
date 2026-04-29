@@ -4,357 +4,376 @@ sidebar_position: 4
 
 # Runtime 架构
 
-`Coding Agent` 不只是一个 `CodingAgent` 实例。
+`Coding Agent` 的 runtime，如果只画成“CLI 调 CodingAgent，再调模型”，会漏掉太多真正影响行为的层。  
+从当前源码看，一次完整运行至少要经过 5 层：
 
-真正跑起来时，至少有四层运行时一起工作：
+1. factory 装配层
+2. coding agent 构建层
+3. session 执行层
+4. host/runtime 交互层
+5. MCP 外部工具运行层
 
-- Agent runtime：模型推理、工具调用、session state；
-- Session runtime：一次 prompt 如何进入会话、如何流式回放、如何写事件账本；
-- Host runtime：CLI、TUI、ACP 这些宿主如何驱动会话；
-- MCP runtime：外部 MCP server 如何连进来并暴露成工具。
+这页的目标不是列模块名，而是讲清楚：**每层真正持有什么状态，决定什么行为，以及它和相邻层的边界是什么。**
 
----
+## 1. 先看最外层总装配入口
 
-## 1. 先看整体结构
+CLI / TUI / ACP 当前真正的准备入口是：
 
-```text
-CodeCommand / AcpCommand
-    -> CodeCommandOptions
-    -> CodingCliAgentFactory
-        -> AgentModelClient
-        -> CodingAgentBuilder
-        -> CliMcpRuntimeManager
-    -> CodingSessionManager
-    -> Host runtime
-        -> CodingCliSessionRunner   (CLI / TUI)
-        -> HeadlessCodingSessionRuntime (ACP / headless)
-```
+- `ai4j-cli/.../DefaultCodingCliAgentFactory.java`
 
-对应代码中的主要入口：
+`prepare(...)` 的主线非常清楚：
 
-- `DefaultCodingCliAgentFactory`
+1. `resolveProtocol(options)`
+2. `createModelClient(options, protocol)`
+3. `prepareMcpRuntime(options, pausedServers, terminal)`
+4. `buildAgent(options, terminal, interactionState, modelClient, mcpRuntimeManager)`
+5. 返回 `PreparedCodingAgent`
+
+这意味着 runtime 不是在 `CodingAgent` 内部“自动长出来”的，而是由 CLI factory 把：
+
+- 协议
+- provider
+- workspace
+- MCP
+- approval
+- stream options
+
+先装成一个可运行的环境。
+
+## 2. factory 层到底决定了什么
+
+`DefaultCodingCliAgentFactory` 当前至少决定 6 件事：
+
+- 用 `ChatModelClient` 还是 `ResponsesModelClient`
+- 当前 provider / baseUrl / apiKey 如何写入 `Configuration`
+- 当前 workspace 对应的 `CliWorkspaceConfig`
+- 是否初始化 `CliMcpRuntimeManager`
+- approval decorator 怎么挂
+- 是否注入 experimental subagent / delivery team
+
+所以 factory 层不是“小小的对象创建器”，而是 runtime policy 的第一层入口。
+
+一旦你切：
+
+- provider
+- protocol
+- model
+- MCP 可见集合
+- approval mode
+
+很多时候都不是改一个字段，而是重新组装整套 runtime。
+
+## 3. `CodingAgentBuilder` 是真正把通用 Agent 变成 Coding Agent 的分叉点
+
+factory 往里走，最关键的下一层是：
+
+- `ai4j-coding/.../CodingAgentBuilder.java`
+
+这个 builder 当前会额外完成：
+
+- `WorkspaceContext` 解析
+- `CodingSkillDiscovery.enrich(...)`
+- `CodingAgentOptions` / `AgentOptions` 归一化
+- built-in coding tool registry 创建
+- built-in tool executor 创建
+- `DefaultCodingRuntime` 创建
+- custom tool 合并
+- subagent / handoff 合并
+- workspace system prompt 注入
+
+最后才把这些东西交给：
+
+- `AgentBuilder`
+
+所以架构上更准确的描述是：
+
+**Coding Agent = 通用 Agent 内核 + coding runtime 装配层。**
+
+## 4. Coding Agent 内核层到底持有什么
+
+如果只看 `CodingAgentBuilder.build()`，你能看到这层真正汇聚的对象是：
+
+- `AgentModelClient`
+- `WorkspaceContext`
+- `CodingAgentOptions`
+- `AgentToolRegistry`
+- `ToolExecutor`
+- `CodingRuntime`
+- `SubAgentRegistry`
+- `HandoffPolicy`
+
+这比普通 Agent 多出来的关键状态是：
+
+- workspace 语义
+- coding-specific tools
+- coding-specific runtime
+- 子工作会话/委派能力
+
+也就是说，Coding Agent 本身已经不是“单模型 + 单工具表”的简单执行器。
+
+## 5. `DefaultCodingRuntime` 为什么是独立一层
+
+很多人第一次看会把 `CodingRuntime` 误会成“宿主界面层”。  
+其实不是。
+
+- `ai4j-coding/.../runtime/DefaultCodingRuntime.java`
+
+当前更像一个 coding 工作编排层。它负责：
+
+- `delegate(...)`
+- background task 调度
+- child session 创建
+- `CodingTask` 生命周期
+- `CodingSessionLink` 持久化
+- `CodingToolPolicyResolver` 应用
+- runtime listeners
+
+也就是说，这层关心的是：
+
+- 任务怎样拆出去
+- 子 session 怎样继承父上下文
+- 子 agent 允许用哪些工具
+- 前后台任务怎样跟踪
+
+它不是 UI runtime，也不是模型 runtime，而是 **coding 工作运行时**。
+
+## 6. session 执行层和 host runtime 不是同一层
+
+这也是当前文档最容易混淆的地方。
+
+### session 执行层
+
+核心对象是：
+
+- `CodingSession`
+- `CodingAgentLoopController`
+
+它们负责：
+
+- 一次 prompt 如何变成多轮 outer loop
+- 自动继续与停止
+- compact / checkpoint
+- process snapshots
+- state export / restore
+
+### host runtime
+
+核心对象是：
+
 - `CodingCliSessionRunner`
 - `HeadlessCodingSessionRuntime`
-- `DefaultCodingSessionManager`
-- `CliMcpRuntimeManager`
-- `AcpJsonRpcServer`
 
----
+它们负责：
 
-## 2. Agent runtime 负责什么
-
-最底层的核心仍然是 `CodingAgentBuilder`。
-
-在 `DefaultCodingCliAgentFactory` 里，当前运行时会完成这些事情：
-
-- 根据 `provider + protocol` 构造 `ChatModelClient` 或 `ResponsesModelClient`；
-- 组装 `WorkspaceContext`；
-- 注入 `systemPrompt`、`instructions`、采样参数和并行 tool 配置；
-- 打开 auto compact、max steps、stream execution 等 agent 选项；
-- 挂入 `toolExecutorDecorator` 做审批；
-- 根据 workspace 配置决定是否注入实验性的 `subagent_background_worker` 与 `subagent_delivery_team`；
-- 如果 MCP 已连接，再把 MCP tools 挂到 `toolRegistry` 和 `toolExecutor`。
-
-也就是说，`CodingAgent` 本身更像“执行内核”，但它并不负责：
-
-- CLI slash command；
-- TUI 界面渲染；
-- ACP JSON-RPC；
-- session 持久化文件；
-- MCP 配置解析。
-
-这些都在外层 runtime。
-
-这里还有一个容易混淆的边界：
-
-- `BaseAgentRuntime` 仍然只负责单轮 tool-loop；
-- `CodingSession` 在 `ai4j-coding` 层额外挂了 `CodingAgentLoopController`，做受控的 outer loop；
-- `ChatModelClient` 在 agent/coding 路径下会自动打开 `passThroughToolCalls`，让 chat provider 把 `tool_calls` 交回 runtime，而不是在 provider 适配层直接执行。
-
-### 2.1 `/experimental` 改变的是哪一层
-
-`/experimental` 不是单独的 UI 开关，而是 `DefaultCodingCliAgentFactory` 的 runtime 组装输入。
-
-当前实现里：
-
-- `subagent` 打开时，会额外挂入 `subagent_background_worker`
-- `agent-teams` 打开时，会额外挂入 `subagent_delivery_team`
-- 这两个开关都持久化在 `<workspace>/.ai4j/workspace.json`
-- CLI / TUI / ACP 切换开关后，都会立即重建当前 session runtime
-
-这里要特别区分：
-
-- 固定内置本地 Tool 仍然只有 `bash / read_file / write_file / apply_patch`
-- `/experimental` 改变的是当前 session 额外可见的 agent delegation surface
-- `subagent_delivery_team` 背后不是一个普通函数，而是一个真实 `AgentTeam` 包装后的 subagent
-
-所以 `/experimental` 的影响范围是：
-
-- 当前模型能看到哪些“可调用工具面”
-- 当前会话是否会把某些复杂任务委派给 subagent / team runtime
-
-而不是：
-
-- provider/profile 配置
-- TUI 渲染壳
-- 底层 `BaseAgentRuntime` 的单轮 tool-loop 语义
-
-### 2.2 审批拦截发生在哪一层
-
-审批不是一个独立的 shell hook 层，而是 runtime 在组装 Tool executor 时挂进去的一层 decorator。
-
-当前链路可以直接理解为：
-
-```text
-CodeCommandOptionsParser
-    -> ApprovalMode
-    -> DefaultCodingCliAgentFactory
-        -> CodingAgentOptions.toolExecutorDecorator
-        -> CodingAgentBuilder.createBuiltInToolExecutor(...)
-            -> decorate(read_file / write_file / apply_patch / bash)
-                -> CliToolApprovalDecorator or AcpToolApprovalDecorator
-```
-
-这段语义很重要，因为它决定了两件事：
-
-- 审批发生在 Tool 执行入口，而不是操作系统层
-- CLI/TUI 和 ACP 可以共享同一套审批策略，但走不同的宿主交互通道
-
-所以如果你要改审批规则，优先看的不是 shell executor，而是：
-
-- `ToolExecutorDecorator`
-- `CliToolApprovalDecorator`
-- `AcpToolApprovalDecorator`
-
----
-
-## 3. Session runtime 负责什么
-
-### 3.1 CLI / TUI 模式
-
-CLI 和 TUI 的主运行时是 `CodingCliSessionRunner`。
-
-它负责：
-
-- 接收用户输入和 slash command；
-- 持有当前 `ManagedCodingSession`；
-- 驱动 `agent.newSession()` / resume / fork 后的会话切换；
-- 驱动一次用户 prompt 下的多轮 outer loop continuation；
-- 把模型事件渲染到终端或 TUI；
-- 管理 `/processes`、`/events`、`/replay`、`/history` 这类会话级命令；
-- 在 provider、profile、model、MCP 状态变化时重建当前 session runtime。
-
-因此它不是“界面层小工具”，而是 CLI/TUI 的主控 runtime。
-
-### 3.2 ACP / Headless 模式
-
-ACP 不走 `CodingCliSessionRunner`，而是走 `HeadlessCodingSessionRuntime`。
-
-它负责：
-
-- 接收 `session/prompt`；
-- 生成 turnId；
-- 将用户输入写入 session event；
-- 调用 `session.getSession().runStream(...)`；
-- 把 reasoning、assistant text、tool call、tool result 转成宿主可消费的事件；
-- 追加 `AUTO_CONTINUE`、`AUTO_STOP`、`BLOCKED` 这类 outer loop 决策事件；
-- 处理 cancel；
-- 在结束后写入 compact / error / save。
-
-所以 ACP 的 runtime 重点不是终端交互，而是“结构化事件流”。
-
----
-
-## 4. Session manager 负责什么
-
-`DefaultCodingSessionManager` 负责会话生命周期和持久化，不负责模型执行。
-
-它的职责包括：
-
-- 创建新 session；
-- 从存储恢复 session state；
-- fork 出新的 session 分支；
-- 保存 `CodingSessionSnapshot`；
-- 追加 `SessionEvent`；
-- 列出 session descriptors 和事件账本。
-
-可以把它理解成：
-
-- `CodingAgent` 负责“跑”
-- `CodingSessionManager` 负责“存、取、分支、记账”
-
-这也是为什么 `session`、`resume`、`fork`、`events`、`replay` 这些能力可以跨 CLI、TUI、ACP 共享。
-
----
-
-## 4.1 Team snapshot manager 负责什么
-
-`CliTeamStateManager` 负责的是“工作区 team 持久化快照的读取与渲染”，不是 session manager 的一部分。
-
-它当前做两件事：
-
-- 从 `<workspace>/.ai4j/teams/state/<teamId>.json` 读取 `AgentTeamState`
-- 从 `<workspace>/.ai4j/teams/mailbox/<teamId>.jsonl` 读取 mailbox 消息
-
-这层能力专门服务：
-
-- `/team list`
-- `/team status [team-id]`
-- `/team messages [team-id] [limit]`
-- `/team resume [team-id]`
-
-而 `/team` 本身走的是另一条路径：
-
-- 当前 session event ledger
-- `TeamBoardRenderSupport.renderBoardLines(events)`
-
-这样拆开的原因是：
-
-- session ledger 记录的是“这次 coding session 观察到的 team 事件”
-- team snapshot 记录的是“某个 team runtime 最近一次持久化状态”
-
-两者不是同一份存储，也不应该互相覆盖。
-
----
-
-## 5. MCP runtime 负责什么
-
-`CliMcpRuntimeManager` 是 Coding Agent 的 MCP 运行时桥接层。
-
-它会：
-
-- 解析全局和 workspace MCP 配置；
-- 建立 MCP client session；
-- 拉取每个 server 的 tool definitions；
-- 校验工具名是否和内置工具冲突；
-- 生成 `toolRegistry` 和 `toolExecutor`；
-- 维护 `connected / paused / disabled / error / missing` 状态。
-
-它不是简单的“配置对象”，而是一个活的 runtime。
-
-所以当你执行：
-
-- `/mcp`
-- `/mcp pause`
-- `/mcp resume`
-- `/mcp reconnect`
-
-背后影响的是当前 session runtime 可见的工具集合。
-
----
-
-## 6. TUI runtime 和 session runtime 不一样
-
-这个地方最容易混淆。
-
-`TuiRuntime` 讲的是终端渲染机制，比如：
-
-- `AnsiTuiRuntime`
-- `AppendOnlyTuiRuntime`
-
-它解决的是：
-
-- 是否使用 alternate screen；
-- 如何刷新主缓冲区；
-- 如何控制绘制频率；
-- 如何把 `TuiRenderer` 输出到终端。
-
-但它不负责模型调用、session state、MCP 生命周期。
+- 用户输入如何进入 session
+- 事件怎样呈现给 CLI/TUI/ACP
+- 如何持久化与回放
+- 审批交互如何和宿主通信
 
 所以：
 
-- `TuiRuntime` = UI runtime
-- `CodingCliSessionRunner` = 会话主 runtime
+- `CodingSession` 是执行会话内核
+- `CodingCliSessionRunner` / `HeadlessCodingSessionRuntime` 是宿主驱动器
 
-两者不是一层东西。
+两者不是一层。
 
----
+## 7. `DefaultCodingSessionManager` 在架构里的位置是什么
 
-## 7. ACP runtime 和协议边界
+`DefaultCodingSessionManager` 也经常被误归到 host UI 层。  
+其实它更像是 session 生命周期服务。
 
-`AcpJsonRpcServer` 是 ACP 宿主层，不是 agent 内核。
+它负责：
 
-它主要负责：
+- `create`
+- `resume`
+- `fork`
+- `save`
+- `load`
+- `list`
+- `appendEvent`
+- `listEvents`
 
-- 处理 `initialize`、`session/new`、`session/load`、`session/list`、`session/prompt`、`session/cancel`；
-- 为每个 ACP session 创建 `SessionHandle`；
-- 把 `HeadlessCodingSessionRuntime` 的事件转成 `session/update`；
-- 在需要审批时，通过 `session/request_permission` 向宿主发起权限请求。
+并且会处理：
 
-因此 ACP 集成时要区分三层：
+- workspace 匹配校验
+- `rootSessionId / parentSessionId`
+- `SESSION_CREATED / RESUMED / FORKED / SAVED` 事件
 
-- ACP 协议层：JSON-RPC 收发；
-- Headless session runtime：一轮 prompt 如何执行；
-- CodingAgent：真正做推理和工具调用。
+所以这层的正确定位是：
 
----
+- 不负责推理
+- 不负责 UI
+- 负责 session 生命周期与账本
 
-## 8. 什么时候会重建 runtime
+## 8. CLI/TUI 路径和 ACP/headless 路径为什么要分开
 
-下面这些操作通常不只是改一个变量，而是会触发当前 session runtime 重建：
+### CLI / TUI
 
-- 切换 provider profile；
-- 切换 model；
-- 切换 protocol；
-- 修改会影响 effective profile 的配置；
-- 切换 MCP 可用集合。
-
-原因很简单：
-
-- model client 变了；
-- tool registry / executor 变了；
-- stream / approval / sampling 参数可能也变了。
-
-所以文档里经常写“立即重建当前 session runtime”，不是修辞，而是当前实现语义。
-
----
-
-## 9. 扩展时优先改哪一层
-
-### 9.1 想换模型接入方式
-
-优先看：
-
-- `DefaultCodingCliAgentFactory`
-- provider profile / configuration 相关文档
-
-### 9.2 想加新的工具审批策略
-
-优先看：
-
-- `ToolExecutorDecorator`
-- `CliToolApprovalDecorator`
-- `AcpToolApprovalDecorator`
-
-### 9.3 想改宿主体验
-
-优先看：
+主要由：
 
 - `CodingCliSessionRunner`
-- `CodingCliTuiFactory`
-- `TuiRuntime`
-- `TuiRenderer`
 
-### 9.4 想改 ACP 接入行为
+来驱动。
 
-优先看：
+它更偏交互式主控，职责包括：
 
-- `AcpJsonRpcServer`
+- 接收用户输入和 slash command
+- 管理当前 `ManagedCodingSession`
+- 处理会话切换与 runtime 重建
+- 驱动终端/TUI 渲染
+
+### ACP / headless
+
+主要由：
+
 - `HeadlessCodingSessionRuntime`
+- `AcpJsonRpcServer`
 
-### 9.5 想扩 MCP 工具来源
+来驱动。
 
-优先看：
+`HeadlessCodingSessionRuntime` 会把一次 prompt 转成：
+
+- `USER_MESSAGE`
+- `ASSISTANT_MESSAGE`
+- `TOOL_CALL`
+- `TOOL_RESULT`
+- `AUTO_CONTINUE / AUTO_STOP / BLOCKED`
+- `COMPACT`
+- `ERROR`
+
+等结构化事件。  
+`AcpJsonRpcServer` 再把这些事件通过协议发给宿主。
+
+所以 ACP 路径的重点不是终端体验，而是协议化事件流。
+
+## 9. MCP runtime 为什么要独立成活的运行层
+
+MCP 这层当前不是“读取配置文件然后拼几个工具定义”。
 
 - `CliMcpRuntimeManager`
 
----
+启动时会：
 
-## 10. 推荐继续阅读
+- 解析 resolved config
+- 为每个 server 建 `CliMcpConnectionHandle`
+- connect
+- `listTools()`
+- 校验工具名冲突
+- 转成 OpenAI-style `Tool`
+- 生成 `toolRegistry` 和 `toolExecutor`
+- 维护 `connected / disabled / paused / error / missing` 状态
+
+尤其它还显式防止与内置工具冲突：
+
+- `bash`
+- `read_file`
+- `write_file`
+- `apply_patch`
+
+这说明 MCP 在 Coding Agent 里不是静态扩展点，而是一个 **可连接、可暂停、可失败、可重建** 的运行层。
+
+## 10. `/experimental` 影响的是哪一层
+
+这也是很容易写错的一个点。
+
+`/experimental` 当前影响的不是：
+
+- model client
+- session manager
+- TUI renderer
+
+它影响的是 `DefaultCodingCliAgentFactory` 在构建 agent 时：
+
+- 是否附加 experimental subagent
+- 是否附加 delivery team surface
+
+也就是说，它改变的是当前 session 对模型暴露的可调用 agent surface，而不是整个底层 runtime 语义。
+
+## 11. 审批拦截在哪一层最合理
+
+当前审批链是：
+
+- `DefaultCodingCliAgentFactory`
+  -> `CodingAgentOptions.toolExecutorDecorator`
+  -> `CodingAgentBuilder.createBuiltInToolExecutor(...)`
+  -> `CliToolApprovalDecorator` / `AcpToolApprovalDecorator`
+
+这说明审批属于：
+
+- 工具执行入口层
+
+而不是：
+
+- shell 层
+- session manager 层
+- UI renderer 层
+
+然后 outer loop 再把审批拒绝转成 `BLOCKED_BY_APPROVAL`。  
+这是一种很干净的分层：
+
+- decorator 决定“能不能执行”
+- loop 决定“被拒后会话怎么停”
+
+## 12. runtime 为什么经常需要“重建”
+
+在 Coding Agent 里，下面这些变化往往会触发 runtime rebuild：
+
+- provider/profile 变化
+- protocol 变化
+- model 变化
+- MCP server 状态变化
+- workspace experimental 设置变化
+
+原因不是 UI 任性，而是这些变化会直接影响：
+
+- `AgentModelClient`
+- `toolRegistry`
+- `toolExecutor`
+- approval decorator
+- 可用 subagent surface
+
+所以很多配置变更，本质上都是运行环境变更。
+
+## 13. 从扩展角度看，优先改哪一层
+
+如果你的需求是：
+
+- 改 provider / protocol 装配
+  先看 `DefaultCodingCliAgentFactory`
+
+- 改 delegation / child session / background task 语义
+  先看 `DefaultCodingRuntime`
+
+- 改会话持久化与 replay
+  先看 `DefaultCodingSessionManager` / `SessionEventStore`
+
+- 改宿主流式事件行为
+  先看 `HeadlessCodingSessionRuntime` 或 `CodingCliSessionRunner`
+
+- 改 MCP 接入与冲突校验
+  先看 `CliMcpRuntimeManager`
+
+- 改审批策略
+  先看 `ToolExecutorDecorator` 与 `CliToolApprovalDecorator`
+
+这种按层修改，会比直接进 `CodingAgent` 主类乱改稳定得多。
+
+## 14. 这页最该记住的结论
+
+AI4J 当前的 Coding Agent runtime 不是单层系统，而是一条清晰的分层装配链：
+
+- factory 层决定 provider、protocol、workspace、MCP、approval、experimental surface
+- builder 层把这些装成 coding-specific agent 内核
+- runtime 层负责 delegation 与子工作会话
+- session 层负责 outer loop、compact、进程、state
+- host 层负责 CLI/TUI/ACP 交互与事件呈现
+- MCP runtime 层负责外部工具连接与冲突治理
+
+把这条链看清楚后，你再去改功能，就知道该改哪一层，而不是把所有东西都往 `CodingAgent` 一个类里堆。
+
+## 15. 推荐继续阅读
 
 1. [会话、流式与进程](/docs/coding-agent/session-runtime)
-2. [Coding Agent Architecture](/docs/coding-agent/architecture)
-3. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
+2. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
+3. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
 4. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
-5. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
-6. [命令参考](/docs/coding-agent/command-reference)
