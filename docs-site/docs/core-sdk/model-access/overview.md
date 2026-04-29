@@ -1,69 +1,146 @@
 # Model Access 总览
 
-`Model Access` 这一章负责把“模型请求如何进入 AI4J”讲成一条稳定主线。
+`Model Access` 这一章讲的不是“AI4J 支持哪些模型名字”，而是 **模型请求在 AI4J 基座里如何被建模、投影、发送、流式消费和回读**。
 
-## 1. 这章在 Core SDK 里的位置
+这一层的关键源码锚点主要是：
 
-如果 `service-entry-and-registry` 讲的是“从哪里进入能力”，那么 `model-access` 讲的就是：
+- `platform/openai/chat/entity/ChatCompletion.java`
+- `platform/openai/response/entity/ResponseRequest.java`
+- `platform/openai/chat/OpenAiChatService.java`
+- `platform/openai/response/OpenAiResponsesService.java`
+- `listener/SseListener.java`
+- `listener/ResponseSseListener.java`
+- `service/factory/AiService.java`
 
-- 进入之后，模型调用语义怎么分层
-- `Chat` 和 `Responses` 各自适合什么
-- 流式、多模态、返回读取应该怎么理解
+## 1. 这一章在 Core SDK 里的位置
 
-它对应的仍然是 `ai4j/` 这层，不是上层 runtime 专属章节。
+如果 `service-entry-and-registry` 讲的是“从哪个 service 入口拿能力”，那 `model-access` 讲的就是：
 
-## 2. 这章到底讲什么
+- 请求对象长什么样
+- provider 适配层在发送前做了什么
+- 流式返回如何被聚合
+- `Chat` 和 `Responses` 分别适合什么运行时
 
-它不讲业务 runtime，也不讲工具编排。
+它仍然是 `ai4j/` 基座层的问题，不是 Agent 或 Coding Agent 的上层专属话题。
 
-它只回答这些基础问题：
+## 2. 这一章真正覆盖什么
 
-- 请求走 `Chat` 还是 `Responses`
-- 流式怎么处理
-- 多模态输入输出怎么理解
-- 请求和返回的读取约定怎么统一
+这一章主要覆盖五个问题：
 
-## 3. 最该先分清的边界
+1. 为什么 AI4J 同时保留 `Chat` 与 `Responses`
+2. 请求对象里哪些字段是主语义，哪些只是辅助注册信息
+3. 流式结果在本地如何被监听器聚合
+4. 多模态输入如何投影到两条主线
+5. provider 差异在基座层被保留到了什么程度
 
-第一次进入这一章，最重要的不是先看哪家 provider，而是先分清：
+它不负责讲：
 
-- `Chat`：更接近传统多轮对话与消息数组心智
-- `Responses`：更接近 item/event 结构和更丰富的输出语义
+- tool 执行细节
+- MCP 协议接入细节
+- agent loop
+- coding runtime
 
-很多后续差异，本质上都是从这里分叉出来的。
+这些要切去 `tools`、`mcp` 或上层模块文档。
 
-更简单地说：
+## 3. 这章最先要分清的边界
 
-- 想先把常规模型调用链路打稳，先看 `Chat`
-- 想要更细的事件模型和输出语义，再进入 `Responses`
+第一次进入这一章，最重要的不是先看某个 provider，而是先分清 AI4J 内部有两条不同的模型访问主线：
 
-## 4. 这章不负责什么
+### `Chat`
 
-它不负责：
+- 以 `messages` 为中心
+- 更贴近传统 chat completions 心智
+- provider 覆盖最广
+- 内建了自动 tool loop 与流式 tool call 聚合
 
-- 工具执行模型
-- Skill 发现与加载
-- MCP 协议接入
-- Agent runtime
-- Coding Agent session/runtime
+### `Responses`
 
-如果你开始关心这些内容，就应该切到 `tools`、`skills`、`mcp` 或上层模块树。
+- 以 `input` 和事件序列为中心
+- 更贴近结构化 response item / event 心智
+- provider 覆盖更聚焦
+- 更适合 runtime 侧状态消费
 
-## 5. 和 legacy `chat/`、`responses/` 页的关系
+很多后续差异，包括 streaming、多模态、工具解析方式，本质上都从这里分叉。
 
-仓库里仍保留一些旧的 `core-sdk/chat/**`、`core-sdk/responses/**` 深页。
+## 4. 当前 provider 覆盖并不完全对称
 
-它们现在更适合当细节补充材料，而当前 canonical 主线应该以 `model-access/*` 为准，因为这里只有新的能力树能把：
+`AiService.createChatService(...)` 当前能创建的 `Chat` provider 包括：
 
-- `Chat`
-- `Responses`
-- `Streaming`
-- `Multimodal`
-- 请求/返回约定
+- OpenAI
+- Zhipu
+- DeepSeek
+- Moonshot
+- Hunyuan
+- Lingyi
+- Ollama
+- Minimax
+- Baichuan
+- DashScope
+- Doubao
 
-放在同一阅读框架里。
+而 `AiService.createResponsesService(...)` 当前只覆盖：
 
-## 6. 推荐阅读顺序
+- OpenAI
+- Doubao
+- DashScope
+
+这意味着在 AI4J 里：
+
+- `Chat` 是更广覆盖的默认主线
+- `Responses` 是更结构化、但 provider 覆盖更聚焦的主线
+
+这不是文档叙述偏好，而是当前工厂实现给出的事实。
+
+## 5. AI4J 如何处理“统一请求”与“provider 差异”
+
+AI4J 的请求对象策略不是简单追求字段最少，而是把主语义固定下来，再把差异留给适配层。
+
+例如：
+
+- `ChatCompletion` 有 `model / messages / stream / tools / toolChoice / responseFormat`
+- `ResponseRequest` 有 `model / input / stream / tools / toolChoice / reasoning / truncation`
+- 两者都有 `functions` 与 `mcpServices` 这类本地注册辅助字段
+- 两者都有 `extraBody` 承接额外 payload
+
+关键点在于：
+
+- `functions` 和 `mcpServices` 不会原样发给 provider
+- `tools` 才是最终真正进入 provider payload 的字段
+
+所以读这一章时，要把“本地注册字段”和“最终 provider 字段”分开理解。
+
+## 6. 两条主线都不是单纯文本接口
+
+`Chat` 不是“只会返回一条字符串”：
+
+- 同步调用里可以自动执行 tool calls
+- 流式调用里 `SseListener` 会聚合 reasoning、tool calls、usage、finish reason
+
+`Responses` 也不是“只会返回一堆事件”：
+
+- 非流式会返回完整 `Response`
+- 流式时 `ResponseSseListener` 会同时聚合 `events`、`outputText`、`reasoningSummary`、`functionArguments` 和最终 `response`
+
+这意味着两条主线都已经足以支撑中等复杂度运行时，只是适合的消费方式不同。
+
+## 7. 多模态也属于这一层，而不是 Tool 或 MCP
+
+AI4J 把图文输入纳入了统一会话抽象：
+
+- `ChatMemory.addUser(String text, String... imageUrls)`
+- `ChatMemoryItem.toChatMessage()`
+- `ChatMemoryItem.toResponsesInput()`
+
+同一份会话事实可以：
+
+- 投影成 `ChatMessage + Content.MultiModal`
+- 或投影成 `Responses` 的 `input_text / input_image`
+
+这说明多模态在 AI4J 里是请求协议问题，不是外部能力接入问题。
+
+## 8. 推荐阅读顺序
+
+建议按下面顺序读：
 
 1. [Chat](/docs/core-sdk/model-access/chat)
 2. [Responses](/docs/core-sdk/model-access/responses)
@@ -72,4 +149,6 @@
 5. [Multimodal](/docs/core-sdk/model-access/multimodal)
 6. [Request and Response Conventions](/docs/core-sdk/model-access/request-and-response-conventions)
 
-如果你是从 `Start Here / First Chat` 过来的，这一章就是你离开入门页后最先该深读的模型主线。
+## 9. 这一页的结论
+
+> `Model Access` 在 AI4J 里讲的是“请求如何被建模并送进 provider”，不是“模型能做什么”。当前基座保留了两条清晰主线：`Chat` 负责更广覆盖的消息式访问，`Responses` 负责更结构化的事件式访问；二者共享统一工具与多模态基座，但并不应被看成同一接口的两种皮肤。

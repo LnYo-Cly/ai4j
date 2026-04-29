@@ -1,144 +1,197 @@
 # Chat
 
-`Chat` 是 AI4J 里最成熟、也最容易打通的一条模型调用主线。它不是“低配版接口”，而是消息式模型访问的主入口。
+`Chat` 是 AI4J 当前最成熟、provider 覆盖最广、也最容易先跑通的一条模型访问主线。
 
-如果你第一次接 AI4J，或者你正在迁移已有 chat-completions 风格代码，`Chat` 通常是最直接的起点。
+但它不是“老接口兼容层”。从实现看，`Chat` 已经同时承载了：
 
-## 1. 源码入口
+- 本地 function tools
+- MCP tools
+- 自动 tool loop
+- 流式 tool call 聚合
+- reasoning 片段聚合
+- pass-through runtime 接力
 
-最关键的几个类是：
+## 1. 关键源码入口
 
-- 服务接口：`service/IChatService.java`
-- 请求对象：`platform/openai/chat/entity/ChatCompletion.java`
-- 返回对象：`platform/openai/chat/entity/ChatCompletionResponse.java`
-- 流式监听：`listener/SseListener.java`
-- 工厂入口：`service/factory/AiService.java#getChatService(...)`
+理解 `Chat` 最值得先看的对象是：
 
-从 `AiService#createChatService(...)` 还能直接看出，`Chat` 目前支持的 provider 面非常广，包括 OpenAI、Zhipu、DeepSeek、Moonshot、Hunyuan、Lingyi、Ollama、Minimax、Baichuan、DashScope、Doubao 等。
+- `platform/openai/chat/entity/ChatCompletion.java`
+- `platform/openai/chat/entity/ChatMessage.java`
+- `platform/openai/chat/entity/Content.java`
+- `platform/openai/chat/OpenAiChatService.java`
+- `listener/SseListener.java`
+- `service/factory/AiService.java`
 
-这就是为什么 `Chat` 特别适合作为通用接入主线。
+其中真正定义“Chat 在 AI4J 中是什么”的，不只是请求对象，还包括 `OpenAiChatService` 内部那条自动工具调用循环。
 
-## 2. 它的调用心智为什么简单
+## 2. `ChatCompletion` 到底承载了什么
 
-`Chat` 的核心心智就是：
+`ChatCompletion` 的主心智当然是：
 
-- 输入：`messages`
-- 输出：一条 assistant message 或 tool call
-- 流式：通过 `SseListener` 逐步消费增量
+- `model`
+- `messages`
 
-这和很多团队已有的 Chat Completions 心智几乎是同构的，所以迁移成本低。
+但当前实现里它还保留了很多运行时级字段：
 
-## 3. 一个最小示例
-
-```java
-ChatCompletion request = ChatCompletion.builder()
-        .model("gpt-4o-mini")
-        .messages(memory.toChatMessages())
-        .build();
-
-ChatCompletionResponse response = chatService.chatCompletion(request);
-```
-
-如果你已经用了 `ChatMemory`，那么这条链几乎就是“会话 -> 请求 -> 响应”三步。
-
-## 4. 为什么 `Chat` 不只是文本生成
-
-这是很多文档会写浅的地方。
-
-`ChatCompletion` 除了基础消息字段，还保留了：
-
+- `stream`
+- `streamOptions`
 - `functions`
 - `mcpServices`
+- `tools`
 - `toolChoice`
 - `parallelToolCalls`
 - `passThroughToolCalls`
 - `responseFormat`
+- `extraBody`
 - `streamExecution`
+- `builtInToolContext`
 
-这意味着 `Chat` 在 AI4J 里已经不是“只会收发文本消息”的薄壳，而是能承接：
+其中一个特别重要的边界是：
 
-- 本地 Tool
-- MCP Tool
-- 流式执行控制
-- provider 级 tool-choice 语义
+- `functions` / `mcpServices` 是本地注册辅助字段
+- `tools` 才是最终送给 provider 的实际 tool payload
 
-## 5. 工具是怎么进来的
+也就是说，AI4J 在 `Chat` 层已经把“本地能力注册”和“provider payload 组装”分开了。
 
-每个 provider 的 chat service 在发送前，会统一调用：
+## 3. 为什么 `Chat` 容易先跑通
 
-```java
-ToolUtil.getAllTools(chatCompletion.getFunctions(), chatCompletion.getMcpServices())
-```
+`Chat` 的基本输入语义非常稳定：
 
-然后把结果挂进 provider 请求。
+- 中心对象是 `messages`
+- 返回中心通常是 `choice.message`
+- 继续对话时直接把新消息拼回会话
 
-所以 `Chat` 这一层的真正价值不是“某家 provider 支持 function calling”，而是 **AI4J 已经把本地 Tool 和 MCP Tool 的暴露方式统一了**。
+这和很多团队已有的 chat-completions 心智几乎同构，所以迁移成本很低。
 
-## 6. `SseListener` 为什么重要
+同时，`AiService.createChatService(...)` 也说明它是当前最广覆盖的主线，支持：
 
-如果只把 `Chat` 的流式理解成“每次来一点文本就打印”，你就低估它了。
+- OpenAI
+- Zhipu
+- DeepSeek
+- Moonshot
+- Hunyuan
+- Lingyi
+- Ollama
+- Minimax
+- Baichuan
+- DashScope
+- Doubao
 
-`SseListener` 会累计和暴露：
+## 4. provider 发送前，AI4J 会对请求做什么
 
-- `currStr`
-- `currData`
-- `reasoningOutput`
-- `toolCalls`
-- `finishReason`
+以 `OpenAiChatService.chatCompletion(...)` 为例，发送前会显式做这些事情：
 
-这意味着 `Chat` 的流式链路已经能消费：
+1. `ToolUtil.pushBuiltInToolContext(...)`
+2. 强制同步模式下 `stream=false`
+3. 如果配置了 `functions` 或 `mcpServices`，就调用 `ToolUtil.getAllTools(...)`
+4. 把解析出的工具塞到 `chatCompletion.tools`
+5. 如果最终没有 tools，就把 `parallelToolCalls` 置空
 
-- 普通文本增量
-- reasoning 片段
-- tool call 片段
+这说明 `Chat` 不是“把请求对象序列化后原样发出”，而是先在本地运行时完成一次能力展开。
 
-所以它完全可以作为中等复杂度 runtime 的基础输入面。
+## 5. `Chat` 的一个关键特性：自动 tool loop
 
-## 7. `passThroughToolCalls` 的价值
+这是理解 AI4J `Chat` 和普通 provider SDK 差异的关键。
 
-这是 `Chat` 主线里一个非常关键的字段。
+在同步模式里，`OpenAiChatService.chatCompletion(...)` 内部会循环请求，直到 `finishReason` 不再是：
 
-它的含义不是“有没有工具”，而是：
+- `first`
+- `tool_calls`
 
-- tool call 是不是要原样保留给上层 runtime 处理
+当收到 `tool_calls` 时，如果没有开启 `passThroughToolCalls`，它会：
 
-当你做 Agent / Coding Agent 时，这个字段特别重要，因为你往往需要：
+1. 取出 assistant message 里的 `toolCalls`
+2. 把这条 assistant message 回填进 `messages`
+3. 对每个 tool call 执行 `ToolUtil.invoke(functionName, arguments)`
+4. 把工具输出包装成 `ChatMessage.withTool(...)`
+5. 再把这些 tool 输出消息追加到 `messages`
+6. 继续下一轮请求
+
+这意味着 `Chat` 在 AI4J 中不是单次 RPC，而是一个可以本地闭环执行工具的对话循环。
+
+## 6. `passThroughToolCalls` 为什么非常关键
+
+`passThroughToolCalls` 决定的是：
+
+- tool call 是让 SDK 直接自动执行
+- 还是把控制权交回上层 runtime
+
+同步场景下，如果 `passThroughToolCalls=true`，收到 `tool_calls` 后会直接返回当前 response，而不是继续本地自动执行。
+
+流式场景下，如果 `passThroughToolCalls=true`，`chatCompletionStream(...)` 在拿到流式聚合后的 tool calls 后会直接 `return`，不再继续追加 tool 消息和递归下一轮。
+
+这对 Agent / Coding Agent 很重要，因为上层往往还要做：
 
 - 审批
 - trace
-- 执行前检查
-- 自定义回填
+- 沙箱执行
+- 结果裁剪
 
-如果没有 `passThroughToolCalls` 这类语义，你就很难把 `Chat` 接到真正的上层 runtime 里。
+## 7. `SseListener` 的真实职责
 
-## 8. 什么时候优先选 `Chat`
+`SseListener` 不是控制台打印回调，而是 Chat 流式聚合器。
 
-- 第一次接 AI4J
-- 现有代码就是 chat 风格
-- 目标是文本生成 + 基础 tool 调用
-- provider 覆盖面比结构化事件更重要
+它会维护：
 
-如果你现在还不确定该用 `Chat` 还是 `Responses`，通常先选 `Chat` 更稳。
+- `output`
+- `currStr`
+- `currData`
+- `currToolName`
+- `reasoningOutput`
+- `usage`
+- `toolCalls`
+- `toolCall`
+- `finishReason`
 
-## 9. 它的边界在哪
+并且能同时处理：
 
-`Chat` 非常强，但它仍然更偏消息式接口。
+- 普通文本 delta
+- reasoning 片段
+- 完整或碎片化 tool call arguments
+- `stop` / `tool_calls` / `[DONE]`
+
+这说明 Chat 流式在 AI4J 里已经是“可供运行时消费的聚合状态”，不是单纯 token 输出。
+
+## 8. 多模态如何进入 Chat
+
+`ChatMessage.withUser(String content, String... images)` 最终会构造成：
+
+- 一段 `text`
+- 多个 `image_url`
+
+其底层由 `Content.ofMultiModals(...)` 与 `Content.MultiModal.withMultiModal(...)` 组织。
+
+再往上一层，`ChatMemoryItem.toChatMessage()` 会自动把带图片的 user item 投影成多模态 `ChatMessage`。
+
+这意味着在 AI4J 里，多模态并不是 Chat 之外的独立特殊链路，而是消息内容编码方式的扩展。
+
+## 9. `Chat` 的边界在哪里
+
+虽然 `Chat` 很强，但它的核心心智仍然是：
+
+- message 列表
+- 一轮一轮追加上下文
+- 在必要时穿插 tool 调用
 
 如果你的需求已经开始强调：
 
-- event 粒度消费
+- event 粒度的状态消费
 - response item 结构
-- function argument delta
-- runtime 级状态流
+- function arguments delta 的独立观察
+- `previous_response_id` 之类的 response-graph 语义
 
-那你应该认真看 `Responses`。
+那就应该认真评估 `Responses`。
 
-## 10. 设计摘要
+## 10. 什么时候优先选 `Chat`
 
-AI4J 的 `Chat` 不是简单的文本接口，而是覆盖最广的一条消息式模型访问主线。它已经把本地工具、MCP 工具、流式监听和 tool-pass-through 都纳进了统一请求对象，因此适合作为通用接入和增量升级的主线入口。
+下面这些情况，通常先选 `Chat` 更稳：
 
-## 11. 继续阅读
+- 第一次接 AI4J
+- 现有代码就是 chat-completions 心智
+- 需要最广 provider 覆盖
+- 想先跑通文本 + tool 调用主线
+- 上层暂时不需要事件化消费
 
-- [Model Access / Responses](/docs/core-sdk/model-access/responses)
-- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
-- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+## 11. 这一页的结论
+
+> AI4J 的 `Chat` 不是薄薄一层请求封装，而是一条成熟的消息式运行链：请求前会解析工具注册，收到 `tool_calls` 时可以自动闭环执行，流式阶段又由 `SseListener` 聚合文本、reasoning 和工具参数。因此它既适合快速接入，也足以支撑中等复杂度的本地 tool runtime。
