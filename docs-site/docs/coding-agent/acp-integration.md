@@ -4,277 +4,218 @@ sidebar_position: 9
 
 # ACP 集成
 
-`ACP` 是 Coding Agent 面向宿主集成的标准入口。
+`ACP` 是当前 `Coding Agent` 面向 IDE、桌面壳和其他宿主程序的标准接入面。
 
-如果你要把 `ai4j-cli` 接到 IDE、桌面应用或自定义前端，而不是直接使用终端交互，那么应当使用 `acp` 模式。
+它的目标不是“远程控制一个终端窗口”，而是让宿主直接驱动：
 
----
+- session 创建与加载
+- prompt 执行
+- 权限确认
+- slash command 调用
+- session 事件消费
 
-## 1. ACP 模式解决什么问题
+如果只从高层概念看，会误以为 ACP 只是“把 CLI 输出换成 JSON”。
 
-它解决的是“宿主如何驱动一个本地 coding agent”。
-
-也就是说，宿主不需要模拟终端输入输出，而是直接与 `ai4j-cli acp` 做结构化 JSON-RPC 通信。
-
-适合：
-
-- IDE 插件
-- 桌面端壳层
-- 自定义工作台
-- 中间层代理进程
+当前源码其实做得更重。
 
 ---
 
-## 2. 启动方式
+## 1. 先看 ACP 的真实入口链
 
-```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.1.0-jar-with-dependencies.jar acp `
-  --provider openai `
-  --protocol responses `
-  --model gpt-5-mini `
-  --workspace .
+把主链压成一条线：
+
+```text
+ai4j-cli acp ...
+  -> AcpCommand.run(...)
+  -> CodeCommandOptionsParser.parse(...)
+  -> new AcpJsonRpcServer(...)
+  -> initialize / session/new / session/load / session/prompt
+  -> HeadlessCodingSessionRuntime
+  -> session/update + session/request_permission
 ```
 
-约定：
+这里最关键的点有两个：
 
-- `stdin/stdout`：换行分隔的 JSON-RPC
-- `stderr`：日志、告警和诊断信息
+- `acp` 和 `code` 共用同一套命令行选项解析规则
+- ACP 不是另一个 runtime，而是同一套 coding runtime 的 headless host
 
----
+所以：
 
-## 3. `initialize`
-
-最小初始化请求：
-
-```json
-{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":1}}
-```
-
-当前返回能力里可以重点关注：
-
-- `loadSession=true`
-- `sessionCapabilities.list`
-- `mcpCapabilities.http=true`
-- `mcpCapabilities.sse=true`
-- `promptCapabilities.audio=false`
-- `promptCapabilities.image=false`
-- `promptCapabilities.embeddedContext=false`
-
-也就是说，当前 ACP 首先是一个文本 prompt + 会话事件流的集成面。
+- provider / model / workspace 的解析规则，ACP 和 CLI 本质一致
+- 差别主要在宿主协议和事件传输方式
 
 ---
 
-## 4. 最小会话流程
+## 2. 传输层约定比“stdio 模式”更具体
+
+`AcpCommand` 的帮助文案和 `AcpJsonRpcServer.run()` 的读取循环决定了当前 ACP 的硬约定：
+
+- `stdin`：换行分隔的 JSON-RPC 请求
+- `stdout`：换行分隔的 JSON-RPC 响应与通知
+- `stderr`：日志、告警、诊断
+
+`AcpJsonRpcServer.run()` 当前会：
+
+1. 按行读取 stdin
+2. 忽略空行
+3. 对每一行单独做 JSON parse
+4. 解析失败时把错误写到 `stderr`
+5. 继续处理后续消息
+
+这意味着当前协议层假设的是：
+
+- newline-delimited JSON-RPC
+
+而不是：
+
+- 带 `Content-Length` 头的 LSP 风格 framing
+
+宿主如果 framing 假设错了，会在最开始就通信失败。
+
+---
+
+## 3. `initialize` 当前暴露的能力边界
+
+当前 `buildInitializeResponse(...)` 返回的是一个很明确的能力集。
+
+关键字段包括：
+
+- `protocolVersion`
+- `agentInfo`
+- `agentCapabilities.loadSession=true`
+- `agentCapabilities.mcpCapabilities.http=true`
+- `agentCapabilities.mcpCapabilities.sse=true`
+- `agentCapabilities.promptCapabilities.audio=false`
+- `agentCapabilities.promptCapabilities.image=false`
+- `agentCapabilities.promptCapabilities.embeddedContext=false`
+- `agentCapabilities.sessionCapabilities.list`
+
+这几项一起说明了当前 ACP 的真实边界：
+
+- 可以列 session
+- 可以 load session
+- 可以从宿主注入 HTTP / SSE MCP
+- 但 prompt 输入仍以文本为主
+- 目前不应该假设图像、音频或嵌入上下文已经被 ACP 第一等支持
+
+所以现在最稳的宿主心智模型仍然是：
+
+- 文本 prompt + 结构化事件 + 审批回调
+
+---
+
+## 4. `session/new` 和 `session/load` 不是完全同一条路径
+
+两者都会进入 `createSession(...)`，但随后动作不同。
 
 ### 4.1 `session/new`
 
-```json
-{"jsonrpc":"2.0","id":2,"method":"session/new","params":{"sessionId":"demo-session","cwd":"C:/workspaces/ai4j-sdk"}}
-```
+执行顺序是：
 
-这里的 `cwd` 需要是绝对路径。
+1. 解析 `cwd` 和可选 `sessionId`
+2. 解析会话级 `mcpServers`
+3. 创建 permission gateway
+4. 准备 `CodingCliAgentFactory`
+5. 构建 `PreparedCodingAgent`
+6. 创建 `CodingSessionManager`
+7. 创建新的 `ManagedCodingSession`
+8. 返回 `sessionId + configOptions + modes`
+9. 发送 `available_commands_update`
 
-建会话成功后，除了 `id=2` 的正常响应外，服务端还会按 ACP 标准补发：
+### 4.2 `session/load`
 
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "session/update",
-  "params": {
-    "sessionId": "demo-session",
-    "update": {
-      "sessionUpdate": "available_commands_update",
-      "availableCommands": [
-        {"name": "status", "description": "Show current session status"}
-      ]
-    }
-  }
-}
-```
+执行顺序与 `session/new` 类似，但在响应前还会做一件额外的事：
 
-这条事件的意义是：
+- `handle.replayHistory()`
 
-- 告诉宿主“当前会话有哪些 slash commands”
-- 让 IDE / 客户端在用户输入 `/` 时弹出命令面板
-- 避免客户端自己硬编码一套命令列表
+也就是说：
 
-同样地，`session/load` 成功后也会发送一遍 `available_commands_update`。
+- `session/load` 会先重放历史 `session/update`
+- 然后才发送本次 RPC 的成功响应
+- 最后再发送 `available_commands_update`
 
-### 4.2 `session/prompt`
-
-```json
-{"jsonrpc":"2.0","id":3,"method":"session/prompt","params":{"sessionId":"demo-session","prompt":[{"type":"text","text":"列出这个仓库的模块结构"}]}}
-```
-
-发送后会先收到 `session/update`，最后收到：
-
-```json
-{"jsonrpc":"2.0","id":3,"result":{"stopReason":"end_turn"}}
-```
-
-如果用户输入的是：
-
-```text
-/status
-```
-
-ACP 客户端通常仍然会把它作为普通 `session/prompt` 文本发过来。
-
-当前 `ai4j-cli acp` 的处理方式是：
-
-- 如果是 ACP 已知 slash command，就在本地执行
-- 不再把这条命令透传给模型
-- 执行结果仍然通过标准 `session/update` 文本事件返回
-
-也就是说，ACP 下“命令发现”和“命令执行”是两件事：
-
-- 发现：`available_commands_update`
-- 执行：普通 `session/prompt`
-
-其中 `/team`、`/team list|status|messages|resume`、`/experimental` 的执行结果也走这条路径，不会额外引入新的 ACP 自定义事件。宿主即使没有专门的“团队看板”或“runtime feature toggle”组件，也可以先把它们作为普通文本摘要展示。
-
-这里要特别区分两种 `/team` 语义：
-
-- `/team`：读取当前 session event ledger，返回“当前会话视角”的 team board
-- `/team status|messages|resume`：读取 `<workspace>/.ai4j/teams` 下的持久化 team snapshot / mailbox
-
-其中 `/team resume <team-id>` 在 ACP 里仍然只是返回一个持久化快照视图，不表示 ACP 服务端重新拉起了某个 team runtime。
+这个顺序对宿主很重要，因为它决定了你是先收到历史内容，还是先收到“会话已打开”的确认。
 
 ---
 
-## 5. 会话管理方法
+## 5. `cwd` 为什么必须是绝对路径
 
-### 5.1 `session/list`
+`createSession(...)` 和 `listSessions(...)` 都会要求 `cwd` 走 `requireAbsolutePath(...)`。
 
-```json
-{"jsonrpc":"2.0","id":4,"method":"session/list","params":{"cwd":"C:/workspaces/ai4j-sdk"}}
-```
+所以当前 ACP 宿主不应该传：
 
-用于枚举某个工作区下已有的 session。
+- 相对路径
+- IDE 内部工作区别名
+- 逻辑 project id
 
-### 5.2 `session/load`
+而应该传：
 
-```json
-{"jsonrpc":"2.0","id":5,"method":"session/load","params":{"sessionId":"demo-session","cwd":"C:/workspaces/ai4j-sdk"}}
-```
+- 真实绝对文件系统路径
 
-加载成功后，服务端会回放历史 `session/update`。
-
-### 5.3 `session/cancel`
-
-```json
-{"jsonrpc":"2.0","method":"session/cancel","params":{"sessionId":"demo-session"}}
-```
-
-适合：
-
-- 宿主侧“停止生成”
-- 正在等待工具审批时统一取消
-- 终止当前活跃 turn
+因为后续所有 session store、workspace config、skills、MCP、文件工具边界，最终都依赖这个真实 workspace root。
 
 ---
 
-## 6. 事件模型
+## 6. `session/prompt` 其实有两条执行分支
 
-宿主最常消费的是 `session/update`。
+`promptSession(...)` 先把 `prompt` 数组 flatten 成输入字符串，然后判断：
 
-常见类型：
+- `AcpSlashCommandSupport.supports(input)` 是否为真
 
-- `available_commands_update`
-- `user_message_chunk`
-- `agent_thought_chunk`
-- `agent_message_chunk`
-- `tool_call`
-- `tool_call_update`
+于是当前 prompt 有两条路：
 
-这些事件有两个来源，但语义保持一致：
+### 6.1 普通 prompt
 
-- live turn：模型和工具实时产生的增量
-- history replay：`session/load` 后对历史事件的回放
+走：
 
-需要补充一个例外：
+- `HeadlessCodingSessionRuntime.runPrompt(...)`
 
-- `available_commands_update` 不是模型生成事件，而是会话元数据事件
-- 它通常出现在 `session/new` / `session/load` 之后
-- 宿主应缓存这份命令清单，并在命令面板或 slash menu 中复用
+这条路会产生真正的模型调用、工具调用、loop decision、auto-compact、event ledger 等一整套运行事件。
 
-宿主实现时，按收到顺序消费即可，不需要为“历史事件”和“实时事件”写两套渲染器。
+### 6.2 ACP 已知 slash command
 
-### 6.1 Team / SubAgent 任务在 ACP 里的映射
+走：
 
-`ai4j-cli acp` 不会为团队协作再发一套自定义协议事件。
+- `SessionHandle.runSlashCommand(...)`
 
-当前做法是继续遵守 ACP 标准：
+这条路不会把输入再交给模型，而是在本地执行命令逻辑，然后依然用标准 `session/update` 事件把文本结果发回宿主。
 
-- 任务创建 -> `tool_call`
-- 任务更新 -> `tool_call_update`
-- 团队消息 -> 也映射成 `tool_call_update`
+所以：
 
-其中 Team task 的 `rawInput / rawOutput` 会补更多结构化字段，例如：
+- ACP 里的 slash command 发现是协议能力
+- 但执行仍然通过普通 `session/prompt` 输入触发
 
-- `memberId`
-- `memberName`
-- `phase`
-- `percent`
-- `heartbeatCount`
-- `durationMillis`
-
-所以 ACP 宿主如果只想做最小接入，只消费：
-
-- `sessionUpdate`
-- `toolCallId`
-- `status`
-- `content`
-
-就足够。
-
-如果想做更强的 IDE 可视化，则可以继续读取 `rawInput / rawOutput`，把团队任务渲染成：
-
-- 成员 lane
-- 任务进度标签
-- heartbeat / reassign / release 状态提示
-
-而不需要协议层扩展。
-
-一个典型文本事件如下：
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "session/update",
-  "params": {
-    "sessionId": "demo-session",
-    "update": {
-      "sessionUpdate": "agent_message_chunk",
-      "content": {
-        "type": "text",
-        "text": "项目包含 ai4j、ai4j-cli、ai4j-agent 等模块。"
-      }
-    }
-  }
-}
-```
+这和“单独再发一套 command RPC”是不同设计。
 
 ---
 
-## 7. 流式文本语义
+## 7. `available_commands_update` 是元数据事件，不是模型事件
 
-ACP 当前对文本增量的处理方式非常直接：
+当前 ACP 会在以下时机主动发送：
 
-- 推理增量直接发 `agent_thought_chunk`
-- 回复增量直接发 `agent_message_chunk`
-- `content.text` 就是宿主应该顺序追加的字符串 chunk
+- `session/new` 之后
+- `session/load` 之后
 
-要特别注意：
+事件类型是：
 
-- 一个 event 不等于一个 token
-- 一个 chunk 可能是一个字、一个词，也可能是一小段文本
-- chunk 内部的换行与空白要原样保留
-- 没必要在协议层再做一轮 coalesce
+- `session/update`
+- `update.sessionUpdate = "available_commands_update"`
 
-## 7.1 ACP slash commands 的当前范围
+它的作用不是回复某次 prompt，而是告诉宿主：
 
-当前 ACP 默认暴露的是一组适合宿主集成的命令子集：
+- 这个 ACP session 当前支持哪些 slash commands
+
+宿主最稳的做法应该是：
+
+1. 缓存这份命令列表
+2. 把它映射到 slash menu / command palette
+3. 不要在客户端写死另一套命令清单
+
+---
+
+## 8. ACP 当前默认暴露的是“headless 友好”命令子集
+
+`AcpSlashCommandSupport.COMMANDS` 当前暴露的重点命令包括：
 
 - `help`
 - `status`
@@ -283,6 +224,7 @@ ACP 当前对文本增量的处理方式非常直接：
 - `providers`
 - `provider`
 - `model`
+- `experimental`
 - `skills`
 - `agents`
 - `mcp`
@@ -296,132 +238,245 @@ ACP 当前对文本增量的处理方式非常直接：
 - `processes`
 - `process`
 
-这样做的原因是：
+这和 CLI/TUI 的完整命令面不完全一样。
 
-- ACP 更偏“结构化宿主集成”，不是完整终端替身
-- 会保留一批适合 IDE 集成、且不依赖真实终端控件的高价值命令
-- 命令面板应优先稳定、可预测，而不是和 TUI 命令集完全耦合
+原因不是功能缺失，而是 ACP 当前更强调：
 
-`team` 属于一个值得保留的高价值命令：
+- 结构化宿主集成
+- 不依赖终端特有交互
+- 命令结果能够稳定退化为纯文本
 
-- 不依赖终端交互语义
-- 返回结果是纯文本，所有 ACP 宿主都能安全消费
-- 内容是 Team task / Team message 聚合后的当前任务板，可作为 lane UI 的文本回退
-
-`provider` / `model` 现在也属于 ACP 暴露范围：
-
-- 可以在 IDE 宿主中直接查看当前 provider/profile/model 状态
-- 可以通过 `/provider use ...`、`/provider add ...`、`/model ...` 做会话级切换
-- 切换后会立即重建当前 ACP session runtime，而不是只改配置文件不生效
-
-如果你在 IDE 中输入 `/` 后没有立刻看到命令面板，优先排查：
-
-1. 是否已经完成 `session/new` 或 `session/load`
-2. 日志里是否收到了 `available_commands_update`
-3. 宿主客户端是否实现了 ACP slash command UI
-
-如果宿主想做更平滑的显示动画，可以在 UI 层缓冲；但协议语义本身就是“按顺序到达的字符串 chunk”。
+所以像 `team` 这类命令虽然复杂，但仍然适合 ACP，因为它的输出可以先作为文本展示，再由宿主按需做 richer UI。
 
 ---
 
-## 8. 权限确认
+## 9. 文本事件模型的关键不是“分几类”，而是“顺序可重放”
 
-如果当前审批模式不是 `auto`，并且这次 Tool 调用命中了审批规则，宿主会收到 `session/request_permission`。
+ACP 最常见的通知仍然是：
 
-按当前实现理解：
+- `session/update`
 
-- `manual`：每次 Tool 调用都会触发
-- `safe`：当前主要是 `apply_patch` 和部分 `bash` 动作会触发
+其中常见 `sessionUpdate` 包括：
 
-当前支持的选项有：
+- `available_commands_update`
+- `user_message_chunk`
+- `agent_thought_chunk`
+- `agent_message_chunk`
+- `tool_call`
+- `tool_call_update`
+
+当前设计最重要的特点不是事件名本身，而是：
+
+- live turn 和 replay history 走的是同一类更新模型
+
+也就是说：
+
+- 你不需要为“实时渲染”和“历史回放”写两套完全不同的渲染器
+- 只要按顺序消费 `session/update`，大多数宿主就能统一处理
+
+---
+
+## 10. slash command 的执行结果为什么也走 `agent_message_chunk`
+
+`runSlashCommand(...)` 会：
+
+1. 先追加一个 `USER_MESSAGE` ledger event
+2. 发送 `user_message_chunk`
+3. 本地执行 ACP slash command
+4. 追加一个 `ASSISTANT_MESSAGE` ledger event，标记 `kind=command`
+5. 再把结果通过 `agent_message_chunk` 发给宿主
+
+这意味着对宿主来说：
+
+- slash command 结果和普通 assistant 文本结果在消费层可以共用 UI
+
+如果宿主想做更细区分，可以去读 ledger payload 里的：
+
+- `kind = command`
+
+但不是必须。
+
+---
+
+## 11. `session/load` 的 replay 不是“再问模型一次”
+
+`SessionHandle.replayHistory()` 只是从 event store 读取历史 `SessionEvent`，然后转成 ACP `session/update`。
+
+它不会：
+
+- 重新跑模型
+- 重新执行工具
+- 重新拉取外部状态
+
+所以 ACP 宿主必须把 replay 理解为：
+
+- 事件账本回放
+
+而不是：
+
+- 重新构造真实运行现场
+
+如果某些实时外部资源已经变化，replay 看到的仍然只是当时写下来的会话事件。
+
+---
+
+## 12. `session/cancel` 不只中断当前 turn，还会统一结束待审批状态
+
+`cancelSession(...)` 当前会做两件事：
+
+1. 取消该 session 上的 active prompt
+2. 把所有 pending permission futures 统一完成为 cancelled
+
+这说明 ACP 的“停止”语义不只是文本生成中断，还包括：
+
+- 宿主侧如果正卡在一次工具审批上，也应该一起退出等待
+
+这比简单中断线程更接近用户真正需要的“停止当前工作单元”。
+
+---
+
+## 13. 权限确认是服务端主动发起的反向 RPC
+
+如果当前审批模式不是 `auto`，并且工具调用命中审批规则，ACP 不会只在本地等待。
+
+它会主动向宿主发送一个 JSON-RPC request：
+
+- `method = "session/request_permission"`
+
+当前选项集合固定为：
 
 - `allow_once`
 - `allow_always`
 - `reject_once`
 - `reject_always`
 
-宿主返回时，只需要带回最终选择结果，例如：
+服务端收到宿主响应后，只把：
 
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "1",
-  "result": {
-    "outcome": {
-      "outcome": "selected",
-      "optionId": "allow_once"
-    }
-  }
-}
-```
+- `allow_once`
+- `allow_always`
 
----
+视为批准。
 
-## 9. ACP 下的 MCP 注入
+其他结果都会走拒绝或取消。
 
-ACP 场景除了使用本地全局 MCP 配置外，还可以在建会话时直接传 `mcpServers`。
+因此宿主需要支持的不是“显示一段文本”，而是：
 
-这适合：
+- 接收服务端主动请求
+- 暂停本次工具调用
+- 回传最终选择结果
 
-- 宿主动态配置 server
-- 每个会话临时挂不同 MCP
-- 不依赖本地固定配置文件
-
-示例：
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 6,
-  "method": "session/new",
-  "params": {
-    "sessionId": "demo-session",
-    "cwd": "C:/workspaces/ai4j-sdk",
-    "mcpServers": [
-      {
-        "name": "fetch",
-        "type": "sse",
-        "url": "http://127.0.0.1:3101/sse"
-      },
-      {
-        "name": "browser",
-        "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-fetch"]
-      }
-    ]
-  }
-}
-```
-
-常见字段有：
-
-- `name`
-- `type`
-- `url`
-- `command`
-- `args`
-- `env`
-- `cwd`
-- `headers`
+这条链如果没实现，`manual` / `safe` 模式下的 ACP 集成会卡死在权限等待点。
 
 ---
 
-## 10. 宿主实现建议
+## 14. `modes` 和 `configOptions` 当前能力边界很窄
 
-- `stdout` 只作为协议通道，`stderr` 只作为日志通道
-- 所有请求都使用换行分隔的 JSON-RPC
-- `cwd` 传绝对路径，`sessionId` 保持稳定
-- 统一按事件顺序渲染 `session/update`
-- 文本 chunk 保留原始换行与空白
-- 当前 ACP 以文本 prompt 为主，不要假设图片 / 音频输入已经可用
+`buildSessionOpenResult()` 会把两组东西发回给宿主：
+
+- `modes`
+- `configOptions`
+
+但当前真正支持的内容其实很有限。
+
+### `modes`
+
+当前本质上是审批模式集合，例如：
+
+- `auto`
+- `safe`
+- `manual`
+
+### `configOptions`
+
+当前只有：
+
+- `mode`
+- `model`
+
+也就是说 ACP 当前还不是完整“设置中心”。
+
+它只支持：
+
+- 切审批模式
+- 切模型
+
+如果宿主想改 provider、MCP store、workspace binding，当前仍然要通过其他路径，而不是期待 ACP 已经提供了全量配置 API。
 
 ---
 
-## 11. 继续阅读
+## 15. ACP 下的 MCP 注入是一条独立于本地 store 的链
+
+在 `session/new` / `session/load` 里，宿主可以直接传 `mcpServers`。
+
+`AcpJsonRpcServer.resolveMcpConfig(...)` 会把它们直接组装成 `CliResolvedMcpConfig`，随后交给 ACP agent factory。
+
+这条链的特点是：
+
+- 默认视为 workspace enabled
+- 不依赖 `~/.ai4j/mcp.json`
+- 不依赖 `workspace.json.enabledMcpServers`
+- 更像宿主临时会话注入
+
+因此 ACP 下的 MCP 最适合：
+
+- IDE 按项目动态挂载工具
+- 桌面壳按会话临时分配 MCP
+- 多租户宿主不想依赖用户本地全局配置
+
+---
+
+## 16. 当前最常见的接入误区
+
+### 16.1 用 LSP framing 发消息
+
+当前 ACP 读的是逐行 JSON，不是 `Content-Length` framing。
+
+### 16.2 把 `cwd` 传成相对路径
+
+当前要求绝对路径，否则建 session 就会失败。
+
+### 16.3 以为 slash command 需要另一套 RPC
+
+当前 slash command 仍然通过 `session/prompt` 文本触发。
+
+### 16.4 以为 `session/load` 会重跑历史工具
+
+它只 replay event ledger，不会重演真实执行。
+
+### 16.5 忽略服务端反向 `session/request_permission`
+
+如果宿主只会发请求、不会处理服务端发回来的审批请求，ACP 在非 `auto` 模式下就不完整。
+
+---
+
+## 17. 宿主实现建议
+
+- `stdout` 只作为协议通道，不要混入日志
+- `stderr` 单独接日志与告警
+- 所有请求按换行分隔 JSON-RPC 发送
+- `cwd` 始终传真实绝对路径
+- 统一按收到顺序消费 `session/update`
+- slash menu 以 `available_commands_update` 为准，不要本地硬编码
+- 权限对话框要支持处理服务端主动发起的 `session/request_permission`
+- 当前 prompt 输入以文本为主，不要假设 image/audio/embeddedContext 已可用
+
+---
+
+## 18. 这页最该记住的结论
+
+- ACP 是 headless host，不是“远程终端镜像”
+- `acp` 和 `code` 共用同一套基础配置解析规则
+- `session/new`、`session/load`、`session/prompt` 背后都有明确的本地运行链，不只是 JSON 转发
+- slash command 发现靠 `available_commands_update`，执行靠普通 `session/prompt`
+- 权限确认是服务端主动发起的反向 RPC
+- `session/load` replay 的是事件账本，不是重新执行历史运行
+
+---
+
+## 19. 继续阅读
 
 1. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
 2. [会话、流式与进程](/docs/coding-agent/session-runtime)
 3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
-4. [命令参考](/docs/coding-agent/command-reference)
-
+4. [MCP 对接](/docs/coding-agent/mcp-integration)
+5. [命令参考](/docs/coding-agent/command-reference)
