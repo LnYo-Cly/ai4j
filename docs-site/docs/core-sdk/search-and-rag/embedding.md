@@ -1,91 +1,216 @@
 # Embedding
 
-`Embedding` 是 AI4J 知识增强链路的起点。只要你开始做 RAG、向量召回或知识库入库，就应该先把这一层理解清楚。
+在 AI4J 当前实现里，`embedding` 不是一个孤立 API，而是离线 RAG 两端都在依赖的公共底座：
 
-## 1. 它在 Core SDK 里的位置
+- ingest 时，它把 chunk 变成向量
+- query 时，它把问题变成向量
 
-Embedding 解决的是“把文本统一映射成向量表征”。在 AI4J 里，这一层被统一抽象为：
+如果这一层理解得不准，你后面看 `DenseRetriever`、`IngestionPipeline`、`VectorStore` 都会失真。
 
-- `IEmbeddingService`
-- `Embedding`
-- `EmbeddingResponse`
+## 1. 抽象入口其实非常薄
 
-它既服务于手工向量化，也服务于 `IngestionPipeline` 这样的标准入库链路。
+统一接口只有一个：
 
-## 2. 代码锚点
+- `service/IEmbeddingService.java`
 
-- 统一接口：`service/IEmbeddingService.java`
-- 工厂入口：`service/factory/AiService.java#getEmbeddingService(...)`
-- 多实例入口：`service/factory/AiServiceRegistry.java`、`FreeAiService.java`
-- 入库编排：`rag/ingestion/IngestionPipeline.java`
+签名也很克制：
 
-从 `AiService#createEmbeddingService(...)` 可以看出，当前 Core SDK 的 embedding 主线主要支持：
+```java
+EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq)
+EmbeddingResponse embedding(Embedding embeddingReq)
+```
+
+这意味着 AI4J 在 embedding 层的设计取向是：
+
+- 统一输入输出结构
+- 把 provider 差异压到实现类
+- 不在接口层提前引入 RAG 语义
+
+也就是说，embedding 层本身并不知道：
+
+- dataset 是什么
+- chunk 是什么
+- 检索要怎么做
+
+它只负责“把输入文本转成向量”。
+
+## 2. 当前工厂默认支持哪些 embedding provider
+
+`AiService.createEmbeddingService(platform)` 目前只支持：
 
 - `OPENAI`
 - `OLLAMA`
 
-## 3. 它怎么进入 RAG 链路
+这一点很值得在文档里讲透，因为它和聊天模型支持面并不一致。  
+也就是说，AI4J 当前平台支持面里：
 
-`IngestionPipeline` 在构建 `VectorRecord` 之前，会先把 chunk 文本批量送进 `embeddingService.embedding(...)`，默认按批次分段调用。
+- chat provider 比 embedding provider 更多
+- rerank provider 又是另一套支持集合
 
-也就是说，Embedding 不只是一个独立 API，它是：
+所以“这个平台能聊天”并不等于“这个平台也能直接作为 embedding 提供方”。
 
-- chunk -> vector 的转换层
-- 检索质量的上游约束
-- 不同向量存储后端之间的共同前提
+## 3. embedding 在 ingest 链里是怎么被调用的
 
-## 4. 你真正该关心什么
+真正把 embedding 接进入库主线的是：
 
-- 同一个索引内向量维度必须一致
-- embedding 模型最好固定，不要半路混用
-- 批量向量化要考虑吞吐、限流和超时
-
-很多 RAG 效果问题看起来像“检索不准”，实际根因是 embedding 模型换了、向量维度漂了，或者入库时混用了多套模型。
-
-## 5. Core SDK 的边界
-
-Core SDK 负责：
-
-- 统一请求 / 返回实体
-- provider 差异屏蔽
-- 让 `IngestionPipeline`、`RagService`、手工调用共用同一套接口
-
-但它不替你做：
-
-- 文本清洗策略
-- chunk 粒度设计
-- 召回评测
-
-这些仍然属于知识工程本身。
-
-## 6. 实用建议
-
-- 先确定 embedding 模型，再建索引和数据集。
-- 对重复文本做缓存，避免重复向量化。
-- 如果后续要更换模型，按“新索引 / 新数据集”重建，不要原地混写。
-
-## 7. 关键对象
-
-如果你要继续从文档进入实现，优先看下面这些入口：
-
-- `service/IEmbeddingService.java`
-- `service/factory/AiService.java#getEmbeddingService(...)`
 - `rag/ingestion/IngestionPipeline.java`
-- `vector/entity/VectorRecord`
 
-它们把“调用 embedding 模型”和“把结果稳定送入向量体系”连接成了一条完整主线。
+在 `buildRecords(...)` 前，它会先做：
 
-## 8. 这一层不要替你决定什么
+```java
+List<List<Float>> vectors = embed(contents, request.getEmbeddingModel(), request.getBatchSize());
+```
 
-Embedding 是必要前提，但它不会自动替你决定：
+这个 `embed(...)` 方法有几个很关键的实现细节：
 
-- 文本应该怎么切分
-- 哪些字段要进入 metadata
-- 召回效果该如何评估
+- 默认批大小 `DEFAULT_BATCH_SIZE = 32`
+- 每批把 `List<String>` 作为一次 `Embedding.input` 发送
+- 从 `EmbeddingResponse.data` 中按 `EmbeddingObject.index` 重新组装顺序
+- 如果返回数量不足，会直接抛异常
 
-把这些责任分清楚，有助于避免把所有 RAG 质量问题都错误归因到 embedding 模型本身。
+这说明 AI4J 当前的 ingest embedding 不是“来一个 chunk 打一次请求”，而是已经做了基础批处理和顺序恢复。
 
-## 9. 继续阅读
+## 4. 为什么 `EmbeddingObject.index` 很关键
 
-- [Search and RAG / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
-- [Search and RAG / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)
+`IngestionPipeline.extractEmbeddings(...)` 会把 provider 返回结果按 `index` 放回原顺序。
+
+这个实现细节决定了：
+
+- provider 可以按 batch 返回多个向量
+- 但最终必须能恢复到原请求文本顺序
+
+如果返回里：
+
+- `index` 缺失过多
+- 向量数量少于 batch 大小
+- 某个 index 缺向量
+
+当前实现都会抛 `IllegalStateException`。
+
+这比“静默跳过坏数据”更严格，但对 RAG ingest 是正确取向，因为：
+
+- 一旦向量顺序错位
+- 后面的 `VectorRecord` 就会把错误向量写到错误 chunk 上
+
+这种错比直接失败更难查。
+
+## 5. embedding 在 query 链里是怎么被调用的
+
+查询侧真正使用 embedding 的是：
+
+- `rag/DenseRetriever.java`
+
+它会：
+
+1. 校验 `query.query` 非空
+2. 强制要求 `query.embeddingModel` 非空
+3. 调 `embeddingService.embedding(...)` 生成 query 向量
+4. 把向量交给 `VectorStore.search(...)`
+
+这说明 AI4J 的 dense retrieval，不是把 embedding 藏在 vector store 内部，而是显式拆成两步：
+
+- query to vector
+- vector to hits
+
+这种设计的好处是层次清楚；代价是 embedding 模型一致性要由你自己治理。
+
+## 6. 为什么“同一模型一致性”在这里不是建议，而是约束
+
+从当前实现看，ingest 和 query 侧都只认你传入的 embedding model 名称。  
+框架不会自动检查：
+
+- 你入库时用的是否和查询时一致
+- 维度是否匹配
+- 索引里是否混入了多套 embedding 体系
+
+这意味着一旦你：
+
+- 用 A 模型入库
+- 用 B 模型查询
+
+即便代码能跑通，检索质量也很可能直接失真，甚至后端因为维度不一致而报错。
+
+所以 embedding 在 AI4J 当前语义下，不是“随时可替换的 provider 配置”，而是：
+
+**索引级协议的一部分。**
+
+## 7. embedding 和 `dataset` 为什么不在同一层
+
+这个结构设计也值得说透。
+
+`IEmbeddingService` 不关心 `dataset`，因为：
+
+- dataset 是向量存储和检索边界
+- embedding 只是文本到向量的变换
+
+所以在当前实现里：
+
+- `IngestionPipeline` 先做 embedding
+- 再把向量和 metadata 组装成 `VectorRecord`
+- 最后连同 `dataset` 一起交给 `VectorStore.upsert(...)`
+
+这种分层是合理的。  
+因为一旦让 embedding 层感知 dataset，它就开始和存储策略耦合了。
+
+## 8. 当前实现最容易踩的 5 个点
+
+### 8.1 以为聊天模型可用，embedding 也一定可用
+
+当前 `AiService` 对 embedding 的 provider 支持明显更窄。
+
+### 8.2 ingest 和 query 用不同 embedding model
+
+这是最常见、也最隐蔽的 RAG 质量问题来源。
+
+### 8.3 忽略 batch 行为
+
+`IngestionPipeline` 默认按 32 条分批，不同 provider 的吞吐、限流、超时特征都可能在这里暴露。
+
+### 8.4 只看 provider 返回成功，不校验向量数量和顺序
+
+AI4J 当前实现是严格校验的，这一点不要在上层包装时给“优化掉”。
+
+### 8.5 把 embedding 当成 RAG 质量的唯一决定因素
+
+chunking、metadata、dataset、retrieval、rerank 都同样重要。
+
+## 9. 当前这一层没有替你做什么
+
+Embedding 层当前没有直接替你解决：
+
+- 文本清洗
+- chunk 边界设计
+- 向量缓存
+- 模型版本治理
+- 维度迁移
+- 召回效果评测
+
+它的职责非常克制，就是统一 provider 调用与结果承接。
+
+## 10. 从当前源码看，最稳的使用建议
+
+如果你要在 AI4J 上做稳定 RAG，embedding 层最稳的做法是：
+
+1. 先固定一套 embedding model
+2. 用它完整跑通 ingest 与 query
+3. 把模型名视为索引协议的一部分
+4. 更换模型时按新 dataset / 新索引重建
+
+不要一边沿用旧向量，一边改查询模型。  
+在当前架构下，这种混用不会被自动阻止。
+
+## 11. 这页最该记住的结论
+
+AI4J 当前的 embedding，是离线 RAG 的共享底层变换层：
+
+- ingest 侧靠它把 chunk 批量转成向量
+- query 侧靠它把问题转成向量后再交给 `VectorStore`
+
+接口本身很薄，真正重要的是它在主链里的位置和一致性约束。  
+把它看成“索引协议的一部分”，比把它看成“随时可切换的小配置”更准确。
+
+## 12. 继续阅读
+
+- [Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
+- [Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)
+- [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)

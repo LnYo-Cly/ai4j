@@ -1,160 +1,225 @@
 # Vector Store and Backends
 
-这一页讲向量存储后端，不讲模型调用。AI4J 的做法不是让你直接依赖某一个向量数据库 SDK，而是先定义一层统一 `VectorStore` 契约，再把不同后端塞到这个契约后面。
+AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector”，信息密度其实很低。  
+真正重要的是：**它怎样用统一 `VectorStore` 契约把不同后端收口，同时又不假装这些后端完全等价。**
 
-这页如果写浅了，用户会只记住“支持 Pinecone / Qdrant / Milvus / PgVector”，却看不懂真正的抽象价值。
+## 1. 统一契约到底有多大
 
-## 1. 统一契约到底是什么
+`VectorStore` 接口本身只有 4 个方法：
 
-Core SDK 的统一抽象集中在：
+```java
+int upsert(VectorUpsertRequest request) throws Exception;
+List<VectorSearchResult> search(VectorSearchRequest request) throws Exception;
+boolean delete(VectorDeleteRequest request) throws Exception;
+VectorStoreCapabilities capabilities();
+```
 
-- `VectorStore`
-- `VectorUpsertRequest`
-- `VectorSearchRequest`
-- `VectorDeleteRequest`
-- `VectorSearchResult`
-- `VectorStoreCapabilities`
+这个抽象很克制，但已经覆盖了 RAG 最核心的三件事：
 
-从请求对象也能直接看出这层设计的重点：
+- 向量写入
+- 向量检索
+- 数据删除
 
-- `dataset`
-- `vector`
-- `filter`
-- `includeMetadata`
-- `includeVector`
+以及一件非常关键的事：
 
-也就是说，AI4J 抽象的不是“存个向量”这么简单，而是把：
+- 后端能力声明
 
-- 写入
-- 检索
-- metadata 过滤
-- 向量回传能力
+也就是说，AI4J 当前不是靠“文档备注”来告诉你后端差异，而是把差异正式变成了 `capabilities()`。
 
-全部做成了稳定契约。
+## 2. `dataset` 在这层不是附属字段，而是硬边界
 
-## 2. 为什么 `dataset` 是核心字段
+看请求对象你就会发现：
 
-这一点非常关键。
+- `VectorUpsertRequest.dataset`
+- `VectorSearchRequest.dataset`
 
-AI4J 几乎所有后端都围绕 `dataset` 做逻辑边界：
+都是主字段，不是可选标签。
 
-- Pinecone：namespace
-- Milvus：collection scope
-- PgVector：查询筛选条件
-- Qdrant：集合/作用域级访问上下文
+更关键的是，4 个当前内置后端都把 `dataset` 当作必填：
 
-所以 `dataset` 不是装饰字段，而是：
+- Pinecone：`requiredDataset(...)`
+- Qdrant：`requiredDataset(...)`
+- Milvus：`requiredDataset(...)`
+- PgVector：`requiredDataset(...)`
 
-- 数据隔离边界
-- 检索边界
-- 删除边界
+也就是说，在 AI4J 当前实现里，`dataset` 不是“如果你想分库再填”，而是：
 
-如果文档不强调这一点，用户很容易在实际接入场景中把索引和租户治理做乱。
+**所有向量写入、检索、删除操作的默认边界。**
 
-## 3. 当前后端各自代表什么
+## 3. 同一个 `dataset`，在不同后端里具体落到哪里
+
+这恰恰说明统一接口不等于相同语义实现。
 
 ### Pinecone
 
-源码：`vector/store/pinecone/PineconeVectorStore.java`
+`dataset` 被映射到：
 
-特点：
-
-- 更偏 SaaS 向量库
-- 以 namespace 承载 `dataset`
-- 支持 metadata 过滤和 stored vector 返回
+- `namespace`
 
 ### Qdrant
 
-源码：`vector/store/qdrant/QdrantVectorStore.java`
+`dataset` 被嵌进：
 
-特点：
+- URL 模板路径
 
-- 走 HTTP API
-- 支持 payload
-- 支持 named vector
-- filter 会被转成 Qdrant 的查询表达式
+它更像集合级作用域。
 
 ### Milvus
 
-源码：`vector/store/milvus/MilvusVectorStore.java`
+`dataset` 会被写到：
 
-特点：
-
-- 以 collection 为核心
-- 可叠加 partition / dbName
-- 更适合独立向量服务基础设施
+- `collectionName`
 
 ### PgVector
 
-源码：`vector/store/pgvector/PgVectorStore.java`
+`dataset` 则被当成：
 
-特点：
+- 表中的筛选字段 / 查询条件
 
-- 直接基于 PostgreSQL
-- metadata 走 `jsonb`
-- 距离计算和筛选直接进 SQL
+所以从业务角度看大家都叫 `dataset`，但从存储现实看，它在不同后端对应的是：
 
-这四个后端不只是“换个驱动”，而是对应四种完全不同的运维和数据基础设施路线。
+- namespace
+- collection
+- URL scope
+- relational filter column
 
-## 4. `VectorStoreCapabilities` 为什么重要
+这也是为什么你不能把“切换后端”理解成“换个连接串”。
 
-这是很多人第一次看时会忽略的点。
+## 4. `VectorSearchRequest` 真正抽象了哪些检索语义
 
-不同后端不是完全等价的，所以 AI4J 没假装它们 100% 对齐，而是通过 `VectorStoreCapabilities` 显式声明：
+搜索请求目前有这些关键字段：
 
-- 支不支持 dataset
-- 支不支持 metadata filter
-- 能不能按 filter 删除
-- 能不能返回 stored vector
+- `dataset`
+- `vector`
+- `topK`，默认 `10`
+- `filter`
+- `includeMetadata`，默认 `true`
+- `includeVector`，默认 `false`
 
-这让上层 RAG 代码能在统一接口下，仍然知道后端能力差异。
+这个设计说明 AI4J 当前的 vector search 抽象，不只是“给个向量查最近邻”，而是已经把：
 
-## 5. 和 `IngestionPipeline` 的关系
+- 检索边界
+- 过滤条件
+- 返回内容粒度
 
-`IngestionPipeline` 并不关心你后面具体是哪种向量库，它只关心最终有一个 `VectorStore`。
+一起纳入了统一接口。
 
-这层解耦非常有价值，因为它意味着：
+返回对象 `VectorSearchResult` 也对应给出：
 
-- 文档加载和 chunking 策略不必绑死后端
-- embedding 策略不必绑死后端
-- 你可以在不重写入库流水线的前提下替换存储基础设施
+- `id`
+- `score`
+- `content`
+- `vector`
+- `metadata`
 
-这就是基座抽象真正的工程意义。
+这正是 `DenseRetriever` 后面能把结果继续装回 `RagHit` 的前提。
 
-## 6. Spring Boot 里怎么落地
+## 5. `capabilities()` 为什么是这层最有价值的设计
 
-`AiConfigAutoConfiguration` 已经帮你准备了自动装配：
+4 个当前后端都会显式返回 `VectorStoreCapabilities`。  
+而且这不是装饰性信息，里面真的有差异。
 
-- `PineconeVectorStore`
-- `QdrantVectorStore`
-- `MilvusVectorStore`
-- `PgVectorStore`
+当前源码里：
 
-这说明在 starter 视角里，这些后端已经被视为一等 RAG 组件，而不是额外插件。
+- Pinecone：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=true`
+- Qdrant：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=true`
+- Milvus：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
+- PgVector：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
 
-## 7. 注意事项
+这里最值得注意的是：
 
-### 7.1 以为后端只是“换个连接串”
+**`returnStoredVector` 不是所有后端都支持。**
 
-实际每个后端的元数据、过滤、隔离、运维方式都不一样。
+也就是说，如果你的上层逻辑依赖“检索时顺便把已存向量取回来”，那么当前：
 
-### 7.2 不先想清楚 `dataset`
+- Pinecone / Qdrant 更自然
+- Milvus / PgVector 不是同样语义
 
-后面检索和删除边界都会混乱。
+这就是 `capabilities()` 的意义：  
+统一接口之上，仍然允许你看见真实差异。
 
-### 7.3 把向量库选择建立在“社区热度”上
+## 6. `VectorStore` 和 `DenseRetriever` 的关系是什么
 
-真正应该看的是你团队现有基础设施：
+`DenseRetriever` 并不会直接关心你后面是哪种向量库。  
+它只做两件事：
 
-- 是更偏云 SaaS
-- 更偏自管服务
-- 还是更偏关系库合并方案
+1. 用 `IEmbeddingService` 生成 query 向量
+2. 调 `vectorStore.search(...)`
 
-## 8. 设计摘要
+这意味着 `VectorStore` 在整条 RAG 链里的位置是：
 
-> AI4J 用 `VectorStore` 把 Pinecone、Qdrant、Milvus、PgVector 收到统一契约后面，但没有假装它们完全等价，而是通过 `VectorStoreCapabilities` 暴露后端能力差异。`dataset` 在这层是核心边界，不只是一个附加字段。
+- 上接 embedding/query 向量
+- 下接具体后端
+- 输出统一 `VectorSearchResult`
 
-## 9. 继续阅读
+这就是它真正的抽象价值。  
+不是为了“把 4 个 SDK 名字收进一个列表”，而是为了把检索链的上下游断开。
 
-- [Search and RAG / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
-- [Search and RAG / Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)
+## 7. 为什么这一层仍然不能替你隐藏所有后端现实
+
+虽然 `VectorStore` 已经做了统一抽象，但下面这些东西，AI4J 当前并没有帮你完全抹平：
+
+- 后端的运维方式
+- 向量列或 collection 的初始化策略
+- 维度管理
+- 性能特征
+- 过滤表达式成本
+- SaaS 与自管的部署差异
+
+所以这层 abstraction 的正确理解不是“后端完全同构”，而是：
+
+**主链调用方式统一，但存储现实仍然存在。**
+
+## 8. 当前实现最容易踩的 5 个点
+
+### 8.1 把 `dataset` 当标签用
+
+在当前实现里，它是写入、检索、删除的边界，不是随手可空的 metadata。
+
+### 8.2 忽略 `capabilities()` 差异
+
+尤其 `returnStoredVector`，并不是所有后端都支持。
+
+### 8.3 只从产品名选后端
+
+你真正该看的是：
+
+- 你是 SaaS 优先还是自管优先
+- 你要不要借 PostgreSQL 现有基础设施
+- 你需不需要取回存量向量
+
+### 8.4 让上层直接依赖具体后端语义
+
+一旦这样写，`VectorStore` 这层抽象就被绕空了。
+
+### 8.5 以为统一接口会自动解决维度与 schema 治理
+
+当前它只统一调用，不替你做数据治理。
+
+## 9. 从当前源码看，最稳的使用建议
+
+在 AI4J 当前架构里，一个很稳的策略是：
+
+1. 先把 `dataset` 设计成稳定边界
+2. 用 `VectorStore` 写业务主链
+3. 仅在必要时根据 `capabilities()` 分支处理后端差异
+4. 不要把后端专有逻辑泄漏进 retriever / ingestion 上层
+
+这样你既能吃到统一接口的好处，又不会被“假等价”误导。
+
+## 10. 这页最该记住的结论
+
+AI4J 当前的向量存储层，本质上是：
+
+- 用 `VectorStore` 统一 upsert / search / delete
+- 用 `dataset` 统一知识边界
+- 用 `VectorStoreCapabilities` 显式暴露后端差异
+
+它做的是“主链抽象统一”，不是“后端现实消失”。  
+把这一层看清楚之后，再去看 ingest、dense retrieval、hybrid，就能知道哪些问题该在向量层解决，哪些不该。
+
+## 11. 继续阅读
+
+- [Embedding](/docs/core-sdk/search-and-rag/embedding)
+- [Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
+- [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)
