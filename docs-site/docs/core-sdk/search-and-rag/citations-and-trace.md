@@ -1,80 +1,281 @@
 # Citations and Trace
 
-知识增强链路最终不只看“答得像不像”，还要看“能不能解释来源”。在 AI4J 里，引用和 trace 的基础不是回答阶段临时拼出来的，而是 ingest 阶段就保留下来的 identity 和 metadata。
+AI4J 这一章里，`citation` 和 `trace` 很容易被一起写成“可解释性能力”。  
+这个说法不算错，但太粗。源码里这两者其实解决的是两件不同的事：
 
-## 1. 引用能力从哪里来
+- `citation` 解决“最终上下文和回答能引用到哪里”
+- `trace` 解决“RAG 管线里命中是怎么变化的”
 
-`IngestionPipeline` 在处理文档时会保留：
+这页把两条链分开讲。
 
-- `documentId`
-- `chunkId`
+## 1. 源码入口在哪里
+
+关键类很少，但非常集中：
+
+- `rag/DefaultRagService.java`
+- `rag/DefaultRagContextAssembler.java`
+- `rag/RagContext.java`
+- `rag/RagCitation.java`
+- `rag/RagTrace.java`
+- `rag/RagResult.java`
+
+从这组类就能看出，AI4J 当前的 citation/trace 都属于 **RAG 结果组装层**，不是 provider 层能力。
+
+## 2. citation 是怎么生成出来的
+
+真正生成 citation 的不是 retriever，也不是 reranker，而是：
+
+```java
+DefaultRagContextAssembler.assemble(query, hits)
+```
+
+它会按最终 `hits` 顺序逐条处理：
+
+1. 为每个 hit 分配 `citationId`，格式是 `S1`、`S2`、`S3`
+2. 从 hit 里提取：
+   - `sourceName`
+   - `sourcePath`
+   - `sourceUri`
+   - `pageNumber`
+   - `sectionTitle`
+   - `content`
+3. 生成 `RagCitation`
+4. 同时拼接给模型的 `context.text`
+
+所以 citation 不是单独的一张表，它和最终给模型的上下文文本，是在同一个 assembler 里一起产生的。
+
+## 3. `RagCitation` 里到底保存什么
+
+当前 `RagCitation` 很轻：
+
+- `citationId`
 - `sourceName`
 - `sourcePath`
 - `sourceUri`
-- chunk / document metadata
+- `pageNumber`
+- `sectionTitle`
+- `snippet`
 
-这些信息会一路进入：
+这里没有：
 
-- `VectorRecord`
-- `VectorSearchResult`
+- 精确字符 offset
+- chunkId
+- dataset
+- 命中分数
 
-也就是说，citation 不是回答阶段才“附加”的东西，而是从入库开始就必须保住的证据链。
+这说明 AI4J 当前 citation 的设计目标更偏：
 
-## 2. 为什么 trace 不能只靠最终回答
+- 给模型和用户一个可读来源标识
+- 给排障提供基本来源线索
 
-如果你最后只有一段文本，却没有：
+而不是做细粒度审计级引用定位。
 
-- chunk identity
-- source 信息
-- metadata 边界
+## 4. `context` 文本里的引用前缀是怎么拼的
 
-那你后续几乎做不好：
+`DefaultRagContextAssembler` 默认会在每段命中内容前面加类似：
 
-- 引用回溯
-- UI 证据展示
-- 排障
-- 检索效果解释
+```text
+[S1] source label
+```
 
-所以 AI4J 基座层真正做的是：**把证据链需要的最小骨架保留下来**，上层再决定如何展示和审计。
+其中 `source label` 的拼接优先级大致是：
 
-## 3. 设计摘要
+1. `sourceName`
+2. `sourcePath`
+3. 否则退化成 `source`
 
-> AI4J 的 citations/trace 不是靠回答阶段临时加工，而是依赖 `IngestionPipeline` 在文档、chunk、metadata 层建立稳定 identity。基座层负责保存证据链骨架，上层 runtime 或 UI 再决定怎么展示和追踪。
+如果有：
 
-## 4. 关键对象
+- `pageNumber`
+- `sectionTitle`
 
-这一页对应的关键对象主要有：
+也会继续附加到 label 上。
 
-- `rag/RagChunk`
-- `vector/entity/VectorRecord`
-- `vector/entity/VectorSearchResult`
-- `rag/ingestion/IngestionPipeline`
+然后才把 `hit.content` 接到后面。
 
-它们串起来的意义在于：文档身份、chunk 身份和检索结果身份是连续保存的，而不是到了回答阶段才第一次出现。
+这说明 citation 在 AI4J 当前实现里，不只是返回结构化字段，而是 **直接写进了给模型看的上下文文本**。
 
-## 5. 这一层真正解决什么
+## 5. `includeCitations` 控制的到底是什么
 
-`Citations and Trace` 在基座层解决的是“证据链骨架是否存在”，而不是“最终 UI 长什么样”。
+`RagQuery.includeCitations` 默认是 `true`。
 
-因此这一页最该关注的是：
+但从 `DefaultRagContextAssembler` 的实现看，它控制的是：
 
-- identity 是否稳定
-- metadata 是否够用
-- 召回结果能否回指到原始来源
+- 是否把 `[S1] source label` 这种前缀写进 `context.text`
 
-至于引用卡片怎么画、trace 面板怎么展示，那是上层产品和前端的职责。
+它**不控制** `RagCitation` 列表是否生成。
 
-## 6. 设计注意事项
+也就是说，即使你把 `includeCitations = false`：
 
-如果要把这条证据链长期维护稳定，至少要注意三件事：
+- `RagResult.citations` 仍然会有内容
+- 只是给模型的上下文不再内嵌 citation 标签
 
-- `documentId` 和 `chunkId` 的生成规则不要频繁漂移
-- metadata 既要够用，也不要无限膨胀到难以治理
-- 检索结果和最终回答之间最好保留明确映射关系
+这个细节很容易被误解成“关掉后就没有 citations 了”，实际上不是。
 
-否则即使今天能生成引用，后续版本迁移、重建索引或做审计时也会很痛苦。
+## 6. trace 是怎么生成出来的
 
-## 7. 继续阅读
+`trace` 由 `DefaultRagService.search(...)` 生成。
 
-- [Search and RAG / Ingestion Pipeline](/docs/core-sdk/search-and-rag/ingestion-pipeline)
-- [Search and RAG / Chunking Strategies](/docs/core-sdk/search-and-rag/chunking-strategies)
+只有当：
+
+```java
+query != null && query.isIncludeTrace()
+```
+
+时，结果里才会带：
+
+```java
+RagTrace.builder()
+    .retrievedHits(hits)
+    .rerankedHits(reranked)
+    .build()
+```
+
+也就是说，当前 trace 只记录两段：
+
+- 检索后命中列表
+- rerank 后命中列表
+
+它不记录：
+
+- 最终模型回答
+- prompt 拼装细节
+- token 使用
+- provider reasoning
+
+所以别把它误写成“全链路 trace”。
+
+## 7. 为什么 trace 不能只靠最终回答替代
+
+最终回答告诉你的只是模型输出。  
+但 RAG 排障真正常见的问题是：
+
+- 是没召回到？
+- 还是召回到了但排序不对？
+- 还是排序对了但 context 太长被噪音稀释？
+
+当前 `RagTrace` 虽然很轻，但至少能帮你区分前两类问题：
+
+- `retrievedHits` 看召回集合
+- `rerankedHits` 看排序变化
+
+这对于调：
+
+- dense topK
+- hybrid 融合
+- rerank topN
+- finalTopK
+
+都非常重要。
+
+## 8. citation 和 trace 的数据来源为什么不同
+
+这两者的来源阶段并不相同。
+
+`citation` 来自：
+
+- 最终传给 `contextAssembler` 的 `finalHits`
+
+`trace` 来自：
+
+- `retrievedHits`
+- `rerankedHits`
+
+这意味着 citation 是 **后状态**，trace 更偏 **中间状态记录**。
+
+一个直接后果是：
+
+- 被 `finalTopK` 裁掉的 hit 可能出现在 trace 里
+- 但不会出现在 citations 里
+
+所以看到某条命中“trace 有，citation 没有”，不一定是 bug，很可能只是因为它没进最终上下文。
+
+## 9. citation 质量真正受什么影响
+
+从源码看，citation 的内容几乎直接取自 `RagHit`。  
+因此 citation 质量首先受前面几层影响：
+
+- chunking 是否合理
+- metadata 是否完整
+- retriever 是否把 `sourceName/sourcePath/pageNumber/sectionTitle` 带回来了
+- rerank 后是否替换过 content
+
+尤其 `DenseRetriever`，它会尽量从 metadata 恢复：
+
+- `documentId`
+- `sourceName`
+- `sourcePath`
+- `sourceUri`
+- `pageNumber`
+- `sectionTitle`
+- `chunkIndex`
+
+如果 ingest 时这些字段没有入库，citation 再怎么写也只能很弱。
+
+## 10. 当前设计最真实的边界
+
+AI4J 这层 citation/trace 很有用，但边界要说透。
+
+它当前没有直接提供：
+
+- chunk 级精确偏移定位
+- 最终回答中的 span 到 citation 的自动绑定
+- prompt 版本记录
+- 模型使用了哪条 citation 的因果证明
+- provider 级可追踪性
+
+所以它更像是：
+
+- 一个可读引用机制
+- 一个轻量 RAG 过程快照
+
+而不是法务级、审计级、科研级引用系统。
+
+## 11. 最容易踩坑的 5 个点
+
+### 11.1 以为 citation 来自原始文档
+
+当前 citation 实际来自最终 `RagHit`，不是直接来自原始文档对象。
+
+### 11.2 以为关闭 `includeCitations` 就没有 citation 结构
+
+关掉的只是上下文文本里的标签前缀，不是 `RagCitation` 列表本身。
+
+### 11.3 以为 trace 是完整调用链
+
+当前 trace 只覆盖 retrieval 和 rerank 两段，不覆盖最终生成。
+
+### 11.4 忽略 metadata 质量
+
+没有 `sourceName`、`pageNumber`、`sectionTitle` 的 hit，citation 可读性会明显下降。
+
+### 11.5 把 citation 和 answer grounding 画等号
+
+AI4J 能提供引用材料，不等于模型最终一定严格按这些引用作答。
+
+## 12. 最稳的扩展位置在哪里
+
+如果你想增强 citation/trace，当前最稳的扩展位点是：
+
+- 自定义 `RagContextAssembler`
+- 改进 ingest metadata
+- 在上层 runtime 外挂更完整的 trace 记录
+
+不要把所有事情都压到 retriever 上。  
+retriever 负责找回 chunk，不负责决定最终 citation 呈现格式。
+
+## 13. 这页最该记住的结论
+
+AI4J 当前的 citation 和 trace 不是同一件事：
+
+- citation 由 `DefaultRagContextAssembler` 基于最终 hits 生成
+- trace 由 `DefaultRagService` 记录 retrieval / rerank 两个阶段
+
+前者面向“最终引用与上下文呈现”，后者面向“中间过程排障”。  
+把这两层分清，RAG 的可解释性分析才不会混。
+
+## 14. 继续阅读
+
+- [Chunking Strategies](/docs/core-sdk/search-and-rag/chunking-strategies)
+- [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)
+- [Rerank](/docs/core-sdk/search-and-rag/rerank)
