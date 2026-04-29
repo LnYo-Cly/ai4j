@@ -4,41 +4,35 @@ sidebar_position: 4
 
 # 前端画布与后端 Runtime 对接
 
-这一页讲的不是“如何再写一个前端编辑器”，而是：
+这一页讲的不是“再做一个前端编辑器”，而是 `Flowgram.ai` 画布怎样和 AI4J 的 Java 后端执行层对齐。
 
-- 前端画布如何把工作流 schema 交给后端；
-- 后端 runtime 如何执行任务；
-- 两边的数据协议在哪里被适配。
+如果只说“前端调几个接口”会漏掉最关键的事实：前后端之间真正对齐的不是按钮，而是 3 个契约。
 
-AI4J 当前已经给出两端参考：
+- workflow schema 契约
+- task lifecycle 契约
+- report / result / trace 读侧契约
 
-- 后端：`ai4j-flowgram-spring-boot-starter`
-- 前端：`ai4j-flowgram-webapp-demo`
+## 1. 先看完整链路
 
-这里的前端基础是 `Flowgram.ai` 画布 / editor 能力，AI4J 负责的是与它对接的后端 runtime 与 server 侧协议。
-
----
-
-## 1. 整体对接结构
+当前参考实现的主链路是：
 
 ```text
-Flowgram 前端画布
+Flowgram.ai canvas
   -> runtime plugin
-  -> server client
+  -> WorkflowRuntimeServerClient
   -> /flowgram/tasks/*
   -> FlowGramTaskController
   -> FlowGramRuntimeFacade
   -> FlowGramRuntimeService
-  -> node executors / LLM runner
+  -> node executors / LLM node runner
+  -> report / result / trace
 ```
 
-如果你要做自己的 Agentic 工作流平台，这就是当前最重要的一条主链路。
+这条链说明了一件事：AI4J 负责的不是前端画布本身，而是画布背后的正式执行后端。
 
----
+## 2. 前端并不是“直接调五个接口”
 
-## 2. 前端不是直接硬调五个接口
-
-在 `ai4j-flowgram-webapp-demo` 里，前端运行时是通过 runtime plugin 接进去的。
+在 `ai4j-flowgram-webapp-demo` 里，前端运行时是通过 runtime plugin 接进去的，而不是在组件里手写 `fetch`。
 
 关键文件：
 
@@ -46,40 +40,47 @@ Flowgram 前端画布
 - `src/plugins/runtime-plugin/runtime-service/index.ts`
 - `src/plugins/runtime-plugin/client/server-client/index.ts`
 
-当前 runtime plugin 支持两种模式：
+### 2.1 当前支持两种模式
 
 - `browser`
 - `server`
 
-如果你要对接 AI4J 后端 runtime，应使用 `server` 模式。
+如果你要接 AI4J Java 后端，应使用 `server` 模式。
 
-在这个模式下：
+### 2.2 `server` 模式下谁负责发请求
 
-- 前端会绑定 `WorkflowRuntimeServerClient`
-- 通过它调用 `/flowgram/tasks/run`
-- `/flowgram/tasks/validate`
-- `/flowgram/tasks/{taskId}/report`
-- `/flowgram/tasks/{taskId}/result`
-- `/flowgram/tasks/{taskId}/cancel`
+前端会绑定 `WorkflowRuntimeServerClient`，由它统一调用：
 
----
+- `POST /flowgram/tasks/validate`
+- `POST /flowgram/tasks/run`
+- `GET /flowgram/tasks/{taskId}/report`
+- `GET /flowgram/tasks/{taskId}/result`
+- `POST /flowgram/tasks/{taskId}/cancel`
 
-## 3. 前端发给后端前会做一次 schema 归一化
+这意味着前端最好把后端看成一个 task API server，而不是“某个节点自己临时发个请求”。
 
-这一步很关键。
+## 3. 前端发给后端前，schema 会先被重写
+
+这一层是整个对接最容易被忽略、但实际最关键的部分。
 
 关键文件：
 
 - `ai4j-flowgram-webapp-demo/src/utils/backend-workflow.ts`
 
-它当前做了几件事：
+### 3.1 UI-only 节点不会进后端
 
-- 去掉只用于画布展示的节点类型，例如 `Comment`、`Group`、`BlockStart`、`BlockEnd`
-- 把前端节点类型映射成后端 runtime 识别的类型
-- 清理无效边
-- 处理 loop 节点的输入补齐
+当前会被过滤掉的至少包括：
 
-当前可以直接确认的类型映射包括：
+- `Comment`
+- `Group`
+- `BlockStart`
+- `BlockEnd`
+
+这些对象对编辑器有意义，但对执行器没有意义。
+
+### 3.2 前端类型会映射成后端执行类型
+
+当前可直接确认的映射有：
 
 - `start -> START`
 - `end -> END`
@@ -92,247 +93,238 @@ Flowgram 前端画布
 - `tool -> TOOL`
 - `knowledge -> KNOWLEDGE`
 
-这意味着：
+这说明：
 
-- 前端节点 type 不一定等于后端最终执行 type
-- 你加自定义节点时，前后端都要同步考虑
+- 前端展示类型不一定等于后端协议类型
+- 前端 schema 和后端 runtime 之间存在一个明确的适配层
 
----
+### 3.3 这一步为什么重要
 
-## 4. 后端执行链路怎么接
+如果没有这层适配，后端就会被迫理解画布内部细节，最终造成：
 
-后端入口主要是三层：
+- UI 结构侵入执行层
+- 前端迭代牵动后端 contract
+- 自定义节点难以维护
 
-### 4.1 Controller
+因此最稳的做法，是把“执行前归一化”视为正式协议步骤，而不是 demo 小技巧。
 
-- `FlowGramTaskController`
+## 4. 后端侧不是只有 controller
 
-负责暴露 REST API。
+后端真正参与对接的至少有 3 层。
 
-### 4.2 Facade
+### 4.1 `FlowGramTaskController`: HTTP 暴露层
 
-- `FlowGramRuntimeFacade`
+Controller 默认挂在：
 
-负责：
+- `${ai4j.flowgram.api.base-path:/flowgram}`
 
-- 请求转运行输入
-- caller 解析
-- 权限检查
-- task store 写入
-- 结果与报告输出
+它只负责暴露 REST 入口，不负责执行业务。
 
-### 4.3 Runtime
+### 4.2 `FlowGramRuntimeFacade`: 平台治理层
 
-- `FlowGramRuntimeService`
+Facade 做的事情比 controller 多得多：
 
-负责：
+- 把 request 转成 runtime 输入
+- 解析 caller
+- 做 access check
+- 创建 task ownership
+- 把状态写入 `FlowGramTaskStore`
+- 根据配置决定是否带 node details / trace
 
-- 校验任务
-- 执行节点图
-- 聚合任务结果
-- 返回 report / result
+如果你后面要接权限、任务中心或审计，这一层才是真正的后端边界。
 
----
+### 4.3 `FlowGramRuntimeService`: 真正执行层
 
-## 5. 前端测试运行的真实调用方式
+Runtime 负责：
 
-在 `WorkflowRuntimeService` 里，前端当前流程是：
+- schema 校验
+- task record 创建
+- 节点图执行
+- report / result 生成
 
-1. 先做本地表单校验
-2. 调 `/tasks/validate`
-3. 调 `/tasks/run`
-4. 按固定轮询间隔拉 `/tasks/{taskId}/report`
-5. 最后拉 `/tasks/{taskId}/result`
+这说明前后端对接不是“前端 JSON -> controller -> done”，中间隔着明确的平台层和执行层。
 
-这说明当前平台形态是：
+## 5. 前端运行时到底怎样驱动一次任务
 
-- 异步任务执行
-- 前端轮询 report / result
-- 不是单次同步返回全部结果
+`WorkflowRuntimeService` 当前的主流程非常明确。
 
-如果你后面要接企业平台，这个轮询模型需要在产品层面先接受。
+### 5.1 提交前先做本地表单校验
 
----
+前端会先遍历所有节点表单，确保基础表单约束先过。
 
-## 6. 前端现在应该消费哪一层 trace
+### 5.2 再调 `/tasks/validate`
 
-当前后端已经不只是返回 `workflow/nodes/result` 这些静态结构。
+这一步负责发现后端视角的错误，例如：
 
-当 `ai4j.flowgram.trace-enabled=true` 时：
+- 图结构不合法
+- 节点类型没注册
+- 必填输入没绑定
+- 引用路径无效
 
-- `/tasks/{taskId}/report`
-- `/tasks/{taskId}/result`
+### 5.3 通过后再调 `/tasks/run`
 
-都会带一个 `trace` 字段。
+后端返回的不是最终结果，而是 `taskId`。这说明运行模型是异步任务。
 
-这层数据来自：
+### 5.4 前端按固定间隔轮询 `report`
+
+当前前端常量：
+
+- `SYNC_TASK_REPORT_INTERVAL = 500`
+
+也就是说，默认是每 `500ms` 轮询一次任务 report。
+
+### 5.5 结束后再取 `result`
+
+最终输出不是从 report 直接推断，而是通过 `/tasks/{taskId}/result` 正式获取。
+
+## 6. `validate`、`report`、`result` 三种响应不要混用
+
+这是接前端时最容易犯的一个错误。
+
+### 6.1 `validate`
+
+适合做：
+
+- 提交前阻断
+- 表单错误提示
+- schema 合法性确认
+
+不适合做：
+
+- 运行时 UI 展示
+
+### 6.2 `report`
+
+适合做：
+
+- 运行中状态面板
+- 节点高亮
+- 错误定位
+- 进度时间线
+
+如果 `reportNodeDetails = true`，还会带节点级 inputs / outputs。
+
+### 6.3 `result`
+
+适合做：
+
+- 最终输出展示
+- 任务结束页
+- 成功 / 失败的最终收口
+
+它更偏“最终结果视图”，而 report 更偏“执行过程视图”。
+
+## 7. `trace` 是给前端直接消费的投影，不是原始埋点
+
+当 `ai4j.flowgram.trace-enabled = true` 时：
+
+- `/report`
+- `/result`
+
+都会附带 `trace` 字段。
+
+这层数据的来源是：
 
 - `FlowGramRuntimeEvent`
 - `FlowGramRuntimeTraceCollector`
 - `FlowGramTraceView`
 
-它的定位是：
+### 7.1 它解决什么问题
 
-- 给前端调试面板
-- 给节点时间线
-- 给任务详情页
-
-也就是“前端直接渲染”的后端 projection。
-
-### 6.1 `trace` 字段的结构
-
-```json
-{
-  "taskId": "task-123",
-  "status": "success",
-  "startedAt": 1710000000000,
-  "endedAt": 1710000005231,
-  "summary": {
-    "durationMillis": 5231,
-    "eventCount": 4,
-    "nodeCount": 1,
-    "completedNodeCount": 1,
-    "failedNodeCount": 0,
-    "metrics": {
-      "promptTokens": 159,
-      "completionTokens": 236,
-      "totalTokens": 395
-    }
-  },
-  "events": [
-    { "type": "TASK_STARTED", "timestamp": 1710000000000, "status": "processing" },
-    { "type": "NODE_STARTED", "timestamp": 1710000000100, "nodeId": "llm_0", "status": "processing" },
-    { "type": "NODE_FINISHED", "timestamp": 1710000004200, "nodeId": "llm_0", "status": "success" },
-    { "type": "TASK_FINISHED", "timestamp": 1710000005231, "status": "success" }
-  ],
-  "nodes": {
-    "llm_0": {
-      "nodeId": "llm_0",
-      "status": "success",
-      "terminated": true,
-      "startedAt": 1710000000100,
-      "endedAt": 1710000004200,
-      "durationMillis": 4100,
-      "eventCount": 2,
-      "metrics": {
-        "promptTokens": 159,
-        "completionTokens": 236,
-        "totalTokens": 395
-      }
-    }
-  }
-}
-```
-
-前端一般可以这样消费：
+前端需要的是：
 
 - 顶部任务状态
-  - 用 `trace.status/startedAt/endedAt`
-- 顶部总指标
-  - 用 `trace.summary.metrics`
-- 节点执行高亮
-  - 用 `trace.nodes[nodeId].status`
-- 时间线面板
-  - 直接渲染 `trace.events`
-- 节点失败详情
-  - 读 `trace.nodes[nodeId].error`
-- 节点级 token / 成本
-  - 用 `trace.nodes[nodeId].metrics`
-- 节点原始输出区
-  - 如果你还要展示 report 里的节点输出，可直接读 `workflow.nodes[nodeId].outputs.metrics`
+- 节点执行时间线
+- 哪个节点失败了
+- 每个节点耗时和指标
 
-### 6.2 为什么不直接读 OpenTelemetry
+这类 UI 不应直接消费后端内部埋点对象，而应该消费为前端投影过的 `FlowGramTraceView`。
 
-因为两层目标不一样：
+### 7.2 为什么不直接让前端读 OTel
+
+因为两层目标不同：
 
 - OTel 面向后端 observability 平台
 - `FlowGramTraceView` 面向前端画布运行时
 
-推荐模式是：
+把两者分开，前后端职责边界会更清楚。
 
-- 后端可以继续往 OTel 导出
-- 前端只消费 `trace` projection
+## 8. Protocol Adapter 在这里的意义
 
-这样前后端的职责边界最清晰。
+`FlowGramProtocolAdapter` 是前后端协议收口点之一。
 
-还要注意一件事：
+它负责把：
 
-- 新版后端会在 `report/result` 返回前自动把 `rawResponse.usage` 归一化成 `outputs.metrics`
-- 同时补齐 `trace.summary.metrics` 和 `trace.nodes[nodeId].metrics`
+- HTTP request DTO
+- runtime 输入输出模型
+- 前端消费的 response DTO
 
-所以前端不应该再把“自己解析 provider 原始 usage”当成默认路径。只有在你明确兼容旧后端时，才需要做 client-side fallback。
+连接起来。
 
----
+### 为什么它很重要
 
-## 7. 如何配置后端地址
+因为它保证了几个关键事实：
 
-`WorkflowRuntimeServerClient` 会把请求发到：
+- request 的 `schema` 可以是对象，也可以是 JSON 字符串
+- response 会被复制成更安全的 map 结构
+- report / result 的外部字段形态由 adapter 固定，而不是被 runtime 内部对象泄漏出去
 
-- 当前页面相对路径，或
-- `protocol + domain + port`
+这使得协议演进比直接暴露内部模型更可控。
 
-也就是说，前端可以：
+## 9. 对接时最常见的 4 个问题
 
-- 同域部署，直接走相对路径
-- 前后端分离部署，显式指定 domain / port
+### 9.1 前端节点能显示，但后端不认识
 
-如果你做正式平台，建议把：
+通常原因是：
 
-- API host
-- 协议
-- 端口
-- 反向代理规则
+- 没做类型映射
+- 后端没注册对应 executor
+- 节点被误当成 UI-only 类型过滤掉
 
-做成独立环境配置，而不是写死在 demo 里。
+### 9.2 表单看起来填了，后端还是报必填缺失
 
----
+通常原因是：
 
-## 8. 安全与任务归属怎么接
+- 前端表单字段名和后端读取字段名不一致
+- 绑定写在 `data` 里，但没有进入 `inputsValues`
+- schema 归一化过程中字段丢失
 
-后端 starter 当前已经预留了几层平台化接口：
+### 9.3 任务能跑，但 report 看不清节点细节
+
+通常要检查：
+
+- `reportNodeDetails` 是否开启
+- 前端是否在读 `workflow.nodes`
+- 节点 outputs 是否被 executor 正常写出
+
+### 9.4 重启后拿不到任务详情
+
+这是架构边界，不一定是 bug。
+
+当前运行态真相主要在 `FlowGramRuntimeService` 的进程内 `TaskRecord`。`FlowGramTaskStore` 会保存元数据和快照，但不是完整可恢复执行引擎。
+
+## 10. 权限和多租户接入点在哪里
+
+当前默认是轻安全姿态：
+
+- `auth.enabled = false`
+- caller 默认匿名
+- access checker 默认放行
+
+如果你要接企业平台，重点接入点在：
 
 - `FlowGramCallerResolver`
 - `FlowGramAccessChecker`
 - `FlowGramTaskOwnershipStrategy`
-- `FlowGramTaskStore`
 
-默认行为是：
+也就是说，权限控制不在前端 runtime plugin，而在后端 facade 这一层。
 
-- caller 可匿名
-- access checker 默认全部放行
-- task store 默认内存版
+## 11. 最重要的对接原则
 
-这说明：
+最稳的对接方式，不是让前端知道更多后端细节，而是守住这 3 条边界：
 
-- demo 可以直接跑
-- 真正的平台接入必须替换这几层
+- 画布层负责编辑和展示
+- 适配层负责把编辑态压成执行态
+- 后端负责 task lifecycle 和节点执行
 
-尤其是：
-
-- 多租户
-- 任务归属
-- 权限控制
-- 持久化任务查询
-
-不要直接拿默认实现上线。
-
----
-
-## 9. 推荐接入顺序
-
-1. 先用 `ai4j-flowgram-demo` 跑通后端 API
-2. 再用 `ai4j-flowgram-webapp-demo` 跑通 server 模式
-3. 确认 schema 归一化后的节点类型与后端一致
-4. 先把 `trace` 面板接上，确认节点时间线与状态可信
-5. 再补 caller、auth、task store、权限
-6. 最后再加你的自定义节点与业务面板
-
----
-
-## 10. 继续阅读
-
-1. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
-2. [Flowgram Runtime](/docs/flowgram/runtime)
-3. [Flowgram Overview](/docs/flowgram/overview)
-4. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
-5. [Agent、Tool、知识库与 MCP 接入](/docs/flowgram/agent-tool-knowledge-integration)
+这 3 条边界稳了，前后端就能各自迭代而不互相拖垮。
