@@ -1,185 +1,263 @@
 ---
-sidebar_position: 3
+sidebar_position: 7
 ---
 
 # Flowgram API 与运行时
 
-本页说明 AI4J 围绕字节开源 `Flowgram.ai` 前端工作流库所实现的后端 runtime、任务 API 以及配置边界。
+这一页不重复讲 runtime 内核本身，而是专门讲“外部调用者实际面对的控制面 contract”。
 
----
+如果 `runtime.md` 讲的是执行真相，这一页讲的是：
 
-## 1. 默认任务 API
+- HTTP API 长什么样
+- DTO 是怎样被 adapter 和 facade 变形的
+- 哪些配置真正改变了外部行为
+- task store、auth、trace 在外部协议里如何体现
 
-当前 Flowgram REST 接口由 `FlowGramTaskController` 暴露，默认路径前缀是：
+## 1. 先看控制面，不要先看内部类名
 
-- `/flowgram`
+外部调用者真正面对的是这 5 个入口：
 
-接口列表：
-
-- `POST /flowgram/tasks/run`
 - `POST /flowgram/tasks/validate`
+- `POST /flowgram/tasks/run`
 - `GET /flowgram/tasks/{taskId}/report`
 - `GET /flowgram/tasks/{taskId}/result`
 - `POST /flowgram/tasks/{taskId}/cancel`
 
----
+默认根路径来自：
 
-## 2. 每个接口做什么
-
-### 2.1 `POST /tasks/run`
-
-提交一个工作流 schema 与 inputs，创建并运行任务。
-
-适合：
-
-- 前端画布点击“运行”
-- 后端集成测试
-- demo 验证
-
-### 2.2 `POST /tasks/validate`
-
-只校验 schema，不真正执行。
-
-适合：
-
-- 前端保存前校验
-- 节点编辑器联调
-- CI 检查流程定义合法性
-
-### 2.3 `GET /tasks/{taskId}/result`
-
-读取任务最终结果状态。
-
-更关注：
-
-- 是否结束
-- 是否成功
-- 最终 result 是什么
-- 当前 trace 投影快照是什么
-
-### 2.4 `GET /tasks/{taskId}/report`
-
-读取更完整的报告。
-
-更关注：
-
-- workflow 状态
-- 每个节点的输入输出
-- 起止时间
-- 整体执行细节
-- 前端可直接消费的 trace 视图
-
-### 2.5 `POST /tasks/{taskId}/cancel`
-
-取消任务。
-
-适合：
-
-- 前端提供“停止运行”
-- 宿主平台接入任务中断
-
----
-
-## 3. 运行时装配关系
-
-从 starter 自动装配可以确认当前主链路是：
-
-1. `FlowGramTaskController`
-2. `FlowGramRuntimeFacade`
-3. `FlowGramRuntimeService`
-4. `FlowGramLlmNodeRunner` + `FlowGramNodeExecutor`
-5. `FlowGramTaskStore`
-
-职责可以这样理解：
-
-- `Controller`：对外 HTTP 接口
-- `RuntimeFacade`：协议适配、任务调度、访问控制、结果拼装
-- `RuntimeService`：真正执行工作流
-- `LlmNodeRunner`：跑 `LLM` 节点
-- `NodeExecutor`：跑自定义或内置业务节点
-- `TaskStore`：保存任务状态与快照
-
----
-
-## 4. 当前默认配置
-
-```yaml
-ai4j:
-  flowgram:
-    enabled: true
-    default-service-id: glm-coding
-    stream-progress: false
-    task-retention: 1h
-    report-node-details: true
-    trace-enabled: true
-    api:
-      base-path: /flowgram
-    task-store:
-      type: memory
-      table-name: ai4j_flowgram_task
-      initialize-schema: true
-    cors:
-      allowed-origins: []
-    auth:
-      enabled: false
-      header-name: Authorization
-```
-
-### 4.1 `default-service-id`
-
-指定 Flowgram `LLM` 节点默认使用哪个 AI 服务。
-
-### 4.2 `stream-progress`
-
-表示是否暴露更细粒度的运行进度流。当前文档阶段先按关闭理解。
-
-### 4.3 `task-retention`
-
-任务结果保留时间，影响任务所有权与清理策略。
-
-### 4.4 `report-node-details`
-
-是否在 report 中包含节点级细节。默认是 `true`。
-
-### 4.5 `trace-enabled`
-
-是否在 `report/result` 返回里附带 `FlowGramTraceView`。
+- `ai4j.flowgram.api.base-path`
 
 默认值：
 
-- `true`
+- `/flowgram`
 
-它的定位是：
+这组接口共同构成 Flowgram 的 task control plane。
 
-- 给前端画布和任务详情页的运行时 projection
-- 不是直接暴露底层 OTel span
+## 2. API 背后经过了哪几层
 
-### 4.6 `task-store.type`
+一次 HTTP 请求不会直接进 runtime，而是至少经过这 3 层：
 
-当前支持：
+1. `FlowGramTaskController`
+2. `FlowGramRuntimeFacade`
+3. `FlowGramProtocolAdapter`
+
+外加最终的：
+
+4. `FlowGramRuntimeService`
+
+它们各自的职责不同。
+
+### 2.1 Controller：只暴露 HTTP
+
+Controller 只负责把 REST 请求接进来，并转给 facade。
+
+### 2.2 Facade：平台语义收口
+
+Facade 负责：
+
+- resolve caller
+- access check
+- ownership 生成
+- task store 同步
+- trace / node detail 是否返回
+
+### 2.3 ProtocolAdapter：把协议固定住
+
+`FlowGramProtocolAdapter` 负责：
+
+- 把 request DTO 变成 runtime `FlowGramTaskRunInput`
+- 把 runtime 输出变成 `run/validate/report/result/cancel` response DTO
+- 复制 map/list 值，避免内部对象直接泄漏给外部
+
+因此外部协议的真实形态，不是直接由 runtime 内部类决定的，而是由 adapter 固化的。
+
+## 3. `validate` 的 contract
+
+### 输入
+
+`validate` 接收：
+
+- `schema`
+- `inputs`
+
+其中 `schema` 既可以是对象，也可以是字符串 JSON，因为 `FlowGramProtocolAdapter` 会统一做 `schemaToJson(...)`。
+
+### 输出
+
+`validate` 返回的核心字段是：
+
+- `valid`
+- `errors`
+
+### 什么时候该调用
+
+适合：
+
+- 前端提交前校验
+- CI 验证 workflow schema
+- 节点编辑器联调
+
+不适合：
+
+- 用来当作真正执行结果
+
+## 4. `run` 的 contract
+
+### 输入
+
+和 `validate` 一样，也是：
+
+- `schema`
+- `inputs`
+
+### 输出
+
+`run` 返回的不是最终结果，而是：
+
+- `taskId`
+
+这点必须强调，因为它决定了整个系统是任务式模型，不是同步 RPC。
+
+### run 发生了什么
+
+`FlowGramRuntimeFacade.run(...)` 会：
+
+1. resolve caller
+2. `ensureAllowed(RUN, ...)`
+3. 调 `runtimeService.runTask(...)`
+4. 创建 ownership
+5. 把初始状态写入 `FlowGramTaskStore`
+
+因此 `run` 不只是“启动 runtime”，它同时也是平台元数据创建点。
+
+## 5. `report` 和 `result` 的 contract 差别
+
+这两个接口最容易被误用。
+
+### 5.1 `report`
+
+`report` 更偏执行过程视图。
+
+默认会返回：
+
+- `taskId`
+- `inputs`
+- `outputs`
+- `workflow`
+- 可选 `nodes`
+- 可选 `trace`
+
+其中 `nodes` 是否返回，受：
+
+- `ai4j.flowgram.report-node-details`
+
+控制，默认是 `true`。
+
+### 5.2 `result`
+
+`result` 更偏最终收口视图。
+
+核心字段是：
+
+- `taskId`
+- `status`
+- `terminated`
+- `error`
+- `result`
+- 可选 `trace`
+
+### 5.3 为什么要拆成两种响应
+
+因为两类调用方关心的问题不一样：
+
+- 任务面板要看 `report`
+- 最终结果消费者更关心 `result`
+
+如果把两者混成一个接口，外部协议会越来越臃肿。
+
+## 6. `cancel` 的 contract
+
+`cancel` 的响应很简单：
+
+- `success`
+
+但它的语义不要理解成“事务式回滚”。当前实现只是：
+
+- 标记 cancel requested
+- 对任务 `Future` 发中断
+
+所以它是 best-effort stop。
+
+## 7. HTTP 层能看到哪些错误语义
+
+### 7.1 校验错误
+
+通常通过 `validate` 的 `valid=false` 和 `errors[]` 返回。
+
+### 7.2 不存在的任务
+
+从集成测试可确认，未知任务会返回 404，并带：
+
+- `code = FLOWGRAM_TASK_NOT_FOUND`
+
+这说明 task-not-found 在 HTTP 层已经是显式错误语义，不是简单返回空对象。
+
+### 7.3 访问被拒绝
+
+如果自定义 `FlowGramAccessChecker` 拒绝访问，facade 会抛访问拒绝异常。这是平台侧权限治理真正的拦截点。
+
+## 8. 配置项里哪些会改变外部行为
+
+不是所有配置都一样重要。下面这些会直接影响外部调用体验。
+
+### 8.1 `enabled`
+
+- 是否启用 Flowgram 整个 starter
+
+### 8.2 `default-service-id`
+
+- 决定 LLM 节点在未显式传 `serviceId` / `aiServiceId` 时默认走哪个服务
+
+### 8.3 `stream-progress`
+
+- 当前默认 `false`
+- 不能把它误解成“现在已经有完整实时推送控制面”
+
+### 8.4 `task-retention`
+
+- 主要影响 ownership / retention 元数据
+- 不等于 durable execution retention
+
+### 8.5 `report-node-details`
+
+- 决定 `report` 是否返回节点级 inputs / outputs
+
+### 8.6 `trace-enabled`
+
+- 决定 `report` / `result` 是否带 `trace`
+
+### 8.7 `task-store.type`
+
+支持：
 
 - `memory`
 - `jdbc`
 
-### 4.7 `task-store.table-name`
+### 8.8 `auth.enabled` / `auth.header-name`
 
-当你使用 `jdbc` 时，指定任务表名。
+决定 `DefaultFlowGramCallerResolver` 是否从请求头解析 caller。
 
-默认值：
+默认是：
 
-- `ai4j_flowgram_task`
+- `auth.enabled = false`
 
-### 4.8 `task-store.initialize-schema`
+这也是为什么默认调用方通常会被当成匿名 caller。
 
-是否在启动时自动初始化任务表。
+## 9. JDBC store 在 API 层到底意味着什么
 
-默认值：
+这一点非常容易被写错。
 
-- `true`
-
-## 4.9 JDBC TaskStore 的装配条件
-
-如果你配置：
+切到：
 
 ```yaml
 ai4j:
@@ -188,210 +266,56 @@ ai4j:
       type: jdbc
 ```
 
-则还需要宿主 Spring 容器里存在 `DataSource` Bean。
-
-此时 starter 会自动装配：
+再加上 `DataSource` 后，starter 会装配：
 
 - `JdbcFlowGramTaskStore`
 
-适合场景：
+这会给你：
 
-- 任务状态跨进程保留
-- 运行结果需要落库
-- Flowgram 平台后端多实例部署
+- 任务元数据落库
+- 状态快照落库
+- result snapshot 落库
 
-### 4.10 Spring Boot + MySQL 示例
+但不要把它误解成“外部 API 已经变成可跨进程恢复执行的 durable workflow engine”。
 
-最常见的接法就是让 Spring Boot 自己提供 `DataSource`：
+当前：
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/ai4j?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
+- `report` / `result` 的第一真相仍来自 runtime 进程内 `TaskRecord`
+- task store 更像平台记录层
 
-ai4j:
-  flowgram:
-    task-store:
-      type: jdbc
-      table-name: ai4j_flowgram_task
-```
+## 10. `report` / `result` 和 trace 的关系
 
-在这种模式下，不需要你手动声明 `JdbcFlowGramTaskStore` Bean。
+trace 不是一个额外独立接口，而是嵌在 `report` / `result` 里的前端可消费投影。
 
-starter 会在容器里检测到：
+这层数据来自：
 
-- `task-store.type=jdbc`
-- 可用的 `DataSource`
+- runtime event
+- trace collector
+- trace response enricher
 
-然后自动装配 `JdbcFlowGramTaskStore`。
+它的目标是：
 
----
+- 给前端画布运行态
+- 给任务详情页
+- 给节点级调试面板
 
-## 5. 一个典型运行流程
+它不是为了替代 OTel，也不是为了把内部事件原样暴露给客户端。
 
-以“Start -> LLM -> End”为例，运行时会依次完成：
+## 11. 什么时候应该读这页，而不是读 runtime 页
 
-1. 接收前端或调用方传来的 schema
-2. 校验是否有且只有一个 `Start`
-3. 校验是否至少存在一个 `End`
-4. 建立任务上下文和 node outputs
-5. 按边关系驱动节点执行
-6. 将节点 outputs 传给下游节点
-7. 将最终结果写入 task store
-8. 收集 `FlowGramRuntimeEvent`
-9. 聚合成 `FlowGramTraceView`
-10. 通过 `result` / `report` 对外暴露结果
+优先读这页的场景：
 
-如果使用 `JdbcFlowGramTaskStore`，这些状态会直接写入数据库，而不是只停留在进程内存里。
+- 你在写前端或测试脚本
+- 你在接 HTTP 客户端
+- 你在做 task API 治理
+- 你在接 caller / access / ownership / task store
 
----
+优先读 `runtime.md` 的场景：
 
-## 6. Trace Projection：给前端的运行时视图
+- 你在追执行链
+- 你在写 executor
+- 你在看 graph validation 和 node dispatch
 
-starter 当前会默认装配：
+如果只记一句话：
 
-- `FlowGramRuntimeTraceCollector`
-
-它会监听 `FlowGramRuntimeService` 发出的 runtime event：
-
-- `TASK_STARTED`
-- `TASK_FINISHED`
-- `TASK_FAILED`
-- `TASK_CANCELED`
-- `NODE_STARTED`
-- `NODE_FINISHED`
-- `NODE_FAILED`
-- `NODE_CANCELED`
-
-然后按 `taskId` 聚合成 `FlowGramTraceView`，最后经由：
-
-- `FlowGramRuntimeFacade`
-- `FlowGramProtocolAdapter`
-
-挂到：
-
-- `FlowGramTaskReportResponse.trace`
-- `FlowGramTaskResultResponse.trace`
-
-### 6.1 `trace` 里有什么
-
-当前 `FlowGramTraceView` 主要字段：
-
-- `taskId`
-- `status`
-- `startedAt`
-- `endedAt`
-- `summary`
-- `events`
-- `nodes`
-
-`events` 的单项字段：
-
-- `type`
-- `timestamp`
-- `nodeId`
-- `status`
-- `error`
-
-`nodes` 的单项字段：
-
-- `nodeId`
-- `status`
-- `terminated`
-- `startedAt`
-- `endedAt`
-- `durationMillis`
-- `error`
-- `eventCount`
-- `metrics`
-
-`summary` 当前至少会带：
-
-- `durationMillis`
-- `eventCount`
-- `nodeCount`
-- `completedNodeCount`
-- `failedNodeCount`
-- `metrics`
-
-其中 `summary.metrics` 会聚合整个任务当前可见的 LLM 指标：
-
-- `promptTokens`
-- `completionTokens`
-- `totalTokens`
-- `inputCost`
-- `outputCost`
-- `totalCost`
-- `currency`
-
-`nodes[nodeId].metrics` 用来表达节点级指标，当前重点是：
-
-- LLM 节点耗时
-- LLM token 统计
-- 成本估算结果
-
-同时，`report.workflow.nodes[nodeId].outputs.metrics` 也会在后端自动补齐。
-
-这意味着如果底层 `rawResponse.usage` 存在：
-
-- `/tasks/{taskId}/report` 的节点输出里可以直接读 token
-- `/tasks/{taskId}/report` 和 `/tasks/{taskId}/result` 的 `trace` 里也能直接读聚合后的 metrics
-
-如果 provider 本次失败或没有返回 usage，这些 token/cost 字段会保持为空，而不是伪造数值。
-
-### 6.2 这层 projection 解决什么问题
-
-它主要解决前端画布的三类调试需求：
-
-1. 当前任务整体状态是什么
-2. 某个节点是否已经开始、结束或失败
-3. 右侧调试面板如何渲染时间线和节点状态
-4. 当前运行累计消耗了多少 token / 成本
-
-所以它不是“再造一套后端 trace 系统”，而是把 runtime event 整理成前端直接可消费的数据结构。
-
-这里还多做了一层后端 enrichment：
-
-- `FlowGramRuntimeTraceCollector`
-  - 负责把 runtime event 折叠成时间线和节点快照
-- `FlowGramRuntimeFacade`
-  - 在返回 `report/result` 前补齐 `trace.summary.metrics`
-  - 同时把节点 `rawResponse.usage` 回填成 `outputs.metrics` 和 `trace.nodes[nodeId].metrics`
-
-这样前端调试面板只需要消费 projection，不需要自己再解析不同 provider 的原始 usage 结构。
-
-### 6.3 与 OpenTelemetry 的边界
-
-如果你的平台同时需要：
-
-- 后端 observability
-- FlowGram 前端调试
-
-建议边界明确分开：
-
-- 后端监控系统：接 OTel
-- 前端画布：接 `FlowGramTraceView`
-
-不要让前端直接去消费原始 OTel span。
-
----
-
-## 7. 与 Agent / Coding Agent 的关系
-
-Flowgram 不直接替代 `Agent` 或 `Coding Agent`，更像是它们的上层编排壳：
-
-- `LLM` 节点底层仍可走 AI4J 模型能力；
-- `Tool` 节点可以承接工具调用；
-- 更复杂的推理策略仍建议在 `Agent` 层完成；
-- `Coding Agent` 适合本地仓库交互，不适合直接拿来替代画布运行时。
-
----
-
-## 8. 推荐阅读
-
-1. [内置节点](/docs/flowgram/built-in-nodes)
-2. [自定义节点扩展](/docs/flowgram/custom-nodes)
-3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-4. `Agent / Workflow 与 StateGraph`
+`runtime.md` 解释“系统怎么跑”，这一页解释“外部该怎么和它说话”。
