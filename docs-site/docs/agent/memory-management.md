@@ -4,347 +4,283 @@ sidebar_position: 6
 
 # Memory Management
 
-[Memory and State](/docs/agent/memory-and-state) 解释的是 `AgentMemory` 在 runtime 中的角色；这页进一步讨论工程层面的记忆管理问题：
+[Memory and State](/docs/agent/memory-and-state) 讲的是 memory 在 runtime 里的位置；这页只讨论一个更工程化的问题：
 
-- 什么东西会被压缩
-- `summary` 怎样重新进入模型上下文
-- 短期窗口和长期摘要如何组合
-- `InMemory` 与 `JDBC` 的真实成本差异是什么
-- 什么时候该自定义 `MemoryCompressor` 或 `AgentMemory`
+- 如何在 token 成本、恢复能力和推理质量之间管理上下文
 
-## 1. 记忆管理真正要解决的不是“存下来”
+换句话说，关注点不是“把消息存下来”，而是：
 
-只把上下文保存下来，通常并不能解决长任务问题。真正的工程难点在于：
+- 什么时候压缩
+- 压缩什么
+- 压缩后怎样重新进入模型上下文
+- 持久化 backend 的成本和边界是什么
 
-- 历史越长，token 成本越高
-- 工具结果往往比普通对话更膨胀
-- 旧上下文既不能全丢，也不能全保留
-- 同一 Agent 可能要支持短任务与长任务两种形态
+## 1. 管理的对象不是单条消息，而是 snapshot
 
-因此 memory 管理的目标不是“保留最多”，而是“以可接受成本保留最有价值的上下文”。
+关键源码：
 
-## 2. 当前实现的状态结构
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/MemorySnapshot.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/MemoryCompressor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/InMemoryAgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/JdbcAgentMemory.java`
 
-无论 `InMemoryAgentMemory` 还是 `JdbcAgentMemory`，其核心状态都可以看成：
+当前记忆管理的最小状态面只有两层：
 
 - `items`
 - `summary`
-- `compressor`
 
-对应源码：
+压缩器拿到的不是“最新一条消息”，而是一整个 `MemorySnapshot(items, summary)`。
 
-- `memory/InMemoryAgentMemory`
-- `memory/JdbcAgentMemory`
-- `memory/MemorySnapshot`
-- `memory/MemoryCompressor`
+这很重要，因为它允许你在压缩时同时决定：
 
-其中：
+- 最近原文保留多少
+- 旧上下文如何折叠进 summary
+- 某些工具结果是保留全文，还是只保留结论
 
-- `items` 保存当前窗口内的原始上下文
-- `summary` 保存压缩后的长期语义
-- `compressor` 负责把 snapshot 变成新的 snapshot
+## 2. 压缩发生在同步写路径上
 
-## 3. `summary` 的语义非常重要
+这是当前设计最容易被低估的地方。
 
-在当前实现中，`summary` 不是旁路元数据，而是会在 `getItems()` 时重新插入上下文。
+### 2.1 `InMemoryAgentMemory`
 
-实现方式是：
-
-- 如果 `summary` 为空，直接返回 `items`
-- 如果 `summary` 不为空，先插入一条 `AgentInputItem.systemMessage(summary)`，再返回其余 items
-
-这意味着：
-
-- 摘要会重新进入模型输入
-- 摘要质量会直接影响后续推理
-- 摘要不是仅供存档或 UI 展示的备注字段
-
-从工程角度看，这一设计支持“历史摘要 + 最近窗口”这种常见模式，但也要求压缩器对 `summary` 的措辞和信息密度更谨慎。
-
-## 4. 压缩触发时机
-
-压缩不是后台懒处理，而是在写路径同步触发。
-
-### 4.1 `InMemoryAgentMemory`
-
-每次发生下面任一写入时都会尝试压缩：
+每次发生以下任一写入后，都会立即调用 `maybeCompress()`：
 
 - `addUserInput(...)`
 - `addOutputItems(...)`
 - `addToolOutput(...)`
 
-写入后调用 `maybeCompress()`，再更新 `items` 与 `summary`。
+### 2.2 `JdbcAgentMemory`
 
-### 4.2 `JdbcAgentMemory`
+每次写入 snapshot 前，也会先执行：
 
-JDBC 实现也会在生成新 snapshot 后，先走 `applyCompressor(...)`，再把新 snapshot 持久化。
+- `applyCompressor(...)`
 
-这意味着：
+这意味着压缩不是后台任务，也不是最终收尾时才触发，而是运行中的同步关键路径。
 
-- 压缩逻辑处于同步关键路径
-- 压缩器异常会直接影响当前写入
-- 压缩策略不能当成“随便失败也无所谓”的插件
+直接后果有三个：
 
-## 5. 内置压缩策略：`WindowedMemoryCompressor`
+- 压缩器异常会让当前写入失败
+- 压缩耗时会直接增加当前轮延迟
+- 压缩策略要按“核心运行代码”标准设计，而不是按“可选插件”标准设计
 
-源码：
+## 3. `summary` 会重新变成 system message
 
-- `memory/WindowedMemoryCompressor`
+不管是内存实现还是 JDBC 实现，只要 summary 非空，`getItems()` 都会先插入：
 
-它的语义非常直接：
+```java
+AgentInputItem.systemMessage(summary)
+```
 
-- 如果 item 数未超过 `maxItems`，不压缩
-- 如果超过，只保留最后 `maxItems` 条
-- `summary` 原样保留
+再返回剩余 items。
 
-这意味着它本质上是“窗口裁剪器”，不是“语义摘要器”。
+所以 summary 的真实语义不是：
 
-### 5.1 它适合什么场景
+- 给宿主存一段摘要备注
 
+而是：
+
+- 以 system-level memory item 的形式重新进入下一轮 prompt
+
+这带来两个非常实际的判断：
+
+- 摘要写得好，会稳定提高长任务连贯性
+- 摘要写得差，会持续污染之后每一轮推理
+
+## 4. `InMemory` 和 `JDBC` 在管理语义上有个关键差异
+
+### 4.1 `InMemoryAgentMemory.setCompressor(...)`
+
+只替换压缩器引用，不会立刻重压当前状态。
+
+也就是说：
+
+- 旧 items 不会因为你刚换了压缩器就立刻被整理
+- 新压缩器要等到下一次写入时才真正生效
+
+### 4.2 `JdbcAgentMemory.setCompressor(...)`
+
+会立即执行：
+
+```java
+replaceSnapshot(applyCompressor(loadSnapshot()))
+```
+
+也就是说：
+
+- 切换压缩器会立刻读取、压缩并重写当前持久化 snapshot
+
+这是两个实现最值得在文档里显式说清的差异之一，因为它直接影响线上切换策略。
+
+## 5. 纯窗口压缩只是最弱策略
+
+内置 `WindowedMemoryCompressor` 只做一件事：
+
+- item 数量超过 `maxItems` 时，仅保留最后 N 条
+
+它不会：
+
+- 自动生成 summary
+- 合并旧摘要
+- 区分不同类型工具结果
+
+所以它本质上是一个窗口裁剪器，不是完整记忆策略。
+
+### 5.1 它适合什么
+
+- 本地调试
 - 短任务
-- 调试期
-- 成本敏感任务
-- 最近上下文最重要的任务
+- 最近上下文最关键的场景
 
 ### 5.2 它不擅长什么
 
 - 长期语义保留
-- 对工具结果做选择性压缩
-- 保留跨阶段目标、约束、结论
+- 跨阶段任务
+- 大体积工具输出
+- 研究型、审计型或 CodeAct 长链路任务
 
-如果会话价值集中在长期计划和关键结论，而不是最近几轮原文，纯窗口通常不够。
+## 6. 更实用的记忆策略通常至少分两层
 
-## 6. 常见压缩策略
+在大多数真实 Agent 里，更稳的思路通常不是“全留”或“全删”，而是：
 
-### 6.1 纯窗口
+- summary 保存阶段结论和关键约束
+- recent items 保存最近可执行细节
 
-特点：
+对工具密集型任务，还应再加一层判断：
 
-- 实现最简单
-- 成本最低
-- 容易丢长期关键信息
+- 哪些工具结果要保留全文
+- 哪些工具结果只该保留结论
 
-适合：
+例如：
 
-- FAQ
-- 短客服会话
-- 工具调用较少的轻任务
+- `read_file` 读到的大段源码，通常不应长期保留全文
+- 数据库检索出的关键结论、失败原因、下一步约束，通常应进入 summary
 
-### 6.2 摘要 + 窗口
+## 7. 选择 backend，不只是选“能不能持久化”
 
-特点：
-
-- 历史内容进入 `summary`
-- 最近 N 条保留原始 items
-- 兼顾长期语义和局部细节
-
-适合：
-
-- 大多数业务 Agent
-- 长于普通聊天、短于研究任务的多步任务
-
-### 6.3 分阶段压缩
-
-特点：
-
-- 按任务阶段整理上下文
-- 阶段完成后只保留阶段结论
-- 让后续轮次不再背负全部原始过程
-
-适合：
-
-- 研究型任务
-- 多阶段工作流
-- CodeAct 较长执行链
-
-### 6.4 按工具类型选择性保留
-
-特点：
-
-- 对高噪声工具结果做强裁剪
-- 对低频但关键的工具输出做保留
-
-适合：
-
-- 工具输出体积差异很大的系统
-- 包含检索、文件读写、代码执行、网络抓取等异构工具的系统
-
-## 7. 自定义 `MemoryCompressor` 的设计建议
-
-`MemoryCompressor` 的输入输出都是 `MemorySnapshot`。最稳妥的设计思路是：
-
-1. 先判断是否真的需要压缩
-2. 明确哪些 item 应进入摘要
-3. 明确哪些 item 必须保留原文
-4. 明确 `summary` 是否累加、覆盖或分段更新
-
-一个实用原则是：
-
-> 摘要保留决策与结论，窗口保留最近可执行细节。
-
-### 7.1 一个更合理的摘要方向
-
-对于工具驱动任务，摘要通常至少应保留：
-
-- 当前目标
-- 已完成的关键步骤
-- 关键工具输出结论
-- 尚未解决的问题
-- 后续下一步约束
-
-如果只记录“压缩了多少条”，对后续推理帮助有限。
-
-## 8. `InMemory` 与 `JDBC` 的真实差异
-
-### 8.1 `InMemoryAgentMemory`
+### 7.1 `InMemoryAgentMemory`
 
 优点：
 
-- 最轻量
 - 延迟低
-- 适合本地开发与单进程任务
+- 实现简单
+- 适合本地单进程和短任务
 
 限制：
 
 - 进程退出即丢失
-- 无法天然跨实例恢复
+- 不能天然跨实例恢复
 
-### 8.2 `JdbcAgentMemory`
+### 7.2 `JdbcAgentMemory`
 
 优点：
 
-- 状态可持久化
-- 可通过 `sessionId` 恢复会话
-- 可以接入现有数据库与连接池
+- 可以跨进程恢复
+- `sessionId` 能作为稳定恢复边界
+- 能接现有数据库与连接池
 
-限制也要写清楚：
+代价：
 
-- 每次写入都要先读 snapshot
-- 然后删除旧记录并整份重写新 snapshot
-- 更偏向语义一致性，而非高频增量写优化
+- 每次写入先 `loadSnapshot()`
+- 然后整份 `replaceSnapshot(...)`
+- 会先删旧记录，再重写 summary 与 items
 
-这意味着在超长会话、高频写入或高并发环境下，JDBC 路线需要评估：
+这说明 JDBC 实现当前优先的是：
 
-- 写放大
-- 锁争用
-- 大文本存储成本
-- 数据库吞吐瓶颈
+- 语义一致性
+- 恢复简单性
 
-## 9. `sessionId` 才是持久化会话隔离的真正边界
+而不是：
 
-使用 `JdbcAgentMemory` 时，是否真正隔离会话，取决于 `sessionId`，而不只是实例是否新建。
+- 增量写最优
+- 高频写吞吐最优
 
-如果两个 session 指向相同 `sessionId`，它们读写的就是同一份持久化状态。
+如果你的任务会产生很多工具输出，或者一步内频繁写 memory，必须单独评估写放大成本。
 
-因此 `sessionId` 通常应与下面某一种稳定业务标识对齐：
+## 8. `sessionId` 才是持久化隔离的真正边界
 
-- 用户会话 ID
+对 `JdbcAgentMemory` 来说，是否新建对象实例不是最重要的，真正决定隔离的是：
+
+- `sessionId`
+
+如果两个 session 指向同一个 `sessionId`，它们管理的就是同一份状态。
+
+所以长期任务里，`sessionId` 最好对齐稳定业务标识，例如：
+
+- 对话线程 ID
 - 工单 ID
 - 任务 ID
-- 对话线程 ID
+- 用户会话 ID
 
-## 10. 与 `Agent.newSession()` 的关系
+## 9. 管理策略里最常见的几个反模式
 
-`Agent.newSession()` 的语义是：
+### 9.1 只做窗口，不保留结论
 
-- 复用原有 runtime 和配置
-- 为新 session 换一份 memory
+这样初期最省事，但一旦任务变长，Agent 会开始“忘掉为什么之前这么做”。
 
-如果 `memorySupplier` 返回的是：
+### 9.2 把所有工具输出都等价对待
 
-- 新的 `InMemoryAgentMemory` 实例，则状态天然隔离
-- 新的 `JdbcAgentMemory` 实例但共用同一 `sessionId`，则状态仍不隔离
+检索摘要、代码 diff、超长文件内容、错误堆栈，对后续推理价值完全不同。统一保留或统一裁掉，通常都不合理。
 
-所以 session 隔离最终要同时看：
+### 9.3 让 summary 变成流水账
 
-- memory 实例是否独立
-- 持久化 key 是否独立
+summary 如果只是“本轮做了什么”的机械清单，而不是“当前目标、关键结论、未解决问题、约束”，它对后续推理帮助很有限。
 
-## 11. 与 Trace 的关系
+### 9.4 压缩策略没有可观测性
 
-`AgentEventType` 中包含 `MEMORY_COMPRESS`，Trace 体系也能消费这一类事件，但默认 memory 实现并不会主动发出压缩事件。
+如果你完全不知道每次压缩删掉了什么、保留了什么，后续出现“怎么突然变笨了”的问题会非常难排。
 
-这意味着如果你想观测记忆管理质量，通常需要在自定义 memory 或 compressor 中主动记录：
+## 10. 当前实现的可观测空缺
+
+`AgentEventType` 虽然包含 memory 相关事件语义，但默认 memory 实现并不会主动把压缩细节打出来。
+
+所以如果你真的关心记忆质量，通常应该在自定义 memory 或 compressor 里主动记录：
 
 - 压缩前 item 数
 - 压缩后 item 数
 - summary 长度
-- 被裁剪的工具结果规模
+- 被裁掉的工具结果规模
+- 压缩耗时
 
-否则“为什么这轮回答开始变差”很难定位到 memory 策略。
+否则 trace 里只看到最终回答，很难把质量退化归因到 memory policy。
 
-## 12. 实用选型建议
+## 11. 自定义压缩器时先守住这几个原则
 
-| 场景 | 推荐策略 |
-| --- | --- |
-| 本地开发、短任务 | `InMemoryAgentMemory` + 纯窗口 |
-| 标准业务 Agent | `InMemory` 或 `JDBC` + 摘要 + 窗口 |
-| 研究型或长任务 | 摘要 + 窗口 + 分阶段压缩 |
-| 需要跨进程恢复 | `JdbcAgentMemory` 或自定义持久化 memory |
-| 工具输出极大 | 选择性保留关键工具结果 |
+一个可用的 `MemoryCompressor`，至少要明确回答：
 
-## 13. 典型接入方式
+1. 什么时候压缩
+2. 哪些信息进入 summary
+3. 哪些信息必须保留在 recent items
+4. summary 是覆盖、累加还是阶段性重写
+5. 压缩失败时是否允许本轮直接失败
 
-### 13.1 简单窗口压缩
+对工具驱动任务，一个实用的最低标准通常是：
 
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("gpt-4.1")
-        .memorySupplier(() -> new InMemoryAgentMemory(
-                new WindowedMemoryCompressor(20)
-        ))
-        .build();
-```
+- summary 里至少保留当前目标
+- 已完成的关键步骤
+- 关键外部观察结论
+- 尚未解决的问题
+- 后续下一步约束
 
-### 13.2 JDBC 持久化
+## 12. 和 `Memory and State` 的分工
 
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("gpt-4.1")
-        .memorySupplier(() -> new JdbcAgentMemory(
-                JdbcAgentMemoryConfig.builder()
-                        .dataSource(dataSource)
-                        .sessionId("agent-session-001")
-                        .compressor(new WindowedMemoryCompressor(20))
-                        .build()
-        ))
-        .build();
-```
+如果你要理解：
 
-### 13.3 自定义压缩器
+- runtime 什么时候读写 memory
+- 工具结果如何回灌
+- session 隔离怎么实现
 
-```java
-public class HybridMemoryCompressor implements MemoryCompressor {
+先读 [Memory and State](/docs/agent/memory-and-state)。
 
-    private final int maxItems;
+如果你要决定：
 
-    public HybridMemoryCompressor(int maxItems) {
-        this.maxItems = maxItems;
-    }
+- 压缩策略怎么设计
+- backend 怎么选
+- 长任务为什么越跑越歪
+- summary 应该长什么样
 
-    @Override
-    public MemorySnapshot compress(MemorySnapshot snapshot) {
-        if (snapshot == null || snapshot.getItems() == null || snapshot.getItems().size() <= maxItems) {
-            return snapshot;
-        }
+这页才是更直接的参考。
 
-        int split = snapshot.getItems().size() - maxItems;
-        java.util.List<Object> history = new java.util.ArrayList<Object>(snapshot.getItems().subList(0, split));
-        java.util.List<Object> recent = new java.util.ArrayList<Object>(snapshot.getItems().subList(split, snapshot.getItems().size()));
-
-        String oldSummary = snapshot.getSummary() == null ? "" : snapshot.getSummary().trim();
-        String newSummary = (oldSummary + "\n" + "Completed history items: " + history.size()).trim();
-
-        return MemorySnapshot.from(recent, newSummary);
-    }
-}
-```
-
-这个例子只是说明接口用法。真正生产场景通常应该生成有语义的摘要，而不是只统计条数。
-
-## 14. 继续阅读
+## 13. 继续阅读
 
 1. [Memory and State](/docs/agent/memory-and-state)
 2. [Tools and Registry](/docs/agent/tools-and-registry)

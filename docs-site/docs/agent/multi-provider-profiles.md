@@ -4,10 +4,19 @@ sidebar_position: 3
 
 # 页面已迁移
 
-Provider Profile 相关内容已迁移到 `Coding Agent` 顶级专题，这个旧页面保留仅用于兼容旧链接，不再继续维护正文。
+Multi-provider / provider profile 相关内容已经迁移到 `Coding Agent` 顶级专题。
+
+当前 profile 的真正控制语义在 `ai4j-cli`：
+
+- `providers.json`
+- `workspace.json.activeProfile`
+- `effectiveProfile` 解析
+- `/provider use|save|add|edit|default|remove`
+
+所以这个旧页面只保留兼容入口，不再维护并行内容。
 
 请使用新的正式文档：
 
-1. [配置体系](/docs/coding-agent/configuration)
-2. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
+1. [Provider Profile 与模型切换](/docs/coding-agent/provider-profiles)
+2. [配置体系](/docs/coding-agent/configuration)
 3. [命令参考](/docs/coding-agent/command-reference)
