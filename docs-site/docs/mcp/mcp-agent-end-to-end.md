@@ -4,25 +4,37 @@ sidebar_position: 7
 
 # MCP 与 Agent 一体化实战（端到端）
 
-这一页给你一个“从第三方 MCP 到 Agent 工具调用”的完整闭环示例，目标是做到：
+这一页不是“天气助手 demo 文案”，而是把 MCP 真正进入 Agent 运行时后的执行链拆开。
 
-1. 接入外部 MCP 服务
-2. 通过 `McpGateway` 聚合工具
-3. 在 Agent 中按场景暴露 MCP 工具
-4. 运行并观测结果
+要回答的问题只有一个：
 
-> 这是你后续做开源示例、演示仓库、CI 回归最实用的一条链路。
+> 一个第三方 MCP 服务，是怎样从配置文件一路进入 Agent 推理循环，并最终被模型调用的？
 
-## 1. 场景设定
+## 1. 先看完整执行链
 
-- 外部 MCP 服务：`weather-http`（假设已提供 `query_weather` 工具）
-- 模型：Doubao / OpenAI 兼容模型
-- Agent：ReAct Runtime
-- 工具暴露策略：只暴露 `mcpServerIds=["weather-http"]`，不自动暴露其它工具
+在 AI4J 里，MCP 接入 Agent 至少会经过 7 层：
 
-## 2. 准备 MCP 配置
+1. `mcp-servers-config.json`
+2. `McpGateway.initialize(...)`
+3. `McpClient.connect()`
+4. `McpGatewayToolRegistry.refresh(...)`
+5. `ToolUtil.getAllTools(functionList, mcpServerIds)`
+6. Agent runtime 把工具 schema 暴露给模型
+7. `ToolUtil.invoke(...)` 再把调用路由回 gateway/client
 
-在 `mcp-servers-config.json` 中声明服务：
+如果不把这 7 层拆开，很多文档都会把“Agent 能调用 MCP”写成一句空话。
+
+## 2. 场景设定
+
+假设我们接一个第三方天气服务：
+
+- serviceId: `weather-http`
+- transport: `streamable_http`
+- tool: `query_weather`
+- Agent runtime: ReAct
+- 目标：模型根据用户问题决定是否调用天气工具
+
+配置如下：
 
 ```json
 {
@@ -36,138 +48,192 @@ sidebar_position: 7
 }
 ```
 
-> `serviceId`（这里是 `weather-http`）就是后续 `toolRegistry(..., mcpServices)` 里要传的 ID。新配置建议直接写 `streamable_http`，不要再把 `http` 当成主写法。
+这里的 `weather-http` 不是备注，而是后续 Agent 白名单要用到的真实 `serviceId`。
 
-## 3. 启动并初始化网关
+## 3. 第 1 段：把第三方服务接进宿主
 
 ```java
 McpGateway gateway = McpGateway.getInstance();
 gateway.initialize("mcp-servers-config.json").join();
-
-List<Tool.Function> gatewayTools = gateway.getAvailableTools().join();
-System.out.println("MCP tools in gateway: " + gatewayTools.size());
 ```
 
-建议初始化后先打印工具名，确认服务确实注册成功。
+这一步之后，真正发生的不是“网关准备好了”这么简单，而是：
 
-## 4. 构建模型服务
+1. gateway 读入配置
+2. `McpGatewayClientFactory` 根据 `type` 创建 transport
+3. 为 `weather-http` 创建 `McpClient`
+4. `client.connect()` 执行 MCP 握手
+5. `toolRegistry.refresh(...)` 拉取工具清单
+
+建议你在这一步就先做一次显式检查：
 
 ```java
-DoubaoConfig doubaoConfig = new DoubaoConfig();
-doubaoConfig.setApiKey(System.getenv("ARK_API_KEY"));
-
-Configuration configuration = new Configuration();
-configuration.setDoubaoConfig(doubaoConfig);
-
-AiService aiService = new AiService(configuration);
-ResponsesModelClient modelClient = new ResponsesModelClient(
-        aiService.getResponsesService(PlatformType.DOUBAO)
-);
+List<Tool.Function> gatewayTools = gateway.getAvailableTools().join();
+System.out.println(gatewayTools);
 ```
 
-## 5. 构建 Agent（接入 MCP）
+如果这里拿不到工具，后面 Agent 再怎么调也不会成功。
+
+## 4. 第 2 段：把 MCP 工具投影到 Agent 可见面
+
+Agent 不是直接读取 gateway 内部状态，而是通过 `ToolUtil.getAllTools(...)` 获取本次请求的工具集合。
+
+构建 Agent 时通常是：
 
 ```java
 Agent agent = Agents.react()
         .modelClient(modelClient)
         .model("doubao-seed-1-8-251228")
         .systemPrompt("你是天气助手，必要时必须调用工具后再回答。")
-        .instructions("使用 MCP 工具查询天气，并给出简洁建议。")
         .toolRegistry(Collections.<String>emptyList(), Arrays.asList("weather-http"))
         .options(AgentOptions.builder().maxSteps(4).build())
         .build();
 ```
 
-这里关键点：
+这句最重要的不是语法，而是白名单语义：
 
-- `functionList` 传空
-- `mcpServices` 只传 `weather-http`
-- 达成“只暴露该 MCP 服务工具”的精确控制
+- `functionList` 为空，说明本次不暴露本地 Function 工具
+- `mcpServices = ["weather-http"]`，说明只暴露这一个 MCP 服务的工具
 
-## 6. 发起请求并查看输出
+当前 AI4J 不会因为 gateway 里接了很多服务，就自动把它们全部给模型看见。
+
+## 5. 第 3 段：模型发起 tool call 时真正走哪条路
+
+模型在推理中决定调用工具后，不是直接碰 `McpClient`，而是先回到 `ToolUtil.invoke(...)`。
+
+在 MCP 场景里，关键分支是：
+
+1. `ToolUtil.invoke(functionName, argument)`
+2. 如果命中用户工具前缀，先尝试 `gateway.callUserTool(...)`
+3. 否则进入本地 MCP / Function / 全局 gateway 工具分发
+4. 远程第三方 MCP 最终落到 `gateway.callTool(...)`
+5. gateway 根据 `tool -> client` 映射找到 `weather-http`
+6. `McpClient.callTool(...)` 发起 `tools/call`
+
+因此，Agent 看到的是工具 schema，但真正执行时依然由 Core SDK 的 MCP 运行时兜底。
+
+## 6. 第 4 段：结果怎样回到模型
+
+`McpClient.callTool(...)` 拿到 MCP 响应后，会：
+
+1. 解析 `tools/call` 的返回内容
+2. 转成字符串结果
+3. 返回给 `ToolUtil`
+4. 再交回 Agent runtime
+5. Agent 把 tool result 放回模型上下文
+6. 模型继续生成最终回答
+
+也就是说，MCP 工具在 Agent 里的角色是：
+
+- 先作为 schema 暴露给模型
+- 再作为 tool result 回填给模型
+
+这与本地 Function 工具在 Agent 里的角色是对齐的，只是中间多了一段 MCP 协议链。
+
+## 7. 一份最小可运行示例
 
 ```java
+McpGateway gateway = McpGateway.getInstance();
+gateway.initialize("mcp-servers-config.json").join();
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("doubao-seed-1-8-251228")
+        .systemPrompt("你是天气助手，必须先调用工具再回答。")
+        .toolRegistry(Collections.<String>emptyList(), Arrays.asList("weather-http"))
+        .options(AgentOptions.builder().maxSteps(4).build())
+        .build();
+
 AgentResult result = agent.run(AgentRequest.builder()
         .input("请查询北京今天天气，并给出穿衣建议")
         .build());
 
-System.out.println("OUTPUT: " + result.getOutputText());
+System.out.println(result.getOutputText());
 ```
 
-如果链路正常，模型会触发 MCP tool call，再给出最终文本。
+这段代码验证的是整条闭环，而不是某个局部 API。
 
-## 7. 增加 Trace 观测（推荐默认开启）
+## 8. 为什么有时 gateway 有工具，但 Agent 看不到
 
-```java
-Agent agent = Agents.react()
-        .modelClient(modelClient)
-        .model("doubao-seed-1-8-251228")
-        .toolRegistry(Collections.<String>emptyList(), Arrays.asList("weather-http"))
-        .traceExporter(new ConsoleTraceExporter())
-        .traceConfig(TraceConfig.builder().build())
-        .build();
-```
+这是最常见的集成误判。
 
-你会看到 RUN/STEP/MODEL/TOOL 的 trace，能快速判断慢在模型还是慢在 MCP。
+排查顺序应该是：
 
-## 8. 常见故障与定位
+1. `gateway.isInitialized()` 是否为 `true`
+2. `gateway.getAvailableTools()` 是否能列出工具
+3. `toolRegistry(..., mcpServices)` 是否传了正确的 `serviceId`
+4. 是否把 serviceId 和 toolName 混用了
 
-## 8.1 Agent 看不到 MCP 工具
+`mcpServices` 传的是服务 ID，不是工具名。
 
-排查顺序：
+## 9. 为什么模型有时不触发工具
 
-1. `gateway.isInitialized()` 是否为 true
-2. `gateway.getAvailableTools()` 是否有工具
-3. `toolRegistry(..., Arrays.asList("weather-http"))` 的 serviceId 是否拼写一致
+如果 gateway 和 Agent 注册都没问题，但模型仍然不用工具，排查顺序应该是：
 
-## 8.2 模型没有触发工具
+1. tool description 是否让模型看懂它能做什么
+2. `systemPrompt` 是否明确要求必要时调用工具
+3. `maxSteps` 是否过小
+4. 用户问题是否真的需要该工具
 
-排查顺序：
+这已经不是 MCP 连接问题，而是 runtime 提示与推理策略问题。
 
-1. `systemPrompt/instructions` 是否明确“必须调用工具”
-2. `maxSteps` 是否过小
-3. 工具描述是否足够让模型理解用途
+## 10. 多租户场景如何进入这条链
 
-## 8.3 调用超时或失败
-
-排查顺序：
-
-1. MCP 服务端可达性（url/认证）
-2. 服务端 `tools/call` 是否可用
-3. 网关/反向代理超时配置
-
-## 9. 多租户扩展（可选）
-
-如果你做 SaaS，可用用户级 MCP 客户端：
+如果同一个 Agent 宿主要面向多个用户，而每个用户绑定不同第三方 MCP，可以这样接：
 
 ```java
 gateway.addUserMcpClient("u1001", "weather-http", userClient).join();
-String output = gateway.callUserTool("u1001", "query_weather", Collections.singletonMap("location", "Beijing")).join();
 ```
 
-配合 Agent 时，建议在会话层绑定 userId，并统一审计。
+之后调用链变成：
 
-## 10. 与 Workflow 组合（实战升级）
+1. Agent 会话绑定 `userId`
+2. `ToolUtil` 优先尝试用户级工具
+3. gateway 查 `user_{userId}_tool_{toolName}`
+4. 命中则走用户专属 client
+5. 未命中再回退全局工具
 
-推荐把 MCP 查询和结果格式化拆成两个节点：
+这里要自己想清楚权限边界：
 
-1. 节点 A：MCP 查询 + 初步分析
-2. 节点 B：JSON 格式化
+- 默认实现允许回退
+- 强隔离场景通常不应该回退
 
-这样可以明显提升稳定性和可维护性（对应你当前的天气双 Agent 模式）。
+## 11. Trace 和诊断应该加在哪里
 
-## 11. 一份可复用的最小测试模板
+MCP + Agent 问题很多时候不是“错”，而是“不知道卡在哪”。
+
+推荐至少观察这几个点：
+
+- gateway 初始化是否成功
+- 工具是否出现在 Agent 暴露列表
+- 模型是否真的发出 tool call
+- tool call 是否成功返回
+
+如果 Agent runtime 已启用 trace，重点看：
+
+- RUN
+- MODEL
+- TOOL
+
+这样能很快分清：
+
+- 是模型没决定调用
+- 还是 MCP 工具执行失败
+
+## 12. 一份更像回归测试的最小断言
 
 ```java
 @Test
-public void test_mcp_agent_e2e() throws Exception {
+public void test_mcp_agent_e2e() {
     McpGateway gateway = McpGateway.getInstance();
     gateway.initialize("mcp-servers-config.json").join();
+
+    List<Tool.Function> tools = gateway.getAvailableTools().join();
+    Assert.assertFalse(tools.isEmpty());
 
     Agent agent = Agents.react()
             .modelClient(modelClient)
             .model("doubao-seed-1-8-251228")
-            .systemPrompt("你是天气助手，必须先调用工具")
             .toolRegistry(Collections.<String>emptyList(), Arrays.asList("weather-http"))
             .options(AgentOptions.builder().maxSteps(4).build())
             .build();
@@ -175,17 +241,23 @@ public void test_mcp_agent_e2e() throws Exception {
     AgentResult result = agent.run(AgentRequest.builder().input("北京天气").build());
     Assert.assertNotNull(result);
     Assert.assertNotNull(result.getOutputText());
-    Assert.assertTrue(result.getOutputText().length() > 0);
 }
 ```
 
-## 12. 生产落地建议
+重点不是断言输出具体文案，而是断言：
 
-1. Gateway 初始化失败时，提供降级回答而不是直接 500。
-2. MCP 工具必须按业务场景白名单暴露。
-3. Trace 默认开启，日志至少保留 `serviceId/toolName/status/latency`。
-4. 关键第三方 MCP 建议配熔断和重试策略。
+- gateway 有工具
+- Agent 能执行
+- 最终回答非空
 
----
+## 13. 这页最该记住的结论
 
-如果你接下来愿意，我可以再补一个“**MCP + StateGraph + SubAgent 三层编排**”的端到端案例页，直接对应你目前的 Agent 架构路线。
+MCP 进入 Agent 不是“把一个第三方工具名塞给模型”。
+
+它实际是一条跨 3 层的链：
+
+- Core SDK 的 MCP 连接与治理层
+- ToolUtil 的工具投影与调用分发层
+- Agent runtime 的推理与工具消费层
+
+把这 3 层分开理解，端到端问题就会容易定位很多。

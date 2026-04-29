@@ -99,7 +99,7 @@ const config: Config = {
             {label: '开始阅读', to: '/docs/intro'},
             {label: 'Coding Agent', to: '/docs/coding-agent/overview'},
             {label: 'Core SDK', to: '/docs/core-sdk/overview'},
-            {label: 'MCP', to: '/docs/core-sdk/mcp/overview'},
+            {label: 'MCP', to: '/docs/mcp/overview'},
             {label: 'Agent', to: '/docs/agent/overview'},
             {label: 'Flowgram', to: '/docs/flowgram/overview'},
           ],

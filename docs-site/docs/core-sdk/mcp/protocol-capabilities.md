@@ -1,80 +1,211 @@
 # Protocol Capabilities
 
-这一页讲的是：**MCP 协议面到底能承载什么。**  
-如果只把 MCP 理解成“远端工具调用”，那你看到的只是它最表层的一小块。
+如果把 MCP 只理解成“远程工具调用”，那你只看到了最薄的一层。
 
-## 1. 三类核心 capability
+在 AI4J 当前实现里，MCP 至少同时包含：
 
-在 MCP 语义里，最核心的能力通常是：
+- 初始化握手
+- Tool capability
+- Resource capability
+- Prompt capability
+- 变更通知与缓存失效
+- 会话与 transport 协议差异
 
-- `Tools`
-- `Resources`
-- `Prompts`
+这页的目标就是把这些能力面拆开，而不是继续用一句“支持 MCP”带过。
 
-AI4J 在服务端侧也按这三类去建模，这不是文档概念，而是源码层真实存在的类型分工。
+## 1. 从协议引擎反推 capability 结构
 
-## 2. 源码入口
+服务端统一入口是 `McpServerEngine.processMessage(...)`。
 
-- `@McpService`
-- `@McpTool`
-- `@McpResource`
-- `@McpPrompt`
-- `McpToolAdapter`
-- `McpResourceAdapter`
-- `McpPromptAdapter`
+它当前直接处理：
 
-只看这些类就能知道，AI4J 并没有把 MCP 简化成“只支持 tool”，而是保留了更完整的协议能力面。
+- `initialize`
+- `tools/list`
+- `tools/call`
+- `resources/list`
+- `resources/read`
+- `prompts/list`
+- `prompts/get`
+- `ping`
 
-## 3. 为什么 `Resource` 和 `Prompt` 不能被省略
+这已经说明一件事：
 
-如果所有东西都强行做成 tool，会出现两个问题：
+- AI4J 里的 MCP 不是“只有 Tool”
+- Tool 只是 capability 之一
 
-- 只读内容被伪装成动作
-- 提示模板被伪装成函数调用
+## 2. 初始化能力不是可有可无
 
-更合理的划分是：
+`McpClient.connect()` 并不是 transport 连通就结束，而是会继续发送：
 
-- 动作型能力 -> Tool
-- 稳定只读内容 -> Resource
-- 可复用交互模板 -> Prompt
+1. `initialize`
+2. `notifications/initialized`
 
-这会直接影响：
+客户端声明的能力包括：
 
-- 模型如何理解能力
-- 服务端如何命名
-- 客户端如何做治理和可观测性
+- `sampling`
+- `roots`
+- `tools`
+- `resources`
+- `prompts`
 
-## 4. 这和“工具执行”是什么关系
+服务端则通过 `McpServerEngine.buildCapabilities()` 返回：
 
-在运行时，MCP 的 tool 型能力最终可能会被 provider 看成某种 `tool schema`。但这不意味着 MCP 只剩工具。
+- `tools.listChanged`
+- `resources.subscribe`
+- `resources.listChanged`
+- `prompts.listChanged`
+
+所以初始化不是“打个招呼”，而是双方能力面的协商入口。
+
+## 3. Tool capability 是动作面
+
+Tool 对应的是动作型能力。
+
+服务端侧：
+
+- `tools/list` 返回工具定义
+- `tools/call` 执行工具
+
+AI4J 当前实现中，Tool 的服务端投影来自：
+
+- `ToolUtil.getLocalMcpTools()`
+
+这条链会把本地 `@McpService + @McpTool` 能力转换成 MCP `inputSchema`。
+
+所以从协议角度看，Tool 解决的是：
+
+- 模型可调用什么动作
+- 这个动作需要什么参数
+
+## 4. Resource capability 是内容面
+
+Resource 不应该被写成“只读工具”。
+
+在 AI4J 里，它有自己独立的协议路径：
+
+- `resources/list`
+- `resources/read`
+
+服务端实现通过：
+
+- `McpResourceAdapter.getAllMcpResources()`
+- `McpResourceAdapter.readMcpResource(uri)`
+
+完成 URI 模板匹配和参数提取。
+
+这类能力更适合表达：
+
+- 文档
+- 配置
+- 结构化只读数据
+
+而不是动作型操作。
+
+## 5. Prompt capability 是模板面
+
+Prompt 也不是普通字符串常量。
+
+AI4J 当前的协议入口是：
+
+- `prompts/list`
+- `prompts/get`
+
+对应实现：
+
+- `McpPromptAdapter.getAllMcpPrompts()`
+- `McpPromptAdapter.getMcpPrompt(name, arguments)`
+
+Prompt 更适合表达：
+
+- 需要参数渲染的模板
+- 复用的交互片段
+- 服务端提供的标准调用提示
+
+把它和 Tool 分开，最大的好处是不会把“模板获取”误写成“执行动作”。
+
+## 6. capability 和 tool projection 不是一回事
+
+这一点最容易讲错。
+
+对于模型侧消费而言，最终很多能力都会被投影成：
+
+- 一组可见工具 schema
+
+但对协议层来说，Tool / Resource / Prompt 仍然是三类不同 capability。
 
 更准确的理解是：
 
-- `Tool` 是能力中的动作面
-- `Resource` 是内容面
-- `Prompt` 是交互模板面
+- Tool 是动作 capability
+- Resource 是内容 capability
+- Prompt 是模板 capability
+- “tool 暴露给模型”只是运行时投影，不是 capability 本体
 
-AI4J 把它们分开，意味着后续做服务设计时不会把所有东西都堆成“远端函数调用”。
+## 7. listChanged 通知为什么重要
 
-## 5. 为什么这对读 SDK 的人重要
+`McpClient` 会缓存：
 
-如果你把 MCP 只看成 tool：
+- `availableTools`
+- `availableResources`
+- `availablePrompts`
 
-- 会低估它的协议定位
-- 会误把资源暴露做成工具接口
-- 会看不懂后续服务端和客户端为什么需要不同适配器
+它还会处理：
 
-而如果你知道 MCP 至少是三类 capability 的组合，就能更清楚地读懂：
+- `notifications/tools/list_changed`
+- `notifications/resources/list_changed`
+- `notifications/prompts/list_changed`
 
-- 服务端发布
-- 客户端接入
-- gateway 管理
+收到通知后会清空对应缓存。
 
-## 6. 设计摘要
+这意味着 AI4J 不是把 MCP 当成完全静态目录，而是已经考虑了能力面变更后的缓存失效。
 
-> AI4J 的 MCP 不是“远端函数调用 SDK”，而是完整协议能力面。它至少明确区分了 Tool、Resource、Prompt 三类 capability，所以在设计服务时不会把所有东西都硬塞成 tool，这也是它和单纯远端 RPC 包装的根本区别。
+## 8. 不同 server transport 的 capability 边界
 
-## 7. 继续阅读
+### `StdioMcpServer`
 
-- [MCP / Publish Your MCP Server](/docs/core-sdk/mcp/publish-your-mcp-server)
-- [MCP / Positioning and When to Use](/docs/core-sdk/mcp/positioning-and-when-to-use)
+- 协议版本固定 `2024-11-05`
+- `initializationRequired = false`
+- `pingEnabled = false`
+
+### `SseMcpServer`
+
+- 协议版本固定 `2024-11-05`
+- `initializationRequired = true`
+- `pingEnabled = true`
+
+### `StreamableHttpMcpServer`
+
+- 支持 `2025-03-26` 与 `2024-11-05`
+- `initializationRequired = true`
+- `toolsListChanged = true`
+
+所以 capability 不只是业务能力，还和 server transport 的会话模型、协议版本直接相关。
+
+## 9. 当前实现里最成熟的是哪一块
+
+从代码完整度看：
+
+- Tool capability 最成熟
+- Resource / Prompt capability 结构完整，但启动前注册流程需要你自己管理
+
+这也是为什么很多生产接入应该先从 Tool 跑通，再补其它 capability。
+
+## 10. 什么时候该用哪种 capability
+
+| 需求 | 更适合什么 |
+| --- | --- |
+| 触发一个动作、查询、调用外部系统 | Tool |
+| 暴露稳定只读内容 | Resource |
+| 暴露模板化提示或交互片段 | Prompt |
+
+不要把所有东西都写成 Tool。那样短期省事，长期会让协议语义和运行治理都变差。
+
+## 11. 这页最该记住的结论
+
+AI4J 里的 MCP 能力面，不是“一个远程工具列表”，而是：
+
+- 初始化协商
+- 三类 capability
+- 通知驱动的缓存失效
+- 与 transport 绑定的会话语义
+
+只有把 MCP 看成这一整套能力面，后面的 client、gateway、server 和 Agent 集成才不会讲乱。
