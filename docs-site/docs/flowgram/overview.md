@@ -4,164 +4,262 @@ sidebar_position: 1
 
 # Agentic 工作流平台总览
 
-先把一个关键边界说清楚：
+这一章讲的不是单独的 `Flowgram.ai` 前端库，而是 AI4J 围绕它补出来的一整套 Java 后端执行体系。
 
-- `Flowgram.ai` 本身是字节开源的前端工作流/画布库
-- AI4J 在这之上补的是后端 runtime、Spring Boot starter、节点执行、任务 API，以及前后端对接示例
+先把边界讲清楚：
 
-所以这一章讲的重点不是“Flowgram.ai 前端库本身怎么用”，而是 AI4J 如何围绕它落成一套可运行的工作流平台后端。
+- `Flowgram.ai` 是字节开源的前端工作流画布 / editor 库
+- AI4J 提供的是后端 runtime、Spring Boot starter、任务 API、节点执行器、trace 投影，以及 demo 接入面
 
-这条线对应的是：
+所以这里讨论的重点不是“怎么画流程图”，而是“流程图交给谁执行、怎样校验、怎样取消、怎样观察、怎样扩展成平台后端”。
 
-- `ai4j-flowgram-spring-boot-starter/`
-- `ai4j-flowgram-demo/`
+## 1. 这条子系统到底是什么
+
+如果只看页面标题，`Flowgram` 很容易被误解成“Agent 的一个可视化壳”。源码里并不是这样。
+
+它更接近下面这个定义：
+
+> 一个以显式工作流图为契约、以异步任务 API 为控制面、以节点执行器为扩展点的 Java 工作流后端。
+
+这意味着它的核心不是 prompt，而是 3 个更硬的对象：
+
+- 工作流 schema
+- task lifecycle
+- node executor contract
+
+和普通 `Agent` 运行时相比，`Flowgram` 先固定流程，再执行节点；`Agent` 则更偏向先给目标，再让模型在循环里决定下一步。
+
+## 2. 模块边界和真实代码落点
+
+这一章至少要按 4 层理解，而不是把 demo 和 runtime 混成一层：
+
+### 2.1 前端画布层
+
+- `Flowgram.ai`
 - `ai4j-flowgram-webapp-demo/`
 
-如果 `Agent` 解决的是“通用智能体 runtime 怎么做”，那么 `Flowgram` 这条线解决的就是“如何围绕 `Flowgram.ai` 这样的前端画布，把这些能力落成一套可视化节点工作流平台后端和执行层”。
+这层负责：
 
-## 1. 三分钟理解 Flowgram
+- 节点编辑
+- 工作流 JSON 序列化
+- 运行时 UI
+- 调后端 task API
 
-先记住这四句话：
+### 2.2 Spring Boot 平台接入层
 
-- `Flowgram` 不是 `Agent` 的另一层 UI 壳
-- 它面向的是节点图、任务 API、平台后端和前端画布对接
-- 它的强项是稳定流程、明确 schema 和平台化运行
-- 它更适合“节点流先于自由推理”的场景
+- `ai4j-flowgram-spring-boot-starter/`
 
-一句话定义可以概括成：
+关键类：
 
-> 一个基于 Flowgram 工作流框架、由 AI4J 提供后端 runtime、节点执行和平台接入能力的可视化工作流平台后端。
+- `FlowGramAutoConfiguration`
+- `FlowGramTaskController`
+- `FlowGramRuntimeFacade`
+- `FlowGramTaskStore`
 
-## 2. 它到底解决什么问题
+这层负责把 runtime 包装成一个能被平台直接消费的 HTTP 服务。
 
-当你的任务更适合画成流程图，而不是完全交给模型自由决定下一步时，你需要解决的问题通常是：
+### 2.3 执行引擎层
 
-- 节点输入输出 schema 怎么稳定
-- 后端怎么运行、校验、取消、查询任务
-- LLM、HTTP、Tool、变量处理怎么组合成可执行节点流
-- 前端画布和后端 runtime 怎么对接
-- 节点如何扩展，平台如何演进
+- `ai4j-agent/.../flowgram/FlowGramRuntimeService`
 
-`Flowgram` 这一层就是把这些问题平台化。
+这层负责：
 
-## 3. 模块路径和组成方式
+- schema 解析与校验
+- task record 创建
+- 节点调度
+- 状态流转
+- report / result 组装
 
-这一层最好按“前端是谁、后端是谁”来理解：
+### 2.4 AI 能力复用层
 
-- 上游前端库：`Flowgram.ai`
-- AI4J 后端接入层：`ai4j-flowgram-spring-boot-starter`
-- AI4J 后端示例：`ai4j-flowgram-demo`
-- AI4J 前后端联调示例：`ai4j-flowgram-webapp-demo`
+- `ai4j-agent/.../flowgram/Ai4jFlowGramLlmNodeRunner`
+- `ai4j` / `ai4j-agent` 里的模型、RAG、Tool 等基座能力
 
-### 3.1 Starter
+其中最关键的一点是：LLM 节点不是自己重新实现一套推理栈，而是复用 `AgentBuilder` 和 `ReActRuntime`，只是在 Flowgram 场景里把它约束成单步节点执行。
 
-`ai4j-flowgram-spring-boot-starter`
+## 3. 三个最重要的设计决策
 
-它负责：
+理解这套子系统，先抓住 3 个设计决策，比先背 API 更重要。
 
-- 自动装配 runtime
-- 注册内置节点执行器
-- 暴露 `/flowgram` 任务 API
-- 组织节点执行与任务生命周期
+### 3.1 它的控制面是 task API，不是一次性同步调用
 
-### 3.2 Demo
+`FlowGramTaskController` 默认暴露：
 
-`ai4j-flowgram-demo`
+- `POST /flowgram/tasks/run`
+- `POST /flowgram/tasks/validate`
+- `GET /flowgram/tasks/{taskId}/report`
+- `GET /flowgram/tasks/{taskId}/result`
+- `POST /flowgram/tasks/{taskId}/cancel`
 
-它负责：
+这说明它的默认产品形态是“异步任务后端”，而不是“HTTP 进来，模型一次性返回字符串”。
 
-- 给你一个可直接启动的 Spring Boot 示例
-- 提供最短的后端验证路径
-- 用真实 REST API 帮你跑通 `run -> result -> report`
+### 3.2 工作流图是正式契约，不是前端临时 JSON
 
-### 3.3 WebApp Demo
+前端不会把画布对象原样扔给后端。
 
-`ai4j-flowgram-webapp-demo`
+`ai4j-flowgram-webapp-demo/src/utils/backend-workflow.ts` 会先做归一化：
 
-它负责：
+- 去掉 `Comment`、`Group`、`BlockStart`、`BlockEnd` 这类只属于画布的节点
+- 把前端类型映射成后端执行类型，例如 `start -> START`、`llm -> LLM`
+- 清理无效边
+- 只把真正可执行的节点图送进后端
 
-- 演示如何把 `Flowgram.ai` 前端画布接到 AI4J 后端 runtime
-- 演示前端画布如何接后端 runtime
-- 演示 schema 适配和前后端联动
+这一步很重要，因为它把“编辑态模型”和“执行态模型”明确分开了。
 
-## 4. 这条线的核心能力是什么
+### 3.3 LLM 节点复用了 Agent，但没有把工作流重新变回自由推理
 
-从当前 starter、demo 和相关文档看，这条线的重点能力包括：
+`Ai4jFlowGramLlmNodeRunner` 每次执行一个 LLM 节点时，会动态构造一个 `Agent`：
 
-- 任务 API：`run / validate / result / report / cancel`
-- 节点执行：`Start`、`End`、`LLM`、`Variable`、`Code`、`Tool`、`HTTP`、`KnowledgeRetrieve`
-- 前后端对接：画布 schema 到 runtime schema 的适配
-- 平台后端：Spring Boot 方式接入、配置、任务存储、扩展节点
+- 默认 runtime 是 `ReActRuntime`
+- 默认 `AgentOptions` 是 `maxSteps(1)`、`stream(false)`
+- 模型名从 `modelName` / `model` / `modelId` 里取
+- prompt 从 `prompt` / `message` / `input` 里取
 
-## 5. 和相邻模块的边界
+所以 Flowgram 并不是和 Agent 彻底分家，而是把 Agent 作为“单节点智能执行器”嵌进显式工作流里。
 
-### 5.1 和 Agent 的边界
+## 4. 一次真实运行的主链路
 
-`Agent` 更适合：
+最有价值的理解方式，是沿着一次 `run` 请求往下看：
 
-- 多轮推理
-- 工具决策由模型主导
-- runtime 自由度更高
+```text
+Flowgram.ai canvas
+  -> normalizeWorkflowForBackend(...)
+  -> POST /flowgram/tasks/run
+  -> FlowGramTaskController
+  -> FlowGramRuntimeFacade
+  -> FlowGramRuntimeService
+  -> built-in logic / FlowGramNodeExecutor / Ai4jFlowGramLlmNodeRunner
+  -> task report / task result / trace projection
+```
 
-`Flowgram` 更适合：
+把它拆细一点，大致是 6 步。
 
-- 节点图天然更稳定的流程
-- 输入输出 schema 需要更明确
-- 平台需要对前端画布暴露可执行后端 API
+### 4.1 前端构造后端可执行 schema
 
-一个偏 runtime，自由度更高；一个偏平台流程，结构更强。
+前端运行时在 `WorkflowRuntimeService` 中先做表单校验，再发 `/tasks/validate`，通过后才发 `/tasks/run`。这一步决定了平台交互是“先预检，再启动任务”。
 
-同时还要再加一条边界：
+### 4.2 Controller 只做 HTTP 暴露
 
-- `Flowgram.ai` 负责前端画布与交互
-- AI4J `Flowgram` 这条线负责后端 runtime、任务 API 和节点执行
+`FlowGramTaskController` 本身很薄。它的职责不是执行业务，而是把请求转给 `FlowGramRuntimeFacade`。
 
-### 5.2 和 Coding Agent 的边界
+### 4.3 Facade 负责平台治理逻辑
 
-`Coding Agent` 面向本地代码仓任务交付。
+`FlowGramRuntimeFacade` 处理的事情明显比 controller 多：
 
-`Flowgram` 面向可视化流程平台后端。
+- 解析 caller
+- 执行 access check
+- 创建 task ownership
+- 调用 runtime
+- 把结果同步到 `FlowGramTaskStore`
+- 根据配置决定是否返回 node details 和 trace
 
-如果你在做“让 agent 帮我读改本地仓库”，先看 `Coding Agent`。如果你在做“给前端流程编辑器一个稳定的执行引擎”，先看 `Flowgram`。
+这说明真正的平台边界在 facade，而不是 controller。
 
-### 5.3 和 Core SDK 的边界
+### 4.4 Runtime 创建任务并异步执行
 
-`Core SDK` 提供模型、工具、`MCP`、RAG 等基座能力。
+`FlowGramRuntimeService.runTask(...)` 会：
 
-`Flowgram` 则把其中一部分能力按“节点运行 + 后端任务 API”的方式重新组织出来。
+1. 解析和校验 schema
+2. 创建 `taskId`
+3. 在进程内 `ConcurrentMap<String, TaskRecord>` 里登记任务
+4. 把执行逻辑提交到内部 `ExecutorService`
+5. 立即返回 `taskId`
 
-## 6. 什么时候该选 Flowgram
+这一步直接决定了它是异步模型。
 
-更适合：
+### 4.5 节点执行按类型分流
 
-- 任务天然是流程图
-- 前端会画节点
-- 希望后端以任务 API 形式稳定执行
-- 想把 LLM、HTTP、Tool、知识检索统一装进一个平台后端
+`FlowGramRuntimeService` 内核原生理解的节点类型只有：
 
-不一定优先：
+- `START`
+- `END`
+- `LLM`
+- `CONDITION`
+- `LOOP`
 
-- 完全自由推理的智能体任务
-- 本地代码仓交互式编码场景
-- 只想直接写少量 Java 调模型代码
+其它能力不是 runtime 内核硬编码，而是走注册式 executor：
 
-## 7. 推荐阅读顺序
+- `HTTP`
+- `VARIABLE`
+- `CODE`
+- `TOOL`
+- `KNOWLEDGE`
+
+这些主要由 starter 通过 bean 注入后注册到 runtime。
+
+### 4.6 前端通过轮询消费 report / result
+
+`ai4j-flowgram-webapp-demo` 当前默认每 `500ms` 拉一次 report，再在任务结束时取 result。这说明当前默认交互模型是“轮询式异步任务 UI”，不是 SSE / WebSocket first。
+
+## 5. 默认行为和它们的后果
+
+源码里的默认值会直接影响你对这套系统的预期。
+
+### 5.1 默认 API 根路径是 `/flowgram`
+
+`FlowGramProperties.ApiProperties.basePath = "/flowgram"`。
+
+这意味着前后端 demo、测试脚本、运维文档默认都围绕这组路径组织。
+
+### 5.2 默认 task store 是内存
+
+`FlowGramProperties.TaskStoreProperties.type = "memory"`。
+
+后果是：
+
+- demo 启动最轻
+- 适合单进程开发联调
+- 但不是持久化工作流引擎
+
+如果你要更接近平台场景，应切到 JDBC store。
+
+### 5.3 默认 trace 打开，节点细节也打开
+
+- `traceEnabled = true`
+- `reportNodeDetails = true`
+
+这对调试很友好，但也意味着你要自己评估生产环境下的返回体体积和敏感信息暴露范围。
+
+### 5.4 默认 auth 是关闭的
+
+- `auth.enabled = false`
+- `DefaultFlowGramAccessChecker` 默认永远返回 `true`
+
+也就是说，starter 默认更偏 demo / 内网集成姿态，而不是开箱即用的强安全平台。
+
+### 5.5 默认任务保留时间是 1 小时
+
+`taskRetention = Duration.ofHours(1)`。
+
+它主要用于 ownership / store 元数据，不等于“任务状态可以完整跨进程恢复 1 小时”。
+
+## 6. 这套体系适合什么，不适合什么
+
+### 更适合
+
+- 任务天然就是流程图
+- 前端要给用户一个可视化编排界面
+- 节点输入输出 schema 需要稳定
+- 平台要有校验、运行、报告、取消这些正式控制面
+
+### 不应优先选它
+
+- 任务核心是自由推理，而不是固定流程
+- 你需要的是本地代码仓交互式 agent
+- 你只想写一个最简单的模型调用 demo
+
+## 7. 建议阅读顺序
+
+建议按这个顺序进入，不要一上来就跳到自定义节点：
 
 1. [Why Flowgram](/docs/flowgram/why-flowgram)
-2. [Flowgram Quickstart](/docs/flowgram/quickstart)
-3. [Architecture](/docs/flowgram/architecture)
+2. [Architecture](/docs/flowgram/architecture)
+3. [Quickstart](/docs/flowgram/quickstart)
 4. [Runtime](/docs/flowgram/runtime)
 5. [Frontend / Backend Integration](/docs/flowgram/frontend-backend-integration)
 6. [Built-in Nodes](/docs/flowgram/built-in-nodes)
 7. [Custom Nodes](/docs/flowgram/custom-nodes)
-8. [Agent / Tool / Knowledge Integration](/docs/flowgram/agent-tool-knowledge-integration)
 
-## 8. 当前边界
+如果你只想抓住一句话：
 
-现阶段这条线仍有这些边界：
-
-- 任务存储默认是内存实现
-- `Agent` 与 `MCP` 目前没有单独的内置专属节点体系
-- 更复杂的权限模型、持久化任务存储、远程节点市场仍不属于当前 MVP 范围
-
-如果你是第一次进入这一章，下一页建议先看 [Why Flowgram](/docs/flowgram/why-flowgram)。
+`Flowgram.ai` 负责把流程画出来，AI4J Flowgram 负责把这张图当成正式任务后端跑起来。
