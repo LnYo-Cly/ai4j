@@ -1,175 +1,262 @@
 # Discovery and Loading
 
-`Skill` 在 AI4J 里不是可执行工具，而是**按需读取的方法论资源**。所以这页的重点不是“怎么调用 skill”，而是“skill 是如何被发现、列出、再被安全读取的”。
+`Skill` 在 AI4J 里不是可执行工具，而是按需读取的方法论资源。
 
-## 1. 为什么 AI4J 要单独做一套 skill discovery
+因此这页真正要讲清楚的，不是“怎么调用 skill”，而是：
 
-如果把所有方法论、模板、长说明都塞进系统提示词，问题会非常明显：
+- 它从哪里被发现
+- 如何生成技能目录
+- 为什么不应该一开始读取全部正文
+- 这些技能文件怎样进入安全读取边界
 
-- 上下文污染
-- 初始 prompt 过大
-- 模型很难只在需要时读取相关说明
+## 1. 主入口就在 `Skills.java`
 
-AI4J 的 skill 设计就是在解决这个问题：
+这套机制几乎都集中在：
 
-- 先暴露 skill 清单
-- 不自动读全部正文
-- 只有任务明确匹配时，再去读 `SKILL.md`
+- `ai4j/src/main/java/io/github/lnyocly/ai4j/skill/Skills.java`
 
-也就是说，skill 的核心价值是 **减少 prompt 污染，同时保留方法论复用能力**。
+最关键的方法有：
 
-## 2. 核心源码入口
-
-这一层几乎都在 `ai4j/src/main/java/io/github/lnyocly/ai4j/skill/Skills.java` 里：
-
-- `discoverDefault(Path workspaceRoot)`
-- `discoverDefault(Path workspaceRoot, List<String> skillDirectories)`
-- `discover(Path workspaceRoot, List<Path> roots)`
+- `discoverDefault(...)`
+- `discover(...)`
 - `buildAvailableSkillsPrompt(...)`
 - `createToolContext(...)`
 
-配套的数据对象是：
+配套数据对象是：
 
 - `SkillDescriptor`
-- `DiscoveryResult`
+- `Skills.DiscoveryResult`
 
-## 3. 默认会扫哪些目录
+## 2. 默认会扫描哪些根目录
 
-`resolveSkillRoots(...)` 默认会把三类目录纳入候选：
+`discoverDefault(...)` 内部会先调用 `resolveSkillRoots(...)`，当前默认候选根有三类：
 
 1. `<workspace>/.ai4j/skills`
 2. `~/.ai4j/skills`
-3. 调用方额外挂载的 `skillDirectories`
+3. 额外挂载的 `skillDirectories`
 
-这里有两个重要设计点：
+这里有两个重要点：
 
-- 项目私有 skill 和用户级全局 skill 可以共存
-- 相对路径会相对 workspace root 解析
+### 工作区 skill 和全局 skill 可以同时存在
 
-这正好对应两类常见需求：
+这让你可以同时拥有：
 
-- 团队共享一组仓库内 skill
-- 个人维护一组跨项目复用 skill
+- 仓库专属 skill
+- 用户级跨项目通用 skill
 
-## 4. 一个 skill 目录如何被识别
+### 相对路径会按 workspace root 解析
 
-AI4J 不是看到一个目录就默认当 skill。
+如果传入的额外挂载目录不是绝对路径，它会相对当前 workspace root 解析，而不是相对用户 home 或 JVM 启动目录。
 
-它会优先查找：
+## 3. root 是怎样被识别成 skill 的
 
-- `SKILL.md`
-- `skill.md`
+`Skills` 不是看到一个目录就把它整个当 skill。
 
-如果根目录本身就有 `SKILL.md`，它会把这个目录当成一个 skill；否则会继续扫描子目录，寻找每个子目录里的 `SKILL.md`。
+当前识别顺序是：
 
-这意味着 skill root 支持两种组织方式：
+1. 先检查该目录自身是否包含：
+   - `SKILL.md`
+   - `skill.md`
+2. 如果有，就把这个目录识别为一个 skill
+3. 如果没有，再扫描它的直接子目录
+4. 每个子目录只要含有 `SKILL.md` 或 `skill.md`，就被当成一个 skill
 
-- 单技能目录
-- 技能集合目录
+这意味着当前支持两种组织方式：
 
-## 5. `SkillDescriptor` 里到底保存了什么
+- 单 skill root
+- skill 集合 root
 
-发现成功后，AI4J 会构建 `SkillDescriptor`，其中至少包括：
+## 4. 一个很重要的限制：当前只扫一层子目录
+
+从 `discoverFromRoot(...)` 的实现看，当前不会无限递归扫描。
+
+也就是说：
+
+- root 本身可以是一个 skill
+- 或者 root 的直接子目录可以各自是 skill
+- 但更深的孙子目录不会自动继续向下发现
+
+如果你想要更深层级的技能树，当前做法不是依赖递归，而是把更深目录显式作为新的 skill root 挂进来。
+
+## 5. 一个 skill 的名字和描述是怎么来的
+
+`buildDescriptor(...)` 当前的提取顺序非常明确。
+
+### 名称提取优先级
+
+1. front matter 里的 `name`
+2. 第一个 markdown heading
+3. skill 目录名
+
+### 描述提取优先级
+
+1. front matter 里的 `description`
+2. 正文里的第一段非标题段落
+3. 默认文案 `No description available.`
+
+这意味着即使你的 `SKILL.md` 写得很简单，只要：
+
+- 顶部 front matter 比较规范
+- 或者 heading / 第一段比较清楚
+
+AI4J 仍然能构造出可用的技能目录。
+
+## 6. `SkillDescriptor` 里到底保存什么
+
+当前 `SkillDescriptor` 很轻，只保存：
 
 - `name`
 - `description`
 - `skillFilePath`
 - `source`
 
-`source` 会根据目录是否位于 workspace 内，被标成：
+其中 `source` 由 `resolveSource(...)` 判断：
 
-- `workspace`
-- `global`
+- skill root 位于 workspace 内 -> `workspace`
+- 否则 -> `global`
 
-这个字段很有用。它告诉你某个 skill 是项目真相的一部分，还是用户级公共能力。
+这个字段很实用，因为它能告诉你某个 skill 是：
 
-## 6. 为什么 AI4J 不会一上来就读取全部 `SKILL.md`
+- 当前项目真相的一部分
+- 还是用户级共享能力
 
-`buildAvailableSkillsPrompt(...)` 的设计非常明确：
+## 7. 去重策略是什么
 
-- 只生成可用 skill 目录
-- 明确告诉模型：不要预先读取所有 skill
-- 只有任务明确匹配时，再去读对应 `SKILL.md`
+`discover(...)` 内部会按技能名做去重，去重 key 是：
 
-这不是一个小优化，而是这套机制成败的关键。
+- `name.trim().toLowerCase(Locale.ROOT)`
 
-如果一开始就把几十个 skill 正文全部塞给模型，那么：
+并且是“先到先得”：
 
-- skill discovery 就退化回“大 prompt”
-- 上下文治理优势直接消失
-- 模型会更难做按需推理
+- 前面 root 里先发现的 skill 会保留
+- 后面同名 skill 会被忽略
 
-所以 AI4J 这里其实是在做一种**方法论文档的懒加载**。
+这带来一个很实际的结论：
 
-## 7. `allowedReadRoots` 是干什么的
+- skill 名称在当前体系里本质上是全局 key
 
-`DiscoveryResult` 除了 skill 列表，还会返回：
+因此不要随意让 workspace 和 global skills 出现同名但不同语义的条目。
+
+## 8. 为什么 AI4J 不会直接读取全部 `SKILL.md`
+
+`buildAvailableSkillsPrompt(...)` 的生成文本里，明确告诉模型：
+
+- 先看到可用技能目录
+- 不要预先读取全部 skill
+- 只有任务明显匹配时，再用 `read_file` 去读对应 `SKILL.md`
+
+这是这套设计最关键的原则之一。
+
+如果你一上来就把全部 skill 正文拼进 prompt，那么：
+
+- skill discovery 退化成“大 prompt 拼接器”
+- 懒加载价值消失
+- 上下文污染会迅速变严重
+
+所以当前 skill 机制的本质，其实就是：
+
+- 方法论文档的目录暴露
+- 正文的延迟加载
+
+## 9. `buildAvailableSkillsPrompt(...)` 实际生成什么
+
+这个方法不会返回 skill 正文，而是生成一段目录提示，大致包含：
+
+- name
+- path
+- description
+
+并用 `<available_skills>` 包住。
+
+同时还会明确告诉模型：
+
+- 不要先读所有 skill
+- 只有匹配时再读取 `SKILL.md`
+- 使用最小相关 skill 集
+
+这就是当前 AI4J skill 体系的 prompt 契约。
+
+## 10. `allowedReadRoots` 为什么是这套机制的关键
+
+`DiscoveryResult` 不只返回 skills，还会返回：
 
 - `allowedReadRoots`
 
-这组目录随后会被 `createToolContext(...)` 写进 `BuiltInToolContext`。它的意义是：
+随后 `Skills.createToolContext(...)` 会把它们写入：
 
-- skill 文件不是“全盘任意可读”
-- 内建的 `read_file` 一类工具可以知道哪些目录属于技能只读区
+- `BuiltInToolContext.allowedReadRoots`
 
-换句话说，skill discovery 和工具读取权限在 AI4J 里是连着设计的，不是各自独立。
+这意味着 skill discovery 和宿主工具安全是联动的：
 
-## 8. 这套机制怎么和宿主 prompt 配合
+- 模型知道有哪些 skill
+- `read_file` 也知道哪些 skill 根目录允许只读访问
 
-宿主通常会先把 `buildAvailableSkillsPrompt(...)` 生成的技能目录加进系统上下文。模型先看到的是：
+因此 skill 不是“纯提示词特性”，它和宿主读取边界是一起设计的。
 
-- 有哪些 skill
-- 每个 skill 的名字、路径、描述
-- 应该按需读取，而不是全读
+## 11. `createToolContext(...)` 真正做了什么
 
-这一步做完以后，模型才有机会进一步决定：
+这个方法会构造：
 
-- 这个任务是否匹配某个 skill
-- 是否应该调用 `read_file`
-- 读取哪个 `SKILL.md`
+- `workspaceRoot`
+- `allowedReadRoots`
 
-这和“把方法论直接写死在系统提示词里”是完全不同的控制思路。
+对应的含义是：
 
-## 9. 目录管理建议
+- 正常工作区路径仍由 workspace root 约束
+- skill roots 额外作为只读目录放开
+
+这正是为什么模型可以读取工作区外的全局 skill 文件，但默认不能随便写这些目录。
+
+## 12. 当前实现的真实限制
+
+### 没有复杂版本和依赖模型
+
+`SkillDescriptor` 只有基础元数据，不包含：
+
+- 版本
+- 依赖
+- capability graph
+
+### 没有递归深层扫描
+
+只认 root 或 root 的直接子目录。
+
+### 没有正文级缓存层
+
+当前重点是发现目录和只读边界，正文读取仍交给 `read_file` 等宿主工具完成。
+
+这些都不是 bug，而是当前实现选择了轻量而清晰的 skill 模型。
+
+## 13. 目录组织建议
 
 ### 仓库内 skill 适合放什么
 
 - 项目专属开发规范
 - 仓库特有脚本和工作流
-- 只对这个 monorepo 成立的方法论
+- 只对当前 monorepo 成立的方法论
 
-### 用户级 skill 适合放什么
+### 全局 skill 适合放什么
 
-- 通用 agent 能力
-- 跨项目复用的 SOP
-- 私人偏好的工作方式
+- 跨项目复用能力
+- 通用分析 SOP
+- 个人长期使用的标准模板
 
-### `SKILL.md` 顶部最该认真写什么
+### `SKILL.md` 顶部最值得认真写什么
 
 - `name`
 - `description`
 
-因为 discovery 阶段构建目录时，最先依赖的就是这两项。
+因为目录发现阶段最先依赖的就是这两项。
 
-## 10. 注意事项
+## 14. 这页最该记住的结论
 
-### 10.1 把 skill 当成工具
+AI4J 的 skill discovery 不是“遍历目录后直接塞正文”，而是一套：
 
-skill 不执行动作，它只是说明“这类任务应该怎么做”。
+- 扫描 root
+- 生成目录
+- 按需读取
+- 把 skill roots 纳入只读边界
 
-### 10.2 把所有 skill 一次性读完
+的轻量懒加载机制。
 
-这会直接破坏 skill 体系存在的意义。
-
-### 10.3 skill 描述写得像市场文案
-
-模型真正需要的是任务边界、适用场景和工作流，不是空泛宣传语。
-
-## 11. 设计摘要
-
-AI4J 的 skill 不是 prompt 附件，而是一套按需发现、按需读取的资源体系。`Skills.discoverDefault(...)` 先生成目录和可读根，再通过 `BuiltInToolContext` 把 skill 读取边界交给宿主工具，因此它本质上是在做方法论文档的懒加载和上下文治理。
-
-## 12. 继续阅读
-
-- [Skills / Skill vs Tool vs MCP](/docs/core-sdk/skills/skill-vs-tool-vs-mcp)
-- [Tools / Function Calling](/docs/core-sdk/tools/function-calling)
+也正因为如此，skill 才能既复用方法论，又不把上下文治理做坏。
