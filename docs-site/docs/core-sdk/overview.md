@@ -1,94 +1,131 @@
 # Core SDK 总览
 
-`Core SDK` 是 AI4J 的唯一基座层，对应仓库里的核心模块是 `ai4j/`。
+`Core SDK` 对应仓库里的 `ai4j/` 模块，是 AI4J 整个体系唯一的基础能力层。  
+如果你只能先讲清楚一个部分，就应该先讲清楚这一层，因为后面的 `Spring Boot`、`Agent`、`Coding Agent`、`Flowgram` 本质上都在复用或上升它。
 
-如果你只能先讲清楚一个部分，那应该先讲清楚这一层。因为后面的 `Spring Boot`、`Agent`、`Coding Agent`、`Flowgram`，本质上都在复用或扩展这里的能力。
+## 1. 用一句话定义这一层
 
-## 1. 先用一句话理解这一层
+`Core SDK` 解决的是：
 
-`Core SDK` 解决的是：在 Java 里，如何用一套连续的工程模型把模型调用、工具接入、协议扩展、会话上下文、RAG 和能力扩展组织起来。
+> 在 Java 里，如何把模型访问、工具暴露、协议扩展、会话上下文、RAG 和服务入口统一收进一套连续的工程模型。
 
-所以它不是单独的“Chat 章节”，也不是“工具杂项区”，而是整个 AI4J 的基础能力总装层。
+所以它不是单独的 `Chat` SDK，也不是“几个 provider wrapper 的集合”，而是整个 AI4J 的能力总装层。
 
-## 2. 这一层到底包含什么
+## 2. 当前这层真正包含什么
 
-可以把 `Core SDK` 理解成七个并列能力面：
+从仓库当前代码和文档结构看，`Core SDK` 至少包含这些正式能力面：
 
-- `Model Access`：`Chat`、`Responses`、流式、多模态、统一请求/返回约定
-- `Tools`：本地函数工具、注解式工具、执行模型、安全边界
-- `Skills`：可发现、按需加载的说明/模板/工作流资源
-- `MCP`：外部能力的协议化接入、网关、传输、发布语义
-- `Memory`：基础会话上下文，以及与工具边界的划分
-- `Search & RAG`：联网增强、`Embedding`、`Rerank`、向量存储、入库和检索
-- `Extension`：provider、模型、服务入口与网络栈扩展
+- `Model Access`
+- `Tools`
+- `Skills`
+- `MCP`
+- `Memory`
+- `Search & RAG`
+- `Extension`
+- 以及被这些能力面共同依赖的 `service entry / registry`
 
-这七块合起来，才构成 AI4J 的基座。
+如果只把它理解成模型调用层，你会看漏这层最重要的价值：它是在组织一整套基础能力，而不是单一 API。
 
-## 3. 代码里这层长什么样
+## 3. 源码里这层是怎么长出来的
 
-在源码里，`ai4j/src/main/java/io/github/lnyocly/ai4j/` 下面已经能看到这套分层的主干：
+在 `ai4j/src/main/java/io/github/lnyocly/ai4j/` 下，已经能直接看到这套分层骨架：
 
 - `service`、`platform`
 - `tool`、`tools`
 - `skill`
 - `mcp`
 - `memory`
-- `rag`、`vector`、`rerank`、`websearch`、`document`
-- `network`、`config`、`interceptor`、`auth`
+- `rag`、`vector`、`websearch`
+- `network`、`config`
 
-不需要一开始记住所有包名，但你应该先记住：这个模块不是只围绕某一个接口长出来的，而是围绕一整套基础能力面组织的。
+这说明它不是围绕某一个接口临时扩起来的，而是围绕多条稳定能力面组织的。
 
-## 4. 什么属于 Core SDK，什么不属于
+## 4. 真实入口链是什么
 
-属于这一层的，是“任何上层模块都可能复用的基础能力”。
+如果你先按“最常见主线”理解，这层的入口链是：
 
-例如：
+```text
+Configuration
+  -> AiService
+    -> IChatService / IResponsesService / IEmbeddingService / ...
+```
 
-- provider 与服务访问
-- `Function Call`
+如果进入多实例场景，则会变成：
+
+```text
+Configuration + AiConfig.platforms
+  -> DefaultAiServiceRegistry
+  -> AiServiceRegistry
+  -> id -> platformType -> AiService -> I*Service
+```
+
+这两条链几乎决定了你后面如何理解 provider、RAG、扩展点和 Spring Boot 装配。
+
+## 5. 这层不是“所有能力都完全对称”
+
+这是非常值得先建立的事实。
+
+从 `AiService` 当前实现看：
+
+- `Chat` 支持平台最广
+- `Responses` 支持平台较少
+- `Embedding` 只支持 OpenAI/Ollama
+- `Audio`、`Realtime` 目前只在 OpenAI 路径存在
+- `Rerank` 只支持 Jina/Ollama/Doubao
+
+所以 `Core SDK` 的统一，并不等于“所有 provider 在所有 service 面都完全一致”。  
+统一的是入口与抽象，能力覆盖矩阵仍然是显式维护的。
+
+## 6. 什么属于 Core SDK，什么不属于
+
+属于这一层的，是所有上层模块都可能复用的基础能力，例如：
+
+- provider/service 分发
+- 统一请求对象与返回对象
+- 本地工具暴露
 - `Skill`
 - `MCP`
 - `ChatMemory`
-- RAG 与检索链
-- 扩展点和统一入口
+- embedding / rerank / vector / websearch / ingestion
 
-不属于这一层的，是更上层、更场景化的运行时：
+不属于这一层的，是更高一层的运行时或宿主：
 
-- `Spring Boot` 的自动装配与 Bean 扩展
-- `Agent` 的 runtime、orchestration、trace
-- `Coding Agent` 的 workspace、session、approval、CLI / TUI / ACP
-- `Flowgram` 的节点图运行与平台后端接口
+- `ai4j-spring-boot-starter` 的自动装配
+- `ai4j-agent` 的 runtime、trace、memory orchestration
+- `ai4j-coding` 的 workspace、approval、session
+- `ai4j-cli` 的宿主界面与交互
+- `ai4j-flowgram-*` 的节点图运行与平台集成
 
-这个边界很重要，因为它决定了文档阅读和代码定位都不会混层。
+这个边界越早建立，后面越不容易混层。
 
-## 5. 为什么这层必须先学
+## 7. 为什么这层必须先学
 
-### 5.1 它决定你怎么解释整个项目
+### 它决定你怎么解释整个项目
 
-如果你能讲清楚 `Core SDK`，你基本就能讲清楚：
+只要你能讲清楚 `Core SDK`，你基本就能讲清楚：
 
-- AI4J 不是一个单点 SDK
-- 上层模块为什么不是各写各的
-- `Function Call`、`Skill`、`MCP` 的归属为什么要分开
+- AI4J 为什么不是单点模型 SDK
+- 为什么 `Function Call`、`Skill`、`MCP` 要分层
+- 为什么上层模块不需要各自重新造一套基础能力
 
-### 5.2 它是上层模块共享的能力底座
+### 它是上层模块共享的底座
 
-上层模块复用关系可以简化理解为：
+上层模块和这层的关系可以简化成：
 
-- `Spring Boot` 复用这层的配置和能力装配
-- `Agent` 复用这层的模型访问、工具和 `MCP`
-- `Coding Agent` 复用这层的工具、`Skill`、`MCP` 和基础模型接入
-- `Flowgram` 复用这层的模型、工具、知识库和部分 agentic 能力
+- `Spring Boot` 负责容器化接入
+- `Agent` 在这层之上做 runtime
+- `Coding Agent` 在这层之上做工作区与流程控制
+- `Flowgram` 在这层之上做图式编排与集成
 
-所以这一层不是“读过就算”，而是后续所有专题的共同前提。
+所以这一层不是“读完就忘的基础章节”，而是后续所有专题的共同前提。
 
-## 6. 建议怎么读这一层
+## 8. 推荐阅读顺序
 
-推荐按下面顺序：
+建议按下面顺序读：
 
 1. [Strengths and Differentiators](/docs/core-sdk/strengths-and-differentiators)
-2. [Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)
-3. [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+2. [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+3. [Platform and Service Matrix](/docs/core-sdk/platform-service-matrix)
 4. [Model Access](/docs/core-sdk/model-access/overview)
 5. [Tools](/docs/core-sdk/tools/overview)
 6. [Skills](/docs/core-sdk/skills/overview)
@@ -97,27 +134,6 @@
 9. [Search & RAG](/docs/core-sdk/search-and-rag/overview)
 10. [Extension](/docs/core-sdk/extension/overview)
 
-如果你是第一次建立整体认知，前 4 页就是最值得优先读完的主线。
+## 9. 这一页的结论
 
-## 7. 建议先抓住的关键对象
-
-如果你接下来要从文档进入源码，优先记住下面这些入口：
-
-- `service/factory/AiService.java`：模型与能力服务的统一工厂入口
-- `service/factory/AiServiceRegistry.java`：服务注册与分发表
-- `tool/ToolUtil.java`：本地工具 schema 暴露和执行适配入口
-- `skill/Skills.java`：skill 发现与读取入口
-- `mcp/gateway/McpGateway.java`：MCP 多服务管理中心
-- `memory/ChatMemory.java`：基础会话上下文契约
-- `rag/ingestion/IngestionPipeline.java`：RAG 入库流水线主入口
-
-这些对象分别对应七个能力面，能帮助你把“文档分章”和“源码分包”一一对上。
-
-## 8. 阅读这一层时要避免的误区
-
-- 不要把 `Chat` 当成整个基座的全部，模型访问只是主线之一
-- 不要把 `Tools`、`Skills`、`MCP` 混成一种概念，它们分别代表执行能力、说明资产和协议接入
-- 不要先从 demo 或 starter 反推基座，核心边界应当先在 `ai4j/` 里建立
-- 不要跳过 `Service Entry and Registry`，否则后面很难看懂 provider、RAG 和扩展点是如何收束的
-
-把这些边界先立住，后面进入 `Agent`、`Coding Agent` 和 `Flowgram` 时，阅读成本会明显降低。
+> `Core SDK` 在 AI4J 里不是“模型调用那一层”，而是整个工程体系的基础能力层。它统一了入口、抽象和扩展方式，但并不伪装成一个完全对称的多 provider 世界；理解这层的真实支持矩阵和入口链，才是理解整个仓库的前提。
