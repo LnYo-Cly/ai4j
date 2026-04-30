@@ -1,192 +1,186 @@
 # Chat Memory
 
-`ChatMemory` 是 AI4J 基座层里很容易被低估的一块能力。很多人以为它只是“帮你存一下聊天记录”，但从源码看，它实际上是 **`Chat` 和 `Responses` 的共享会话上下文容器**。
+`ChatMemory` 是 AI4J 基座里一个非常核心、但容易被低估的对象。  
+它真正做的不是“帮你存一份 messages”，而是 **把多轮会话事实组织成可投影、可裁剪、可快照、可恢复的统一上下文抽象**。
 
-如果你把这页看透，就能明白：
+## 1. 先看真实契约
 
-- 为什么 AI4J 没让每个调用方自己维护 `messages`
-- 为什么 `Chat` 和 `Responses` 可以共用一套会话状态
-- 为什么它和 `AgentMemory` / `CodingSession` 不是一回事
-
-## 1. 先看核心接口
-
-`ai4j/src/main/java/io/github/lnyocly/ai4j/memory/ChatMemory.java` 定义了这套能力的最小契约：
+`ChatMemory.java` 当前定义的核心能力包括：
 
 - `addSystem(...)`
 - `addUser(...)`
 - `addAssistant(...)`
+- `addAssistantToolCalls(...)`
 - `addToolOutput(...)`
+- `add(...)`
+- `addAll(...)`
+- `getItems()`
 - `toChatMessages()`
 - `toResponsesInput()`
 - `snapshot()`
 - `restore(...)`
 - `clear()`
 
-只看这组方法就能知道，`ChatMemory` 的重点不是某个 provider，而是：
+只看这组方法就能知道，它不是某个 provider 的附属工具，而是会话状态的正式抽象层。
 
-- 维护多轮上下文
-- 把上下文投影到不同模型接口
-- 支持回放、恢复和裁剪
+## 2. 记录的不是文本，而是会话事实
 
-## 2. 它为什么不是“只给 Chat 用的”
+`ChatMemoryItem` 决定了这一层到底保存什么。
 
-这是最容易写漏的一点。
+它当前能承载：
 
-`ChatMemory` 同时提供：
+- role
+- 文本
+- 图片 URL
+- assistant tool calls
+- tool output 对应的 `toolCallId`
+- 是否为摘要条目
 
-- `toChatMessages()`
+这意味着 memory 可以同时覆盖：
+
+- 普通文本对话
+- 多模态用户输入
+- assistant 发起的 tool call
+- tool 执行后回写的结果
+
+所以这层保存的是“模型上下文事实”，不是“最后一轮问答文本”。
+
+## 3. 为什么它是 `Chat` 和 `Responses` 的共享基座
+
+`ChatMemoryItem` 里有两个关键方法：
+
+- `toChatMessage()`
 - `toResponsesInput()`
 
-这两个方法已经明确说明，它不是某个 `ChatCompletion` 的附属物，而是 AI4J 基座层抽出来的统一会话表示。
+它们对应两种不同协议投影：
 
-你可以把它理解成：
+- `Chat` 路径投影成 `ChatMessage`
+- `Responses` 路径投影成 `message` / `function_call_output` 等输入项
 
-- `Chat` 需要的投影：`List<ChatMessage>`
-- `Responses` 需要的投影：`List<Object>`
+同一份历史不需要被业务层维护两套结构，这正是 `ChatMemory` 的价值所在。
 
-底层会话事实只有一份，投影方式不同。
+## 4. `InMemoryChatMemory` 的真实行为
 
-## 3. 两个最常用的实现
+默认实现是：
 
-### 3.1 `InMemoryChatMemory`
+- `InMemoryChatMemory`
 
-源码位置：
+它的几个关键行为很直接：
 
-- `memory/InMemoryChatMemory.java`
+- 内部持有 `List<ChatMemoryItem>`
+- `add(...)` 时会复制条目，避免外部对象直接共享
+- 每次新增后都会立即应用当前 policy
+- `getItems()`、`snapshot()`、`toChatMessages()` 都返回重新组织后的结果
 
-特征：
+这意味着它不是“原封不动地堆列表”，而是每次写入后都会把当前保留策略真正执行一遍。
 
-- 默认实现
-- 数据保存在 JVM 内存里
-- 默认 policy 是 `UnboundedChatMemoryPolicy`
-- 适合先跑通单进程多轮对话
+## 5. `JdbcChatMemory` 的真实行为
 
-### 3.2 `JdbcChatMemory`
+`JdbcChatMemory` 是正式持久化实现，不是演示类。
 
-源码位置：
+构造时它要求：
 
-- `memory/JdbcChatMemory.java`
-- `memory/JdbcChatMemoryConfig.java`
+- `sessionId`
+- `dataSource` 或 `jdbcUrl`
 
-特征：
+默认行为包括：
 
-- 以 `sessionId` 作为持久化主键
-- 支持 `DataSource` 或 JDBC 参数
-- 可以初始化 schema
-- 仍然可以叠加 `MessageWindow` / `Summary` policy
+- `tableName = "ai4j_chat_memory"`
+- `initializeSchema = true`
+- policy 默认仍然是 `UnboundedChatMemoryPolicy`
 
-也就是说，AI4J 已经把“跨进程恢复多轮上下文”这件事做到基座层了，而不是要求业务方自己临时造一个 session 表。
+它的写入策略也值得明确写出来：
 
-## 4. 为什么 policy 设计非常关键
+- 读取当前会话所有条目
+- 合并新条目
+- 应用 policy
+- 用事务先删旧记录，再按 `item_index` 重新插入整段会话
 
-很多人会说“上下文太长就截断”。AI4J 没有把这件事做成黑盒，而是抽成了 `ChatMemoryPolicy`。
+这个设计的好处是恢复简单、顺序稳定；代价是它偏向会话一致性，而不是高频增量更新性能。
 
-当前常见策略有：
+## 6. policy 是如何真正生效的
 
-- `UnboundedChatMemoryPolicy`
-- `MessageWindowChatMemoryPolicy`
-- `SummaryChatMemoryPolicy`
+### `UnboundedChatMemoryPolicy`
 
-### `MessageWindowChatMemoryPolicy` 做什么
+最简单，基本等于复制当前会话，不做裁剪。
 
-它会保留最近 N 条非 system 消息，但会尽量保住 system role。
+### `MessageWindowChatMemoryPolicy`
 
-### `SummaryChatMemoryPolicy` 做什么
+这不是“简单保留最后 N 条数组元素”。
 
-它会在达到触发阈值后，把较早消息总结成一条 summary，再保留最近消息继续滚动。
+它会：
 
-这一点很重要，因为这代表 AI4J 对“上下文变长”的态度不是简单粗暴裁掉，而是允许你做 **可解释的压缩**。
+- 从尾部开始统计最近的非 system 消息
+- 尽量保留 `system` 项
+- 丢弃超出窗口的较早非 system 条目
 
-## 5. 最小使用心智
+测试里已经验证了这一点：即使窗口裁剪发生，`system` 消息仍会被保住。
 
-一个很典型的基座层用法是：
+### `SummaryChatMemoryPolicy`
 
-```java
-ChatMemory memory = new InMemoryChatMemory();
-memory.addSystem("你是一个简洁的 Java 助手");
-memory.addUser("请用三点介绍 AI4J");
+这是更重的一条策略链。
 
-ChatCompletion request = ChatCompletion.builder()
-        .model("gpt-4o-mini")
-        .messages(memory.toChatMessages())
-        .build();
-```
+它会：
 
-如果你切到 `Responses`，只是把最后一行换成：
+- 跳过非摘要 `system` 项，不把它们纳入摘要对象
+- 当可摘要消息数超过 `summaryTriggerMessages` 时触发摘要
+- 保留最近 `maxRecentMessages`
+- 把更早的消息交给 `ChatMemorySummarizer`
+- 生成一条 `summary=true` 的新条目插回会话
 
-```java
-ResponseRequest request = ResponseRequest.builder()
-        .model("gpt-4.1")
-        .input(memory.toResponsesInput())
-        .build();
-```
+它不是简单“把前面拼成一段字符串”，而是显式引入了摘要器接口与摘要请求对象：
 
-这就说明 `ChatMemory` 的真正价值是：**把上下文和接口形式解耦**。
+- `ChatMemorySummarizer`
+- `ChatMemorySummaryRequest`
 
-## 6. 它不只存文本
+这使得摘要逻辑可以由业务自己决定，而不是被 SDK 写死。
 
-`ChatMemory` 还能记录：
+## 7. 快照与恢复意味着什么
 
-- 图文用户输入
-- assistant tool calls
-- tool output
+`snapshot()` / `restore(...)` 的存在让这一层不只是“当前会话容器”，还支持：
 
-这意味着它记录的是“对话事实”，而不是只记录最后的自然语言文本。
+- 会话回放
+- 临时分支试验
+- 手动 checkpoint
+- 持久化恢复
 
-例如 `addToolOutput(toolCallId, output)` 的存在就说明，工具结果也被视为会话上下文的一部分。
+这里的 `ChatMemorySnapshot` 只是复制 `ChatMemoryItem` 列表，不承担额外语义。  
+它的价值在于把“当下会话状态”稳定冻结下来。
 
-## 7. 但它为什么仍然不是工具治理系统
+## 8. 多模态和工具结果如何进入 memory
 
-这是一个非常关键的边界。
+### 多模态用户输入
 
-`ChatMemory` 能记录 tool calls 和 tool outputs，不代表它负责：
+`addUser(String text, String... imageUrls)` 会把文本和图片 URL 记录成同一个 `ChatMemoryItem`。  
+投影到 `Chat` 时会变成 `Content.MultiModal`，投影到 `Responses` 时会变成 `input_text` / `input_image` 结构。
 
-- 允许不允许调用工具
-- 工具需不需要审批
-- 工具执行失败后怎么补偿
-- 多步任务如何推进
+### 工具结果
 
-它保存的是“发生过什么”，不是“应该让什么发生”。
+assistant 的 tool calls 和 tool outputs 是分开记录的：
 
-所以它和 `ToolUtil`、`McpGateway`、Agent runtime 是邻接关系，不是包含关系。
+- `addAssistant(..., toolCalls)`
+- `addToolOutput(toolCallId, output)`
 
-## 8. 和 `AgentMemory` / `CodingSession` 的区别
+这使得模型下一轮看到的是一个完整链条：
 
-如果你是做普通多轮对话：
+- assistant 曾请求过什么工具
+- 那个工具返回了什么
 
-- `ChatMemory` 足够
+## 9. 使用这层时最常见的误区
 
-如果你已经进入：
+### 把 `InMemoryChatMemory` 当成跨进程持久层
 
-- 任务规划
-- 长程状态机
-- 审批
-- checkpoint / compact / resume
+它只适合单 JVM 生命周期内的会话，不适合服务重启后恢复。
 
-那就不是 `ChatMemory` 该解决的层了，而是 `ai4j-agent` / `ai4j-coding` 的状态系统。
+### 业务层自己手工 `subList`
 
-这条边界必须写清楚，否则用户会误以为“AI4J 既然有 memory，就应该自动等于 agent memory”。
+更稳的方式是显式使用 `ChatMemoryPolicy`。  
+业务层手工截列表很容易破坏 system、summary、tool output 之间的结构。
 
-## 9. 注意事项
+### 以为 memory 会自动治理工具
 
-### 9.1 把 `InMemoryChatMemory` 当成长会话存储
+它可以记录 tool call 和 tool output，但不会决定工具能不能执行，也不会处理审批或副作用补偿。
 
-单进程 demo 没问题，跨进程恢复就不对。
+## 10. 一个更准确的定义
 
-### 9.2 上下文太长时直接手工裁消息
-
-更稳的方式是显式使用 memory policy，而不是业务代码里随手 `subList`。
-
-### 9.3 把工具审批结果塞进 memory 里当权限系统
-
-memory 只能记录事实，不能替代治理。
-
-## 10. 设计摘要
-
-AI4J 的 `ChatMemory` 不是一个“聊天记录数组工具类”，而是 `Chat` 和 `Responses` 共用的会话抽象。它把上下文维护、投影、裁剪、摘要和持久化都收进了基座层，但不承担 agent 级状态推进和工具治理职责。
-
-## 11. 继续阅读
-
-- [Memory / Memory and Tool Boundaries](/docs/core-sdk/memory/memory-and-tool-boundaries)
-- [Model Access / Chat](/docs/core-sdk/model-access/chat)
-- [Model Access / Responses](/docs/core-sdk/model-access/responses)
+> `ChatMemory` 在 AI4J 里是统一会话事实层。它把多轮对话、多模态输入、tool call、tool output、窗口裁剪、摘要压缩和快照恢复收进同一套契约里，并允许同一份历史同时投影到 `Chat` 和 `Responses` 两条访问主线。
