@@ -2,19 +2,11 @@
 
 这一页只讲配置入口，不讲业务调用。
 
-## 1. 这页在 Spring Boot 主线里的位置
+## 1. 配置分层
 
-如果 `auto-configuration` 讲的是“starter 最终装了什么 Bean”，那么这一页讲的是：
+AI4J 的 Spring Boot 配置不是一坨平铺字段，而是按能力面分层组织的。
 
-- 你能配什么
-- 这些配置大致分成哪几类
-- 单实例配置和多实例配置怎么分工
-
-它不负责替代完整业务示例，也不负责讲清底层模型协议语义。
-
-## 2. 常见配置前缀
-
-当前高频配置面主要包括：
+常见前缀包括：
 
 - `ai.openai.*`
 - `ai.doubao.*`
@@ -26,67 +18,64 @@
 - `ai.vector.*`
 - `ai.agentflow.*`
 
-第一次接入时，不需要把所有前缀背下来，但要先知道配置不是一坨平铺字段，而是按能力面分层组织的。
+## 2. 这些配置最终流向哪里
 
-## 3. 单实例与多实例
-
-- `ai.openai.*` 这类配置适合单实例基础接入
-- `ai.platforms[]` 适合构建 `AiServiceRegistry`
-
-它们不是互斥关系，而是两层不同粒度的配置方式。
-
-更简单地说：
-
-- 只想先跑通一个 provider：先配单实例
-- 一个应用内要管理多套 provider / 多账号 / 多租户：再进多实例注册表
-
-## 4. 配置大致会流向哪里
-
-从阅读心智上，可以先记成：
+可以先把主线记成：
 
 ```text
 application.yml
-    -> *ConfigProperties
-        -> starter auto-configuration
-            -> Core SDK Configuration / Bean graph
+  -> *ConfigProperties
+  -> AiConfigAutoConfiguration
+  -> Configuration / Bean graph
 ```
 
-所以这页真正要解决的问题不是“字段名本身”，而是：
+所以这页的重点不是字段列表本身，而是：
 
 - 这组字段属于哪个能力面
-- 它最终会进入哪条 Bean 主线
+- 它会进入单实例主线，还是多实例注册表主线
 
-## 5. 这一页和其他页面的边界
+## 3. 单实例和多实例
 
-- `configuration-reference` 讲“你能配什么”
-- `auto-configuration` 讲“这些配置最终变成了什么 Bean”
-- `bean-extension` 讲“默认 Bean 不够时你怎么接管”
+### 单实例
 
-如果这三页边界混掉，Spring Boot 路径就会很难讲清楚。
+像 `ai.openai.*` 这种配置，适合最直接的 provider 接入。
 
-## 6. 继续阅读
+### 多实例
 
-1. [Auto Configuration](/docs/spring-boot/auto-configuration)
-2. [Bean Extension](/docs/spring-boot/bean-extension)
-3. [Common Patterns](/docs/spring-boot/common-patterns)
-4. [Start Here / Troubleshooting](/docs/start-here/troubleshooting)
+像 `ai.platforms[]` 这种配置，适合构建 `AiServiceRegistry`，用于多账号、多租户或多平台路由。
 
-## 7. 实际使用时先统一什么
+两条线不是互斥，而是粒度不同。
 
-建议团队先统一三类约定：
+## 4. `ai.okhttp.*` 的位置
 
-- 哪些 provider 走单实例配置，哪些走 `ai.platforms[]`
-- 哪些网络、向量和联网增强配置允许按环境覆盖
-- 哪些配置变化需要同步回归 `RAG`、`Tool` 或多实例路由链
+`ai.okhttp.*` 不是 provider 配置，而是底层网络栈配置。
 
-这样这页就不只是字段索引，而是配置治理的入口。
+它影响的是：
 
-## 8. 关键对象
+- 日志级别
+- 超时时间
+- 代理
+- SSL 策略
 
-如果你要继续对照源码，优先关注：
+这类配置会通过 `AiConfigAutoConfiguration.initOkHttp()` 进入统一 `OkHttpClient`。
 
+## 5. 这页应该怎么用
+
+当你要加一个新环境配置时，先问自己三个问题：
+
+1. 这是 provider 级参数，还是 HTTP 栈参数
+2. 这是单实例配置，还是多实例注册表配置
+3. 这项配置是否会影响 RAG、Tool 或多实例路由链
+
+如果这三个问题没想清楚，字段加对了也容易放错层。
+
+## 6. 关键对象
+
+继续对照源码时，优先看：
+
+- `AiConfigProperties`
 - 各类 `*ConfigProperties`
 - `AiConfigAutoConfiguration`
 - `Configuration`
 
-它们共同构成了“YAML -> 属性对象 -> 运行时配置 -> Bean 图”的完整路径。
+它们共同构成了从 YAML 到运行时对象图的路径。

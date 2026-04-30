@@ -1,22 +1,22 @@
 # Spring Boot Quickstart
 
-如果你还没有跑通第一个 Spring Boot 请求，先读这一页。
+如果你还没跑通第一个 Spring Boot 请求，先读这一页。
 
-## 1. 这一页要先验证什么
+## 1. 最短成功路径
 
-这一页的目标不是讲完整个 starter，而是先确认这条最短成功路径：
+这页只验证四件事：
 
 1. 引入 `ai4j-spring-boot-starter`
-2. 在 `application.yml` 中配置 `ai.*`
+2. 在 `application.yml` 里配置 `ai.*`
 3. 注入 `AiService`
 4. 发出第一个 `ChatCompletion`
 
-如果这四步已经成立，就说明：
+如果这四步成立，说明：
 
-- starter 已经进项目
-- 自动装配已经生效
-- 配置绑定已经成立
-- 容器内已经能拿到可用 AI4J Bean
+- starter 已进项目
+- 自动装配已生效
+- 配置绑定已成立
+- 容器里已经有可用的 AI4J Bean
 
 ## 2. 最小依赖
 
@@ -24,7 +24,7 @@
 
 - `ai4j-spring-boot-starter`
 
-这条路径默认建立在 `Core SDK` 已被 starter 带入容器的前提上，不需要你手动再拼一遍最底层入口。
+这条路径默认建立在 `Core SDK` 已被 starter 带入容器的前提上，不需要你手动再拼一遍底层入口。
 
 ## 3. 最小配置
 
@@ -34,12 +34,12 @@ ai:
     api-key: ${OPENAI_API_KEY}
 ```
 
-如果你的网络环境需要代理，再补 `ai.okhttp.*` 相关配置。
+如果你的网络环境需要代理，再补 `ai.okhttp.*`。
 
 这一步最核心的判断标准不是“字段背没背全”，而是：
 
-- 你的配置是否真的进入 Spring 环境
-- provider 的最小必需字段是否已经具备
+- 配置是否真的进入 Spring 环境
+- provider 最小必需字段是否已经具备
 
 ## 4. 最小调用
 
@@ -60,13 +60,13 @@ public String chatOnce(String userInput) throws Exception {
 
 这一段代码真正验证的是：
 
-- Spring 已经注入 `AiService`
-- `AiService` 能按 `PlatformType` 给你取到服务
-- 第一条模型请求已经能在业务 Bean 中成功跑通
+- Spring 已注入 `AiService`
+- `AiService` 能按 `PlatformType` 取到服务
+- 第一条模型请求已经能在业务 Bean 中跑通
 
-## 5. 跑通之后不要立刻跳得太深
+## 5. 跑通之后怎么继续看
 
-跑通第一条请求之后，建议按这个顺序继续：
+建议按这个顺序继续：
 
 1. [Auto Configuration](/docs/spring-boot/auto-configuration)
 2. [Configuration Reference](/docs/spring-boot/configuration-reference)
