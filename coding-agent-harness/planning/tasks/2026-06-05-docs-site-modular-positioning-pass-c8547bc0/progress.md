@@ -1,6 +1,6 @@
 # docs site modular positioning pass - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -53,3 +53,10 @@
 - 验证结果：`npm run build` 在 `docs-site/` 成功；`git diff --check` 成功，仅有 Windows LF/CRLF warning；`docs-site/build` 未出现在 git status 中。
 - 下一步：补齐 review / walkthrough，提交本地 commit 后推进 harness lifecycle。
 - 证据：command:docs-site:npm run build success; command:repo-root:git diff --check success with LF/CRLF warnings only; report:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/artifacts/INDEX.md:ART-005 and ART-006
+
+### [2026-06-04 16:49] - task-review
+
+- 做了什么：docs-site modular positioning pass ready: intro, Why AI4J, and Feature Map now present AI4J as modular Java AI building blocks; POM relationship scan, docs-site build, and diff check passed
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
