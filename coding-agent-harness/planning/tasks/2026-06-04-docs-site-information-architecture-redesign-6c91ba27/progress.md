@@ -1,6 +1,6 @@
 # docs site information architecture redesign - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -44,4 +44,11 @@
 - 做了什么：docs-site IA redesign design packet ready for human review: current inventory, target layered IA, Feature Map strategy, status labels, page contracts, and migration waves are documented; implementation is intentionally deferred pending approval.
 - 验证结果：已记录
 - 下一步：继续执行
+- 证据：n/a
+
+### [2026-06-04 12:05] - task-complete
+
+- 做了什么：docs-site IA redesign design task closed after human confirmation; Wave 1 implementation is authorized as a separate task.
+- 验证结果：已记录
+- 下一步：完成
 - 证据：n/a
