@@ -1,0 +1,47 @@
+{
+  "preset": "standard-task",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/standard-task/preset.yaml",
+  "manifestSha256": "5015d79c8edaad1358174ee7b8bf7b9f1285ee9a2f957940ea4cc119cd2e9920",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md"
+      },
+      "writes": [
+        "{{paths.tasksRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/tasks/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-04T12:05:19.454Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/tasks/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/brief.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/task_plan.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/execution_strategy.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/visual_map.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/findings.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/lesson_candidates.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/progress.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/review.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/references/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/walkthrough.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/preset/2026-06-04T12-05-19-453Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md"
+  ]
+}
