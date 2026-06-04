@@ -71,6 +71,20 @@ modules:
       plan: coding-agent-harness/planning/modules/core-sdk/module_plan.md
       brief: coding-agent-harness/planning/modules/core-sdk/brief.md
       updated: 2026-06-04
+    flowgram-starter:
+      title: FlowGram Starter
+      prefix: FLOWSTART
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-spring-boot-starter
+      shared: []
+      dependsOn:
+        - agent-runtime
+      plan: coding-agent-harness/planning/modules/flowgram-starter/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-starter/brief.md
+      updated: 2026-06-04
     spring-starter:
       title: Spring Boot Starter
       prefix: SPRING
