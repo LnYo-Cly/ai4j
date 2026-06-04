@@ -30,6 +30,23 @@ sidebar_position: 4
 | 第一次工具调用 | `stable` | `ai4j` | 想让模型调用本地函数或工具 | [First Tool Call](/docs/start-here/first-tool-call) |
 | 路径选择 | `stable` | docs | 不确定该走 SDK、Spring、Agent 还是 FlowGram | [Choose Your Path](/docs/start-here/choose-your-path) |
 
+## 按模块取用
+
+AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用的平台。你可以按当前目标选择最小模块。
+
+| 当前目标 | 最小取用模块 | 依赖关系 | 适合场景 |
+| --- | --- | --- | --- |
+| 只做模型调用、工具、RAG、MCP | `ai4j` | 无 AI4J 内部依赖 | 普通 Java 项目先把 AI 能力跑起来 |
+| Spring Boot 应用接入 AI | `ai4j-spring-boot-starter` | 依赖 `ai4j` | 需要配置属性、自动装配、Bean 扩展 |
+| 嵌入 Agent runtime | `ai4j-agent` | 依赖 `ai4j` | 需要 memory、state、workflow、trace、team orchestration |
+| 做本地 Coding Agent runtime | `ai4j-coding` | 依赖 `ai4j`、`ai4j-agent` | 需要 workspace 工具、会话、outer loop、compaction |
+| 提供 CLI / TUI / ACP 入口 | `ai4j-cli` | 依赖 `ai4j`、`ai4j-coding` | 需要终端产品壳层和本地会话入口 |
+| 接 FlowGram 后端 | `ai4j-flowgram-spring-boot-starter` | 依赖 `ai4j-agent`、`ai4j-spring-boot-starter` | 需要可视化工作流、任务 API、trace bridge |
+| 跑 FlowGram demo | `ai4j-flowgram-demo` | 依赖 FlowGram starter | 需要示例后端验证集成 |
+| 统一版本 | `ai4j-bom` | 管理多个 artifact 版本 | 同时引入多个 AI4J 模块时减少版本漂移 |
+
+判断原则很简单：先引入能解决当前问题的最小模块；只有当需求自然上升时，再叠加下一层。
+
 ## Core SDK
 
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
