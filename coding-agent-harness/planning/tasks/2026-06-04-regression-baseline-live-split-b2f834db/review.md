@@ -113,3 +113,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 tracked v2 SSoT/Cadence diff、CI/package script 检查、provider/env 测试扫描、harness status，以及人工 dashboard confirmation。live profile 与 CI 扩展残余已路由，不阻塞本轮治理切片。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606040931 |
+| Submitted At | 2026-06-04 09:31 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-regression-baseline-live-split-b2f834db |
+| Materials Checklist Hash | d7319866fe56215d |
+| Evidence Summary | Regression baseline/live split ready for review: v2 SSoT and Cadence separate local-required from live-provider and credential-release opt-in gates; legacy docs projection synced; harness status pass with 0 failures and 0 warnings; executable regressions waived because this is governance-only. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db |

@@ -1,6 +1,6 @@
 # regression baseline live split - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:harness status pass with 0 failures and 0 warnings; rg key scan found local/live gate taxonomy in v2 and legacy projection docs; git boundary limited to regression governance and task materials
+
+### [2026-06-04 09:31] - task-review
+
+- 做了什么：Regression baseline/live split ready for review: v2 SSoT and Cadence separate local-required from live-provider and credential-release opt-in gates; legacy docs projection synced; harness status pass with 0 failures and 0 warnings; executable regressions waived because this is governance-only.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
