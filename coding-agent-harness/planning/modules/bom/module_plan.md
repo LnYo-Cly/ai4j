@@ -4,22 +4,24 @@
 
 - 模块 Key：`bom`
 - 负责人：coordinator
-- 分支：
-- 写入范围：
-- 共享面：
-- 依赖模块：
+- 分支：`main`
+- 写入范围：`ai4j-bom/**`
+- 共享面：根 `pom.xml`、模块 POM、release profile
+- 依赖模块：无
 
 ## 边界
 
-- 可以编辑：
-- 禁止编辑：
-- 外部依赖：
+- 可以编辑：BOM POM 和版本对齐说明。
+- 禁止编辑：功能模块源码，除非任务明确为跨模块 release 变更。
+- 外部依赖：Maven Central consumers、release signing、dependency resolution。
 
 ## 步骤
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| MOD-01 | 定义模块运行合同 | planned | none | none |
+| BOM-01 | 维护版本对齐合同 | planned | none | none |
+| BOM-02 | release/package smoke | planned | none | BOM-01 |
+| BOM-03 | 下游 starter 消费影响评估 | planned | none | BOM-01 |
 
 ## 活跃任务
 
@@ -31,18 +33,14 @@
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| 模块任务合同 | `harness check --profile target-project .` | yes |
+| BOM package | `mvn -pl ai4j-bom -DskipTests package` | yes |
+| 全局 package smoke | `mvn -DskipTests package` | risk-based |
 
 ## 交接
 
-- 分支：
-- Commit SHA：
-- 检查：
-- 变更文件：
-- 残余风险：
-- 需要 coordinator 同步：
-
-## 模板边界
-
-模块根目录默认只拥有 `brief.md` 和 `module_plan.md`。`execution_strategy.md`、
-`visual_map.md`、`review.md`、`walkthrough.md` 等执行合同属于具体任务目录。
+- 分支：`feature/<name>` 或 `.worktrees/feature/<name>`。
+- Commit SHA：worker handoff 必须提供。
+- 检查：记录 Maven package 或 dependency resolution 证据。
+- 变更文件：只列 `ai4j-bom/**` 及批准的共享 POM。
+- 残余风险：release signing 或 deploy 未执行时必须说明。
+- 需要 coordinator 同步：影响模块版本、release docs 或 starter consumers 时同步。

@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `ai4j/` 核心 SDK 的 provider、Chat/Responses、RAG、MCP、向量、图像、音频和 realtime 能力边界。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让 agent 能把核心 SDK 变更和 starter、CLI、demo 变更分开规划。涉及模型提供商、基础协议、RAG、MCP 或通用运行时能力时，任务应先落到 `core-sdk`，再由 coordinator 判断是否需要同步下游 starter、agent runtime 或 docs。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：核心 SDK API、provider adapter、通用能力实现和对应测试。
+- 负责范围：`ai4j/`
+- 验证证据：`mvn -pl ai4j -DskipTests=false test` 或更小的类级 Maven 测试。
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再按任务类型读 `docs/11-REFERENCE/engineering-standard.md` 和 `docs/11-REFERENCE/testing-standard.md`。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责生产级 SDK 能力与跨模块公共行为。它是多个上层模块的依赖源，因此 API 兼容性、Java 8 和 provider-facing 测试边界必须优先处理。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：`ai4j/src/main/java`、`ai4j/src/test/java` 和模块本地 POM。
+- 共享面：根 `pom.xml`、`ai4j-bom/`、Regression SSoT、跨模块文档。
+- 不负责：agent orchestration、CLI/TUI、Spring/FlowGram 自动装配和 demo-only 逻辑。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- module registry 中 scope、依赖和 owner 与仓库事实一致。
+- 核心 SDK 任务有明确的 targeted Maven 验证。
+- 影响上层模块时，在任务中显式列出 downstream follow-up。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。

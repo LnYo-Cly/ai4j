@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `ai4j-agent/` 的 agent runtime、workflow、trace、memory、subagent 和 team orchestration。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让 agent 能独立处理 agent 编排能力，而不把运行时策略塞进 core SDK 或 demo。凡涉及 workflow 执行、trace 结构、memory 行为、subagent/team orchestration 的任务，应以 `agent-runtime` 为主模块，并评估 core SDK 和 FlowGram starter 的影响。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：agent runtime API、工作流执行、trace/memory 能力和对应测试。
+- 负责范围：`ai4j-agent/`
+- 验证证据：`mvn -pl ai4j-agent -DskipTests=false test`
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再读 `AGENT.md` 和 `docs/11-REFERENCE/engineering-standard.md`。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责 agent 行为和编排运行时，不把 demo 流程或 starter wiring 作为生产逻辑来源。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：`ai4j-agent/src/main/java`、`ai4j-agent/src/test/java` 和模块 POM。
+- 共享面：core SDK API、FlowGram starter bridge、trace 相关文档。
+- 不负责：CLI host、coding workspace tools、Spring Boot auto-configuration。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- agent runtime 任务能独立定位到 `ai4j-agent/`。
+- 对 core SDK 或 FlowGram starter 的影响在任务计划中明确。
+- 验证证据覆盖 workflow/trace/memory 受影响面。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。

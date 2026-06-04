@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `ai4j-cli/` 的 CLI、TUI、ACP host 和 session/runtime integration。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让命令行体验、TUI 和 ACP host 变更从 coding runtime 中分离。涉及命令入口、交互 UI、session 管理或 runtime integration 的任务应以 `cli-host` 为主，并检查 `coding-runtime` 合同是否变化。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：CLI command、TUI/ACP host、session integration 和测试。
+- 负责范围：`ai4j-cli/`
+- 验证证据：`mvn -pl ai4j-cli -DskipTests=false test`
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再读 `docs/11-REFERENCE/engineering-standard.md` 和 `docs/11-REFERENCE/testing-standard.md`。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责用户面 CLI host 与 runtime 接线，不把 coding runtime 核心逻辑写进 CLI。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：`ai4j-cli/src/main/java`、`ai4j-cli/src/test/java` 和模块 POM。
+- 共享面：coding runtime API、docs/CLI 使用文档、发布脚本。
+- 不负责：core SDK provider、agent workflow、starter auto-configuration。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- CLI 任务能明确区分 host wiring 与 runtime behavior。
+- 交互行为有可复查的命令或测试证据。
+- 影响 coding runtime 时同步到对应模块计划。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。

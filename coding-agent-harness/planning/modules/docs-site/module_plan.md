@@ -4,22 +4,24 @@
 
 - 模块 Key：`docs-site`
 - 负责人：coordinator
-- 分支：
-- 写入范围：
-- 共享面：
-- 依赖模块：
+- 分支：`main`
+- 写入范围：`docs-site/**`
+- 共享面：根 `docs/**`、README、release notes
+- 依赖模块：无
 
 ## 边界
 
-- 可以编辑：
-- 禁止编辑：
-- 外部依赖：
+- 可以编辑：Docusaurus 站点源码、配置、静态资源和 package files。
+- 禁止编辑：Java modules 和 harness SSoT，除非任务明确批准。
+- 外部依赖：Node/npm、Docusaurus build、站点部署环境。
 
 ## 步骤
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| MOD-01 | 定义模块运行合同 | planned | none | none |
+| DOCS-01 | 维护 docs-site build contract | planned | none | none |
+| DOCS-02 | SSoT 同步检查 | planned | none | DOCS-01 |
+| DOCS-03 | 站点构建验证 | planned | none | DOCS-01 |
 
 ## 活跃任务
 
@@ -31,18 +33,14 @@
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| 模块任务合同 | `harness check --profile target-project .` | yes |
+| docs-site build | `npm run build` from `docs-site/` | yes when docs-site changes |
+| SSoT drift check | affected root docs reviewed | risk-based |
 
 ## 交接
 
-- 分支：
-- Commit SHA：
-- 检查：
-- 变更文件：
-- 残余风险：
-- 需要 coordinator 同步：
-
-## 模板边界
-
-模块根目录默认只拥有 `brief.md` 和 `module_plan.md`。`execution_strategy.md`、
-`visual_map.md`、`review.md`、`walkthrough.md` 等执行合同属于具体任务目录。
+- 分支：`docs/<name>` 或 `.worktrees/docs/<name>`。
+- Commit SHA：worker handoff 必须提供。
+- 检查：记录 npm build 或 scoped docs check。
+- 变更文件：只列 `docs-site/**` 及批准的 shared docs。
+- 残余风险：站点未构建或部署未验证时必须说明。
+- 需要 coordinator 同步：影响 root docs SSoT、release docs 或 examples 时同步。

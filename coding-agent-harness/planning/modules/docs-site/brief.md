@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `docs-site/` 的 Docusaurus 文档站点和文档构建 surface。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让 docs site 内容、导航和构建配置从 Java 模块中分离。涉及 Docusaurus 配置、站点页面、文档站构建或前端展示文档时，任务应落到 `docs-site`，同时确认业务文档 SSoT 是否需要同步。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：Docusaurus 页面、配置、静态站点构建结果。
+- 负责范围：`docs-site/`
+- 验证证据：在 `docs-site/` 运行 `npm run build`。
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再读 `docs-site/` 的 package/config 和受影响 docs。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责文档站点呈现，不替代 repo 根 `docs/` 下的 harness/reference SSoT。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：`docs-site/**`
+- 共享面：根 `docs/**`、README、版本发布说明。
+- 不负责：Java 生产代码、harness governance 文档的事实来源。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- docs-site 任务明确区分展示层和 SSoT。
+- 构建或变更验证记录在任务 progress。
+- 影响 docs SSoT 时由 coordinator 同步。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。

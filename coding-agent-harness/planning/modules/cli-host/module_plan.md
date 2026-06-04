@@ -4,22 +4,24 @@
 
 - 模块 Key：`cli-host`
 - 负责人：coordinator
-- 分支：
-- 写入范围：
-- 共享面：
-- 依赖模块：
+- 分支：`main`
+- 写入范围：`ai4j-cli/**`
+- 共享面：CLI docs、root build config、coding runtime integration contracts
+- 依赖模块：`coding-runtime`
 
 ## 边界
 
-- 可以编辑：
-- 禁止编辑：
-- 外部依赖：
+- 可以编辑：CLI host 源码、测试、模块 POM。
+- 禁止编辑：coding runtime 内核、core SDK、starter 模块，除非任务明确批准。
+- 外部依赖：terminal capabilities、ACP client behavior、本地 session 文件。
 
 ## 步骤
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| MOD-01 | 定义模块运行合同 | planned | none | none |
+| CLI-01 | 维护 CLI/TUI/ACP host 合同 | planned | none | coding-runtime |
+| CLI-02 | session/runtime integration 回归 | planned | none | CLI-01 |
+| CLI-03 | 用户文档和发布影响同步 | planned | none | CLI-01 |
 
 ## 活跃任务
 
@@ -31,18 +33,14 @@
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| 模块任务合同 | `harness check --profile target-project .` | yes |
+| 模块测试 | `mvn -pl ai4j-cli -DskipTests=false test` | yes |
+| 依赖构建 | `mvn -pl ai4j-cli -am -DskipTests package` | risk-based |
 
 ## 交接
 
-- 分支：
-- Commit SHA：
-- 检查：
-- 变更文件：
-- 残余风险：
-- 需要 coordinator 同步：
-
-## 模板边界
-
-模块根目录默认只拥有 `brief.md` 和 `module_plan.md`。`execution_strategy.md`、
-`visual_map.md`、`review.md`、`walkthrough.md` 等执行合同属于具体任务目录。
+- 分支：`feature/<name>` 或 `.worktrees/feature/<name>`。
+- Commit SHA：worker handoff 必须提供。
+- 检查：记录 CLI targeted test 或 smoke command。
+- 变更文件：只列 `ai4j-cli/**` 及批准的共享文件。
+- 残余风险：平台或终端差异未验证时必须说明。
+- 需要 coordinator 同步：影响 coding-runtime、docs 或 release config 时同步。

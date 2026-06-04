@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `ai4j-spring-boot-starter/` 的 Spring Boot auto-configuration 和 core SDK starter wiring。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让 Spring Boot 自动装配、配置属性和 starter 兼容性独立于 core SDK 行为。涉及 starter wiring、auto-configuration、Spring 条件装配或属性绑定的任务应落到 `spring-starter`，并检查 core SDK API 是否变化。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：Spring Boot auto-configuration、properties、starter tests。
+- 负责范围：`ai4j-spring-boot-starter/`
+- 验证证据：`mvn -pl ai4j-spring-boot-starter -DskipTests=false test`
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再读 `docs/11-REFERENCE/engineering-standard.md` 和 `docs/11-REFERENCE/testing-standard.md`。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责把 core SDK 以 Spring Boot 方式接入应用，不在 starter 中承载 core SDK 生产逻辑。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：starter 源码、测试和模块 POM。
+- 共享面：core SDK API、Spring Boot 版本兼容、BOM。
+- 不负责：FlowGram starter、demo backend、core SDK provider 实现。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- starter 任务有配置绑定或 auto-configuration 验证。
+- core SDK API 变化被同步到 `core-sdk` 或 BOM。
+- Java 8 / Spring Boot 兼容性风险有记录。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。

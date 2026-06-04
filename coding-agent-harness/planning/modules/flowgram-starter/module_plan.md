@@ -4,22 +4,24 @@
 
 - 模块 Key：`flowgram-starter`
 - 负责人：coordinator
-- 分支：
-- 写入范围：
-- 共享面：
-- 依赖模块：
+- 分支：`main`
+- 写入范围：`ai4j-flowgram-spring-boot-starter/**`
+- 共享面：`ai4j-agent/**` API、FlowGram demo contracts、trace docs
+- 依赖模块：`agent-runtime`
 
 ## 边界
 
-- 可以编辑：
-- 禁止编辑：
-- 外部依赖：
+- 可以编辑：FlowGram starter 源码、测试、模块 POM。
+- 禁止编辑：demo backend、webapp、agent runtime 内核，除非任务明确批准。
+- 外部依赖：FlowGram runtime semantics、task API consumers、trace bridge contracts。
 
 ## 步骤
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| MOD-01 | 定义模块运行合同 | planned | none | none |
+| FLOWSTART-01 | 维护 FlowGram starter contract | planned | none | agent-runtime |
+| FLOWSTART-02 | task API / trace bridge 回归 | planned | none | FLOWSTART-01 |
+| FLOWSTART-03 | demo backend 同步 | planned | none | FLOWSTART-01 |
 
 ## 活跃任务
 
@@ -31,18 +33,14 @@
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| 模块任务合同 | `harness check --profile target-project .` | yes |
+| 模块测试 | `mvn -pl ai4j-flowgram-spring-boot-starter -DskipTests=false test` | yes |
+| 依赖构建 | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests package` | risk-based |
 
 ## 交接
 
-- 分支：
-- Commit SHA：
-- 检查：
-- 变更文件：
-- 残余风险：
-- 需要 coordinator 同步：
-
-## 模板边界
-
-模块根目录默认只拥有 `brief.md` 和 `module_plan.md`。`execution_strategy.md`、
-`visual_map.md`、`review.md`、`walkthrough.md` 等执行合同属于具体任务目录。
+- 分支：`feature/<name>` 或 `.worktrees/feature/<name>`。
+- Commit SHA：worker handoff 必须提供。
+- 检查：记录 starter targeted test。
+- 变更文件：只列 FlowGram starter 目录及批准的共享文件。
+- 残余风险：demo 或外部 FlowGram 运行时未验证时必须说明。
+- 需要 coordinator 同步：影响 agent runtime、demo backend 或 docs 时同步。

@@ -10,38 +10,38 @@
 
 ## 一句话结果
 
-用一句话说明这个模块持续维护什么结果。
+维护 `ai4j-flowgram-webapp-demo/` 的 FlowGram web demo frontend surface。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个模块健康运行时，用户、项目、coordinator 或 worker agents
-能得到什么。说明它能改善哪些决策、交付协调、验证或交接工作。聚焦模块带来的运行结果，
-不要展开内部流程。
+该模块让 web demo UI、前端构建和 backend contract 变更独立可追踪。涉及 FlowGram demo 前端、页面交互、构建配置或与 demo backend API 的契约时，任务应落到 `flowgram-webapp-demo`，并同步 `flowgram-demo`。
 
 ## 交付物
 
-- 可见产物：
-- 负责范围：
-- 验证证据：
+- 可见产物：web demo UI、前端资源、构建或交互验证记录。
+- 负责范围：`ai4j-flowgram-webapp-demo/`
+- 验证证据：模块本地 frontend build/test 命令或浏览器 smoke。
 
 ## 第一眼应该看什么
 
-写明人打开模块后应该先读哪个 module plan、任务列表、证据或生成产物。
+先读 `module_plan.md`，再查看 webapp package/config 和 demo backend API 期望。
 
 ## 模块职责
 
-说明这个模块负责什么，以及为什么需要独立管理。
+负责 demo frontend，不承载 backend production logic 或 FlowGram starter 行为。
 
 ## 边界
 
-- 负责：本模块拥有的目录、服务或文档区域。
-- 共享面：需要 coordinator 同步的文件。
-- 不负责：相邻模块或未声明的全局文件。
+- 负责：`ai4j-flowgram-webapp-demo/**`
+- 共享面：demo backend API contract、docs/demo usage。
+- 不负责：backend endpoint、starter integration、Java production code。
 
 ## 完成判断
 
-列出能证明这个模块 brief 仍然反映当前模块合同的条件。执行细节保留在 `module_plan.md`。
+- webapp 任务明确验证 build 或浏览器 smoke。
+- API contract 变化同步给 `flowgram-demo`。
+- UI 变更不修改 Java production logic。
 
 ## 当前工作
 
-列出当前模块任务，或指向 `module_plan.md`。
+当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。
