@@ -1,13 +1,15 @@
 # 任务产物索引
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
-
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | diff | TARGET:coding-agent-harness/harness.yaml | `module-parallel` capability and modules registry SSoT. | coordinator |
+| ART-002 | report | TARGET:coding-agent-harness/planning/modules/Module-Registry.md | Generated view listing 10 registered modules. | harness CLI |
+| ART-003 | diff | TARGET:coding-agent-harness/planning/modules/**/brief.md | Project-specific module briefs. | coordinator |
+| ART-004 | diff | TARGET:coding-agent-harness/planning/modules/**/module_plan.md | Project-specific module plans with scope, shared surfaces and validation commands. | coordinator |
+| ART-005 | command | TARGET:progress.md | Records status and module-list verification summaries. | coordinator |
 
 ## 使用规则
 
-- 路径必须可复查；临时终端输出应先保存为稳定文件再登记。
-- 产物如果包含敏感信息，先脱敏或改为记录复查方式，不要提交原始敏感内容。
-- 与 `review.md`、`progress.md`、walkthrough 互相引用时，使用 `ART-xxx` ID。
+- 大段命令输出不单独提交，以 `progress.md` 摘要和可重跑命令为准。
+- Module Registry 是生成视图，不直接手工编辑。
+- 后续模块任务应引用对应 module `brief.md` / `module_plan.md`。

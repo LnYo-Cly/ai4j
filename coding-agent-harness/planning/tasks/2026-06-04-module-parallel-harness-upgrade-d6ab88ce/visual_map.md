@@ -2,21 +2,46 @@
 
 Visual Map Contract: v1.0
 
-本文件是任务图表集合，不只是阶段路线图。只有对人或 agent 理解任务有实际帮助的图才放进来。
+本任务图谱说明 module-parallel harness 升级的生命周期和模块 registry 拓扑。
 
 ## 图表索引（Map Index）
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md`; `progress.md` | no |
+| MAP-02 | topology | 展示注册模块及一阶依赖 | yes | `Module-Registry.md`; `harness.yaml` | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
+  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 module-parallel 配置\nkind=execution"]
   EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
   GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+```
+
+## 模块拓扑图
+
+```mermaid
+flowchart LR
+  CORE["core-sdk"]
+  AGENT["agent-runtime"]
+  CODING["coding-runtime"]
+  CLI["cli-host"]
+  SPRING["spring-starter"]
+  FLOWSTART["flowgram-starter"]
+  FLOWDEMO["flowgram-demo"]
+  WEBAPP["flowgram-webapp-demo"]
+  BOM["bom"]
+  DOCS["docs-site"]
+
+  CORE --> AGENT
+  CORE --> CODING
+  CODING --> CLI
+  CORE --> SPRING
+  AGENT --> FLOWSTART
+  FLOWSTART --> FLOWDEMO
+  FLOWDEMO --> WEBAPP
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
@@ -24,9 +49,9 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-04-module-parallel-harness-upgrade-d6ab88ce` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-04-module-parallel-harness-upgrade-d6ab88ce EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-04-module-parallel-harness-upgrade-d6ab88ce --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-04-module-parallel-harness-upgrade-d6ab88ce --confirm 2026-06-04-module-parallel-harness-upgrade-d6ab88ce` | human | missing | Agent 不能代办人工确认 | human |
+| EXEC-01 | execution | INIT-01 | planned | 0 | 启用 module-parallel、注册 10 个模块、补齐模块合同 | diff; `progress.md`; `Module-Registry.md`; module brief/plan | `harness task-phase 2026-06-04-module-parallel-harness-upgrade-d6ab88ce EXEC-01 --state done --completion 100 --evidence present` | agent | present | 依赖拓扑只记录一阶协调关系 | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; `progress.md`; lesson routing | `harness task-review 2026-06-04-module-parallel-harness-upgrade-d6ab88ce --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | dashboard workbench confirmation | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
@@ -36,15 +61,8 @@ flowchart LR
 
 允许的 `Actor`：`agent`, `human`, `coordinator`。
 
-`Completion` 使用 `0..100` 的整数；`done` 应为 `100`，`planned` 应为 `0`，`skipped` 不计入 dashboard 总完成度。dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算；`init` 和 `gate` 阶段表达生命周期门禁、下一步命令和责任人，不拉低实现完成度。
+`Completion` 使用 `0..100` 的整数；dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算。
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
-
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+后续启用 `subagent-worker` 时，应新增 worktree / handoff 拓扑图。

@@ -4,106 +4,103 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | module-parallel capability、10 个模块 registry、模块 brief/plan、Session Prompt Pack、harness status。 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：architecture / repository-governance / harness
+- 范围内：`harness.yaml` capability 和 modules.items、`planning/modules/**`、当前 task 材料、status/module-list 证据。
+- 范围外：业务源码、Maven 测试、frontend build、subagent-worker、Regression SSoT 重构。
+- 来源材料：CLI 输出、git diff、`status --json`、`module list --json`、模块文件占位扫描。
 
-## Agent Review Submission（Agent 提交审查）
+## Agent Review Submission Pending
 
-本节由 agent 或 coordinator 在审查材料包准备好时填写。它只表示“提交待审”，不表示人工批准。
+本节表示材料已准备；严格 `Agent Review Submission` 块由 `harness task-review` 生成。本节不是人工批准。
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-04-module-parallel-harness-upgrade-d6ab88ce |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submitted | pending task-review |
+| Task Key | TASKS/2026-06-04-module-parallel-harness-upgrade-d6ab88ce |
+| Evidence Summary | module-parallel capability enabled; 10 modules registered; module contracts customized; harness status pass. |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | pending | `lesson_candidates.md` will be routed during task-review. |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - module registry 记录的是治理/协调依赖，不是完整 Maven dependency graph。
+  - 本轮未启用 `subagent-worker`，可写 worker 并行仍需后续授权。
+  - 本轮未做 regression baseline/live-provider 分层。
+- Fix loop count：1
+- 当前结论：当前 module-parallel 升级目标已达成，可提交人工确认；残余项不阻塞本轮。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `docs-site` 和 `flowgram-webapp-demo` 作为可独立构建和验证的 surface 纳入 registry。
+- `subagent-worker` 未启用；后续第一次需要可写 worker 时再单独升级。
+- PowerShell 批量调用 `npx` 的尝试没有可靠执行，已改为逐条 CLI 注册并核验。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:coding-agent-harness/harness.yaml | capabilities includes `module-parallel`; modules.items contains registered modules. |
+| E-002 | report | TARGET:coding-agent-harness/planning/modules/Module-Registry.md | Generated registry lists 10 modules with scope and dependency hints. |
+| E-003 | diff | TARGET:coding-agent-harness/planning/modules/**/brief.md | Module briefs contain project-specific responsibilities and boundaries. |
+| E-004 | diff | TARGET:coding-agent-harness/planning/modules/**/module_plan.md | Module plans contain write scopes, shared surfaces and validation commands. |
+| E-005 | command | `npx --yes coding-agent-harness status --json .` | pass, failures=0, warnings=0, modules=10. |
+| E-006 | command | `npx --yes coding-agent-harness module list --json .` | returns 10 registered modules. |
+| E-007 | command | `rg` placeholder scan over `planning/modules` | no placeholder hits. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞当前 module-parallel 升级目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| module dependency graph 不完整 | coordinator | yes | 真实模块任务中继续按 Maven/task scope 复核。 |
+| 未启用 `subagent-worker` | user / coordinator | yes | 需要可写 worker 时单独授权和升级。 |
+| regression baseline/live-provider 分层未完成 | coordinator | yes | 下一波升级任务处理。 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料准备好后提交 Agent Review Submission。 | 人工确认或退回。 |
+| Missing Materials | no | 任务材料和模块材料已替换为真实内容。 | 不适用。 |
+| Blocked | no | 当前没有 open P0/P1/P2 阻塞发现。 | 不适用。 |
+| Lessons | no | 本轮不沉淀全局 lesson；具体发现留在 `findings.md`。 | 不适用。 |
+| Confirmed / Finalized | no | 尚无人工确认。 | 人工确认后 task-complete。 |
+| Soft-deleted / Superseded | no | 任务仍活动。 | 不适用。 |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：对应 `progress.md` 的 verification 条目
+- 发现记录：已写入 `findings.md`
+- Regression SSoT：无新增 / 调整
+- Lessons：checked-none: module-parallel registry 是项目本地治理结构，不提升为全局 lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+信心来自 CLI 增量启用、逐条 module register、项目事实化 module brief/plan、占位扫描、`status --json` 和 `module list --json`。本轮结论限定为 harness module-parallel 治理升级已完成，不扩展为可写 worker 并行或回归分层已完成。

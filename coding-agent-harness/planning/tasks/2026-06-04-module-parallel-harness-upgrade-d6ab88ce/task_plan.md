@@ -9,81 +9,90 @@ Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+启用 module-parallel harness，并把 `ai4j-sdk` 的 Maven 模块、docs site 和 FlowGram web demo surface 登记成可审计的模块边界。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 做什么：运行 `add-capability module-parallel`；注册 10 个 module key；生成并定制模块 `brief.md` / `module_plan.md`；验证 `status` 和 `module list`。
+- 不做什么：不修改 Java、前端或 docs-site 业务代码；不启用 `subagent-worker`；不创建 worktree；不做 regression baseline/live-provider 分层。
+- 主要风险：module dependency 只记录稳定的一阶协调关系，不能替代完整 Maven dependency graph；后续真实模块任务仍需按任务范围确认共享文件锁。
 
 ## 预算选择
 
 选择预算：complex
 
-选择理由：[为什么本任务适合这个预算]
+选择理由：本任务改变 harness capability、全局 registry、10 个模块的运行合同和 worker prompt 边界，属于 monorepo 级治理升级，需要完整任务包和 review 证据。
 
 ## 上下文包（Context Packet）
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+| C-001 | public-doc | TARGET:AGENTS.md | 定义 8 个 Maven 模块和 docs/demo surface 的 repo 范围。 | coordinator |
+| C-002 | code | TARGET:pom.xml | Maven reactor 和模块边界的源事实。 | coordinator |
+| C-003 | harness | TARGET:coding-agent-harness/harness.yaml | capability 与 modules.items 的 SSoT。 | coordinator, reviewer |
+| C-004 | harness | TARGET:coding-agent-harness/planning/modules/Module-Registry.md | 生成的模块只读视图。 | coordinator, reviewer, worker |
+| C-005 | harness | TARGET:coding-agent-harness/planning/modules/Session-Prompt-Pack.md | 后续模块 worker 会话的全局提示词包。 | coordinator, worker |
 
 ## 步骤
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+1. 诊断当前 harness capability 和空 module registry。
+2. dry-run 并执行 `add-capability module-parallel --locale zh-CN`。
+3. 注册模块：`core-sdk`、`agent-runtime`、`coding-runtime`、`cli-host`、`spring-starter`、`flowgram-starter`、`flowgram-demo`、`bom`、`docs-site`、`flowgram-webapp-demo`。
+4. 用项目事实替换生成的模块 brief/plan 和 session prompt pack。
+5. 运行 `status --json`、`module list --json` 和占位扫描。
+6. 提交 review 包并等待人工确认。
 
 ## 验收标准
 
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
+- [x] `module-parallel` 出现在 `harness.yaml` capability 列表中。
+- [x] `module list --json` 返回 10 个模块，scope 和依赖符合 repo 事实。
+- [x] 模块 `brief.md` / `module_plan.md` 不再保留通用模板占位。
+- [x] `Session-Prompt-Pack.md` 已针对 `ai4j-sdk` 模块 worker 协作边界定制。
+- [x] `npx --yes coding-agent-harness status --json .` 通过且无 warning。
 
 ## 工作树（Worktree）
 
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
+- 路径：same checkout
+- 分支：`main`
+- Worker owner：不适用
+- Worker handoff commit required：不适用
+- Coordinator integration branch：不适用
+- 未使用 worktree 的原因：本轮只改 harness governance 文档和 manifest，由 coordinator 顺序执行最稳妥。
 
 ## 长程任务判定
 
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
+- 是否属于长程任务：否
+- 若是，合同文件：不适用
+- 连续执行权限：不适用
+- Stop Condition 摘要：需要人工确认、启用可写 worker、变更业务代码或进入回归分层任务时停止。
 
 ## 审查判定
 
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
+- 是否需要对抗性审查：否
+- 若是，报告文件：不适用
+- Reviewer：self，然后 human dashboard confirmation
+- No-finding 要求：self review 无 P0/P1/P2 阻塞发现；人工确认另行完成。
 
 ## 关联
 
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
+- 相关 Regression Gate：无新增固定 regression gate；本轮为 harness governance 变更。
+- 审查报告：`review.md`
+- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建。
+- 前置任务：`2026-06-04-first-wave-project-upgrades-93da333c`
 
 ## 模块关联（启用模块并行时填写）
 
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
+- Module：base / global harness governance
+- Step：MP-01
+- Module Plan：`coding-agent-harness/planning/modules/Module-Registry.md`
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
+- Global sync owner：coordinator
+- Global sync status：synced
+- Registry update needed：10 modules registered and module contracts updated
+- Harness Ledger update needed：已由 lifecycle CLI 同步 generated Harness Ledger
+- Closeout / Regression update needed：`walkthrough.md`；Regression SSoT 无新增 gate
 
 ## Standard Task Preset
 
