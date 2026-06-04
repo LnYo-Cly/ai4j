@@ -77,7 +77,7 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 | E-001 | diff | TARGET:coding-agent-harness/governance/regression/Regression-SSoT.md | 新增三层回归分层、LV/CR opt-in gate、R-006/R-007 残余。 |
 | E-002 | diff | TARGET:coding-agent-harness/governance/regression/Cadence-Ledger.md | 触发表新增必跑 gate、opt-in gate、节奏和最低证据深度。 |
 | E-003 | command | TARGET:.github/workflows/java-regression.yml | Java PR workflow 确认覆盖 package smoke 和 6 模块 test matrix。 |
-| E-004 | command | TARGET:. | harness status 期望 pass / 0 failures / 0 warnings。 |
+| E-004 | command | TARGET:. | `npx --yes coding-agent-harness status --json .` returned pass, 0 failures, 0 warnings, dirty=false. |
 
 ## 无重要发现声明
 

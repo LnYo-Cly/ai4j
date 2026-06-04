@@ -17,8 +17,8 @@
 
 | 检查 | 命令或过程 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| harness status | `npx --yes coding-agent-harness status --json .` | pending final run | `progress.md` |
-| key scan | scan for local/live gate ids and template placeholders | pending final run | `progress.md` |
+| harness status | `npx --yes coding-agent-harness status --json .` | pass; 0 failures; 0 warnings; dirty=false | `progress.md` |
+| key scan | scan for local/live gate ids and template placeholders | pass; taxonomy present; only preset-audit contains expected template token | `progress.md` |
 | executable regression | not run | waived for governance-only docs change | `review.md` |
 
 ## 审查结论
