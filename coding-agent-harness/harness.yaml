@@ -12,3 +12,20 @@ structure:
   externalRoot: coding-agent-harness/planning/external
   governanceRoot: coding-agent-harness/governance
   generatedRoot: coding-agent-harness/governance/generated
+modules:
+  schema: harness-modules/v1
+  generatedView: coding-agent-harness/planning/modules/Module-Registry.md
+  items:
+    core-sdk:
+      title: Core SDK
+      prefix: CORE
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/core-sdk/module_plan.md
+      brief: coding-agent-harness/planning/modules/core-sdk/brief.md
+      updated: 2026-06-04

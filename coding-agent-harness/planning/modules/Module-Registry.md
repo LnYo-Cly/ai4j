@@ -1,9 +1,9 @@
 # Module Registry
 
-由 `harness.yaml` 的 `modules.items` 生成。不要直接编辑这个视图。
+Generated from `harness.yaml` `modules.items`. Do not edit this view directly.
 
-## 活跃模块
+## Active Modules
 
 | ID | Key | Title | Prefix | Branch | Current Step | Status | Owner | Scope | Shared | Depends On | Plan | Brief | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| none | none | none | none | none | none | planned | none | none | none | none | none | none | none |
+| M-CORE | core-sdk | Core SDK | CORE | main |  | planned | coordinator | ai4j | none | none | coding-agent-harness/planning/modules/core-sdk/module_plan.md | coding-agent-harness/planning/modules/core-sdk/brief.md | 2026-06-04 |
