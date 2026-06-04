@@ -71,6 +71,7 @@
 | E-004 | diff | `docs-site/sidebars.ts` | Start Here sidebar 已挂入 `start-here/feature-map`。 |
 | E-005 | command | `docs-site/` | `npm run build` 成功，生成静态文件到 `build`，未报告断链或编译错误。 |
 | E-006 | command | repo root | `git diff --check` 成功，仅有 LF/CRLF warning。 |
+| E-007 | command | repo root | `npx --yes coding-agent-harness status --json .` 通过；当前任务已进入 `ready-to-confirm`，材料齐全。 |
 
 ## 无重要发现声明
 

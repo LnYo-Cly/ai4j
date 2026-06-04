@@ -52,7 +52,7 @@ Task Package Index: required
 - [x] sidebar 已挂入 `start-here/feature-map`。
 - [x] `docs-site` 构建通过。
 - [x] `git diff --check` 通过。
-- [ ] lifecycle 进入 review 队列。
+- [x] lifecycle 进入 review 队列。
 
 ## 工作树（Worktree）
 

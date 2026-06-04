@@ -67,3 +67,10 @@
 - 验证结果：准备重新运行 task-review。
 - 下一步：重新提交 Agent Review Submission。
 - 证据：diff:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/progress.md:removed default progress-log-entry template material
+
+### [2026-06-04 20:21] - harness status
+
+- 做了什么：运行 harness status 并抽取当前任务队列字段。
+- 验证结果：`checkState=pass`，git dirty false；当前任务 `state=review`、`reviewQueueState=ready-to-confirm`、`materialsReady=True`、`reviewSubmitted=True`、`materialIssues=0`。
+- 下一步：等待人工确认。
+- 证据：command:repo-root:npx --yes coding-agent-harness status --json . passed; report:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/INDEX.md:ART-007

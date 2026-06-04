@@ -8,7 +8,7 @@
 | ART-004 | diff | `docs-site/sidebars.ts` | Start Here sidebar 挂载 `start-here/feature-map`。 | coordinator |
 | ART-005 | command | `docs-site/` | `npm run build` 成功，Docusaurus 生成静态文件到 `docs-site/build`，未报告断链或编译错误。 | coordinator |
 | ART-006 | command | repo root | `git diff --check` 成功；仅输出 Windows 工作区 LF/CRLF 转换 warning。 | coordinator |
-| ART-007 | command | pending | `npx --yes coding-agent-harness status --json .`，提交后验证并补充。 | coordinator |
+| ART-007 | command | repo root | `npx --yes coding-agent-harness status --json .` 通过；checkState pass、git dirty false；当前任务 `reviewQueueState=ready-to-confirm`、`materialsReady=True`、`materialIssues=0`。 | coordinator |
 
 ## 使用规则
 
