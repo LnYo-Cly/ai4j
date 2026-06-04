@@ -125,6 +125,20 @@ modules:
       plan: coding-agent-harness/planning/modules/flowgram-starter/module_plan.md
       brief: coding-agent-harness/planning/modules/flowgram-starter/brief.md
       updated: 2026-06-04
+    flowgram-webapp-demo:
+      title: FlowGram Webapp Demo
+      prefix: WEBAPP
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-webapp-demo
+      shared: []
+      dependsOn:
+        - flowgram-demo
+      plan: coding-agent-harness/planning/modules/flowgram-webapp-demo/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-webapp-demo/brief.md
+      updated: 2026-06-04
     spring-starter:
       title: Spring Boot Starter
       prefix: SPRING
