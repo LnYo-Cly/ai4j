@@ -19,14 +19,14 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | pending task-review lifecycle command |
-| Submitted At | pending task-review lifecycle command |
-| Submitted By | coordinator |
-| Task Key | 2026-06-04-docs-site-wave-1-entrance-redesign-54198b78 |
-| Materials Checklist Hash | pending task-review lifecycle command |
-| Evidence Summary | docs-site build passed; git diff check passed; docs entrance diff complete |
+| Submission ID | ARS-202606041219 |
+| Submitted At | 2026-06-04 12:19 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78 |
+| Materials Checklist Hash | a6414320b903a19f |
+| Evidence Summary | docs-site Wave 1 entrance redesign ready: intro and Why rewritten, Feature Map added, sidebar updated, npm run build and diff check passed |
 | Open Findings Count | 0 |
-| Scanner Version | pending task-review lifecycle command |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
 
 ### Material Checklist（材料清单）
 

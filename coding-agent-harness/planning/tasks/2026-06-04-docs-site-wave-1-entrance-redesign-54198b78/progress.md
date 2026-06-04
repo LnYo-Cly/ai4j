@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- docs-site 深页质量仍需后续 Wave 2/3 分波次补强；本轮只关闭入口修正。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：task-review 已同步 generated ledger；task-complete 待人工确认后执行
+- 负责人：coordinator
 
 ### [2026-06-04 12:05] - task-start
 
@@ -64,6 +57,13 @@
 ### [2026-06-04 12:19] - task-review
 
 - 做了什么：docs-site Wave 1 entrance redesign ready: intro and Why rewritten, Feature Map added, sidebar updated, npm run build and diff check passed
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 验证结果：task-review 已生成 ARS-202606041219，但 scanner 发现 progress.md 仍残留模板进度条目。
+- 下一步：删除 progress.md 模板残留并重新提交 review。
+- 证据：review:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/review.md:ARS-202606041219
+
+### [2026-06-04 20:20] - material repair
+
+- 做了什么：删除 progress.md 中的模板示例进度条目，补齐实际残余和 coordinator 交接状态。
+- 验证结果：准备重新运行 task-review。
+- 下一步：重新提交 Agent Review Submission。
+- 证据：diff:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/progress.md:removed default progress-log-entry template material
