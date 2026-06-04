@@ -4,7 +4,9 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | diff | TARGET:coding-agent-harness/governance/regression/Regression-SSoT.md | 证明 SSoT 已拆分 local-required、live-provider-opt-in、credential-release-opt-in，并新增残余 R-006/R-007。 | coordinator |
+| ART-002 | diff | TARGET:coding-agent-harness/governance/regression/Cadence-Ledger.md | 证明 Cadence 表已补必跑 gate、opt-in gate、节奏和最低证据深度。 | coordinator |
+| ART-003 | command | TARGET:. | `npx --yes coding-agent-harness status --json .`，期望 status pass、0 failures、0 warnings。 | coordinator |
 
 ## 使用规则
 

@@ -4,7 +4,11 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | code | TARGET:coding-agent-harness/governance/regression/Regression-SSoT.md | tracked v2 回归 gate 和残余事实源。 | coordinator / reviewer |
+| REF-002 | code | TARGET:coding-agent-harness/governance/regression/Cadence-Ledger.md | tracked v2 cadence、触发表和批次日志。 | coordinator / reviewer |
+| REF-003 | code | TARGET:.github/workflows/java-regression.yml | Java PR package smoke 和 module matrix 的真实执行入口。 | coordinator / reviewer |
+| REF-004 | code | TARGET:docs-site/package.json | docs-site build/typecheck 脚本事实源。 | coordinator / reviewer |
+| REF-005 | code | TARGET:ai4j-flowgram-webapp-demo/package.json | FlowGram webapp lint/type/build 脚本事实源。 | coordinator / reviewer |
 
 ## 使用规则
 

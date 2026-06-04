@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:auto-no-candidate |
 | Source task | 2026-06-04-regression-baseline-live-split-b2f834db |
 | Owner | coordinator |
 | Last updated | 2026-06-04 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮结论是 ai4j-sdk 项目特定的回归 gate 分层和残余路由；`local-required` / `live-provider-opt-in` / `credential-release-opt-in` 已直接写入项目 SSoT，不需要提升为共享 lesson。
 
 ## Promotion Notes
 
