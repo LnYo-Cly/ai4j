@@ -50,6 +50,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <gpg.executable>gpg</gpg.executable>
         <root.publish.skip>true</root.publish.skip>
     </properties>
 
@@ -111,7 +112,7 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
                         <configuration>
-                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
                         </configuration>
                         <executions>

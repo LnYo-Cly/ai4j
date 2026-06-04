@@ -217,7 +217,7 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
                         <configuration>
-                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
                         </configuration>
                         <executions>

@@ -49,6 +49,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 ### Scratch / temp ###
+output/
 *.class
 .tmp*/
 .tmp*

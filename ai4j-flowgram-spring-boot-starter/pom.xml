@@ -46,6 +46,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
+        <gpg.executable>gpg</gpg.executable>
         <skipTests>true</skipTests>
     </properties>
 
@@ -200,7 +201,7 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
                         <configuration>
-                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
                         </configuration>
                         <executions>

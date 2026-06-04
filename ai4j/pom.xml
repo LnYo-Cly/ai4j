@@ -21,6 +21,7 @@
         <graalvm.version>20.3.4</graalvm.version>
         <graalsdk.version>${graalvm.version}</graalsdk.version>
         <nashorn.version>15.6</nashorn.version>
+        <gpg.executable>gpg</gpg.executable>
     </properties>
     <licenses>
         <license>
@@ -324,7 +325,7 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
                         <configuration>
-                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
                         </configuration>
                         <executions>
