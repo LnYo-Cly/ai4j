@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-04-regression-baseline-live-split-b2f834db |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 3bf8207992395e7bd5e4655af2ad6a0126845a9a |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | confirmed from dashboard workbench |
 | Migration Status | native |
