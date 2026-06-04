@@ -16,6 +16,20 @@ modules:
   schema: harness-modules/v1
   generatedView: coding-agent-harness/planning/modules/Module-Registry.md
   items:
+    agent-runtime:
+      title: Agent Runtime
+      prefix: AGENT
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-agent
+      shared: []
+      dependsOn:
+        - core-sdk
+      plan: coding-agent-harness/planning/modules/agent-runtime/module_plan.md
+      brief: coding-agent-harness/planning/modules/agent-runtime/brief.md
+      updated: 2026-06-04
     core-sdk:
       title: Core SDK
       prefix: CORE
