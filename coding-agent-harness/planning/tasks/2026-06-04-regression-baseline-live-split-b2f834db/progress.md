@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-04 09:30] - task-log
+
+- 做了什么：Updated regression governance split: local-required baseline, live-provider opt-in gates, credential-release opt-in gate, cadence terms, minimum evidence depth, and residual routing for live profiles/provider hygiene/webapp CI.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:harness status pass with 0 failures and 0 warnings; rg key scan found local/live gate taxonomy in v2 and legacy projection docs; git boundary limited to regression governance and task materials
