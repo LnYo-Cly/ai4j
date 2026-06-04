@@ -1,6 +1,6 @@
 {
   "schemaVersion": "template-projections/v1",
-  "generatedAt": "2026-06-04T07:41:41.420Z",
+  "generatedAt": "2026-06-04T08:55:02.761Z",
   "entries": [
     {
       "destination": "CLAUDE.md",
@@ -501,6 +501,46 @@
         "closeoutIndexPath": "coding-agent-harness/governance/generated/Closeout-Index.md"
       },
       "updatedAt": "2026-06-04T07:41:31.295Z"
+    },
+    {
+      "destination": "coding-agent-harness/planning/modules/Module-Registry.md",
+      "source": "templates-zh-CN/modules/registry_view.md",
+      "ownership": "package-template-pristine",
+      "renderedSha256": "e6f784e0ab899860960850a9bb4a965e5c2405985b8d2878382eae4fac371584",
+      "sourceSha256": "e6f784e0ab899860960850a9bb4a965e5c2405985b8d2878382eae4fac371584",
+      "paths": {
+        "harnessRoot": "coding-agent-harness",
+        "planningRoot": "coding-agent-harness/planning",
+        "tasksRoot": "coding-agent-harness/planning/tasks",
+        "modulesRoot": "coding-agent-harness/planning/modules",
+        "externalRoot": "coding-agent-harness/planning/external",
+        "governanceRoot": "coding-agent-harness/governance",
+        "generatedRoot": "coding-agent-harness/governance/generated",
+        "regressionRoot": "coding-agent-harness/governance/regression",
+        "ledgerPath": "coding-agent-harness/governance/generated/Harness-Ledger.md",
+        "closeoutIndexPath": "coding-agent-harness/governance/generated/Closeout-Index.md"
+      },
+      "updatedAt": "2026-06-04T08:55:02.757Z"
+    },
+    {
+      "destination": "coding-agent-harness/planning/modules/Session-Prompt-Pack.md",
+      "source": "templates-zh-CN/modules/session_prompt_pack.md",
+      "ownership": "package-template-pristine",
+      "renderedSha256": "5a5d7343544e52a512a9a2d9030605ec6ffe77fea68f69fd547397f1d7a327bb",
+      "sourceSha256": "5a5d7343544e52a512a9a2d9030605ec6ffe77fea68f69fd547397f1d7a327bb",
+      "paths": {
+        "harnessRoot": "coding-agent-harness",
+        "planningRoot": "coding-agent-harness/planning",
+        "tasksRoot": "coding-agent-harness/planning/tasks",
+        "modulesRoot": "coding-agent-harness/planning/modules",
+        "externalRoot": "coding-agent-harness/planning/external",
+        "governanceRoot": "coding-agent-harness/governance",
+        "generatedRoot": "coding-agent-harness/governance/generated",
+        "regressionRoot": "coding-agent-harness/governance/regression",
+        "ledgerPath": "coding-agent-harness/governance/generated/Harness-Ledger.md",
+        "closeoutIndexPath": "coding-agent-harness/governance/generated/Closeout-Index.md"
+      },
+      "updatedAt": "2026-06-04T08:55:02.759Z"
     }
   ]
 }

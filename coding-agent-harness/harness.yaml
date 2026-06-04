@@ -3,6 +3,7 @@ locale: zh-CN
 capabilities:
   - core
   - dashboard
+  - module-parallel
 structure:
   harnessRoot: coding-agent-harness
   planningRoot: coding-agent-harness/planning
