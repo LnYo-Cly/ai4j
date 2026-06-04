@@ -1,6 +1,6 @@
 # regression baseline live split - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -35,4 +35,11 @@
 - 做了什么：Regression baseline/live split ready for review: v2 SSoT and Cadence separate local-required from live-provider and credential-release opt-in gates; legacy docs projection synced; harness status pass with 0 failures and 0 warnings; executable regressions waived because this is governance-only.
 - 验证结果：已记录
 - 下一步：继续执行
+- 证据：n/a
+
+### [2026-06-04 10:42] - task-complete
+
+- 做了什么：Regression baseline/live split finalized after human review confirmation HRC-202606041042. Regression SSoT and Cadence now separate local-required baseline from live-provider and credential-release opt-in gates; residuals route live profile/provider hygiene and FlowGram webapp CI follow-up.
+- 验证结果：已记录
+- 下一步：完成
 - 证据：n/a
