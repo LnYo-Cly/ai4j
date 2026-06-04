@@ -71,6 +71,20 @@ modules:
       plan: coding-agent-harness/planning/modules/core-sdk/module_plan.md
       brief: coding-agent-harness/planning/modules/core-sdk/brief.md
       updated: 2026-06-04
+    flowgram-demo:
+      title: FlowGram Demo Backend
+      prefix: FLOWDEMO
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-demo
+      shared: []
+      dependsOn:
+        - flowgram-starter
+      plan: coding-agent-harness/planning/modules/flowgram-demo/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-demo/brief.md
+      updated: 2026-06-04
     flowgram-starter:
       title: FlowGram Starter
       prefix: FLOWSTART
