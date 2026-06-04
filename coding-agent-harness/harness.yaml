@@ -84,6 +84,19 @@ modules:
       plan: coding-agent-harness/planning/modules/core-sdk/module_plan.md
       brief: coding-agent-harness/planning/modules/core-sdk/brief.md
       updated: 2026-06-04
+    docs-site:
+      title: Documentation Site
+      prefix: DOCS
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - docs-site
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/docs-site/module_plan.md
+      brief: coding-agent-harness/planning/modules/docs-site/brief.md
+      updated: 2026-06-04
     flowgram-demo:
       title: FlowGram Demo Backend
       prefix: FLOWDEMO
