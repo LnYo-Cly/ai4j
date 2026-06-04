@@ -1,6 +1,6 @@
 # docs site information architecture redesign - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-04 11:53] - task-start
+
+- 做了什么：开始 docs-site 信息架构重构设计：先盘点现有目录、入口页和文档定位，只提交设计与迁移计划，不直接大规模改正文。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
