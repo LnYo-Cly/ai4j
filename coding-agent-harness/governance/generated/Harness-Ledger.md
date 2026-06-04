@@ -13,7 +13,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | ID | Scope | Module | Task | State | Queues | Plan | Review | Lessons Check | Closeout | Residual | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | HL-YYYY-MM-DD-001 | task | none | Short operational title | planned | none | {{paths.harnessRoot}}/planning/tasks/.../task_plan.md | pending | pending | pending | none | YYYY-MM-DD |
-| HL-2026-06-04-first-wave-project-upgrades-93da333c | task | none | first wave project upgrades | planned | none | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-04 |
+| HL-2026-06-04-first-wave-project-upgrades-93da333c | task | none | first wave project upgrades | active | none | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md | pending | pending | pending | Start first wave upgrades: clean local generated-output Git boundary and remove hardcoded release GPG executable paths. | 2026-06-04 |
 
 ## Field Rules
 
