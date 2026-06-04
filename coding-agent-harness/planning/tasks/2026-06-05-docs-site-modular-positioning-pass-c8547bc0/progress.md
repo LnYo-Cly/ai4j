@@ -54,6 +54,13 @@
 - 下一步：补齐 review / walkthrough，提交本地 commit 后推进 harness lifecycle。
 - 证据：command:docs-site:npm run build success; command:repo-root:git diff --check success with LF/CRLF warnings only; report:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/artifacts/INDEX.md:ART-005 and ART-006
 
+### [2026-06-05 00:50] - harness status
+
+- 做了什么：运行 harness status 并抽取当前任务队列字段。
+- 验证结果：`checkState=pass`，git dirty false；当前任务 `state=review`、`reviewQueueState=ready-to-confirm`、`materialsReady=True`、`reviewSubmitted=True`、`materialIssues=0`。
+- 下一步：等待人工确认。
+- 证据：command:repo-root:npx --yes coding-agent-harness status --json . passed; report:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/artifacts/INDEX.md:ART-007
+
 ### [2026-06-04 16:49] - task-review
 
 - 做了什么：docs-site modular positioning pass ready: intro, Why AI4J, and Feature Map now present AI4J as modular Java AI building blocks; POM relationship scan, docs-site build, and diff check passed

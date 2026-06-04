@@ -21,6 +21,7 @@
 | docs-site production build | `npm run build` in `docs-site/` | 通过；生成 `docs-site/build`，无断链或编译错误 | `progress.md` / ART-005 |
 | diff whitespace check | `git diff --check` | 通过；仅 LF/CRLF warning | `progress.md` / ART-006 |
 | generated build output status | `git status --short` | `docs-site/build` 未进入 status | `progress.md` |
+| harness status | `npx --yes coding-agent-harness status --json .` | 通过；当前任务 `ready-to-confirm`、材料齐全、git clean | `progress.md` / ART-007 |
 
 ## 审查结论
 

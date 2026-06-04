@@ -71,6 +71,7 @@
 | E-004 | diff | `docs-site/docs/start-here/feature-map.md` | Feature Map 新增 `按模块取用` 表。 |
 | E-005 | command | `docs-site/` | `npm run build` 成功，未报告断链或编译错误。 |
 | E-006 | command | repo root | `git diff --check` 成功，仅有 LF/CRLF warning。 |
+| E-007 | command | repo root | `npx --yes coding-agent-harness status --json .` 通过；当前任务已进入 `ready-to-confirm`，材料齐全。 |
 
 ## 无重要发现声明
 

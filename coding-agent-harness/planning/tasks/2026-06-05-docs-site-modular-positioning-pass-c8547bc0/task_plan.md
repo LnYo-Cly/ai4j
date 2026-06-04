@@ -50,7 +50,7 @@ Task Package Index: required
 - [x] Feature Map 明确每个模块的最小取用场景和依赖关系。
 - [x] `docs-site` 构建通过。
 - [x] `git diff --check` 通过。
-- [ ] harness status 通过，任务材料无模板残留。
+- [x] harness status 通过，任务材料无模板残留。
 
 ## 工作树（Worktree）
 

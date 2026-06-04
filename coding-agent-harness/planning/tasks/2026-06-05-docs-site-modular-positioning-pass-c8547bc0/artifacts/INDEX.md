@@ -8,7 +8,7 @@
 | ART-004 | command | repo root | `rg -n "<module>|<artifactId>ai4j|<version>\\$\\{project\\.version\\}" -g "pom.xml"` 用于核对模块依赖关系。 | coordinator |
 | ART-005 | command | `docs-site/` | `npm run build` 成功，Docusaurus 生成静态文件到 `docs-site/build`，未报告断链或编译错误。 | coordinator |
 | ART-006 | command | repo root | `git diff --check` 成功；仅输出 Windows 工作区 LF/CRLF 转换 warning。 | coordinator |
-| ART-007 | command | pending | `npx --yes coding-agent-harness status --json .`，待验证后补充。 | coordinator |
+| ART-007 | command | repo root | `npx --yes coding-agent-harness status --json .` 通过；checkState pass、git dirty false；当前任务 `reviewQueueState=ready-to-confirm`、`materialsReady=True`、`materialIssues=0`。 | coordinator |
 
 ## 使用规则
 
