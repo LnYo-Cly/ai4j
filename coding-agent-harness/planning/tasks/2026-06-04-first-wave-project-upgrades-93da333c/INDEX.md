@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-04-first-wave-project-upgrades-93da333c |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 28559a4a97d4d13af4ca2c1d7d92c8ecf4ef3198 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | confirmed from dashboard workbench |
 | Migration Status | native |
