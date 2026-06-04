@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.4
+toVersion: 1.0.5
+summary: Upgrade Harness projects from 1.0.4 to 1.0.5 with AGPL-3.0-or-later public package licensing and generated-material license boundary review.
+safeActions:
+  - id: inspect-package-license
+    title: Capture package license metadata for 1.0.5 compliance review
+    mode: report-only
+    command: npm pkg get license
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: package license evidence reviewed
+  - id: inspect-generated-material-boundary
+    title: Capture generated material boundary docs for review
+    mode: report-only
+    command: harness check --profile source-package .
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: source package check reviewed
+manualConfirmations:
+  - id: confirm-license-change-understood
+    title: Confirm maintainers understand public package relicensing to AGPL-3.0-or-later
+    verify: owner acknowledgement in review.md
+  - id: confirm-generated-material-permission
+    title: Confirm target project generated materials may follow the target project's license terms
+    verify: license boundary docs reviewed
+blockedActions:
+  - id: silently-change-downstream-license
+    title: Silently change downstream project licensing
+    reason: Generated Harness Materials have their own boundary and must not rewrite target project license decisions.
+  - id: remove-license-notices
+    title: Remove or obscure public package license notices
+    reason: License notices are release-significant public package metadata.
+verify:
+  - id: package-license
+    command: npm pkg get license
+  - id: source-package-check
+    command: harness check --profile source-package .
+  - id: pack-dry-run
+    command: npm pack --dry-run --json

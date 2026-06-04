@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "legacy-migration-queue/v2",
+  "staticDashboardRole": "evidence-snapshot",
+  "workbenchRole": "human-confirmation-control-plane",
+  "requiredItemFields": [
+    "taskId",
+    "phase",
+    "mechanicalState",
+    "semanticState",
+    "evidenceSources",
+    "reviewState",
+    "confirmationState",
+    "owner",
+    "residual"
+  ],
+  "allowedPhases": [
+    "baseline",
+    "mechanical-scaffold",
+    "semantic-reconstruction",
+    "cutover-review"
+  ],
+  "semanticRule": "Semantic reconstruction requires evidenceSources and cannot be marked complete by scaffold-only automation."
+}

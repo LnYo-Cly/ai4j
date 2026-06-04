@@ -1,0 +1,13 @@
+version: 2
+locale: zh-CN
+capabilities:
+  - core
+  - dashboard
+structure:
+  harnessRoot: coding-agent-harness
+  planningRoot: coding-agent-harness/planning
+  tasksRoot: coding-agent-harness/planning/tasks
+  modulesRoot: coding-agent-harness/planning/modules
+  externalRoot: coding-agent-harness/planning/external
+  governanceRoot: coding-agent-harness/governance
+  generatedRoot: coding-agent-harness/governance/generated

@@ -57,6 +57,7 @@ Treat this repository as an 8-module monorepo plus docs/demo surfaces.
 ### Existing Documentation
 
 - Harness-standard docs live under numbered `docs/` directories
+- The v2 CLI harness scaffold lives under `coding-agent-harness/`; use it for dashboard/context/governance projections without deleting or overwriting numbered `docs/` history
 - Legacy historical docs remain under:
   - `docs/plans/`
   - `docs/tasks/`
@@ -127,12 +128,23 @@ Treat this repository as an 8-module monorepo plus docs/demo surfaces.
 
 ## Harness Files
 
+- **Harness v2 config**: `coding-agent-harness/harness.yaml`
+- **Harness v2 context**: `coding-agent-harness/context/`
+- **Harness v2 regression projection**: `coding-agent-harness/governance/regression/`
+- **Harness v2 generated metadata**: `coding-agent-harness/governance/generated/`
 - **Feature SSoT**: `docs/09-PLANNING/Feature-SSoT.md`
 - **Regression SSoT**: `docs/05-TEST-QA/Regression-SSoT.md`
 - **Cadence Ledger**: `docs/05-TEST-QA/Cadence-Ledger.md`
 - **Task template directory**: `docs/09-PLANNING/TASKS/_task-template/`
 - **Walkthrough template**: `docs/10-WALKTHROUGH/_walkthrough-template.md`
 - **Reference standards**: `docs/11-REFERENCE/`
+
+### Harness v2 Transition Rule
+
+- During the transition, numbered `docs/` files remain the detailed historical SSoT for existing tasks, regression history, and walkthroughs.
+- `coding-agent-harness/` mirrors stable project facts for CLI/dashboard use and must be updated by merge/append, not by overwriting old docs.
+- Use `npx --yes coding-agent-harness <command> .` for v2 CLI operations unless a task explicitly allows another installed harness binary.
+- Do not hard-delete legacy task directories during migration; archive or supersede with explicit owner/action/status.
 
 ## Execution Flow
 

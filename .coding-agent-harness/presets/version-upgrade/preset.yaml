@@ -1,0 +1,83 @@
+id: version-upgrade
+version: 1
+purpose: Plan and verify a controlled Harness version upgrade from a bundled per-release upgrade manifest
+compatibleBudgets: [complex]
+localeSupport: [en-US, zh-CN]
+task:
+  kind: version-upgrade
+  defaultTaskId: version-upgrade
+  defaultOutcome: Produce task-local upgrade plan, safe-action evidence, and verification evidence without rewriting project history automatically.
+  projectLevelOnly: true
+inputs:
+  fromVersion:
+    type: text
+    flag: --from-version
+    required: true
+  toVersion:
+    type: text
+    flag: --to-version
+    required: true
+templateValues:
+  fromVersion:
+    from: inputs.fromVersion
+  toVersion:
+    from: inputs.toVersion
+  taskId:
+    from: task.id
+entrypoints:
+  newTask:
+    type: template
+    writes: [{{paths.tasksRoot}}/**]
+    audit: true
+    templates:
+      taskPlanAppend: templates/task_plan.append.md
+      executionStrategyAppend: templates/execution_strategy.append.md
+      findingsSeed: templates/findings.seed.md
+      reviewSeed: templates/review.seed.md
+  plan:
+    type: script
+    command: scripts/plan-upgrade.mjs
+    writes: [{{paths.tasksRoot}}/**]
+    reads: [{{paths.tasksRoot}}/**, .coding-agent-harness/presets/**]
+    audit: true
+  check:
+    type: check
+    command: checks/check-upgrade.mjs
+    writes: [{{paths.tasksRoot}}/**]
+    reads: [{{paths.tasksRoot}}/**]
+    audit: true
+actions:
+  apply-safe:
+    type: script
+    command: actions/apply-safe-actions.mjs
+    taskRequired: true
+    writes: [{{task.paths.artifacts}}/**]
+    reads: [{{task.paths.artifacts}}/**]
+    audit: true
+evidence:
+  bundleDir: artifacts/preset
+  files:
+    fromVersion:
+      path: from-version.txt
+      type: text
+      value: inputs.fromVersion
+    toVersion:
+      path: to-version.txt
+      type: text
+      value: inputs.toVersion
+    presetAudit:
+      path: preset-audit.json
+      type: preset-audit
+    presetManifest:
+      path: preset-manifest.json
+      type: preset-manifest
+    writeScope:
+      path: write-scope.json
+      type: write-scope
+audit:
+  manifestRequired: true
+  evidenceFiles: [preset-audit.json, preset-manifest.json, write-scope.json]
+writeScopes:
+  taskDocs:
+    path: {{paths.tasksRoot}}/**
+    access: write

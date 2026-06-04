@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.5
+toVersion: 1.0.6
+summary: Upgrade Harness projects from 1.0.5 to 1.0.6 by aligning package version evidence for republishing after the TypeScript runtime-source migration.
+safeActions:
+  - id: inspect-package-version
+    title: Capture package version metadata after 1.0.6 bump
+    mode: report-only
+    command: npm pkg get version
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: package version evidence reviewed
+  - id: inspect-runtime-build
+    title: Rebuild runtime dist before publish readiness review
+    mode: report-only
+    command: node scripts/build-dist.mts --quiet
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: dist build evidence reviewed
+manualConfirmations:
+  - id: confirm-publish-line
+    title: Confirm maintainers intend to republish after the TypeScript runtime-source migration
+    verify: release review acknowledgement
+  - id: confirm-dist-output-current
+    title: Confirm generated dist output corresponds to the source being published
+    verify: dist observation and git status review
+blockedActions:
+  - id: publish-with-stale-dist
+    title: Publish with stale or missing dist output
+    reason: Runtime-source migration requires package contents and source to remain aligned.
+  - id: infer-version-without-package-metadata
+    title: Infer release version without checking package metadata
+    reason: Package version is the publish source of truth.
+verify:
+  - id: package-version
+    command: npm pkg get version
+  - id: build-dist
+    command: node scripts/build-dist.mts --quiet
+  - id: source-package-check
+    command: harness check --profile source-package .

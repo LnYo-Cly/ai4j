@@ -1,0 +1,2 @@
+id: legacy-migration
+panels: [migration-queue, task-evidence, human-confirmation]

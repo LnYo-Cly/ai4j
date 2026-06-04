@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.7
+toVersion: 1.0.8
+summary: Upgrade Harness projects from 1.0.7 to 1.0.8 with executable packaged bin preservation, release observation checks, and migrate-structure plan smoke coverage.
+safeActions:
+  - id: inspect-packaged-bin
+    title: Capture pack dry-run evidence for executable harness bin
+    mode: report-only
+    command: npm pack --dry-run --json
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: pack report reviewed
+  - id: inspect-migrate-structure-plan
+    title: Run migrate-structure plan smoke evidence
+    mode: report-only
+    command: harness migrate-structure --plan
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: smoke output reviewed
+manualConfirmations:
+  - id: confirm-bin-mode-preserved
+    title: Confirm packed or installed harness bin is executable on target platform
+    verify: pack and installed-package smoke evidence
+  - id: confirm-migrate-structure-plan-supported
+    title: Confirm migrate-structure plan mode is available in dist and installed-package smoke matrix
+    verify: command matrix evidence
+blockedActions:
+  - id: publish-nonexecutable-bin
+    title: Publish package where harness bin is not executable
+    reason: 1.0.8 release observation checks must fail on non-executable bin output.
+  - id: skip-installed-package-smoke
+    title: Skip installed-package command smoke after dist changes
+    reason: Dist and installed-package command surfaces both need verification.
+verify:
+  - id: pack-dry-run
+    command: npm pack --dry-run --json
+  - id: dist-observation
+    command: node scripts/check-dist-observation.mts
+  - id: source-package-check
+    command: harness check --profile source-package .

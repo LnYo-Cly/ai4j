@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.6
+toVersion: 1.0.7
+summary: Upgrade Harness projects from 1.0.6 to 1.0.7 with npx-based init script generation, installed-package smoke isolation, and executable dist CLI preservation.
+safeActions:
+  - id: inspect-init-npm-scripts
+    title: Capture generated npm script commands for npx-based harness execution
+    mode: report-only
+    command: harness init --add-npm-scripts --dry-run
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: generated command evidence reviewed
+  - id: inspect-dist-bin-executable
+    title: Verify committed dist CLI remains executable
+    mode: report-only
+    command: test -x dist/harness.mjs
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: executable check reviewed
+manualConfirmations:
+  - id: confirm-npx-script-policy
+    title: Confirm target projects should use npx-based harness scripts instead of global installs
+    verify: generated script review
+  - id: confirm-smoke-target-isolation
+    title: Confirm installed-package smoke tests use minimal target fixtures rather than ignored local docs
+    verify: smoke matrix evidence
+blockedActions:
+  - id: require-global-harness-install
+    title: Require a global harness install for generated target scripts
+    reason: 1.0.7 switches generated scripts to npx-based execution.
+  - id: ignore-nonexecutable-bin
+    title: Ignore a non-executable packaged CLI bin
+    reason: The CLI entry must remain executable for npm bin usage.
+verify:
+  - id: dist-bin-executable
+    command: test -x dist/harness.mjs
+  - id: source-package-check
+    command: harness check --profile source-package .
+  - id: pack-dry-run
+    command: npm pack --dry-run --json

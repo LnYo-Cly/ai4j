@@ -36,6 +36,8 @@ build/
 
 ### Local tooling ###
 .claude/
+.agents/
+skills-lock.json
 AGENTS.md
 node_modules/
 dist/
