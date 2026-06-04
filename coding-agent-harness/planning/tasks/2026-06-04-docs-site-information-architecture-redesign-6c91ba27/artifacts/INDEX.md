@@ -1,13 +1,9 @@
 # 任务产物索引
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
-
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
-
-## 使用规则
-
-- 路径必须可复查；临时终端输出应先保存为稳定文件再登记。
-- 产物如果包含敏感信息，先脱敏或改为记录复查方式，不要提交原始敏感内容。
-- 与 `review.md`、`progress.md`、walkthrough 互相引用时，使用 `ART-xxx` ID。
+| ART-001 | command | TARGET:docs-site/docs | `Get-ChildItem -Path docs-site/docs -Recurse -File -Filter *.md` counted 232 markdown files. | coordinator |
+| ART-002 | command | TARGET:docs-site/docs | 一级目录计数显示 `core-sdk` 63、`ai-basics` 37、`agent` 36、`coding-agent` 20、`flowgram` 15、`getting-started` 12、`mcp` 11、`guides` 10、`solutions` 10、`start-here` 8、`spring-boot` 6、`deploy` 1。 | coordinator |
+| ART-003 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/references/docs-site-current-inventory.md | 当前盘点与重复主线记录。 | coordinator |
+| ART-004 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/references/docs-site-redesign-design.md | 目标 IA、Feature Map、状态标签和迁移波次。 | coordinator |
+| ART-005 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/references/docs-site-page-contracts.md | 首页、Feature Map、Quickstart、Capability、Reference、Solution 页面合同。 | coordinator |

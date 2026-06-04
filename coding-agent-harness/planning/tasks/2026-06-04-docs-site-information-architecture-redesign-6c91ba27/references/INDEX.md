@@ -4,7 +4,9 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | generated | `references/docs-site-current-inventory.md` | 当前目录计数、重复主线和迁移风险。 | coordinator / reviewer |
+| REF-002 | design | `references/docs-site-redesign-design.md` | 目标 IA、Feature Map、状态标签和迁移波次。 | coordinator / reviewer |
+| REF-003 | design | `references/docs-site-page-contracts.md` | 首页、Feature Map、Quickstart、Capability、Reference、Solution 的页面结构。 | coordinator / reviewer |
 
 ## 使用规则
 
