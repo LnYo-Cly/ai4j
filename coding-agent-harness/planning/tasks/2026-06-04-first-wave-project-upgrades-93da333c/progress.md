@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-04 08:33] - task-log
+
+- 做了什么：Implemented local generated-output ignore and portable GPG executable configuration across release POMs; package smoke passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:rg-gpg-paths:no hardcoded D:\Develop GnuPG path remains; executable now uses Maven gpg.executable property
