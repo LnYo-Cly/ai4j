@@ -14,6 +14,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | HL-YYYY-MM-DD-001 | task | none | Short operational title | planned | none | {{paths.harnessRoot}}/planning/tasks/.../task_plan.md | pending | pending | pending | none | YYYY-MM-DD |
 | HL-2026-06-04-first-wave-project-upgrades-93da333c | task | none | first wave project upgrades | closed | none | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md | pending | pending | pending | First wave project upgrades finalized after human review confirmation HRC-202606040850. Low-risk release GPG path cleanup and output Git boundary are complete; follow-up upgrades remain module-parallel harness and regression baseline/live split. | 2026-06-04 |
+| HL-2026-06-04-module-parallel-harness-upgrade-d6ab88ce | task | none | module parallel harness upgrade | planned | none | coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-04 |
 
 ## Field Rules
 
