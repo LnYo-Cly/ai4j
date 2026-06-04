@@ -107,3 +107,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 [说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606040835 |
+| Submitted At | 2026-06-04 08:35 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-first-wave-project-upgrades-93da333c |
+| Materials Checklist Hash | 1a581f44a762dbad |
+| Evidence Summary | 已完成第一波低风险升级切片：移除 release POM 中本机 GPG 绝对路径，改用可覆盖的 gpg.executable；补充 output/ 忽略规则；验证 mvn -DskipTests package 通过，harness status 无失败无警告。剩余 module-parallel 与 regression baseline/live split 作为后续切片。 |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c |

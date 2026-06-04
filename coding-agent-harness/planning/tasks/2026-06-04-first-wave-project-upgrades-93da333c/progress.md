@@ -1,6 +1,6 @@
 # first wave project upgrades - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:rg-gpg-paths:no hardcoded D:\Develop GnuPG path remains; executable now uses Maven gpg.executable property
+
+### [2026-06-04 08:35] - task-review
+
+- 做了什么：已完成第一波低风险升级切片：移除 release POM 中本机 GPG 绝对路径，改用可覆盖的 gpg.executable；补充 output/ 忽略规则；验证 mvn -DskipTests package 通过，harness status 无失败无警告。剩余 module-parallel 与 regression baseline/live split 作为后续切片。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

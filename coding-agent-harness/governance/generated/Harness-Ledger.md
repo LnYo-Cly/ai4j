@@ -13,7 +13,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | ID | Scope | Module | Task | State | Queues | Plan | Review | Lessons Check | Closeout | Residual | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | HL-YYYY-MM-DD-001 | task | none | Short operational title | planned | none | {{paths.harnessRoot}}/planning/tasks/.../task_plan.md | pending | pending | pending | none | YYYY-MM-DD |
-| HL-2026-06-04-first-wave-project-upgrades-93da333c | task | none | first wave project upgrades | active | none | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md | pending | pending | pending | Implemented local generated-output ignore and portable GPG executable configuration across release POMs; package smoke passed. | 2026-06-04 |
+| HL-2026-06-04-first-wave-project-upgrades-93da333c | task | none | first wave project upgrades | review | none | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md | coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/review.md | pending | pending | 已完成第一波低风险升级切片：移除 release POM 中本机 GPG 绝对路径，改用可覆盖的 gpg.executable；补充 output/ 忽略规则；验证 mvn -DskipTests package 通过，harness status 无失败无警告。剩余 module-parallel 与 regression baseline/live split 作为后续切片。 | 2026-06-04 |
 
 ## Field Rules
 
