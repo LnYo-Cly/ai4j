@@ -101,3 +101,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自 docs-site 当前结构盘点、用户明确约束、目标 IA、页面合同和迁移波次的闭环。本轮是设计任务，发布前审查不适用。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606041203 |
+| Submitted At | 2026-06-04 12:03 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27 |
+| Materials Checklist Hash | 42f7dee3c9fcd0b5 |
+| Evidence Summary | docs-site IA redesign design packet ready for human review: current inventory, target layered IA, Feature Map strategy, status labels, page contracts, and migration waves are documented; implementation is intentionally deferred pending approval. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27 |
