@@ -22,6 +22,9 @@
         <graalsdk.version>${graalvm.version}</graalsdk.version>
         <nashorn.version>15.6</nashorn.version>
         <gpg.executable>gpg</gpg.executable>
+        <live.provider.test.category>io.github.lnyocly.ai4j.test.LiveProviderTest</live.provider.test.category>
+        <test.groups></test.groups>
+        <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
     </properties>
     <licenses>
         <license>
@@ -200,6 +203,8 @@
                 <version>2.12.4</version>
                 <configuration>
                     <skipTests>${skipTests}</skipTests>
+                    <groups>${test.groups}</groups>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
@@ -230,6 +235,13 @@
 
 
     <profiles>
+        <profile>
+            <id>live-provider-tests</id>
+            <properties>
+                <test.groups>${live.provider.test.category}</test.groups>
+                <test.excludedGroups></test.excludedGroups>
+            </properties>
+        </profile>
         <profile>
             <id>nashorn-runtime</id>
             <activation>

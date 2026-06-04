@@ -52,6 +52,9 @@
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <gpg.executable>gpg</gpg.executable>
         <root.publish.skip>true</root.publish.skip>
+        <live.provider.test.category>io.github.lnyocly.ai4j.test.LiveProviderTest</live.provider.test.category>
+        <test.groups></test.groups>
+        <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
     </properties>
 
     <modules>
@@ -80,6 +83,15 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12.4</version>
+                <configuration>
+                    <groups>${test.groups}</groups>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>3.1.1</version>
                 <inherited>false</inherited>
@@ -100,6 +112,13 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>live-provider-tests</id>
+            <properties>
+                <test.groups>${live.provider.test.category}</test.groups>
+                <test.excludedGroups></test.excludedGroups>
+            </properties>
+        </profile>
         <profile>
             <id>release</id>
             <properties>

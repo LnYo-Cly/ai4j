@@ -9,11 +9,13 @@ import io.github.lnyocly.ai4j.service.IImageService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assume;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @Description 豆包图片生成测试
  * @Date 2026/1/31
  */
+@Category(LiveProviderTest.class)
 public class DoubaoImageTest {
 
     private IImageService imageService;

@@ -75,6 +75,11 @@ Use `-am` for clean-checkout local and CI verification so upstream module depend
 - Prefer deterministic local tests for default regression gates
 - Tests that need provider credentials or external services must keep secrets outside git and must not provide embedded/default credential values
 - Credential-dependent tests must use explicit env vars or an external secret store and skip cleanly when credentials are absent
+- Default Maven test runs exclude `io.github.lnyocly.ai4j.test.LiveProviderTest`
+- Run live-provider tests only with `-P live-provider-tests`, for example:
+  - `mvn -pl ai4j -P live-provider-tests -Dtest=<ProviderTest> -DskipTests=false test`
+  - `mvn -pl ai4j-agent -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test`
+  - `mvn -pl ai4j-coding -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test`
 - When live-provider validation is required, record it as `live-provider-opt-in` or `credential-release-opt-in` with higher Evidence Depth in `docs/05-TEST-QA/Regression-SSoT.md`
 - Do not silently rely on developer-local credentials; document env var names, provider/model assumptions, command, result, and skip/failure reason in task progress and walkthrough output
 - Live-provider failures caused by rate limits, quota, provider outage, or missing credentials are not local baseline failures; classify them as opt-in residuals unless the task explicitly made live behavior the release gate

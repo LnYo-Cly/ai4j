@@ -1,6 +1,7 @@
 package io.github.lnyocly.agent;
 
 import io.github.lnyocly.agent.support.ZhipuAgentTestSupport;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -10,10 +11,12 @@ import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Category(LiveProviderTest.class)
 public class ReActAgentUsageTest extends ZhipuAgentTestSupport {
 
     @Test

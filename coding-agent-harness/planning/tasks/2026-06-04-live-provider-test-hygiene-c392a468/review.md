@@ -4,106 +4,102 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | POM profile/category、live test credential handling、Regression SSoT/Cadence sync、verification evidence |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：regression / security
+- 范围内：root and `ai4j` Surefire config、core/agent/coding live provider tests、env-only key handling、task/governance docs。
+- 范围外：真实 provider 调用、release signing、`HandoffPolicyTest` 行为修复。
+- 来源材料：diff、`progress.md`、`artifacts/INDEX.md`、Regression SSoT、Cadence Ledger、testing standard。
 
 ## Agent Review Submission（Agent 提交审查）
 
-本节由 agent 或 coordinator 在审查材料包准备好时填写。它只表示“提交待审”，不表示人工批准。
+本节由 `harness task-review` 生成或补全。当前下方材料清单已人工预填，提交命令会写入 submission 元数据。
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | agent |
 | Task Key | 2026-06-04-live-provider-test-hygiene-c392a468 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | Default local tests exclude live provider tests; targeted live profile tests skip cleanly without credentials; R-008 records unrelated `HandoffPolicyTest` blocker. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md`, `artifacts/INDEX.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
-直接回答：你是否对当前计划、实现和策略有 100% 信心？
-
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 未运行真实 provider 调用，因为本任务没有用户提供的凭据或 live approval。
+  - RG-002 完整默认 gate 有 R-008 非本任务失败。
+- Fix loop count：2
+- 当前结论：本任务目标可以提交审查；live provider hygiene 已由 default exclusion、profile smoke、env-only scan 和文档同步证明。R-008 必须独立修复后才能把 RG-002 记为 fully green。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `rg` 仍会命中 `config-api-key`、`sk-test`、`jina-key` 等本地 fixture fake key；这些不是 live provider credentials。
+- Maven reactor tests 不应在同一个 checkout 内并行跑会写相同 `target/` 的 `-am` 命令；本轮最终采用顺序复跑确认 R-008。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:. | `mvn -pl ai4j -DskipTests=false test` passed, 98 tests. |
+| E-002 | command | TARGET:. | `mvn -pl ai4j-coding -DskipTests=false test` passed, 56 tests. |
+| E-003 | command | TARGET:. | `mvn -pl ai4j-coding -am -DskipTests package` passed and compiled core/agent/coding test sources. |
+| E-004 | command | TARGET:. | `-P live-provider-tests` targeted smoke passed with JUnit skips for core/agent/coding when env credentials were absent. |
+| E-005 | command | TARGET:. | Credential scan found only deterministic local fixture fake key values after cleanup. |
+| E-006 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false test` failed in `HandoffPolicyTest`; routed as R-008. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞 live-provider hygiene 目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| R-008: agent local gate fails in `HandoffPolicyTest` | project coordinator | yes for this task | Create/fix an agent-runtime task before claiming RG-002 fully green. |
+| No real provider behavior was executed | project coordinator/operator | yes | Run LV-001/LV-002 with real env credentials only when a task or release explicitly requires it. |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 审查材料包已准备，可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节和证据已补齐。 | n/a |
+| Blocked | no | R-008 不阻塞本任务目标，已路由为外部残余。 | n/a |
+| Lessons | no | 本任务不提升共享 lesson；经验记录保留在 walkthrough。 | n/a |
+| Confirmed / Finalized | no | 尚未人工确认。 | dashboard 人工确认后 closeout。 |
+| Soft-deleted / Superseded | no | n/a | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：见 `progress.md`
+- 发现记录：见 `findings.md`
+- Regression SSoT：新增 R-008；R-002/R-006 标记 resolved/closed
+- Lessons：checked-none: 本任务没有需要提升到共享治理的 durable lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+信心来自代码 diff、default local tests、targeted live profile skip smoke、credential scan 和 v2/legacy 回归文档同步。发布前若需要真实 provider 证据，必须由 operator 提供 env 凭据并运行 LV-001/LV-002。

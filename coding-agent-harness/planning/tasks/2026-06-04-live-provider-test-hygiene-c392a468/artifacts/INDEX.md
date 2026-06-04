@@ -1,13 +1,17 @@
 # 任务产物索引
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
-
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | command | TARGET:. | `mvn -pl ai4j -DskipTests=false test` passed: 98 tests, 0 failures, 0 errors, live provider tests excluded by default. | coordinator |
+| ART-002 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false test` failed only in `HandoffPolicyTest` with 2 failures; live provider tests were not run by default. | coordinator |
+| ART-003 | command | TARGET:. | `mvn -pl ai4j-coding -am -DskipTests package` passed and compiled core/agent/coding test sources with tests skipped. | coordinator |
+| ART-004 | command | TARGET:. | `mvn -pl ai4j-coding -DskipTests=false test` passed: 56 tests, 0 failures, 0 errors. | coordinator |
+| ART-005 | command | TARGET:. | `mvn -pl ai4j -P live-provider-tests -Dtest=DoubaoTest -DskipTests=false test` passed with 3 skipped tests because provider env vars were absent. | coordinator |
+| ART-006 | command | TARGET:. | `mvn -pl ai4j-agent -P live-provider-tests -Dtest=CodeActRuntimeTest -DskipTests=false test` passed with 1 skipped test because provider env vars were absent. | coordinator |
+| ART-007 | command | TARGET:. | `mvn -pl ai4j-coding -P live-provider-tests -Dtest=MinimaxCodingAgentTeamWorkspaceUsageTest -DskipTests=false test` passed with 1 skipped test because provider env vars were absent. | coordinator |
+| ART-008 | command | TARGET:. | `rg` credential scan shows remaining `setApiKey("...")` hits only in deterministic local unit fixtures (`config-api-key`, `sk-test`, `jina-key`); no live provider default key/property fallback/local path remains. | coordinator |
 
 ## 使用规则
 
-- 路径必须可复查；临时终端输出应先保存为稳定文件再登记。
-- 产物如果包含敏感信息，先脱敏或改为记录复查方式，不要提交原始敏感内容。
-- 与 `review.md`、`progress.md`、walkthrough 互相引用时，使用 `ART-xxx` ID。
+- 原始终端输出不提交；本索引记录可复跑命令和摘要。
+- 敏感信息不记录，live profile smoke 只记录 env var 缺失导致的 JUnit Assume skip。

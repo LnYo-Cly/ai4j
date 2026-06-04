@@ -18,9 +18,9 @@
 
 | Gate ID | 覆盖面 | 主入口 | 触发场景 | 证据深度 | 上次验证 | 当前结果 | 负责人 | 残余路由 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RG-001 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | `ai4j/` provider, protocol, RAG, vector, MCP, image, audio, realtime, agentflow connector changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001, R-002, R-006 |
-| RG-002 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | `ai4j-agent/` workflow, memory, trace, subagent/team orchestration changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001, R-002, R-006 |
-| RG-003 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | `ai4j-coding/` tools, outer-loop, checkpoint, shell/apply-patch changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001, R-006 |
+| RG-001 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | `ai4j/` provider, protocol, RAG, vector, MCP, image, audio, realtime, agentflow connector changes | L1-tests | 2026-06-04 pass | pass-with-residual | project coordinator | R-001 |
+| RG-002 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | `ai4j-agent/` workflow, memory, trace, subagent/team orchestration changes | L1-tests | 2026-06-04 fail | fail | project coordinator | R-001, R-008 |
+| RG-003 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | `ai4j-coding/` tools, outer-loop, checkpoint, shell/apply-patch changes | L1-tests | 2026-06-04 partial | pass-with-residual | project coordinator | R-001, R-008 |
 | RG-004 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | `ai4j-cli/` CLI, TUI, ACP, session, rendering changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
 | RG-005 | Spring Boot starter | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | `ai4j-spring-boot-starter/` property binding or auto-configuration changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
 | RG-006 | FlowGram starter and task APIs | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test` | `ai4j-flowgram-spring-boot-starter/` or `ai4j-flowgram-demo/` changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
@@ -32,8 +32,8 @@
 
 | Gate ID | 覆盖面 | 主入口 | 触发场景 | 证据深度 | 上次验证 | 当前结果 | 负责人 | 残余路由 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| LV-001 | core SDK real provider contracts | targeted JUnit class, e.g. `mvn -pl ai4j -Dtest=<ProviderTest> -DskipTests=false test` | provider/protocol/release tasks that require real provider behavior | L3-live | mapped-pending-normalized-suite | pass-with-residual | project coordinator | R-002, R-006 |
-| LV-002 | agent/coding real provider orchestration | targeted JUnit class in `ai4j-agent` or `ai4j-coding` | agent, CodeAct, workflow, or team-delivery tasks that require a real model | L3-live | mapped-pending-normalized-suite | pass-with-residual | project coordinator | R-002, R-006 |
+| LV-001 | core SDK real provider contracts | `mvn -pl ai4j -P live-provider-tests -Dtest=<ProviderTest> -DskipTests=false test` | provider/protocol/release tasks that require real provider behavior | L3-live | 2026-06-04 profile-smoke-skipped-no-credentials | pass-with-residual | project coordinator | none |
+| LV-002 | agent/coding real provider orchestration | `mvn -pl ai4j-agent -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test` or `mvn -pl ai4j-coding -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test` | agent, CodeAct, workflow, or team-delivery tasks that require a real model | L3-live | 2026-06-04 profile-smoke-skipped-no-credentials | pass-with-residual | project coordinator | R-008 |
 | LV-003 | FlowGram demo end-to-end behavior | backend plus web demo/manual or browser-driven scenario | FlowGram demo release or integration task | L4-browser-human-proxy | mapped-pending-runbook | pass-with-residual | project coordinator | R-003 |
 | CR-001 | release signing and Central publishing | release profile dry run or operator-approved publish command | release candidate only | L3-live to L5-hard-gate | mapped-pending-runbook | pass-with-residual | project coordinator | R-001 |
 
@@ -42,12 +42,13 @@
 | 残余 ID | Gate ID | 问题 | 严重级别 | 负责人 | 创建日期 | 路由 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | R-001 | RG-001..RG-007 | Java PR workflow exists, but first green run and required branch protection are still pending. | P1 | project coordinator | 2026-04-26 | `docs/05-TEST-QA/Regression-SSoT.md` | open |
-| R-002 | RG-001, RG-002, LV-001, LV-002 | Live-provider validation is now classified as opt-in, but still needs normalized Maven profile/category names and a maintained runbook. | P1 | project coordinator | 2026-04-26 | `docs/05-TEST-QA/Regression-SSoT.md` | open |
+| R-002 | RG-001, RG-002, LV-001, LV-002 | Live-provider Maven profile/category names and maintained runbook were added: `-P live-provider-tests` plus `io.github.lnyocly.ai4j.test.LiveProviderTest`. | P1 | project coordinator | 2026-04-26 | `docs/11-REFERENCE/testing-standard.md` | closed |
 | R-003 | RG-009 | FlowGram webapp demo `test` scripts are placeholders; build/lint/type gates are the baseline. | P2 | project coordinator | 2026-04-26 | `docs/05-TEST-QA/Regression-SSoT.md` | open |
 | R-004 | RG-008 | Docs-site build on Windows may hit `EPERM` file locks during output/cache cleanup. | P2 | project coordinator | 2026-04-26 | `docs/05-TEST-QA/Regression-SSoT.md` | open |
 | R-005 | RG-008 | Docs-site typecheck on Windows may need `NODE_OPTIONS=--max-old-space-size=8192`. | P2 | project coordinator | 2026-04-27 | `docs/05-TEST-QA/Regression-SSoT.md` | open |
-| R-006 | RG-001, RG-002, RG-003, LV-001, LV-002 | Provider/usage tests that need credentials must be audited for env-only configuration, clean JUnit assumptions, and no embedded/default credential-like values. | P1 | project coordinator | 2026-06-04 | `coding-agent-harness/governance/regression/Regression-SSoT.md` | open |
+| R-006 | RG-001, RG-002, RG-003, LV-001, LV-002 | Provider/usage tests now use env-only credential reads, clean JUnit assumptions, and live-provider category isolation; remaining `config-api-key`/`sk-test` hits are deterministic local unit fixtures. | P1 | project coordinator | 2026-06-04 | `coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/review.md` | closed |
 | R-007 | RG-009 | RG-009 is mapped locally, but no dedicated CI workflow currently runs the FlowGram webapp lint/type/build baseline. | P2 | project coordinator | 2026-06-04 | `coding-agent-harness/governance/regression/Regression-SSoT.md` | open |
+| R-008 | RG-002, RG-003 | `mvn -pl ai4j-agent -am -DskipTests=false test` currently fails in `HandoffPolicyTest` (`testAllowedToolsPolicyDeniesUnexpectedSubagent`, `testNestedHandoffBlockedByMaxDepth`); this is outside live-provider hygiene but blocks full agent/coding `-am` gate evidence. | P1 | project coordinator | 2026-06-04 | `coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/progress.md` | open |
 
 ## 证据深度说明
 

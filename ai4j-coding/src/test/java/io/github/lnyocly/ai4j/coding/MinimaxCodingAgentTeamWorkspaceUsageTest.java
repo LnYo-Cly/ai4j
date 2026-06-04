@@ -25,6 +25,7 @@ import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
@@ -32,6 +33,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Category(LiveProviderTest.class)
 public class MinimaxCodingAgentTeamWorkspaceUsageTest {
 
     private static final String DEFAULT_MODEL = "MiniMax-M2.7";
@@ -56,8 +59,9 @@ public class MinimaxCodingAgentTeamWorkspaceUsageTest {
 
     @Before
     public void setupMinimaxClient() {
-        String apiKey = readValue("MINIMAX_API_KEY", "minimax.api.key");
-        Assume.assumeTrue("Skip because MiniMax API key is not configured", !isBlank(apiKey));
+        String apiKey = LiveProviderTestSupport.requireEnv(
+                "Skip because MiniMax API key is not configured",
+                "MINIMAX_API_KEY");
 
         model = readValue("MINIMAX_MODEL", "minimax.model");
         if (isBlank(model)) {

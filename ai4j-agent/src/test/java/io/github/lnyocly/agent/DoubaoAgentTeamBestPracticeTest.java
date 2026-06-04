@@ -20,12 +20,14 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - Doubao-powered teammates + synthesizer
  * - message bus + hooks + plan approval enabled
  */
+@Category(LiveProviderTest.class)
 public class DoubaoAgentTeamBestPracticeTest {
 
     private static final String MODEL = (System.getenv("ZHIPU_MODEL") == null || System.getenv("ZHIPU_MODEL").isEmpty())
@@ -52,11 +55,9 @@ public class DoubaoAgentTeamBestPracticeTest {
 
     @Before
     public void init() throws NoSuchAlgorithmException, KeyManagementException {
-        String apiKey = System.getenv("ZHIPU_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = "1cbd1960cdc7e9144ded698a9763569b.seHlVxdOq3eTnY9m";
-        }
-        Assume.assumeTrue(apiKey != null && !apiKey.isEmpty());
+        String apiKey = LiveProviderTestSupport.requireEnv(
+                "Skip because Zhipu API key is not configured",
+                "ZHIPU_API_KEY");
 
         ZhipuConfig zhipuConfig = new ZhipuConfig();
         zhipuConfig.setApiKey(apiKey);

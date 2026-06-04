@@ -17,9 +17,9 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |
 |----|--------|---------|-------------------|---------|----------------|---------------|-------|
-| RG-001 | 🟡 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; provider-dependent tests must skip cleanly when credentials are absent |
-| RG-002 | 🟡 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | agent runtime, workflow, memory, trace, subagent/team orchestration; live provider usage tests are opt-in only |
-| RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | coding loop, workspace tools, shell/apply-patch, compaction; provider-backed team demos are opt-in only |
+| RG-001 | 🟢 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 pass | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; provider-dependent tests are excluded from default runs by `LiveProviderTest` category |
+| RG-002 | 🔴 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 fail | agent runtime, workflow, memory, trace, subagent/team orchestration; current blocker is R-008 in `HandoffPolicyTest` |
+| RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 partial | direct coding module test passed; full `-am` evidence is blocked by upstream RG-002/R-008 |
 | RG-004 | 🟡 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | terminal host, session runtime, ACP, rendering, provider/model command behavior with fake/local clients |
 | RG-005 | 🟡 | Spring Boot starter | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | auto-configuration and config binding |
 | RG-006 | 🟡 | FlowGram starter and task APIs | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | FlowGram runtime facade, controller, task store, trace bridge; local fixture tests are the default baseline |
@@ -31,8 +31,8 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |
 |----|--------|---------|-------------------|---------|----------------|---------------|-------|
-| LV-001 | 🟡 | core SDK real provider contracts | targeted JUnit class, e.g. `mvn -pl ai4j -Dtest=<ProviderTest> -DskipTests=false test` | opt-in on provider/protocol/release tasks | L3 live | mapped-pending-normalized-suite | requires documented provider env vars such as `*_API_KEY`; never commit provider keys or reuse local defaults |
-| LV-002 | 🟡 | agent and coding real provider orchestration | targeted JUnit class in `ai4j-agent` or `ai4j-coding` | opt-in on agent/coding runtime provider tasks | L3 live | mapped-pending-normalized-suite | covers live model, workflow, CodeAct, and team-delivery usage tests; rate limits and provider unavailability must be recorded as skipped or residual evidence |
+| LV-001 | 🟡 | core SDK real provider contracts | `mvn -pl ai4j -P live-provider-tests -Dtest=<ProviderTest> -DskipTests=false test` | opt-in on provider/protocol/release tasks | L3 live | 2026-06-04 profile-smoke-skipped-no-credentials | requires documented provider env vars such as `*_API_KEY`; never commit provider keys or reuse local defaults |
+| LV-002 | 🟡 | agent and coding real provider orchestration | `mvn -pl ai4j-agent -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test` or `mvn -pl ai4j-coding -P live-provider-tests -Dtest=<LiveTest> -DskipTests=false test` | opt-in on agent/coding runtime provider tasks | L3 live | 2026-06-04 profile-smoke-skipped-no-credentials | covers live model, workflow, CodeAct, and team-delivery usage tests; rate limits and provider unavailability must be recorded as skipped or residual evidence |
 | LV-003 | 🟡 | FlowGram demo end-to-end behavior | backend plus web demo/manual or browser-driven scenario | opt-in on FlowGram demo release or integration task | L4 browser_human_proxy | mapped-pending-runbook | requires a documented backend/frontend startup contract before it can become a fixed hard gate |
 | CR-001 | 🟡 | release signing and Central publishing | release profile dry run or operator-approved publish command | opt-in on release candidate only | L3 live to L5 hard_gate | mapped-pending-runbook | requires GPG and Central credentials outside git; use configurable `gpg.executable`, not developer-local absolute paths |
 
@@ -51,12 +51,13 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 | ID | Surface | Issue | Priority | Created |
 |----|---------|-------|----------|---------|
 | R-001 | monorepo CI | Java PR workflow exists, but first green run and required branch protection are still pending | P1 | 2026-04-26 |
-| R-002 | live-provider validation | live provider suites are now classified as opt-in, but still need normalized Maven profile/category names and a maintained runbook | P1 | 2026-04-26 |
+| R-002 | live-provider validation | resolved 2026-06-04: live provider tests use `-P live-provider-tests`, `LiveProviderTest` category, and `docs/11-REFERENCE/testing-standard.md` runbook | P1 | 2026-04-26 |
 | R-003 | FlowGram webapp demo | frontend `test` scripts are placeholders, so build/lint/type gates are the current baseline only | P2 | 2026-04-26 |
 | R-004 | docs-site build on Windows | Docusaurus build reaches bundle compilation but may fail during output/cache cleanup with `EPERM` file locks on generated artifacts | P2 | 2026-04-26 |
 | R-005 | docs-site typecheck on Windows | default Node heap may OOM during `npm run typecheck`; current workaround is `NODE_OPTIONS=--max-old-space-size=8192` | P2 | 2026-04-27 |
-| R-006 | provider test hygiene | provider/usage tests that need credentials must be audited for env-only configuration, clean JUnit assumptions, and no embedded/default credential-like values | P1 | 2026-06-04 |
+| R-006 | provider test hygiene | resolved 2026-06-04: provider/usage tests were audited for env-only credential reads, JUnit assumptions, and category isolation; remaining fake key hits are local unit fixtures | P1 | 2026-06-04 |
 | R-007 | webapp demo CI | RG-009 is mapped locally, but no dedicated CI workflow currently runs the FlowGram webapp lint/type/build baseline | P2 | 2026-06-04 |
+| R-008 | agent local regression | `mvn -pl ai4j-agent -am -DskipTests=false test` fails in `HandoffPolicyTest` on allowed-tools and max-depth assertions; fix before considering RG-002 fully green | P1 | 2026-06-04 |
 
 ## Status Legend
 

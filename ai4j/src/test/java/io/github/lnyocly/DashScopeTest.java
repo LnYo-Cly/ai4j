@@ -1,6 +1,5 @@
 package io.github.lnyocly;
 
-import cn.hutool.core.util.SystemPropsUtil;
 import io.github.lnyocly.ai4j.config.DashScopeConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -13,11 +12,13 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class DashScopeTest {
 
     private IChatService chatService;
@@ -36,7 +38,9 @@ public class DashScopeTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         DashScopeConfig dashScopeConfig = new DashScopeConfig();
-        dashScopeConfig.setApiKey(SystemPropsUtil.get("DASHSCOPE_API_KEY"));
+        dashScopeConfig.setApiKey(LiveProviderTestSupport.requireEnv(
+                "Skip because DashScope API key is not configured",
+                "DASHSCOPE_API_KEY"));
 
         Configuration configuration = new Configuration();
         configuration.setDashScopeConfig(dashScopeConfig);
@@ -54,7 +58,6 @@ public class DashScopeTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
