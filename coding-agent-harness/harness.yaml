@@ -30,6 +30,20 @@ modules:
       plan: coding-agent-harness/planning/modules/agent-runtime/module_plan.md
       brief: coding-agent-harness/planning/modules/agent-runtime/brief.md
       updated: 2026-06-04
+    coding-runtime:
+      title: Coding Runtime
+      prefix: CODING
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-coding
+      shared: []
+      dependsOn:
+        - core-sdk
+      plan: coding-agent-harness/planning/modules/coding-runtime/module_plan.md
+      brief: coding-agent-harness/planning/modules/coding-runtime/brief.md
+      updated: 2026-06-04
     core-sdk:
       title: Core SDK
       prefix: CORE
