@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-04-docs-site-information-architecture-redesign-6c91ba27 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | cf99b3d74e954ac0a3580cb8148dc7ef78b72c47 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复继续，确认 docs-site IA redesign 设计通过并授权进入 Wave 1 实施 |
 | Migration Status | native |
