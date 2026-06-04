@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-04-live-provider-test-hygiene-c392a468 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | ef86d9bfed1c8543d42547b7f4375b2a99e8356a |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中明确同意；通过 Dashboard Workbench 记录人工审查确认 |
 | Migration Status | native |
