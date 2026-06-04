@@ -49,7 +49,7 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-04-module-parallel-harness-upgrade-d6ab88ce` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 启用 module-parallel、注册 10 个模块、补齐模块合同 | diff; `progress.md`; `Module-Registry.md`; module brief/plan | `harness task-phase 2026-06-04-module-parallel-harness-upgrade-d6ab88ce EXEC-01 --state done --completion 100 --evidence present` | agent | present | 依赖拓扑只记录一阶协调关系 | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | 启用 module-parallel、注册 10 个模块、补齐模块合同 | diff; `progress.md`; `Module-Registry.md`; module brief/plan | `harness task-phase 2026-06-04-module-parallel-harness-upgrade-d6ab88ce EXEC-01 --state done --completion 100 --evidence present` | agent | present | 依赖拓扑只记录一阶协调关系 | coordinator |
 | GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; `progress.md`; lesson routing | `harness task-review 2026-06-04-module-parallel-harness-upgrade-d6ab88ce --message "<summary>"` | agent | missing | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | dashboard workbench confirmation | human | missing | Agent 不能代办人工确认 | human |
 
