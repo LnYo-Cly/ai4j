@@ -1,6 +1,6 @@
 # docs site wave 1 entrance redesign - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：`npm run build` 在 `docs-site/` 成功；`git diff --check` 成功，仅有 Windows LF/CRLF 转换 warning；`docs-site/build` 未出现在 git status 中。
 - 下一步：补齐 review / walkthrough，提交本地 commit 后推进 harness lifecycle。
 - 证据：command:docs-site:npm run build success; command:repo-root:git diff --check success with LF/CRLF warnings only; report:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/INDEX.md:ART-005 and ART-006
+
+### [2026-06-04 12:19] - task-review
+
+- 做了什么：docs-site Wave 1 entrance redesign ready: intro and Why rewritten, Feature Map added, sidebar updated, npm run build and diff check passed
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

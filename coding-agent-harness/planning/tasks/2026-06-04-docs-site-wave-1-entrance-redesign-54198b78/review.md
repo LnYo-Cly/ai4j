@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自：小范围 diff、Docusaurus production build 成功、`git diff --check` 成功、任务包材料齐全、无 open P0/P1/P2 finding。残余风险已限定为后续 docs-site 深页质量提升，不影响 Wave 1 入口修正。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606041219 |
+| Submitted At | 2026-06-04 12:19 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78 |
+| Materials Checklist Hash | a6414320b903a19f |
+| Evidence Summary | docs-site Wave 1 entrance redesign ready: intro and Why rewritten, Feature Map added, sidebar updated, npm run build and diff check passed |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78 |
