@@ -103,3 +103,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自代码 diff、default local tests、targeted live profile skip smoke、credential scan 和 v2/legacy 回归文档同步。发布前若需要真实 provider 证据，必须由 operator 提供 env 凭据并运行 LV-001/LV-002。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606041116 |
+| Submitted At | 2026-06-04 11:16 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-04-live-provider-test-hygiene-c392a468 |
+| Materials Checklist Hash | f7caef98712cfc7b |
+| Evidence Summary | Live provider test hygiene ready for human review: default local tests exclude LiveProviderTest, live-provider profile smoke skips cleanly without credentials, env-only credential handling is in place, regression docs synced, and R-008 routes the unrelated HandoffPolicyTest gate failure. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468 |
