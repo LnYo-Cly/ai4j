@@ -4,111 +4,18 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | 第一波低风险配置切片：`.gitignore`、release POM GPG executable 配置、Maven package 和 harness lifecycle 材料。 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
-
-## Agent Review Submission（Agent 提交审查）
-
-本节由 agent 或 coordinator 在审查材料包准备好时填写。它只表示“提交待审”，不表示人工批准。
-
-| Field | Value |
-| --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-04-first-wave-project-upgrades-93da333c |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
-
-### Material Checklist（材料清单）
-
-| Material | Required? | Status | Evidence |
-| --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
-
-## 信心挑战（Confidence Challenge）
-
-直接回答：你是否对当前计划、实现和策略有 100% 信心？
-
-- Verdict：yes / no
-- 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
-
-## 重要发现（Material Findings，表头供 checker 解析）
-
-| ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
-## 非阻塞备注（Non-Material Notes）
-
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
-
-## 已检查证据（Evidence Checked）
-
-| Evidence ID | Type | Path | Summary |
-| --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
-
-## 无重要发现声明
-
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
-
-## 残余风险
-
-| Risk | Owner | Accepted? | Follow-up |
-| --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
-
-## Lifecycle Queue Routing（生命周期队列路由）
-
-| Queue | Applies? | Reason | Exit condition |
-| --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
-
-## 后续路由（Follow-Up Routing）
-
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
-
-## 最终信心依据（Final Confidence Basis）
-
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+- 审查类型：regression / release / repository-governance
+- 范围内：`.gitignore` 的 `output/` 边界、根 POM 和发布模块 POM 的 GPG executable 配置、Maven package smoke、Harness task 材料。
+- 范围外：真实 release signing、deploy、CI secret、module-parallel capability、Regression SSoT 重构、业务代码行为。
+- 来源材料：git diff、本地提交、`rg` 路径复查、`mvn -DskipTests package` 输出、`harness status` 输出、task lifecycle 输出。
 
 ## Agent Review Submission
+
+本节只表示 agent 已提交审查材料包，不表示人工批准。
 
 | Field | Value |
 | --- | --- |
@@ -117,7 +24,84 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 | Submitted By | agent |
 | Task Key | TASKS/2026-06-04-first-wave-project-upgrades-93da333c |
 | Materials Checklist Hash | 1a581f44a762dbad |
-| Evidence Summary | 已完成第一波低风险升级切片：移除 release POM 中本机 GPG 绝对路径，改用可覆盖的 gpg.executable；补充 output/ 忽略规则；验证 mvn -DskipTests package 通过，harness status 无失败无警告。剩余 module-parallel 与 regression baseline/live split 作为后续切片。 |
+| Evidence Summary | 已完成第一波低风险升级切片：移除 release POM 中本机 GPG 绝对路径，改用可覆盖的 `gpg.executable`；补充 `output/` 忽略规则；验证 `mvn -DskipTests package` 通过，harness status 无失败无警告。 |
 | Open Findings Count | 0 |
 | Scanner Version | task-scanner/2026-05-25-phase-kind |
 | Target | TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c |
+
+### Material Checklist（材料清单）
+
+| Material | Required? | Status | Evidence |
+| --- | --- | --- | --- |
+| Brief | yes | present | `brief.md` 已写入真实结果、边界和完成判断。 |
+| Task plan | yes | present | `task_plan.md` 已记录目标、范围、上下文、步骤和验收标准。 |
+| Progress and evidence | yes | present | `progress.md` 记录 `rg`、Maven package、harness status 和 lifecycle 证据。 |
+| Visual map | yes | present | `visual_map.md` 记录 INIT、EXEC、GATE 阶段与人工确认边界。 |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` 已由 CLI 标记 `accepted-no-candidate`。 |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` 汇总本轮结果和残余风险。 |
+
+## 信心挑战（Confidence Challenge）
+
+直接回答：你是否对当前计划、实现和策略有 100% 信心？
+
+- Verdict：no
+- 如果不是 100%，剩余漏洞或证据缺口：
+  - 未执行真实 release signing / deploy，因此不能宣称发布签名链路端到端通过。
+  - 后续 module-parallel 与 regression baseline/live split 还没有实施。
+- Fix loop count：1
+- 当前结论：本轮低风险配置切片可以提交给人工确认；残余项不阻塞当前目标，但应进入后续任务。
+
+## 重要发现（Material Findings，表头供 checker 解析）
+
+| ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+## 非阻塞备注（Non-Material Notes）
+
+- `gpg.executable` 默认值为 `gpg`，CI 或开发者机器如使用非标准路径可通过 Maven 属性覆盖。
+- `output/` 仍保留在本机文件系统中，只是不进入 Git 候选变更。
+
+## 已检查证据（Evidence Checked）
+
+| Evidence ID | Type | Path | Summary |
+| --- | --- | --- | --- |
+| E-001 | diff | TARGET:.gitignore | 新增 `output/` 忽略规则，保护本地生成输出边界。 |
+| E-002 | diff | TARGET:pom.xml and module pom.xml files | release GPG executable 改为 `${gpg.executable}`，默认值为 `gpg`。 |
+| E-003 | command | `rg -n "D:\\Develop\\DevelopEnv\\GnuPG|gpg\\.exe" -g 'pom.xml' -g '**/pom.xml'` | 未发现本机绝对 GPG 路径残留。 |
+| E-004 | command | `mvn -DskipTests package` | Maven reactor 全部 SUCCESS。 |
+| E-005 | command | `npx --yes coding-agent-harness status --json .` | status 为 pass，failures 和 warnings 为 0。 |
+
+## 无重要发现声明
+
+本轮已检查上述证据，未发现阻塞当前低风险升级目标的重要发现。
+
+## 残余风险
+
+| Risk | Owner | Accepted? | Follow-up |
+| --- | --- | --- | --- |
+| release signing 未做真实发布验证 | human / release owner | yes | 发布前在具备 GPG 与凭据的环境执行 release 验证。 |
+| module-parallel 与回归分层尚未升级 | coordinator | yes | 后续任务继续处理。 |
+
+## Lifecycle Queue Routing（生命周期队列路由）
+
+| Queue | Applies? | Reason | Exit condition |
+| --- | --- | --- | --- |
+| Review | yes | agent 已提交审查材料包，等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | task 本地材料已由真实内容替换。 | 不适用。 |
+| Blocked | no | 当前没有 open P0/P1/P2 阻塞发现。 | 不适用。 |
+| Lessons | no | CLI 已标记本轮无 lesson candidate 需要沉淀。 | 不适用。 |
+| Confirmed / Finalized | no | 尚无人工确认。 | 完成人工确认后再 closeout。 |
+| Soft-deleted / Superseded | no | 任务仍是活动任务。 | 不适用。 |
+
+## 后续路由（Follow-Up Routing）
+
+- 任务计划：已更新 `task_plan.md`
+- Progress：对应 `progress.md` 的 material repair 和 verification 条目
+- 发现记录：`findings.md` 已记录技术决策，无阻塞发现
+- Regression SSoT：无新增固定 gate
+- Lessons：checked-none: 本轮为仓库局部配置清理，没有可复用 lesson 需要提升
+- 收口记录：`walkthrough.md`
+
+## 最终信心依据（Final Confidence Basis）
+
+信心来自局部 diff、路径残留复查、Maven 聚合 package smoke、harness status 校验和任务材料自审。由于未执行真实 release signing，本轮结论限定为低风险配置升级已完成，不扩展为发布链路全量验证。
