@@ -30,6 +30,19 @@ modules:
       plan: coding-agent-harness/planning/modules/agent-runtime/module_plan.md
       brief: coding-agent-harness/planning/modules/agent-runtime/brief.md
       updated: 2026-06-04
+    bom:
+      title: Version Alignment BOM
+      prefix: BOM
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-bom
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/bom/module_plan.md
+      brief: coding-agent-harness/planning/modules/bom/brief.md
+      updated: 2026-06-04
     cli-host:
       title: CLI Host
       prefix: CLI
