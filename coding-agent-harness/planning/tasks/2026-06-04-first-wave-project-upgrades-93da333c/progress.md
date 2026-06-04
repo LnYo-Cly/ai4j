@@ -1,6 +1,6 @@
 # first wave project upgrades - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -57,3 +57,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：lifecycle CLI 已同步；材料修复后需要本地 commit。
 - 负责人：coordinator
+
+### [2026-06-04 08:51] - task-complete
+
+- 做了什么：First wave project upgrades finalized after human review confirmation HRC-202606040850. Low-risk release GPG path cleanup and output Git boundary are complete; follow-up upgrades remain module-parallel harness and regression baseline/live split.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
