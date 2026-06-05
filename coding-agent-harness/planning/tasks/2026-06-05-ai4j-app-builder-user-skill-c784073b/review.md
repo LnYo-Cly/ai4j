@@ -26,6 +26,20 @@
 | Open Findings Count | 0 |
 | Scanner Version | task-scanner/2026-05-25-phase-kind |
 
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606051150-R1 |
+| Submitted At | 2026-06-05 11:55 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-05-ai4j-app-builder-user-skill-c784073b |
+| Materials Checklist Hash | material-repair-202606051155 |
+| Evidence Summary | AI4J app-builder user Skill is ready for human review after material repair: skill package committed, docs-site README install command added, skill validation passed, docs-site build passed, and task materials pass harness status. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b |
+
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
