@@ -2,61 +2,59 @@
 
 ## 状态：审查中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
 证据使用 `type:path:summary` 格式。
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
+### 2026-06-05 12:03 - 任务启动
 
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
+- 做了什么：创建并启动 harness 任务，确认工作范围是新增项目 Skill 包。
+- 验证结果：任务目录创建成功，生命周期进入 in_progress。
+- 下一步：生成 Skill 目录并替换模板内容。
+- 证据：command:TARGET:.:npx --yes coding-agent-harness new-task/task-start succeeded
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
+### 2026-06-05 12:04 - Skill 目录与项目诊断
 
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 做了什么：检查 `.gitignore`、`skills-lock.json`、现有 `.agents/skills` 和根 POM 模块列表。
+- 验证结果：`skills/` 未被忽略，适合作为项目分发目录；`skills-lock.json` 是本机安装锁文件，不纳入分发包。
+- 下一步：使用 skill-creator 脚手架生成基础目录。
+- 证据：command:TARGET:.:git status clean before implementation; command:TARGET:pom.xml:root modules confirmed
+
+### 2026-06-05 12:05 - 创建 Skill 包
+
+- 做了什么：新增 `skills/ai4j-sdk/SKILL.md`、`agents/openai.yaml`、`references/repo-map.md`、`references/development-workflow.md`。
+- 验证结果：OpenAI 元数据重新生成，`default_prompt` 正确保留 `$ai4j-sdk`。
+- 下一步：运行 skill 校验和内容扫描。
+- 证据：diff:TARGET:skills/ai4j-sdk:four-file project skill package created
+
+### 2026-06-05 12:06 - 本地校验
+
+- 做了什么：运行 skill-creator 验证脚本、模板残留扫描和 diff 空白检查。
+- 验证结果：`quick_validate.py` 返回 `Skill is valid!`；未发现 TODO、README/INSTALLATION_GUIDE 类残留或 `Use -sdk` 错误提示；`git diff --check` 无空白错误。
+- 下一步：提交实现产物。
+- 证据：command:TARGET:skills/ai4j-sdk:python quick_validate.py skills/ai4j-sdk passed; command:TARGET:skills/ai4j-sdk:rg template residue scan passed; command:TARGET:skills/ai4j-sdk:git diff --check passed
+
+### 2026-06-05 12:07 - 实现提交
+
+- 做了什么：提交新增 Skill 包。
+- 验证结果：提交 `3b8af61 feat: add ai4j sdk project skill` 创建成功，包含 4 个新文件。
+- 下一步：推进 harness 执行阶段并提交 review。
+- 证据：diff:TARGET:skills/ai4j-sdk:implementation committed as 3b8af61
+
+### 2026-06-05 12:08 - Agent Review Submission
+
+- 做了什么：执行 `task-log`、`task-phase` 和 `task-review`，记录验证证据并提交审查。
+- 验证结果：EXEC-01 已完成，审查材料补齐后应进入 human confirmation 队列。
+- 下一步：等待用户人工确认或提出修改意见。
+- 证据：review:TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/review.md:agent review packet submitted
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 未新增 docs-site 安装说明页；这是独立后续增强，不属于本任务的 Skill 包创建范围。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
-### [2026-06-05 04:03] - task-start
-
-- 做了什么：Start project skill creation for ai4j-sdk agent-assisted development
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
-
-### [2026-06-05 04:07] - task-log
-
-- 做了什么：Created distributable ai4j-sdk project skill with OpenAI UI metadata and repo workflow references
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：file:TARGET:skills/ai4j-sdk/SKILL.md:project skill entry
-
-### [2026-06-05 04:08] - task-review
-
-- 做了什么：AI4J SDK project skill is ready for review: distributable skill folder, OpenAI UI metadata, repo map, development workflow, validation command passed, and implementation commit 3b8af61 created.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：已由 lifecycle CLI 同步
+- 负责人：coordinator
