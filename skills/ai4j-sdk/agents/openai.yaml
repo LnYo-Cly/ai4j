@@ -1,4 +1,0 @@
-interface:
-  display_name: "AI4J SDK"
-  short_description: "AI4J Java SDK project development copilot"
-  default_prompt: "Use $ai4j-sdk to help me develop, document, or verify an AI4J SDK change with the right module scope and regression command."

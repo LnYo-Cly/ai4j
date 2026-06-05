@@ -18,13 +18,9 @@ npm run build
 npm run serve
 ```
 
-## AI4J Agent Skills
+## AI4J App Builder Skill
 
-如果使用支持 Skills 的 agent 工具，可以安装本仓库提供的 Skill，让 AI 更低成本地配合你使用或维护 AI4J。
-
-### 用 AI4J 开发应用
-
-面向 AI4J 使用者，推荐安装 `ai4j-app-builder`。它会帮助 agent 在你的 Java / Spring Boot 项目里选择依赖、配置 provider、编写最小可运行代码，并给出验证命令。
+如果使用支持 Skills 的 agent 工具，可以安装本仓库提供的 `ai4j-app-builder` Skill，让 AI 更低成本地配合你在 Java / Spring Boot 项目里使用 AI4J：选择依赖、配置 provider、编写最小可运行代码，并给出验证命令。
 
 ```bash
 npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder
@@ -36,19 +32,7 @@ npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder
 Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpoint, and verify it without hardcoding secrets.
 ```
 
-### 维护 AI4J SDK 仓库
-
-面向本仓库贡献、重构、文档和测试工作，安装 `ai4j-sdk`。它会让 agent 自动了解 AI4J 的模块边界、harness 流程、Java 8 约束和验证命令。
-
-```bash
-npx skills add LnYo-Cly/ai4j --skill ai4j-sdk
-```
-
-安装后可以这样调用：
-
-```text
-Use $ai4j-sdk to help me add a provider feature, choose the right module, and run the smallest useful verification.
-```
+如果要给 AI4J 仓库贡献代码或维护文档，请先阅读仓库根目录的 `AGENTS.md`，并按 `coding-agent-harness/` 的任务、验证和审查流程执行。
 
 ## 文档目录结构
 

@@ -1,6 +1,6 @@
 ---
 name: ai4j-app-builder
-description: Use this skill when helping users build applications with AI4J in their own Java or Spring Boot projects, including first chat, streaming, tool/function calls, MCP, RAG, memory, Agent runtime, Coding Agent CLI embedding, FlowGram integration, provider configuration, dependency selection, and troubleshooting. It guides beginner-friendly app scaffolding, secure environment-variable configuration, smallest useful AI4J module selection, runnable examples, and verification steps. Use ai4j-sdk instead when contributing to or maintaining the AI4J repository itself.
+description: Use this skill when helping users build applications with AI4J in their own Java or Spring Boot projects, including first chat, streaming, tool/function calls, MCP, RAG, memory, Agent runtime, Coding Agent CLI embedding, FlowGram integration, provider configuration, dependency selection, and troubleshooting. It guides beginner-friendly app scaffolding, secure environment-variable configuration, smallest useful AI4J module selection, runnable examples, and verification steps. For AI4J repository maintenance, follow the repository AGENTS.md and coding-agent-harness files instead of this user-facing app builder skill.
 ---
 
 # AI4J App Builder
