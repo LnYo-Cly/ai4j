@@ -1,6 +1,6 @@
 # docs site wave 1 entrance redesign - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -74,3 +74,10 @@
 - 验证结果：`checkState=pass`，git dirty false；当前任务 `state=review`、`reviewQueueState=ready-to-confirm`、`materialsReady=True`、`reviewSubmitted=True`、`materialIssues=0`。
 - 下一步：等待人工确认。
 - 证据：command:repo-root:npx --yes coding-agent-harness status --json . passed; report:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/INDEX.md:ART-007
+
+### [2026-06-05 03:25] - task-complete
+
+- 做了什么：docs-site Wave 1 entrance redesign closed after human review confirmation; remaining deep-page enterprise docs work moves to docs-site enterprise program.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
