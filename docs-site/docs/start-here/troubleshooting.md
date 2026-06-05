@@ -94,7 +94,7 @@ mvn -pl ai4j -DskipTests=false test
 - [First Tool Call](/docs/start-here/first-tool-call)
 - [Core SDK / Tools](/docs/core-sdk/tools/overview)
 - [Core SDK / Skills](/docs/core-sdk/skills/overview)
-- [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+- [MCP](/docs/mcp/overview)
 
 ## 7. 什么时候该离开 Start Here
 
@@ -107,5 +107,5 @@ mvn -pl ai4j -DskipTests=false test
 如果你已经能回答下面三个问题，就应该离开 `Start Here` 进入专题树了：
 
 1. AI4J 在仓库里哪些模块各自负责什么
-2. 你的项目应该先走 Java、Spring Boot、Agent、Coding Agent 还是 Flowgram
+2. 你的项目应该先走 Java、Spring Boot、Agent、Coding Agent 还是 FlowGram
 3. `Tool`、`Skill`、`MCP` 这三个概念为什么不是一回事

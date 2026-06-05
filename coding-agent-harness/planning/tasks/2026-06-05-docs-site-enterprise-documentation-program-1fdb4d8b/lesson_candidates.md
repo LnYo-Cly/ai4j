@@ -1,4 +1,4 @@
-# docs site enterprise documentation program - 教训候选
+# docs-site 文档重构总任务 - 教训候选
 
 本文件是任务本地 lesson candidate queue。人工审查需要决定候选是留在任务内、拒绝、进入 dry-run promotion、创建 promoted lesson 详情文档，还是创建单独的沉淀任务。
 

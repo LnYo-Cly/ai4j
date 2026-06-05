@@ -2,7 +2,7 @@
 
 这一页的目标不是讲细节，而是先帮你建立一个不会乱的总图。
 
-如果你能先把这张图记住，后面读 `Core SDK`、`Agent`、`Coding Agent`、`Flowgram` 时，就不会觉得这些模块只是“堆功能”。
+如果你能先把这张图记住，后面读 `Core SDK`、`Agent`、`Coding Agent`、`FlowGram` 时，就不会觉得这些模块只是“堆功能”。
 
 ## 1. 先记住这张四层图
 
@@ -18,7 +18,7 @@ Upper Modules
   Spring Boot         -> ai4j-spring-boot-starter
   Agent               -> ai4j-agent
   Coding Agent        -> ai4j-coding + ai4j-cli
-  Flowgram            -> ai4j-flowgram-spring-boot-starter
+  FlowGram            -> ai4j-flowgram-spring-boot-starter
 
 Solutions
   场景方案、案例、端到端组合方式
@@ -51,7 +51,7 @@ Solutions
 - 会话 memory、RAG、联网增强怎么归位
 - provider、服务、网络栈怎么扩展
 
-如果这一层没理解清楚，后面的 `Agent`、`Coding Agent`、`Flowgram` 都很容易看成“零散能力集合”。
+如果这一层没理解清楚，后面的 `Agent`、`Coding Agent`、`FlowGram` 都很容易看成“零散能力集合”。
 
 ### 2.3 Upper Modules
 
@@ -60,7 +60,7 @@ Solutions
 - `Spring Boot`：把底座能力接入容器、配置、自动装配
 - `Agent`：增加 runtime、memory、tool loop、orchestration、trace
 - `Coding Agent`：增加 workspace-aware tools、session runtime、CLI / TUI / ACP 宿主
-- `Flowgram`：增加面向可视化节点工作流的后端运行与平台接入
+- `FlowGram`：增加面向可视化节点工作流的后端运行与平台接入
 
 ### 2.4 Solutions
 
@@ -85,8 +85,8 @@ ai4j-agent                  通用 Agent runtime
 ai4j-coding                 Coding Agent runtime
 ai4j-cli                    CLI / TUI / ACP 宿主
 ai4j-flowgram-spring-boot-starter
-                            Flowgram 后端接入层
-ai4j-flowgram-demo          Flowgram 示例工程
+                            FlowGram 后端接入层
+ai4j-flowgram-demo          FlowGram 示例工程
 ai4j-bom                    版本对齐
 docs-site                   文档站源码
 ```
@@ -121,7 +121,7 @@ docs-site                   文档站源码
 
 它属于：
 
-- [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+- [MCP](/docs/mcp/overview)
 
 注意：`MCP` 和 `Tools` 密切相关，但不是 `Tools` 的子目录。`MCP` 还包含 transport、gateway、server publish、tool exposure semantics 等协议层问题。
 
@@ -133,7 +133,7 @@ docs-site                   文档站源码
 - 接 Spring Boot：从 `Spring Boot`
 - 做智能体 runtime：从 `Agent`
 - 直接把本地仓库跑成 coding assistant：从 `Coding Agent`
-- 做可视化节点平台：从 `Flowgram`
+- 做可视化节点平台：从 `FlowGram`
 
 但无论哪条线，最后都绕不开 `Core SDK`。
 

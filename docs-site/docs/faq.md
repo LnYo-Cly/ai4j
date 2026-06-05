@@ -38,7 +38,7 @@ sidebar_position: 998
 - Spring Boot
 - Agent
 - Coding Agent
-- Flowgram
+- FlowGram
 
 如果你要先理解这套基座是怎么分层的，优先看：
 
@@ -166,18 +166,18 @@ MCP 可以成为 Agent 的工具来源，但 MCP 不等于 Agent。
 
 如果是 1~2 个服务，先看：
 
-- [MCP Client Integration](/docs/core-sdk/mcp/client-integration)
+- [MCP Client Integration](/docs/mcp/client-integration)
 
 如果是多服务统一管理，先看：
 
-- [Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
-- [Tool Exposure Semantics](/docs/core-sdk/mcp/tool-exposure-semantics)
+- [Gateway Management](/docs/mcp/gateway-management)
+- [Tool Exposure Semantics](/docs/mcp/tool-exposure-semantics)
 
 ---
 
-## 12. `Flowgram` 和 `Agent` 怎么选
+## 12. `FlowGram` 和 `Agent` 怎么选
 
-优先 `Flowgram`：
+优先 `FlowGram`：
 
 - 任务天然是节点图
 - 前端会画流程
@@ -191,12 +191,12 @@ MCP 可以成为 Agent 的工具来源，但 MCP 不等于 Agent。
 
 ---
 
-## 13. 我想先跑 Flowgram demo
+## 13. 我想先跑 FlowGram demo
 
 直接看：
 
-1. [Flowgram 总览](/docs/flowgram/overview)
-2. [Flowgram 快速开始](/docs/flowgram/quickstart)
+1. [FlowGram 总览](/docs/flowgram/overview)
+2. [FlowGram 快速开始](/docs/flowgram/quickstart)
 
 ---
 

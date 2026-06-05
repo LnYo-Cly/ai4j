@@ -29,6 +29,7 @@ sidebar_position: 4
 | 第一次对话 | `stable` | `ai4j` | 想先发出一条消息，理解最小调用路径 | [First Chat](/docs/start-here/first-chat) |
 | 第一次工具调用 | `stable` | `ai4j` | 想让模型调用本地函数或工具 | [First Tool Call](/docs/start-here/first-tool-call) |
 | 路径选择 | `stable` | docs | 不确定该走 SDK、Spring、Agent 还是 FlowGram | [Choose Your Path](/docs/start-here/choose-your-path) |
+| 文档地图 | `stable` | docs | 想确认 canonical 主线和旧路径去向 | [Documentation Map](/docs/start-here/documentation-map) |
 
 ## 按模块取用
 
@@ -84,6 +85,18 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | FlowGram Quickstart | `preview` | `ai4j-flowgram-demo` | 想跑通 FlowGram demo 或 starter 集成 | [FlowGram Quickstart](/docs/flowgram/quickstart) |
 | Solutions | `advanced` | multiple | 按业务场景复用组合方案 | [Solutions Overview](/docs/solutions/overview) |
 
+## 生产准备和维护
+
+| 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
+| --- | --- | --- | --- | --- |
+| Version Compatibility | `stable` | docs | Java、Maven、模块和 provider 能力边界 | [Version Compatibility](/docs/reference/version-compatibility) |
+| Release and Artifacts | `stable` | docs | Maven artifact、BOM、模块引入顺序 | [Release and Artifacts](/docs/reference/release-and-artifacts) |
+| Security | `stable` | docs | 密钥、Tool、MCP、RAG、Agent、FlowGram 安全边界 | [Security Overview](/docs/security/overview) |
+| Production Checklist | `stable` | docs | 上线前配置、权限、观测和回归检查 | [Production Checklist](/docs/operations/production-checklist) |
+| Migration | `stable` | docs | 旧路径、旧示例和旧 API 心智迁移 | [Migration Guide](/docs/migration/overview) |
+| Troubleshooting | `stable` | docs | provider、Tool、MCP、RAG、Agent、FlowGram 排障入口 | [Troubleshooting](/docs/troubleshooting/overview) |
+| Comparison | `stable` | docs | 与 Spring AI、LangChain4j、AgentScope Java、Pi Agent 的选型边界 | [Comparison](/docs/comparison/overview) |
+
 ## 还没有独立页的集成
 
 部分生态集成或平台连接目前可能还没有稳定专题页。文档中如果提到 Dify、Coze、n8n、
@@ -108,3 +121,4 @@ AgentFlow 或其他外部平台，应先按能力归类阅读：
 3. [First Chat](/docs/start-here/first-chat)
 4. [First Tool Call](/docs/start-here/first-tool-call)
 5. 按需进入 [Core SDK](/docs/core-sdk/overview)、[Spring Boot](/docs/spring-boot/overview)、[Agent](/docs/agent/overview) 或 [FlowGram](/docs/flowgram/overview)
+6. 上线前检查 [Production Checklist](/docs/operations/production-checklist) 和 [Security](/docs/security/overview)

@@ -20,7 +20,7 @@ sidebar_position: 999
 - `Tool / Function Call`
 - `Skill`
 - `MCP`
-- 上层 `Spring Boot / Agent / Coding Agent / Flowgram`
+- 上层 `Spring Boot / Agent / Coding Agent / FlowGram`
 
 如果你要先看这套分层从哪里开始，优先看：
 
@@ -111,13 +111,13 @@ AI4J 面向本地代码仓交付的一套工程化入口，包含：
 - [First Tool Call](/docs/start-here/first-tool-call)
 - [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling)
 
-### Flowgram
+### FlowGram
 
 AI4J 提供的低代码工作流编排接入方向，面向流程图式节点运行、后端任务执行、节点扩展。
 
 对应文档：
 
-- [Flowgram 总览](/docs/flowgram/overview)
+- [FlowGram 总览](/docs/flowgram/overview)
 
 ### Function Tool
 
@@ -138,7 +138,7 @@ AI4J 提供的低代码工作流编排接入方向，面向流程图式节点运
 
 对应文档：
 
-- [Gateway and Multi-service](/docs/core-sdk/mcp/gateway-and-multi-service)
+- [Gateway Management](/docs/mcp/gateway-management)
 
 ---
 
@@ -156,7 +156,7 @@ AI4J 提供的低代码工作流编排接入方向，面向流程图式节点运
 
 对应文档：
 
-- [MCP 总览](/docs/core-sdk/mcp/overview)
+- [MCP 总览](/docs/mcp/overview)
 
 ### Memory
 

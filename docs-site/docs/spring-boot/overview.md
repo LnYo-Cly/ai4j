@@ -1,110 +1,109 @@
 # Spring Boot 总览
 
-`Spring Boot` 这一章讲的不是“AI4J 能不能跑在 Spring 里”，而是 **`ai4j-spring-boot-starter` 如何把 `Core SDK` 的能力接入容器、配置、Bean 生命周期和业务分层**。
+`ai4j-spring-boot-starter` 用来把 Core SDK 接入 Spring Boot 的配置、Bean 生命周期和业务分层。它不是一套新的 AI 实现，也不是必须先使用的入口；如果你不是 Spring 项目，直接从 [Core SDK](/docs/core-sdk/overview) 开始即可。
 
-## 1. 这章在整套体系里的位置
+## 一句话定位
 
-这一层对应的主模块是：
+Spring Boot starter 解决的是：
 
-- `ai4j-spring-boot-starter/`
+> 在 Spring Boot 应用里，用配置和 Bean 管理 AI4J 的模型服务、服务注册表、HTTP client、RAG 组件和扩展点。
 
-它不是一套新的 AI 实现，而是把 `ai4j/` 的能力基座稳定装进 Spring 容器。
+它负责“接入 Spring 容器”，不负责重新定义 Chat、Responses、Tool、MCP 或 RAG 的底层语义。
 
-更具体一点：
+## 什么时候使用 starter
 
-- `Core SDK` 定义能力本身
-- `Spring Boot starter` 定义这些能力如何被配置、装配、覆盖和注入
+| 场景 | 是否适合 |
+| --- | --- |
+| 普通 Java main 方法先验证模型调用 | 不需要 starter |
+| 已有 Spring Boot 项目，需要配置化接入模型 | 适合 |
+| 需要用 Bean 注入 `AiService` 或 `AiServiceRegistry` | 适合 |
+| 需要多 provider / 多实例配置 | 适合 |
+| 需要业务侧覆盖 HTTP client、service 或 RAG Bean | 适合 |
+| 需要 Agent、Coding Agent 或 FlowGram | 先理解 Core SDK，再接对应上层模块 |
 
-## 2. 这章最重要的真实入口
+## 最小路径
 
-如果你要看这章背后的代码，优先看：
+第一次接入建议按这个顺序：
 
-- `AiConfigAutoConfiguration`
-- `AiConfigProperties`
-- `OkHttpConfigProperties`
-- `AiService`
-- `AiServiceRegistry`
-- `FreeAiService`
+1. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+2. [Spring Boot Quickstart](/docs/spring-boot/quickstart)
+3. [Auto Configuration](/docs/spring-boot/auto-configuration)
+4. [Configuration Reference](/docs/spring-boot/configuration-reference)
+5. [Bean Extension](/docs/spring-boot/bean-extension)
 
-这几类对象分别对应：
+先跑通单 provider，再考虑 `ai.platforms[]` 多实例注册表。
 
-- 自动装配入口
-- 配置绑定入口
-- 统一服务入口
-- 多实例路由入口
-- 兼容壳入口
+## starter 帮你装配什么
 
-## 3. starter 到底做了什么
+| 能力 | 说明 |
+| --- | --- |
+| 配置绑定 | 读取 `ai.*` 相关配置，映射到配置属性对象 |
+| 统一服务入口 | 创建或暴露 `AiService` |
+| 多实例注册表 | 通过 `AiServiceRegistry` 管理多个 provider 实例 |
+| HTTP client | 统一 OkHttp 配置、超时和连接能力 |
+| 兼容入口 | 保留旧入口或兼容壳，帮助旧示例迁移 |
+| RAG 相关 Bean | 在条件满足时装配 vector、assembler、reranker 等能力 |
 
-这一层不是“帮你少写几行 `new`”，而是把能力组织成一条稳定链路：
+真正的模型协议、Tool schema、MCP transport、RAG ingestion 仍属于 Core SDK。
 
-1. Spring 读取 `ai.*` 配置
-2. `*ConfigProperties` 接住这些字段
-3. `AiConfigAutoConfiguration` 在 `@PostConstruct` 里初始化统一 `Configuration`
-4. 同时组装统一 `OkHttpClient`
-5. 生成 `AiService`、`AiServiceRegistry`、`FreeAiService`
-6. 在条件满足时挂上 `VectorStore`、`RagContextAssembler`、`Reranker` 等 Bean
+## 单实例和多实例
 
-所以这章的核心不是“怎么写一个 starter”，而是“starter 里的对象图是怎么从配置流出来的”。
+### 单实例
 
-## 4. 单实例和多实例是两条不同主线
+适合先跑通一个 provider：
 
-这一层最容易混淆的点，是把所有配置都看成一回事。
+```yaml
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY}
+    base-url: https://api.openai.com
+```
 
-### 单实例主线
+### 多实例
 
-你直接配置某个 provider，例如：
+适合同时管理多个 provider、多个模型配置或多个租户级入口：
 
-- `ai.openai.*`
-- `ai.doubao.*`
-- `ai.ollama.*`
+```yaml
+ai:
+  platforms:
+    - id: primary-openai
+      type: OPENAI
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com
+```
 
-这种路径通常进入统一 `AiService`，由 `PlatformType` 决定平台分发。
+多实例不是单实例配置的别名。它会进入 `AiServiceRegistry` 心智，后续业务代码应按 id 取用服务。
 
-### 多实例主线
+## 扩展点
 
-当你开始使用：
+| 你想扩展什么 | 从这里开始 |
+| --- | --- |
+| 覆盖默认 Bean | [Bean Extension](/docs/spring-boot/bean-extension) |
+| 查看配置项 | [Configuration Reference](/docs/spring-boot/configuration-reference) |
+| 组织常见业务写法 | [Common Patterns](/docs/spring-boot/common-patterns) |
+| 回到模型和 Tool 语义 | [Core SDK](/docs/core-sdk/overview) |
+| 做 Spring 场景方案 | [Solutions](/docs/solutions/overview) |
 
-- `ai.platforms[]`
+## 上线前检查
 
-就是在构建 `AiServiceRegistry`。
+- key、baseUrl、model 不写死在代码里。
+- dev/test/prod 配置来源可区分。
+- 单实例和多实例不会混用成不清晰的路由。
+- HTTP 超时、代理、日志和错误处理符合项目要求。
+- 自定义 Bean 的覆盖顺序可解释。
+- RAG、MCP、Tool 的安全边界仍回到对应主线确认。
 
-这条链会给每个实例复制一份 `Configuration`，再把当前 `AiPlatform` 的字段写回对应 provider config。  
-所以它不是单例配置的简单别名，而是明确的多实例注册表模型。
+相关页面：
 
-## 5. 为什么这一章和 Core SDK 分界要分清
+- [Version Compatibility](/docs/reference/version-compatibility)
+- [Security Overview](/docs/security/overview)
+- [Production Checklist](/docs/operations/production-checklist)
+- [Troubleshooting](/docs/troubleshooting/overview)
 
-Spring Boot 这一层只负责：
-
-- 容器接入
-- 属性绑定
-- Bean 组装
-- 默认覆盖
-
-它不负责重新定义：
-
-- `Chat` 和 `Responses` 的协议语义
-- `Tool`、`MCP`、`RAG` 的底层模型
-- provider 的真正请求映射
-
-这些仍然属于 `Core SDK`。
-
-## 6. 阅读顺序
-
-建议按下面顺序读：
+## 继续阅读
 
 1. [Quickstart](/docs/spring-boot/quickstart)
 2. [Auto Configuration](/docs/spring-boot/auto-configuration)
 3. [Configuration Reference](/docs/spring-boot/configuration-reference)
 4. [Bean Extension](/docs/spring-boot/bean-extension)
 5. [Common Patterns](/docs/spring-boot/common-patterns)
-
-## 7. 这一章该建立的心智
-
-把 Spring Boot 这一层理解成三句话就够了：
-
-- `ai4j` 提供能力
-- starter 把能力装进 Spring
-- 业务 Bean 在这个容器里组合这些能力
-
-如果你记住这一点，后面读自动装配、配置参考和 Bean 覆盖时就不会把容器逻辑和 SDK 协议逻辑混成一团。

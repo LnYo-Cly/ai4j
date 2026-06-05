@@ -62,7 +62,7 @@
 1. [First Tool Call](/docs/start-here/first-tool-call)
 2. [Core SDK / Tools](/docs/core-sdk/tools/overview)
 3. [Core SDK / Skills](/docs/core-sdk/skills/overview)
-4. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+4. [MCP](/docs/mcp/overview)
 
 如果你经常把这些概念混在一起，这条线应该优先走。
 
@@ -70,9 +70,9 @@
 
 从这里开始：
 
-1. [Core SDK / MCP Overview](/docs/core-sdk/mcp/overview)
-2. [Positioning and When to Use](/docs/core-sdk/mcp/positioning-and-when-to-use)
-3. [Client Integration](/docs/core-sdk/mcp/client-integration)
+1. [MCP Overview](/docs/mcp/overview)
+2. [MCP 使用路径与场景选择](/docs/mcp/use-cases-and-paths)
+3. [Client Integration](/docs/mcp/client-integration)
 
 这条线适合你已经知道：
 
@@ -112,13 +112,13 @@
 
 从这里开始：
 
-1. [Flowgram / 总览](/docs/flowgram/overview)
-2. [Flowgram / Why Flowgram](/docs/flowgram/why-flowgram)
-3. [Flowgram / 快速开始](/docs/flowgram/quickstart)
+1. [FlowGram / 总览](/docs/flowgram/overview)
+2. [FlowGram / Why FlowGram](/docs/flowgram/why-flowgram)
+3. [FlowGram / 快速开始](/docs/flowgram/quickstart)
 
 这条线优先解释：
 
-- Flowgram 在 AI4J 体系里的位置
+- FlowGram 在 AI4J 体系里的位置
 - 它和 Agent、Coding Agent 的差别
 - 后端 runtime、节点、前后端集成怎么协同
 
@@ -130,7 +130,7 @@
 2. [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
 3. [Core SDK / Overview](/docs/core-sdk/overview)
 4. [Core SDK / Strengths and Differentiators](/docs/core-sdk/strengths-and-differentiators)
-5. 再按你的重点补 `Spring Boot / Agent / Coding Agent / Flowgram`
+5. 再按你的重点补 `Spring Boot / Agent / Coding Agent / FlowGram`
 
 这条线最适合：
 

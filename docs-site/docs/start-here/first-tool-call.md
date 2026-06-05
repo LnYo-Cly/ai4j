@@ -101,7 +101,7 @@ ChatCompletionResponse resp = chatService.chatCompletion(req);
 
 1. [Core SDK / Skills](/docs/core-sdk/skills/overview)
 2. [Core SDK / Skills / Skill vs Tool vs MCP](/docs/core-sdk/skills/skill-vs-tool-vs-mcp)
-3. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+3. [MCP](/docs/mcp/overview)
 
 如果这里的 first tool call 没有触发，优先回看：
 
