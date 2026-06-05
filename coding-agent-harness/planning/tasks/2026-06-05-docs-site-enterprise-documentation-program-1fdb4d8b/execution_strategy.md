@@ -5,7 +5,7 @@
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | reviewer subagent | used | read-only | user approved parallel work | 2026-06-05 | docs-site audit only | n/a | no further action needed |
-| worker subagent | not used | n/a | coordinator decision | 2026-06-05 | n/a | n/a | not needed for this wave |
+| worker subagent | not authorized | none | coordinator decision | 2026-06-05 | no worker writes; coordinator owns docs-site shared files | current checkout; no worker worktree | not used for this wave |
 
 ## Subagent Delegation Decision
 
