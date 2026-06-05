@@ -10,42 +10,45 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+删除公开的 `$ai4j-sdk` 维护者 Skill，只保留面向使用者的 `$ai4j-app-builder`。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+对外 Skill 入口收敛为一个清晰选择：用户安装 `$ai4j-app-builder` 来在自己的 Java / Spring Boot 项目中接入 AI4J；贡献者和维护者继续阅读仓库根目录 `AGENTS.md` 并按 `coding-agent-harness/` 执行任务、验证和审查流程。这样减少普通用户困惑，也避免 `$ai4j-sdk` 与 harness 形成重复维护面。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`skills/` 下只保留 `ai4j-app-builder`。
+- 修改位置：`docs-site/README.md`、`skills/ai4j-app-builder/SKILL.md`、删除 `skills/ai4j-sdk/**`。
+- 验证证据：`quick_validate.py skills\ai4j-app-builder`、active Skill 扫描、`docs-site` 构建。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `docs-site/README.md` 的 `AI4J App Builder Skill` 小节。
+2. `skills/ai4j-app-builder/SKILL.md` frontmatter。
+3. `review.md` 的 Evidence Checked 表。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：删除公开 maintainer Skill；清理 README 安装入口；更新 app-builder 描述；验证 docs-site 和剩余 Skill。
+- 范围外：不删除历史任务证据；不改 `AGENTS.md`、harness 标准或 Java 运行时代码；不推送远程。
+- 停止条件：如果需要改远程发布标签、skill marketplace 或 GitHub release，需要另开任务确认。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `skills/ai4j-sdk/**` 已从当前工作树删除。
+- `docs-site/README.md` 不再出现 `$ai4j-sdk` 或 `--skill ai4j-sdk`。
+- `skills/ai4j-app-builder/SKILL.md` 不再把维护者路由到 `$ai4j-sdk`。
+- 剩余 Skill 校验通过，docs-site build 通过。
+- harness status 通过，任务进入 review 队列。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`
+- 完成条件：验证证据记录到 `progress.md`，并提交 agent review。
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交任务材料修复并推进 review。

@@ -1,24 +1,20 @@
-# remove ai4j sdk maintainer skill - 发现记录
+# Findings
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## Material Findings
 
-## 研究发现
+No open material findings.
 
-### [发现主题 1]
+## Decisions
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
+### Remove Maintainer Skill
 
-## 技术决策
+`$ai4j-sdk` duplicated repository-maintenance guidance already owned by `AGENTS.md` and `coding-agent-harness/`. Removing it reduces public confusion and future drift.
 
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
+### Keep Historical Evidence
 
-## 待确认问题
+Historical task artifacts that mention `$ai4j-sdk` are retained as records of prior work. Active public entry points are cleaned instead.
 
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+## Residual Risk
+
+- Users who already installed `$ai4j-sdk` from a prior commit may still have a local copy. Future release notes can mention the consolidation if needed.
+- Remote repository state must be pushed before `npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder` reflects this local deletion.

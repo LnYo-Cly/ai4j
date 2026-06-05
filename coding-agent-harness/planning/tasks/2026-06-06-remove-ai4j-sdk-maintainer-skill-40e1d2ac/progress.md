@@ -2,47 +2,40 @@
 
 ## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
 证据使用 `type:path:summary` 格式。
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
-### [2026-06-05 17:09] - task-start
+### [2026-06-06 01:09] - task-start
 
 - 做了什么：Start removing public ai4j-sdk maintainer skill and converging docs to ai4j-app-builder
 - 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 下一步：删除 maintainer Skill 并验证
+- 证据：report:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac:task-start lifecycle event
+
+### [2026-06-06 01:10] - implementation
+
+- 做了什么：删除 `skills/ai4j-sdk/**`，README 只保留 `ai4j-app-builder`，并更新 app-builder 的维护路由说明。
+- 验证结果：实现已提交。
+- 下一步：补齐任务材料并提交 review。
+- 证据：diff:f891bdd:chore remove ai4j sdk maintainer skill
+
+### [2026-06-06 01:10] - verification
+
+- 做了什么：验证剩余 Skill、扫描 active public surface、构建 docs-site。
+- 验证结果：Skill 校验通过；active surface 不再包含 `$ai4j-sdk`；docs-site build 通过。
+- 下一步：推进 harness review。
+- 证据：command:skills/ai4j-app-builder:quick_validate.py passed
+- 证据：command:docs-site:npm run build passed
+- 证据：command:docs-site/README.md and skills/:no active ai4j-sdk install reference
+
+## 残余
+
+- 无阻塞残余。远程 push 未执行。
+
+## 协调者交接
+
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：由 lifecycle CLI 同步
+- 负责人：coordinator

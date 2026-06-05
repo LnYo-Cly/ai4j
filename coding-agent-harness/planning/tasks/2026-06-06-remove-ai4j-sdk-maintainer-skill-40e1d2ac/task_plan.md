@@ -1,94 +1,46 @@
-# remove ai4j sdk maintainer skill
+# remove ai4j sdk maintainer skill - 任务计划
 
 Task Contract: harness-task/v1
-Task Kind: standard-task
-Task Preset: standard-task
-Preset Version: 1
-Evidence Bundle: coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/artifacts/preset/2026-06-05T17-09-15-229Z
-Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+删除对外公开的 `$ai4j-sdk` maintainer Skill，避免它与 `AGENTS.md` 和 `coding-agent-harness/` 重复维护；docs-site 只推荐 `$ai4j-app-builder`。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 删除 `skills/ai4j-sdk/**`。
+- 更新 `docs-site/README.md`，只保留 `ai4j-app-builder` 安装命令。
+- 更新 `skills/ai4j-app-builder/SKILL.md`，把仓库维护路由到 `AGENTS.md` 和 harness。
+- 验证剩余 Skill 与 docs-site。
 
-## 预算选择
+## 非目标
 
-选择预算：standard
+- 不删除历史任务、评测报告或已提交的旧证据。
+- 不修改 Java SDK 代码。
+- 不修改 release/publish 流程。
+- 不推送远程。
 
-选择理由：[为什么本任务适合这个预算]
+## 执行步骤
 
-## 上下文包（Context Packet）
+| Step | Status | Evidence |
+| --- | --- | --- |
+| 创建并启动 harness 任务 | done | `new-task`、`task-start` commits |
+| 删除 maintainer Skill | done | commit `f891bdd` |
+| 收敛 docs-site README | done | commit `f891bdd` |
+| 校验剩余 Skill | done | `quick_validate.py skills\ai4j-app-builder` |
+| 构建 docs-site | done | `npm run build` |
+| 修复任务材料并提交 review | pending | 本任务材料和 lifecycle 命令 |
 
-| ID | 类型 | 路径 | 为什么需要 | 使用者 |
-| --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+## 验证计划
 
-## 步骤
+- `python C:\Users\1\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills\ai4j-app-builder`
+- `rg -n "ai4j-sdk|\$ai4j-sdk|--skill ai4j-sdk" docs-site\README.md skills\ai4j-app-builder skills`
+- `npm run build` in `docs-site/`
+- `npx --yes coding-agent-harness status --json .`
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+## Review Criteria
 
-## 验收标准
-
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
-
-## 工作树（Worktree）
-
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
-
-## 长程任务判定
-
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
-
-## 审查判定
-
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
-
-## 关联
-
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
-
-## 模块关联（启用模块并行时填写）
-
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
-
-## Standard Task Preset
-
-This task was created through the declarative `standard-task` preset.
-
-| Field | Value |
-| --- | --- |
-| Preset Title | remove ai4j sdk maintainer skill |
+- 对外只有一个用户侧 Skill 入口。
+- 仓库维护说明回到 `AGENTS.md` 和 harness，不引入第二份维护规则。
+- 不破坏 docs-site 构建。
+- 不留下 active Skill 残留。

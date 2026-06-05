@@ -1,47 +1,33 @@
-# 收口记录：remove ai4j sdk maintainer skill
+# Walkthrough
 
-## 摘要
+## Summary
 
-待收口。
+Removed the public `$ai4j-sdk` maintainer Skill and kept `$ai4j-app-builder` as the only active Skill. Repository maintenance now points back to `AGENTS.md` and `coding-agent-harness/`.
 
-## 范围
+## What Changed
 
-| 范围 | 详情 |
-| --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+- Deleted `skills/ai4j-sdk/SKILL.md`.
+- Deleted `skills/ai4j-sdk/agents/openai.yaml`.
+- Deleted `skills/ai4j-sdk/references/development-workflow.md`.
+- Deleted `skills/ai4j-sdk/references/repo-map.md`.
+- Updated `skills/ai4j-app-builder/SKILL.md` description.
+- Updated `docs-site/README.md` to only document `ai4j-app-builder`.
 
-## 验证
+## Verification
 
-| 检查 | 命令或过程 | 结果 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | not run | pending |
+- `quick_validate.py skills\ai4j-app-builder` passed.
+- Active README/Skill scan found no `$ai4j-sdk` install entry.
+- `npm run build` in `docs-site/` passed.
 
-## 审查结论
+## Implementation Commit
 
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
+`f891bdd chore: remove ai4j sdk maintainer skill`
 
-## 残余风险
+## Residual Items
 
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
+- Remote push is not performed in this task.
+- Future release notes may mention that repository maintenance uses `AGENTS.md` and harness instead of a separate Skill.
 
-## 经验沉淀反思
+## Lessons Reflection
 
-| 问题 | 答案 |
-| --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
-
-## 收口链接
-
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+No shared lesson is promoted. This is a project/product surface cleanup, not a reusable harness governance change.
