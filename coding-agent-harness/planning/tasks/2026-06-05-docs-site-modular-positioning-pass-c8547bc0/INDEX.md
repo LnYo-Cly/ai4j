@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-05-docs-site-modular-positioning-pass-c8547bc0 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 83cd06f350a8688f9ae83926daf98293059a26a8 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户已确认 docs-site program 继续执行，人工确认本轮 docs-site review 通过 |
 | Migration Status | native |
