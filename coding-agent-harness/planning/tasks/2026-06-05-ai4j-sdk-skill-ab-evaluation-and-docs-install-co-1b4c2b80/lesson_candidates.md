@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:task-local-evaluation-only |
 | Source task | 2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80 |
 | Owner | coordinator |
 | Last updated | 2026-06-05 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务只新增一次性的 Skill A/B 评测报告和 README 安装入口，没有形成需要沉淀到全局治理标准的可复用 lesson。
 
 ## Promotion Notes
 

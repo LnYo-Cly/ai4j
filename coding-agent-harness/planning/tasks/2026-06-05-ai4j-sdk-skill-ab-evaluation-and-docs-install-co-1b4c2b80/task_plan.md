@@ -9,81 +9,90 @@ Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+评估 `ai4j-sdk` Skill 是否达到预期效果，并在 docs-site README 中提供安装和调用命令。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 做什么：新增 A/B 评测报告，更新 `docs-site/README.md`，运行 docs-site 构建和 Skill 校验。
+- 不做什么：不修改 Skill 行为本体、不做远程发布、不新增完整 docs-site 页面、不做真实用户流量实验。
+- 主要风险：A/B 评测若不说明局限，容易被误解为线上实验；安装命令若不基于真实 remote，会变成不可执行占位。
 
 ## 预算选择
 
 选择预算：standard
 
-选择理由：[为什么本任务适合这个预算]
+选择理由：该任务改动文档和评测材料，涉及 docs-site 构建、Skill 校验和 harness review，适合 standard。
 
 ## 上下文包（Context Packet）
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+| C-001 | code | TARGET:skills/ai4j-sdk/SKILL.md | 评估 Skill 是否覆盖目标场景。 | coordinator / reviewer |
+| C-002 | code | TARGET:skills/ai4j-sdk/references/repo-map.md | 评估模块定位能力。 | coordinator / reviewer |
+| C-003 | code | TARGET:skills/ai4j-sdk/references/development-workflow.md | 评估 harness、验证和新手协作流程。 | coordinator / reviewer |
+| C-004 | code | TARGET:docs-site/README.md | 写入安装命令和调用示例。 | coordinator / reviewer |
+| C-005 | command-output | TARGET:. | `git remote -v` 确认安装命令仓库坐标为 `LnYo-Cly/ai4j`。 | coordinator |
 
 ## 步骤
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+1. 启动 harness 任务并确认当前工作树。
+2. 从 `git remote -v` 提取真实 GitHub 仓库坐标。
+3. 在 `docs-site/README.md` 增加 Skill 安装命令和调用示例。
+4. 创建 `artifacts/ab-evaluation.md`，用同一任务集和 rubric 比较无 Skill / 有 Skill 条件。
+5. 运行 `npm run build`、`quick_validate.py` 和内容检索。
+6. 提交改动并进入 agent review。
 
 ## 验收标准
 
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
+- [x] README 包含安装命令 `npx skills add LnYo-Cly/ai4j --skill ai4j-sdk`。
+- [x] README 包含 `$ai4j-sdk` 调用示例。
+- [x] A/B 评测报告给出任务集、评分规则、分数、结论和局限。
+- [x] `docs-site` 的 `npm run build` 通过。
+- [x] `skills/ai4j-sdk` 的 `quick_validate.py` 通过。
 
 ## 工作树（Worktree）
 
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
+- 路径：当前 checkout
+- 分支：main
+- Worker owner：不适用
+- Worker handoff commit required：不适用
+- Coordinator integration branch：main
+- 未使用 worktree 的原因：改动集中在 README 和当前任务目录，无并行冲突。
 
 ## 长程任务判定
 
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
+- 是否属于长程任务：否
+- 若是，合同文件：不适用
+- 连续执行权限：不适用
+- Stop Condition 摘要：如需发布远程、tag 或 marketplace 流程，先回到用户确认。
 
 ## 审查判定
 
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
+- 是否需要对抗性审查：否
+- 若是，报告文件：不适用
+- Reviewer：self + human review queue
+- No-finding 要求：self-check 无 P0/P1/P2 阻塞项。
 
 ## 关联
 
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
+- 相关 Regression Gate：docs-site build、Skill validation
+- 审查报告：`review.md`
+- Generated Ledger：由 lifecycle CLI 重建
+- 前置任务：`2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a`
 
 ## 模块关联（启用模块并行时填写）
 
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
+- Module：docs-site / project-tooling
+- Step：不适用
+- Module Plan：不适用
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
+- Global sync owner：coordinator
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：由 lifecycle CLI 同步
+- Closeout / Regression update needed：无新增固定回归面
 
 ## Standard Task Preset
 
