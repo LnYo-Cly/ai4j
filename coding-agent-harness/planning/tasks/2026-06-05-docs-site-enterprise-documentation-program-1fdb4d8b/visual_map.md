@@ -24,8 +24,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | done | 100 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b EXEC-01 --state done --completion 100 --evidence present` | agent | present | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b --message "<summary>"` | agent | present | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | docs-site canonical map、辅助页、主入口总览、sidebar/include 和构建验证 | commit `251d364`; `npm run build`; `progress.md` | `harness task-phase 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b EXEC-01 --state done --completion 100 --evidence present` | agent | present | legacy 深页迁移另开后续 wave | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b --message "<summary>"` | agent | present | 等待人工确认 | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b --confirm 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

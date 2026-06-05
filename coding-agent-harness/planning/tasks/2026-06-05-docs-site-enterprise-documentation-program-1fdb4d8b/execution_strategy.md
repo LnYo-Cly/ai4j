@@ -2,66 +2,56 @@
 
 ## Subagent Authorization
 
-任务开始时先读这一段，并向用户说明当前授权状态。这里是授权记录，不是执行沙箱。
-
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| reviewer subagent | allowed by default | read-only | harness task policy | task creation | current task review | n/a | allowed within this task |
-| worker subagent | not authorized | write only after user approval | pending | pending | pending | pending | allowed only within approved task/scope |
+| reviewer subagent | used | read-only | user approved parallel work | 2026-06-05 | docs-site audit only | n/a | no further action needed |
+| worker subagent | not used | n/a | coordinator decision | 2026-06-05 | n/a | n/a | not needed for this wave |
 
 ## Subagent Delegation Decision
 
-任务开始时，coordinator 必须根据用户目标主动做这个判断，即使用户完全没有提到 subagent。
-不要假设用户知道 subagent 或 worker 是什么。如果分工有帮助，用白话说明收益，并向用户申请一次授权。
-可以直接对用户说 subagent 或 worker subagent；关键规则是 agent 不能等用户主动提出 subagent。
-如果任务已经明显拆成互不重叠的独立切片，implementation 前就应判断为 `ask-user`。如果还不知道精确文件路径，先确认路径，然后立刻申请独立执行助手授权。
-
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | yes | docs-site 范围大，Core/MCP、Agent/Coding/FlowGram、全站 IA 可以并行只读审计 | 已完成三路只读审计 |
+| Would a worker subagent materially help? | no | 本轮写入集中在 sidebar、入口页和 shared docs，多个 worker 同时写会增加冲突；coordinator 串行整合更稳 | 后续深页迁移可再拆 worker |
 
 ## User Authorization Decision
 
-如果上方 worker 决策是 `ask-user`，implementation 必须暂停，直到这里记录用户答案。
-已解决状态只能是 `authorized`、`denied` 或 `not-needed`。选择 `ask-user` 后不得继续保持 `pending`。
-
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| parallel read-only subagents | authorized | user | 2026-06-05 | docs-site read-only audits | n/a | 用户确认可以并行 |
+| worker subagent | not-needed | coordinator | 2026-06-05 | n/a | n/a | 写入集中在 coordinator |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
-| 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 主执行者 | coordinator | coordinator 负责编排、写入、构建验证和提交 |
+| Subagent 模式 | reviewer-only | 三个 subagent 只读审计，不直接修改文件 |
+| 审查模型 | self-check + build + human review | 本轮为 docs-site 文档和导航，Docusaurus build 是主要回归证据，最终仍需人工确认 |
+| Worktree 策略 | same checkout | 只读 subagent 不需要 worktree；写入由 coordinator 串行完成 |
+| 冲突控制 | coordinator owns shared files | `sidebars.ts`、`docusaurus.config.ts`、入口页和任务材料由 coordinator 独占 |
+| 证据深度 | L1 | docs-site build 覆盖导航、include、链接和 Docusaurus 编译 |
 
 ## 子代理 / Worker 合同
 
-如使用 subagent 或 worker，在这里写清楚输入包、写入范围、handoff 格式和最终集成 owner。
-
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| Core/MCP reviewer | docs-site Core SDK、MCP、ai-basics | read-only | final audit summary | subagent 019e95cd-25ef-7610-b044-480d7aa21a2b |
+| Agent/Coding/FlowGram reviewer | docs-site Agent、Coding Agent、FlowGram | read-only | final audit summary | subagent 019e95cd-61ed-7b11-ab65-ace9b2b91cad |
+| IA reviewer | docs-site sidebar、Start Here、legacy directories | read-only | final audit summary | subagent 019e95cd-9fec-72f0-86f0-be0063f41b12 |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `rg` 检查生硬措辞和旧 MCP 入口 | `progress.md` | 新增/改动范围无目标残留 |
+| L1 | `npm run build` | `progress.md`、`review.md` | Docusaurus build 通过 |
+| L2 | dashboard / harness status | `review.md` | task lifecycle 可见；无 blocker |
+| L3 | Human Review Confirmation | dashboard review workbench | 人工确认后 closeout |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
-- reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
-- 环境无法提供关键证据，继续执行会变成猜测。
+- 需要删除 legacy 目录或批量移动旧页。
+- 文档需要承诺未验证的 provider 能力或发布能力。
+- Docusaurus build 出现无法在本轮修复的断链或配置问题。
+- 人工 review 要求进一步拆分 deep page migration。

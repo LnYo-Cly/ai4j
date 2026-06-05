@@ -1,13 +1,12 @@
-# 任务参考资料索引
+# References Index
 
-仅在任务需要外部资料、跨仓上下文、reviewer 输入包或生成参考材料时使用。不要把无关背景资料堆进来。
-
-| ID | Type | Path | Summary | Used By |
+| ID | Type | Path | Why It Matters | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
-
-## 使用规则
-
-- 每条参考资料都要说明用途，否则不要登记。
-- 外部链接需要写清访问日期或版本线索，避免后续复查时语境漂移。
-- reviewer 或 worker 只应读取与其 scope 相关的条目。
+| REF-001 | public-doc | TARGET:docs-site/sidebars.ts | docs-site canonical navigation and duplicate route surface | coordinator |
+| REF-002 | public-doc | TARGET:docs-site/docs/start-here/feature-map.md | current capability map and maturity language | coordinator |
+| REF-003 | public-doc | TARGET:docs-site/docs/core-sdk/overview.md | Core SDK entry page rewrite target | coordinator |
+| REF-004 | public-doc | TARGET:docs-site/docs/agent/overview.md | Agent entry page rewrite target | coordinator |
+| REF-005 | public-doc | TARGET:docs-site/docs/coding-agent/overview.md | Coding Agent entry page rewrite target | coordinator |
+| REF-006 | public-doc | TARGET:docs-site/docs/flowgram/overview.md | FlowGram entry page rewrite target | coordinator |
+| REF-007 | public-doc | TARGET:docs-site/docs/spring-boot/overview.md | Spring Boot entry page rewrite target | coordinator |
+| REF-008 | public-doc | TARGET:docs-site/docs/solutions/overview.md | Solutions entry page rewrite target | coordinator |

@@ -22,23 +22,17 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- Legacy `getting-started/`、`ai-basics/`、`guides/` 仍保留强内容；本轮只建立 canonical map，不删除旧页。
+- 后续需要按 deep page wave 迁移旧页独有内容，并给旧页加 legacy notice。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：pending-human-review
+- Registry update needed：不适用
+- Harness Ledger update needed：task-review 已同步，human review 后继续 closeout
+- 负责人：coordinator
 
 ### [2026-06-05 03:28] - task-start
 
