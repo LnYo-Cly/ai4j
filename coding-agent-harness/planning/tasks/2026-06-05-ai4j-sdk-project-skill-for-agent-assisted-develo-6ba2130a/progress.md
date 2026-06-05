@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-05 04:07] - task-log
+
+- 做了什么：Created distributable ai4j-sdk project skill with OpenAI UI metadata and repo workflow references
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：file:TARGET:skills/ai4j-sdk/SKILL.md:project skill entry
