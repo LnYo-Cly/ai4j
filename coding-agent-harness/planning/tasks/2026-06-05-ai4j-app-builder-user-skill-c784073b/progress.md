@@ -41,3 +41,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：task review 后由 lifecycle/status 视图读取本任务材料
 - 负责人：coordinator
+
+### [2026-06-05 11:49] - task-log
+
+- 做了什么：Implemented ai4j-app-builder user Skill, updated docs-site README install commands, and validated skill metadata plus docs-site build.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：diff:c23fb08:feat add ai4j app builder skill
