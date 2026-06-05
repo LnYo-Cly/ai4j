@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-04-docs-site-wave-1-entrance-redesign-54198b78 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | efb01731767b68e150f5d0d07edd8ed4c7b55f25 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户已确认 docs-site program 继续执行，人工确认本轮 docs-site review 通过 |
 | Migration Status | native |
