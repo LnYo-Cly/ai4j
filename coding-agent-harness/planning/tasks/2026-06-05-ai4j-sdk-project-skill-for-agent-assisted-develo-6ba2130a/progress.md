@@ -1,6 +1,6 @@
 # ai4j sdk project skill for agent-assisted development - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：file:TARGET:skills/ai4j-sdk/SKILL.md:project skill entry
+
+### [2026-06-05 04:08] - task-review
+
+- 做了什么：AI4J SDK project skill is ready for review: distributable skill folder, OpenAI UI metadata, repo map, development workflow, validation command passed, and implementation commit 3b8af61 created.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
