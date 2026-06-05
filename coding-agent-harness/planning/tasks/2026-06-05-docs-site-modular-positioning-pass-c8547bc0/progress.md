@@ -1,6 +1,6 @@
 # docs site modular positioning pass - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -66,4 +66,11 @@
 - 做了什么：docs-site modular positioning pass ready: intro, Why AI4J, and Feature Map now present AI4J as modular Java AI building blocks; POM relationship scan, docs-site build, and diff check passed
 - 验证结果：已记录
 - 下一步：继续执行
+- 证据：n/a
+
+### [2026-06-05 03:25] - task-complete
+
+- 做了什么：docs-site modular positioning pass closed after human review confirmation; modular building-block positioning is now part of the docs-site entrance.
+- 验证结果：已记录
+- 下一步：完成
 - 证据：n/a
