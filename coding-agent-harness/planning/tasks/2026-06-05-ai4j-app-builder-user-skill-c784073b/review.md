@@ -2,7 +2,17 @@
 
 ## Agent Review Submission
 
-Status: ready after lifecycle command submission.
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606051150 |
+| Submitted At | 2026-06-05 11:50 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-05-ai4j-app-builder-user-skill-c784073b |
+| Materials Checklist Hash | 795b35a9fafbe123 |
+| Evidence Summary | Ready for human review: ai4j-app-builder Skill added, docs-site README updated, skill validation and docs-site build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b |
 
 ## Scope Reviewed
 

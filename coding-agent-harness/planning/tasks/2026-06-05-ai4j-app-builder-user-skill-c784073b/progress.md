@@ -1,6 +1,6 @@
 # ai4j app builder user skill - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -48,3 +48,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：diff:c23fb08:feat add ai4j app builder skill
+
+### [2026-06-05 11:50] - task-review
+
+- 做了什么：Ready for human review: ai4j-app-builder Skill added, docs-site README updated, skill validation and docs-site build passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
