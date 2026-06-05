@@ -87,3 +87,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 docs-site build、Skill validation、内容检索和 A/B 评测 artifact。该任务不修改 Java 运行时代码，因此不运行 Maven 测试。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606050422 |
+| Submitted At | 2026-06-05 04:22 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80 |
+| Materials Checklist Hash | 7aed6d3d086d4c7a |
+| Evidence Summary | AI4J SDK skill A/B evaluation and docs-site README install command are ready for review: offline rubric shows 7/30 vs 28/30, install command added, docs-site build passed, and skill validation passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80 |

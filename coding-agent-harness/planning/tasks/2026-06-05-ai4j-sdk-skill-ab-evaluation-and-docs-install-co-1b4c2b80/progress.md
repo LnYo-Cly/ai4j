@@ -1,6 +1,6 @@
 # ai4j sdk skill ab evaluation and docs install command - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -45,3 +45,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：由 lifecycle CLI 同步
 - 负责人：coordinator
+
+### [2026-06-05 04:22] - task-review
+
+- 做了什么：AI4J SDK skill A/B evaluation and docs-site README install command are ready for review: offline rubric shows 7/30 vs 28/30, install command added, docs-site build passed, and skill validation passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
