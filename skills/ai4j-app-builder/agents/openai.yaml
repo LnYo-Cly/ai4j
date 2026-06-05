@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI4J App Builder"
+  short_description: "AI4J app builder for Java and Spring users"
+  default_prompt: "Use $ai4j-app-builder to build an AI4J Java or Spring Boot app with the right dependency, provider config, and verification step."
