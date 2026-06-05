@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:auto-no-candidate |
 | Source task | 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b |
 | Owner | coordinator |
 | Last updated | 2026-06-05 |
@@ -49,7 +49,8 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+
+Agent review found no reusable lesson candidates in this task; the empty candidate table is recorded as checked for closeout.
 
 ## Promotion Notes
 

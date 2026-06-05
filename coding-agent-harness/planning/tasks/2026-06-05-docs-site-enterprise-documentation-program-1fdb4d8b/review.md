@@ -113,3 +113,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自三路只读审计、Docusaurus 构建通过、sidebar/include 修复、关键入口页重写和任务材料补齐。剩余风险主要是后续深页内容迁移，不阻塞本轮提交和 review。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606050349 |
+| Submitted At | 2026-06-05 03:49 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b |
+| Materials Checklist Hash | 048f19fdb4a9cae1 |
+| Evidence Summary | docs-site 文档重构首批提交待审：canonical map、生产接入辅助页、主入口总览重写、sidebar/include 更新；docs-site npm run build 通过。 |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b |

@@ -1,6 +1,6 @@
 # docs-site 文档重构总任务 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -76,3 +76,10 @@
 - 验证结果：再次在 `docs-site/` 执行 `npm run build`，构建通过。
 - 下一步：执行 git 边界检查、harness task-review、本地提交。
 - 证据：command:docs-site:npm run build passed after spring-boot and solutions overview rewrite
+
+### [2026-06-05 03:49] - task-review
+
+- 做了什么：docs-site 文档重构首批提交待审：canonical map、生产接入辅助页、主入口总览重写、sidebar/include 更新；docs-site npm run build 通过。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
