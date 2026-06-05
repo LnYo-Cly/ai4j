@@ -1,24 +1,24 @@
-# ai4j app builder user skill - 发现记录
+# Findings
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## Material Findings
 
-## 研究发现
+No open material findings.
 
-### [发现主题 1]
+## Decisions
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
+### Separate Skill Boundary
 
-## 技术决策
+The user-facing app-building workflow belongs in a new `$ai4j-app-builder` Skill instead of extending `$ai4j-sdk`. This prevents beginners who want to build their own app from being routed into repository-maintenance instructions.
 
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
+### Reference Split
 
-## 待确认问题
+Detailed dependency choices, recipes, and verification guidance were moved into references so `SKILL.md` remains concise and follows progressive disclosure.
 
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+### Verification Depth
+
+This task changed Skill/docs artifacts only. Structural Skill validation and docs-site production build are sufficient. Java module regression is not required because no Java source or Maven metadata was changed.
+
+## Residual Risk
+
+- The Skill has not been tested through an independent live agent session in this task. Existing validation confirms structure and docs build, not real external user behavior.
+- API examples are compact skeletons. A future pass should align them with the highest-quality docs-site examples after the docs-site rewrite settles.

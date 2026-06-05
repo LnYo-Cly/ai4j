@@ -1,47 +1,35 @@
-# 收口记录：ai4j app builder user skill
+# Walkthrough
 
-## 摘要
+## Summary
 
-待收口。
+Added a new `$ai4j-app-builder` Skill for users who want to build AI4J-powered applications in their own Java or Spring Boot projects. The Skill is separate from `$ai4j-sdk`, which remains the repository-maintainer Skill.
 
-## 范围
+## What Changed
 
-| 范围 | 详情 |
-| --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+- Created `skills/ai4j-app-builder/SKILL.md`.
+- Added `agents/openai.yaml` metadata for Skill UI display.
+- Added reference files:
+  - `references/app-paths.md`
+  - `references/recipes.md`
+  - `references/verification.md`
+- Updated `docs-site/README.md` with install commands and usage examples for both Skills.
 
-## 验证
+## Verification
 
-| 检查 | 命令或过程 | 结果 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | not run | pending |
+- `python C:\Users\1\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills\ai4j-app-builder` passed.
+- `python C:\Users\1\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills\ai4j-sdk` passed.
+- Placeholder scan found no unresolved generated Skill template content.
+- `npm run build` in `docs-site/` passed.
 
-## 审查结论
+## Implementation Commit
 
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
+`c23fb08 feat: add ai4j app builder skill`
 
-## 残余风险
+## Residual Items
 
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
+- Future improvement: run a live independent prompt test against `$ai4j-app-builder` after publishing or installing it into a fresh consumer project.
+- Future improvement: refine recipe examples after the docs-site restructuring is fully finished.
 
-## 经验沉淀反思
+## Lessons Reflection
 
-| 问题 | 答案 |
-| --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
-
-## 收口链接
-
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+No shared lesson is promoted from this task. The useful pattern is task-local: keep maintainer Skills and user application Skills separate when their startup context, dependencies, and verification commands differ.
