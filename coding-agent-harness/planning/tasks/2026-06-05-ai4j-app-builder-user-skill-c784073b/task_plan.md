@@ -1,5 +1,7 @@
 # Task Plan
 
+Task Contract: harness-task/v1
+
 ## Goal
 
 Create a user-facing AI4J Skill that helps developers build applications with AI4J, then expose its install command in the docs-site README.

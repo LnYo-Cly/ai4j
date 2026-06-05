@@ -1,5 +1,7 @@
 # Task Index
 
+Task Contract: harness-task/v1
+
 ## Task
 
 - ID: `2026-06-05-ai4j-app-builder-user-skill-c784073b`
