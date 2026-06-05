@@ -17,26 +17,15 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | ARS-202606060110 |
-| Submitted At | 2026-06-06 01:10 |
+| Submission ID | ARS-202606051714 |
+| Submitted At | 2026-06-05 17:14 |
 | Submitted By | agent |
 | Task Key | TASKS/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac |
-| Materials Checklist Hash | remove-maintainer-skill-202606060110 |
-| Evidence Summary | Public maintainer Skill removed: `skills/ai4j-sdk/**` deleted, README now exposes only `$ai4j-app-builder`, app-builder routes repo maintenance to AGENTS/harness, Skill validation and docs-site build passed. |
+| Materials Checklist Hash | 540d27ab99c4fe26 |
+| Evidence Summary | Ready for human review: public ai4j-sdk maintainer Skill removed, docs-site now documents only ai4j-app-builder, remaining Skill validation and docs build passed. |
 | Open Findings Count | 0 |
 | Scanner Version | task-scanner/2026-05-25-phase-kind |
 | Target | TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac |
-
-### Material Checklist（材料清单）
-
-| Material | Required? | Status | Evidence |
-| --- | --- | --- | --- |
-| Brief | yes | present | `brief.md` |
-| Task plan | yes | present | `task_plan.md` |
-| Progress and evidence | yes | present | `progress.md` |
-| Visual map | yes | present | `visual_map.md` |
-| Lesson candidate decision | yes | present | `lesson_candidates.md` |
-| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 

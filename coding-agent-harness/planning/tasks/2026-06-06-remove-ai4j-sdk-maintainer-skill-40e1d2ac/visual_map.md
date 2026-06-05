@@ -34,7 +34,7 @@ flowchart TD
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `brief.md`; `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | `$ai4j-sdk` 已删除，README 只保留 app-builder | commit `f891bdd`; validation output; docs-site build | `harness task-phase 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac --confirm 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

@@ -1,6 +1,6 @@
 # remove ai4j sdk maintainer skill - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -39,3 +39,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：由 lifecycle CLI 同步
 - 负责人：coordinator
+
+### [2026-06-05 17:14] - task-review
+
+- 做了什么：Ready for human review: public ai4j-sdk maintainer Skill removed, docs-site now documents only ai4j-app-builder, remaining Skill validation and docs build passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
