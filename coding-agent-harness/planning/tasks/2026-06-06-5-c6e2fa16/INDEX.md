@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-06-5-c6e2fa16 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 0f548fd1723f7542e7c799a5d0661b44c83c6d54 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复确认，确认 5 分钟首聊主路径 review packet 和 RG-008 证据通过。 |
 | Migration Status | native |
