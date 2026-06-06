@@ -44,7 +44,7 @@ For every build/integration answer, produce:
 When the user is new to AI4J or Java AI SDKs:
 
 1. Start with Chat unless the user explicitly asks for RAG, MCP, Agent, FlowGram, or Coding Agent.
-2. Explain the object chain in one line, for example `AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`.
+2. For Plain Java first chat, prefer `ChatClient.openAi(...).chat(...)`, then explain that it still uses `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse` internally.
 3. Prefer one controller/service/test that the user can run immediately.
 4. Distinguish local build success from live model success. If credentials are missing, stop at a compile/mock check and say which env var is needed.
 5. Use the user's language. Default to Chinese when the user writes Chinese.

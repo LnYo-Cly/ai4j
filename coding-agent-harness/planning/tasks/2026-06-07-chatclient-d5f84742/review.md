@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | core SDK facade、单元测试、docs-site 首聊入口、ai4j-app-builder recipe、回归证据 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：regression / architecture / docs
+- 范围内：`ai4j` 新增 `ChatClient`、`ChatClientTest`、docs-site start-here 页面、root/docs README、`ai4j-app-builder` skill recipe、Regression SSoT 与 Cadence Ledger。
+- 范围外：不审查 live provider 质量、真实 OpenAI 额度/网络、agent runtime、FlowGram 行为、Spring Boot starter 代码。
+- 来源材料：`task_plan.md`、当前 diff、RG-001/RG-007/RG-008 命令输出、`docs/05-TEST-QA/Regression-SSoT.md`、`docs/05-TEST-QA/Cadence-Ledger.md`。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,87 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | ARS-202606070230 |
+| Submitted At | 2026-06-07 02:30 |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-06-07-chatclient-d5f84742 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | pending lifecycle scanner |
+| Evidence Summary | `ChatClient` facade and tests added; docs-site and app-builder first-chat paths now prefer `ChatClient`; RG-001/RG-007/RG-008 passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
-- 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+- Verdict：yes
+- 如果不是 100%，剩余漏洞或证据缺口：无。
+- Fix loop count：1
+- 当前结论：实现保持为薄 facade，未改变 `AiService` / `IChatService` 合同；MockWebServer 覆盖请求路径、鉴权和文本抽取；core/full package/docs build 均通过，可以提交人工审查。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `ChatClient.openAi(...)` 当前仅作为 OpenAI-compatible 首聊门面；其他 provider 仍建议走完整对象链，避免一次性包装出半成品 API。
+- Live provider 未运行；本任务默认证据是本地 deterministic tests/build，真实 key、额度和网络仍属于用户运行时外部条件。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:. | `mvn -pl ai4j "-Dtest=ChatClientTest,FirstChatCopyableCodeTest,ConfigurationTest" -DskipTests=false test` passed: 10 tests, 0 failures. |
+| E-002 | command | TARGET:. | `mvn -pl ai4j -am -DskipTests=false test` passed: 108 tests, 0 failures. |
+| E-003 | command | TARGET:. | `mvn -DskipTests package` passed across 9 reactor modules. |
+| E-004 | command | TARGET:docs-site | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` exited 0. |
+| E-005 | command | TARGET:docs-site | `NODE_OPTIONS=--max-old-space-size=8192 npm run build` passed and generated `docs-site/build`. |
+| E-006 | command | TARGET:. | `git diff --check` found no whitespace errors; only Windows LF/CRLF warnings. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 真实 provider 质量、网络、key 权限和 quota 未在本任务验证 | user / release operator | yes | 只有 provider 协议或 release 任务需要时再按 LV-001 opt-in live gate 执行。 |
+| `ChatClient` 目前只覆盖 OpenAI-compatible 首聊 facade | coordinator | yes | 后续如扩展多 provider，应单独设计 provider-neutral facade，避免本任务扩大范围。 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 审查材料包已提交，且可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节、证据已补齐。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | 本任务无可复用治理 lesson 候选。 | n/a |
+| Confirmed / Finalized | no | 尚无人工确认。 | 人工确认后 closeout / ledger finalized。 |
+| Soft-deleted / Superseded | no | 任务仍为 active review path。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：无需再改，路径 `task_plan.md`
+- Progress：`progress.md` 已记录 scope、implementation、verification
+- 发现记录：`findings.md` 已记录 FND/DEC
+- Regression SSoT：已更新 RG-001/RG-007/RG-008
+- Lessons：checked-none: chatclient-first-chat-facade-local-api-no-new-governance-lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自 core facade 的本地 MockWebServer 测试、core 全量测试、9 模块 package、docs-site typecheck/build、回归 SSoT/Cadence 记录，以及无 open material finding 的 self-review。人工确认仍是任务最终关闭前的必需门禁。

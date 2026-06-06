@@ -438,7 +438,26 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
 
 ## 获取AI服务实例
 
-### 非Spring获取
+### 非Spring首聊推荐
+
+如果只是先跑通第一条同步 Chat 请求，优先使用 `ChatClient`：
+
+```java
+import io.github.lnyocly.ai4j.service.ChatClient;
+
+public class Ai4jFirstChat {
+    public static void main(String[] args) throws Exception {
+        String text = ChatClient.openAi(System.getenv("OPENAI_API_KEY"))
+                .chat("gpt-4o-mini", "用一句话介绍 AI4J");
+        System.out.println(text);
+    }
+}
+```
+
+`ChatClient` 是首聊门面，内部仍然复用 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`。
+当你需要自定义 `OkHttpClient`、代理、超时、流式、多模态、Tool、MCP、RAG 或读取完整 `ChatCompletionResponse` 时，再展开使用下面的对象链。
+
+### 非Spring进阶获取
 ```java
     public void test_init(){
         OpenAiConfig openAiConfig = new OpenAiConfig();

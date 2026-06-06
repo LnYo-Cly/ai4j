@@ -4,11 +4,28 @@ Use these patterns as compact starting points. Adjust package names, class names
 
 ## Plain Java First Chat
 
-Object chain:
+Recommended first-chat facade:
+
+```java
+ChatClient client = ChatClient.openAi(System.getenv("OPENAI_API_KEY"));
+String text = client.chat("gpt-4o-mini", "用一句话介绍 AI4J");
+```
+
+Implementation notes:
+
+- Import `io.github.lnyocly.ai4j.service.ChatClient`.
+- Keep secrets in environment variables, for example `OPENAI_API_KEY`.
+- Use `ChatClient.openAi(apiKey, apiHost)` when the project targets an OpenAI-compatible endpoint with a custom host.
+- `ChatClient` exposes `getConfiguration()`, `getAiService()`, and `getChatService()` so the first slice can grow into the full SDK object chain.
+- In this repository, the copyable Plain Java first-chat path is guarded by `mvn -pl ai4j -Dtest=ChatClientTest,FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test`.
+
+Advanced object chain:
 
 ```text
 Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse
 ```
+
+Use this form when the target app needs custom HTTP config, streaming, tool/function calls, MCP, RAG, multiple provider profiles, or direct `ChatCompletionResponse` access.
 
 Skeleton:
 
@@ -40,7 +57,6 @@ Implementation notes:
 - Import `io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion`, `ChatCompletionResponse`, and `ChatMessage`.
 - Use the provider config class that matches the provider.
 - Plain Java can start with AI4J's default `OkHttpClient`; only call `configuration.setOkHttpClient(...)` when the app needs custom timeout, proxy, interceptor, or connection settings.
-- In this repository, the copyable Plain Java first-chat path is guarded by `mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test`.
 
 ## Spring Boot Chat Endpoint
 

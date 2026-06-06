@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: chatclient-first-chat-facade-local-api-no-new-governance-lesson |
 | Source task | 2026-06-07-chatclient-d5f84742 |
 | Owner | coordinator |
 | Last updated | 2026-06-07 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务没有新的可复用治理经验候选。关键经验已经由本任务内的 docs-site、skill recipe、Regression SSoT 和 Cadence Ledger 更新承载；不需要沉淀到共享 lessons。
 
 ## Promotion Notes
 

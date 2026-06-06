@@ -10,42 +10,48 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+为 core SDK 增加一个轻量 `ChatClient` 首聊门面，让 Plain Java 用户用最少对象链完成第一条 OpenAI chat 请求。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+用户能在不理解 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`
+完整对象链的情况下先跑通第一条请求；进阶用户仍可从 `ChatClient` 拿到底层 `Configuration`、
+`AiService` 与 `IChatService`，继续使用工具调用、流式、RAG、MCP 等完整能力。docs-site 与
+`ai4j-app-builder` recipe 会同步把 `ChatClient` 作为 Plain Java 首聊推荐路径，并保留完整对象链作为进阶路径。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`ChatClient.openAi(...).chat(model, message)` 可复制首聊入口。
+- 修改位置：`ai4j/` core SDK、`docs-site/` 首聊文档、`skills/ai4j-app-builder/references/recipes.md`。
+- 验证证据：RG-001 core tests、RG-007 monorepo package、RG-008 docs-site typecheck/build。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `ai4j/src/main/java/io/github/lnyocly/ai4j/service/ChatClient.java` 和
+`ai4j/src/test/java/io/github/lnyocly/ai4j/service/ChatClientTest.java`，再读 docs-site 的
+首聊页面与 `skills/ai4j-app-builder/references/recipes.md`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：新增 core SDK 轻量 chat facade；补充本地单元测试；把 Plain Java 首聊文档与 skill recipe 调整为 `ChatClient` 优先。
+- 范围外：不重构 `AiService` 工厂、不改变现有 `IChatService` 合同、不新增 provider、不调整 agent/runtime/FlowGram 行为。
+- 停止条件：如果需要破坏现有对象链 API、改 Maven 坐标、或引入非 Java 8 语法，必须暂停并重新确认。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `ChatClient.openAi(String apiKey)` 与可注入 `apiHost` 的测试路径存在，并能通过本地 provider double 返回文本。
+- `ChatClient` 不遮蔽底层能力，仍能暴露 `Configuration`、`AiService`、`IChatService` 与原始 response 方法。
+- docs-site 首聊入口和 ai4j-app-builder recipe 使用 `ChatClient` 作为 Plain Java 推荐首聊路径。
+- RG-001、RG-007、RG-008 相关命令通过或把环境性 residual 明确记录。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交 harness review，等待人工确认。

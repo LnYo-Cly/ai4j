@@ -1,13 +1,14 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-06-06
+> Last updated: 2026-06-07
 > Single source of truth for active delivery work in this repository.
 
 ## Active Features
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-022 | 首聊可复制代码合同 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md` | same checkout | pending RG-001/RG-005/RG-008 verification and walkthrough | 2026-06-06 |
+| F-023 | 轻量 ChatClient 首聊门面 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md` | same checkout | implementation and RG-001/RG-007/RG-008 passed; pending explicit human review confirmation | 2026-06-07 |
+| F-022 | 首聊可复制代码合同 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md` | same checkout | implementation and gates passed; pending explicit human review confirmation | 2026-06-07 |
 
 ## Completed Features
 

@@ -7,7 +7,7 @@
 这一页的目标不是把全部模型调用细节一次讲完，而是先让你知道：
 
 - 为什么第一次接入建议先从 `Chat` 开始
-- 一条最小聊天调用链路到底由哪些对象组成
+- 第一条聊天请求的最短写法，以及它背后的对象链
 - 跑通后应该继续看 `Chat`、还是转去 `Responses`
 
 ## 1. 为什么第一次接入先看 `Chat`
@@ -25,7 +25,18 @@ AI4J 里最常用的模型调用主线有两条：
 
 换句话说，`Chat` 更像“先把第一条链路跑通”，而 `Responses` 更像“进入更细的事件模型”。
 
-## 2. 先记住这条最小链路
+## 2. 第一条请求先用短路径
+
+如果只是跑通第一条同步请求，先用 `ChatClient`：
+
+```java
+String text = ChatClient.openAi(System.getenv("OPENAI_API_KEY"))
+        .chat("gpt-4o-mini", "用一句话介绍 AI4J");
+```
+
+这段代码的价值是把“依赖、密钥、provider、请求、文本读取”一次跑通。
+
+## 3. 再记住背后的完整链路
 
 ```text
 Configuration
@@ -44,7 +55,7 @@ Configuration
 
 就不会乱。
 
-## 3. 最短 `Chat` 示例
+## 4. 完整对象链里的 `Chat` 示例
 
 完整可运行版本见 [5 分钟首聊](/docs/start-here/five-minute-first-chat) 和 [Quickstart for Java](/docs/start-here/quickstart-java)。这里只保留核心请求片段：
 
@@ -64,7 +75,7 @@ String text = resp.getChoices().get(0).getMessage().getContent().getText();
 - 响应对象已经成功返回
 - 你已经知道最短的文本结果从哪里读出来
 
-## 4. 什么情况下继续留在 `Chat`
+## 5. 什么情况下继续留在 `Chat`
 
 继续读 `Chat` 主线通常是因为你现在更关心：
 
@@ -79,7 +90,7 @@ String text = resp.getChoices().get(0).getMessage().getContent().getText();
 - [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 - [Core SDK / Model Access / Streaming](/docs/core-sdk/model-access/streaming)
 
-## 5. 什么情况下看 `Responses`
+## 6. 什么情况下看 `Responses`
 
 当你需要：
 
@@ -94,7 +105,7 @@ String text = resp.getChoices().get(0).getMessage().getContent().getText();
 - [Core SDK / Model Access / Responses](/docs/core-sdk/model-access/responses)
 - [Core SDK / Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
 
-## 6. 推荐阅读顺序
+## 7. 推荐阅读顺序
 
 如果你还没跑通过，先读：
 
