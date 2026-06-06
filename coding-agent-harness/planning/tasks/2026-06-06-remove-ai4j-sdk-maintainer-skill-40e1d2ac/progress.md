@@ -46,3 +46,14 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-06 13:12] - review-finding-fix
+
+- 做了什么：修复 review 发现的 Plain Java 首聊体验缺口：`Configuration` 默认创建 `OkHttpClient`，新增 `ConfigurationTest`，并更新 `ai4j-app-builder` recipe 说明默认 client 与可选自定义 client 的边界。
+- 验证结果：实现已通过窄测、core module 回归、monorepo package smoke 和 Skill 校验。
+- 下一步：更新 review/walkthrough 后提交本地 commit，继续等待人工确认；远程 push 不执行。
+- 证据：command:ai4j:mvn -pl ai4j -Dtest=ConfigurationTest -DskipTests=false test passed
+- 证据：command:ai4j:mvn -pl ai4j -am -DskipTests=false test passed, 101 tests
+- 证据：command:.:mvn -DskipTests package passed, 9 reactor modules
+- 证据：command:skills/ai4j-app-builder:quick_validate.py passed
+- 证据：command:.:git diff --check passed

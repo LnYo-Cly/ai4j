@@ -4,6 +4,12 @@
 
 No open material findings.
 
+## Closed Findings
+
+| ID | Severity | Finding | Resolution | Evidence |
+| --- | --- | --- | --- | --- |
+| F-001 | P2 | `ai4j-app-builder` 的 Plain Java 首聊示例只设置 provider config，但 core SDK 的 `OpenAiChatService` 需要 `Configuration` 提供 `OkHttpClient`，小白用户复制示例可能遇到空指针。 | `Configuration` 默认创建 `OkHttpClient`；recipe 补充 `Configuration`、`OpenAiConfig` imports，并说明只有自定义超时、代理、拦截器或连接设置时才覆盖 client。 | `ConfigurationTest`、`mvn -pl ai4j -am -DskipTests=false test`、`mvn -DskipTests package`、`quick_validate.py skills\ai4j-app-builder` |
+
 ## Decisions
 
 ### Remove Maintainer Skill
@@ -13,6 +19,10 @@ No open material findings.
 ### Keep Historical Evidence
 
 Historical task artifacts that mention `$ai4j-sdk` are retained as records of prior work. Active public entry points are cleaned instead.
+
+### Fix Runtime Prerequisite At SDK Layer
+
+Plain Java onboarding should not require users to remember infrastructure wiring that the SDK can safely default. `Configuration` now owns a default `OkHttpClient`, while Spring Boot starter and advanced users can still override it.
 
 ## Residual Risk
 

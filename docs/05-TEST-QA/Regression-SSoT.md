@@ -1,6 +1,6 @@
 # Regression SSoT - ai4j-sdk
 
-> Last updated: 2026-06-04
+> Last updated: 2026-06-06
 > Control tower for fixed regression surfaces in the `ai4j-sdk` monorepo.
 
 ## Regression Layers
@@ -17,13 +17,13 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |
 |----|--------|---------|-------------------|---------|----------------|---------------|-------|
-| RG-001 | 🟢 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 pass | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; provider-dependent tests are excluded from default runs by `LiveProviderTest` category |
+| RG-001 | 🟢 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-06 pass | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; provider-dependent tests are excluded from default runs by `LiveProviderTest` category |
 | RG-002 | 🔴 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 fail | agent runtime, workflow, memory, trace, subagent/team orchestration; current blocker is R-008 in `HandoffPolicyTest` |
 | RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 partial | direct coding module test passed; full `-am` evidence is blocked by upstream RG-002/R-008 |
 | RG-004 | 🟡 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | terminal host, session runtime, ACP, rendering, provider/model command behavior with fake/local clients |
 | RG-005 | 🟡 | Spring Boot starter | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | auto-configuration and config binding |
 | RG-006 | 🟡 | FlowGram starter and task APIs | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | FlowGram runtime facade, controller, task store, trace bridge; local fixture tests are the default baseline |
-| RG-007 | 🟡 | monorepo package build | `mvn -DskipTests package` | PR, merge-batch, shared build change | L2 local_smoke | ci-wired-pending-first-run | cross-module packaging and dependency alignment; automated on Java PRs via `.github/workflows/java-regression.yml` |
+| RG-007 | 🟢 | monorepo package build | `mvn -DskipTests package` | PR, merge-batch, shared build change | L2 local_smoke | 2026-06-06 pass | cross-module packaging and dependency alignment; automated on Java PRs via `.github/workflows/java-regression.yml` |
 | RG-008 | 🟢 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | touched-surface, docs PR/push, merge-batch | L2 local_smoke | 2026-04-29 pass | use `NODE_OPTIONS=--max-old-space-size=8192` locally if typecheck/build hits heap pressure |
 | RG-009 | 🟡 | FlowGram webapp demo build | `npm run lint`, `npm run ts-check`, then `npm run build` in `ai4j-flowgram-webapp-demo/` | touched-surface, merge-batch | L2 local_smoke | bootstrap-mapped | current `npm test` is a stub; lint/type/build are the baseline until real tests exist |
 

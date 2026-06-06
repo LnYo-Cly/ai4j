@@ -32,11 +32,14 @@ String text = response.getChoices().get(0).getMessage().getContent().getText();
 
 Implementation notes:
 
+- Import `io.github.lnyocly.ai4j.service.Configuration`.
+- Import `io.github.lnyocly.ai4j.config.OpenAiConfig`.
 - Import `io.github.lnyocly.ai4j.service.factory.AiService`.
 - Import `io.github.lnyocly.ai4j.service.IChatService`.
 - Import `io.github.lnyocly.ai4j.service.PlatformType`.
 - Import `io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion`, `ChatCompletionResponse`, and `ChatMessage`.
 - Use the provider config class that matches the provider.
+- Plain Java can start with AI4J's default `OkHttpClient`; only call `configuration.setOkHttpClient(...)` when the app needs custom timeout, proxy, interceptor, or connection settings.
 
 ## Spring Boot Chat Endpoint
 
