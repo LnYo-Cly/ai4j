@@ -113,3 +113,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自新增本地 smoke tests、core/starter 全量模块门禁、docs-site build/typecheck、monorepo package smoke 和回归台账同步。该任务不做发布或 live provider 验证；人工确认仍是最终门禁。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606061053 |
+| Submitted At | 2026-06-06 10:53 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-06-item-885d365a |
+| Materials Checklist Hash | 72b721d0ad872c7c |
+| Evidence Summary | First-chat copyable code contract is implemented and verified: core/starter smoke tests added, docs-site and ai4j-app-builder guards updated, RG-001/RG-005/RG-007/RG-008 passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a |

@@ -1,6 +1,6 @@
 # 首聊可复制代码合同 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -66,3 +66,10 @@
 - 证据：command:TARGET:docs-site:NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck passed
 - 证据：command:TARGET:docs-site:NODE_OPTIONS=--max-old-space-size=8192 npm run build passed and generated docs-site/build
 - 证据：command:TARGET:.:mvn -DskipTests package passed across 9 reactor modules
+
+### [2026-06-06 10:53] - task-review
+
+- 做了什么：First-chat copyable code contract is implemented and verified: core/starter smoke tests added, docs-site and ai4j-app-builder guards updated, RG-001/RG-005/RG-007/RG-008 passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
