@@ -1,6 +1,6 @@
 # 5 分钟首聊主路径文档 - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -74,3 +74,10 @@
 - 验证结果：待重新运行 harness status。
 - 下一步：提交材料修复并确认 review queue 状态。
 - 证据：review:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/review.md:ARS-202606060725 material repair
+
+### [2026-06-06 10:12] - task-complete
+
+- 做了什么：Human review confirmed; closing out 5-minute first chat docs path.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
