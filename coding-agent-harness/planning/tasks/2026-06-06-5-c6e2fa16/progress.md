@@ -1,6 +1,6 @@
 # 5 分钟首聊主路径文档 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -67,3 +67,10 @@
 - 验证结果：`git diff --check` 通过；public onboarding files 没有旧 `2.1.0` 依赖版本；公开 docs/README/skills 没有 `$ai4j-sdk` surface；旧数字文件名只保留在任务 findings/progress 作为已修复构建失败的审计记录；`npx --yes coding-agent-harness status --json .` 0 failures、1 warning，warning 是当前任务未提交导致的 dirty-state。
 - 下一步：提交前重新运行 harness status，确认 dirty warning 消失或只剩预期状态。
 - 证据：command:TARGET:git diff --check passed; command:TARGET:npx --yes coding-agent-harness status --json . returned failures=0 warning=dirty-state
+
+### [2026-06-06 07:25] - task-review
+
+- 做了什么：5 分钟首聊主路径已完成；docs-site typecheck/build 通过，review packet ready for human confirmation.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

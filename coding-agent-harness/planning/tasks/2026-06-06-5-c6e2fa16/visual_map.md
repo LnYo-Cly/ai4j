@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-06-5-c6e2fa16` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | docs-site 首聊主路径、Quickstart、README 和 RG-008 验证已完成 | diff、commands、RG-008 evidence | `harness task-phase 2026-06-06-5-c6e2fa16 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-06-5-c6e2fa16 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-06-5-c6e2fa16 --message "<summary>"` | agent | present | [risk] | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-06-5-c6e2fa16 --confirm 2026-06-06-5-c6e2fa16` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
