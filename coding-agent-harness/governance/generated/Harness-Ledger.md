@@ -27,7 +27,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | HL-2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac | task | none | remove ai4j sdk maintainer skill | closed | none | coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/task_plan.md | pending | pending | pending | Human review confirmed; closing out skill surface cleanup and Plain Java onboarding fix. | 2026-06-06 |
 | HL-2026-06-06-5-c6e2fa16 | task | none | 5 分钟首聊主路径文档 | closed | none | coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/task_plan.md | pending | pending | pending | Human review confirmed; closing out 5-minute first chat docs path. | 2026-06-06 |
 | HL-2026-06-06-item-885d365a | task | none | 首聊可复制代码合同 | review | none | coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md | coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/review.md | pending | pending | First-chat copyable code contract is implemented and verified: core/starter smoke tests added, docs-site and ai4j-app-builder guards updated, RG-001/RG-005/RG-007/RG-008 passed. | 2026-06-06 |
-| HL-2026-06-07-chatclient-d5f84742 | task | none | 轻量 ChatClient 首聊门面 | planned | none | coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-07 |
+| HL-2026-06-07-chatclient-d5f84742 | task | none | 轻量 ChatClient 首聊门面 | active | none | coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md | pending | pending | pending | 开始实现轻量 ChatClient 首聊门面，目标是降低 Plain Java 第一条请求的接入成本，同时保留 AiService/IChatService 完整能力。 | 2026-06-07 |
 
 ## Field Rules
 
