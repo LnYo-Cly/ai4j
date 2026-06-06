@@ -1,6 +1,6 @@
 # remove ai4j sdk maintainer skill - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -57,3 +57,10 @@
 - 证据：command:.:mvn -DskipTests package passed, 9 reactor modules
 - 证据：command:skills/ai4j-app-builder:quick_validate.py passed
 - 证据：command:.:git diff --check passed
+
+### [2026-06-06 06:22] - task-complete
+
+- 做了什么：Human review confirmed; closing out skill surface cleanup and Plain Java onboarding fix.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
