@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | d5613a064c1da4da9044c0d78c7d8c972c78dfbd |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复确认，确认 review packet 和修复证据通过。 |
 | Migration Status | native |
