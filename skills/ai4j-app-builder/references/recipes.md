@@ -40,6 +40,7 @@ Implementation notes:
 - Import `io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion`, `ChatCompletionResponse`, and `ChatMessage`.
 - Use the provider config class that matches the provider.
 - Plain Java can start with AI4J's default `OkHttpClient`; only call `configuration.setOkHttpClient(...)` when the app needs custom timeout, proxy, interceptor, or connection settings.
+- In this repository, the copyable Plain Java first-chat path is guarded by `mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test`.
 
 ## Spring Boot Chat Endpoint
 
@@ -92,6 +93,14 @@ public class AiChatController {
     }
 }
 ```
+
+Repository guard:
+
+```bash
+mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest -DskipTests=false test
+```
+
+Use this as a maintenance check when changing the Spring Boot first-chat recipe, starter config binding, or `AiService` creation path.
 
 ## Streaming Chat
 

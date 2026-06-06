@@ -102,6 +102,14 @@ Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionRe
 
 先理解这条链，后面看流式、多模态、Tool、MCP、RAG 都会更顺。
 
+本段普通 Java 首聊链路由仓库内的本地回归保护：
+
+```bash
+mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test
+```
+
+这条命令不读取真实 API Key，也不访问真实 provider；它验证默认 `OkHttpClient`、`AiService` 创建、OpenAI-compatible 请求路径、鉴权头和返回文本读取链路。
+
 ## 4. Spring Boot：最小依赖
 
 ```xml
@@ -186,6 +194,14 @@ curl "http://localhost:8080/ai/chat?q=%E7%94%A8%E4%B8%80%E5%8F%A5%E8%AF%9D%E4%BB
 ```
 
 如果返回非空文本，说明 starter、配置绑定、Bean 注入和第一条模型请求都已打通。
+
+本段 Spring Boot 首聊链路由仓库内的本地回归保护：
+
+```bash
+mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest -DskipTests=false test
+```
+
+这条命令验证 `ai.openai.*` 配置能进入 `AiService`，并能创建 `PlatformType.OPENAI` 对应的 `IChatService`。
 
 ## 7. 让 agent 帮你接入
 

@@ -135,7 +135,17 @@ curl "http://localhost:8080/ai/chat?q=%E7%94%A8%E4%B8%80%E5%8F%A5%E8%AF%9D%E4%BB
 
 成功时你会看到一段模型返回文本。这个结果说明 starter 接入链路已经成立。
 
-## 8. 常见失败点
+## 8. 本页示例的回归合同
+
+本页的 starter 首聊注入链路由本仓库测试保护：
+
+```bash
+mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest -DskipTests=false test
+```
+
+这条命令不访问真实 provider。它验证 `ai.openai.api-key` 和 `ai.openai.api-host` 能绑定进 `AiService` 的 `Configuration`，并能创建 `PlatformType.OPENAI` 对应的 `IChatService`。真实请求仍然需要有效密钥、网络和可用模型。
+
+## 9. 常见失败点
 
 | 现象 | 先检查什么 |
 | --- | --- |
@@ -145,7 +155,7 @@ curl "http://localhost:8080/ai/chat?q=%E7%94%A8%E4%B8%80%E5%8F%A5%E8%AF%9D%E4%BB
 | 请求超时 | 网络、代理、provider 可访问性 |
 | controller 返回异常栈 | 先在 service 层捕获并记录 provider 错误，再决定是否做统一异常映射 |
 
-## 9. 什么时候不用 starter
+## 10. 什么时候不用 starter
 
 下面这些场景可以直接用 `ai4j`：
 
@@ -154,7 +164,7 @@ curl "http://localhost:8080/ai/chat?q=%E7%94%A8%E4%B8%80%E5%8F%A5%E8%AF%9D%E4%BB
 - 你只想在 CLI、测试或小工具里发一次请求
 - 你要完全自己管理 `Configuration` 和 `OkHttpClient`
 
-## 10. 跑通之后
+## 11. 跑通之后
 
 - 想看底层 `Chat` 调用语义：看 [First Chat](/docs/start-here/first-chat)
 - 想配置更多 provider：看 [Spring Boot / Configuration Reference](/docs/spring-boot/configuration-reference)

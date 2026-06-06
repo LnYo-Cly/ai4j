@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:first-chat-contract-recorded-in-regression-ssot |
 | Source task | 2026-06-06-item-885d365a |
 | Owner | coordinator |
 | Last updated | 2026-06-06 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务的可复用结论已直接固化到 `docs/05-TEST-QA/Regression-SSoT.md`、`docs/05-TEST-QA/Cadence-Ledger.md`、docs-site 和 `ai4j-app-builder` recipe；不需要额外提升为共享 lesson。
 
 ## Promotion Notes
 
