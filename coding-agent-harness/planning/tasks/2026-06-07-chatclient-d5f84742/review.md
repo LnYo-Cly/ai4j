@@ -103,3 +103,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 core facade 的本地 MockWebServer 测试、core 全量测试、9 模块 package、docs-site typecheck/build、回归 SSoT/Cadence 记录，以及无 open material finding 的 self-review。人工确认仍是任务最终关闭前的必需门禁。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606061829 |
+| Submitted At | 2026-06-06 18:29 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-07-chatclient-d5f84742 |
+| Materials Checklist Hash | af744fa1629752c1 |
+| Evidence Summary | ChatClient facade, docs, skill recipe, and RG-001/RG-007/RG-008 evidence are ready for human review. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742 |

@@ -1,6 +1,6 @@
 # 轻量 ChatClient 首聊门面 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -73,3 +73,10 @@
 - Registry update needed：core-sdk/docs-site touched; no module plan status change required
 - Harness Ledger update needed：task-review 后由 lifecycle / governance rebuild 刷新
 - 负责人：coordinator
+
+### [2026-06-06 18:29] - task-review
+
+- 做了什么：ChatClient facade, docs, skill recipe, and RG-001/RG-007/RG-008 evidence are ready for human review.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
