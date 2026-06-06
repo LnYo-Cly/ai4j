@@ -1,6 +1,6 @@
 # 首聊可复制代码合同 - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-06 10:33] - task-start
+
+- 做了什么：开始为首聊 public docs 和 ai4j-app-builder 示例建立可复制代码回归合同。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
