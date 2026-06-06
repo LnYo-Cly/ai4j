@@ -2,6 +2,8 @@
 
 先把第一条聊天链路打通，再去看工具、MCP、Agent。
 
+如果你还没有跑过代码，先走 [5 分钟首聊](/docs/start-here/five-minute-first-chat)。本页继续解释 `Chat` 主线的对象边界和后续阅读方向。
+
 这一页的目标不是把全部模型调用细节一次讲完，而是先让你知道：
 
 - 为什么第一次接入建议先从 `Chat` 开始
@@ -43,6 +45,8 @@ Configuration
 就不会乱。
 
 ## 3. 最短 `Chat` 示例
+
+完整可运行版本见 [5 分钟首聊](/docs/start-here/five-minute-first-chat) 和 [Quickstart for Java](/docs/start-here/quickstart-java)。这里只保留核心请求片段：
 
 ```java
 ChatCompletion req = ChatCompletion.builder()
@@ -91,6 +95,11 @@ String text = resp.getChoices().get(0).getMessage().getContent().getText();
 - [Core SDK / Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
 
 ## 6. 推荐阅读顺序
+
+如果你还没跑通过，先读：
+
+1. [5 分钟首聊](/docs/start-here/five-minute-first-chat)
+2. [Quickstart for Java](/docs/start-here/quickstart-java) 或 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
 
 如果你已经跑通第一条聊天链路，推荐顺序是：
 

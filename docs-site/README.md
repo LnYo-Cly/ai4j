@@ -18,6 +18,13 @@ npm run build
 npm run serve
 ```
 
+## 新用户入口
+
+- 先跑通第一条模型请求：`docs/start-here/five-minute-first-chat.md`
+- 普通 Java 细分路径：`docs/start-here/quickstart-java.md`
+- Spring Boot 细分路径：`docs/start-here/quickstart-spring-boot.md`
+- 能力边界与继续阅读：`docs/start-here/feature-map.md`
+
 ## AI4J App Builder Skill
 
 如果使用支持 Skills 的 agent 工具，可以安装本仓库提供的 `ai4j-app-builder` Skill，让 AI 更低成本地配合你在 Java / Spring Boot 项目里使用 AI4J：选择依赖、配置 provider、编写最小可运行代码，并给出验证命令。
@@ -29,6 +36,12 @@ npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder
 安装后可以这样调用：
 
 ```text
+Use $ai4j-app-builder to add AI4J first chat to my Java 8 Maven project. Use env vars for secrets, choose the smallest dependency, create a runnable first-chat slice, and give me the verification command.
+```
+
+Spring Boot 项目可以这样调用：
+
+```text
 Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpoint, and verify it without hardcoding secrets.
 ```
 
@@ -37,12 +50,15 @@ Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpo
 ## 文档目录结构
 
 - `docs/`
-  - `getting-started/`：接入与排障
-  - `guides/`：场景实践
+  - `start-here/`：首聊、路径选择、Quickstart、功能地图
+  - `core-sdk/`：模型接入、Tool、Skill、MCP、Memory、RAG、扩展
+  - `spring-boot/`：starter、配置、自动装配和 Bean 扩展
   - `mcp/`：MCP 能力与治理
   - `agent/`：智能体架构、编排与可观测
+  - `coding-agent/`：Coding Agent CLI / TUI / ACP 与本地会话
+  - `flowgram/`：FlowGram 后端集成和工作流运行
+  - `solutions/`：场景组合路径
   - `deploy/`：文档站部署运维
-- `blog/`：发布动态与演进记录
 - `src/pages/`：首页与自定义页面
 - `src/theme/NotFound/`：自定义中文 404 页面
 

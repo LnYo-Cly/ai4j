@@ -15,6 +15,7 @@ AI4J 是一套面向 `Java 8+` 的 AI SDK。它不是一个要求全量采用的
 
 | 目标 | 推荐入口 | 你会得到什么 |
 | --- | --- | --- |
+| 5 分钟跑通第一条 AI 请求 | [5 分钟首聊](/docs/start-here/five-minute-first-chat) | 普通 Java / Spring Boot 的最短成功路径、密钥配置、验证标准和 agent skill 安装方式 |
 | 普通 Java 项目先跑通 | [Quickstart for Java](/docs/start-here/quickstart-java) | 最小依赖、配置和第一段调用代码 |
 | Spring Boot 项目接入 | [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) | starter、配置项和 Bean 注入方式 |
 | 先看完整能力边界 | [Feature Map](/docs/start-here/feature-map) | AI4J 当前能力、成熟度和继续阅读路径 |
@@ -75,5 +76,5 @@ AI4J 文档会刻意区分三类能力：
 
 这些模块不是为了展示目录规模，而是为了让使用者只引入当下需要的能力，并保留向上升级的空间。
 
-下一步建议：如果你还没跑过代码，直接看 [Quickstart for Java](/docs/start-here/quickstart-java)；
+下一步建议：如果你还没跑过代码，直接看 [5 分钟首聊](/docs/start-here/five-minute-first-chat)；
 如果你想先判断 AI4J 是否适合自己的项目，看 [Why AI4J](/docs/start-here/why-ai4j)。

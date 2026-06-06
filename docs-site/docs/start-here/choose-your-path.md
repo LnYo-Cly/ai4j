@@ -14,10 +14,11 @@
 
 1. [Why AI4J](/docs/start-here/why-ai4j)
 2. [Architecture at a Glance](/docs/start-here/architecture-at-a-glance)
-3. [Quickstart for Java](/docs/start-here/quickstart-java) 或 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
-4. [First Chat](/docs/start-here/first-chat)
-5. [First Tool Call](/docs/start-here/first-tool-call)
-6. [Core SDK / Overview](/docs/core-sdk/overview)
+3. [5 分钟首聊](/docs/start-here/five-minute-first-chat)
+4. [Quickstart for Java](/docs/start-here/quickstart-java) 或 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+5. [First Chat](/docs/start-here/first-chat)
+6. [First Tool Call](/docs/start-here/first-tool-call)
+7. [Core SDK / Overview](/docs/core-sdk/overview)
 
 这条线最适合：
 
@@ -31,9 +32,10 @@
 
 从这里开始：
 
-1. [Quickstart for Java](/docs/start-here/quickstart-java)
-2. [First Chat](/docs/start-here/first-chat)
-3. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
+1. [5 分钟首聊](/docs/start-here/five-minute-first-chat)
+2. [Quickstart for Java](/docs/start-here/quickstart-java)
+3. [First Chat](/docs/start-here/first-chat)
+4. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
 
 这条线会先让你确认三件事：
 
@@ -45,9 +47,10 @@
 
 从这里开始：
 
-1. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
-2. [Spring Boot / 总览](/docs/spring-boot/overview)
-3. [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
+1. [5 分钟首聊](/docs/start-here/five-minute-first-chat)
+2. [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+3. [Spring Boot / 总览](/docs/spring-boot/overview)
+4. [Spring Boot / Auto Configuration](/docs/spring-boot/auto-configuration)
 
 这条线优先回答：
 

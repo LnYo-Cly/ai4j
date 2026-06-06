@@ -60,7 +60,7 @@ AI4J 更适合把差异放在这些地方：
 ### 1. 普通 Java 也能先接入
 
 你不需要先把项目改造成某个完整应用框架，也不需要一开始就理解 Agent、workflow 或复杂编排。
-从 [Quickstart for Java](/docs/start-here/quickstart-java) 开始，可以先验证模型配置和一次调用。
+从 [5 分钟首聊](/docs/start-here/five-minute-first-chat) 开始，可以先验证模型配置和一次调用。
 
 如果项目已经是 Spring Boot，再走 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)，
 用 starter 管理配置和 Bean。
@@ -138,6 +138,7 @@ AI4J 不太适合：
 
 | 你现在想做什么 | 下一页 |
 | --- | --- |
+| 5 分钟跑通第一条请求 | [5 分钟首聊](/docs/start-here/five-minute-first-chat) |
 | 普通 Java 先跑通 | [Quickstart for Java](/docs/start-here/quickstart-java) |
 | Spring Boot 接入 | [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) |
 | 看完整功能地图 | [Feature Map](/docs/start-here/feature-map) |

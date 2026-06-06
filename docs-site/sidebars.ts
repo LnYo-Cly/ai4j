@@ -10,6 +10,7 @@ const sidebars: SidebarsConfig = {
         'start-here/why-ai4j',
         'start-here/architecture-at-a-glance',
         'start-here/choose-your-path',
+        'start-here/five-minute-first-chat',
         'start-here/feature-map',
         'start-here/documentation-map',
         'start-here/quickstart-java',

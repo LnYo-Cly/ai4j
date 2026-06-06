@@ -92,17 +92,26 @@
 ## 官方文档站
 + 在线文档站：`https://lnyo-cly.github.io/ai4j/`
 + 文档站源码位于 `docs-site/`
-+ 适合直接使用者的入口：`docs-site/docs/coding-agent/`
-+ 适合 SDK 接入的入口：`docs-site/docs/getting-started/` 与 `docs-site/docs/ai-basics/`
-+ 适合协议与扩展集成的入口：`docs-site/docs/mcp/`、`docs-site/docs/agent/`
++ 5 分钟跑通第一条请求：`docs-site/docs/start-here/five-minute-first-chat.md`
++ 普通 Java 接入：`docs-site/docs/start-here/quickstart-java.md`
++ Spring Boot 接入：`docs-site/docs/start-here/quickstart-spring-boot.md`
++ 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
++ 协议、Agent 与上层集成：`docs-site/docs/mcp/`、`docs-site/docs/agent/`、`docs-site/docs/coding-agent/`、`docs-site/docs/flowgram/`
 
 推荐阅读顺序：
 
 + `docs-site/docs/intro.md`
-+ `docs-site/docs/getting-started/installation.md`
-+ `docs-site/docs/coding-agent/overview.md`
-+ `docs-site/docs/ai-basics/overview.md`
++ `docs-site/docs/start-here/five-minute-first-chat.md`
++ `docs-site/docs/start-here/quickstart-java.md` 或 `docs-site/docs/start-here/quickstart-spring-boot.md`
++ `docs-site/docs/start-here/first-chat.md`
++ `docs-site/docs/core-sdk/overview.md`
 + `docs-site/docs/mcp/overview.md`
+
+如果使用支持 Skills 的 agent 工具，可以安装用户侧接入 Skill：
+
+```bash
+npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder
+```
 
 基础会话上下文新增入口：
 

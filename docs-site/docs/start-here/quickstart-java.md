@@ -1,29 +1,31 @@
 # Quickstart for Java
 
-这一页是非 Spring 项目的最短接入路径。
+这页是普通 Java / Maven 项目的最短接入路径。如果你还没跑过任何代码，建议先看一遍 [5 分钟首聊](/docs/start-here/five-minute-first-chat)，再回到本页补普通 Java 细节。
 
-它对应的主模块是：
+本页对应的主模块是：
 
 - `ai4j/`
 
-这条路径的目标很明确：先在一个普通 Java / Maven 项目里，跑通第一条最小模型调用链路。
+目标很明确：不引入 Spring，不引入 Agent，不引入 RAG，先用一个 `main` 或测试方法跑通第一条同步 `Chat` 请求。
 
-## 1. 这条路径会先验证什么
+## 1. 这条路径会验证什么
 
-如果你按本页完成最小示例，你就能一次性确认：
+跑通后，你至少能确认：
 
-- 依赖是否已经接对
-- provider 配置是否已经生效
-- `AiService` 是否已经初始化成功
-- `IChatService` 是否能够发出第一条同步请求
+- Maven 依赖声明正确
+- API Key 从环境变量读取
+- provider config 已经放进 `Configuration`
+- `AiService` 可以创建 `IChatService`
+- `ChatCompletionResponse` 可以读出返回文本
 
-它还不会解决的事情包括：
+它暂时不解决：
 
-- Spring 容器集成
+- Spring Boot 自动配置
 - Tool / Function Call
 - `Responses`
-- `MCP`
+- MCP
 - Agent runtime
+- RAG / VectorStore
 
 ## 2. 最小依赖
 
@@ -31,84 +33,121 @@
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.1.0</version>
+  <version>2.3.0</version>
 </dependency>
 ```
 
-如果你会同时引多个 AI4J 模块，建议直接上 `ai4j-bom`。
+如果项目会同时引入多个 AI4J 模块，再使用 `ai4j-bom` 做版本对齐；第一次首聊不需要先上 BOM。
 
-## 3. 环境基线
+## 3. 设置环境变量
 
-- JDK `1.8+`
-- Maven `3.8+`
-- 网络可访问目标 provider
+PowerShell:
 
-## 4. 初始化 `AiService`
+```powershell
+$env:OPENAI_API_KEY="sk-..."
+```
 
-最小思路是：
+Bash:
 
-1. 构造 provider 配置
-2. 构造统一 `Configuration`
-3. 用 `AiService` 拿到目标能力接口
+```bash
+export OPENAI_API_KEY="sk-..."
+```
 
-也就是说，本页真正想让你先建立的心智模型是：
+不要把密钥写进 Java 文件、Git 跟踪的配置文件或 README 示例。
+
+## 4. 最小对象链
+
+普通 Java 接入时，先记住这一条链：
 
 ```text
 Configuration
     -> AiService
         -> IChatService
+            -> ChatCompletion
+                -> ChatCompletionResponse
 ```
 
-最小示例如下：
+`Configuration` 放 provider 配置；`AiService` 是服务工厂；`IChatService` 负责 `Chat` 请求；`ChatCompletionResponse` 是返回对象。
+
+## 5. 可复制代码
 
 ```java
-OpenAiConfig openAiConfig = new OpenAiConfig();
-openAiConfig.setApiKey(System.getenv("OPENAI_API_KEY"));
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
 
-Configuration configuration = new Configuration();
-configuration.setOpenAiConfig(openAiConfig);
+public class Ai4jFirstChat {
+    public static void main(String[] args) throws Exception {
+        String apiKey = System.getenv("OPENAI_API_KEY");
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalStateException("Missing OPENAI_API_KEY");
+        }
 
-AiService aiService = new AiService(configuration);
-IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiKey(apiKey);
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        AiService aiService = new AiService(configuration);
+        IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        ChatCompletion request = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("用一句话介绍 AI4J"))
+                .build();
+
+        ChatCompletionResponse response = chatService.chatCompletion(request);
+        String text = response.getChoices().get(0).getMessage().getContent().getText();
+        System.out.println(text);
+    }
+}
 ```
 
-## 5. 首个同步请求
+## 6. 关于 `OkHttpClient`
 
-```java
-ChatCompletion req = ChatCompletion.builder()
-        .model("gpt-4o-mini")
-        .message(ChatMessage.withUser("用一句话介绍 AI4J"))
-        .build();
+AI4J 的 `Configuration` 默认已经带有 `OkHttpClient`，普通 Java 首聊不需要先手动创建客户端。
 
-ChatCompletionResponse resp = chatService.chatCompletion(req);
-String text = resp.getChoices().get(0).getMessage().getContent().getText();
-System.out.println(text);
-```
+只有在下面这些情况，才需要调用 `configuration.setOkHttpClient(...)`：
 
-这一步跑通之后，说明你已经验证了最核心的 SDK 主线：
+- 要配置代理
+- 要调整超时
+- 要加拦截器
+- 要复用应用已有的连接池或网络栈
 
-- 模型配置
-- 服务获取
-- 请求构造
-- 响应读取
+第一次首聊建议先用默认客户端，减少变量。
 
-## 6. 跑通之后应该看什么
+## 7. 换 provider 时改哪里
 
-如果你的目标是继续理解模型调用主线，推荐顺序是：
+| 你要换什么 | 需要改的地方 |
+| --- | --- |
+| OpenAI-compatible endpoint | `OpenAiConfig#setApiHost(...)`、模型名、API Key |
+| DeepSeek | 使用 `DeepSeekConfig`，并改为 `PlatformType.DEEPSEEK` |
+| Moonshot | 使用 `MoonshotConfig`，并改为 `PlatformType.MOONSHOT` |
+| DashScope | 使用 `DashScopeConfig`，并改为 `PlatformType.DASHSCOPE` |
+| Ollama | 使用 `OllamaConfig`，并改为 `PlatformType.OLLAMA` |
 
-1. [First Chat](/docs/start-here/first-chat)
-2. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
-3. [Core SDK / Chat](/docs/core-sdk/model-access/chat)
-4. [Core SDK / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
+原则是：provider config class 和 `PlatformType` 要匹配。
 
-如果你的目标是继续理解整个基座结构，推荐顺序是：
+## 8. 成功标准
 
-1. [First Chat](/docs/start-here/first-chat)
-2. [First Tool Call](/docs/start-here/first-tool-call)
-3. [Core SDK / Overview](/docs/core-sdk/overview)
-4. [Core SDK / Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+| 检查点 | 成功说明 |
+| --- | --- |
+| 项目能编译 | 依赖和 import 正确 |
+| 没有 `Missing OPENAI_API_KEY` | 当前运行环境能读到密钥 |
+| 没有 provider 鉴权错误 | API Key、host、模型名基本有效 |
+| 输出非空文本 | 第一条同步 `Chat` 链路已经成立 |
 
-如果这里没跑通，优先回看：
+如果只想先做本地编译检查，不想调用真实 provider，可以先写一个单元测试验证对象构造和依赖解析；真实模型请求仍然需要有效密钥和网络。
 
-- [Troubleshooting](/docs/start-here/troubleshooting)
-- [FAQ](/docs/faq)
+## 9. 跑通之后
+
+- 想接入 Spring Boot：看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+- 想理解 `Chat` 细节：看 [First Chat](/docs/start-here/first-chat)
+- 想让模型调用本地函数：看 [First Tool Call](/docs/start-here/first-tool-call)
+- 想继续看完整能力：看 [Feature Map](/docs/start-here/feature-map)

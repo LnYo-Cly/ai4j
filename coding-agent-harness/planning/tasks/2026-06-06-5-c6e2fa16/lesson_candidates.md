@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:task-local-docs-site-filename-finding |
 | Source task | 2026-06-06-5-c6e2fa16 |
 | Owner | coordinator |
 | Last updated | 2026-06-06 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务没有需要沉淀到共享治理层的经验候选。Docusaurus 数字前缀文件名行为已经作为 task-local finding 写入 `findings.md`，足够支撑本轮和后续相邻 docs-site 工作；暂不提升为全局 lesson。
 
 ## Promotion Notes
 
