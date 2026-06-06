@@ -19,14 +19,14 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | pending task-review command |
-| Submitted At | pending task-review command |
+| Submission ID | ARS-202606060725 |
+| Submitted At | 2026-06-06 07:25 |
 | Submitted By | agent |
-| Task Key | 2026-06-06-5-c6e2fa16 |
-| Materials Checklist Hash | pending task-review command |
+| Task Key | TASKS/2026-06-06-5-c6e2fa16 |
+| Materials Checklist Hash | dfe59a7c390e5c0c |
 | Evidence Summary | 5 分钟首聊页、Java/Spring Boot Quickstart、README/sidebar/Start Here 入口已更新；RG-008 typecheck/build 通过；Docusaurus 数字前缀文件名问题已修复。 |
 | Open Findings Count | 0 |
-| Scanner Version | pending task-review command |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
 
 ### Material Checklist（材料清单）
 
@@ -114,17 +114,3 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自当前源码包路径核对、Start Here 链接收敛、RG-008 typecheck/build 通过、`git diff --check` 通过，以及首轮 build 暴露问题后的修复回归。该任务仍需人工 review confirmation 后才能进入 done。
-
-## Agent Review Submission
-
-| Field | Value |
-| --- | --- |
-| Submission ID | ARS-202606060725 |
-| Submitted At | 2026-06-06 07:25 |
-| Submitted By | agent |
-| Task Key | TASKS/2026-06-06-5-c6e2fa16 |
-| Materials Checklist Hash | dfe59a7c390e5c0c |
-| Evidence Summary | 5 分钟首聊主路径已完成；docs-site typecheck/build 通过，review packet ready for human confirmation. |
-| Open Findings Count | 0 |
-| Scanner Version | task-scanner/2026-05-25-phase-kind |
-| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16 |

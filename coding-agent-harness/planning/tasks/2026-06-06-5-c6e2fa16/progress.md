@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 等待人工 review confirmation；Agent 不能代办人工确认。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：由 `task-review` 和后续 `review-confirm` / `task-complete` 同步
+- 负责人：coordinator
 
 ### [2026-06-06 06:58] - task-start
 
@@ -74,3 +67,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-06 15:27] - repair-review-materials
+
+- 做了什么：根据 `task-review` scanner 反馈，删除 `progress.md` 的模板示例进度段，修正 `visual_map.md` 的 GATE-01 风险占位，并把 CLI 生成的 ARS 信息合并到 `review.md` 主提交块。
+- 验证结果：待重新运行 harness status。
+- 下一步：提交材料修复并确认 review queue 状态。
+- 证据：review:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/review.md:ARS-202606060725 material repair
