@@ -7,13 +7,14 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-023 | 轻量 ChatClient 首聊门面 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md` | same checkout | implementation and RG-001/RG-007/RG-008 passed; pending explicit human review confirmation | 2026-06-07 |
-| F-022 | 首聊可复制代码合同 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md` | same checkout | implementation and gates passed; pending explicit human review confirmation | 2026-06-07 |
+| _none_ | _No active feature delivery after 2026-06-07 review closeout batch._ | 🟢 completed | n/a | n/a | n/a | 2026-06-07 |
 
 ## Completed Features
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-023 | 轻量 ChatClient 首聊门面 | 2026-06-07 | `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` |
+| F-022 | 首聊可复制代码合同 | 2026-06-07 | `docs/10-WALKTHROUGH/2026-06-06-first-chat-copyable-code-contract.md` |
 | F-021 | docs-site 5 分钟首聊主路径 | 2026-06-06 | `coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/walkthrough.md` |
 | F-020 | docs-site hard technical tone polish | 2026-04-29 | `docs/10-WALKTHROUGH/2026-04-29-docs-site-hard-technical-tone-polish.md` |
 | F-019 | docs-site residual polish | 2026-04-28 | `docs/10-WALKTHROUGH/2026-04-28-docs-site-residual-polish.md` |

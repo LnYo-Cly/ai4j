@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex | self | Feature SSoT closeout drift and repository-level walkthrough evidence |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：governance / regression
+- 范围内：`docs/09-PLANNING/Feature-SSoT.md`、`docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md`、本任务 harness package
+- 范围外：SDK 业务代码、docs-site 正文、provider live validation、远程提交
+- 来源材料：task plan、diff、`harness status --json .`、F-022/F-023 task walkthrough
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -46,11 +46,11 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：yes
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 无
+- Fix loop count：1
+- 当前结论：本轮只修正治理状态漂移，目标文件和验证命令足以覆盖风险。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -72,38 +72,41 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:docs/09-PLANNING/Feature-SSoT.md | F-022/F-023 从 Active Features 移到 Completed Features |
+| E-002 | diff | TARGET:docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md | F-023 仓库级 closeout 补齐 |
+| E-003 | command | TARGET:. | `npx --yes coding-agent-harness status --json .` 提交前仅 dirty-state warning，待提交后复核 |
+| E-004 | command | TARGET:. | `git diff --check` 无 whitespace error，仅 Windows LF/CRLF 提示 |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 本任务不重新验证 F-022/F-023 的业务代码，只校正已通过审查关闭后的治理索引 | coordinator | yes | 业务验证保留在原任务 progress/review/walkthrough |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料准备完成后提交审查，等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件均存在。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | 已记录 no-candidate accepted。 | n/a |
+| Confirmed / Finalized | no | 尚未人工确认。 | 人工确认后 closeout。 |
+| Soft-deleted / Superseded | no | 无 tombstone 或 superseded-by。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：见 `progress.md`
+- 发现记录：无
+- Regression SSoT：无；governance-only 修正
+- Lessons：checked-none: closeout-drift-cleanup-local-governance-fix
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自目标文件 diff、harness status、diff hygiene 和无重要发现 self-review。本任务不发布业务代码。

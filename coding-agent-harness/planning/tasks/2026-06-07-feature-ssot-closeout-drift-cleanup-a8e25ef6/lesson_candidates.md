@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: closeout-drift-cleanup-local-governance-fix |
 | Source task | 2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6 |
 | Owner | coordinator |
 | Last updated | 2026-06-07 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务是一次局部治理漂移修正：把已关闭 feature 从 Active Features 移到 Completed Features，并补齐缺失 closeout。现有 `execution-workflow-standard.md` 已覆盖 closeout 必须同步 Feature SSoT 和 walkthrough 的规则，不需要新增可复用 lesson。
 
 ## Promotion Notes
 
