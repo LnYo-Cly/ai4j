@@ -44,7 +44,7 @@ Task Package Index: required
 - [x] Java / Spring Boot / profile / OpenAI-compatible/TroveBox 路径可复制。
 - [x] 新增页面在 sidebar 中可达。
 - [x] `npm run build` 通过。
-- [ ] harness status 通过。
+- [x] harness status 通过。
 
 ## 工作树（Worktree）
 
