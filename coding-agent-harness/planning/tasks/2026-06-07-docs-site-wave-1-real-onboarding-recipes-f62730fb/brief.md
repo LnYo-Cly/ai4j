@@ -10,33 +10,34 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+完成 docs-site Wave 1 真实接入路径重写，让新用户能按真实 AI4J 对象链完成 Java、Spring Boot、多 profile 和中转平台接入。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，默认 docs-site 的首屏路径会围绕真实代码组织：普通 Java 使用 `Configuration -> AiService -> IChatService`，Spring Boot 使用 starter 注入 `AiService` / `AiServiceRegistry`，OpenAI-compatible/TroveBox 使用 `platform: openai` + `api-host` 配置，Tool/MCP/RAG/Memory 通过 recipe 组合。中文 i18n 暂不做同步重写，避免扩大范围。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：更新后的 docs-site onboarding / recipe 页面、task review、walkthrough
+- 修改位置：`docs-site/docs` 和当前 harness task package
+- 验证证据：`npm run build`、链接/文本扫描、`harness status --json .`
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `design.md`，再看修改后的 `docs-site/docs/start-here/*`、`spring-boot/*` 和 `core-sdk/service-entry-and-registry.md`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：canonical `docs-site/docs` 的首聊、Java quickstart、Spring Boot quickstart、service registry、中转平台/recipe 相关页面。
+- 范围外：Java API、docs-site i18n 全量同步、站点视觉重设计、远程推送。
+- 停止条件：若发现页面引用不存在 API 或 build 失败且无法定位，需要暂停修正设计。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+1. 首屏路径不再推荐不存在的 `ChatClient` 或隐藏式 `Ai4j.chat()`。
+2. Java / Spring Boot / OpenAI-compatible / profile / recipe 路径各有可复制入口。
+3. sidebars 中被新增或改动的路径能通过 docs-site build。
+4. 验证结果写入 `progress.md` 和 `walkthrough.md`。
 
 ## 执行合同
 
@@ -48,4 +49,4 @@
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+补设计文档，启动任务，改 canonical docs-site 页面。

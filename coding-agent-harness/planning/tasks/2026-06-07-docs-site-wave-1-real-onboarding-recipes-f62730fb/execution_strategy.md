@@ -7,7 +7,7 @@
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | reviewer subagent | allowed by default | read-only | harness task policy | task creation | current task review | n/a | allowed within this task |
-| worker subagent | not authorized | write only after user approval | pending | pending | pending | pending | allowed only within approved task/scope |
+| worker subagent | not-needed | n/a | coordinator | 2026-06-07 | docs-site canonical Wave 1 | same checkout | n/a |
 
 ## Subagent Delegation Decision
 
@@ -18,8 +18,8 @@
 
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | no | 范围集中在 docs-site 文档内容，self-review + build 足够。 | coordinator self-review。 |
+| Would a worker subagent materially help? | no | 页面数量有限，拆分会增加口径不一致风险。 | coordinator 直接执行。 |
 
 ## User Authorization Decision
 
@@ -28,18 +28,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-07 | docs-site canonical Wave 1 | same checkout | 不使用 worker。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
 | 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
+| Subagent 模式 | none | 不拆分。 |
+| 审查模型 | self-check + docs build | 文档内容以真实 API 和 build 为主要证据。 |
+| Worktree 策略 | same checkout | 单切片 docs 改动。 |
 | 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 证据深度 | L1 | docs build + 文本扫描。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,21 +47,17 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| n/a | C-001..C-005 | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | 文本扫描和 diff hygiene | `progress.md` | 无错误 API 推荐 |
+| L1 | `npm run build` in `docs-site` | `progress.md` | build pass |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
-- reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
-- 环境无法提供关键证据，继续执行会变成猜测。
+- 需要新增或修改 Java API。
+- docs-site build 出现无法快速定位的结构性问题。
+- 需要全量 i18n 同步。
