@@ -42,11 +42,11 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] `design.md` 明确升级原则、建议改动、拒绝项和实现波次。
-- [ ] `findings.md` 记录源码证据与 accepted decisions。
-- [ ] 设计覆盖 Plain Java、Spring Boot、多 provider/profile、中转平台、recipe 文档。
-- [ ] 明确哪些事项不需要新 API、哪些必须单独 API 评审。
-- [ ] `git diff --check` 与 `harness status --json .` 通过。
+- [x] `design.md` 明确升级原则、建议改动、拒绝项和实现波次。
+- [x] `findings.md` 记录源码证据与 accepted decisions。
+- [x] 设计覆盖 Plain Java、Spring Boot、多 provider/profile、中转平台、recipe 文档。
+- [x] 明确哪些事项不需要新 API、哪些必须单独 API 评审。
+- [x] `git diff --check` 与 `harness status --json .` 通过。
 
 ## 工作树（Worktree）
 
