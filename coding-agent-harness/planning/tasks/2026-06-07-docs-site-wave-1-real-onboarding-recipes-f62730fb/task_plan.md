@@ -40,10 +40,10 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] docs-site 不推荐 `ChatClient.openAi` 或 `Ai4j.chat()`。
-- [ ] Java / Spring Boot / profile / OpenAI-compatible/TroveBox 路径可复制。
-- [ ] 新增页面在 sidebar 中可达。
-- [ ] `npm run build` 通过。
+- [x] docs-site 不推荐 `ChatClient.openAi` 或 `Ai4j.chat()`。
+- [x] Java / Spring Boot / profile / OpenAI-compatible/TroveBox 路径可复制。
+- [x] 新增页面在 sidebar 中可达。
+- [x] `npm run build` 通过。
 - [ ] harness status 通过。
 
 ## 工作树（Worktree）

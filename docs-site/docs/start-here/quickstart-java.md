@@ -119,6 +119,8 @@ public class Ai4jFirstChat {
 - 需要读取 `ChatCompletionResponse` 里的 usage、finish reason 或 tool calls
 - 需要在一个应用内管理多个 provider profile 或 `AiServiceRegistry`
 
+不要为了“少写几行”改走不存在的 `ChatClient` 或隐藏式 `Ai4j.chat()`。AI4J 当前的优势在于这条对象链能继续承载 Tool、MCP、RAG、Memory、Responses 和自定义网络栈。
+
 ## 7. 关于 `OkHttpClient`
 
 AI4J 的 `Configuration` 默认已经带有 `OkHttpClient`，普通 Java 首聊不需要先手动创建客户端。
@@ -146,13 +148,23 @@ mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=fals
 
 | 你要换什么 | 需要改的地方 |
 | --- | --- |
-| OpenAI-compatible endpoint | `OpenAiConfig#setApiHost(...)`、模型名、API Key |
+| OpenAI-compatible endpoint / TroveBox | `OpenAiConfig#setApiHost(...)`、模型名、API Key |
 | DeepSeek | 使用 `DeepSeekConfig`，并改为 `PlatformType.DEEPSEEK` |
 | Moonshot | 使用 `MoonshotConfig`，并改为 `PlatformType.MOONSHOT` |
 | DashScope | 使用 `DashScopeConfig`，并改为 `PlatformType.DASHSCOPE` |
 | Ollama | 使用 `OllamaConfig`，并改为 `PlatformType.OLLAMA` |
 
 原则是：provider config class 和 `PlatformType` 要匹配。
+
+OpenAI-compatible 中转平台通常仍使用 `OpenAiConfig` 和 `PlatformType.OPENAI`：
+
+```java
+OpenAiConfig openAiConfig = new OpenAiConfig();
+openAiConfig.setApiKey(System.getenv("TROVEBOX_API_KEY"));
+openAiConfig.setApiHost("https://codex.trovebox.online/");
+```
+
+完整配置说明见 [OpenAI-compatible 与 TroveBox 中转平台配置](/docs/start-here/openai-compatible-and-trovebox)。
 
 ## 10. 成功标准
 
@@ -168,6 +180,7 @@ mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=fals
 ## 11. 跑通之后
 
 - 想接入 Spring Boot：看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+- 想接 TroveBox 或其他中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)
 - 想理解 `Chat` 细节：看 [First Chat](/docs/start-here/first-chat)
 - 想让模型调用本地函数：看 [First Tool Call](/docs/start-here/first-tool-call)
 - 想继续看完整能力：看 [Feature Map](/docs/start-here/feature-map)

@@ -40,11 +40,43 @@ application.yml
 
 像 `ai.openai.*` 这种配置，适合最直接的 provider 接入。
 
+OpenAI-compatible 中转平台也属于这一类。比如 TroveBox：
+
+```yaml
+ai:
+  openai:
+    api-key: ${TROVEBOX_API_KEY}
+    api-host: https://codex.trovebox.online/
+```
+
+此时业务代码仍然从 `AiService` 获取 `PlatformType.OPENAI` 的服务。
+
 ### 多实例
 
 像 `ai.platforms[]` 这种配置，适合构建 `AiServiceRegistry`，用于多账号、多租户或多平台路由。
 
 两条线不是互斥，而是粒度不同。
+
+示例：
+
+```yaml
+ai:
+  platforms:
+    - id: openai-main
+      platform: openai
+      api-key: ${OPENAI_API_KEY}
+      api-host: https://api.openai.com/
+    - id: trovebox-low-cost
+      platform: openai
+      api-key: ${TROVEBOX_API_KEY}
+      api-host: https://codex.trovebox.online/
+```
+
+```java
+IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost");
+```
+
+`id` 是业务路由名；`platform` 决定底层 provider 适配。多个 OpenAI-compatible endpoint 可以共享 `platform: openai`，只通过不同 `id` 和 `api-host` 区分。
 
 ## 4. `ai.okhttp.*` 的位置
 
@@ -79,3 +111,9 @@ application.yml
 - `Configuration`
 
 它们共同构成了从 YAML 到运行时对象图的路径。
+
+## 7. 继续阅读
+
+- 首次接入：看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+- 中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)
+- 多实例入口：看 [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)

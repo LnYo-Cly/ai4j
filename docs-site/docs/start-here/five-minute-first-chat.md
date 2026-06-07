@@ -28,6 +28,8 @@ slug: /start-here/five-minute-first-chat
 
 本页默认用 OpenAI-compatible Chat 举例。如果你使用 DeepSeek、Moonshot、DashScope、Ollama 等 provider，主链路相同，只需要换对应 config 和 `PlatformType`。
 
+如果你使用 TroveBox 或其他 OpenAI-compatible 中转平台，仍然走 `PlatformType.OPENAI`，只需要配置自己的 `api-host` 和 API Key。完整配置见 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)。
+
 ## 1. 设置密钥
 
 PowerShell:
@@ -250,6 +252,7 @@ Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpo
 
 - 想继续理解普通 Java 主线：看 [Quickstart for Java](/docs/start-here/quickstart-java)
 - 想继续理解 Spring Boot 接入：看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
+- 想接 TroveBox 或其他 OpenAI-compatible 中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)
 - 想了解 `Chat` 和 `Responses` 怎么选：看 [First Chat](/docs/start-here/first-chat)
 - 想让模型调用本地函数：看 [First Tool Call](/docs/start-here/first-tool-call)
 - 想判断当前能力边界：看 [Feature Map](/docs/start-here/feature-map)

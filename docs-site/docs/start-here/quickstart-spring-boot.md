@@ -20,7 +20,6 @@
 
 它暂时不解决：
 
-- 多 provider profiles
 - Tool / Function Call
 - MCP
 - RAG
@@ -145,7 +144,49 @@ mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest 
 
 这条命令不访问真实 provider。它验证 `ai.openai.api-key` 和 `ai.openai.api-host` 能绑定进 `AiService` 的 `Configuration`，并能创建 `PlatformType.OPENAI` 对应的 `IChatService`。真实请求仍然需要有效密钥、网络和可用模型。
 
-## 9. 常见失败点
+## 9. OpenAI-compatible / TroveBox 配置
+
+TroveBox 或其他 OpenAI-compatible 中转平台不需要新 provider。单实例场景里只要改 `api-host`：
+
+```yaml
+ai:
+  openai:
+    api-key: ${TROVEBOX_API_KEY}
+    api-host: https://codex.trovebox.online/
+```
+
+业务代码仍然是：
+
+```java
+IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+```
+
+完整说明见 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)。
+
+## 10. 多 provider profiles
+
+一个应用里需要多套 provider 或多个中转平台时，用 `ai.platforms` 和 `AiServiceRegistry`：
+
+```yaml
+ai:
+  platforms:
+    - id: openai-main
+      platform: openai
+      api-key: ${OPENAI_API_KEY}
+      api-host: https://api.openai.com/
+    - id: trovebox-low-cost
+      platform: openai
+      api-key: ${TROVEBOX_API_KEY}
+      api-host: https://codex.trovebox.online/
+```
+
+```java
+IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost");
+```
+
+`id` 是业务路由名。`platform` 决定 AI4J 使用哪个底层 provider 适配。
+
+## 11. 常见失败点
 
 | 现象 | 先检查什么 |
 | --- | --- |
@@ -154,8 +195,9 @@ mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest 
 | 鉴权失败 | key、host、模型名是否匹配当前 provider |
 | 请求超时 | 网络、代理、provider 可访问性 |
 | controller 返回异常栈 | 先在 service 层捕获并记录 provider 错误，再决定是否做统一异常映射 |
+| registry 取不到 profile | `ai.platforms[].id` 是否和代码里的 id 一致 |
 
-## 10. 什么时候不用 starter
+## 12. 什么时候不用 starter
 
 下面这些场景可以直接用 `ai4j`：
 
@@ -164,7 +206,7 @@ mvn -pl ai4j-spring-boot-starter -Dtest=AiServiceFirstChatAutoConfigurationTest 
 - 你只想在 CLI、测试或小工具里发一次请求
 - 你要完全自己管理 `Configuration` 和 `OkHttpClient`
 
-## 11. 跑通之后
+## 13. 跑通之后
 
 - 想看底层 `Chat` 调用语义：看 [First Chat](/docs/start-here/first-chat)
 - 想配置更多 provider：看 [Spring Boot / Configuration Reference](/docs/spring-boot/configuration-reference)

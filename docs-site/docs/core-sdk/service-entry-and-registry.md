@@ -26,6 +26,8 @@ Configuration + AiConfig.platforms
 
 这条链适合多账号、多租户、多 provider 配置共存。
 
+这两条主线都是公开、真实、可扩展的入口。文档不把 `ChatClient.openAi(...)` 或隐藏式 `Ai4j.chat()` 作为主入口，因为它们会遮住 `Tool`、`MCP`、`RAG`、`Memory`、`Responses` 和自定义网络栈的边界。
+
 ## 2. `AiService` 真正负责什么
 
 `AiService` 不是只给 `Chat` 用的入口，而是当前 Core SDK 的统一能力工厂。
@@ -108,14 +110,33 @@ Configuration + AiConfig.platforms
 - 正式多实例抽象：`AiServiceRegistry`
 - 历史兼容壳：`FreeAiService`
 
-## 7. 这页和相邻页面怎么分工
+## 7. OpenAI-compatible profile 怎么放
+
+OpenAI-compatible 中转平台不要先新建 provider 类型。通常配置成 `platform: openai`，再用不同 `id` 和 `api-host` 区分：
+
+```yaml
+ai:
+  platforms:
+    - id: trovebox-low-cost
+      platform: openai
+      api-key: ${TROVEBOX_API_KEY}
+      api-host: https://codex.trovebox.online/
+```
+
+```java
+IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost");
+```
+
+这里 `trovebox-low-cost` 是业务 profile id；`openai` 表示底层协议适配。完整 recipe 见 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)。
+
+## 8. 这页和相邻页面怎么分工
 
 - `service-entry-and-registry` 讲“从哪里进入能力”
 - `platform-service-matrix` 讲“每个平台支持哪些 service”
 - `model-access` 讲“进入服务后请求语义怎么建模”
 - `extension` 讲“默认入口不够时该沿哪条线扩展”
 
-## 8. 最容易忽略的几个事实
+## 9. 最容易忽略的几个事实
 
 ### service 对象默认不是缓存的
 
@@ -131,6 +152,6 @@ Configuration + AiConfig.platforms
 这个方法对未知值会回退到 `OPENAI`，而 `DefaultAiServiceRegistry.resolvePlatformType(...)` 对未知平台会显式抛错。  
 正式多实例配置更应该依赖后者的严格行为。
 
-## 9. 这一页的结论
+## 10. 这一页的结论
 
 > AI4J 当前的服务入口体系是显式且分层的：`AiService` 负责单实例统一能力工厂，`AiServiceRegistry` 负责正式多实例注册与路由，`FreeAiService` 只承担兼容壳角色。理解这条入口链，比记住单个 provider 的 API 更重要，因为后面的支持矩阵、扩展成本和上层装配都建立在这条链上。

@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：task lifecycle CLI 已同步 generated ledger
+- 负责人：coordinator
 
 ### [2026-06-07 15:47] - task-start
 
@@ -46,3 +39,17 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-07 20:08] - docs-update
+
+- 做了什么：新增 OpenAI-compatible/TroveBox recipe，挂入 sidebar；更新 five-minute first chat、Java quickstart、Spring Boot quickstart、Spring Boot configuration reference、Core SDK service registry 页面。
+- 验证结果：文本扫描确认 TroveBox/profile 链接存在；`ChatClient.openAi` / `Ai4j.chat()` 只在“不推荐/不作为主入口”语境出现。
+- 下一步：运行 docs-site build。
+- 证据：diff:TARGET:docs-site/docs:start-here and config pages updated; diff:TARGET:docs-site/sidebars.ts:new recipe reachable; command:TARGET:.:`rg -n "ChatClient\\.openAi|Ai4j\\.chat\\(" docs-site/docs README.md`
+
+### [2026-06-07 20:10] - verification
+
+- 做了什么：运行 docs-site production build。
+- 验证结果：`npm run build` 通过，Docusaurus 生成静态文件成功。
+- 下一步：提交变更并提交 agent review。
+- 证据：command:TARGET:docs-site:`npm run build`

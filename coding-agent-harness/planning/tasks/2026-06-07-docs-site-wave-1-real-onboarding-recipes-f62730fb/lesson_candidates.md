@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: docs-wave-local-scope |
 | Source task | 2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb |
 | Owner | coordinator |
 | Last updated | 2026-06-07 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务是 docs-site 局部 Wave 1 内容实现，结论已体现在页面和任务设计中。是否沉淀“canonical docs 优先、i18n 单独同步”的长期规则，需要后续治理任务确认。
 
 ## Promotion Notes
 
@@ -65,6 +65,6 @@
 
 | Queue | When this task enters it | Exit condition |
 | --- | --- | --- |
-| Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
-| Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
-| Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |
+| Lessons | 不进入；本任务 no-candidate accepted。 | n/a |
+| Missing Materials | 文件缺失或状态非法。 | Agent 修复候选文件。 |
+| Confirmed / Finalized | 已人工确认但仍有后续治理事项。 | 记录后续任务或 dry-run 决策。 |

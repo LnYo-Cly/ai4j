@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
         'start-here/documentation-map',
         'start-here/quickstart-java',
         'start-here/quickstart-spring-boot',
+        'start-here/openai-compatible-and-trovebox',
         'start-here/first-chat',
         'start-here/first-tool-call',
         'start-here/troubleshooting',
