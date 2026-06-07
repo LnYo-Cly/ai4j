@@ -1,6 +1,6 @@
 # Core SDK configuration and invocation experience upgrade design - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：模板扫描无阻塞占位符；`git diff --check` 通过，仅有 LF/CRLF 提示；`harness status --json .` 仅报告当前任务包未提交导致的 dirty-state warning，材料状态为 ready。
 - 下一步：提交设计包并提交 agent review。
 - 证据：command:TARGET:.:`rg -n "<template placeholder patterns>" coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f`; command:TARGET:.:`git diff --check`; command:TARGET:.:`npx.cmd --yes coding-agent-harness status --json .`
+
+### [2026-06-07 15:40] - task-review
+
+- 做了什么：Core SDK configuration and invocation experience design completed; recommends docs/recipe first, Configuration helper API second, registry/starter default profile third.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
