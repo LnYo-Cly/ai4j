@@ -27,7 +27,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | HL-2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac | task | none | remove ai4j sdk maintainer skill | closed | none | coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/task_plan.md | pending | pending | pending | Human review confirmed; closing out skill surface cleanup and Plain Java onboarding fix. | 2026-06-06 |
 | HL-2026-06-06-5-c6e2fa16 | task | none | 5 分钟首聊主路径文档 | closed | none | coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/task_plan.md | pending | pending | pending | Human review confirmed; closing out 5-minute first chat docs path. | 2026-06-06 |
 | HL-2026-06-06-item-885d365a | task | none | 首聊可复制代码合同 | closed | none | coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md | pending | pending | pending | 用户已确认审查通过，任务关闭。 | 2026-06-07 |
-| HL-2026-06-07-chatclient-d5f84742 | task | none | 轻量 ChatClient 首聊门面 | review | none | coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md | coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/review.md | pending | pending | ChatClient facade, docs, skill recipe, and RG-001/RG-007/RG-008 evidence are ready for human review. | 2026-06-07 |
+| HL-2026-06-07-chatclient-d5f84742 | task | none | 轻量 ChatClient 首聊门面 | closed | none | coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md | pending | pending | pending | 用户已确认审查通过，任务关闭。 | 2026-06-07 |
 
 ## Field Rules
 
