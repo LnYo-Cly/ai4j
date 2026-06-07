@@ -51,3 +51,5 @@
 | 审查记录 | `review.md` |
 | 进度记录 | `progress.md` |
 | 仓库级 walkthrough | `docs/10-WALKTHROUGH/2026-06-06-first-chat-copyable-code-contract.md` |
+
+Closeout Status: closed
