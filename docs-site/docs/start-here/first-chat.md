@@ -25,18 +25,17 @@ AI4J 里最常用的模型调用主线有两条：
 
 换句话说，`Chat` 更像“先把第一条链路跑通”，而 `Responses` 更像“进入更细的事件模型”。
 
-## 2. 第一条请求先用短路径
+## 2. 第一条请求先用真实对象链
 
-如果只是跑通第一条同步请求，先用 `ChatClient`：
+普通 Java 首聊不要绕过核心对象链，先明确这几个对象：
 
-```java
-String text = ChatClient.openAi(System.getenv("OPENAI_API_KEY"))
-        .chat("gpt-4o-mini", "用一句话介绍 AI4J");
+```text
+Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse
 ```
 
-这段代码的价值是把“依赖、密钥、provider、请求、文本读取”一次跑通。
+这条链路的价值是把“依赖、密钥、provider、请求、响应对象、文本读取”一次跑通，后续流式、Tool、MCP、RAG 都沿着同一套对象边界扩展。
 
-## 3. 再记住背后的完整链路
+## 3. 核心链路
 
 ```text
 Configuration

@@ -444,22 +444,42 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
 
 ### 非Spring首聊推荐
 
-如果只是先跑通第一条同步 Chat 请求，优先使用 `ChatClient`：
+如果只是先跑通第一条同步 Chat 请求，直接使用 AI4J 的核心对象链：
 
 ```java
-import io.github.lnyocly.ai4j.service.ChatClient;
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
 
 public class Ai4jFirstChat {
     public static void main(String[] args) throws Exception {
-        String text = ChatClient.openAi(System.getenv("OPENAI_API_KEY"))
-                .chat("gpt-4o-mini", "用一句话介绍 AI4J");
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiKey(System.getenv("OPENAI_API_KEY"));
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        AiService aiService = new AiService(configuration);
+        IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        ChatCompletion request = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("用一句话介绍 AI4J"))
+                .build();
+
+        ChatCompletionResponse response = chatService.chatCompletion(request);
+        String text = response.getChoices().get(0).getMessage().getContent().getText();
         System.out.println(text);
     }
 }
 ```
 
-`ChatClient` 是首聊门面，内部仍然复用 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`。
-当你需要自定义 `OkHttpClient`、代理、超时、流式、多模态、Tool、MCP、RAG 或读取完整 `ChatCompletionResponse` 时，再展开使用下面的对象链。
+这条路径也是 AI4J 的真实主线：`Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`。后续自定义 `OkHttpClient`、代理、超时、流式、多模态、Tool、MCP、RAG 或读取完整 `ChatCompletionResponse` 时，都沿着同一条对象链继续扩展。
 
 ### 非Spring进阶获取
 ```java

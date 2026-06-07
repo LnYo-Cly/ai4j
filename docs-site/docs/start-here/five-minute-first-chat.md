@@ -15,7 +15,7 @@ slug: /start-here/five-minute-first-chat
 
 | 你现在的项目 | 走哪条路径 | 跑通后说明什么 |
 | --- | --- | --- |
-| 普通 Java / Maven 项目 | 引入 `ai4j`，使用 `ChatClient.openAi(...)` | 依赖、密钥、provider 配置、模型请求、响应文本都成立 |
+| 普通 Java / Maven 项目 | 引入 `ai4j`，使用 `Configuration -> AiService -> IChatService` | 依赖、密钥、provider 配置、模型请求、响应文本都成立 |
 | Spring Boot 项目 | 引入 `ai4j-spring-boot-starter`，通过配置注入 `AiService` | starter、配置绑定、Bean 注入和 HTTP 入口都成立 |
 | 想让 agent 帮你接入 | 安装 `$ai4j-app-builder` | agent 会按项目结构选择依赖、写最小代码，并给验证命令 |
 
@@ -57,7 +57,14 @@ export OPENAI_API_KEY="sk-..."
 ## 3. 普通 Java：第一段可运行代码
 
 ```java
-import io.github.lnyocly.ai4j.service.ChatClient;
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
 
 public class Ai4jFirstChat {
     public static void main(String[] args) throws Exception {
@@ -66,30 +73,42 @@ public class Ai4jFirstChat {
             throw new IllegalStateException("Missing OPENAI_API_KEY");
         }
 
-        String text = ChatClient.openAi(apiKey)
-                .chat("gpt-4o-mini", "用一句话介绍 AI4J");
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiKey(apiKey);
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        AiService aiService = new AiService(configuration);
+        IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        ChatCompletion request = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("用一句话介绍 AI4J"))
+                .build();
+
+        ChatCompletionResponse response = chatService.chatCompletion(request);
+        String text = response.getChoices().get(0).getMessage().getContent().getText();
         System.out.println(text);
     }
 }
 ```
 
-`ChatClient` 是首聊门面，不是第二套 SDK。它内部仍然复用这条对象链：
+这不是第二套 SDK，也不是隐藏门面。普通 Java 首聊直接使用 AI4J 的真实对象链：
 
 ```text
 Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse
 ```
 
-跑通第一条请求后，如果要配置代理、复用自定义 `OkHttpClient`、做流式、多模态、Tool、MCP、RAG，
-再展开使用 `Configuration`、`AiService`、`IChatService` 和 `ChatCompletion`。`ChatClient` 也保留
-`getConfiguration()`、`getAiService()`、`getChatService()`，方便从短路径升级到完整对象链。
+跑通第一条请求后，如果要配置代理、复用自定义 `OkHttpClient`、做流式、多模态、Tool、MCP、RAG，仍然沿着 `Configuration`、`AiService`、`IChatService` 和 `ChatCompletion` 继续扩展。
 
 本段普通 Java 首聊链路由仓库内的本地回归保护：
 
 ```bash
-mvn -pl ai4j -Dtest=ChatClientTest,FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test
+mvn -pl ai4j -Dtest=FirstChatCopyableCodeTest,ConfigurationTest -DskipTests=false test
 ```
 
-这条命令不读取真实 API Key，也不访问真实 provider；它验证 `ChatClient` 首聊门面、默认 `OkHttpClient`、`AiService` 创建、OpenAI-compatible 请求路径、鉴权头和返回文本读取链路。
+这条命令不读取真实 API Key，也不访问真实 provider；它验证默认 `OkHttpClient`、`AiService` 创建、OpenAI-compatible 请求路径、鉴权头和返回文本读取链路。
 
 ## 4. Spring Boot：最小依赖
 
@@ -213,9 +232,9 @@ Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpo
 | --- | --- |
 | Maven 依赖 | 项目能解析 `ai4j` 或 `ai4j-spring-boot-starter` |
 | 密钥读取 | 代码只从环境变量读取 API Key |
-| 服务创建 | `ChatClient` 能创建底层 `AiService` 和 `IChatService` |
+| 服务创建 | `AiService` 能创建底层 `IChatService` |
 | 请求发送 | provider 返回 `ChatCompletionResponse` |
-| 文本读取 | `ChatClient#chat(...)` 返回非空文本；进阶时也能从 `ChatCompletionResponse` 读取文本 |
+| 文本读取 | 能从 `ChatCompletionResponse` 读取非空文本 |
 
 ## 9. 常见问题
 

@@ -25,9 +25,9 @@ npm run serve
 - Spring Boot 细分路径：`docs/start-here/quickstart-spring-boot.md`
 - 能力边界与继续阅读：`docs/start-here/feature-map.md`
 
-普通 Java 首聊优先展示 `ChatClient.openAi(...).chat(...)`。完整
+普通 Java 首聊直接展示
 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`
-对象链作为进阶路径保留，用于自定义 HTTP、流式、Tool、MCP、RAG 和 response 细节读取。
+对象链。自定义 HTTP、流式、Tool、MCP、RAG 和 response 细节读取都沿这条主线继续扩展。
 
 ## AI4J App Builder Skill
 
