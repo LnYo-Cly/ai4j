@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-06-item-885d365a |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 84c6a879451e5a1af7b284fb1e4111245fc335ef |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复同意，确认 review packet 通过。 |
 | Migration Status | native |
