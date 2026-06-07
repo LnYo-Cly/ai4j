@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-本任务是一次局部治理漂移修正：把已关闭 feature 从 Active Features 移到 Completed Features，并补齐缺失 closeout。现有 `execution-workflow-standard.md` 已覆盖 closeout 必须同步 Feature SSoT 和 walkthrough 的规则，不需要新增可复用 lesson。
+本任务是一次局部治理漂移修正：把已关闭 feature 从 Active Features 移到 Completed Features，并把新任务 closeout 默认位置明确为 harness task package。规则已写回 `AGENTS.md`、reference 和 harness context，不需要新增可复用 lesson。
 
 ## Promotion Notes
 

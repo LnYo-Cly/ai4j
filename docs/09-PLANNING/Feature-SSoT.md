@@ -13,7 +13,7 @@
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
-| F-023 | 轻量 ChatClient 首聊门面 | 2026-06-07 | `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` |
+| F-023 | 轻量 ChatClient 首聊门面 | 2026-06-07 | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md` |
 | F-022 | 首聊可复制代码合同 | 2026-06-07 | `docs/10-WALKTHROUGH/2026-06-06-first-chat-copyable-code-contract.md` |
 | F-021 | docs-site 5 分钟首聊主路径 | 2026-06-06 | `coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/walkthrough.md` |
 | F-020 | docs-site hard technical tone polish | 2026-04-29 | `docs/10-WALKTHROUGH/2026-04-29-docs-site-hard-technical-tone-polish.md` |

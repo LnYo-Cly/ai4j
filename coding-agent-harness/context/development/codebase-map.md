@@ -2,7 +2,7 @@
 
 Context Doc Type: codebase-map
 Owner: project coordinator
-Last Verified: 2026-06-04
+Last Verified: 2026-06-07
 Confidence: medium
 
 ## Entry Points
@@ -20,6 +20,7 @@ Confidence: medium
 | Starters and demo backend | `ai4j-spring-boot-starter/`, `ai4j-flowgram-spring-boot-starter/`, `ai4j-flowgram-demo/` | Spring Boot auto-config, FlowGram task APIs and backend demo. | Starter/demo integration changes. | `AGENTS.md`; module source | 2026-06-04 | high |
 | Docs site | `docs-site/` | Docusaurus docs. | Docs content/config changes. | `docs-site/package.json`; workflows | 2026-06-04 | high |
 | FlowGram web demo | `ai4j-flowgram-webapp-demo/` | React/Rsbuild frontend demo. | FlowGram frontend demo changes. | `ai4j-flowgram-webapp-demo/package.json`; `rsbuild.config.ts` | 2026-06-04 | high |
-| Existing planning SSoT | `docs/09-PLANNING/` | Historical/current numbered task packages and Feature SSoT. | Any legacy or existing workstream continuation. | `AGENTS.md`; `docs/09-PLANNING/Feature-SSoT.md` | 2026-06-04 | high |
+| Harness task SSoT | `coding-agent-harness/planning/tasks/` | Default home for new task packages, progress, review, lesson candidates, and walkthrough closeout. | Any new non-trivial work. | `AGENTS.md`; `coding-agent-harness/harness.yaml` | 2026-06-07 | high |
+| Existing planning history | `docs/09-PLANNING/` | Historical/summary numbered planning material. New tasks should not be added here by default. | Legacy or existing numbered-docs continuation only. | `AGENTS.md`; `docs/09-PLANNING/Feature-SSoT.md` | 2026-06-07 | medium |
 | Existing regression SSoT | `docs/05-TEST-QA/` | Current regression gate map and cadence ledger. | Any change affecting fixed regression surfaces. | `AGENTS.md`; `docs/05-TEST-QA/*.md` | 2026-06-04 | high |
 | Harness v2 context | `coding-agent-harness/` | CLI scaffolded v2 context, dashboard inputs and generated metadata. | Harness CLI/dashboard/context work. | `coding-agent-harness/harness.yaml` | 2026-06-04 | high |

@@ -53,7 +53,7 @@
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | targeted text scan, walkthrough `Test-Path`, `git diff --check`, `harness status --json .` | `progress.md` | no stale active F-022/F-023, links exist, diff hygiene clean, harness pass |
+| L0 | targeted text scan, task-local walkthrough `Test-Path`, removed transitional docs/10 `Test-Path`, `git diff --check`, `harness status --json .` | `progress.md` | no stale active F-022/F-023, F-023 task-local link exists, erroneous docs/10 file absent, diff hygiene clean, harness pass |
 
 ## 暂停 / 升级条件
 

@@ -2,25 +2,26 @@
 
 ## 摘要
 
-本任务修正了 2026-06-07 review closeout batch 后的治理漂移：F-022/F-023 已经在 harness 中关闭，但 `Feature-SSoT.md` 仍显示为 active。现在它们已移动到 Completed Features，并补齐了 F-023 仓库级 walkthrough。
+本任务修正了 2026-06-07 review closeout batch 后的治理漂移：F-022/F-023 已经在 harness 中关闭，但 `Feature-SSoT.md` 仍显示为 active。现在它们已移动到 Completed Features，F-023 指向已存在的 task-local walkthrough，并且 repo 规则明确新任务 planning/progress/review/walkthrough 默认归入 `coding-agent-harness/planning/tasks/`。
 
 ## 范围
 
 | 范围 | 详情 |
 | --- | --- |
 | 变更模块 | governance docs / task package |
-| 新增文件 | `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` |
-| 删除文件 | 无 |
+| 新增文件 | 无 |
+| 删除文件 | `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` |
 | 不在范围内 | SDK 业务代码、docs-site 正文、回归 gate 定义、远程提交 |
 
 ## 验证
 
 | 检查 | 命令或过程 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| stale active scan | `rg -n "F-022|F-023|pending explicit human review|\| F-02[23] \|.*in_progress" docs\09-PLANNING\Feature-SSoT.md docs\10-WALKTHROUGH -S` | pass；只剩 Completed Features 和 walkthrough 引用 | `progress.md` |
-| walkthrough links | `Test-Path docs\10-WALKTHROUGH\2026-06-07-lightweight-chatclient-first-chat-facade.md`; `Test-Path docs\10-WALKTHROUGH\2026-06-06-first-chat-copyable-code-contract.md` | pass | `progress.md` |
+| stale active scan | `rg -n "F-022|F-023|pending explicit human review|\| F-02[23] \|.*in_progress" docs\09-PLANNING\Feature-SSoT.md coding-agent-harness\planning\tasks -S` | pass；只剩 Completed Features 和 task-local walkthrough 引用 | `progress.md` |
+| task-local walkthrough link | `Test-Path coding-agent-harness\planning\tasks\2026-06-07-chatclient-d5f84742\walkthrough.md` | pass；返回 true | `progress.md` |
+| removed transitional docs/10 file | `Test-Path docs\10-WALKTHROUGH\2026-06-07-lightweight-chatclient-first-chat-facade.md` | pass；返回 false | `progress.md` |
 | diff hygiene | `git diff --check` | pass；仅 Windows LF/CRLF 提示 | `progress.md` |
-| harness status | `npx --yes coding-agent-harness status --json .` | 提交前仅 dirty-state warning；提交后复核 | `progress.md` |
+| harness status | `npx.cmd --yes coding-agent-harness status --json .` | 提交前仅 dirty-state warning；提交后复核 | `progress.md` |
 
 ## 审查结论
 
@@ -32,7 +33,7 @@
 
 | 风险 | Owner | 是否接受 | 跟进 |
 | --- | --- | --- | --- |
-| 本任务不重新验证 F-022/F-023 的业务代码，只修正治理索引 | coordinator | yes | 原任务 progress/review/walkthrough 保留业务验证证据 |
+| 本任务不重新验证 F-022/F-023 的业务代码，只修正治理索引和 closeout 归档规则 | coordinator | yes | 原任务 progress/review/walkthrough 保留业务验证证据 |
 
 ## 经验沉淀反思
 
@@ -49,4 +50,4 @@
 | 审查记录 | `review.md` |
 | 进度记录 | `progress.md` |
 | Feature SSoT | `docs/09-PLANNING/Feature-SSoT.md` |
-| F-023 仓库级 walkthrough | `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` |
+| F-023 task-local walkthrough | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md` |

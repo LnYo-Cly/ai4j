@@ -5,13 +5,13 @@ Task Package Index: required
 
 ## 目标
 
-修正 2026-06-07 review closeout batch 之后的治理漂移，让 `Feature-SSoT.md`、仓库级 walkthrough 和 harness task 状态一致。
+修正 2026-06-07 review closeout batch 之后的治理漂移，并明确新任务 closeout 以 harness task package 为 SSoT。
 
 ## 范围
 
-- 做什么：把已关闭的 F-022/F-023 从 Active Features 移到 Completed Features；补齐 F-023 仓库级 walkthrough；记录本次治理修正证据。
+- 做什么：把已关闭的 F-022/F-023 从 Active Features 移到 Completed Features；将 F-023 链接指向已存在的 task-local walkthrough；删除错误新增的过渡 `docs/10` closeout；把 AGENTS/reference/context 同步为 harness-first 规则；记录本次治理修正证据。
 - 不做什么：不改 SDK 业务代码、不改 docs-site 正文、不新增回归 gate、不推送远程。
-- 主要风险：治理文档与 harness generated 状态不一致会误导后续 agent 判断还有 active feature。
+- 主要风险：治理文档与 harness generated 状态不一致，或继续新增 numbered `docs/10` closeout，会误导后续 agent 在两套 SSoT 间来回漂移。
 
 ## 预算选择
 
@@ -23,22 +23,26 @@ Task Package Index: required
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | governance | TARGET:docs/09-PLANNING/Feature-SSoT.md | 当前显示 F-022/F-023 仍在进行中，是本次修正对象 | coordinator |
-| C-002 | task | TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/walkthrough.md | F-022 已关闭证据和仓库级 walkthrough 链接来源 | coordinator |
-| C-003 | task | TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md | F-023 已关闭证据和仓库级 walkthrough 内容来源 | coordinator |
-| C-004 | reference | TARGET:docs/11-REFERENCE/execution-workflow-standard.md | closeout 要求 Feature SSoT 和 walkthrough 同步 | coordinator / reviewer |
+| C-001 | governance | TARGET:docs/09-PLANNING/Feature-SSoT.md | 历史/摘要 Feature SSoT，需将 F-023 指向 task-local walkthrough | coordinator |
+| C-002 | task | TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/walkthrough.md | F-022 已关闭证据和 task-local walkthrough 链接来源 | coordinator |
+| C-003 | task | TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md | F-023 已关闭证据和 task-local walkthrough 内容来源 | coordinator |
+| C-004 | reference | TARGET:AGENTS.md | repo-wide agent 入口规则，需明确新任务归档位置 | coordinator / reviewer |
+| C-005 | reference | TARGET:docs/11-REFERENCE/execution-workflow-standard.md | closeout 和 task lifecycle 规则的长期 reference | coordinator / reviewer |
 
 ## 步骤
 
 1. 诊断 Feature SSoT 与 harness task closeout 的差异。
-2. 修正 Feature SSoT，并补齐缺失的 F-023 仓库级 walkthrough。
-3. 运行 targeted governance verification：文本扫描、`harness status --json .`、`git diff --check`。
-4. 更新 progress、lesson candidate、review、walkthrough，并提交审查。
+2. 修正 Feature SSoT，并删除错误新增的 F-023 `docs/10` 过渡 walkthrough。
+3. 更新 AGENTS、reference 和 harness context，明确新任务 closeout 写入 `coding-agent-harness/planning/tasks/<task>/walkthrough.md`。
+4. 运行 targeted governance verification：文本扫描、`harness status --json .`、`git diff --check`。
+5. 更新 progress、lesson candidate、review、walkthrough，并提交审查。
 
 ## 验收标准
 
 - [ ] `Feature-SSoT.md` 不再把 F-022/F-023 标为 active/in_progress。
-- [ ] Completed Features 包含 F-022/F-023，且 walkthrough 链接存在。
+- [ ] F-023 Completed Features 指向存在的 task-local walkthrough。
+- [ ] 新任务 planning/progress/review/walkthrough 默认路径在 AGENTS、reference、harness context 中一致。
+- [ ] 错误新增的 `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` 不存在。
 - [ ] `harness status --json .` 通过。
 - [ ] `git diff --check` 通过。
 
