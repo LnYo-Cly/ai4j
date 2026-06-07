@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-07-chatclient-d5f84742 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | 922f4685c18a5ae3cdadf623bf0f07ad3d1d4608 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复同意，确认 review packet 通过。 |
 | Migration Status | native |
