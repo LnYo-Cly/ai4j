@@ -105,3 +105,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自源码入口审计、设计文档、findings 决策表和 task package self-review。本任务不发布业务代码。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606071125 |
+| Submitted At | 2026-06-07 11:25 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763 |
+| Materials Checklist Hash | 23d23ef34ee637d3 |
+| Evidence Summary | Core SDK invocation contract audited; design keeps object-chain main contract and rejects hidden Chat facade. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763 |
