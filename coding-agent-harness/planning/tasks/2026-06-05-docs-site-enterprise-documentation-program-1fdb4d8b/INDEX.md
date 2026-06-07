@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | e159bdda8f090ffd01e6f04bb72a29015f1b18e7 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | 用户在对话中回复同意，确认 review packet 通过。 |
 | Migration Status | native |
