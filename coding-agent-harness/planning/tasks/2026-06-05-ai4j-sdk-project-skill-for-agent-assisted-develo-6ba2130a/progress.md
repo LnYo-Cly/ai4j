@@ -1,6 +1,6 @@
 # ai4j sdk project skill for agent-assisted development - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -58,3 +58,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：已由 lifecycle CLI 同步
 - 负责人：coordinator
+
+### [2026-06-07 06:55] - task-complete
+
+- 做了什么：用户已确认审查通过，任务关闭。
+- 验证结果：已记录
+- 下一步：完成
+- 证据：dashboard:task-complete
