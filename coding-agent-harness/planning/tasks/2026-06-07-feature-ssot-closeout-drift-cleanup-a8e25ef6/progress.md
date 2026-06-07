@@ -22,23 +22,23 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：task lifecycle CLI 已同步 generated ledger
+- 负责人：coordinator
+
+### [2026-06-07 15:20] - material-repair
+
+- 做了什么：修复 `task-review` scanner 指出的 task-local 模板残留，补齐 brief、execution_strategy、visual_map、progress、review 材料。
+- 验证结果：待复跑 `harness status --json .` 和 `task-review`。
+- 下一步：重新提交 review packet。
+- 证据：diff:TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6:task-local materials repaired
 
 ### [2026-06-07 07:10] - task-start
 

@@ -10,42 +10,43 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+`Feature-SSoT.md` 与 2026-06-07 已关闭任务状态重新对齐，F-022/F-023 不再被后续 agent 误判为 active。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，下一轮 agent 打开 `docs/09-PLANNING/Feature-SSoT.md` 时会看到当前没有 active feature delivery，F-022/F-023 已在 Completed Features 中，并且能从表格直接跳到对应 walkthrough。F-023 缺失的仓库级 closeout 已补齐，避免只在 task-local walkthrough 中保存收口事实。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：Feature SSoT 状态修正；F-023 仓库级 walkthrough；本任务 review packet
+- 修改位置：`docs/09-PLANNING/Feature-SSoT.md`、`docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md`、当前 task package
+- 验证证据：targeted text scan、walkthrough `Test-Path`、`git diff --check`、`harness status --json .`
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `docs/09-PLANNING/Feature-SSoT.md` 的 Active/Completed Features 表，再读新增的 F-023 仓库级 walkthrough，最后查看 `progress.md` 中的 targeted verification 记录。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：Feature SSoT closeout 状态、F-023 仓库级 walkthrough、当前任务包材料。
+- 范围外：SDK 业务代码、docs-site 正文、回归 gate 定义、远程推送。
+- 停止条件：若发现 F-022/F-023 实际未关闭或验证证据缺失，停止并回到 review closeout 流程。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+1. F-022/F-023 不再位于 Active Features。
+2. F-022/F-023 位于 Completed Features，并指向存在的 walkthrough。
+3. `git diff --check` 无 whitespace error。
+4. `npx --yes coding-agent-harness status --json .` 在提交后通过。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：审查中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- 完成条件：验证证据必须记录到 `progress.md`，并通过 human review confirmation 后关闭。
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+等待人工确认本任务 review packet；确认后可通过 Dashboard workbench 关闭任务。
