@@ -25,6 +25,10 @@
 
 当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要 Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
 
+## 赞助商
+
++ [TroveBox AI 中转平台](https://codex.trovebox.online/)：提供 AI API 中转服务，低至 0.1x 倍率。
+
 ## 适用场景与常见方案对比
 
 | 方案 | Java 基线 | 应用形态 | 能力侧重点 |
