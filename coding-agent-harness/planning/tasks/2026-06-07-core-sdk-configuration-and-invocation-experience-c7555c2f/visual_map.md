@@ -8,7 +8,8 @@ Visual Map Contract: v1.0
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示设计任务阶段和门禁 | yes | `task_plan.md` | no |
+| MAP-02 | decision | 展示升级设计分层和拒绝项 | yes | `task_plan.md`; 前置审计 | no |
 
 ## 阶段关系图（Phase Graph）
 
@@ -24,9 +25,9 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | planned | 0 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f` | agent | missing | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f --confirm 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f` | human | missing | Agent 不能代办人工确认 | human |
+| EXEC-01 | execution | INIT-01 | planned | 0 | Core SDK 配置与调用体验升级设计 | `design.md`; `findings.md`; `progress.md` | `harness task-phase 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f EXEC-01 --state done --completion 100 --evidence present` | agent | missing | API change requires separate approval | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | dashboard workbench confirmation | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
@@ -40,11 +41,20 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
+## MAP-02 - 升级分层
 
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+```mermaid
+flowchart TD
+  Goal["降低 Java 接入成本"] --> Keep["保留对象链主合同"]
+  Keep --> Config["配置体验\nConfiguration helpers / AiConfig binding"]
+  Keep --> Registry["多 provider/profile\nAiServiceRegistry 增强"]
+  Keep --> Compatible["中转平台\nOpenAI-compatible baseUrl/profile"]
+  Keep --> Recipes["组合范式\nChat + Tool/MCP + RAG + Memory recipes"]
+  Goal --> Reject["拒绝隐藏式大门面"]
+  Reject --> NoChatClient["不恢复 ChatClient.openAi"]
+  Reject --> NoMegaChain["不新增 Ai4j.chat().rag().tools().call"]
+  Config --> Later["后续实现任务"]
+  Registry --> Later
+  Compatible --> Later
+  Recipes --> Later
+```
