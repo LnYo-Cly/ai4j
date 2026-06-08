@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | Guardrail executor、Agent / Coding Agent 接线、targeted tests、docs 和治理记录已完成 | diff、commands、`progress.md`、`review.md` | `harness task-phase 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b --message "<summary>"` | agent | missing | pending task-review command | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b --message "<summary>"` | agent | present | pending task-review command | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b --confirm 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
