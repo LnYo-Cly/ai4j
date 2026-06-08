@@ -18,6 +18,7 @@
 
 | Gate ID | 覆盖面 | 主入口 | 触发场景 | 证据深度 | 上次验证 | 当前结果 | 负责人 | 残余路由 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RG-010 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | `ai4j-extension-api/` manifest, discovery, enable/expose, and resource contract changes | L1-tests | 2026-06-08 pass | pass | project coordinator | none |
 | RG-001 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | `ai4j/` provider, protocol, RAG, vector, MCP, image, audio, realtime, agentflow connector changes | L1-tests | 2026-06-04 pass | pass-with-residual | project coordinator | R-001 |
 | RG-002 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | `ai4j-agent/` workflow, memory, trace, subagent/team orchestration changes | L1-tests | 2026-06-04 fail | fail | project coordinator | R-001, R-008 |
 | RG-003 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | `ai4j-coding/` tools, outer-loop, checkpoint, shell/apply-patch changes | L1-tests | 2026-06-04 partial | pass-with-residual | project coordinator | R-001, R-008 |

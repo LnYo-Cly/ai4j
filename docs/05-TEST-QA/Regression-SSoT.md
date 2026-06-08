@@ -1,6 +1,6 @@
 # Regression SSoT - ai4j-sdk
 
-> Last updated: 2026-06-07
+> Last updated: 2026-06-08
 > Control tower for fixed regression surfaces in the `ai4j-sdk` monorepo.
 
 ## Regression Layers
@@ -17,6 +17,7 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |
 |----|--------|---------|-------------------|---------|----------------|---------------|-------|
+| RG-010 | 🟢 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-08 pass | manifest model, ServiceLoader discovery, explicit enable/expose gates, capability validation, and extension resource registry contracts |
 | RG-001 | 🟢 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-07 pass | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; includes `FirstChatCopyableCodeTest` for the full object-chain docs contract; provider-dependent tests are excluded from default runs by `LiveProviderTest` category |
 | RG-002 | 🔴 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 fail | agent runtime, workflow, memory, trace, subagent/team orchestration; current blocker is R-008 in `HandoffPolicyTest` |
 | RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 partial | direct coding module test passed; full `-am` evidence is blocked by upstream RG-002/R-008 |

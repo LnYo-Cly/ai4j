@@ -2,13 +2,14 @@
 
 Context Doc Type: service-catalog
 Owner: project coordinator
-Last Verified: 2026-06-04
+Last Verified: 2026-06-08
 Confidence: medium
 
 ## Services
 
 | Service Key | Service / Component | Owner | Repo / Path | Responsibility | Interfaces | Data Owned | Dependencies | Service Profile | Development Context | Source Pack | Contract Index | Source Evidence | Last Verified | Stale After | Confidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ai4j-extension-api | Extension API module | project coordinator | `ai4j-extension-api/` | Lightweight public extension contract, manifest, ServiceLoader discovery, explicit enable/expose gates, neutral tool/command/skill/prompt/guardrail specs. | Java API, ServiceLoader SPI | extension manifest/spec DTOs only | none | N/A | `coding-agent-harness/context/development/codebase-map.md` | none | N/A | `AGENTS.md`; `ai4j-extension-api/src/main/java` | 2026-06-08 | 2026-09-08 | high |
 | ai4j-core | Core SDK module | project coordinator | `ai4j/` | Unified provider access, Chat/Responses, RAG, MCP, vector, image, audio, realtime, web search, memory. | Java API, provider HTTP/SSE, vector store clients, MCP transports | SDK DTOs/config only | external providers, vector stores, MCP servers | N/A | `coding-agent-harness/context/development/codebase-map.md` | none | `coding-agent-harness/context/integrations/README.md` | `AGENTS.md`; `ai4j/src/main/java` | 2026-06-04 | 2026-09-04 | high |
 | ai4j-agent | Agent runtime module | project coordinator | `ai4j-agent/` | Agent runtime, workflow, trace, memory, subagent/team orchestration and FlowGram runtime bridge. | Java API, trace exporters, FlowGram task models | local runtime state abstractions | core SDK, trace exporters | N/A | `coding-agent-harness/context/development/codebase-map.md` | none | `coding-agent-harness/context/integrations/README.md` | `AGENTS.md`; `AGENT.md`; `ai4j-agent/src/main/java` | 2026-06-04 | 2026-09-04 | high |
 | ai4j-coding | Coding-agent runtime module | project coordinator | `ai4j-coding/` | Workspace-aware tools, shell/apply-patch runtime, loop control, compaction, session state. | Java API, local filesystem/shell abstractions | local coding session state | agent runtime, local workspace | N/A | `coding-agent-harness/context/development/codebase-map.md` | none | N/A | `AGENTS.md`; `ai4j-coding/src/main/java` | 2026-06-04 | 2026-09-04 | high |

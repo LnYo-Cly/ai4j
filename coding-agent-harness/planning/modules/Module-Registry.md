@@ -6,6 +6,7 @@ Generated from `harness.yaml` `modules.items`. Do not edit this view directly.
 
 | ID | Key | Title | Prefix | Branch | Current Step | Status | Owner | Scope | Shared | Depends On | Plan | Brief | Updated |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| M-EXT | extension-api | Extension API | EXT | main |  | planned | coordinator | ai4j-extension-api | none | none | coding-agent-harness/planning/modules/extension-api/module_plan.md | coding-agent-harness/planning/modules/extension-api/brief.md | 2026-06-08 |
 | M-AGENT | agent-runtime | Agent Runtime | AGENT | main |  | planned | coordinator | ai4j-agent | none | core-sdk | coding-agent-harness/planning/modules/agent-runtime/module_plan.md | coding-agent-harness/planning/modules/agent-runtime/brief.md | 2026-06-04 |
 | M-BOM | bom | Version Alignment BOM | BOM | main |  | planned | coordinator | ai4j-bom | none | none | coding-agent-harness/planning/modules/bom/module_plan.md | coding-agent-harness/planning/modules/bom/brief.md | 2026-06-04 |
 | M-CLI | cli-host | CLI Host | CLI | main |  | planned | coordinator | ai4j-cli | none | coding-runtime | coding-agent-harness/planning/modules/cli-host/module_plan.md | coding-agent-harness/planning/modules/cli-host/brief.md | 2026-06-04 |

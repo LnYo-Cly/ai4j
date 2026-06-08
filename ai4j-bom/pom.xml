@@ -49,6 +49,11 @@
         <dependencies>
             <dependency>
                 <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-extension-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
                 <artifactId>ai4j-agent</artifactId>
                 <version>${project.version}</version>
             </dependency>

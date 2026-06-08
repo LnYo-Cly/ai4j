@@ -5,6 +5,7 @@ on:
     branches: [dev, main]
     paths:
       - 'pom.xml'
+      - 'ai4j-extension-api/**'
       - 'ai4j/**'
       - 'ai4j-agent/**'
       - 'ai4j-coding/**'
@@ -49,6 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         module:
+          - ai4j-extension-api
           - ai4j
           - ai4j-agent
           - ai4j-coding

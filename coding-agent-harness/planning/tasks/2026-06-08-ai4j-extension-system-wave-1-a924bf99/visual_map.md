@@ -9,6 +9,7 @@ Visual Map Contract: v1.0
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-02 | architecture | 展示 Wave 1 扩展 API 与后续 runtime adapter 的边界 | yes | `ai4j-extension-api/src/main/java`; `findings.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
@@ -24,8 +25,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-08-ai4j-extension-system-wave-1-a924bf99` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-08-ai4j-extension-system-wave-1-a924bf99 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-08-ai4j-extension-system-wave-1-a924bf99 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `ai4j-extension-api` 模块、公共合同、测试、CI/BOM/回归/harness context 同步 | diff、RG-010、RG-007、progress、findings | `harness task-phase 2026-06-08-ai4j-extension-system-wave-1-a924bf99 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-08-ai4j-extension-system-wave-1-a924bf99 --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-08-ai4j-extension-system-wave-1-a924bf99 --confirm 2026-06-08-ai4j-extension-system-wave-1-a924bf99` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -48,3 +49,21 @@ flowchart LR
 - state：状态机或生命周期。
 - topology：repo、服务、worker、worktree 拓扑。
 - decision：方案分叉和决策树。
+
+## 架构边界图
+
+```mermaid
+flowchart LR
+  ThirdParty["third-party extension jar"] --> ServiceLoader["ServiceLoader discovery"]
+  ServiceLoader --> Manifest["ExtensionManifest"]
+  Manifest --> Registry["ExtensionRegistry"]
+  Registry --> Enable["explicit enable(id)"]
+  Enable --> Apply["ExtensionContext apply"]
+  Apply --> Resources["tool / command / skill / prompt / guardrail specs"]
+  Resources --> Expose["explicit exposeTool(name)"]
+  Expose --> Snapshot["ExtensionRuntimeSnapshot"]
+
+  Snapshot -. Wave 2 .-> AgentAdapter["ai4j-agent adapter"]
+  Snapshot -. Wave 2 .-> CliAdapter["ai4j-cli inspect/command adapter"]
+  Snapshot -. Wave 2 .-> SpringAdapter["Spring Boot properties/beans"]
+```

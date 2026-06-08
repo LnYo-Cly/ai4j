@@ -2,7 +2,7 @@
 
 Context Doc Type: codebase-map
 Owner: project coordinator
-Last Verified: 2026-06-07
+Last Verified: 2026-06-08
 Confidence: medium
 
 ## Entry Points
@@ -11,7 +11,9 @@ Confidence: medium
 | --- | --- | --- | --- | --- | --- | --- |
 | Repo operating rules | `AGENTS.md` | Monorepo identity, hard rules, build/test commands and reading matrix. | Always first. | `AGENTS.md` | 2026-06-04 | high |
 | Agent module architecture | `AGENT.md` | Architecture note for `ai4j-agent/`. | Agent runtime/workflow/trace/subagent changes. | `AGENTS.md`; `AGENT.md` | 2026-06-04 | high |
-| Parent Maven build | `pom.xml` | Java baseline, module list, release profile. | Any Java dependency/build/release change. | `pom.xml` | 2026-06-04 | high |
+| Parent Maven build | `pom.xml` | Java baseline, module list, release profile. | Any Java dependency/build/release change. | `pom.xml` | 2026-06-08 | high |
+| Extension API source | `ai4j-extension-api/src/main/java` | Public extension manifest, discovery, enable/expose and resource contracts. | Extension API or plugin ecosystem contract changes. | `AGENTS.md`; file scan 2026-06-08 | 2026-06-08 | high |
+| Extension API tests | `ai4j-extension-api/src/test/java` | JUnit tests for extension manifest, registry, capability and ServiceLoader contracts. | Extension API regression planning. | file scan 2026-06-08 | 2026-06-08 | high |
 | Core SDK source | `ai4j/src/main/java` | Provider, RAG, MCP, vector, image, audio, realtime and memory source. | Core SDK/provider/RAG/MCP/vector changes. | `AGENTS.md`; file scan 2026-06-04 | 2026-06-04 | high |
 | Core SDK tests | `ai4j/src/test/java` | Unit/local/provider-facing tests for core SDK. | Core SDK regression planning. | file scan 2026-06-04 | 2026-06-04 | high |
 | Agent runtime source | `ai4j-agent/src/main/java` | Agent runtime, workflow, trace, memory, subagent/team orchestration. | Agent behavior changes. | `AGENTS.md`; file scan 2026-06-04 | 2026-06-04 | high |

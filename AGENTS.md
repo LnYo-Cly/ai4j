@@ -10,10 +10,11 @@
 
 ## Monorepo Scope
 
-Treat this repository as an 8-module monorepo plus docs/demo surfaces.
+Treat this repository as a 9-module monorepo plus docs/demo surfaces.
 
 | Path | Role |
 |------|------|
+| `ai4j-extension-api/` | Lightweight public extension contract: manifest, ServiceLoader discovery, explicit enable/expose gates, extension resources |
 | `ai4j/` | Core SDK: provider access, Chat/Responses, RAG, MCP, vector, image, audio, realtime |
 | `ai4j-agent/` | Agent runtime, workflow, trace, memory, subagent/team orchestration |
 | `ai4j-coding/` | Coding-agent runtime, workspace-aware tools, outer loop, compaction |
@@ -41,6 +42,7 @@ Treat this repository as an 8-module monorepo plus docs/demo surfaces.
 ### Production Code
 
 - `ai4j/src/main/java`
+- `ai4j-extension-api/src/main/java`
 - `ai4j-agent/src/main/java`
 - `ai4j-coding/src/main/java`
 - `ai4j-cli/src/main/java`
@@ -76,6 +78,7 @@ Treat this repository as an 8-module monorepo plus docs/demo surfaces.
 ### Common Modules
 
 - Core SDK: `mvn -pl ai4j -DskipTests=false test`
+- Extension API: `mvn -pl ai4j-extension-api -DskipTests=false test`
 - Agent runtime: `mvn -pl ai4j-agent -DskipTests=false test`
 - Coding runtime: `mvn -pl ai4j-coding -DskipTests=false test`
 - CLI host: `mvn -pl ai4j-cli -DskipTests=false test`
@@ -117,6 +120,7 @@ Treat this repository as an 8-module monorepo plus docs/demo surfaces.
 
 | Task type | Read first |
 |-----------|------------|
+| Extension API / plugin ecosystem contract changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |
 | Core SDK / provider / MCP / RAG / vector / agentflow connector changes | `docs/11-REFERENCE/engineering-standard.md` |
 | Agent runtime / workflow / trace / subagent changes | `AGENT.md` and `docs/11-REFERENCE/engineering-standard.md` |
 | Coding runtime / CLI / TUI / ACP changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |

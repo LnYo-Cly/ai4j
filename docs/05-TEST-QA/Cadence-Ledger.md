@@ -1,6 +1,6 @@
 # Cadence Ledger - ai4j-sdk
 
-> Last updated: 2026-06-07
+> Last updated: 2026-06-08
 > Defines which regression gates should be revisited when each repository surface changes.
 
 ## Cadence Terms
@@ -16,7 +16,8 @@
 
 | Change Scope | Required Local Gates | Live / Credential Gates | Cadence | Minimum Evidence Depth | Why |
 |--------------|----------------------|-------------------------|---------|------------------------|-----|
-| PR to `dev` or `main` touching `pom.xml`, `ai4j/**`, `ai4j-agent/**`, `ai4j-coding/**`, `ai4j-cli/**`, `ai4j-spring-boot-starter/**`, `ai4j-flowgram-spring-boot-starter/**`, or `ai4j-bom/**` | RG-001, RG-002, RG-003, RG-004, RG-005, RG-006, RG-007 | none by default | PR | L1/L2 | `.github/workflows/java-regression.yml` runs Java 8 package smoke plus module test matrix |
+| PR to `dev` or `main` touching `pom.xml`, `ai4j-extension-api/**`, `ai4j/**`, `ai4j-agent/**`, `ai4j-coding/**`, `ai4j-cli/**`, `ai4j-spring-boot-starter/**`, `ai4j-flowgram-spring-boot-starter/**`, or `ai4j-bom/**` | RG-010, RG-001, RG-002, RG-003, RG-004, RG-005, RG-006, RG-007 | none by default | PR | L1/L2 | `.github/workflows/java-regression.yml` runs Java 8 package smoke plus module test matrix |
+| `ai4j-extension-api/` manifest, discovery, enable/expose, or extension resource contract changes | RG-010, RG-007 | none by default | touched-surface | L1 plus L2 when shared build changes | extension API contract plus cross-module packaging; third-party extension behavior must stay deterministic by default |
 | `ai4j/` provider, protocol, RAG, vector, MCP, image, audio, realtime, or agentflow connector changes | RG-001, RG-007 | LV-001 only when real provider behavior is in scope | touched-surface; opt-in-live if provider contract changed | L1 plus L3 when live is approved | core SDK contract plus cross-module packaging; provider calls must not be implicit default evidence |
 | `ai4j-agent/` workflow, memory, trace, subagent, team, or orchestration changes | RG-002, RG-007 | LV-002 only when live model behavior is in scope | touched-surface; opt-in-live for provider runtime changes | L1 plus L3 when live is approved | runtime behavior plus dependency alignment |
 | `ai4j-coding/` tools, outer-loop, checkpoint, shell/apply-patch, or compaction changes | RG-003, RG-007 | LV-002 only when live coding-agent/provider orchestration is in scope | touched-surface; opt-in-live for provider runtime changes | L1 plus L3 when live is approved | coding runtime plus cross-module packaging |
@@ -26,7 +27,7 @@
 | `ai4j-flowgram-demo/` backend changes | RG-006, RG-007 | LV-003 when demo scenario is in scope | touched-surface; opt-in-live for end-to-end demo | L1/L2 plus L4 when approved | demo backend consumes starter contracts and can affect web-demo integration |
 | `docs-site/` content, config, or workflow changes | RG-008 | none by default | touched-surface; PR/push workflow if configured path matches | L2 | docs-site build/type safety is the owning gate |
 | `ai4j-flowgram-webapp-demo/` frontend changes | RG-009 | LV-003 when paired with a real backend/demo scenario | touched-surface; opt-in-live for end-to-end demo | L2 plus L4 when approved | frontend demo lint/type/build baseline; browser scenario is separate evidence |
-| root `pom.xml`, `ai4j-bom/`, shared build plugins, release/publishing logic | RG-001, RG-002, RG-003, RG-004, RG-005, RG-006, RG-007 | CR-001 for release candidate or publish validation | touched-surface, PR, merge-batch; opt-in-live for release | L1/L2 plus L3-L5 when approved | shared dependency, plugin, or publishing changes can break all Java surfaces |
+| root `pom.xml`, `ai4j-bom/`, shared build plugins, release/publishing logic | RG-010, RG-001, RG-002, RG-003, RG-004, RG-005, RG-006, RG-007 | CR-001 for release candidate or publish validation | touched-surface, PR, merge-batch; opt-in-live for release | L1/L2 plus L3-L5 when approved | shared dependency, plugin, or publishing changes can break all Java surfaces |
 | `AGENTS.md`, `docs/11-REFERENCE/`, Regression SSoT, Cadence Ledger, task standards, or workflow governance changes | affected gates by manual review; no executable gate unless command behavior changes | none by default | touched-surface governance review | L0/L1 doc verification | governance docs alone do not imply code regression, but they must not drift from executable commands |
 | any merge to `dev` or `main` | full local baseline RG-001 to RG-009 | only opt-in gates explicitly required by the merged task/release | merge-batch | L1/L2; L3-L5 only when approved | branch integration should refresh the full deterministic control surface |
 

@@ -2,7 +2,7 @@
 
 Context Doc Type: local-repo-context
 Owner: project coordinator
-Last Verified: 2026-06-04
+Last Verified: 2026-06-08
 Confidence: medium
 
 ## Responsibility
@@ -13,6 +13,7 @@ Confidence: medium
 
 | Component | Path | Responsibility | Source Evidence | Last Verified | Confidence |
 | --- | --- | --- | --- | --- | --- |
+| Extension API | `ai4j-extension-api/` | Lightweight third-party extension contract, manifest, discovery, explicit enable/expose gates, neutral tool/command/skill/prompt/guardrail specs. | `AGENTS.md`; `pom.xml`; `ai4j-extension-api/src/main/java` | 2026-06-08 | high |
 | Core SDK | `ai4j/` | Provider access, Chat/Responses, RAG, MCP, vector, image, audio, realtime, web search, memory. | `AGENTS.md`; `pom.xml`; `ai4j/src/main/java` | 2026-06-04 | high |
 | Agent runtime | `ai4j-agent/` | Agent runtime, workflow, trace, memory, subagent/team orchestration, FlowGram runtime model. | `AGENTS.md`; `AGENT.md`; `ai4j-agent/src/main/java` | 2026-06-04 | high |
 | Coding runtime | `ai4j-coding/` | Workspace-aware coding tools, shell/apply-patch runtime, loop policy, compaction, session state. | `AGENTS.md`; `ai4j-coding/src/main/java` | 2026-06-04 | high |
