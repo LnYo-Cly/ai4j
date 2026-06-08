@@ -114,6 +114,7 @@ const sidebars: SidebarsConfig = {
           label: 'Extension',
           items: [
             'core-sdk/extension/overview',
+            'core-sdk/extension/plugin-packages',
             'core-sdk/extension/provider-extension',
             'core-sdk/extension/model-extension',
             'core-sdk/extension/service-extension',

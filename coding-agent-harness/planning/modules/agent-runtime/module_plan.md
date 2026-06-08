@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| AGENT-01 | 维护 runtime/workflow 合同 | planned | none | core-sdk |
+| AGENT-01 | 维护 runtime/workflow 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | core-sdk |
 | AGENT-02 | trace 与 memory 行为回归 | planned | none | AGENT-01 |
 | AGENT-03 | FlowGram / CLI 下游影响同步 | planned | none | AGENT-01 |
 
@@ -27,7 +27,7 @@
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Wave 3 adds extension tool adapter and `.extensions(...)` AgentBuilder entry; full suite still has existing R-008 blocker. |
 
 ## 验证
 

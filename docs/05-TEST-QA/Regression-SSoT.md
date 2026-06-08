@@ -1,6 +1,6 @@
 # Regression SSoT - ai4j-sdk
 
-> Last updated: 2026-06-08
+> Last updated: 2026-06-09
 > Control tower for fixed regression surfaces in the `ai4j-sdk` monorepo.
 
 ## Regression Layers
@@ -17,15 +17,15 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |
 |----|--------|---------|-------------------|---------|----------------|---------------|-------|
-| RG-010 | 🟢 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-08 pass, 8 tests | manifest model, ServiceLoader discovery, explicit enable/expose gates, runtime inspection snapshot, capability validation, and extension resource registry contracts |
+| RG-010 | 🟢 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-09 pass, 8 tests | manifest model, ServiceLoader discovery, explicit enable/expose gates, runtime inspection snapshot, capability validation, and extension resource registry contracts |
 | RG-001 | 🟢 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-07 pass | core provider adapters, RAG, MCP, vector, realtime, agentflow contract tests; includes `FirstChatCopyableCodeTest` for the full object-chain docs contract; provider-dependent tests are excluded from default runs by `LiveProviderTest` category |
-| RG-002 | 🔴 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 fail | agent runtime, workflow, memory, trace, subagent/team orchestration; current blocker is R-008 in `HandoffPolicyTest` |
-| RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-04 partial | direct coding module test passed; full `-am` evidence is blocked by upstream RG-002/R-008 |
-| RG-004 | 🟡 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-08 targeted pass / full gate blocked by R-008 | terminal host, session runtime, ACP, rendering, provider/model command behavior with fake/local clients; `Ai4jCliTest` passed 8 tests for extension inspect, while full `-am` stops in upstream `ai4j-agent` `HandoffPolicyTest` before CLI |
+| RG-002 | 🟡 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-09 targeted pass / full gate blocked by R-008 | agent runtime, workflow, memory, trace, subagent/team orchestration; `ExtensionAgentToolsTest` passed 4 tests for plugin adapter routing; full suite blocker remains R-008 in `HandoffPolicyTest` |
+| RG-003 | 🟡 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-09 targeted pass / full gate blocked by upstream R-008 | `CodingAgentBuilderTest` passed 7 tests including extension tool execution inside coding session; full `-am` evidence remains blocked by upstream RG-002/R-008 |
+| RG-004 | 🟡 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-09 targeted pass / full gate blocked by R-008 | terminal host, session runtime, ACP, rendering, provider/model command behavior with fake/local clients; `Ai4jCliTest` passed 8 tests for extension inspect, while full `-am` still stops in upstream `ai4j-agent` `HandoffPolicyTest` |
 | RG-005 | 🟢 | Spring Boot starter | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | 2026-06-06 pass | auto-configuration and config binding; includes `AiServiceFirstChatAutoConfigurationTest` for copyable Spring Boot first-chat starter contract |
 | RG-006 | 🟡 | FlowGram starter and task APIs | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test` | touched-surface, PR, merge-batch | L1 tests | ci-wired-pending-first-run | FlowGram runtime facade, controller, task store, trace bridge; local fixture tests are the default baseline |
-| RG-007 | 🟢 | monorepo package build | `mvn -DskipTests package` | PR, merge-batch, shared build change | L2 local_smoke | 2026-06-07 pass | cross-module packaging and dependency alignment; automated on Java PRs via `.github/workflows/java-regression.yml` |
-| RG-008 | 🟢 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | touched-surface, docs PR/push, merge-batch | L2 local_smoke | 2026-06-07 pass | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` and `NODE_OPTIONS=--max-old-space-size=8192 npm run build` passed for first-chat documentation updates |
+| RG-007 | 🟢 | monorepo package build | `mvn -DskipTests package` | PR, merge-batch, shared build change | L2 local_smoke | 2026-06-09 pass | cross-module packaging and dependency alignment across 10 reactor modules; automated on Java PRs via `.github/workflows/java-regression.yml` |
+| RG-008 | 🟢 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | touched-surface, docs PR/push, merge-batch | L2 local_smoke | 2026-06-09 pass | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` and `NODE_OPTIONS=--max-old-space-size=8192 npm run build` passed for plugin package documentation updates |
 | RG-009 | 🟡 | FlowGram webapp demo build | `npm run lint`, `npm run ts-check`, then `npm run build` in `ai4j-flowgram-webapp-demo/` | touched-surface, merge-batch | L2 local_smoke | bootstrap-mapped | current `npm test` is a stub; lint/type/build are the baseline until real tests exist |
 
 ## Live And Credential Opt-in Gates

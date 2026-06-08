@@ -17,10 +17,18 @@ import io.github.lnyocly.ai4j.coding.task.CodingTaskStatus;
 import io.github.lnyocly.ai4j.coding.task.InMemoryCodingTaskManager;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
+import io.github.lnyocly.ai4j.extension.Ai4jExtension;
+import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContext;
+import io.github.lnyocly.ai4j.extension.ExtensionManifest;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.tool.ExtensionToolCall;
+import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -164,6 +173,52 @@ public class CodingAgentBuilderTest {
         assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
         assertTrue(result.getToolResults().get(0).getOutput().contains("Unsupported patch line"));
         assertTrue(Files.notExists(workspaceRoot.resolve("calculator.py")));
+    }
+
+    @Test
+    public void shouldAllowModelToInvokeExposedExtensionToolWithinCodingSession() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-extension").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit extension workspace")
+                .build();
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
+                .enable("weather-pack")
+                .exposeTool("weather.search");
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name("weather.search")
+                        .arguments("{\"city\":\"Shanghai\"}")
+                        .callId("coding-weather-call-1")
+                        .build()))
+                .rawResponse("extension-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("extension weather ready")
+                .rawResponse("extension-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .extensions(registry)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Use the extension weather tool.");
+        }
+
+        assertEquals("extension weather ready", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        assertEquals("weather.search", result.getToolResults().get(0).getName());
+        assertEquals("weather:{\"city\":\"Shanghai\"}:coding-weather-call-1",
+                result.getToolResults().get(0).getOutput());
+        assertEquals(2, modelClient.prompts.size());
+        assertTrue(modelClient.prompts.get(0).getTools().toString().contains("weather.search"));
     }
 
     @Test
@@ -372,6 +427,7 @@ public class CodingAgentBuilderTest {
     private static class QueueModelClient implements AgentModelClient {
 
         private final Deque<AgentModelResult> results = new ArrayDeque<>();
+        private final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
 
         private void enqueue(AgentModelResult result) {
             results.addLast(result);
@@ -379,16 +435,41 @@ public class CodingAgentBuilderTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return results.removeFirst();
         }
 
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+            prompts.add(prompt);
             AgentModelResult result = results.removeFirst();
             if (listener != null && result != null && result.getOutputText() != null) {
                 listener.onDeltaText(result.getOutputText());
             }
             return result;
+        }
+    }
+
+    private static class WeatherExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("weather-pack")
+                    .name("Weather Pack")
+                    .capability(ExtensionCapability.TOOL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.tools().register(ExtensionToolSpec.builder()
+                            .name("weather.search")
+                            .description("Search weather")
+                            .inputSchema("{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"Target city\"}},\"required\":[\"city\"]}")
+                            .build(),
+                    new io.github.lnyocly.ai4j.extension.tool.ExtensionToolExecutor() {
+                        public String execute(ExtensionToolCall call) {
+                            return "weather:" + call.getArguments() + ":" + call.getAttributes().get("callId");
+                        }
+                    });
         }
     }
 }

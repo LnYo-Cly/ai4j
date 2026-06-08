@@ -100,6 +100,7 @@
 + 普通 Java 接入：`docs-site/docs/start-here/quickstart-java.md`
 + Spring Boot 接入：`docs-site/docs/start-here/quickstart-spring-boot.md`
 + 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
++ 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
 + 协议、Agent 与上层集成：`docs-site/docs/mcp/`、`docs-site/docs/agent/`、`docs-site/docs/coding-agent/`、`docs-site/docs/flowgram/`
 
 推荐阅读顺序：
@@ -109,6 +110,7 @@
 + `docs-site/docs/start-here/quickstart-java.md` 或 `docs-site/docs/start-here/quickstart-spring-boot.md`
 + `docs-site/docs/start-here/first-chat.md`
 + `docs-site/docs/core-sdk/overview.md`
++ `docs-site/docs/core-sdk/extension/plugin-packages.md`
 + `docs-site/docs/mcp/overview.md`
 
 如果使用支持 Skills 的 agent 工具，可以安装用户侧接入 Skill：

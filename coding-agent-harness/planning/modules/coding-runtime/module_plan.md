@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| CODING-01 | 维护 workspace-aware runtime 合同 | planned | none | core-sdk |
+| CODING-01 | 维护 workspace-aware runtime 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | core-sdk |
 | CODING-02 | outer loop / compaction 回归 | planned | none | CODING-01 |
 | CODING-03 | CLI host 同步评估 | planned | none | CODING-01 |
 
@@ -27,7 +27,7 @@
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-coding -am "-Dtest=CodingAgentBuilderTest,ExtensionAgentToolsTest" -DfailIfNoTests=false -DskipTests=false test` | Wave 3 adds `.extensions(...)` CodingAgentBuilder entry and extension tool execution coverage inside coding session. |
 
 ## 验证
 

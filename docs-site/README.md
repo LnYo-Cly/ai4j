@@ -24,6 +24,7 @@ npm run serve
 - 普通 Java 细分路径：`docs/start-here/quickstart-java.md`
 - Spring Boot 细分路径：`docs/start-here/quickstart-spring-boot.md`
 - 能力边界与继续阅读：`docs/start-here/feature-map.md`
+- 插件包生态与第三方扩展：`docs/core-sdk/extension/plugin-packages.md`
 
 普通 Java 首聊直接展示
 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`
@@ -55,7 +56,7 @@ Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpo
 
 - `docs/`
   - `start-here/`：首聊、路径选择、Quickstart、功能地图
-  - `core-sdk/`：模型接入、Tool、Skill、MCP、Memory、RAG、扩展
+  - `core-sdk/`：模型接入、Tool、Skill、MCP、Memory、RAG、扩展和插件包生态
   - `spring-boot/`：starter、配置、自动装配和 Bean 扩展
   - `mcp/`：MCP 能力与治理
   - `agent/`：智能体架构、编排与可观测

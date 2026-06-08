@@ -10,6 +10,7 @@
 | Model extension | 现有 provider 内部能力扩展 | 请求对象 + provider service 实现 |
 | Service extension | 代码内能力面扩展，不是通用 SPI | `service/*.java`、`AiService`、`AiServiceRegistry`、`FreeAiService` |
 | HTTP stack extension | 真正的 SPI 扩展 | `network/*Provider.java`、`META-INF/services/*`、`AiConfigAutoConfiguration.initOkHttp()` |
+| Plugin package | 第三方 jar 形式的运行时资源扩展 | `ai4j-extension-api`、`ServiceLoader`、`ExtensionRegistry`、Agent / Coding Agent `.extensions(...)` |
 
 ## 1. 这一章在 Core SDK 里的位置
 
@@ -21,6 +22,8 @@
 - 哪些底层行为已经有正式 SPI，可以不碰 provider 主链
 
 这一章仍然属于 `ai4j/` 基座本身。它不是 Spring Boot、Agent 或 Coding Agent 的补丁说明页。
+
+但从插件包开始，扩展面会进入 `ai4j-extension-api`、`ai4j-agent` 和 `ai4j-coding` 的交界处。插件包不是新增 provider 的方式，而是把工具、命令、Skill、Prompt、Guardrail 等运行时资源交给 Agent / Coding Agent 使用。
 
 ## 2. 先看真实执行链
 
@@ -72,6 +75,17 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 这类改动已经被做成正式 SPI，是当前这一章里最接近“插件化”的扩展面。
 
+### Plugin package
+
+你不想改核心 SDK 主链，只想把一组可复用资源提供给宿主应用，例如：
+
+- agent 可调用工具
+- coding agent 辅助工具
+- CLI 可检查的 extension manifest
+- prompt、skill 或 guardrail 资源
+
+这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用，最后用 `exposeTool(...)` 显式暴露给模型。
+
 ## 4. 当前实现里，哪些是“真 SPI”，哪些不是
 
 这是这一章最容易被误读的地方。
@@ -89,8 +103,11 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 - `DispatcherProvider`
 - `ConnectionPoolProvider`
+- `Ai4jExtension`，用于插件包 manifest 和运行时资源发现
 
 Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `ServiceLoaderUtil.load(...)` 加载这两个扩展点，并把返回的 `Dispatcher` 与 `ConnectionPool` 注入统一的 `OkHttpClient.Builder`。
+
+`Ai4jExtension` 也通过 `ServiceLoader` 发现，但它服务的是插件包资源注册，不会自动改变 provider 工厂分发。
 
 ## 5. 扩展决策顺序
 
@@ -136,7 +153,8 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 2. [Model Extension](/docs/core-sdk/extension/model-extension)
 3. [Service Extension](/docs/core-sdk/extension/service-extension)
 4. [SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
+5. [Plugin Packages](/docs/core-sdk/extension/plugin-packages)
 
 ## 9. 这一页的结论
 
-> AI4J 当前的扩展面并不对称。provider 和顶层 service 仍然走 `PlatformType + AiService + Registry` 这条代码主链，HTTP 并发与连接治理才是已经正式 SPI 化的部分。真正开始扩展前，先判断你碰到的是平台边界、模型变体、能力新增，还是网络栈治理问题。
+> AI4J 当前的扩展面并不对称。provider 和顶层 service 仍然走 `PlatformType + AiService + Registry` 这条代码主链，HTTP 并发与连接治理走底层 SPI；第三方插件包则走 `ai4j-extension-api + ServiceLoader + ExtensionRegistry`，用于给 Agent / Coding Agent 暴露可控的运行时资源。真正开始扩展前，先判断你碰到的是平台边界、模型变体、能力新增、网络栈治理，还是插件资源复用。

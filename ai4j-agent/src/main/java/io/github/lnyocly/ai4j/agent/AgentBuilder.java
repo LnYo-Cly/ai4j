@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -16,11 +17,13 @@ import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.trace.AgentTraceListener;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.lang.reflect.Constructor;
@@ -36,6 +39,7 @@ public class AgentBuilder {
     private AgentRuntime runtime;
     private AgentModelClient modelClient;
     private AgentToolRegistry toolRegistry;
+    private ExtensionAgentTools extensionTools;
     private SubAgentRegistry subAgentRegistry;
     private HandoffPolicy handoffPolicy;
     private final List<SubAgentDefinition> subAgentDefinitions = new ArrayList<>();
@@ -72,6 +76,16 @@ public class AgentBuilder {
 
     public AgentBuilder toolRegistry(AgentToolRegistry toolRegistry) {
         this.toolRegistry = toolRegistry;
+        return this;
+    }
+
+    public AgentBuilder extensions(ExtensionRegistry registry) {
+        this.extensionTools = ExtensionAgentTools.from(registry);
+        return this;
+    }
+
+    public AgentBuilder extensions(ExtensionAgentTools extensionTools) {
+        this.extensionTools = extensionTools;
         return this;
     }
 
@@ -209,15 +223,27 @@ public class AgentBuilder {
         Supplier<AgentMemory> resolvedMemorySupplier = memorySupplier == null ? InMemoryAgentMemory::new : memorySupplier;
         AgentMemory memory = resolvedMemorySupplier.get();
 
-        AgentToolRegistry baseToolRegistry = toolRegistry == null ? StaticToolRegistry.empty() : toolRegistry;
+        AgentToolRegistry configuredToolRegistry = toolRegistry == null ? StaticToolRegistry.empty() : toolRegistry;
+        ToolExecutor configuredToolExecutor = toolExecutor;
+        if (configuredToolExecutor == null) {
+            Set<String> allowedToolNames = resolveToolNames(configuredToolRegistry);
+            configuredToolExecutor = createToolUtilExecutor(allowedToolNames);
+        }
+        AgentToolRegistry baseToolRegistry = configuredToolRegistry;
+        ToolExecutor baseToolExecutor = configuredToolExecutor;
+        if (extensionTools != null) {
+            baseToolRegistry = new CompositeToolRegistry(configuredToolRegistry, extensionTools.getToolRegistry());
+            baseToolExecutor = mergeToolExecutors(
+                    configuredToolRegistry,
+                    configuredToolExecutor,
+                    extensionTools.getToolRegistry(),
+                    extensionTools.getToolExecutor()
+            );
+        }
         SubAgentRegistry resolvedSubAgentRegistry = resolveSubAgentRegistry();
         AgentToolRegistry resolvedToolRegistry = resolveToolRegistry(baseToolRegistry, resolvedSubAgentRegistry);
 
-        ToolExecutor resolvedToolExecutor = toolExecutor;
-        if (resolvedToolExecutor == null) {
-            Set<String> allowedToolNames = resolveToolNames(baseToolRegistry);
-            resolvedToolExecutor = createToolUtilExecutor(allowedToolNames);
-        }
+        ToolExecutor resolvedToolExecutor = baseToolExecutor;
         if (resolvedSubAgentRegistry != null) {
             HandoffPolicy resolvedHandoffPolicy = handoffPolicy == null ? HandoffPolicy.builder().build() : handoffPolicy;
             resolvedToolExecutor = new SubAgentToolExecutor(resolvedSubAgentRegistry, resolvedToolExecutor, resolvedHandoffPolicy);
@@ -303,6 +329,22 @@ public class AgentBuilder {
             }
         }
         return names;
+    }
+
+    private ToolExecutor mergeToolExecutors(AgentToolRegistry firstRegistry,
+                                            ToolExecutor firstExecutor,
+                                            AgentToolRegistry secondRegistry,
+                                            ToolExecutor secondExecutor) {
+        if (firstExecutor == null) {
+            return secondExecutor;
+        }
+        if (secondExecutor == null) {
+            return firstExecutor;
+        }
+        List<RoutingToolExecutor.Route> routes = new ArrayList<RoutingToolExecutor.Route>();
+        routes.add(RoutingToolExecutor.route(resolveToolNames(firstRegistry), firstExecutor));
+        routes.add(RoutingToolExecutor.route(resolveToolNames(secondRegistry), secondExecutor));
+        return new RoutingToolExecutor(routes, null);
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {

@@ -1,12 +1,13 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-06-08
+> Last updated: 2026-06-09
 > Single source of truth for active delivery work in this repository.
 
 ## Active Features
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
+| F-025 | AI4J Extension Runtime Adapter Wave 3 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
 | F-024 | AI4J Extension System 架构规划 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/task_plan.md` | n/a | 仅规划，不进入运行时代码实现 | 2026-06-08 |
 
 ## Completed Features
