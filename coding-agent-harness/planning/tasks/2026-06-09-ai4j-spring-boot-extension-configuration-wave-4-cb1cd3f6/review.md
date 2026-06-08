@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 Spring Boot auto-configuration tests、starter full regression、monorepo package smoke、docs-site typecheck/build、diff check 和 self adversarial review。人工确认仍由 harness review 队列完成。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606081952 |
+| Submitted At | 2026-06-08 19:52 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6 |
+| Materials Checklist Hash | 07dbcc75fd42782c |
+| Evidence Summary | Wave 4 Spring Boot extension configuration, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6 |
