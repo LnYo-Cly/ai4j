@@ -7,7 +7,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-029 | AI4J Extension Guardrail Execution Wave 7 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
+| F-029 | AI4J Extension Guardrail Execution Wave 7 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md` | n/a | Agent Review Submission complete; human confirmation not yet recorded | 2026-06-09 |
 | F-028 | AI4J Extension Skill / Prompt Resources Wave 6 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
 | F-027 | AI4J Extension Command Execution Wave 5 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
 | F-026 | AI4J Spring Boot Extension Configuration Wave 4 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
