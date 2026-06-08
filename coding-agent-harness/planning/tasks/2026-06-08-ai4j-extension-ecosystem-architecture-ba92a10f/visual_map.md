@@ -9,6 +9,7 @@ Visual Map Contract: v1.0
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-02 | architecture | 展示 Package / Manifest / Extension / Resource 和 AI4J 模块消费关系 | yes | `references/ai4j-extension-system-design.md` | yes |
 
 ## 阶段关系图（Phase Graph）
 
@@ -48,3 +49,32 @@ flowchart LR
 - state：状态机或生命周期。
 - topology：repo、服务、worker、worktree 拓扑。
 - decision：方案分叉和决策树。
+
+### MAP-02 - Extension System Architecture
+
+```mermaid
+flowchart TB
+  Package["AI4J Package\nMaven artifact / local package / future marketplace"]
+  Manifest["ai4j-package.yml\nid/version/capabilities/permissions/configPrefix"]
+  Extension["Ai4jExtension\nruntime code entrypoint"]
+  Resources["Resources\nskills / prompts / themes / schemas"]
+
+  Package --> Manifest
+  Package --> Extension
+  Package --> Resources
+
+  Loader["Extension Loader\nServiceLoader + manifest validation"]
+  Enable["Enable Gate\nexplicit enabled package set"]
+  Expose["Expose Gate\nallowlist tools/resources"]
+
+  Manifest --> Loader
+  Extension --> Loader
+  Resources --> Loader
+  Loader --> Enable
+  Enable --> Expose
+
+  Expose --> Agent["ai4j-agent\nTool / Guardrail"]
+  Expose --> Coding["ai4j-coding\nSkill / Prompt / Context / SubAgent"]
+  Expose --> CLI["ai4j-cli\nCommand / Inspect / TUI"]
+  Expose --> Spring["spring starter\nconfiguration binding"]
+```

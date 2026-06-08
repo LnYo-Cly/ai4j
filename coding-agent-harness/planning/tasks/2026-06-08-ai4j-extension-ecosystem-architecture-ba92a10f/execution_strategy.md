@@ -18,8 +18,8 @@
 
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | no | 本轮是设计落盘，主要风险来自边界判断；先由 coordinator 做 architecture/security self-review，后续实现前再要求独立 reviewer。 | 不调用只读 reviewer；在 `review.md` 记录信心挑战和残余。 |
+| Would a worker subagent materially help? | no | 没有并行代码切片；worker 会增加协调成本。 | coordinator 直接完成 task-local 规划材料。 |
 
 ## User Authorization Decision
 
@@ -28,18 +28,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-08 | planning-only | main | 本轮不改运行时代码，不需要 worker。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
 | 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
+| Subagent 模式 | none | 设计材料由 coordinator 独立完成，避免引入并行写入冲突。 |
+| 审查模型 | architecture/security self-check | 本轮产物是规划，目标是发现过度抽象、错误对标和安全门禁缺口。 |
+| Worktree 策略 | same checkout | 仅修改 task-local 文档和 Feature SSoT，不需要独立 worktree。 |
 | 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 证据深度 | L0 | 规划任务，验证覆盖 harness status、diff check、设计自审。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,16 +47,16 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| n/a | C-001..C-006 | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `git diff --check`; `npx.cmd --yes coding-agent-harness status --json .`; design self-review | `progress.md`、`review.md` | 无 whitespace error，harness status pass，review 无 P0/P1/P2 open finding |
+| L1 | 不适用 | n/a | 本轮不改代码 |
+| L2 | 不适用 | n/a | 本轮不改 docs-site 或 UI |
+| L3 | 后续实现前再定 | `review.md` residual | 需要实现任务补充独立 reviewer / targeted tests |
 
 ## 暂停 / 升级条件
 

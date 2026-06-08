@@ -4,7 +4,10 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | public-doc | URL:https://pi.dev/docs/latest/packages | Pi package 资源类型、安装来源、项目/全局配置和安全提示。 | coordinator |
+| REF-002 | public-doc | URL:https://pi.dev/docs/latest/extensions | Pi extension 可注册的 runtime 扩展面。 | coordinator |
+| REF-003 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/references/pi-extension-ecosystem-research.md | Pi 插件生态调研摘要和 AI4J 映射。 | coordinator / reviewer |
+| REF-004 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/references/ai4j-extension-system-design.md | AI4J Extension System 架构设计正文。 | coordinator / reviewer |
 
 ## 使用规则
 

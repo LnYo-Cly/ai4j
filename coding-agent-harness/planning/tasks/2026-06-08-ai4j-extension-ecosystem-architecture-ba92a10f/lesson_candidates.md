@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: extension-architecture-plan-local-design |
 | Source task | 2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f |
 | Owner | coordinator |
 | Last updated | 2026-06-08 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮产物本身就是 task-local 架构设计，不产生新的跨任务执行规范或 harness lesson。后续实现过程中若发现 extension API / guardrail / plugin docs 的可复用经验，再在对应实现任务中沉淀。
 
 ## Promotion Notes
 
