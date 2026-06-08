@@ -12,10 +12,14 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory.PreparedCodingAgent;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -24,6 +28,9 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Ai4jCliTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void test_top_level_help() {
@@ -417,6 +424,84 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_init_generates_maven_plugin_scaffold() throws Exception {
+        Path root = temporaryFolder.newFolder("extension-init").toPath();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        Ai4jCli cli = new Ai4jCli(new StubCodingCliAgentFactory(), root);
+        int exitCode = cli.run(
+                new String[]{
+                        "extension", "init", "weather-plugin",
+                        "--id", "weather-pack",
+                        "--package", "com.example.ai4j.weather",
+                        "--name", "Weather Pack",
+                        "--vendor", "Example"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        Path plugin = root.resolve("weather-plugin");
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(new String(err.toByteArray(), StandardCharsets.UTF_8), 0, exitCode);
+        Assert.assertTrue(output.contains("extension scaffold:"));
+        Assert.assertTrue(output.contains("id=weather-pack"));
+        Assert.assertTrue(output.contains("package=com.example.ai4j.weather"));
+        Assert.assertTrue(Files.exists(plugin.resolve("pom.xml")));
+        Assert.assertTrue(Files.exists(plugin.resolve("README.md")));
+        Assert.assertTrue(Files.exists(plugin.resolve("src/main/java/com/example/ai4j/weather/WeatherPackExtension.java")));
+        Assert.assertTrue(Files.exists(plugin.resolve("src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension")));
+        Assert.assertTrue(Files.exists(plugin.resolve("src/main/resources/skills/weather-pack/SKILL.md")));
+        Assert.assertTrue(Files.exists(plugin.resolve("src/main/resources/prompts/weather-pack-summary.md")));
+        Assert.assertTrue(Files.exists(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java")));
+
+        String extensionSource = read(plugin.resolve("src/main/java/com/example/ai4j/weather/WeatherPackExtension.java"));
+        String testSource = read(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java"));
+        String service = read(plugin.resolve("src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension"));
+        Assert.assertTrue(extensionSource.contains("implements Ai4jExtension"));
+        Assert.assertTrue(extensionSource.contains(".id(\"weather-pack\")"));
+        Assert.assertTrue(extensionSource.contains(".capability(ExtensionCapability.TOOL)"));
+        Assert.assertTrue(extensionSource.contains(".capability(ExtensionCapability.GUARDRAIL)"));
+        Assert.assertTrue(extensionSource.contains(".resourcePath(\"skills/weather-pack/SKILL.md\")"));
+        Assert.assertTrue(testSource.contains("ExtensionValidator.validate(registry, \"weather-pack\")"));
+        Assert.assertTrue(service.contains("com.example.ai4j.weather.WeatherPackExtension"));
+    }
+
+    @Test
+    public void test_extension_init_rejects_non_empty_directory() throws Exception {
+        Path root = temporaryFolder.newFolder("extension-init-non-empty").toPath();
+        Path plugin = root.resolve("weather-plugin");
+        Files.createDirectories(plugin);
+        Files.write(plugin.resolve("existing.txt"), "keep".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        Ai4jCli cli = new Ai4jCli(new StubCodingCliAgentFactory(), root);
+        int exitCode = cli.run(
+                new String[]{
+                        "extension", "init", "weather-plugin",
+                        "--id", "weather-pack",
+                        "--package", "com.example.ai4j.weather"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("target directory must be empty"));
+        Assert.assertTrue(Files.exists(plugin.resolve("existing.txt")));
+        Assert.assertFalse(Files.exists(plugin.resolve("pom.xml")));
+    }
+
+    @Test
     public void test_top_level_tui_command_routes_to_tui_mode() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -437,6 +522,10 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("fake-model"));
         Assert.assertTrue(output.contains("Echo: hello"));
         Assert.assertFalse(output.contains("EVENTS"));
+    }
+
+    private static String read(Path path) throws Exception {
+        return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     }
 
     private static final class StubCodingCliAgentFactory implements CodingCliAgentFactory {

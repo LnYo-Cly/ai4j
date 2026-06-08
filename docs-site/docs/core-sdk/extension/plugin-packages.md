@@ -211,6 +211,47 @@ CodingAgent agent = CodingAgents.builder()
 
 第三方插件至少包含三个部分。
 
+如果你还没有项目骨架，可以先用 CLI 生成一个最小 Maven 项目：
+
+```bash
+ai4j-cli extension init weather-ai4j-plugin \
+  --id weather-pack \
+  --package com.example.ai4j.weather \
+  --name "Weather Pack"
+```
+
+这个命令只写入一个不存在或空的本地目录。它不会把插件依赖安装到宿主应用，不会拉取远程插件，也不会启用插件。生成后目录结构类似：
+
+```text
+weather-ai4j-plugin/
+  pom.xml
+  README.md
+  src/main/java/com/example/ai4j/weather/WeatherPackExtension.java
+  src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension
+  src/main/resources/skills/weather-pack/SKILL.md
+  src/main/resources/prompts/weather-pack-summary.md
+  src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java
+```
+
+本地验证：
+
+```bash
+cd weather-ai4j-plugin
+mvn test
+```
+
+生成的测试会调用 `ExtensionValidator`，先证明 manifest、runtime 贡献、Skill / Prompt classpath 资源和 schema contract 能被 AI4J 稳定读取。插件作者再把示例 Tool / Command / Skill / Prompt / Guardrail 替换成真实业务逻辑。
+
+可选参数：
+
+| 参数 | 作用 | 默认值 |
+| --- | --- | --- |
+| `--group-id` | Maven `groupId` | `--package` |
+| `--artifact-id` | Maven `artifactId` | `--id` |
+| `--version` | Maven 和 manifest 版本 | `1.0.0` |
+| `--class-name` | `Ai4jExtension` 实现类名 | 从 `--id` 派生 |
+| `--vendor` | manifest vendor | `example` |
+
 ### 5.1 实现 `Ai4jExtension`
 
 ```java

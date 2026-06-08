@@ -19,11 +19,28 @@ import io.github.lnyocly.ai4j.extension.validation.ExtensionValidationReport;
 import io.github.lnyocly.ai4j.extension.validation.ExtensionValidator;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class CliExtensionCommand {
+
+    private static final String EXTENSION_API_VERSION = "2.3.0";
+
+    private final Path currentDirectory;
+
+    public CliExtensionCommand() {
+        this(Paths.get(".").toAbsolutePath().normalize());
+    }
+
+    public CliExtensionCommand(Path currentDirectory) {
+        this.currentDirectory = currentDirectory == null
+                ? Paths.get(".").toAbsolutePath().normalize()
+                : currentDirectory.toAbsolutePath().normalize();
+    }
 
     public int run(List<String> args, TerminalIO terminal) {
         List<String> arguments = args == null ? Collections.<String>emptyList() : args;
@@ -41,6 +58,9 @@ public class CliExtensionCommand {
             }
             if ("inspect".equalsIgnoreCase(command)) {
                 return inspect(arguments.subList(1, arguments.size()), terminal);
+            }
+            if ("init".equalsIgnoreCase(command)) {
+                return init(arguments.subList(1, arguments.size()), terminal);
             }
             if ("validate".equalsIgnoreCase(command)) {
                 return validate(arguments.subList(1, arguments.size()), terminal);
@@ -91,6 +111,19 @@ public class CliExtensionCommand {
                 : Collections.singletonList(ExtensionValidator.validate(registry, options.extensionId));
         printValidationReports(reports, terminal);
         return hasValidationErrors(reports) ? 2 : 0;
+    }
+
+    private int init(List<String> args, TerminalIO terminal) throws IOException {
+        ExtensionScaffoldGenerator.Options options = parseInitOptions(args);
+        ExtensionScaffoldGenerator.Result result = ExtensionScaffoldGenerator.generate(options);
+        terminal.println("extension scaffold:");
+        terminal.println("path=" + result.getTargetDirectory());
+        terminal.println("id=" + options.getExtensionId());
+        terminal.println("package=" + options.getPackageName());
+        terminal.println("class=" + options.getClassName());
+        terminal.println("files=" + result.getCreatedFiles().size());
+        terminal.println("next=mvn test");
+        return 0;
     }
 
     private int runExtensionCommand(List<String> args, TerminalIO terminal) throws Exception {
@@ -166,6 +199,85 @@ public class CliExtensionCommand {
             terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, and guardrails");
         }
         return 0;
+    }
+
+    private ExtensionScaffoldGenerator.Options parseInitOptions(List<String> args) {
+        if (args == null || args.isEmpty() || isHelp(args.get(0))) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
+        }
+        String directory = null;
+        String extensionId = null;
+        String packageName = null;
+        String displayName = null;
+        String groupId = null;
+        String artifactId = null;
+        String version = null;
+        String className = null;
+        String vendor = null;
+        for (int i = 0; i < args.size(); i++) {
+            String arg = args.get(i);
+            if (arg != null && arg.startsWith("--")) {
+                String value = requireOptionValue(args, i, arg);
+                i++;
+                if ("--id".equals(arg)) {
+                    extensionId = value;
+                } else if ("--package".equals(arg)) {
+                    packageName = value;
+                } else if ("--name".equals(arg)) {
+                    displayName = value;
+                } else if ("--group-id".equals(arg)) {
+                    groupId = value;
+                } else if ("--artifact-id".equals(arg)) {
+                    artifactId = value;
+                } else if ("--version".equals(arg)) {
+                    version = value;
+                } else if ("--class-name".equals(arg)) {
+                    className = value;
+                } else if ("--vendor".equals(arg)) {
+                    vendor = value;
+                } else {
+                    throw new IllegalArgumentException("unsupported option: " + arg);
+                }
+                continue;
+            }
+            if (directory != null) {
+                throw new IllegalArgumentException("unexpected argument: " + arg);
+            }
+            directory = arg;
+        }
+        if (isBlank(directory)) {
+            throw new IllegalArgumentException("target directory is required");
+        }
+        if (isBlank(extensionId)) {
+            throw new IllegalArgumentException("--id is required");
+        }
+        if (isBlank(packageName)) {
+            throw new IllegalArgumentException("--package is required");
+        }
+        Path target = currentDirectory.resolve(directory).toAbsolutePath().normalize();
+        return ExtensionScaffoldGenerator.Options.builder()
+                .targetDirectory(target)
+                .extensionId(extensionId)
+                .packageName(packageName)
+                .displayName(displayName)
+                .groupId(groupId)
+                .artifactId(artifactId)
+                .version(version)
+                .className(className)
+                .vendor(vendor)
+                .extensionApiVersion(EXTENSION_API_VERSION)
+                .build();
+    }
+
+    private String requireOptionValue(List<String> args, int index, String option) {
+        if (index + 1 >= args.size()) {
+            throw new IllegalArgumentException(option + " requires a value");
+        }
+        String value = args.get(index + 1);
+        if (isBlank(value) || value.startsWith("--")) {
+            throw new IllegalArgumentException(option + " requires a value");
+        }
+        return value;
     }
 
     private RunOptions parseRunOptions(List<String> args) {
@@ -470,19 +582,31 @@ public class CliExtensionCommand {
         terminal.println("  Inspect AI4J extension packages discovered on the current classpath.\n");
         terminal.println("Usage:");
         terminal.println("  ai4j-cli extension list");
-        terminal.println("  ai4j-cli extension inspect <id> [--runtime]\n");
-        terminal.println("  ai4j-cli extension validate <id>|--all\n");
-        terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]\n");
+        terminal.println("  ai4j-cli extension inspect <id> [--runtime]");
+        terminal.println("  ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
+        terminal.println("  ai4j-cli extension validate <id>|--all");
+        terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
         terminal.println("  ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>\n");
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
+        terminal.println("  init <directory>     Generate a local Maven Java 8 plugin package scaffold");
         terminal.println("  validate <id>|--all  Validate manifest, runtime resources, and authoring contract");
         terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
         terminal.println("  resource --enable <id> <skill|prompt> <name>  Print a contributed resource from enabled extensions");
+        terminal.println("\nInit options:");
+        terminal.println("  --id <extension-id>       Required stable plugin id, for example weather-pack");
+        terminal.println("  --package <java-package>  Required Java package, for example com.example.ai4j.weather");
+        terminal.println("  --name <display-name>     Human-readable plugin name");
+        terminal.println("  --group-id <group-id>     Maven groupId; defaults to --package");
+        terminal.println("  --artifact-id <artifact>  Maven artifactId; defaults to --id");
+        terminal.println("  --version <version>       Maven and manifest version; defaults to 1.0.0");
+        terminal.println("  --class-name <class>      Extension class name; defaults from --id");
+        terminal.println("  --vendor <vendor>         Manifest vendor; defaults to example");
         terminal.println("\nNotes:");
         terminal.println("  Discovery does not enable an extension.");
+        terminal.println("  init writes only into a missing or empty directory; it does not install dependencies.");
         terminal.println("  Runtime inspection is temporary and does not expose tools to an agent.");
         terminal.println("  Running a command requires --enable so classpath discovery never executes commands implicitly.");
         terminal.println("  Reading a resource also requires --enable; the command prints raw UTF-8 classpath content.");

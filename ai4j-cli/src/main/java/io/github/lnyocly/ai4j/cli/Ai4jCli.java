@@ -55,7 +55,7 @@ public class Ai4jCli {
                     currentDirectory
             );
             AcpCommand acpCommand = new AcpCommand(env, properties, currentDirectory);
-            CliExtensionCommand extensionCommand = new CliExtensionCommand();
+            CliExtensionCommand extensionCommand = new CliExtensionCommand(currentDirectory);
 
             if (arguments.isEmpty()) {
                 return codeCommand.run(Collections.<String>emptyList(), terminal);
@@ -99,6 +99,7 @@ public class Ai4jCli {
         terminal.println("  ai4j-cli tui --model <model> [options]");
         terminal.println("  ai4j-cli acp --model <model> [options]");
         terminal.println("  ai4j-cli extension list");
+        terminal.println("  ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
         terminal.println("  ai4j-cli extension validate <extension-id>|--all");
         terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
         terminal.println("  ai4j-cli --model <model> [options]   # handled as the code command by default\n");

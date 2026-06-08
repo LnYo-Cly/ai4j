@@ -7,6 +7,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
+| F-031 | AI4J Extension Plugin Scaffold Wave 9 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/task_plan.md` | n/a | local Maven plugin scaffold implementation in progress; no remote marketplace or dependency install semantics | 2026-06-09 |
 | F-030 | AI4J Extension Authoring / Validation Wave 8 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/task_plan.md` | n/a | validator / CLI / docs implementation in progress; human confirmation not yet recorded | 2026-06-09 |
 | F-029 | AI4J Extension Guardrail Execution Wave 7 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md` | n/a | Agent Review Submission complete; human confirmation not yet recorded | 2026-06-09 |
 | F-028 | AI4J Extension Skill / Prompt Resources Wave 6 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |

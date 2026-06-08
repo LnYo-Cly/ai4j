@@ -26,6 +26,8 @@ npm run serve
 - 能力边界与继续阅读：`docs/start-here/feature-map.md`
 - 插件包生态与第三方扩展：`docs/core-sdk/extension/plugin-packages.md`
 - Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
+- CLI 插件骨架生成：`ai4j-cli extension init <directory> --id <extension-id> --package <java-package>`
+- CLI 插件校验：`ai4j-cli extension validate <extension-id>|--all`
 - CLI 插件命令执行：`ai4j-cli extension run --enable <extension-id> <command> [arguments...]`
 - CLI 插件资源读取：`ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>`
 
