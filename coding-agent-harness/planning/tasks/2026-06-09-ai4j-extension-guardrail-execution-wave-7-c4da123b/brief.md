@@ -10,42 +10,43 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+已启用插件注册的 Guardrail 会在 Agent / Coding Agent 执行 tool call 前生效，并能阻止 extension tool 或 Coding Agent 内置工具实际运行。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+本任务完成后，AI4J 的插件生态不再只是展示 Guardrail 能力，而是在真实运行时执行。普通 Agent 调用暴露的插件工具前会先评估 Guardrail；Coding Agent 调用内置 workspace tools 或 extension tools 前也会先评估 Guardrail。被拒绝的调用会作为 `TOOL_ERROR` 返回给 Agent loop，实际工具 executor 不会执行。文档同步说明 `tool.execute` 请求契约、Agent / Coding Agent 执行点，以及 CLI `extension run/resource` 仍属于人工显式路径。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`ExtensionGuardrailToolExecutor`、Agent / Coding Agent Guardrail 接线、targeted tests、docs-site 插件文档、README 入口、回归治理记录。
+- 修改位置：`ai4j-agent/`、`ai4j-coding/`、`docs-site/docs/core-sdk/extension/plugin-packages.md`、`README.md`、`docs/05-TEST-QA/`、`docs/09-PLANNING/`。
+- 验证证据：`progress.md` 记录 Agent / Coding Agent targeted tests、monorepo package、docs-site typecheck/build、diff check 和 harness status。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `task_plan.md` 确认范围和验收标准，再读 `findings.md` 理解为什么 Coding Agent `newSession()` 和 delegated child session 都需要独立包装。代码重点看 `ExtensionGuardrailToolExecutor.java`、`CodingAgent.java` 和 `DefaultCodingRuntime.java`。验证证据看 `progress.md`，审查结论看 `review.md`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：Agent / Coding Agent tool execution 前的 extension Guardrail 执行、测试、文档和回归台账。
+- 范围外：CLI `extension run/resource` 的 Guardrail 拦截、marketplace、自动安装、jar hotload、provider plugin、live provider behavior。
+- 停止条件：需要改变 approval、workspace 写边界、CLI command 拦截或新增非 `tool.execute` Guardrail action 时，必须另开任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `ExtensionAgentToolsTest` 覆盖 extension tool 被 Guardrail 拒绝且 executor 未执行。
+- `CodingAgentBuilderTest` 覆盖内置 `bash` 被 Guardrail 拒绝且命令未执行。
+- docs-site 和 README 明确 Agent / Coding Agent Guardrail 执行语义与 CLI 边界。
+- Regression SSoT / Cadence Ledger 记录 RG-002、RG-003、RG-007、RG-008 证据。
+- `review.md` 无 open material finding，`lesson_candidates.md` 完成 checked-none 判定。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- 生命周期状态：审查中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`、`walkthrough.md`、`lesson_candidates.md`
+- 完成条件：验证证据必须记录到 `progress.md`，Agent Review Submission 由 `harness task-review` 写入；人工确认不能由 agent 代办。
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+运行 `harness task-review` 写入 Agent Review Submission，然后推送提交，等待人工确认。
