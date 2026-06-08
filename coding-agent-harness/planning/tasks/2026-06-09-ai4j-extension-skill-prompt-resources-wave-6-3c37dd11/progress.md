@@ -1,6 +1,6 @@
 # AI4J extension skill prompt resources wave 6 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -54,3 +54,10 @@
 - 验证结果：package/docs/diff 全部通过；harness status 在提交前只报告 dirty-state warning，无 validation failure。
 - 下一步：提交实现，运行 `harness task-review`，推送。
 - 证据：command:TARGET:.:"mvn -DskipTests package" passed across 10 reactor modules; command:TARGET:docs-site:"NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck" passed; command:TARGET:docs-site:"NODE_OPTIONS=--max-old-space-size=8192 npm run build" passed; command:TARGET:.:"git diff --check" passed; command:TARGET:.:"npx --yes coding-agent-harness status --json ." warned only because working tree was intentionally dirty before commit
+
+### [2026-06-08 20:42] - task-review
+
+- 做了什么：Wave 6 extension skill/prompt resources implementation, docs, and verification are ready for human review
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

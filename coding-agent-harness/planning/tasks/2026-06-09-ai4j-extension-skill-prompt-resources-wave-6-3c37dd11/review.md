@@ -102,3 +102,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自三组 targeted JUnit、后续 package/docs gates、harness status、diff check，以及对 enable 门禁、只读资源根和 workspace 写边界的显式测试。人工确认仍由 review queue 执行。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606082042 |
+| Submitted At | 2026-06-08 20:42 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11 |
+| Materials Checklist Hash | d499eff1fe467255 |
+| Evidence Summary | Wave 6 extension skill/prompt resources implementation, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11 |
