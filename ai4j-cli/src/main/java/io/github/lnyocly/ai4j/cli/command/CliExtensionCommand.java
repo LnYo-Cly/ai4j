@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandRequest;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
+import io.github.lnyocly.ai4j.extension.resource.ExtensionResourceResolver;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
@@ -40,6 +41,9 @@ public class CliExtensionCommand {
             }
             if ("run".equalsIgnoreCase(command)) {
                 return runExtensionCommand(arguments.subList(1, arguments.size()), terminal);
+            }
+            if ("resource".equalsIgnoreCase(command)) {
+                return readExtensionResource(arguments.subList(1, arguments.size()), terminal);
             }
             terminal.errorln("Unknown extension command: " + command);
             printHelp(terminal);
@@ -86,6 +90,37 @@ public class CliExtensionCommand {
         if (!isBlank(result)) {
             terminal.println(result);
         }
+        return 0;
+    }
+
+    private int readExtensionResource(List<String> args, TerminalIO terminal) {
+        ResourceOptions options = parseResourceOptions(args);
+        ExtensionRegistry registry = ExtensionRegistry.discover()
+                .enableAll(options.enabledExtensionIds);
+        ExtensionRuntimeSnapshot snapshot = registry.snapshot();
+        String content;
+        if ("skill".equals(options.resourceType)) {
+            ExtensionSkillResource skill = findSkill(snapshot.getSkills(), options.resourceName);
+            if (skill == null) {
+                throw new ExtensionException("skill not registered by enabled extensions: " + options.resourceName);
+            }
+            content = ExtensionResourceResolver.readText(
+                    skill.getResourcePath(),
+                    registry.getExtensionClassLoader(requireExtensionId(skill.getExtensionId(), "skill"))
+            );
+        } else if ("prompt".equals(options.resourceType)) {
+            ExtensionPromptResource prompt = findPrompt(snapshot.getPrompts(), options.resourceName);
+            if (prompt == null) {
+                throw new ExtensionException("prompt not registered by enabled extensions: " + options.resourceName);
+            }
+            content = ExtensionResourceResolver.readText(
+                    prompt.getResourcePath(),
+                    registry.getExtensionClassLoader(requireExtensionId(prompt.getExtensionId(), "prompt"))
+            );
+        } else {
+            throw new IllegalArgumentException("unsupported resource type: " + options.resourceType);
+        }
+        terminal.print(content == null ? "" : content);
         return 0;
     }
 
@@ -158,6 +193,50 @@ public class CliExtensionCommand {
             throw new IllegalArgumentException("command name is required");
         }
         return new RunOptions(enabledExtensionIds, commandName, commandArguments);
+    }
+
+    private ResourceOptions parseResourceOptions(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>");
+        }
+        List<String> enabledExtensionIds = new ArrayList<String>();
+        String resourceType = null;
+        String resourceName = null;
+        for (int i = 0; i < args.size(); i++) {
+            String arg = args.get(i);
+            if ("--enable".equals(arg) || "--extension".equals(arg)) {
+                if (i + 1 >= args.size()) {
+                    throw new IllegalArgumentException(arg + " requires an extension id");
+                }
+                enabledExtensionIds.add(ExtensionManifest.requireId(args.get(++i), "extension id"));
+                continue;
+            }
+            if (arg != null && arg.startsWith("--")) {
+                throw new IllegalArgumentException("unsupported option: " + arg);
+            }
+            if (resourceType == null) {
+                resourceType = ExtensionManifest.requireId(arg, "resource type").toLowerCase();
+                continue;
+            }
+            if (resourceName == null) {
+                resourceName = ExtensionManifest.requireId(arg, "resource name");
+                continue;
+            }
+            throw new IllegalArgumentException("unexpected argument: " + arg);
+        }
+        if (enabledExtensionIds.isEmpty()) {
+            throw new IllegalArgumentException("at least one --enable <extension-id> is required before reading extension resources");
+        }
+        if (isBlank(resourceType)) {
+            throw new IllegalArgumentException("resource type is required");
+        }
+        if (!"skill".equals(resourceType) && !"prompt".equals(resourceType)) {
+            throw new IllegalArgumentException("unsupported resource type: " + resourceType);
+        }
+        if (isBlank(resourceName)) {
+            throw new IllegalArgumentException("resource name is required");
+        }
+        return new ResourceOptions(enabledExtensionIds, resourceType, resourceName);
     }
 
     private InspectOptions parseInspectOptions(List<String> args) {
@@ -238,6 +317,30 @@ public class CliExtensionCommand {
         return joinValues(values);
     }
 
+    private ExtensionSkillResource findSkill(List<ExtensionSkillResource> skills, String name) {
+        if (skills == null) {
+            return null;
+        }
+        for (ExtensionSkillResource skill : skills) {
+            if (skill != null && skill.getName().equals(name)) {
+                return skill;
+            }
+        }
+        return null;
+    }
+
+    private ExtensionPromptResource findPrompt(List<ExtensionPromptResource> prompts, String name) {
+        if (prompts == null) {
+            return null;
+        }
+        for (ExtensionPromptResource prompt : prompts) {
+            if (prompt != null && prompt.getName().equals(name)) {
+                return prompt;
+            }
+        }
+        return null;
+    }
+
     private String joinCapabilities(Iterable<ExtensionCapability> capabilities) {
         if (capabilities == null) {
             return "-";
@@ -287,15 +390,18 @@ public class CliExtensionCommand {
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension inspect <id> [--runtime]\n");
         terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]\n");
+        terminal.println("  ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>\n");
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
         terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
+        terminal.println("  resource --enable <id> <skill|prompt> <name>  Print a contributed resource from enabled extensions");
         terminal.println("\nNotes:");
         terminal.println("  Discovery does not enable an extension.");
         terminal.println("  Runtime inspection is temporary and does not expose tools to an agent.");
         terminal.println("  Running a command requires --enable so classpath discovery never executes commands implicitly.");
+        terminal.println("  Reading a resource also requires --enable; the command prints raw UTF-8 classpath content.");
     }
 
     private boolean isHelp(String value) {
@@ -339,6 +445,13 @@ public class CliExtensionCommand {
         return value == null || value.trim().isEmpty();
     }
 
+    private String requireExtensionId(String extensionId, String resourceType) {
+        if (isBlank(extensionId)) {
+            throw new ExtensionException("extension " + resourceType + " resource is missing extension id");
+        }
+        return extensionId.trim();
+    }
+
     private static final class InspectOptions {
         private final String extensionId;
         private final boolean runtime;
@@ -362,6 +475,20 @@ public class CliExtensionCommand {
             this.arguments = arguments == null
                     ? Collections.<String>emptyList()
                     : Collections.unmodifiableList(new ArrayList<String>(arguments));
+        }
+    }
+
+    private static final class ResourceOptions {
+        private final List<String> enabledExtensionIds;
+        private final String resourceType;
+        private final String resourceName;
+
+        private ResourceOptions(List<String> enabledExtensionIds, String resourceType, String resourceName) {
+            this.enabledExtensionIds = enabledExtensionIds == null
+                    ? Collections.<String>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<String>(enabledExtensionIds));
+            this.resourceType = resourceType;
+            this.resourceName = resourceName;
         }
     }
 }

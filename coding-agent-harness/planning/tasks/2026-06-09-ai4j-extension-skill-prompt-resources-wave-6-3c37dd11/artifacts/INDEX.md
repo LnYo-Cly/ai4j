@@ -4,7 +4,12 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | command | TARGET:. | `mvn -pl ai4j-extension-api -DskipTests=false test` passed with 8 tests. | coordinator |
+| ART-002 | command | TARGET:. | `mvn -pl ai4j-coding -am -Dtest=CodingSkillSupportTest -DfailIfNoTests=false -DskipTests=false test` passed with 3 tests. | coordinator |
+| ART-003 | command | TARGET:. | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 16 tests. | coordinator |
+| ART-004 | command | TARGET:. | `mvn -DskipTests package` passed across 10 reactor modules. | coordinator |
+| ART-005 | command | TARGET:docs-site | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` and `npm run build` passed. | coordinator |
+| ART-006 | command | TARGET:. | `git diff --check` passed; pre-commit harness status warned only about intentional dirty working tree. | coordinator |
 
 ## 使用规则
 

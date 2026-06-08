@@ -58,7 +58,7 @@ public final class ExtensionRuntimeState {
             throw new IllegalArgumentException("skill resource must not be null");
         }
         ensureUnique(skills, resource.getName(), "skill", manifest);
-        skills.put(resource.getName(), resource);
+        skills.put(resource.getName(), withExtensionId(resource, manifest));
     }
 
     public void registerPrompt(ExtensionManifest manifest, ExtensionPromptResource resource) {
@@ -66,7 +66,7 @@ public final class ExtensionRuntimeState {
             throw new IllegalArgumentException("prompt resource must not be null");
         }
         ensureUnique(prompts, resource.getName(), "prompt", manifest);
-        prompts.put(resource.getName(), resource);
+        prompts.put(resource.getName(), withExtensionId(resource, manifest));
     }
 
     public void registerGuardrail(ExtensionManifest manifest, ExtensionGuardrail guardrail) {
@@ -118,5 +118,19 @@ public final class ExtensionRuntimeState {
             String extensionId = manifest == null ? "unknown" : manifest.getId();
             throw new ExtensionException("duplicate " + type + " id: " + id + " from extension " + extensionId);
         }
+    }
+
+    private ExtensionSkillResource withExtensionId(ExtensionSkillResource resource, ExtensionManifest manifest) {
+        if (manifest == null) {
+            return resource;
+        }
+        return resource.withExtensionId(manifest.getId());
+    }
+
+    private ExtensionPromptResource withExtensionId(ExtensionPromptResource resource, ExtensionManifest manifest) {
+        if (manifest == null) {
+            return resource;
+        }
+        return resource.withExtensionId(manifest.getId());
     }
 }

@@ -103,6 +103,7 @@
 + 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
 + Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 + CLI 插件命令执行：`ai4j-cli extension run --enable <extension-id> <command> [arguments...]`
++ CLI 插件资源读取：`ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>`
 + 协议、Agent 与上层集成：`docs-site/docs/mcp/`、`docs-site/docs/agent/`、`docs-site/docs/coding-agent/`、`docs-site/docs/flowgram/`
 
 推荐阅读顺序：

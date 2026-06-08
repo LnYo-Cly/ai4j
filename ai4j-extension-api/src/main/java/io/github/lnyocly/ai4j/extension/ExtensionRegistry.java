@@ -121,6 +121,13 @@ public final class ExtensionRegistry {
         return Collections.unmodifiableSet(exposedToolIds);
     }
 
+    public ClassLoader getExtensionClassLoader(String extensionId) {
+        String normalized = requireKnownExtension(extensionId);
+        Ai4jExtension extension = discovered.get(normalized);
+        ClassLoader classLoader = extension == null ? null : extension.getClass().getClassLoader();
+        return classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
+    }
+
     private void registerDiscovered(Ai4jExtension extension) {
         if (extension == null) {
             throw new IllegalArgumentException("extension must not be null");

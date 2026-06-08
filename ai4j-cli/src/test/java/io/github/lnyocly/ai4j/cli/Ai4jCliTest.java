@@ -287,6 +287,71 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_resource_requires_explicit_enable() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "resource", "skill", "cli-skill"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("at least one --enable <extension-id> is required"));
+        Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_resource_prints_enabled_skill_content() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "resource", "--enable", "cli-test-pack", "skill", "cli-skill"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("name: cli-skill"));
+        Assert.assertTrue(output.contains("Use this fixture skill to verify extension resource loading."));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_resource_prints_enabled_prompt_content() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extensions", "resource", "--enable", "cli-test-pack", "prompt", "cli-prompt"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("CLI extension prompt fixture"));
+        Assert.assertTrue(output.contains("Summarize extension resources."));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
     public void test_top_level_tui_command_routes_to_tui_mode() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();

@@ -4,7 +4,9 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | design | TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/references/ai4j-extension-system-design.md | AI4J Extension System 的 Package / Manifest / Extension / Resource 分层和 Wave 路线。 | coordinator / reviewer |
+| REF-002 | code | TARGET:ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/skill/CodingSkillDiscovery.java | 现有 coding skill discovery 和 allowed read root 机制。 | coordinator / reviewer |
+| REF-003 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/CliExtensionCommand.java | 现有 extension list/inspect/run CLI 命令和 enable 门禁。 | coordinator / reviewer |
 
 ## 使用规则
 

@@ -27,6 +27,7 @@ npm run serve
 - 插件包生态与第三方扩展：`docs/core-sdk/extension/plugin-packages.md`
 - Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 - CLI 插件命令执行：`ai4j-cli extension run --enable <extension-id> <command> [arguments...]`
+- CLI 插件资源读取：`ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>`
 
 普通 Java 首聊直接展示
 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`

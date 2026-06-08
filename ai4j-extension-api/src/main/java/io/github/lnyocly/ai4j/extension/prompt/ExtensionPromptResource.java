@@ -7,11 +7,13 @@ public final class ExtensionPromptResource {
     private final String name;
     private final String description;
     private final String resourcePath;
+    private final String extensionId;
 
     private ExtensionPromptResource(Builder builder) {
         this.name = ExtensionManifest.requireId(builder.name, "prompt name");
         this.description = ExtensionManifest.emptyToNull(builder.description);
         this.resourcePath = ExtensionManifest.requireId(builder.resourcePath, "prompt resource path");
+        this.extensionId = ExtensionManifest.emptyToNull(builder.extensionId);
     }
 
     public String getName() {
@@ -26,6 +28,19 @@ public final class ExtensionPromptResource {
         return resourcePath;
     }
 
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public ExtensionPromptResource withExtensionId(String extensionId) {
+        return builder()
+                .name(name)
+                .description(description)
+                .resourcePath(resourcePath)
+                .extensionId(extensionId)
+                .build();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -34,6 +49,7 @@ public final class ExtensionPromptResource {
         private String name;
         private String description;
         private String resourcePath;
+        private String extensionId;
 
         private Builder() {
         }
@@ -50,6 +66,11 @@ public final class ExtensionPromptResource {
 
         public Builder resourcePath(String resourcePath) {
             this.resourcePath = resourcePath;
+            return this;
+        }
+
+        public Builder extensionId(String extensionId) {
+            this.extensionId = extensionId;
             return this;
         }
 

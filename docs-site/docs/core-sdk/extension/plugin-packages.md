@@ -106,6 +106,17 @@ ai4j-cli extension run --enable weather-pack weather.status beijing
 
 `--enable` 是必填项。classpath 发现插件不会自动执行命令，也不会把工具暴露给模型。`extension run` 是人手动调用插件 command 的 CLI 入口；Agent / Coding Agent 的模型可见工具仍然只走 `.exposeTool(...)` 或 Spring Boot `ai.extensions.tools.expose`。
 
+### 2.6 CLI 资源读取路径
+
+插件声明的 Skill / Prompt 是 classpath 资源。开发者可以先用 `inspect --runtime` 查看资源名和路径，再显式启用插件读取内容：
+
+```bash
+ai4j-cli extension resource --enable weather-pack skill weather-skill
+ai4j-cli extension resource --enable weather-pack prompt weather-summary
+```
+
+这个命令只打印 UTF-8 文本资源，不会执行插件工具，也不会把工具暴露给模型。它的主要用途是让插件作者和使用者确认 jar 内资源是否可被 AI4J 正确读取。
+
 ## 3. 接入 Agent
 
 插件工具可以直接进入通用 Agent loop：
@@ -148,6 +159,15 @@ CodingAgent agent = CodingAgents.builder()
 - 已配置的 delegate / subagent tools
 
 这意味着插件作者可以提供“项目扫描”“代码生成辅助”“业务规则检查”等工具，但执行权限仍然由宿主应用决定。插件不会绕过 Coding Agent 原有的 workspace、tool policy、approval 和执行边界。
+
+插件 Skill / Prompt 也会进入 Coding Agent 的上下文装配：
+
+- 已启用插件贡献的 Skill 会被物化成只读 `SKILL.md` 文件，进入 `<available_skills>` 清单。
+- 已启用插件贡献的 Prompt 会被物化成只读 Markdown 文件，进入 `<available_prompts>` 清单。
+- Agent 不会在系统提示里直接塞入完整资源正文，而是先看到资源名、描述和可读路径，再按任务需要用 `read_file` 读取。
+- 这些物化文件只加入 `allowedReadRoots`，不会扩大 workspace 写入权限。
+
+这和本地 / 全局 `.ai4j/skills` 的使用方式一致：资源是给 agent 按需读取的工作流和模板，不是安装后自动执行的代码。
 
 ## 5. 开发者路径
 
@@ -209,6 +229,36 @@ com.example.ai4j.weather.WeatherExtension
 
 AI4J 会把这些字段映射成现有 OpenAI-compatible tool schema。不要把大段自然语言塞进 `description` 代替结构化参数。
 
+### 5.4 打包 Skill / Prompt 资源
+
+插件可以把 Skill 和 Prompt 放在 `src/main/resources` 下，再在 `apply(...)` 中注册资源路径：
+
+```java
+public void apply(ExtensionContext context) {
+    context.skills().register(ExtensionSkillResource.builder()
+            .name("weather-skill")
+            .description("Weather workflow")
+            .resourcePath("skills/weather/SKILL.md")
+            .build());
+
+    context.prompts().register(ExtensionPromptResource.builder()
+            .name("weather-summary")
+            .description("Weather summary prompt")
+            .resourcePath("prompts/weather-summary.md")
+            .build());
+}
+```
+
+对应 jar 结构：
+
+```text
+src/main/resources/
+  skills/weather/SKILL.md
+  prompts/weather-summary.md
+```
+
+资源路径默认按 classpath 查找，也可以写成 `classpath:skills/weather/SKILL.md`。资源路径不能包含 `..`，避免插件把 resource contract 伪装成任意文件读取。
+
 ## 6. 安全门禁
 
 插件生态的默认语义是三段式门禁：
@@ -265,8 +315,9 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
 - CLI 可以 `extension list / inspect` 查看 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
+- CLI 可以 `extension resource --enable <id> <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具
-- Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具
+- Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，并把已启用插件贡献的 Skill / Prompt 投影成只读可读资源
 - Spring Boot starter 可以通过 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`
 
 当前不包含：

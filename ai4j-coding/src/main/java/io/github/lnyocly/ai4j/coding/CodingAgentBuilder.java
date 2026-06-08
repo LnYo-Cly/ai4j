@@ -24,6 +24,7 @@ import io.github.lnyocly.ai4j.coding.process.SessionProcessRegistry;
 import io.github.lnyocly.ai4j.coding.prompt.CodingContextPromptAssembler;
 import io.github.lnyocly.ai4j.coding.runtime.CodingRuntime;
 import io.github.lnyocly.ai4j.coding.runtime.DefaultCodingRuntime;
+import io.github.lnyocly.ai4j.coding.skill.CodingExtensionResources;
 import io.github.lnyocly.ai4j.coding.session.CodingSessionLinkStore;
 import io.github.lnyocly.ai4j.coding.session.InMemoryCodingSessionLinkStore;
 import io.github.lnyocly.ai4j.coding.skill.CodingSkillDiscovery;
@@ -59,6 +60,7 @@ public class CodingAgentBuilder {
     private CodingAgentOptions codingOptions;
     private AgentToolRegistry toolRegistry;
     private ToolExecutor toolExecutor;
+    private ExtensionRegistry extensionRegistry;
     private ExtensionAgentTools extensionTools;
     private CodingAgentDefinitionRegistry definitionRegistry;
     private SubAgentRegistry subAgentRegistry;
@@ -117,7 +119,8 @@ public class CodingAgentBuilder {
     }
 
     public CodingAgentBuilder extensions(ExtensionRegistry registry) {
-        this.extensionTools = ExtensionAgentTools.from(registry);
+        this.extensionRegistry = registry;
+        this.extensionTools = registry == null ? null : ExtensionAgentTools.from(registry);
         return this;
     }
 
@@ -247,6 +250,7 @@ public class CodingAgentBuilder {
                 ? WorkspaceContext.builder().build()
                 : workspaceContext;
         resolvedWorkspaceContext = CodingSkillDiscovery.enrich(resolvedWorkspaceContext);
+        resolvedWorkspaceContext = CodingExtensionResources.enrich(resolvedWorkspaceContext, extensionRegistry);
         CodingAgentOptions resolvedCodingOptions = codingOptions == null
                 ? CodingAgentOptions.builder().build()
                 : codingOptions;
