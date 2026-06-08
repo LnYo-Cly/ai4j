@@ -89,14 +89,35 @@ public Agent agent(ModelClient modelClient, ExtensionRegistry extensionRegistry)
 }
 ```
 
-### 2.5 CLI 命令执行路径
+### 2.5 CLI 校验路径
 
 CLI 可以先查看 classpath 上的插件：
 
 ```bash
 ai4j-cli extension list
 ai4j-cli extension inspect weather-pack --runtime
+ai4j-cli extension validate weather-pack
 ```
+
+`validate` 会像 `inspect --runtime` 一样临时调用插件 `apply(...)` 做 runtime inspection，并把 manifest、capability 声明、工具 schema、Skill / Prompt classpath 资源和 `apply(...)` 失败情况整理成校验报告。它只报告问题，不会把工具暴露给模型，也不会执行插件 command。
+
+如果要检查当前 classpath 上所有插件：
+
+```bash
+ai4j-cli extension validate --all
+```
+
+返回值语义：
+
+| 结果 | 含义 |
+| --- | --- |
+| `status=pass` | 没有发现 error 或 warning |
+| `status=warn` | 没有阻断性错误，但存在建议修正项，例如缺少 manifest `vendor` 或 command `usage` |
+| `status=fail` | 存在会影响接入的错误，例如 tool schema 不可用、资源不存在或 `apply(...)` 失败 |
+
+有 error 时 CLI 返回非零退出码。插件作者可以把它放进插件项目的本地测试或 CI；使用者也可以在引入第三方 jar 后先校验，再决定是否在宿主应用里启用。
+
+### 2.6 CLI 命令执行路径
 
 如果插件声明了 command，可以显式启用插件后执行：
 
@@ -106,7 +127,7 @@ ai4j-cli extension run --enable weather-pack weather.status beijing
 
 `--enable` 是必填项。classpath 发现插件不会自动执行命令，也不会把工具暴露给模型。`extension run` 是人手动调用插件 command 的 CLI 入口；Agent / Coding Agent 的模型可见工具仍然只走 `.exposeTool(...)` 或 Spring Boot `ai.extensions.tools.expose`。
 
-### 2.6 CLI 资源读取路径
+### 2.7 CLI 资源读取路径
 
 插件声明的 Skill / Prompt 是 classpath 资源。开发者可以先用 `inspect --runtime` 查看资源名和路径，再显式启用插件读取内容：
 
@@ -276,6 +297,30 @@ src/main/resources/
 
 资源路径默认按 classpath 查找，也可以写成 `classpath:skills/weather/SKILL.md`。资源路径不能包含 `..`，避免插件把 resource contract 伪装成任意文件读取。
 
+### 5.5 写插件本地校验
+
+插件作者可以直接在测试里调用公共 validator，不必依赖 CLI 文本输出：
+
+```java
+ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension());
+ExtensionValidationReport report = ExtensionValidator.validate(registry, "weather-pack");
+
+if (!report.isValid()) {
+    throw new IllegalStateException("extension validation failed: " + report.getIssues());
+}
+```
+
+这套校验关注“插件包是否能被 AI4J 稳定消费”，不是第三方代码安全审计。它会检查：
+
+- manifest 是否有 id / capability，并建议补齐 name、version、vendor
+- 声明的 capability 是否真的贡献了对应资源
+- tool 是否有基本可用的 input schema
+- command 是否有描述和 usage
+- Skill / Prompt 的 classpath 资源是否存在
+- `apply(...)` 在 runtime inspection 中是否失败
+
+它会调用插件 `apply(...)` 收集运行时贡献，但不会执行插件 command，不会把 tool 暴露给模型，也不会替宿主判断第三方插件是否可信。
+
 ## 6. 安全门禁
 
 插件生态的默认语义是三段式门禁：
@@ -324,7 +369,7 @@ check
 - 每个 tool 的输入 schema
 - 是否触发网络、文件系统、数据库或外部 API
 - 所需环境变量名，不要要求用户把密钥写进代码
-- 本地 smoke test 命令
+- 本地 smoke test 命令，例如 `ai4j-cli extension validate <extension-id>`
 
 AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己的包管理、README 和版本策略维护插件。
 
@@ -333,7 +378,8 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 当前已经可用：
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
-- CLI 可以 `extension list / inspect` 查看 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
+- `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
+- CLI 可以 `extension list / inspect / validate` 查看和校验 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
 - CLI 可以 `extension resource --enable <id> <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具，并在 tool execution 前应用已启用插件注册的 Guardrail
 - Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，把已启用插件贡献的 Skill / Prompt 投影成只读可读资源，并在内置 / extension tool execution 前应用 Guardrail

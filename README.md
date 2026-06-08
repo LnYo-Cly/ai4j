@@ -102,6 +102,7 @@
 + 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
 + 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
 + Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
++ CLI 插件校验：`ai4j-cli extension validate <extension-id>|--all`
 + CLI 插件命令执行：`ai4j-cli extension run --enable <extension-id> <command> [arguments...]`
 + CLI 插件资源读取：`ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>`
 + 插件 Guardrail：已启用插件可在 Agent / Coding Agent 执行 tool call 前拦截内置工具与扩展工具

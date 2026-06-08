@@ -86,6 +86,8 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用，最后用 `exposeTool(...)` 显式暴露给模型。Spring Boot 项目可以用 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 完成同样的启用与暴露，但仍不会自动创建 Agent 或自动安装插件依赖。
 
+插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。
+
 ## 4. 当前实现里，哪些是“真 SPI”，哪些不是
 
 这是这一章最容易被误读的地方。

@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 既有 R-008 仍未在本轮修复：broad `ai4j-agent` suite 的 `HandoffPolicyTest` blocker 属于历史残余；本轮覆盖 extension API、CLI targeted、monorepo package 与 docs-site gates。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：pending-review-submission
+- Registry update needed：Feature SSoT / Regression SSoT / Cadence Ledger 已更新
+- Harness Ledger update needed：task-review 后由 harness lifecycle CLI 同步
+- 负责人：coordinator
 
 ### [2026-06-08 21:33] - task-start
 
@@ -46,3 +39,17 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-09 05:46] - Extension validator and CLI validate implemented
+
+- 做了什么：新增 `ExtensionValidator`、`ExtensionValidationReport`、`ExtensionValidationIssue`、`ExtensionValidationSeverity`；CLI 增加 `ai4j-cli extension validate <id>|--all`；补 extension API / CLI 测试。
+- 验证结果：`mvn -pl ai4j-extension-api -DskipTests=false test` 通过，12 tests；`mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` 通过，19 tests。
+- 下一步：补 docs-site、README 和回归治理记录。
+- 证据：command:TARGET:.:`mvn -pl ai4j-extension-api -DskipTests=false test` passed with 12 tests; command:TARGET:.:`mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 19 tests
+
+### [2026-06-09 05:53] - Full local verification passed
+
+- 做了什么：更新插件包文档、README、Feature SSoT、Regression SSoT、Cadence Ledger 和任务材料；运行本轮 touched-surface 回归。
+- 验证结果：`mvn -DskipTests package` 通过 10 个 reactor modules；`NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` 通过；`NODE_OPTIONS=--max-old-space-size=8192 npm run build` 通过；`git diff --check` 通过。
+- 下一步：补审查记录和 walkthrough，提交 Agent Review Submission。
+- 证据：command:TARGET:.:`mvn -DskipTests package` passed across 10 reactor modules; command:TARGET:docs-site:`NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck` passed; command:TARGET:docs-site:`NODE_OPTIONS=--max-old-space-size=8192 npm run build` passed; command:TARGET:.:`git diff --check` passed

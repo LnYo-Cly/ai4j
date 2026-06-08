@@ -14,6 +14,9 @@ import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.resource.ExtensionResourceResolver;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
+import io.github.lnyocly.ai4j.extension.validation.ExtensionValidationIssue;
+import io.github.lnyocly.ai4j.extension.validation.ExtensionValidationReport;
+import io.github.lnyocly.ai4j.extension.validation.ExtensionValidator;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
 
 import java.util.ArrayList;
@@ -38,6 +41,9 @@ public class CliExtensionCommand {
             }
             if ("inspect".equalsIgnoreCase(command)) {
                 return inspect(arguments.subList(1, arguments.size()), terminal);
+            }
+            if ("validate".equalsIgnoreCase(command)) {
+                return validate(arguments.subList(1, arguments.size()), terminal);
             }
             if ("run".equalsIgnoreCase(command)) {
                 return runExtensionCommand(arguments.subList(1, arguments.size()), terminal);
@@ -75,6 +81,16 @@ public class CliExtensionCommand {
                     + " source=" + extension.getSourceClassName());
         }
         return 0;
+    }
+
+    private int validate(List<String> args, TerminalIO terminal) {
+        ValidateOptions options = parseValidateOptions(args);
+        ExtensionRegistry registry = ExtensionRegistry.discover();
+        List<ExtensionValidationReport> reports = options.all
+                ? ExtensionValidator.validateAll(registry)
+                : Collections.singletonList(ExtensionValidator.validate(registry, options.extensionId));
+        printValidationReports(reports, terminal);
+        return hasValidationErrors(reports) ? 2 : 0;
     }
 
     private int runExtensionCommand(List<String> args, TerminalIO terminal) throws Exception {
@@ -239,6 +255,34 @@ public class CliExtensionCommand {
         return new ResourceOptions(enabledExtensionIds, resourceType, resourceName);
     }
 
+    private ValidateOptions parseValidateOptions(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension validate <id>|--all");
+        }
+        boolean all = false;
+        String extensionId = null;
+        for (String arg : args) {
+            if ("--all".equals(arg)) {
+                all = true;
+                continue;
+            }
+            if (arg != null && arg.startsWith("--")) {
+                throw new IllegalArgumentException("unsupported option: " + arg);
+            }
+            if (extensionId != null) {
+                throw new IllegalArgumentException("unexpected argument: " + arg);
+            }
+            extensionId = arg;
+        }
+        if (all && !isBlank(extensionId)) {
+            throw new IllegalArgumentException("validate accepts either <id> or --all, not both");
+        }
+        if (!all && isBlank(extensionId)) {
+            throw new IllegalArgumentException("extension id is required");
+        }
+        return new ValidateOptions(all, all ? null : ExtensionManifest.requireId(extensionId, "extension id"));
+    }
+
     private InspectOptions parseInspectOptions(List<String> args) {
         if (args == null || args.isEmpty()) {
             throw new IllegalArgumentException("Usage: ai4j-cli extension inspect <id> [--runtime]");
@@ -271,6 +315,44 @@ public class CliExtensionCommand {
         terminal.println("skills=" + joinSkills(snapshot.getSkills()));
         terminal.println("prompts=" + joinPrompts(snapshot.getPrompts()));
         terminal.println("guardrails=" + joinValues(snapshot.getGuardrails()));
+    }
+
+    private void printValidationReports(List<ExtensionValidationReport> reports, TerminalIO terminal) {
+        List<ExtensionValidationReport> safeReports = reports == null
+                ? Collections.<ExtensionValidationReport>emptyList()
+                : reports;
+        terminal.println("validation:");
+        terminal.println("count=" + safeReports.size());
+        for (ExtensionValidationReport report : safeReports) {
+            terminal.println("- id=" + report.getExtensionId()
+                    + " status=" + report.getStatus()
+                    + " errors=" + report.getErrorCount()
+                    + " warnings=" + report.getWarningCount()
+                    + " source=" + valueOrDash(report.getSourceClassName()));
+            if (report.getIssues().isEmpty()) {
+                terminal.println("  issues=-");
+                continue;
+            }
+            terminal.println("  issues:");
+            for (ExtensionValidationIssue issue : report.getIssues()) {
+                terminal.println("  - severity=" + issue.getSeverity().getId()
+                        + " code=" + issue.getCode()
+                        + " target=" + valueOrDash(issue.getTarget())
+                        + " message=" + issue.getMessage());
+            }
+        }
+    }
+
+    private boolean hasValidationErrors(List<ExtensionValidationReport> reports) {
+        if (reports == null) {
+            return false;
+        }
+        for (ExtensionValidationReport report : reports) {
+            if (report != null && !report.isValid()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String joinTools(List<ExtensionToolSpec> tools) {
@@ -389,12 +471,14 @@ public class CliExtensionCommand {
         terminal.println("Usage:");
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension inspect <id> [--runtime]\n");
+        terminal.println("  ai4j-cli extension validate <id>|--all\n");
         terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]\n");
         terminal.println("  ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>\n");
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
+        terminal.println("  validate <id>|--all  Validate manifest, runtime resources, and authoring contract");
         terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
         terminal.println("  resource --enable <id> <skill|prompt> <name>  Print a contributed resource from enabled extensions");
         terminal.println("\nNotes:");
@@ -459,6 +543,16 @@ public class CliExtensionCommand {
         private InspectOptions(String extensionId, boolean runtime) {
             this.extensionId = extensionId;
             this.runtime = runtime;
+        }
+    }
+
+    private static final class ValidateOptions {
+        private final boolean all;
+        private final String extensionId;
+
+        private ValidateOptions(boolean all, String extensionId) {
+            this.all = all;
+            this.extensionId = extensionId;
         }
     }
 
