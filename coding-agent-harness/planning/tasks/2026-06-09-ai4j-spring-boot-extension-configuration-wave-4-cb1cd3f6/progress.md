@@ -22,13 +22,6 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
 - Spring Boot starter 只装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`，不会自动创建 Agent 或 Coding Agent；如需 Spring 自动创建 Agent，后续单独设计。
