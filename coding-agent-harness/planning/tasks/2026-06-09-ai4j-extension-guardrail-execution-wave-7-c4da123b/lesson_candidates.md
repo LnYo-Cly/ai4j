@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-this-task |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是插件 Guardrail 执行面的产品实现，没有发现需要推广到全局 harness 标准的可复用执行规则；与 Coding Agent executor 重建路径相关的技术判断已保留在本任务 `findings.md` 和 docs-site 插件文档中。
 
 ## Promotion Notes
 

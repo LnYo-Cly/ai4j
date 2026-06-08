@@ -22,6 +22,9 @@ import io.github.lnyocly.ai4j.extension.ExtensionCapability;
 import io.github.lnyocly.ai4j.extension.ExtensionContext;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailDecision;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRequest;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolCall;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 import org.junit.Rule;
@@ -173,6 +176,52 @@ public class CodingAgentBuilderTest {
         assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
         assertTrue(result.getToolResults().get(0).getOutput().contains("Unsupported patch line"));
         assertTrue(Files.notExists(workspaceRoot.resolve("calculator.py")));
+    }
+
+    @Test
+    public void shouldApplyExtensionGuardrailBeforeBuiltInCodingToolExecution() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-guardrail").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit guardrail workspace")
+                .build();
+        ExtensionRegistry registry = ExtensionRegistry.of(new DenyBashExtension())
+                .enable("deny-bash-pack");
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo should-not-run\"}")
+                        .callId("call-bash-denied")
+                        .build()))
+                .rawResponse("guardrail-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("guardrail handled")
+                .rawResponse("guardrail-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .extensions(registry)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Try to run bash.");
+        }
+
+        assertEquals("guardrail handled", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        assertEquals(CodingToolNames.BASH, result.getToolResults().get(0).getName());
+        String toolOutput = result.getToolResults().get(0).getOutput();
+        assertTrue(toolOutput, toolOutput.contains("TOOL_ERROR:"));
+        assertTrue(toolOutput, toolOutput.contains("Extension guardrail denied tool bash"));
+        assertTrue(toolOutput, toolOutput.contains("bash disabled by extension"));
+        assertTrue(toolOutput, !toolOutput.contains("should-not-run"));
     }
 
     @Test
@@ -470,6 +519,32 @@ public class CodingAgentBuilderTest {
                             return "weather:" + call.getArguments() + ":" + call.getAttributes().get("callId");
                         }
                     });
+        }
+    }
+
+    private static class DenyBashExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("deny-bash-pack")
+                    .name("Deny Bash Pack")
+                    .capability(ExtensionCapability.GUARDRAIL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.guardrails().register(new ExtensionGuardrail() {
+                public String name() {
+                    return "deny-bash";
+                }
+
+                public GuardrailDecision evaluate(GuardrailRequest request) {
+                    if ("tool.execute".equals(request.getAction())
+                            && CodingToolNames.BASH.equals(request.getTarget())) {
+                        return GuardrailDecision.deny("bash disabled by extension");
+                    }
+                    return GuardrailDecision.allow();
+                }
+            });
         }
     }
 }

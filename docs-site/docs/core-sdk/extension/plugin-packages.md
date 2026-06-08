@@ -136,6 +136,21 @@ Agent agent = Agents.react()
 
 Agent 主循环不用认识插件实现类。模型看到的是普通 tool schema，调用时走同一套 tool result 回传流程。
 
+### 3.1 Guardrail 执行点
+
+已启用插件注册的 Guardrail 会在 Agent 执行 tool call 之前评估。AI4J 当前给插件 Guardrail 的请求语义是：
+
+| 字段 | 值 |
+| --- | --- |
+| `action` | `tool.execute` |
+| `target` | tool name，例如 `weather.search`、`bash`、`read_file` |
+| `attributes.toolName` | 同 `target` |
+| `attributes.arguments` | 模型给出的原始 tool arguments 字符串 |
+| `attributes.callId` | 当前 tool call id |
+| `attributes.type` | 当前 tool call type，存在时传入 |
+
+如果任意 Guardrail 返回 `GuardrailDecision.deny("reason")`，AI4J 不会调用后续 tool executor，而是把拒绝原因作为普通 `TOOL_ERROR` 回写给 Agent loop。这样插件既可以约束自己暴露的 extension tools，也可以约束宿主已经开放给 Agent 的其他工具。
+
 ## 4. 接入 Coding Agent
 
 Coding Agent 也使用同一个入口：
@@ -159,6 +174,8 @@ CodingAgent agent = CodingAgents.builder()
 - 已配置的 delegate / subagent tools
 
 这意味着插件作者可以提供“项目扫描”“代码生成辅助”“业务规则检查”等工具，但执行权限仍然由宿主应用决定。插件不会绕过 Coding Agent 原有的 workspace、tool policy、approval 和执行边界。
+
+已启用插件注册的 Guardrail 也会覆盖 Coding Agent 的 tool execution。它不仅能拦截已暴露的 extension tools，也能拦截内置 workspace tools，例如 `bash`、`read_file`、`write_file`、`apply_patch`，前提是宿主已经把这些工具交给当前 Coding Agent 会话。Guardrail 的判断发生在实际工具执行前；被拒绝的调用不会触发 shell、文件写入或 extension tool executor。
 
 插件 Skill / Prompt 也会进入 Coding Agent 的上下文装配：
 
@@ -271,6 +288,8 @@ src/main/resources/
 
 这个设计故意不做“安装后自动可用”。原因很直接：tool 一旦暴露给模型，就可能触发网络、文件系统、业务系统或工作区操作。AI4J 要求宿主应用明确决定哪些工具能进入模型上下文。
 
+Guardrail 是 enable 级资源，不需要 `exposeTool(...)`。原因是 Guardrail 不会主动给模型增加工具，也不会自动执行业务动作；它只在已经发生的 tool execution 决策点上判断是否允许继续。CLI 的 `extension run` 和 `extension resource` 是人手动触发的命令 / 资源读取路径，不属于 Agent tool loop，因此当前不走这套 `tool.execute` Guardrail。
+
 ## 7. 命名建议
 
 插件 ID 和工具名应该稳定、可读、可冲突排查：
@@ -316,8 +335,8 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
 - CLI 可以 `extension list / inspect` 查看 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
 - CLI 可以 `extension resource --enable <id> <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
-- Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具
-- Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，并把已启用插件贡献的 Skill / Prompt 投影成只读可读资源
+- Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具，并在 tool execution 前应用已启用插件注册的 Guardrail
+- Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，把已启用插件贡献的 Skill / Prompt 投影成只读可读资源，并在内置 / extension tool execution 前应用 Guardrail
 - Spring Boot starter 可以通过 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`
 
 当前不包含：

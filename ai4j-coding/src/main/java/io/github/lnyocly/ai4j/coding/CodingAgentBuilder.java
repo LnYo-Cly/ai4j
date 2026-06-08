@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentToolExecutor;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -278,7 +279,8 @@ public class CodingAgentBuilder {
                 resolvedSessionLinkStore,
                 resolvedToolPolicyResolver,
                 resolvedSubAgentRegistry,
-                resolvedHandoffPolicy
+                resolvedHandoffPolicy,
+                extensionTools
         )
                 : codingRuntime;
 
@@ -295,6 +297,7 @@ public class CodingAgentBuilder {
         ToolExecutor resolvedToolExecutor = mergeToolExecutor(builtInRegistry, builtInExecutor, configuredToolRegistry, configuredToolExecutor);
         resolvedToolRegistry = mergeSubAgentToolRegistry(resolvedToolRegistry, resolvedSubAgentRegistry);
         resolvedToolExecutor = mergeSubAgentToolExecutor(resolvedToolExecutor, resolvedSubAgentRegistry, resolvedHandoffPolicy);
+        resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
         String resolvedSystemPrompt = resolvedCodingOptions.isPrependWorkspaceInstructions()
                 ? CodingContextPromptAssembler.mergeSystemPrompt(systemPrompt, resolvedWorkspaceContext)
                 : systemPrompt;
@@ -329,7 +332,8 @@ public class CodingAgentBuilder {
                 configuredToolExecutor,
                 resolvedCodingRuntime,
                 resolvedSubAgentRegistry,
-                resolvedHandoffPolicy
+                resolvedHandoffPolicy,
+                extensionTools
         );
     }
 
@@ -458,6 +462,13 @@ public class CodingAgentBuilder {
                 baseExecutor,
                 handoffPolicy == null ? HandoffPolicy.builder().build() : handoffPolicy
         );
+    }
+
+    public static ToolExecutor applyExtensionGuardrails(ToolExecutor executor, ExtensionAgentTools extensionTools) {
+        if (executor == null || extensionTools == null || extensionTools.getGuardrails().isEmpty()) {
+            return executor;
+        }
+        return new ExtensionGuardrailToolExecutor(executor, extensionTools.getGuardrails());
     }
 
     public static Set<String> resolveToolNames(AgentToolRegistry registry) {

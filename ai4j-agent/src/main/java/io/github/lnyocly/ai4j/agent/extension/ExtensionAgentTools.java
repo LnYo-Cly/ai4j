@@ -4,15 +4,26 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class ExtensionAgentTools {
 
     private final AgentToolRegistry toolRegistry;
     private final ToolExecutor toolExecutor;
+    private final List<ExtensionGuardrail> guardrails;
 
-    private ExtensionAgentTools(AgentToolRegistry toolRegistry, ToolExecutor toolExecutor) {
+    private ExtensionAgentTools(AgentToolRegistry toolRegistry,
+                                ToolExecutor toolExecutor,
+                                List<ExtensionGuardrail> guardrails) {
         this.toolRegistry = toolRegistry;
         this.toolExecutor = toolExecutor;
+        this.guardrails = guardrails == null
+                ? Collections.<ExtensionGuardrail>emptyList()
+                : Collections.unmodifiableList(new ArrayList<ExtensionGuardrail>(guardrails));
     }
 
     public static ExtensionAgentTools from(ExtensionRegistry registry) {
@@ -28,7 +39,8 @@ public final class ExtensionAgentTools {
         }
         return new ExtensionAgentTools(
                 new ExtensionAgentToolRegistry(snapshot),
-                new ExtensionAgentToolExecutor(snapshot)
+                new ExtensionAgentToolExecutor(snapshot),
+                snapshot.getGuardrails()
         );
     }
 
@@ -38,5 +50,9 @@ public final class ExtensionAgentTools {
 
     public ToolExecutor getToolExecutor() {
         return toolExecutor;
+    }
+
+    public List<ExtensionGuardrail> getGuardrails() {
+        return guardrails;
     }
 }

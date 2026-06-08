@@ -16,6 +16,9 @@ import io.github.lnyocly.ai4j.extension.ExtensionCapability;
 import io.github.lnyocly.ai4j.extension.ExtensionContext;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailDecision;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRequest;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolCall;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
@@ -67,6 +70,7 @@ public class ExtensionAgentToolsTest {
 
     @Test
     public void shouldExecuteExposedExtensionToolInsideAgentLoop() throws Exception {
+        WeatherExtension.resetExecuteCount();
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
                 .enable("weather-pack")
                 .exposeTool("weather.search");
@@ -99,6 +103,44 @@ public class ExtensionAgentToolsTest {
                 result.getToolResults().get(0).getOutput());
         Assert.assertEquals(2, modelClient.prompts.size());
         Assert.assertEquals(1, modelClient.prompts.get(0).getTools().size());
+        Assert.assertEquals(1, WeatherExtension.getExecuteCount());
+    }
+
+    @Test
+    public void shouldApplyExtensionGuardrailBeforeToolExecution() throws Exception {
+        WeatherExtension.resetExecuteCount();
+        ExtensionRegistry registry = ExtensionRegistry.of(new DenyWeatherExtension())
+                .enable("weather-pack")
+                .exposeTool("weather.search");
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name("weather.search")
+                        .arguments("{\"city\":\"Shanghai\"}")
+                        .callId("call-weather-denied")
+                        .type("function_call")
+                        .build()))
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("guardrail handled")
+                .build());
+
+        Agent agent = Agents.react()
+                .modelClient(modelClient)
+                .model("test-model")
+                .extensions(registry)
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder().input("Check weather").build());
+
+        Assert.assertEquals("guardrail handled", result.getOutputText());
+        Assert.assertEquals(1, result.getToolResults().size());
+        Assert.assertEquals("weather.search", result.getToolResults().get(0).getName());
+        Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
+        Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("Extension guardrail denied tool weather.search"));
+        Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("weather access disabled"));
+        Assert.assertEquals(0, WeatherExtension.getExecuteCount());
     }
 
     @Test
@@ -118,6 +160,8 @@ public class ExtensionAgentToolsTest {
     }
 
     private static class WeatherExtension implements Ai4jExtension {
+        private static int executeCount;
+
         public ExtensionManifest manifest() {
             return ExtensionManifest.builder()
                     .id("weather-pack")
@@ -131,12 +175,49 @@ public class ExtensionAgentToolsTest {
                             .name("weather.search")
                             .description("Search weather")
                             .inputSchema("{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"Target city\"},\"unit\":{\"type\":\"string\",\"enum\":[\"celsius\",\"fahrenheit\"]}},\"required\":[\"city\"]}")
-                            .build(),
+                    .build(),
                     new io.github.lnyocly.ai4j.extension.tool.ExtensionToolExecutor() {
                         public String execute(ExtensionToolCall call) {
+                            executeCount++;
                             return "weather:" + call.getArguments() + ":" + call.getAttributes().get("callId");
                         }
                     });
+        }
+
+        static void resetExecuteCount() {
+            executeCount = 0;
+        }
+
+        static int getExecuteCount() {
+            return executeCount;
+        }
+    }
+
+    private static class DenyWeatherExtension extends WeatherExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("weather-pack")
+                    .name("Weather Pack")
+                    .capability(ExtensionCapability.TOOL)
+                    .capability(ExtensionCapability.GUARDRAIL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            super.apply(context);
+            context.guardrails().register(new ExtensionGuardrail() {
+                public String name() {
+                    return "deny-weather";
+                }
+
+                public GuardrailDecision evaluate(GuardrailRequest request) {
+                    if ("tool.execute".equals(request.getAction())
+                            && "weather.search".equals(request.getTarget())) {
+                        return GuardrailDecision.deny("weather access disabled");
+                    }
+                    return GuardrailDecision.allow();
+                }
+            });
         }
     }
 

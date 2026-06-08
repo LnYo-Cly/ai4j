@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
@@ -30,6 +31,7 @@ public class CodingAgent {
     private final CodingRuntime runtime;
     private final SubAgentRegistry subAgentRegistry;
     private final HandoffPolicy handoffPolicy;
+    private final ExtensionAgentTools extensionTools;
 
     public CodingAgent(Agent delegate,
                        WorkspaceContext workspaceContext,
@@ -39,6 +41,19 @@ public class CodingAgent {
                        CodingRuntime runtime,
                        SubAgentRegistry subAgentRegistry,
                        HandoffPolicy handoffPolicy) {
+        this(delegate, workspaceContext, options, customToolRegistry, customToolExecutor, runtime,
+                subAgentRegistry, handoffPolicy, null);
+    }
+
+    public CodingAgent(Agent delegate,
+                       WorkspaceContext workspaceContext,
+                       CodingAgentOptions options,
+                       AgentToolRegistry customToolRegistry,
+                       ToolExecutor customToolExecutor,
+                       CodingRuntime runtime,
+                       SubAgentRegistry subAgentRegistry,
+                       HandoffPolicy handoffPolicy,
+                       ExtensionAgentTools extensionTools) {
         this.delegate = delegate;
         this.workspaceContext = workspaceContext;
         this.options = options;
@@ -47,6 +62,7 @@ public class CodingAgent {
         this.runtime = runtime;
         this.subAgentRegistry = subAgentRegistry;
         this.handoffPolicy = handoffPolicy;
+        this.extensionTools = extensionTools;
     }
 
     public CodingAgentResult run(String input) throws Exception {
@@ -106,6 +122,7 @@ public class CodingAgent {
                 subAgentRegistry,
                 handoffPolicy
         );
+        mergedExecutor = CodingAgentBuilder.applyExtensionGuardrails(mergedExecutor, extensionTools);
         AgentSession session = new AgentSession(
                 rawSession.getRuntime(),
                 rawSession.getContext().toBuilder()

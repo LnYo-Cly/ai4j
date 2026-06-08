@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -248,6 +249,7 @@ public class AgentBuilder {
             HandoffPolicy resolvedHandoffPolicy = handoffPolicy == null ? HandoffPolicy.builder().build() : handoffPolicy;
             resolvedToolExecutor = new SubAgentToolExecutor(resolvedSubAgentRegistry, resolvedToolExecutor, resolvedHandoffPolicy);
         }
+        resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
         AgentOptions resolvedOptions = options == null ? AgentOptions.builder().build() : options;
@@ -345,6 +347,13 @@ public class AgentBuilder {
         routes.add(RoutingToolExecutor.route(resolveToolNames(firstRegistry), firstExecutor));
         routes.add(RoutingToolExecutor.route(resolveToolNames(secondRegistry), secondExecutor));
         return new RoutingToolExecutor(routes, null);
+    }
+
+    private ToolExecutor applyExtensionGuardrails(ToolExecutor executor, ExtensionAgentTools extensionTools) {
+        if (executor == null || extensionTools == null || extensionTools.getGuardrails().isEmpty()) {
+            return executor;
+        }
+        return new ExtensionGuardrailToolExecutor(executor, extensionTools.getGuardrails());
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {
