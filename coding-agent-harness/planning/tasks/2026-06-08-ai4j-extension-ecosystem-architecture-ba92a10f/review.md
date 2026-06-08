@@ -105,3 +105,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自 Pi 官方文档核对、本仓库模块边界盘点、task-local design 自审和 L0 harness 验证。由于本轮是规划，不是发布前实现审查；后续代码实现不能只依赖本轮 self-review。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606080850 |
+| Submitted At | 2026-06-08 08:50 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f |
+| Materials Checklist Hash | 92af5671b14987de |
+| Evidence Summary | AI4J Extension System 架构规划已完成：包含 Pi 生态调研、AI4J Package/Manifest/Extension/Resource 分层、首批扩展点、安全门禁、模块落点和分波路线；L0 验证通过。 |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f |

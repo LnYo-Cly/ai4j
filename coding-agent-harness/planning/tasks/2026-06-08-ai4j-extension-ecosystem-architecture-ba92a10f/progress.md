@@ -1,6 +1,6 @@
 # AI4J extension ecosystem architecture - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -50,6 +50,13 @@
 ### [2026-06-08 08:30] - task-start
 
 - 做了什么：开始 AI4J 插件生态架构规划：基于 Pi package/extension 调研，产出 task-local 设计与实施切片，不进入运行时代码实现。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
+
+### [2026-06-08 08:50] - task-review
+
+- 做了什么：AI4J Extension System 架构规划已完成：包含 Pi 生态调研、AI4J Package/Manifest/Extension/Resource 分层、首批扩展点、安全门禁、模块落点和分波路线；L0 验证通过。
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
