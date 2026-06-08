@@ -116,3 +116,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 CLI/API targeted tests、package smoke、self-review 对默认不执行第三方代码的确认、read-only inspection snapshot 边界、以及回归残余 R-008 的明确路由。人工确认仍是任务关闭前的必需门禁。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606081236 |
+| Submitted At | 2026-06-08 12:36 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e |
+| Materials Checklist Hash | dfc3976eff8a8136 |
+| Evidence Summary | AI4J Extension CLI Wave 2 ready: extension list/inspect implemented, default inspect is manifest-only, runtime inspect uses read-only snapshot, targeted API/CLI tests and package smoke passed; full RG-004 remains blocked by existing R-008 upstream agent tests. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e |

@@ -1,6 +1,6 @@
 # AI4J extension CLI inspect wave 2 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：package smoke pass，10 reactor modules；完整 CLI gate 在 `ai4j-agent` 上游既有 `HandoffPolicyTest` 两个失败处停止，CLI 模块未执行到；失败与本轮新增 extension CLI 无直接关系，按 R-008 路由。
 - 下一步：补齐 task materials、回归记录和 review packet。
 - 证据：command:TARGET:.:mvn -DskipTests package pass across 10 reactor modules; command:TARGET:.:mvn -pl ai4j-cli -am -DskipTests=false test fails in existing ai4j-agent HandoffPolicyTest R-008 before cli module
+
+### [2026-06-08 12:36] - task-review
+
+- 做了什么：AI4J Extension CLI Wave 2 ready: extension list/inspect implemented, default inspect is manifest-only, runtime inspect uses read-only snapshot, targeted API/CLI tests and package smoke passed; full RG-004 remains blocked by existing R-008 upstream agent tests.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
