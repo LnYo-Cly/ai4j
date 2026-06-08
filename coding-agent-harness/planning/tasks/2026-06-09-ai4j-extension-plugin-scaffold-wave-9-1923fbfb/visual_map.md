@@ -41,7 +41,7 @@ flowchart TD
 | EXEC-01 | execution | INIT-01 | in_progress | 20 | `extension init` CLI 实现和测试 | diff; targeted tests | n/a | agent | partial | 生成代码与 API 不匹配 | coordinator |
 | EXEC-02 | execution | EXEC-01 | planned | 0 | README、docs-site、Regression/Cadence 更新 | diff | n/a | agent | missing | 文档暗示未实现能力 | coordinator |
 | VERIFY-01 | execution | EXEC-02 | planned | 0 | 目标回归和 harness status | commands in `progress.md` | n/a | agent | missing | Maven/docs build 失败 | coordinator |
-| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb --message "<summary>"` | agent | missing | materials incomplete | coordinator |
+| GATE-01 | gate | VERIFY-01 | done | 100 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb --message "<summary>"` | agent | present | materials incomplete | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet and human confirmation | `harness review-confirm 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb --confirm 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

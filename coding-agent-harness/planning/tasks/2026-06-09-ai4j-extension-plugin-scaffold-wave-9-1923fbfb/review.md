@@ -102,3 +102,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 CLI targeted tests、真实生成项目 Maven validator smoke、monorepo package、docs-site typecheck/build，以及无 open material finding 的自审。人工确认仍需由用户或 reviewer 执行，agent 不代办 `review-confirm`。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606082245 |
+| Submitted At | 2026-06-08 22:45 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb |
+| Materials Checklist Hash | afd3cbcebf5d558f |
+| Evidence Summary | Wave 9 extension plugin scaffold, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb |
