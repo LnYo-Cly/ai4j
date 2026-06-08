@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | 新增 ask-user 插件模块、Maven/BOM/CI wiring、docs-site、README、Regression SSoT、Cadence Ledger、harness task package |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：adversarial / regression / architecture / release-readiness
+- 范围内：`ai4j-plugin-ask-user/**`、根 POM、`ai4j-bom`、README、docs-site extension 页面、CI matrix、Regression SSoT、Cadence Ledger、harness module/task 记录。
+- 范围外：远程插件市场、runtime jar hot load、CLI 自动安装依赖、真实 UI、stdin 阻塞、答案持久化、Agent 恢复执行协议。
+- 来源材料：task plan、diff、插件测试、全仓 packaging smoke、docs-site typecheck/build、harness status。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,102 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | agent-self-review-2026-06-09 |
+| Submitted At | 2026-06-09 local |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | lifecycle-cli-pending |
+| Evidence Summary | 插件模块测试、全仓 packaging smoke、docs-site typecheck/build、diff check、harness status 将在 closeout 后记录到 `progress.md` 和 walkthrough。 |
+| Open Findings Count | 0 |
+| Scanner Version | manual-review-v1 |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 人工审查确认尚未由用户侧执行；agent 不能代办。
+  - `ask_user` 只定义 host-mediated request envelope；真实 host UI / answer resume 体验是后续更高层任务。
+- Fix loop count：2
+- 当前结论：在本任务边界内可以收口；公开文档已明确不承诺 UI、marketplace、hot load 或阻塞执行，最终命令证据通过后可提交推送。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- 后续如果要把 ask-user 变成完整产品体验，应在 CLI/TUI、docs-site demo、IDE 或 host runtime 里单独设计 UI、answer persistence 和 resume contract。
+- 官方样板插件不应被包装成远程 marketplace；当前 Java 生态更稳妥的接入方式是 Maven / classpath / ServiceLoader。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:ai4j-plugin-ask-user/ | 新增模块只依赖 `ai4j-extension-api` 和 JUnit 4 测试依赖，符合 Java 8 / Maven jar 样板边界。 |
+| E-002 | diff | TARGET:docs-site/docs/core-sdk/extension/ask-user-plugin.md | 文档说明启用、暴露、tool 输入输出、command 路径、Skill/Prompt 资源和当前边界。 |
+| E-003 | diff | TARGET:docs/05-TEST-QA/Regression-SSoT.md | 新增 RG-011 官方 Ask User 插件回归面。 |
+| E-004 | diff | TARGET:coding-agent-harness/planning/modules/ask-user-plugin/module_plan.md | 新增 module registry 计划，明确共享面和范围外能力。 |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。最终验证命令必须通过后才进入提交推送。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 人工 review confirmation 未由用户侧执行 | human | yes | 推送后由用户侧决定是否运行 `review-confirm` 或退回修改。 |
+| ask-user 尚未提供真实 UI / resume contract | owner | yes | 后续 CLI/TUI 或 host runtime 任务单独设计。 |
+| 远程插件市场、runtime jar hot load、CLI install 未实现 | owner | yes | 当前文档明确不承诺；如需要应作为插件生态下一阶段任务。 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | Agent review packet 已准备，最终验证通过后可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 任务包必需文件已补齐。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | `lesson_candidates.md` 记录 no-candidate。 | 人工审查覆盖 no-candidate 判断时重新路由。 |
+| Confirmed / Finalized | no | agent 未运行 human confirmation。 | 人工确认后再 closeout ledger。 |
+| Soft-deleted / Superseded | no | 本任务仍为当前 active task。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新，路径 `task_plan.md`。
+- Progress：最终验证后追加命令证据并切换状态。
+- 发现记录：已更新 `findings.md`。
+- Regression SSoT：新增 RG-011；RG-007/RG-008 最终验证后更新 Last Verified 文案。
+- Lessons：checked-none: 本任务无新增可复用 harness lesson。
+- 收口记录：`walkthrough.md`。
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自插件模块单测、全仓 Maven package smoke、docs-site typecheck/build、diff whitespace check、harness status，以及边界清楚的 self adversarial review。人工确认仍是用户侧动作，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606090724 |
+| Submitted At | 2026-06-09 07:24 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f |
+| Materials Checklist Hash | 6f9c37a4e2d8910b |
+| Evidence Summary | Wave 10 official Ask User plugin, docs, regression evidence, and task package are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f |

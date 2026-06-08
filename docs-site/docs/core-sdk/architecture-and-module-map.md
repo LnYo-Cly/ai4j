@@ -14,6 +14,8 @@
 
 ```text
 ai4j-sdk
+├─ ai4j-extension-api
+├─ ai4j-plugin-ask-user
 ├─ ai4j
 ├─ ai4j-agent
 ├─ ai4j-coding
@@ -31,7 +33,34 @@ ai4j-sdk
 
 ## 2. 每个模块分别解决什么
 
-### 2.1 `ai4j`
+### 2.1 `ai4j-extension-api`
+
+这是插件生态的轻量公共合同模块。
+
+它负责：
+
+- extension manifest
+- ServiceLoader discovery
+- enable / expose 门禁
+- tool、command、Skill、Prompt、Guardrail 的中立 spec
+- 插件作者可复用的 validator
+
+### 2.2 `ai4j-plugin-ask-user`
+
+这是官方样板插件模块。
+
+它负责展示一个完整插件包应该怎么组织：
+
+- `Ai4jExtension` 实现
+- `META-INF/services` 注册
+- `ask_user` tool
+- `ask-user` command
+- 随 jar 分发的 Skill / Prompt
+- validator 和 ServiceLoader 回归测试
+
+它不会打开 UI 或阻塞等待用户输入，只返回宿主可识别的提问请求 envelope。
+
+### 2.3 `ai4j`
 
 这是唯一的 `Core SDK` 模块，也是整个仓库的基础能力底座。
 
@@ -45,7 +74,7 @@ ai4j-sdk
 - RAG 与检索增强
 - provider / service / network 扩展
 
-### 2.2 `ai4j-spring-boot-starter`
+### 2.4 `ai4j-spring-boot-starter`
 
 把 `ai4j` 放进 Spring Boot 容器。
 
@@ -55,7 +84,7 @@ ai4j-sdk
 - 配置绑定
 - Bean 级扩展
 
-### 2.3 `ai4j-agent`
+### 2.5 `ai4j-agent`
 
 在 `ai4j` 之上增加通用智能体运行时。
 
@@ -67,7 +96,7 @@ ai4j-sdk
 - agent memory
 - subagent / team / workflow / trace
 
-### 2.4 `ai4j-coding`
+### 2.6 `ai4j-coding`
 
 在 `ai4j` 和 `ai4j-agent` 之上增加面向代码仓任务的 runtime。
 
@@ -79,7 +108,7 @@ ai4j-sdk
 - session / process / prompt assembly
 - coding task 相关策略
 
-### 2.5 `ai4j-cli`
+### 2.7 `ai4j-cli`
 
 这是 `Coding Agent` 的产品壳层。
 
@@ -90,7 +119,7 @@ ai4j-sdk
 - ACP host
 - 分发产物和交互入口
 
-### 2.6 `ai4j-flowgram-spring-boot-starter`
+### 2.8 `ai4j-flowgram-spring-boot-starter`
 
 这是面向可视化节点工作流平台的后端 starter。
 
@@ -101,11 +130,11 @@ ai4j-sdk
 - 任务 API
 - 与 `Spring Boot`、`Agent` 能力的组合
 
-### 2.7 `ai4j-flowgram-demo`
+### 2.9 `ai4j-flowgram-demo`
 
 这是 Flowgram starter 的示例工程，用来展示后端接入和调试路径。
 
-### 2.8 `ai4j-bom`
+### 2.10 `ai4j-bom`
 
 用于多模块项目的版本对齐，适合团队在引入多个 AI4J 模块时集中管理版本。
 
@@ -114,6 +143,7 @@ ai4j-sdk
 从当前模块 `pom.xml` 可以读出一条比较清楚的主线：
 
 ```text
+ai4j-plugin-ask-user       -> ai4j-extension-api
 ai4j-agent                  -> ai4j
 ai4j-coding                 -> ai4j + ai4j-agent
 ai4j-cli                    -> ai4j + ai4j-coding
@@ -126,13 +156,16 @@ ai4j-flowgram-demo          -> ai4j-flowgram-spring-boot-starter
 这条依赖方向说明了两件事：
 
 1. `ai4j` 是真正的底层核心
-2. `Coding Agent` 和 `Flowgram` 都不是凭空出现的，它们是往上叠加出来的运行时或平台层
+2. `ai4j-extension-api` 是插件生态的轻量公共合同，不反向依赖 runtime
+3. `Coding Agent` 和 `Flowgram` 都不是凭空出现的，它们是往上叠加出来的运行时或平台层
 
 ## 4. 代码定位时应该先去哪
 
 如果你的目标是：
 
 - 看基础模型与能力接入：先看 `ai4j`
+- 看插件合同和第三方插件开发：看 `ai4j-extension-api`
+- 看官方插件样板：看 `ai4j-plugin-ask-user`
 - 看 Spring 自动装配：看 `ai4j-spring-boot-starter`
 - 看通用智能体 runtime：看 `ai4j-agent`
 - 看本地代码仓任务与持续会话：看 `ai4j-coding`
@@ -151,9 +184,11 @@ ai4j-flowgram-demo          -> ai4j-flowgram-spring-boot-starter
 4. [Core SDK / Skills](/docs/core-sdk/skills/overview)
 5. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
 6. [Spring Boot / Overview](/docs/spring-boot/overview)
-7. [Agent / Overview](/docs/agent/overview)
-8. [Coding Agent / Overview](/docs/coding-agent/overview)
-9. [Flowgram / Overview](/docs/flowgram/overview)
+7. [Extension / Plugin Packages](/docs/core-sdk/extension/plugin-packages)
+8. [Extension / Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
+9. [Agent / Overview](/docs/agent/overview)
+10. [Coding Agent / Overview](/docs/coding-agent/overview)
+11. [Flowgram / Overview](/docs/flowgram/overview)
 
 如果你下一步想继续从代码结构往包结构下钻，建议继续看 [Package Map](/docs/core-sdk/package-map)。
 

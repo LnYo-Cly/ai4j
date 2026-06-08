@@ -23,7 +23,7 @@
 一款面向 JDK8+ 的 Java AI Agentic 开发套件，既提供统一的大模型调用与常用 AI 基座能力，也提供更完善的智能体式 Agent 开发能力。  
 覆盖多平台模型接入、统一输入输出、Tool Call、MCP、RAG、统一 `VectorStore`、ChatMemory、Agent Runtime、Coding Agent、CLI / TUI / ACP、FlowGram 集成，以及 Dify / Coze / n8n 等已发布 AgentFlow 端点接入能力，帮助 Java 应用从基础模型接入扩展到更完整的 agentic 应用开发。
 
-当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要 Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
+当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-extension-api`、`ai4j-plugin-ask-user`、`ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要插件包、Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
 
 ## 赞助商
 
@@ -73,6 +73,7 @@
 + 内置 Coding Agent CLI / TUI，支持本地代码仓交互式会话、provider profile、workspace model override、session/process 管理
 + 提供 `ai4j-coding` Coding Agent 运行时，支持 workspace tools、outer loop、checkpoint compaction、subagent 与 team 协作
 + 提供 `ai4j-flowgram-spring-boot-starter`，便于在 Spring Boot 中接入 FlowGram 工作流与 trace
++ 提供 `ai4j-extension-api` 与官方 `ai4j-plugin-ask-user` 样板插件，用于按需扩展 Agent / Coding Agent 工具、命令、Skill 与 Prompt
 + 提供 `ai4j-bom`，便于多模块项目统一版本管理
 + 统一的输入输出
 + 统一的错误处理
@@ -101,6 +102,7 @@
 + Spring Boot 接入：`docs-site/docs/start-here/quickstart-spring-boot.md`
 + 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
 + 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
++ 官方 Ask User 插件：`docs-site/docs/core-sdk/extension/ask-user-plugin.md`
 + Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 + CLI 插件骨架生成：`ai4j-cli extension init <directory> --id <extension-id> --package <java-package>`
 + CLI 插件校验：`ai4j-cli extension validate <extension-id>|--all`
@@ -384,6 +386,8 @@ skill 发现规则：
 + 需要本地 CLI / TUI / ACP 宿主：引入 `ai4j-cli`
 + 需要 Spring Boot 自动配置：引入 `ai4j-spring-boot-starter`
 + 需要 FlowGram 工作流集成：引入 `ai4j-flowgram-spring-boot-starter`
++ 需要开发第三方插件：引入 `ai4j-extension-api`
++ 需要让 Agent 结构化询问用户：引入 `ai4j-plugin-ask-user`
 + 同时引入多个模块：建议额外引入 `ai4j-bom`
 
 ### Gradle
@@ -391,6 +395,7 @@ skill 发现规则：
 implementation platform("io.github.lnyo-cly:ai4j-bom:${project.version}")
 implementation "io.github.lnyo-cly:ai4j"
 implementation "io.github.lnyo-cly:ai4j-agent"
+implementation "io.github.lnyo-cly:ai4j-plugin-ask-user"
 ```
 
 ```groovy
@@ -427,6 +432,11 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-coding</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-plugin-ask-user</artifactId>
 </dependency>
 ```
 

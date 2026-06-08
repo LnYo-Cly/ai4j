@@ -88,6 +88,8 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。
 
+官方 `ai4j-plugin-ask-user` 是第一个样板插件。它展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope，同时贡献 command、Skill 和 Prompt 资源。
+
 ## 4. 当前实现里，哪些是“真 SPI”，哪些不是
 
 这是这一章最容易被误读的地方。
@@ -156,6 +158,7 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 3. [Service Extension](/docs/core-sdk/extension/service-extension)
 4. [SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
 5. [Plugin Packages](/docs/core-sdk/extension/plugin-packages)
+6. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
 
 ## 9. 这一页的结论
 

@@ -33,9 +33,10 @@ modules:
     ask-user-plugin:
       title: Ask User Plugin
       prefix: ASKUSER
-      status: planned
-      branch: codex/ask-user-plugin
+      status: active
+      branch: main
       owner: coordinator
+      currentStep: MOD-02
       scope:
         - ai4j-plugin-ask-user
       shared: []

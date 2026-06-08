@@ -399,7 +399,22 @@ check
 
 工具名进入模型上下文后，也会进入执行路由。名字过宽会让调用意图和冲突排查都变困难。
 
-## 8. 发布建议
+## 8. 官方样板插件
+
+AI4J 当前提供一个官方样板插件：
+
+| Artifact | Extension id | 能力 | 文档 |
+| --- | --- | --- | --- |
+| `ai4j-plugin-ask-user` | `ask-user` | tool + command + Skill + Prompt | [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin) |
+
+它的作用不是替代第三方插件，而是给插件作者一个可编译、可测试、可通过 `ServiceLoader` 发现的参考模块。它展示的重点是：
+
+- 官方插件也只是普通 Maven jar。
+- 插件启用后不自动把工具暴露给模型。
+- tool / command 可以返回宿主可识别的结构化 envelope。
+- Skill / Prompt 可以随 jar 分发，再由 Agent / Coding Agent 按需读取。
+
+## 9. 发布建议
 
 插件包发布时至少给出：
 
@@ -414,11 +429,12 @@ check
 
 AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己的包管理、README 和版本策略维护插件。
 
-## 9. 当前边界
+## 10. 当前边界
 
 当前已经可用：
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
+- `ai4j-plugin-ask-user` 提供官方样板插件，展示 host-mediated 用户提问 tool / command / Skill / Prompt
 - `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
 - CLI 可以 `extension list / inspect / validate` 查看和校验 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
 - CLI 可以 `extension resource --enable <id> <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
@@ -435,10 +451,11 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 
 这些能力可以继续演进，但不应该在文档里暗示已经存在。
 
-## 10. 推荐阅读顺序
+## 11. 推荐阅读顺序
 
 1. [Extension 总览](/docs/core-sdk/extension/overview)
 2. 本页：Plugin Packages
-3. [Tools](/docs/core-sdk/tools/overview)
-4. [Agent Tools and Registry](/docs/agent/tools-and-registry)
-5. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)
+3. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
+4. [Tools](/docs/core-sdk/tools/overview)
+5. [Agent Tools and Registry](/docs/agent/tools-and-registry)
+6. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)

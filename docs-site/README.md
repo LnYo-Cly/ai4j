@@ -25,6 +25,7 @@ npm run serve
 - Spring Boot 细分路径：`docs/start-here/quickstart-spring-boot.md`
 - 能力边界与继续阅读：`docs/start-here/feature-map.md`
 - 插件包生态与第三方扩展：`docs/core-sdk/extension/plugin-packages.md`
+- 官方 Ask User 插件：`docs/core-sdk/extension/ask-user-plugin.md`
 - Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 - CLI 插件骨架生成：`ai4j-cli extension init <directory> --id <extension-id> --package <java-package>`
 - CLI 插件校验：`ai4j-cli extension validate <extension-id>|--all`

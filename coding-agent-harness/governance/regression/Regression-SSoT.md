@@ -18,15 +18,16 @@
 
 | Gate ID | 覆盖面 | 主入口 | 触发场景 | 证据深度 | 上次验证 | 当前结果 | 负责人 | 残余路由 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RG-010 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | `ai4j-extension-api/` manifest, discovery, enable/expose, runtime inspection snapshot, and resource contract changes | L1-tests | 2026-06-08 pass, 8 tests | pass | project coordinator | none |
+| RG-010 | extension API module | `mvn -pl ai4j-extension-api -DskipTests=false test` | `ai4j-extension-api/` manifest, discovery, enable/expose, runtime inspection snapshot, and resource contract changes | L1-tests | 2026-06-09 pass, 12 tests | pass | project coordinator | none |
+| RG-011 | official Ask User plugin module | `mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test` | `ai4j-plugin-ask-user/` official plugin package changes | L1-tests | 2026-06-09 pass, 6 plugin tests plus extension API dependency tests | pass | project coordinator | none |
 | RG-001 | core SDK module | `mvn -pl ai4j -am -DskipTests=false test` | `ai4j/` provider, protocol, RAG, vector, MCP, image, audio, realtime, agentflow connector changes | L1-tests | 2026-06-04 pass | pass-with-residual | project coordinator | R-001 |
 | RG-002 | agent runtime module | `mvn -pl ai4j-agent -am -DskipTests=false test` | `ai4j-agent/` workflow, memory, trace, subagent/team orchestration changes | L1-tests | 2026-06-04 fail | fail | project coordinator | R-001, R-008 |
 | RG-003 | coding runtime module | `mvn -pl ai4j-coding -am -DskipTests=false test` | `ai4j-coding/` tools, outer-loop, checkpoint, shell/apply-patch changes | L1-tests | 2026-06-04 partial | pass-with-residual | project coordinator | R-001, R-008 |
 | RG-004 | CLI/TUI/ACP host | `mvn -pl ai4j-cli -am -DskipTests=false test` | `ai4j-cli/` CLI, TUI, ACP, session, rendering changes | L1-tests | 2026-06-08 targeted pass / full gate blocked by R-008 | pass-with-residual | project coordinator | R-001, R-008 |
 | RG-005 | Spring Boot starter | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | `ai4j-spring-boot-starter/` property binding or auto-configuration changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
 | RG-006 | FlowGram starter and task APIs | `mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test` | `ai4j-flowgram-spring-boot-starter/` or `ai4j-flowgram-demo/` changes | L1-tests | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
-| RG-007 | monorepo package build | `mvn -DskipTests package` | root `pom.xml`, `ai4j-bom/`, shared build plugins, release/publishing logic, cross-module impact | L2-local-smoke | ci-wired-pending-first-run | pass-with-residual | project coordinator | R-001 |
-| RG-008 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | `docs-site/` content, config or workflow changes | L2-local-smoke | 2026-04-29 pass | pass | project coordinator | R-004, R-005 |
+| RG-007 | monorepo package build | `mvn -DskipTests package` | root `pom.xml`, `ai4j-bom/`, shared build plugins, release/publishing logic, cross-module impact | L2-local-smoke | 2026-06-09 pass, 11 reactor projects | pass | project coordinator | none |
+| RG-008 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | `docs-site/` content, config or workflow changes | L2-local-smoke | 2026-06-09 pass | pass | project coordinator | R-005 |
 | RG-009 | FlowGram webapp demo build | `npm run lint`, `npm run ts-check`, then `npm run build` in `ai4j-flowgram-webapp-demo/` | `ai4j-flowgram-webapp-demo/` frontend changes | L2-local-smoke | bootstrap-mapped | pass-with-residual | project coordinator | R-003, R-007 |
 
 ## Live / 凭证 Opt-in Gate

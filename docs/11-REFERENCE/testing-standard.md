@@ -1,6 +1,6 @@
 # Testing Standard
 
-> Last updated: 2026-06-08
+> Last updated: 2026-06-09
 
 ## Test Frameworks
 
@@ -29,6 +29,7 @@ Tasks should close on the smallest local-required gate that covers the changed s
 |------|---------|
 | `ai4j/src/test/java` | Core SDK and provider-facing tests |
 | `ai4j-extension-api/src/test/java` | Extension manifest, discovery, enable/expose, and registry contract tests |
+| `ai4j-plugin-ask-user/src/test/java` | Official sample plugin manifest, ServiceLoader, validator, tool/command envelope, and resource tests |
 | `ai4j-agent/src/test/java` | Agent runtime, memory, workflow, trace tests |
 | `ai4j-coding/src/test/java` | Coding runtime, tools, shell/apply-patch tests |
 | `ai4j-cli/src/test/java` | CLI, TUI, ACP, session, rendering tests |
@@ -55,6 +56,7 @@ Tasks should close on the smallest local-required gate that covers the changed s
 
 - Full package: `mvn -DskipTests package`
 - Extension API: `mvn -pl ai4j-extension-api -DskipTests=false test`
+- Ask User plugin: `mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test`
 - Core SDK: `mvn -pl ai4j -am -DskipTests=false test`
 - Agent runtime: `mvn -pl ai4j-agent -am -DskipTests=false test`
 - Coding runtime: `mvn -pl ai4j-coding -am -DskipTests=false test`

@@ -2,7 +2,7 @@
 
 Context Doc Type: system-map
 Owner: project coordinator
-Last Verified: 2026-06-08
+Last Verified: 2026-06-09
 Confidence: medium
 
 ## Scope
@@ -15,6 +15,7 @@ Confidence: medium
 flowchart LR
   core["ai4j core SDK"]
   extension["ai4j-extension-api"]
+  askUser["ai4j-plugin-ask-user"]
   agent["ai4j-agent"]
   coding["ai4j-coding"]
   cli["ai4j-cli"]
@@ -25,6 +26,7 @@ flowchart LR
   docs["docs-site"]
   bom["ai4j-bom"]
 
+  askUser --> extension
   core -. future adapter .-> extension
   agent -. future adapter .-> extension
   coding -. future adapter .-> extension
@@ -38,6 +40,7 @@ flowchart LR
   flowDemo --> flowStarter
   flowWeb --> flowDemo
   bom --> extension
+  bom --> askUser
   bom --> core
   docs --> core
   docs --> agent
@@ -57,6 +60,7 @@ flowchart LR
 | Node | Meaning | Source Evidence | Last Verified | Confidence |
 | --- | --- | --- | --- | --- |
 | `extension` | Lightweight extension API contract for manifest, discovery, enable/expose gates and neutral resources. | `AGENTS.md`; `ai4j-extension-api/src/main/java` | 2026-06-08 | high |
+| `askUser` | Official sample plugin for host-mediated user clarification tool, command, Skill, and Prompt resources. | `ai4j-plugin-ask-user/src/main/java`; `docs-site/docs/core-sdk/extension/ask-user-plugin.md` | 2026-06-09 | high |
 | `core` | Core SDK module and provider/RAG/MCP/vector owner. | `AGENTS.md`; `ai4j/src/main/java` | 2026-06-04 | high |
 | `agent` | Agent runtime and orchestration module. | `AGENTS.md`; `AGENT.md`; `ai4j-agent/src/main/java` | 2026-06-04 | high |
 | `coding` / `cli` | Coding-agent runtime and host surfaces. | `AGENTS.md`; `ai4j-coding/src/main/java`; `ai4j-cli/src/main/java` | 2026-06-04 | high |
