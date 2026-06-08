@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 adapter 单元测试、coding session 工具调用回归、CLI inspect 目标回归、monorepo package smoke、docs-site typecheck/build 和 self adversarial review。人工确认仍由 harness review 队列完成。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606081924 |
+| Submitted At | 2026-06-08 19:24 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5 |
+| Materials Checklist Hash | 9d46d3ab06a822d9 |
+| Evidence Summary | Wave 3 runtime adapter, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5 |
