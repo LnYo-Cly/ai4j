@@ -9,9 +9,9 @@
 | Schema version | lesson-candidate-v1 |
 | Task-level status | pending-review |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-this-task |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77 |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是既有 extension 安全模型下的窄实现切片，没有产生新的通用 harness 流程经验；相关技术决策已经记录在 `findings.md`。
 
 ## Promotion Notes
 

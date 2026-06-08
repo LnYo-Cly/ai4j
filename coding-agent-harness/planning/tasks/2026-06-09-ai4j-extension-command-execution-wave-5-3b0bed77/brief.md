@@ -10,42 +10,44 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+AI4J CLI 可以通过 `extension run --enable <extension-id> <command> [arguments...]` 显式执行已启用插件包提供的 command。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+使用者把第三方插件 jar 放到 classpath 后，不只能 `extension list / inspect` 查看插件，还能在 CLI 中显式启用插件并运行插件 command。这让第三方插件从“可被发现和审阅”进入“可被人手动调用”的阶段，同时仍保留安全边界：classpath 发现不会执行 command，`run` 必须带 `--enable`，模型可见工具仍然只走 `exposeTool` / Spring Boot `ai.extensions.tools.expose`。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`ai4j-cli extension run --enable <id> <command> [arguments...]`
+- 修改位置：`ai4j-cli`、`docs-site/docs/core-sdk/extension/plugin-packages.md`、harness task package、Regression SSoT / Cadence Ledger
+- 验证证据：`Ai4jCliTest` targeted regression、monorepo package smoke、docs-site typecheck/build、diff check、harness status
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `task_plan.md` 的边界和验收标准，再看 `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/CliExtensionCommand.java` 与 `ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/Ai4jCliTest.java`。文档侧看 `docs-site/docs/core-sdk/extension/plugin-packages.md` 的 CLI 命令执行路径。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：CLI `extension run` 子命令、显式 `--enable` 门禁、command handler 调用、CLI tests、插件文档和治理记录。
+- 范围外：CLI 自动安装插件、远程 marketplace、运行时 jar 热加载、provider plugin、Agent/Coding Agent 新能力、Spring Boot 新属性。
+- 停止条件：如果需要改变 `ai4j-extension-api` 公共合同或让插件自动执行，必须停止并重新确认范围。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- CLI 未显式 `--enable` 时拒绝执行插件 command。
+- CLI 显式启用插件后能执行 command handler 并输出结果。
+- CLI 支持 slash-prefixed command 名称和 command 参数中的 `--flag`。
+- 未知 command 返回稳定 extension error。
+- 相关 Java/docs/harness 验证通过并记录到 `progress.md`。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+补齐 Wave 5 CLI command execution 实现、测试、文档和验证证据。

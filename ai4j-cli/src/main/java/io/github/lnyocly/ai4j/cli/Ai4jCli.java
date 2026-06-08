@@ -99,6 +99,7 @@ public class Ai4jCli {
         terminal.println("  ai4j-cli tui --model <model> [options]");
         terminal.println("  ai4j-cli acp --model <model> [options]");
         terminal.println("  ai4j-cli extension list");
+        terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
         terminal.println("  ai4j-cli --model <model> [options]   # handled as the code command by default\n");
         terminal.println("Commands:");
         terminal.println("  code      Start a coding session in one-shot or interactive REPL mode\n");

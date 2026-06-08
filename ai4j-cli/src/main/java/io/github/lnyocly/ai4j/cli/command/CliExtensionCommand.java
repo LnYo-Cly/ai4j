@@ -6,6 +6,9 @@ import io.github.lnyocly.ai4j.extension.ExtensionException;
 import io.github.lnyocly.ai4j.extension.ExtensionInspectionSnapshot;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
+import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
+import io.github.lnyocly.ai4j.extension.command.ExtensionCommandRequest;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
@@ -34,6 +37,9 @@ public class CliExtensionCommand {
             }
             if ("inspect".equalsIgnoreCase(command)) {
                 return inspect(arguments.subList(1, arguments.size()), terminal);
+            }
+            if ("run".equalsIgnoreCase(command)) {
+                return runExtensionCommand(arguments.subList(1, arguments.size()), terminal);
             }
             terminal.errorln("Unknown extension command: " + command);
             printHelp(terminal);
@@ -67,6 +73,22 @@ public class CliExtensionCommand {
         return 0;
     }
 
+    private int runExtensionCommand(List<String> args, TerminalIO terminal) throws Exception {
+        RunOptions options = parseRunOptions(args);
+        ExtensionRegistry registry = ExtensionRegistry.discover()
+                .enableAll(options.enabledExtensionIds);
+        ExtensionRuntimeSnapshot snapshot = registry.snapshot();
+        ExtensionCommandHandler handler = snapshot.getCommandHandlers().get(options.commandName);
+        if (handler == null) {
+            throw new ExtensionException("command not registered by enabled extensions: " + options.commandName);
+        }
+        String result = handler.handle(new ExtensionCommandRequest(options.commandName, joinCommandArguments(options.arguments)));
+        if (!isBlank(result)) {
+            terminal.println(result);
+        }
+        return 0;
+    }
+
     private int inspect(List<String> args, TerminalIO terminal) {
         InspectOptions options = parseInspectOptions(args);
         ExtensionRegistry registry = ExtensionRegistry.discover();
@@ -93,6 +115,49 @@ public class CliExtensionCommand {
             terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, and guardrails");
         }
         return 0;
+    }
+
+    private RunOptions parseRunOptions(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
+        }
+        List<String> enabledExtensionIds = new ArrayList<String>();
+        List<String> commandArguments = new ArrayList<String>();
+        String commandName = null;
+        boolean passthrough = false;
+        for (int i = 0; i < args.size(); i++) {
+            String arg = args.get(i);
+            if (!passthrough && "--".equals(arg)) {
+                passthrough = true;
+                continue;
+            }
+            if (commandName != null) {
+                commandArguments.add(arg);
+                continue;
+            }
+            if (!passthrough && ("--enable".equals(arg) || "--extension".equals(arg))) {
+                if (i + 1 >= args.size()) {
+                    throw new IllegalArgumentException(arg + " requires an extension id");
+                }
+                enabledExtensionIds.add(ExtensionManifest.requireId(args.get(++i), "extension id"));
+                continue;
+            }
+            if (!passthrough && arg != null && arg.startsWith("--")) {
+                throw new IllegalArgumentException("unsupported option: " + arg);
+            }
+            if (commandName == null) {
+                commandName = normalizeCommandName(arg);
+                continue;
+            }
+            commandArguments.add(arg);
+        }
+        if (enabledExtensionIds.isEmpty()) {
+            throw new IllegalArgumentException("at least one --enable <extension-id> is required before running extension commands");
+        }
+        if (isBlank(commandName)) {
+            throw new IllegalArgumentException("command name is required");
+        }
+        return new RunOptions(enabledExtensionIds, commandName, commandArguments);
     }
 
     private InspectOptions parseInspectOptions(List<String> args) {
@@ -221,13 +286,16 @@ public class CliExtensionCommand {
         terminal.println("Usage:");
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension inspect <id> [--runtime]\n");
+        terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]\n");
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
+        terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
         terminal.println("\nNotes:");
         terminal.println("  Discovery does not enable an extension.");
         terminal.println("  Runtime inspection is temporary and does not expose tools to an agent.");
+        terminal.println("  Running a command requires --enable so classpath discovery never executes commands implicitly.");
     }
 
     private boolean isHelp(String value) {
@@ -243,6 +311,30 @@ public class CliExtensionCommand {
         return isBlank(message) ? "unknown error" : message.trim();
     }
 
+    private String normalizeCommandName(String value) {
+        String normalized = ExtensionManifest.requireId(value, "command name");
+        if (normalized.startsWith("/") && normalized.length() > 1) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    private String joinCommandArguments(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (String value : values) {
+            if (builder.length() > 0) {
+                builder.append(' ');
+            }
+            if (value != null) {
+                builder.append(value);
+            }
+        }
+        return builder.toString();
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
@@ -254,6 +346,22 @@ public class CliExtensionCommand {
         private InspectOptions(String extensionId, boolean runtime) {
             this.extensionId = extensionId;
             this.runtime = runtime;
+        }
+    }
+
+    private static final class RunOptions {
+        private final List<String> enabledExtensionIds;
+        private final String commandName;
+        private final List<String> arguments;
+
+        private RunOptions(List<String> enabledExtensionIds, String commandName, List<String> arguments) {
+            this.enabledExtensionIds = enabledExtensionIds == null
+                    ? Collections.<String>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<String>(enabledExtensionIds));
+            this.commandName = commandName;
+            this.arguments = arguments == null
+                    ? Collections.<String>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<String>(arguments));
         }
     }
 }

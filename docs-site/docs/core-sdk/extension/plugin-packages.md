@@ -89,6 +89,23 @@ public Agent agent(ModelClient modelClient, ExtensionRegistry extensionRegistry)
 }
 ```
 
+### 2.5 CLI 命令执行路径
+
+CLI 可以先查看 classpath 上的插件：
+
+```bash
+ai4j-cli extension list
+ai4j-cli extension inspect weather-pack --runtime
+```
+
+如果插件声明了 command，可以显式启用插件后执行：
+
+```bash
+ai4j-cli extension run --enable weather-pack weather.status beijing
+```
+
+`--enable` 是必填项。classpath 发现插件不会自动执行命令，也不会把工具暴露给模型。`extension run` 是人手动调用插件 command 的 CLI 入口；Agent / Coding Agent 的模型可见工具仍然只走 `.exposeTool(...)` 或 Spring Boot `ai.extensions.tools.expose`。
+
 ## 3. 接入 Agent
 
 插件工具可以直接进入通用 Agent loop：
@@ -247,7 +264,7 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 当前已经可用：
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
-- CLI 可以 `extension list / inspect` 查看 classpath 上的插件
+- CLI 可以 `extension list / inspect` 查看 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具
 - Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具
 - Spring Boot starter 可以通过 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`

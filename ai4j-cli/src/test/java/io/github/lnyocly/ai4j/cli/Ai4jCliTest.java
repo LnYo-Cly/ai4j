@@ -182,6 +182,111 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_run_requires_explicit_enable() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "run", "cli-echo", "hello"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("at least one --enable <extension-id> is required"));
+        Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_run_executes_command_from_enabled_extension() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "cli-echo", "hello", "world"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("hello world"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_run_accepts_slash_prefixed_command_name() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extensions", "run", "--enable", "cli-test-pack", "/cli-echo", "slash"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("slash"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_run_passes_option_like_arguments_to_handler() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "cli-echo", "--name", "demo"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("--name demo"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_run_unknown_command_returns_extension_error() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "missing-command"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("command not registered by enabled extensions: missing-command"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
     public void test_top_level_tui_command_routes_to_tui_mode() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
