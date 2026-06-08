@@ -1,6 +1,6 @@
 # AI4J extension runtime adapter wave 3 - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-08 18:32] - task-start
+
+- 做了什么：开始 Wave 3：补齐 extension runtime 到 agent tool registry/executor 的最小运行时适配，并同步 docs-site 插件生态入口
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
