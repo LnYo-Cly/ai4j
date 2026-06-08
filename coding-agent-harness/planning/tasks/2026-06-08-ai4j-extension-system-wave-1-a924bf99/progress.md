@@ -1,6 +1,6 @@
 # AI4J extension system wave 1 - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -81,3 +81,10 @@
 - Registry update needed：`extension-api` 已加入 `harness.yaml`、`Module-Registry.md`、`coding-agent-harness/planning/modules/extension-api/*`
 - Harness Ledger update needed：task-review 后由 lifecycle / governance rebuild 刷新
 - 负责人：coordinator
+
+### [2026-06-08 10:50] - task-review
+
+- 做了什么：AI4J Extension API Wave 1 is ready for human review: extension-api module, discovery/enable/expose gates, tests, BOM/CI/regression/harness context are complete.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
