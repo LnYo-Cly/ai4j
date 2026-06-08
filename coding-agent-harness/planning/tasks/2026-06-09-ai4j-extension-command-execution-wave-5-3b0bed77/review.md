@@ -114,3 +114,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 CLI targeted tests、monorepo package smoke、docs-site typecheck/build、diff check 和 self adversarial review。人工确认仍由 harness review 队列完成。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606082015 |
+| Submitted At | 2026-06-08 20:15 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77 |
+| Materials Checklist Hash | 25806e6c69cf457d |
+| Evidence Summary | Wave 5 CLI extension command execution, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77 |

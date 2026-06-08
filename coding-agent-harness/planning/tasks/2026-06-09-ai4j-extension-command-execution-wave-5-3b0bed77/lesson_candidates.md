@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | no-reusable-governance-lesson-for-this-task |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | checked-none |
+| Closeout token | checked-none:auto-no-candidate |
 | Source task | 2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77 |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,8 @@
 
 ## No-Candidate Reason
 
-本轮是既有 extension 安全模型下的窄实现切片，没有产生新的通用 harness 流程经验；相关技术决策已经记录在 `findings.md`。
+
+Agent review found no reusable lesson candidates in this task; the empty candidate table is recorded as checked for closeout.
 
 ## Promotion Notes
 
