@@ -38,11 +38,11 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] `ExtensionValidator` 能检查 manifest 完整性、capability 与贡献资源一致性、tool input schema 基础形状、Skill / Prompt 资源是否存在。
-- [ ] `ai4j-cli extension validate <id>` 输出 extension、status、errors、warnings 和 issue 列表；有 error 时返回非零。
-- [ ] `ai4j-cli extension validate --all` 能检查 classpath 上所有发现的插件。
-- [ ] 校验不会自动 enable/expose 工具，也不会执行插件 command。
-- [ ] docs-site/README 不出现“企业采用”这类用户明确反感的措辞。
+- [x] `ExtensionValidator` 能检查 manifest 完整性、capability 与贡献资源一致性、tool input schema 基础形状、Skill / Prompt 资源是否存在。
+- [x] `ai4j-cli extension validate <id>` 输出 extension、status、errors、warnings 和 issue 列表；有 error 时返回非零。
+- [x] `ai4j-cli extension validate --all` 能检查 classpath 上所有发现的插件。
+- [x] 校验不会自动 enable/expose 工具，也不会执行插件 command。
+- [x] docs-site/README 不出现“企业采用”这类用户明确反感的措辞。
 
 ## 工作树（Worktree）
 
@@ -83,7 +83,7 @@ Task Package Index: required
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
 - Global sync owner：coordinator
-- Global sync status：pending-coordinator-pass
-- Registry update needed：Feature SSoT、Regression SSoT、Cadence Ledger
-- Harness Ledger update needed：task plan、review、walkthrough
+- Global sync status：pending-human-review
+- Registry update needed：Feature SSoT、Regression SSoT、Cadence Ledger 已更新
+- Harness Ledger update needed：已由 lifecycle CLI 同步；材料修复后重新提交 review
 - Closeout / Regression update needed：`docs/05-TEST-QA/Regression-SSoT.md`、`docs/05-TEST-QA/Cadence-Ledger.md`

@@ -4,7 +4,8 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+
+本轮没有额外外部资料索引；代码和文档上下文已在 `task_plan.md` 的 Context Packet 中列出。
 
 ## 使用规则
 

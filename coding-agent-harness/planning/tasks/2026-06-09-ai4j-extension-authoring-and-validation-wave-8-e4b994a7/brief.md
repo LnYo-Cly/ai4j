@@ -43,11 +43,11 @@ AI4J 插件包作者和使用者可以用稳定的公共 validator 与 `ai4j-cli
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：进行中
+- 生命周期状态：审查中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-实现 `ExtensionValidator` 与 CLI `validate`，随后补测试和文档。
+材料包已提交 Agent Review Submission；下一步等待 Human Review Confirmation，agent 不代办人工确认。

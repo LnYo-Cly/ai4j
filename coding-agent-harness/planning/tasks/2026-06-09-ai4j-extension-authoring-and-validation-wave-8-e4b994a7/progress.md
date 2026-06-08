@@ -28,9 +28,9 @@
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-review-submission
+- Global sync status：pending-human-review
 - Registry update needed：Feature SSoT / Regression SSoT / Cadence Ledger 已更新
-- Harness Ledger update needed：task-review 后由 harness lifecycle CLI 同步
+- Harness Ledger update needed：已由 lifecycle CLI 同步；材料修复后重新提交 review
 - 负责人：coordinator
 
 ### [2026-06-08 21:33] - task-start
@@ -57,6 +57,13 @@
 ### [2026-06-08 22:06] - task-review
 
 - 做了什么：Wave 8 extension authoring validation, docs, and verification are ready for human review
-- 验证结果：已记录
-- 下一步：继续执行
+- 验证结果：harness 接收 Agent Review Submission，但发现 `execution_strategy.md` 仍有模板内容，任务暂入 Missing Materials。
+- 下一步：修复任务本地执行策略并重新提交 review。
 - 证据：n/a
+
+### [2026-06-09 06:10] - Review material repair
+
+- 做了什么：将 `execution_strategy.md` 从模板态改为 Wave 8 真实执行策略；同步 brief、task plan 和 progress 的当前状态。
+- 验证结果：待重新运行 harness status / task-review。
+- 下一步：重新提交 Agent Review Submission。
+- 证据：diff:TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7:task-local material repair

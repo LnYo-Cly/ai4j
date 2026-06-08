@@ -4,7 +4,8 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+
+本轮没有额外保存大体量产物；验证证据直接记录在 `progress.md` 和 `review.md`。
 
 ## 使用规则
 
