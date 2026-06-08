@@ -16,19 +16,6 @@ modules:
   schema: harness-modules/v1
   generatedView: coding-agent-harness/planning/modules/Module-Registry.md
   items:
-    extension-api:
-      title: Extension API
-      prefix: EXT
-      status: planned
-      branch: main
-      owner: coordinator
-      scope:
-        - ai4j-extension-api
-      shared: []
-      dependsOn: []
-      plan: coding-agent-harness/planning/modules/extension-api/module_plan.md
-      brief: coding-agent-harness/planning/modules/extension-api/brief.md
-      updated: 2026-06-08
     agent-runtime:
       title: Agent Runtime
       prefix: AGENT
@@ -43,6 +30,20 @@ modules:
       plan: coding-agent-harness/planning/modules/agent-runtime/module_plan.md
       brief: coding-agent-harness/planning/modules/agent-runtime/brief.md
       updated: 2026-06-04
+    ask-user-plugin:
+      title: Ask User Plugin
+      prefix: ASKUSER
+      status: planned
+      branch: codex/ask-user-plugin
+      owner: coordinator
+      scope:
+        - ai4j-plugin-ask-user
+      shared: []
+      dependsOn:
+        - extension-api
+      plan: coding-agent-harness/planning/modules/ask-user-plugin/module_plan.md
+      brief: coding-agent-harness/planning/modules/ask-user-plugin/brief.md
+      updated: 2026-06-09
     bom:
       title: Version Alignment BOM
       prefix: BOM
@@ -110,6 +111,19 @@ modules:
       plan: coding-agent-harness/planning/modules/docs-site/module_plan.md
       brief: coding-agent-harness/planning/modules/docs-site/brief.md
       updated: 2026-06-04
+    extension-api:
+      title: Extension API
+      prefix: EXT
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-extension-api
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/extension-api/module_plan.md
+      brief: coding-agent-harness/planning/modules/extension-api/brief.md
+      updated: 2026-06-08
     flowgram-demo:
       title: FlowGram Demo Backend
       prefix: FLOWDEMO
