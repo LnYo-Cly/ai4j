@@ -1,6 +1,6 @@
 # AI4J extension guardrail execution wave 7 - 进度
 
-## 状态：审查中
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
