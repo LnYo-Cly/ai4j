@@ -10,33 +10,34 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+`ai4j-cli extension list/inspect` 能发现 classpath 上的 AI4J extension，并展示 manifest 与可选 runtime 贡献清单。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，使用者可以先通过 CLI 审查已加入 classpath 的扩展包，而不是直接把扩展能力接入 agent runtime。`extension list` 展示发现数量、id、名称、版本、能力和来源类；`extension inspect <id>` 展示 manifest、权限和配置前缀；`--runtime` 才临时执行 extension 的 `apply()`，列出贡献的 tool/command/skill/prompt/guardrail 名称。这个结果用于 Wave 3 之前的安全审查、文档演示和第三方扩展开发调试。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`ai4j-cli extension list`、`ai4j-cli extension inspect <id> [--runtime]`
+- 修改位置：`ai4j-cli/`、必要时同步 `ai4j-extension-api` regression/governance
+- 验证证据：CLI JUnit tests、`mvn -pl ai4j-cli -am -DskipTests=false test`、`git diff --check`、harness status
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `task_plan.md` 的范围边界，再读 `findings.md` 的设计决策；实现完成后看 `progress.md` 和 `review.md`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：CLI top-level `extension` 命令、classpath discovery、manifest inspect、可选 runtime contribution inspect、CLI 测试和回归记录。
+- 范围外：`extension install`、持久化 enable 配置、Spring Boot properties、Agent/Coding runtime adapter、Marketplace、jar hotload。
+- 停止条件：如果需要让扩展工具真正进入 agent 执行面，停止并开 Wave 3 adapter 任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `ai4j-cli extension list` 可列出 ServiceLoader 发现的扩展。
+- `ai4j-cli extension inspect <id>` 不执行 `apply()` 也能展示 manifest。
+- `ai4j-cli extension inspect <id> --runtime` 可列出贡献资源，但不持久启用。
+- CLI targeted tests 和 harness status 通过。
 
 ## 执行合同
 
@@ -48,4 +49,4 @@
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+补齐 task plan / execution strategy 后，实现 `CliExtensionCommand` 并接入 `Ai4jCli`。

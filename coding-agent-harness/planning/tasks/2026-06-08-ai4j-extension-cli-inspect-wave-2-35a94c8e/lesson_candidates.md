@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: cli-extension-inspect-local-contract-no-new-governance-lesson |
 | Source task | 2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e |
 | Owner | coordinator |
 | Last updated | 2026-06-08 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务没有新的可复用治理 lesson 候选。默认 inspect manifest-only、runtime inspect opt-in、可执行对象不进入 CLI 这些决策已经写入 `findings.md`、`review.md` 和回归台账；它们是本任务局部插件 CLI 合同，不需要提升为全局 lesson。
 
 ## Promotion Notes
 

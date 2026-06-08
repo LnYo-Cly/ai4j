@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.cli;
 
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
+import io.github.lnyocly.ai4j.cli.fixture.CliExtensionTestExtension;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -43,6 +44,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("ai4j-cli"));
         Assert.assertTrue(output.contains("code"));
         Assert.assertTrue(output.contains("acp"));
+        Assert.assertTrue(output.contains("extension"));
     }
 
     @Test
@@ -62,6 +64,121 @@ public class Ai4jCliTest {
         String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(2, exitCode);
         Assert.assertTrue(error.contains("Unknown command: unknown"));
+    }
+
+    @Test
+    public void test_extension_list_shows_discovered_extension_manifest() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "list"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("extensions:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack"));
+        Assert.assertTrue(output.contains("name=CLI Test Pack"));
+        Assert.assertTrue(output.contains("capabilities=tool,command,skill,prompt,guardrail"));
+        Assert.assertTrue(output.contains("source=io.github.lnyocly.ai4j.cli.fixture.CliExtensionTestExtension"));
+        Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_list_rejects_unexpected_arguments() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "list", "extra"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("unexpected argument for list: extra"));
+    }
+
+    @Test
+    public void test_extension_inspect_defaults_to_manifest_only() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "inspect", "cli-test-pack"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("extension:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack"));
+        Assert.assertTrue(output.contains("permissions=network:example.test"));
+        Assert.assertTrue(output.contains("configPrefix=ai4j.extensions.cli-test"));
+        Assert.assertTrue(output.contains("runtime=not-inspected"));
+        Assert.assertFalse(output.contains("tools=cli.echo"));
+        Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_inspect_runtime_lists_contributed_resources() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extensions", "inspect", "cli-test-pack", "--runtime"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("runtime=inspected"));
+        Assert.assertTrue(output.contains("tools=cli.echo"));
+        Assert.assertTrue(output.contains("commands=cli-echo"));
+        Assert.assertTrue(output.contains("skills=cli-skill@skills/cli/SKILL.md"));
+        Assert.assertTrue(output.contains("prompts=cli-prompt@prompts/cli.md"));
+        Assert.assertTrue(output.contains("guardrails=cli-guardrail"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_inspect_unknown_id_returns_argument_error() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "inspect", "missing-pack"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("extension not discovered: missing-pack"));
     }
 
     @Test

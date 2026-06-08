@@ -22,12 +22,13 @@
 | CLI-01 | 维护 CLI/TUI/ACP host 合同 | planned | none | coding-runtime |
 | CLI-02 | session/runtime integration 回归 | planned | none | CLI-01 |
 | CLI-03 | 用户文档和发布影响同步 | planned | none | CLI-01 |
+| CLI-EXT-01 | extension list/inspect 入口 | review | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/task_plan.md` | extension-api |
 
 ## 活跃任务
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e` | review | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test`; `mvn -DskipTests package` | Wave 2 只交付 classpath extension list/inspect；完整 RG-004 仍受 R-008 上游 agent residual 阻塞 |
 
 ## 验证
 

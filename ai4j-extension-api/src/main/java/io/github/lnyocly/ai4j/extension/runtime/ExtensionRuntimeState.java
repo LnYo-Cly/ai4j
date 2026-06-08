@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.extension.runtime;
 
 import io.github.lnyocly.ai4j.extension.ExtensionException;
+import io.github.lnyocly.ai4j.extension.ExtensionInspectionSnapshot;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
@@ -99,6 +100,16 @@ public final class ExtensionRuntimeState {
                 new ArrayList<ExtensionSkillResource>(skills.values()),
                 new ArrayList<ExtensionPromptResource>(prompts.values()),
                 new ArrayList<ExtensionGuardrail>(guardrails.values())
+        );
+    }
+
+    public ExtensionInspectionSnapshot inspectionSnapshot() {
+        return new ExtensionInspectionSnapshot(
+                new ArrayList<ExtensionToolSpec>(tools.values()),
+                new ArrayList<ExtensionCommandSpec>(commands.values()),
+                new ArrayList<ExtensionSkillResource>(skills.values()),
+                new ArrayList<ExtensionPromptResource>(prompts.values()),
+                new ArrayList<String>(guardrails.keySet())
         );
     }
 

@@ -51,6 +51,26 @@ public class ExtensionRegistryTest {
     }
 
     @Test
+    public void shouldInspectRuntimeWithoutEnablingExtensionOrExposingTools() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension());
+
+        ExtensionInspectionSnapshot inspected = registry.inspectRuntime(" weather-pack ");
+
+        Assert.assertEquals(1, inspected.getTools().size());
+        Assert.assertEquals("weather.search", inspected.getTools().get(0).getName());
+        Assert.assertEquals(1, inspected.getCommands().size());
+        Assert.assertEquals("weather", inspected.getCommands().get(0).getName());
+        Assert.assertEquals(1, inspected.getSkills().size());
+        Assert.assertEquals("weather-skill", inspected.getSkills().get(0).getName());
+        Assert.assertEquals(1, inspected.getPrompts().size());
+        Assert.assertEquals("weather-summary", inspected.getPrompts().get(0).getName());
+        Assert.assertEquals(1, inspected.getGuardrails().size());
+        Assert.assertEquals("weather-guardrail", inspected.getGuardrails().get(0));
+        Assert.assertTrue(registry.getEnabledIds().isEmpty());
+        Assert.assertTrue(registry.snapshot().getTools().isEmpty());
+    }
+
+    @Test
     public void shouldRejectUnknownExtensionEnable() {
         try {
             ExtensionRegistry.of(new WeatherExtension()).enable("missing-pack");

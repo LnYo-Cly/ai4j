@@ -104,6 +104,15 @@ public final class ExtensionRegistry {
         return runtimeState.snapshot(exposedToolIds);
     }
 
+    public ExtensionInspectionSnapshot inspectRuntime(String extensionId) {
+        String normalized = requireKnownExtension(extensionId);
+        ExtensionRuntimeState state = new ExtensionRuntimeState();
+        Ai4jExtension extension = discovered.get(normalized);
+        ExtensionManifest manifest = manifests.get(normalized);
+        extension.apply(new DefaultExtensionContext(manifest, state));
+        return state.inspectionSnapshot();
+    }
+
     public Set<String> getEnabledIds() {
         return Collections.unmodifiableSet(enabledIds);
     }
