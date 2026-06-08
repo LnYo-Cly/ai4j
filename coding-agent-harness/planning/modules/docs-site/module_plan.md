@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| DOCS-01 | 维护 docs-site build contract | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | none |
+| DOCS-01 | 维护 docs-site build contract | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | none |
 | DOCS-02 | SSoT 同步检查 | planned | none | DOCS-01 |
 | DOCS-03 | 站点构建验证 | planned | none | DOCS-01 |
 
@@ -27,6 +27,7 @@
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
+| `2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6` | review-pending | coordinator | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`; `NODE_OPTIONS=--max-old-space-size=8192 npm run build` | Wave 4 documents Spring Boot plugin configuration path and boundaries. |
 | `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`; `NODE_OPTIONS=--max-old-space-size=8192 npm run build` | Wave 3 adds plugin package docs, sidebar entry, and README links. |
 
 ## 验证

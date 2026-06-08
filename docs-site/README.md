@@ -25,6 +25,7 @@ npm run serve
 - Spring Boot 细分路径：`docs/start-here/quickstart-spring-boot.md`
 - 能力边界与继续阅读：`docs/start-here/feature-map.md`
 - 插件包生态与第三方扩展：`docs/core-sdk/extension/plugin-packages.md`
+- Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 
 普通 Java 首聊直接展示
 `Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`

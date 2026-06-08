@@ -20,14 +20,14 @@
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
 | SPRING-01 | 维护 starter wiring 合同 | planned | none | core-sdk |
-| SPRING-02 | 配置属性与 auto-configuration 回归 | planned | none | SPRING-01 |
+| SPRING-02 | 配置属性与 auto-configuration 回归 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | SPRING-01 |
 | SPRING-03 | BOM/docs 同步 | planned | none | SPRING-01 |
 
 ## 活跃任务
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6` | review-pending | coordinator | `mvn -pl ai4j-spring-boot-starter -am -DskipTests=false test` | Wave 4 adds `ai.extensions.*` plugin configuration and registry/snapshot beans. |
 
 ## 验证
 

@@ -18,7 +18,7 @@ AI4J 现在有两类容易混淆的扩展：
 
 ## 2. 使用者路径
 
-使用者的完整路径分三步。
+普通 Java 使用者的完整路径分三步。
 
 ### 2.1 引入插件依赖
 
@@ -52,6 +52,42 @@ ExtensionRegistry registry = ExtensionRegistry.discover()
 ```
 
 启用也不等于把工具交给模型。只有 `exposeTool(...)` 后，工具才会进入 agent tool registry。
+
+### 2.4 Spring Boot 配置路径
+
+Spring Boot 项目可以用配置完成同一件事：
+
+```yaml
+ai:
+  extensions:
+    enabled:
+      - weather-pack
+    tools:
+      expose:
+        - weather.search
+```
+
+starter 会自动创建两个 bean：
+
+| Bean | 作用 |
+| --- | --- |
+| `ExtensionRegistry` | 保存 classpath 发现、显式启用和工具 allowlist 状态 |
+| `ExtensionRuntimeSnapshot` | 保存已启用资源和已暴露工具的只读快照 |
+
+如果配置了不存在的插件包，或者只配置 `tools.expose` 却没有启用贡献该工具的插件包，应用启动会失败。这是刻意设计的安全边界：Spring Boot 配置也不能绕过 discover / enable / expose 三段式门禁。
+
+starter 不会自动创建 Agent 或 Coding Agent。需要 Agent 时，仍然把 `ExtensionRegistry` 传给 Agent builder：
+
+```java
+@Bean
+public Agent agent(ModelClient modelClient, ExtensionRegistry extensionRegistry) {
+    return Agents.react()
+            .modelClient(modelClient)
+            .model("glm-4.5-flash")
+            .extensions(extensionRegistry)
+            .build();
+}
+```
 
 ## 3. 接入 Agent
 
@@ -214,6 +250,7 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 - CLI 可以 `extension list / inspect` 查看 classpath 上的插件
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具
 - Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具
+- Spring Boot starter 可以通过 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`
 
 当前不包含：
 
@@ -221,7 +258,6 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 - CLI 自动安装插件依赖
 - 运行时热加载 jar
 - provider 自动注册
-- Spring Boot 配置化插件装配
 
 这些能力可以继续演进，但不应该在文档里暗示已经存在。
 

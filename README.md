@@ -101,6 +101,7 @@
 + Spring Boot 接入：`docs-site/docs/start-here/quickstart-spring-boot.md`
 + 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
 + 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
++ Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
 + 协议、Agent 与上层集成：`docs-site/docs/mcp/`、`docs-site/docs/agent/`、`docs-site/docs/coding-agent/`、`docs-site/docs/flowgram/`
 
 推荐阅读顺序：

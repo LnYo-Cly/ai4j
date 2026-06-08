@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-this-task |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6 |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是既有插件生态设计在 Spring Boot starter 的一次普通落地，没有新增可复用的 harness 流程经验；需要沉淀的是项目功能事实，已写入 task plan、docs-site、Regression SSoT 和 module plan。
 
 ## Promotion Notes
 

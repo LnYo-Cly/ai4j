@@ -10,7 +10,7 @@
 | Model extension | 现有 provider 内部能力扩展 | 请求对象 + provider service 实现 |
 | Service extension | 代码内能力面扩展，不是通用 SPI | `service/*.java`、`AiService`、`AiServiceRegistry`、`FreeAiService` |
 | HTTP stack extension | 真正的 SPI 扩展 | `network/*Provider.java`、`META-INF/services/*`、`AiConfigAutoConfiguration.initOkHttp()` |
-| Plugin package | 第三方 jar 形式的运行时资源扩展 | `ai4j-extension-api`、`ServiceLoader`、`ExtensionRegistry`、Agent / Coding Agent `.extensions(...)` |
+| Plugin package | 第三方 jar 形式的运行时资源扩展 | `ai4j-extension-api`、`ServiceLoader`、`ExtensionRegistry`、Agent / Coding Agent `.extensions(...)`、Spring Boot `ai.extensions.*` |
 
 ## 1. 这一章在 Core SDK 里的位置
 
@@ -84,7 +84,7 @@ AI4J 当前的扩展链路，大体上是下面这条：
 - CLI 可检查的 extension manifest
 - prompt、skill 或 guardrail 资源
 
-这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用，最后用 `exposeTool(...)` 显式暴露给模型。
+这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用，最后用 `exposeTool(...)` 显式暴露给模型。Spring Boot 项目可以用 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 完成同样的启用与暴露，但仍不会自动创建 Agent 或自动安装插件依赖。
 
 ## 4. 当前实现里，哪些是“真 SPI”，哪些不是
 
@@ -157,4 +157,4 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 
 ## 9. 这一页的结论
 
-> AI4J 当前的扩展面并不对称。provider 和顶层 service 仍然走 `PlatformType + AiService + Registry` 这条代码主链，HTTP 并发与连接治理走底层 SPI；第三方插件包则走 `ai4j-extension-api + ServiceLoader + ExtensionRegistry`，用于给 Agent / Coding Agent 暴露可控的运行时资源。真正开始扩展前，先判断你碰到的是平台边界、模型变体、能力新增、网络栈治理，还是插件资源复用。
+> AI4J 当前的扩展面并不对称。provider 和顶层 service 仍然走 `PlatformType + AiService + Registry` 这条代码主链，HTTP 并发与连接治理走底层 SPI；第三方插件包则走 `ai4j-extension-api + ServiceLoader + ExtensionRegistry`，用于给 Agent / Coding Agent 暴露可控的运行时资源，Spring Boot 只是把同一套 registry/snapshot 配置化。真正开始扩展前，先判断你碰到的是平台边界、模型变体、能力新增、网络栈治理，还是插件资源复用。

@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- |
 | EXT-01 | 维护 manifest / discovery / enable / expose 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/task_plan.md` | none |
 | EXT-02 | 下游 runtime 适配设计 | planned | none | EXT-01 |
-| EXT-03 | CLI / Spring Boot inspect 和配置接入 | planned | none | EXT-01 |
+| EXT-03 | CLI / Spring Boot inspect 和配置接入 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | EXT-01 |
 
 ## 活跃任务
 
