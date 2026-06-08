@@ -17,8 +17,8 @@
 
 | 检查 | 命令或过程 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| whitespace | `git diff --check` | pending | `progress.md` |
-| harness status | `npx.cmd --yes coding-agent-harness status --json .` | pending | `progress.md` |
+| whitespace | `git diff --check` | pass | `progress.md` |
+| harness status | `npx.cmd --yes coding-agent-harness status --json .` | pass | `progress.md` |
 
 ## 审查结论
 

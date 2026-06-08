@@ -22,19 +22,19 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ### [2026-06-08 16:44] - architecture plan
 
 - 做了什么：完成 task-local 规划、执行策略、Pi 生态调研、AI4J Extension System 设计正文、visual map 和 Feature SSoT active row。
 - 验证结果：设计已明确 Package / Manifest / Extension / Resource 分层，首批扩展点限定为 Tool、Command、Skill、Prompt、Guardrail；Provider、完整 RAG、UI、FlowGram 后置。
 - 下一步：运行 `git diff --check` 和 harness status，并填写 self-review / walkthrough。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/references/pi-extension-ecosystem-research.md:Pi package/extension 调研; report:TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/references/ai4j-extension-system-design.md:AI4J Extension System 设计; diff:TARGET:docs/09-PLANNING/Feature-SSoT.md:F-024 active feature row
+
+### [2026-06-08 16:49] - L0 verification
+
+- 做了什么：运行规划任务 L0 验证，并提交架构设计材料。
+- 验证结果：`git diff --check` 通过；`npx.cmd --yes coding-agent-harness status --json .` 在设计材料提交后通过，0 failures / 0 warnings。
+- 下一步：修复 task-review 提示的模板残留后重新提交审查。
+- 证据：command:TARGET:.:`git diff --check`; command:TARGET:.:`npx.cmd --yes coding-agent-harness status --json .`; diff:TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f:task-local design materials
 
 ## 残余
 
@@ -57,6 +57,6 @@
 ### [2026-06-08 08:50] - task-review
 
 - 做了什么：AI4J Extension System 架构规划已完成：包含 Pi 生态调研、AI4J Package/Manifest/Extension/Resource 分层、首批扩展点、安全门禁、模块落点和分波路线；L0 验证通过。
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 验证结果：首次 review submission 指出 `progress.md` 和 `visual_map.md` 仍有模板残留，已进入修复。
+- 下一步：删除模板残留并重新提交 review。
+- 证据：command:TARGET:.:`npx.cmd --yes coding-agent-harness task-review ...`:missing-materials 指向 progress 和 visual map 的模板残留
