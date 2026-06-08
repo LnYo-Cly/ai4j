@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自公共 API 单测、CLI 定向测试、monorepo package smoke、docs-site typecheck/build、diff check、Regression SSoT / Cadence Ledger 更新，以及本轮自审无 material finding。发布前仍需要 Human Review Confirmation，不能由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606082206 |
+| Submitted At | 2026-06-08 22:06 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7 |
+| Materials Checklist Hash | 66dfaa9eade54d40 |
+| Evidence Summary | Wave 8 extension authoring validation, docs, and verification are ready for human review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7 |
