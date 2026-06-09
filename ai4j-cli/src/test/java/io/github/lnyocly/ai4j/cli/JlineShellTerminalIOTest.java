@@ -7,7 +7,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.Buffer;
 import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
+import org.jline.terminal.impl.DumbTerminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.Status;
 import org.junit.Assert;
@@ -34,12 +34,7 @@ public class JlineShellTerminalIOTest {
     public void test_clear_assistant_block_resets_tracking_and_writes_erase_sequences() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -72,12 +67,7 @@ public class JlineShellTerminalIOTest {
     public void test_forget_assistant_block_resets_tracking_without_rewriting_terminal_history() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -109,12 +99,7 @@ public class JlineShellTerminalIOTest {
     public void test_blank_newline_uses_print_above_while_reading() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         RecordingLineReaderHandler handler = new RecordingLineReaderHandler();
         LineReader lineReader = (LineReader) Proxy.newProxyInstance(
                 LineReader.class.getClassLoader(),
@@ -140,12 +125,7 @@ public class JlineShellTerminalIOTest {
     public void test_multiline_transcript_block_uses_print_above_while_reading() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         RecordingLineReaderHandler handler = new RecordingLineReaderHandler();
         LineReader lineReader = (LineReader) Proxy.newProxyInstance(
                 LineReader.class.getClassLoader(),
@@ -171,12 +151,7 @@ public class JlineShellTerminalIOTest {
     public void test_assistant_markdown_block_writes_directly_when_not_reading() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         RecordingLineReaderHandler handler = new RecordingLineReaderHandler(false);
         LineReader lineReader = (LineReader) Proxy.newProxyInstance(
                 LineReader.class.getClassLoader(),
@@ -202,12 +177,7 @@ public class JlineShellTerminalIOTest {
     public void test_direct_output_window_bypasses_print_above_even_if_line_reader_reports_reading() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         RecordingLineReaderHandler handler = new RecordingLineReaderHandler(true);
         LineReader lineReader = (LineReader) Proxy.newProxyInstance(
                 LineReader.class.getClassLoader(),
@@ -237,12 +207,7 @@ public class JlineShellTerminalIOTest {
         System.setProperty("ai4j.jline.status", "true");
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -269,12 +234,7 @@ public class JlineShellTerminalIOTest {
         System.clearProperty("ai4j.jline.status");
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -303,12 +263,7 @@ public class JlineShellTerminalIOTest {
         );
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         PaletteBuffer buffer = new PaletteBuffer();
         PaletteLineReaderHandler handler = new PaletteLineReaderHandler(buffer);
         LineReader lineReader = (LineReader) Proxy.newProxyInstance(
@@ -336,12 +291,7 @@ public class JlineShellTerminalIOTest {
     public void test_turn_interrupt_watch_invokes_handler_on_escape() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{27});
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -369,12 +319,7 @@ public class JlineShellTerminalIOTest {
     public void test_turn_interrupt_polling_detects_escape() throws Exception {
         ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{27});
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Terminal terminal = TerminalBuilder.builder()
-                .system(false)
-                .dumb(true)
-                .streams(input, output)
-                .encoding(StandardCharsets.UTF_8)
-                .build();
+        Terminal terminal = newDumbTerminal(input, output);
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .appName("ai4j-cli-test")
@@ -400,12 +345,7 @@ public class JlineShellTerminalIOTest {
             System.setProperty("ai4j.jline.stalled-ms", "220");
             ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            Terminal terminal = TerminalBuilder.builder()
-                    .system(false)
-                    .dumb(true)
-                    .streams(input, output)
-                    .encoding(StandardCharsets.UTF_8)
-                    .build();
+            Terminal terminal = newDumbTerminal(input, output);
             LineReader lineReader = LineReaderBuilder.builder()
                     .terminal(terminal)
                     .appName("ai4j-cli-test")
@@ -442,12 +382,7 @@ public class JlineShellTerminalIOTest {
             System.setProperty("ai4j.jline.stalled-ms", "400");
             ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            Terminal terminal = TerminalBuilder.builder()
-                    .system(false)
-                    .dumb(true)
-                    .streams(input, output)
-                    .encoding(StandardCharsets.UTF_8)
-                    .build();
+            Terminal terminal = newDumbTerminal(input, output);
             LineReader lineReader = LineReaderBuilder.builder()
                     .terminal(terminal)
                     .appName("ai4j-cli-test")
@@ -475,6 +410,10 @@ public class JlineShellTerminalIOTest {
                 .getDeclaredConstructor(Terminal.class, LineReader.class, Status.class);
         constructor.setAccessible(true);
         return constructor.newInstance(terminal, lineReader, status);
+    }
+
+    private Terminal newDumbTerminal(ByteArrayInputStream input, ByteArrayOutputStream output) throws Exception {
+        return new DumbTerminal("ai4j-cli-test", "dumb", input, output, StandardCharsets.UTF_8);
     }
 
     private void restoreProperty(String key, String value) {
