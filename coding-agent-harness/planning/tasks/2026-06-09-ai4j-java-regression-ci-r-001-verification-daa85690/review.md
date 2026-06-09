@@ -113,3 +113,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自远端 `java-regression` 全矩阵绿灯、`main` / `dev` branch protection API 复查、本地 `ai4j-cli` Linux 稳定性修复验证，以及两套 Regression SSoT / Cadence Ledger 已同步关闭 R-001。提交后需要人工确认，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606091150 |
+| Submitted At | 2026-06-09 11:50 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690 |
+| Materials Checklist Hash | 6ac0f3792020fd65 |
+| Evidence Summary | R-001 ready for human review: remote java-regression passed, main/dev branch protection require java-regression, regression governance closed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690 |
