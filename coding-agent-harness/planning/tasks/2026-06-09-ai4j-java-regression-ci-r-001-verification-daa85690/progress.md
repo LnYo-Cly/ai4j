@@ -31,7 +31,7 @@
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- R-001 仍待远端 workflow_dispatch green run 和 branch protection API 确认；完成前不得关闭。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
@@ -46,3 +46,31 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-09 18:48] - 远端 R-001 诊断
+
+- 做了什么：检查 GitHub CLI、远端 workflow 历史、默认分支和 `main` / `dev` branch protection。
+- 验证结果：`gh` 已登录 `LnYo-Cly` 且具备 repo/workflow 权限；仓库默认分支是 `main`；`java-regression.yml` 最近两次 run 均为 2026-04-26/27 的失败 PR run；`main` 和 `dev` 均返回 `Branch not protected`。
+- 下一步：调整 workflow，使它可手动/推送触发并提供稳定 required-check 名称。
+- 证据：command:TARGET:.:`gh auth status` passed; command:TARGET:.:`gh run list --workflow java-regression.yml --limit 10` showed two historical failed runs; command:TARGET:.:`gh api repos/LnYo-Cly/ai4j/branches/main/protection` and `.../branches/dev/protection` returned 404 Branch not protected
+
+### [2026-06-09 18:50] - FlowGram demo CI 覆盖面验证
+
+- 做了什么：核对父 POM 模块清单和旧 workflow matrix，发现 `ai4j-flowgram-demo` 在父 POM 内但未被旧 Java CI path/matrix 覆盖；本地验证将其纳入 matrix 的可行性。
+- 验证结果：`mvn -pl ai4j-flowgram-spring-boot-starter -am -DfailIfNoTests=false -DskipTests=false test` 通过，starter 13 tests；`mvn -pl ai4j-flowgram-demo -am -DfailIfNoTests=false -DskipTests=false test` 通过，demo 模块无测试但 reactor 依赖链通过。
+- 下一步：修改 `.github/workflows/java-regression.yml`，纳入 `ai4j-flowgram-demo` 并增加聚合 job。
+- 证据：command:TARGET:.:`mvn -pl ai4j-flowgram-spring-boot-starter -am -DfailIfNoTests=false -DskipTests=false test` passed; command:TARGET:.:`mvn -pl ai4j-flowgram-demo -am -DfailIfNoTests=false -DskipTests=false test` passed
+
+### [2026-06-09 18:55] - CI workflow 初始改动
+
+- 做了什么：更新 `.github/workflows/java-regression.yml`：增加 `workflow_dispatch` 和 `push` 触发；移除 workflow-level path filter，改为 `detect-java-changes` job；加入稳定聚合 job `java-regression`；将 `ai4j-flowgram-demo` 纳入 module matrix。
+- 验证结果：本地 diff 已生成，等待格式检查、提交、推送和远端 run。
+- 下一步：运行 `git diff --check`，提交推送后触发远端 Java regression。
+- 证据：diff:TARGET:.github/workflows/java-regression.yml:workflow trigger, matrix, and stable aggregate check updated
+
+### [2026-06-09 19:01] - workflow 语法和格式检查
+
+- 做了什么：检查 workflow YAML 和当前 diff 格式。
+- 验证结果：`npx.cmd --yes yaml-lint .github/workflows/java-regression.yml` 通过；`git diff --check` 通过，仅显示 Windows CRLF 工作区提示。
+- 下一步：提交并推送 workflow/task 材料，等待 GitHub Actions 远端结果。
+- 证据：command:TARGET:.github/workflows/java-regression.yml:`npx.cmd --yes yaml-lint .github/workflows/java-regression.yml` passed; command:TARGET:.:`git diff --check` passed with CRLF warnings only

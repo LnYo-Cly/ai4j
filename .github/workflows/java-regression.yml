@@ -1,20 +1,11 @@
 name: java-regression
 
 on:
+  workflow_dispatch:
+  push:
+    branches: [dev, main]
   pull_request:
     branches: [dev, main]
-    paths:
-      - 'pom.xml'
-      - 'ai4j-extension-api/**'
-      - 'ai4j-plugin-ask-user/**'
-      - 'ai4j/**'
-      - 'ai4j-agent/**'
-      - 'ai4j-coding/**'
-      - 'ai4j-cli/**'
-      - 'ai4j-spring-boot-starter/**'
-      - 'ai4j-flowgram-spring-boot-starter/**'
-      - 'ai4j-bom/**'
-      - '.github/workflows/java-regression.yml'
 
 permissions:
   contents: read
@@ -24,9 +15,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-java-changes:
+    name: detect-java-changes
+    runs-on: ubuntu-latest
+    outputs:
+      java: ${{ steps.changed.outputs.java }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Java regression surface
+        id: changed
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "java=true" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch runs the full Java regression surface."
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+            if [[ "$BASE" =~ ^0+$ ]]; then
+              BASE="$(git rev-list --max-parents=0 "$HEAD")"
+            fi
+          fi
+
+          echo "Changed files between $BASE and $HEAD:"
+          CHANGED_FILES="$(git diff --name-only "$BASE" "$HEAD")"
+          printf '%s\n' "$CHANGED_FILES"
+
+          if printf '%s\n' "$CHANGED_FILES" | grep -Eq '^(pom\.xml|ai4j-extension-api/|ai4j-plugin-ask-user/|ai4j/|ai4j-agent/|ai4j-coding/|ai4j-cli/|ai4j-spring-boot-starter/|ai4j-flowgram-spring-boot-starter/|ai4j-flowgram-demo/|ai4j-bom/|\.github/workflows/java-regression\.yml$)'; then
+            echo "java=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "java=false" >> "$GITHUB_OUTPUT"
+          fi
+
   package-smoke:
     name: package-smoke
     runs-on: ubuntu-latest
+    needs: detect-java-changes
+    if: needs.detect-java-changes.outputs.java == 'true'
     timeout-minutes: 30
 
     steps:
@@ -46,6 +81,8 @@ jobs:
   module-tests:
     name: module-tests (${{ matrix.module }})
     runs-on: ubuntu-latest
+    needs: detect-java-changes
+    if: needs.detect-java-changes.outputs.java == 'true'
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -59,6 +96,7 @@ jobs:
           - ai4j-cli
           - ai4j-spring-boot-starter
           - ai4j-flowgram-spring-boot-starter
+          - ai4j-flowgram-demo
 
     steps:
       - name: Checkout
@@ -82,3 +120,40 @@ jobs:
           path: |
             **/target/surefire-reports/**
           if-no-files-found: ignore
+
+  java-regression:
+    name: java-regression
+    runs-on: ubuntu-latest
+    needs:
+      - detect-java-changes
+      - package-smoke
+      - module-tests
+    if: always()
+    steps:
+      - name: Assert Java regression gate
+        shell: bash
+        run: |
+          echo "java changes: ${{ needs.detect-java-changes.outputs.java }}"
+          echo "detect-java-changes: ${{ needs.detect-java-changes.result }}"
+          echo "package-smoke: ${{ needs.package-smoke.result }}"
+          echo "module-tests: ${{ needs.module-tests.result }}"
+
+          if [[ "${{ needs.detect-java-changes.result }}" != "success" ]]; then
+            echo "detect-java-changes did not pass."
+            exit 1
+          fi
+
+          if [[ "${{ needs.detect-java-changes.outputs.java }}" != "true" ]]; then
+            echo "No Java regression surface changed; required gate passes without running the matrix."
+            exit 0
+          fi
+
+          if [[ "${{ needs.package-smoke.result }}" != "success" ]]; then
+            echo "package-smoke did not pass."
+            exit 1
+          fi
+
+          if [[ "${{ needs.module-tests.result }}" != "success" ]]; then
+            echo "module-tests did not pass."
+            exit 1
+          fi
