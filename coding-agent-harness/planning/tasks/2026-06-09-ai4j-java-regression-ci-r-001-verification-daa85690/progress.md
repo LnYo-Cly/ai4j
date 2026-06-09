@@ -74,3 +74,10 @@
 - 验证结果：`npx.cmd --yes yaml-lint .github/workflows/java-regression.yml` 通过；`git diff --check` 通过，仅显示 Windows CRLF 工作区提示。
 - 下一步：提交并推送 workflow/task 材料，等待 GitHub Actions 远端结果。
 - 证据：command:TARGET:.github/workflows/java-regression.yml:`npx.cmd --yes yaml-lint .github/workflows/java-regression.yml` passed; command:TARGET:.:`git diff --check` passed with CRLF warnings only
+
+### [2026-06-09 11:24] - task-log
+
+- 做了什么：远端 run 27201785049 暴露 ai4j-cli Linux/JDK8 测试不稳定：CodeCommandTest 使用 Windows-only type sample.txt，JlineShellTerminalIOTest 的 TerminalBuilder 在 Ubuntu CI 走 PosixPtyTerminal 并导致输出捕获断言失败；已将 fake bash 样例读取命令改为 OS-aware，并将 JLine 测试夹具固定为 DumbTerminal。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27201785049:module-tests ai4j-cli failed with 5 failures
