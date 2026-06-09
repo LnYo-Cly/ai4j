@@ -158,7 +158,7 @@ public class JlineShellTerminalIOTest {
             terminalIO.printTranscriptBlock(Arrays.asList("alpha", "", "beta"));
 
             Assert.assertEquals(1, handler.printAboveCalls().size());
-            Assert.assertEquals("alpha\n \nbeta", handler.printAboveCalls().get(0));
+            Assert.assertEquals("alpha\n \nbeta", AttributedString.fromAnsi(handler.printAboveCalls().get(0)).toString());
             Assert.assertTrue(handler.widgetCalls().isEmpty());
             Assert.assertEquals("", new String(output.toByteArray(), StandardCharsets.UTF_8));
         } finally {

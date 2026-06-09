@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- R-008 仍 open：`ai4j-agent/HandoffPolicyTest` 的 `testAllowedToolsPolicyDeniesUnexpectedSubagent` 和 `testNestedHandoffBlockedByMaxDepth` 仍阻断 broad `-am` gate。本任务不修改 agent handoff policy。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：由 lifecycle CLI 同步
+- 负责人：coordinator
 
 ### [2026-06-09 08:22] - task-start
 
@@ -46,3 +39,31 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-09 16:23] - reproduce
+
+- 做了什么：复现 R-009，确认失败集中在 `JlineShellTerminalIOTest.test_multiline_transcript_block_uses_print_above_while_reading`、`AcpCommandTest.test_markdown_char_stream_is_forwarded_without_coalescing` 和 `test_whitespace_only_stream_chunks_are_forwarded`。
+- 验证结果：目标命令失败，JLine 差异为 ANSI-styled `printAbove` 文本，ACP 差异为额外 `Stopped after the assistant completed the current task turn.` 被作为 `agent_message_chunk` 输出。
+- 下一步：修复 ACP 正文流污染；调整 JLine 测试断言为视觉文本合同。
+- 证据：command:TARGET:.:`mvn -pl ai4j-cli "-Dtest=JlineShellTerminalIOTest,AcpCommandTest" -DfailIfNoTests=false -DskipTests=false test` failed with 3 R-009 assertions
+
+### [2026-06-09 16:28] - fix-and-targeted-regression
+
+- 做了什么：更新 ACP session/update 映射，`AUTO_CONTINUE` / `AUTO_STOP` / `BLOCKED` loop-control 事件不再转成 `agent_message_chunk`；JLine multiline transcript 测试改为断言 ANSI 去除后的视觉文本。
+- 验证结果：目标失败类通过，30 tests, 0 failures。
+- 下一步：运行直接 CLI 全套和 cadence gate。
+- 证据：diff:TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/acp/AcpJsonRpcServer.java:loop-control events suppressed from ACP assistant content chunks; diff:TARGET:ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/JlineShellTerminalIOTest.java:assert visual printAbove text via AttributedString.fromAnsi; command:TARGET:.:`mvn -pl ai4j-cli "-Dtest=JlineShellTerminalIOTest,AcpCommandTest" -DfailIfNoTests=false -DskipTests=false test` passed with 30 tests
+
+### [2026-06-09 16:29] - cli-direct-suite
+
+- 做了什么：运行 R-009 直接 owning module gate。
+- 验证结果：`ai4j-cli` 直接测试通过，261 tests, 0 failures。
+- 下一步：复核 broad `-am` 是否只剩 R-008，并运行 package 烟测。
+- 证据：command:TARGET:.:`mvn -pl ai4j-cli -DfailIfNoTests=false -DskipTests=false test` passed with 261 tests
+
+### [2026-06-09 16:30] - cadence-evidence
+
+- 做了什么：运行 RG-004 broad `-am` 入口和 RG-007 package 烟测。
+- 验证结果：broad `mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` 仍在 upstream `ai4j-agent/HandoffPolicyTest` R-008 失败，CLI 未执行；`mvn -DskipTests package` 通过 11 个 reactor projects。
+- 下一步：更新 Regression SSoT、Cadence Ledger、review 和 walkthrough；提交待人工确认。
+- 证据：command:TARGET:.:`mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` failed only in known R-008 before CLI; command:TARGET:.:`mvn -DskipTests package` passed across 11 reactor projects
