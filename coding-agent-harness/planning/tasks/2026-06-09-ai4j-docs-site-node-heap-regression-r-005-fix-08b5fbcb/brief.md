@@ -10,42 +10,43 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+docs-site 的 typecheck/build 入口内置 8GB Node heap，R-005 不再要求维护者手动设置 `NODE_OPTIONS`。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，维护者、CI 和下一轮 agent 都使用同一组命令验证 docs-site：`npm run typecheck` 后接 `npm run build`。这两个脚本内部直接调用本地 TypeScript / Docusaurus CLI，并固定 `node --max-old-space-size=8192`，避免 Windows 或 CI 中因为默认 Node heap 不足而重新写临时 workaround。RG-008 仍保留 R-004 的 Docusaurus 文件锁风险，但 R-005 heap 残余独立关闭。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：docs-site 标准 npm scripts、docs workflows、回归台账和任务材料。
+- 修改位置：`docs-site/package.json`、`.github/workflows/docs-build.yml`、`.github/workflows/docs-pages.yml`、`docs-site/README.md`、Regression SSoT / Cadence Ledger、docs-site module plan。
+- 验证证据：`npm run typecheck`、`npm run build`、workflow YAML lint。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `task_plan.md` 的范围，再看 `progress.md` 的 RG-008 证据和 `review.md` 的 R-004 / R-005 边界说明。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：docs-site package scripts、docs CI workflow、README 使用说明、Regression SSoT / Cadence Ledger、任务包材料。
+- 范围外：docs 内容重构、Docusaurus 版本升级、Windows `EPERM` 清理残余 R-004、branch protection required check 调整。
+- 停止条件：标准 `npm run typecheck` 或 `npm run build` 在内置 heap 下失败且不是简单配置问题。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `npm run typecheck` 不设置外部 `NODE_OPTIONS` 通过。
+- `npm run build` 不设置外部 `NODE_OPTIONS` 通过并生成 `docs-site/build`。
+- docs workflows 执行 `npm run typecheck` 和 `npm run build`。
+- legacy 和 v2 Regression SSoT 均关闭 R-005，并保留 R-004。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交 review 前运行 `git diff --check` 和 `npx.cmd --yes coding-agent-harness status --json .`。

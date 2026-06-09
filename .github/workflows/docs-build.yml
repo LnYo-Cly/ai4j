@@ -5,11 +5,13 @@ on:
     paths:
       - 'docs-site/**'
       - '.github/workflows/docs-build.yml'
+      - '.github/workflows/docs-pages.yml'
   push:
     branches: [main, dev]
     paths:
       - 'docs-site/**'
       - '.github/workflows/docs-build.yml'
+      - '.github/workflows/docs-pages.yml'
 
 jobs:
   build:
@@ -31,6 +33,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck docs
+        run: npm run typecheck
 
       - name: Build docs
         run: npm run build

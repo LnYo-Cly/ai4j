@@ -70,6 +70,7 @@ Use `-am` for clean-checkout local and CI verification so upstream module depend
 
 - Docs build: `npm run build` in `docs-site/`
 - Docs typecheck: `npm run typecheck` in `docs-site/`
+- The docs-site scripts already include the required 8GB Node heap; do not prepend `NODE_OPTIONS=--max-old-space-size=8192` in new task evidence unless testing an environment override.
 - Web demo lint: `npm run lint` in `ai4j-flowgram-webapp-demo/`
 - Web demo typecheck: `npm run ts-check` in `ai4j-flowgram-webapp-demo/`
 - Web demo build: `npm run build` in `ai4j-flowgram-webapp-demo/`

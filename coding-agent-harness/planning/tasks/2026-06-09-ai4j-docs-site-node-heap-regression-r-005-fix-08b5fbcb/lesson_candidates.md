@@ -7,14 +7,14 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:repo-specific-docs-script-regression |
 | Source task | 2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb |
 | Owner | coordinator |
-| Last updated | 2026-06-09 |
+| Last updated | 2026-06-10 |
 
 ## Schema
 
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务是 repo-specific docs-site 回归入口修复，稳定结论已经写入 testing standard、Regression SSoT 和 Cadence Ledger；没有需要额外沉淀成全局 lesson 的复用规则。
 
 ## Promotion Notes
 

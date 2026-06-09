@@ -13,10 +13,13 @@ npm start
 ## 构建与预览
 
 ```bash
+npm run typecheck
 npm run clear
 npm run build
 npm run serve
 ```
+
+`typecheck` 和 `build` 脚本已经内置 `--max-old-space-size=8192`，本地 Windows 和 CI 不需要额外设置 `NODE_OPTIONS`。
 
 ## 新用户入口
 
