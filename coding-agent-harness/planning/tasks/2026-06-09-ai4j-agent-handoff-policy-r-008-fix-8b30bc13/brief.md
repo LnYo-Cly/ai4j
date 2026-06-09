@@ -10,42 +10,44 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+修复 R-008，使 `HandoffPolicy` 的 `allowedTools` 与 `maxDepth` 失败重新按 `FAIL` 语义穿透 agent 运行，并解除 `ai4j-agent` 本地回归阻塞。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，`ai4j-agent` 的子代理 handoff 安全策略会回到可验证状态：策略拒绝不再被 ReAct 主循环包装成普通 `TOOL_ERROR` 后继续执行，`HandoffPolicyTest` 的 allowed-tools 与 nested max-depth 场景应恢复通过。回归记录会同步关闭 R-008，并让 `ai4j-agent -am` 与依赖它的 `ai4j-cli -am` 重新获得可用的本地门禁证据。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：R-008 修复提交、Regression SSoT / Cadence Ledger 更新、walkthrough 与 review 材料。
+- 修改位置：`ai4j-agent/src/main/java`、`ai4j-agent/src/test/java`、`docs/05-TEST-QA/`、`coding-agent-harness/governance/regression/`。
+- 验证证据：`HandoffPolicyTest`、`ai4j-agent` 本地测试、`ai4j-cli -am` 广义门禁、package smoke、harness status。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `task_plan.md` 的范围和验收标准，再看 `progress.md` 的命令证据；代码侧优先查看 `BaseAgentRuntime` 与 `SubAgentToolExecutor` 的异常传播路径。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：`HandoffPolicy.FAIL` 类策略失败传播、最小回归测试、R-008 治理记录。
+- 范围外：插件生态、docs-site 功能文档重写、Agent Team 行为改造、普通工具错误策略重构。
+- 停止条件：若修复需要改变普通工具异常转 `TOOL_ERROR` 的公共语义，必须停下重新评估。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `HandoffPolicyTest` 全部通过。
+- `mvn -pl ai4j-agent -am -DskipTests=false test` 通过。
+- `mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` 不再被 R-008 阻塞。
+- R-008 在 Regression SSoT 中关闭，Cadence Ledger 写入本次证据。
+- task 进入 review 队列，等待人工确认。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+实现 handoff 策略失败专用异常，并让 `BaseAgentRuntime` 对该异常 fail fast。

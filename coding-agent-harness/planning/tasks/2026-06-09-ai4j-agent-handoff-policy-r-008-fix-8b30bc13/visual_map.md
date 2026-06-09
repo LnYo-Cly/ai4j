@@ -9,6 +9,7 @@ Visual Map Contract: v1.0
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-02 | sequence | 展示 R-008 修复后的异常传播路径 | yes | `HandoffPolicyTest` / `BaseAgentRuntime` / `SubAgentToolExecutor` | no |
 
 ## 阶段关系图（Phase Graph）
 
@@ -24,8 +25,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | planned | 0 | R-008 handoff policy 修复、回归记录和验证证据 | diff、commands、progress update | `harness task-phase 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | ordinary tool error behavior must remain stable | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --message "<summary>"` | agent | missing | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --confirm 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -39,6 +40,25 @@ flowchart LR
 `Completion` 使用 `0..100` 的整数；`done` 应为 `100`，`planned` 应为 `0`，`skipped` 不计入 dashboard 总完成度。dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算；`init` 和 `gate` 阶段表达生命周期门禁、下一步命令和责任人，不拉低实现完成度。
 
 ## 支持性图表（Supporting Maps）
+
+### MAP-02 - R-008 Failure Propagation
+
+```mermaid
+sequenceDiagram
+  participant AgentRun as manager/parent.run
+  participant Runtime as BaseAgentRuntime.executeTool
+  participant Handoff as SubAgentToolExecutor
+  participant Policy as HandoffPolicy
+
+  AgentRun->>Runtime: execute subagent tool call
+  Runtime->>Handoff: executor.execute(call)
+  Handoff->>Policy: check allowedTools / maxDepth
+  Policy-->>Handoff: denied reason
+  Handoff-->>Runtime: HandoffPolicyException
+  Runtime-->>AgentRun: rethrow fail-fast
+```
+
+普通工具异常不走 `HandoffPolicyException`，仍保持 `TOOL_ERROR` 输出合同。
 
 按需添加，不要求每类都存在：
 

@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicyException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
@@ -318,6 +319,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             throw interruptedException;
+        } catch (HandoffPolicyException handoffPolicyException) {
+            throw handoffPolicyException;
         } catch (Exception ex) {
             return buildToolErrorOutput(call, ex);
         }

@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-narrow-regression-fix |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是窄范围 R-008 回归修复：既有 Testing Standard、Regression SSoT 和 Cadence Ledger 已覆盖“失败复现 -> targeted gate -> owning module gate -> dependent broad gate -> residual closeout”的处理方式，没有新的可复用治理规则需要沉淀。
 
 ## Promotion Notes
 
