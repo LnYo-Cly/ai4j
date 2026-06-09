@@ -104,3 +104,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自标准 `npm run typecheck` / `npm run build` 在无外部 `NODE_OPTIONS` 下通过、workflow YAML lint 通过、R-005 与 R-004 在两套 Regression SSoT 中被明确区分，以及 docs workflows 复用同一 package script 入口。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606091633 |
+| Submitted At | 2026-06-09 16:33 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb |
+| Materials Checklist Hash | d7824b42e5e7555c |
+| Evidence Summary | R-005 docs-site Node heap fix ready: npm run typecheck/build pass without external NODE_OPTIONS, docs workflows align with RG-008, R-005 closed while R-004 remains routed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb |

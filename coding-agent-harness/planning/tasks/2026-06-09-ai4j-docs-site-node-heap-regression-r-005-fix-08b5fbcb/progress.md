@@ -1,6 +1,6 @@
 # AI4J docs site Node heap regression R-005 fix - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -43,6 +43,13 @@
 ### [2026-06-09 15:59] - task-start
 
 - 做了什么：开始修复 docs-site Node heap R-005：固化 typecheck/build heap 配置，更新 CI 与回归治理。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
+
+### [2026-06-09 16:33] - task-review
+
+- 做了什么：R-005 docs-site Node heap fix ready: npm run typecheck/build pass without external NODE_OPTIONS, docs workflows align with RG-008, R-005 closed while R-004 remains routed.
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
