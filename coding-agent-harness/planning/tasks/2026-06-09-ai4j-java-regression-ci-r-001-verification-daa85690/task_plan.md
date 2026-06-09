@@ -40,11 +40,11 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] `.github/workflows/java-regression.yml` 有稳定的 `java-regression` 聚合检查，可作为 branch protection required check。
-- [ ] 远端 Actions 出现一次完成且成功的 `java-regression` run。
-- [ ] `main` / `dev` branch protection 已要求 `java-regression` status check。
-- [ ] R-001 在两套 Regression SSoT 中从 open 改为 closed，Cadence Ledger 记录对应批次。
-- [ ] harness status、`git diff --check` 和必要本地 Maven gate 通过。
+- [x] `.github/workflows/java-regression.yml` 有稳定的 `java-regression` 聚合检查，可作为 branch protection required check。
+- [x] 远端 Actions 出现一次完成且成功的 `java-regression` run。
+- [x] `main` / `dev` branch protection 已要求 `java-regression` status check。
+- [x] R-001 在两套 Regression SSoT 中从 open 改为 closed，Cadence Ledger 记录对应批次。
+- [x] harness status、`git diff --check` 和必要本地 Maven gate 通过。
 
 ## 工作树（Worktree）
 
@@ -85,7 +85,7 @@ Task Package Index: required
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
 - Global sync owner：coordinator
-- Global sync status：pending-coordinator-pass
+- Global sync status：synced
 - Registry update needed：不适用
 - Harness Ledger update needed：任务进入 review/closeout 时由 lifecycle CLI 同步
 - Closeout / Regression update needed：`docs/05-TEST-QA/Regression-SSoT.md`、`docs/05-TEST-QA/Cadence-Ledger.md`、`coding-agent-harness/governance/regression/Regression-SSoT.md`、`coding-agent-harness/governance/regression/Cadence-Ledger.md`

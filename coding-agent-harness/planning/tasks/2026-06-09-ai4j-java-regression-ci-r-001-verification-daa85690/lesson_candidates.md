@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-narrow-ci-closeout |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690 |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是窄范围 R-001 CI/branch-protection 收口：既有 CI/CD Standard、Regression SSoT、Cadence Ledger 和 task lifecycle 已覆盖“远端失败 -> targeted 修复 -> 远端绿灯 -> required check 配置 -> SSoT 关闭”的治理方式，没有新的可复用治理规则需要沉淀。
 
 ## Promotion Notes
 

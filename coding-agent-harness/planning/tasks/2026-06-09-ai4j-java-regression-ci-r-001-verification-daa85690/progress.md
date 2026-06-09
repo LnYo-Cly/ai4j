@@ -31,14 +31,14 @@
 
 ## 残余
 
-- R-001 仍待远端 workflow_dispatch green run 和 branch protection API 确认；完成前不得关闭。
+- R-001 已完成远端 green run 和 branch protection API 确认；无 open R-001 residual。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：task-review / closeout 时由 lifecycle CLI 同步
+- 负责人：coordinator
 
 ### [2026-06-09 10:47] - task-start
 
