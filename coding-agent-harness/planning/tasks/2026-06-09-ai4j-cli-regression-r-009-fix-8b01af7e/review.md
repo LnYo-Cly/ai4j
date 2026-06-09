@@ -112,3 +112,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自目标失败类通过、CLI 直接全套 261 tests 通过、package 烟测通过，以及 broad `-am` 失败仍限定在既有 R-008。提交后需要人工确认，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606090848 |
+| Submitted At | 2026-06-09 08:48 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e |
+| Materials Checklist Hash | 06d67fb293bdcf24 |
+| Evidence Summary | R-009 fix ready for human review: target failing tests pass, direct ai4j-cli suite passes, package smoke passes; broad -am remains blocked only by known upstream R-008 before CLI. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e |

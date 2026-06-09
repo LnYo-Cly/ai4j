@@ -1,6 +1,6 @@
 # AI4J CLI Regression R-009 Fix - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -67,3 +67,10 @@
 - 验证结果：broad `mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` 仍在 upstream `ai4j-agent/HandoffPolicyTest` R-008 失败，CLI 未执行；`mvn -DskipTests package` 通过 11 个 reactor projects。
 - 下一步：更新 Regression SSoT、Cadence Ledger、review 和 walkthrough；提交待人工确认。
 - 证据：command:TARGET:.:`mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` failed only in known R-008 before CLI; command:TARGET:.:`mvn -DskipTests package` passed across 11 reactor projects
+
+### [2026-06-09 08:48] - task-review
+
+- 做了什么：R-009 fix ready for human review: target failing tests pass, direct ai4j-cli suite passes, package smoke passes; broad -am remains blocked only by known upstream R-008 before CLI.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
