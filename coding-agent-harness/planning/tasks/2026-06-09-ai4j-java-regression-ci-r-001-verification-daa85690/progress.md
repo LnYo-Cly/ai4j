@@ -81,3 +81,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：report:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27201785049:module-tests ai4j-cli failed with 5 failures
+
+### [2026-06-09 11:33] - task-log
+
+- 做了什么：远端 R-001 验证完成：push run 27202972949 在 main@41ca7bd 上完成且 conclusion=success；detect-java-changes、package-smoke、全部 module-tests 和稳定聚合 job java-regression 均成功。随后通过 GitHub API 为 main 和 dev 配置 branch protection，required_status_checks.strict=true，contexts=[java-regression]，allow_force_pushes=false。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27202972949:java-regression completed successfully on main@41ca7bd
