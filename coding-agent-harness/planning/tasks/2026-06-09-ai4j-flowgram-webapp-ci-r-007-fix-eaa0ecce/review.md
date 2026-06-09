@@ -113,3 +113,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自本地 `npm run lint` / `npm run ts-check` / `npm run build` 通过、远端 `flowgram-webapp-regression` 绿灯、`main` / `dev` branch protection API 复查，以及两套 Regression SSoT / Cadence Ledger 已同步关闭 R-007。提交后需要人工确认，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606091404 |
+| Submitted At | 2026-06-09 14:04 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce |
+| Materials Checklist Hash | 34d35f653d205de5 |
+| Evidence Summary | R-007 ready for human review: local and remote FlowGram webapp lint/type/build gates passed, main/dev branch protection require flowgram-webapp-regression, regression governance closed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce |
