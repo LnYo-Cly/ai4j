@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-narrow-ci-closeout |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce |
 | Owner | coordinator |
 | Last updated | 2026-06-09 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是窄范围 R-007 CI/branch-protection 收口：现有 Java regression R-001 模式已经覆盖“detect job + stable aggregate required check + branch protection + SSoT closeout”的治理方式，本任务只是把同一模式投影到 FlowGram webapp baseline；没有新的通用 lesson 需要沉淀。
 
 ## Promotion Notes
 

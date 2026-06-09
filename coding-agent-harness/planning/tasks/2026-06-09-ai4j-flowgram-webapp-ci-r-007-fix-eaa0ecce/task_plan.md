@@ -39,11 +39,11 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] `.github/workflows/flowgram-webapp-regression.yml` 存在稳定聚合 job `flowgram-webapp-regression`。
-- [ ] 本地 webapp lint/type/build 通过。
-- [ ] 远端 GitHub Actions `flowgram-webapp-regression` run 成功。
-- [ ] R-007 在两套 Regression SSoT 中关闭，RG-009 记录 CI evidence。
-- [ ] harness status、`git diff --check` 和 task review materials 通过。
+- [x] `.github/workflows/flowgram-webapp-regression.yml` 存在稳定聚合 job `flowgram-webapp-regression`。
+- [x] 本地 webapp lint/type/build 通过。
+- [x] 远端 GitHub Actions `flowgram-webapp-regression` run 成功。
+- [x] R-007 在两套 Regression SSoT 中关闭，RG-009 记录 CI evidence。
+- [x] harness status、`git diff --check` 和 task review materials 通过。
 
 ## 工作树（Worktree）
 
@@ -84,7 +84,7 @@ Task Package Index: required
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
 - Global sync owner：coordinator
-- Global sync status：pending-coordinator-pass
+- Global sync status：synced
 - Registry update needed：不适用
 - Harness Ledger update needed：task-review / closeout 时由 lifecycle CLI 同步
 - Closeout / Regression update needed：`docs/05-TEST-QA/Regression-SSoT.md`、`docs/05-TEST-QA/Cadence-Ledger.md`、`coding-agent-harness/governance/regression/Regression-SSoT.md`、`coding-agent-harness/governance/regression/Cadence-Ledger.md`

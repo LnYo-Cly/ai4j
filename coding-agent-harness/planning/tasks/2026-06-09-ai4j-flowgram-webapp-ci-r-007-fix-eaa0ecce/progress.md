@@ -12,11 +12,12 @@
 
 ## 残余
 
-- R-007 当前仍 open，待新增 workflow、本地 webapp gate 和远端 green run 后关闭。
+- R-007 已完成 dedicated CI、远端 green run 和 branch protection API 确认；无 open R-007 residual。
+- R-003 仍保留：webapp `test` / `test:cov` 仍是 stub，lint/type/build 是当前固定 baseline。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass
+- Global sync status：synced
 - Registry update needed：不适用
 - Harness Ledger update needed：task-review / closeout 时由 lifecycle CLI 同步
 - 负责人：coordinator
@@ -41,3 +42,10 @@
 - 验证结果：`npx.cmd --yes yaml-lint .github/workflows/flowgram-webapp-regression.yml` 通过；`npm run lint` 通过但有 Prettier/CRLF warnings；`npm run ts-check` 通过；`npm run build` 通过但有既有 bundle / Node module-type warnings。
 - 下一步：更新 R-007/RG-009 治理记录，提交并推送，等待远端 `flowgram-webapp-regression` run。
 - 证据：diff:TARGET:.github/workflows/flowgram-webapp-regression.yml:stable webapp regression workflow added; diff:TARGET:ai4j-flowgram-webapp-demo/.eslintrc.js:legacy ESLint config repaired; command:TARGET:.github/workflows/flowgram-webapp-regression.yml:`npx.cmd --yes yaml-lint .github/workflows/flowgram-webapp-regression.yml` passed; command:TARGET:ai4j-flowgram-webapp-demo:`npm run lint` passed with warnings; command:TARGET:ai4j-flowgram-webapp-demo:`npm run ts-check` passed; command:TARGET:ai4j-flowgram-webapp-demo:`npm run build` passed
+
+### [2026-06-09 13:58] - 远端 R-007 验证和 branch protection
+
+- 做了什么：推送 workflow 后等待 GitHub Actions run `27211219761` 完成；随后用 GitHub API 将 `flowgram-webapp-regression` 与 `java-regression` 一起配置为 `main` / `dev` strict required checks。
+- 验证结果：run `27211219761` completed success；`detect-webapp-changes`、`webapp-checks` install/lint/typecheck/build、聚合 job `flowgram-webapp-regression` 均成功；`main` 和 `dev` branch protection 均返回 `required_status_checks.strict=true`，contexts 为 `java-regression`、`flowgram-webapp-regression`，`allow_force_pushes=false`。
+- 下一步：提交 R-007/RG-009 治理收口材料并进入 Agent Review Submission。
+- 证据：report:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27211219761:flowgram-webapp-regression completed successfully on main@8bb7783; command:TARGET:.:`gh api repos/LnYo-Cly/ai4j/branches/main/protection` confirmed strict java-regression plus flowgram-webapp-regression; command:TARGET:.:`gh api repos/LnYo-Cly/ai4j/branches/dev/protection` confirmed strict java-regression plus flowgram-webapp-regression
