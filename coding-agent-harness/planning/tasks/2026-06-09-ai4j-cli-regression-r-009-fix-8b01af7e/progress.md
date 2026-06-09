@@ -72,5 +72,12 @@
 
 - 做了什么：R-009 fix ready for human review: target failing tests pass, direct ai4j-cli suite passes, package smoke passes; broad -am remains blocked only by known upstream R-008 before CLI.
 - 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 下一步：修复 Missing Materials 中的 `execution_strategy.md` 模板占位。
+- 证据：review:TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/review.md:Agent Review Submission created but task routed to Missing Materials due unedited execution_strategy
+
+### [2026-06-09 16:49] - repair-review-materials
+
+- 做了什么：补齐 `execution_strategy.md`，明确不使用 worker subagent、采用 self regression review、证据深度 L1/L2，并把 R-008 作为 out-of-scope residual。
+- 验证结果：材料缺口已修复，准备重新提交 task-review。
+- 下一步：重新运行 `harness task-review`。
+- 证据：diff:TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/execution_strategy.md:removed default template content and recorded actual execution strategy
