@@ -18,8 +18,8 @@
 
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | no | 范围集中在 CLI scaffold 文本、docs 和测试；coordinator 自审即可覆盖语义漂移风险。 | 在 `review.md` 做 self-review。 |
+| Would a worker subagent materially help? | no | 改动文件少且共享文档较多，拆给 worker 会增加协调成本。 | coordinator 串行实现。 |
 
 ## User Authorization Decision
 
@@ -28,18 +28,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-09 | CLI scaffold + docs authoring | current checkout / main | 小范围串行任务，无并行 worker。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
 | 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
+| Subagent 模式 | none | 当前任务不需要并行 worker。 |
+| 审查模型 | self-check + targeted tests | 改动风险主要是文档/README 语义漂移，CLI 测试和 docs build 可覆盖。 |
+| Worktree 策略 | same checkout | 当前 branch 干净且无并行写入。 |
 | 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 证据深度 | L1 + docs build | CLI targeted/module tests + docs-site typecheck/build + harness status。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,16 +47,16 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| n/a | C-001..C-005 | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `git diff --check` | `progress.md` | 无 whitespace/error diff |
+| L1 | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DskipTests=false test` 和 `mvn -pl ai4j-cli -am -DskipTests=false test` | `progress.md` | CLI targeted 与模块测试通过 |
+| L2 | `docs-site` typecheck/build；`npx.cmd --yes coding-agent-harness status --json .` | `progress.md` / `review.md` | docs 与 harness 状态通过 |
+| L3 | 不适用 | `review.md` | 本轮不触发发布或 live-provider gate |
 
 ## 暂停 / 升级条件
 

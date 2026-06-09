@@ -461,6 +461,7 @@ public class Ai4jCliTest {
 
         String extensionSource = read(plugin.resolve("src/main/java/com/example/ai4j/weather/WeatherPackExtension.java"));
         String testSource = read(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java"));
+        String readme = read(plugin.resolve("README.md"));
         String service = read(plugin.resolve("src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension"));
         Assert.assertTrue(extensionSource.contains("implements Ai4jExtension"));
         Assert.assertTrue(extensionSource.contains(".id(\"weather-pack\")"));
@@ -468,6 +469,14 @@ public class Ai4jCliTest {
         Assert.assertTrue(extensionSource.contains(".capability(ExtensionCapability.GUARDRAIL)"));
         Assert.assertTrue(extensionSource.contains(".resourcePath(\"skills/weather-pack/SKILL.md\")"));
         Assert.assertTrue(testSource.contains("ExtensionValidator.validate(registry, \"weather-pack\")"));
+        Assert.assertTrue(readme.contains("## Package Metadata"));
+        Assert.assertTrue(readme.contains("| Extension id | `weather-pack` |"));
+        Assert.assertTrue(readme.contains("## Author Workflow"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension validate weather-pack"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension resource --enable weather-pack skill weather-pack-skill"));
+        Assert.assertTrue(readme.contains("Classpath discovery does not enable this extension."));
+        Assert.assertTrue(readme.contains("## Security And Side Effects"));
+        Assert.assertTrue(readme.contains("## Publish Checklist"));
         Assert.assertTrue(service.contains("com.example.ai4j.weather.WeatherPackExtension"));
     }
 

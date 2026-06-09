@@ -158,7 +158,8 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 3. [Service Extension](/docs/core-sdk/extension/service-extension)
 4. [SPI HTTP Stack](/docs/core-sdk/extension/spi-http-stack)
 5. [Plugin Packages](/docs/core-sdk/extension/plugin-packages)
-6. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
+6. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
+7. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
 
 ## 9. 这一页的结论
 

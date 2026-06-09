@@ -24,6 +24,9 @@
 | CLI-03 | 用户文档和发布影响同步 | planned | none | CLI-01 |
 | CLI-EXT-01 | extension list/inspect 入口 | review | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/task_plan.md` | extension-api |
 | CLI-EXT-02 | extension command 显式执行入口 | review-pending | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md` | extension-api |
+| CLI-EXT-03 | extension validate 作者校验入口 | review-pending | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/task_plan.md` | extension-api |
+| CLI-EXT-04 | extension init 本地 Maven 插件骨架 | review-pending | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/task_plan.md` | CLI-EXT-03 |
+| CLI-EXT-05 | scaffold 作者 README 与验证合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md` | CLI-EXT-04 |
 
 ## 活跃任务
 
@@ -31,6 +34,7 @@
 | --- | --- | --- | --- | --- |
 | `2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e` | review | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test`; `mvn -DskipTests package` | Wave 2 只交付 classpath extension list/inspect；完整 RG-004 仍受 R-008 上游 agent residual 阻塞 |
 | `2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77` | review-pending | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test`; `mvn -DskipTests package` | Wave 5 adds `extension run --enable <id> <command>` for explicit human-invoked extension commands. |
+| `2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6` | in_progress | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 21 tests; broader checks pending | Wave 11 strengthens generated scaffold README author contract and docs cookbook without changing extension runtime semantics. |
 
 ## 验证
 
