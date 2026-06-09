@@ -113,3 +113,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自目标失败类通过、普通工具错误防回归通过、agent/coding/CLI broad gates 均通过、package smoke 通过，以及 R-008 回归治理记录已经关闭。提交后需要人工确认，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606090950 |
+| Submitted At | 2026-06-09 09:50 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 |
+| Materials Checklist Hash | 2598ff20748a4e9b |
+| Evidence Summary | R-008 fix ready for human review: HandoffPolicy FAIL propagation restored; HandoffPolicyTest, RG-002, RG-003, RG-004, and package smoke all pass. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 |

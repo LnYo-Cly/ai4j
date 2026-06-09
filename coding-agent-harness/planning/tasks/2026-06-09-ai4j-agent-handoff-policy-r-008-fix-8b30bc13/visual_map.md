@@ -26,7 +26,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | R-008 handoff policy 修复、回归记录和验证证据 | diff、commands、progress update | `harness task-phase 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 EXEC-01 --state done --completion 100 --evidence present` | agent | present | ordinary tool error behavior must remain stable | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13 --confirm 2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

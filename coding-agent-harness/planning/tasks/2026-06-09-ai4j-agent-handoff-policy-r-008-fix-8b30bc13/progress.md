@@ -1,6 +1,6 @@
 # AI4J agent handoff policy R-008 fix - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -88,3 +88,10 @@
 - 验证结果：治理记录已与本轮证据对齐。
 - 下一步：提交 Agent Review Submission。
 - 证据：diff:TARGET:docs/05-TEST-QA/Regression-SSoT.md:R-008 marked resolved; diff:TARGET:coding-agent-harness/governance/regression/Cadence-Ledger.md:SRB-V2-008 added for R-008 fix
+
+### [2026-06-09 09:50] - task-review
+
+- 做了什么：R-008 fix ready for human review: HandoffPolicy FAIL propagation restored; HandoffPolicyTest, RG-002, RG-003, RG-004, and package smoke all pass.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
