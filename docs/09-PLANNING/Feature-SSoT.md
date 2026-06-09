@@ -7,6 +7,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
+| F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | add dedicated FlowGram webapp lint/type/build CI and close R-007 after remote green evidence | 2026-06-09 |
 | F-034 | AI4J Agent Handoff Policy R-008 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/task_plan.md` | n/a | restore HandoffPolicy FAIL propagation for allowedTools and maxDepth without changing ordinary tool error behavior | 2026-06-09 |
 | F-033 | AI4J Extension Scaffold Author Experience Wave 11 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md` | n/a | improve local plugin scaffold author README, validation workflow, and docs cookbook without remote marketplace / auto-install / hotload semantics | 2026-06-09 |
 | F-032 | AI4J Official Ask User Plugin Wave 10 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/task_plan.md` | n/a | official plugin sample implementation in progress; no UI blocking, remote marketplace, CLI install, or runtime jar hotload semantics | 2026-06-09 |
