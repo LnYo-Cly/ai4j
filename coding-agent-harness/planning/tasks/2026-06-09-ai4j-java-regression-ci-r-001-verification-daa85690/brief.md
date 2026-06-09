@@ -10,42 +10,44 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+关闭 R-001：Java regression CI 已有远端 green run，`main` / `dev` 分支保护已要求稳定的 `java-regression` required check。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+本任务完成后，项目获得一条可复查的 Java monorepo 回归证据链：workflow 支持 push / manual / PR 触发，`java-regression` 聚合 job 可作为稳定 required check；GitHub Actions run `27202972949` 已在 `main@41ca7bd` 通过；`main` 和 `dev` branch protection 已要求 strict `java-regression`。下一轮 agent 可以基于这份材料判断 R-001 已关闭，后续 Java 模块变更应通过该 required check 进入 PR / merge gate。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：R-001 closeout materials、Regression SSoT / Cadence Ledger 更新、task review packet。
+- 修改位置：`.github/workflows/java-regression.yml`、`ai4j-cli` 测试夹具、`docs/05-TEST-QA/`、`coding-agent-harness/governance/regression/`、当前任务目录。
+- 验证证据：GitHub Actions run `27202972949`、GitHub branch protection API、本地 Maven gate、`git diff --check`、harness status。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `review.md` 的 Evidence Checked 表和 `walkthrough.md` 的验证清单；再对照 `docs/05-TEST-QA/Regression-SSoT.md` 与 `coding-agent-harness/governance/regression/Regression-SSoT.md`，确认 R-001 已从 open 改为 closed。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：Java regression workflow、R-001 相关测试稳定性修复、远端 CI / branch protection 证据、Regression SSoT / Cadence Ledger 同步。
+- 范围外：live-provider gate、release signing、Central publish、docs-site/webapp CI、业务 API 设计。
+- 停止条件：远端 Actions 失败、GitHub API 无法确认 branch protection、或出现新的 open P0/P1/P2 finding。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `java-regression` 聚合 job 存在且远端 run `27202972949` 成功。
+- `main` / `dev` branch protection API 返回 strict required check `java-regression`。
+- R-001 在详细 SSoT 和 harness v2 regression projection 中关闭。
+- Cadence Ledger 记录 SRB-042 / SRB-V2-009。
+- `git diff --check` 和 harness status 无阻塞失败。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：审查中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+等待人工审查确认；agent 不执行 `review-confirm`。
