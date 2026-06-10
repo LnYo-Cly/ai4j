@@ -199,6 +199,12 @@ ai4j-cli extension plan ask-user --enable \
   --allow-skill ask-user-collaboration \
   --allow-prompt ask-user-question \
   --strict
+ai4j-cli extension check ask-user --enable \
+  --expose-tool ask_user \
+  --allow-command ask-user \
+  --allow-skill ask-user-collaboration \
+  --allow-prompt ask-user-question \
+  --strict
 ```
 
 如果宿主要用 CLI command 触发：

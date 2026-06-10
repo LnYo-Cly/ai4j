@@ -147,6 +147,7 @@ CLI 可以先查看 classpath 上的插件：
 ```bash
 ai4j-cli extension list
 ai4j-cli extension inspect weather-pack --runtime
+ai4j-cli extension validate weather-pack
 ai4j-cli extension plan weather-pack --enable \
   --expose-tool weather.search \
   --allow-command weather.status \
@@ -154,12 +155,20 @@ ai4j-cli extension plan weather-pack --enable \
   --allow-prompt weather-summary \
   --allow-guardrail weather-policy \
   --strict
-ai4j-cli extension validate weather-pack
+ai4j-cli extension check weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather.status \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather-policy \
+  --strict
 ```
 
 `plan` 用来预览某个插件在当前授权参数下的激活状态。它会列出每个 tool、command、Skill、Prompt、Guardrail 是 `active` 还是 `inactive`，并给出原因，例如 `not exposed`、`not allowed`、`not registered by extension`。它适合放在“依赖已经加入 classpath，但还没接入 Agent”之前做人工检查。
 
 `validate` 会像 `inspect --runtime` 一样临时调用插件 `apply(...)` 做 runtime inspection，并把 manifest、capability 声明、工具 schema、Skill / Prompt classpath 资源和 `apply(...)` 失败情况整理成校验报告。它只报告问题，不会把工具暴露给模型，也不会执行插件 command。
+
+`check` 是可脚本化门禁。它会先执行 validation；validation 有 error 时直接返回非零，不再继续 activation plan。validation 通过后，它会启用插件并套用本次 `--expose-tool` / `--allow-*` / `--strict` 参数，只要显式请求的资源没有进入 active 状态就返回非零。没有被请求的插件资源不会导致失败，这样使用者仍然可以保留最小授权 recipe。
 
 因此插件作者要把 `apply(...)` 写成轻量注册函数：只注册 spec、executor、classpath resource 和 guardrail，不要在 `apply(...)` 里连接远程服务、发起网络请求、写文件、读取用户密钥或执行长耗时初始化。真实副作用应该放到 tool executor、command handler 或宿主显式初始化流程里。
 
@@ -508,7 +517,7 @@ AI4J 当前提供一个官方样板插件：
 - 每个 tool 的输入 schema
 - 是否触发网络、文件系统、数据库或外部 API
 - 所需环境变量名，不要要求用户把密钥写进代码
-- 本地 smoke test 命令，例如 `ai4j-cli extension validate <extension-id>`
+- 本地 smoke test 命令，例如 `ai4j-cli extension validate <extension-id>` 和 `ai4j-cli extension check <extension-id> --enable ... --strict`
 
 AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己的包管理、README 和版本策略维护插件。
 
@@ -521,7 +530,7 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 - `ai4j-extension-api` 会在公共 ID / name 构造时执行格式校验，并在 `ExtensionValidator` 中检查 tool schema 的基础 JSON 结构
 - `ai4j-plugin-ask-user` 提供官方样板插件，展示 host-mediated 用户提问 tool / command / Skill / Prompt
 - `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
-- CLI 可以 `extension list / inspect / plan / validate` 查看、预览和校验 classpath 上的插件，也可以 `extension run --enable <id> [--allow-command <name>] <command>` 显式执行插件 command
+- CLI 可以 `extension list / inspect / plan / validate / check` 查看、预览、校验和门禁 classpath 上的插件，也可以 `extension run --enable <id> [--allow-command <name>] <command>` 显式执行插件 command
 - CLI 可以 `extension resource --enable <id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具，并在 tool execution 前应用已启用插件注册的 Guardrail
 - Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，把已启用插件贡献的 Skill / Prompt 投影成只读可读资源，并在内置 / extension tool execution 前应用 Guardrail

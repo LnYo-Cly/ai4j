@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex | self | `ai4j-cli` gate 语义、docs-site 对齐、回归治理更新与本地验证证据 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：regression / release
+- 范围内：`ai4j-cli` `extension check` 语义、脚手架 README、README / docs-site 插件文档、Regression SSoT / Cadence Ledger 投影与历史记录
+- 范围外：远程 CI、live-provider、插件 marketplace / 自动安装 / jar 热加载 / provider 自动注册
+- 来源材料：`task_plan.md`、工作区 diff、本地 Maven / docs-site 命令结果、回归治理文件
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,25 +19,25 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | self-review-f041-local |
+| Submitted At | 2026-06-11 01:24 |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-06-11-ai4j-extension-check-gate-d3f91b18 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | n/a-manual-self-review |
+| Evidence Summary | `Ai4jCliTest` 29 tests pass；`mvn -DskipTests package` pass；`docs-site` typecheck/build pass；diff shows `check` gate only fails on validation errors or explicitly requested inactive resources |
+| Open Findings Count | 0 |
+| Scanner Version | manual-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,11 +46,11 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：yes
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 无
+- Fix loop count：2
+- 当前结论：可以进入人工审查或直接提交。`check` 语义已通过本地测试和文档对齐验证，未发现阻塞性缺口。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -66,44 +66,61 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `docs-site` typecheck 在本机这次运行超过 120s 工具默认超时，但延长超时后通过；这不构成产品缺陷，已记录为本轮执行细节。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/CliExtensionCommand.java | `check` 先 validate，失败时短路；通过后只检查显式请求资源是否 active |
+| E-002 | command | TARGET:ai4j-cli | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` 通过，29 tests |
+| E-003 | command | TARGET:. | `mvn -DskipTests package` 通过，11 reactor projects |
+| E-004 | command | TARGET:docs-site | `npm run typecheck` 与 `npm run build` 通过 |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| `docs-site` build 仍保留既有 Windows `EPERM` 文件锁残余 R-004，但本轮未复现 | project coordinator | yes | 无 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料已齐，全量本地 gate 已记录，可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 无缺失材料。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | 本轮没有建议提升到共享治理的 lesson。 | n/a |
+| Confirmed / Finalized | no | 尚未人工确认或提交。 | 人工确认后 closeout / commit 完成。 |
+| Soft-deleted / Superseded | no | 任务仍活跃。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：无
+- Progress：`progress.md` 已记录 2026-06-11 三条验证证据
+- 发现记录：`findings.md` 已写入 `plan` 与 `check` 的边界结论
+- Regression SSoT：已调整 `docs/05-TEST-QA/*` 与 `coding-agent-harness/governance/regression/*`
+- Lessons：checked-none: 本轮是既有插件门禁语义补全，没有抽象出独立复用价值超过现有 standards 的新模式
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自三层证据：1) `Ai4jCliTest` 直接覆盖新 gate 的关键分支；2) `mvn -DskipTests package` 证明跨模块打包未回归；3) `docs-site` typecheck/build 证明插件文档更新可发布。当前没有 open material finding。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606110124 |
+| Submitted At | 2026-06-11 01:24 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18 |
+| Materials Checklist Hash | f041d3f91b180124 |
+| Evidence Summary | F-041 extension check gate ready for human review: added CLI check gate semantics, targeted CLI tests, scaffold/readme/docs updates, regression governance updates, and verified mvn test/package plus docs-site typecheck/build. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18 |

@@ -17,6 +17,7 @@ import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 public class CliExtensionTestExtension implements Ai4jExtension {
 
     private static int applyCount;
+    private static boolean invalidToolSchema;
 
     public ExtensionManifest manifest() {
         return ExtensionManifest.builder()
@@ -39,7 +40,7 @@ public class CliExtensionTestExtension implements Ai4jExtension {
         context.tools().register(ExtensionToolSpec.builder()
                         .name("cli.echo")
                         .description("Echo arguments")
-                        .inputSchema("{\"type\":\"object\"}")
+                        .inputSchema(invalidToolSchema ? "{\"type\":\"array\"}" : "{\"type\":\"object\"}")
                         .build(),
                 new ExtensionToolExecutor() {
                     public String execute(ExtensionToolCall call) {
@@ -75,9 +76,14 @@ public class CliExtensionTestExtension implements Ai4jExtension {
 
     public static void resetApplyCount() {
         applyCount = 0;
+        invalidToolSchema = false;
     }
 
     public static int getApplyCount() {
         return applyCount;
+    }
+
+    public static void useInvalidToolSchema() {
+        invalidToolSchema = true;
     }
 }

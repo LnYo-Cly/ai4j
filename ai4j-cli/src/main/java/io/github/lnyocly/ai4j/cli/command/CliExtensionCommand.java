@@ -64,6 +64,9 @@ public class CliExtensionCommand {
             if ("plan".equalsIgnoreCase(command)) {
                 return plan(arguments.subList(1, arguments.size()), terminal);
             }
+            if ("check".equalsIgnoreCase(command)) {
+                return check(arguments.subList(1, arguments.size()), terminal);
+            }
             if ("init".equalsIgnoreCase(command)) {
                 return init(arguments.subList(1, arguments.size()), terminal);
             }
@@ -116,6 +119,29 @@ public class CliExtensionCommand {
                 : Collections.singletonList(ExtensionValidator.validate(registry, options.extensionId));
         printValidationReports(reports, terminal);
         return hasValidationErrors(reports) ? 2 : 0;
+    }
+
+    private int check(List<String> args, TerminalIO terminal) {
+        CheckOptions options = parseCheckOptions(args);
+        ExtensionRegistry registry = ExtensionRegistry.discover();
+        ExtensionValidationReport report = ExtensionValidator.validate(registry, options.extensionId);
+        printValidationReports(Collections.singletonList(report), terminal);
+
+        List<String> issues = new ArrayList<String>();
+        if (!report.isValid()) {
+            issues.add("validation failed for extension " + options.extensionId);
+            printCheckResult(issues, terminal);
+            return 2;
+        }
+
+        registry.enable(options.extensionId);
+        applyActivationOptions(registry, options.activationOptions);
+        ExtensionActivationPlan plan = registry.activationPlan(options.extensionId);
+        printActivationPlan(plan, terminal);
+
+        issues.addAll(requestedActivationIssues(plan, options.activationOptions));
+        printCheckResult(issues, terminal);
+        return issues.isEmpty() ? 0 : 2;
     }
 
     private int init(List<String> args, TerminalIO terminal) throws IOException {
@@ -467,6 +493,17 @@ public class CliExtensionCommand {
         return new PlanOptions(extensionId, enable, activationOptions);
     }
 
+    private CheckOptions parseCheckOptions(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension check <id> --enable [--expose-tool <name>] [--allow-command <name>] [--allow-skill <name>] [--allow-prompt <name>] [--allow-guardrail <name>] [--strict]");
+        }
+        PlanOptions plan = parsePlanOptions(args);
+        if (!plan.enable) {
+            throw new IllegalArgumentException("check requires --enable so the activation recipe is evaluated against enabled runtime resources");
+        }
+        return new CheckOptions(plan.extensionId, plan.activationOptions);
+    }
+
     private ValidateOptions parseValidateOptions(List<String> args) {
         if (args == null || args.isEmpty()) {
             throw new IllegalArgumentException("Usage: ai4j-cli extension validate <id>|--all");
@@ -581,6 +618,22 @@ public class CliExtensionCommand {
         }
     }
 
+    private void printCheckResult(List<String> issues, TerminalIO terminal) {
+        List<String> safeIssues = issues == null
+                ? Collections.<String>emptyList()
+                : issues;
+        terminal.println("check:");
+        terminal.println("status=" + (safeIssues.isEmpty() ? "pass" : "fail"));
+        if (safeIssues.isEmpty()) {
+            terminal.println("issues=-");
+            return;
+        }
+        terminal.println("issues:");
+        for (String issue : safeIssues) {
+            terminal.println("- " + issue);
+        }
+    }
+
     private boolean hasValidationErrors(List<ExtensionValidationReport> reports) {
         if (reports == null) {
             return false;
@@ -591,6 +644,48 @@ public class CliExtensionCommand {
             }
         }
         return false;
+    }
+
+    private List<String> requestedActivationIssues(ExtensionActivationPlan plan, ActivationOptions options) {
+        List<String> issues = new ArrayList<String>();
+        if (plan == null || options == null) {
+            return issues;
+        }
+        collectInactiveRequested("tool", plan.getTools(), options.exposedToolIds, issues);
+        collectInactiveRequested("command", plan.getCommands(), options.allowedCommandIds, issues);
+        collectInactiveRequested("skill", plan.getSkills(), options.allowedSkillIds, issues);
+        collectInactiveRequested("prompt", plan.getPrompts(), options.allowedPromptIds, issues);
+        collectInactiveRequested("guardrail", plan.getGuardrails(), options.allowedGuardrailIds, issues);
+        return issues;
+    }
+
+    private void collectInactiveRequested(String type,
+                                          List<ExtensionActivationItem> items,
+                                          List<String> requested,
+                                          List<String> issues) {
+        if (requested == null || requested.isEmpty()) {
+            return;
+        }
+        for (String name : requested) {
+            ExtensionActivationItem item = findActivationItem(items, name);
+            if (item != null && item.isActive()) {
+                continue;
+            }
+            String reason = item == null ? "not registered by extension" : valueOrDash(item.getReason());
+            issues.add("inactive requested resource type=" + type + " name=" + name + " reason=" + reason);
+        }
+    }
+
+    private ExtensionActivationItem findActivationItem(List<ExtensionActivationItem> items, String name) {
+        if (items == null) {
+            return null;
+        }
+        for (ExtensionActivationItem item : items) {
+            if (item != null && item.getName().equals(name)) {
+                return item;
+            }
+        }
+        return null;
     }
 
     private String joinTools(List<ExtensionToolSpec> tools) {
@@ -710,6 +805,7 @@ public class CliExtensionCommand {
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension inspect <id> [--runtime]");
         terminal.println("  ai4j-cli extension plan <id> [--enable] [activation options]");
+        terminal.println("  ai4j-cli extension check <id> --enable [activation options]");
         terminal.println("  ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
         terminal.println("  ai4j-cli extension validate <id>|--all");
         terminal.println("  ai4j-cli extension run --enable <extension-id> [--allow-command <command>] <command> [arguments...]");
@@ -719,6 +815,7 @@ public class CliExtensionCommand {
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
         terminal.println("  plan <id>            Preview enable/expose/allow activation state before wiring the host");
+        terminal.println("  check <id> --enable  Validate and fail if requested activation resources are inactive");
         terminal.println("  init <directory>     Generate a local Maven Java 8 plugin package scaffold");
         terminal.println("  validate <id>|--all  Validate manifest, runtime resources, and authoring contract");
         terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
@@ -733,11 +830,11 @@ public class CliExtensionCommand {
         terminal.println("  --class-name <class>      Extension class name; defaults from --id");
         terminal.println("  --vendor <vendor>         Manifest vendor; defaults to example");
         terminal.println("\nActivation options:");
-        terminal.println("  --expose-tool <name>       Plan-only: mark a model-visible tool as exposed");
+        terminal.println("  --expose-tool <name>       Plan/check: mark a model-visible tool as exposed");
         terminal.println("  --allow-command <name>     Plan/run: allow a command in explicit resource activation mode");
         terminal.println("  --allow-skill <name>       Plan/resource: allow a Skill resource in explicit resource activation mode");
         terminal.println("  --allow-prompt <name>      Plan/resource: allow a Prompt resource in explicit resource activation mode");
-        terminal.println("  --allow-guardrail <name>   Plan-only: allow a Guardrail in explicit resource activation mode");
+        terminal.println("  --allow-guardrail <name>   Plan/check: allow a Guardrail in explicit resource activation mode");
         terminal.println("  --strict                   Enable explicit resource activation even with an empty allowlist");
         terminal.println("\nNotes:");
         terminal.println("  Discovery does not enable an extension.");
@@ -877,6 +974,16 @@ public class CliExtensionCommand {
         private PlanOptions(String extensionId, boolean enable, ActivationOptions activationOptions) {
             this.extensionId = extensionId;
             this.enable = enable;
+            this.activationOptions = activationOptions == null ? new ActivationOptions() : activationOptions;
+        }
+    }
+
+    private static final class CheckOptions {
+        private final String extensionId;
+        private final ActivationOptions activationOptions;
+
+        private CheckOptions(String extensionId, ActivationOptions activationOptions) {
+            this.extensionId = extensionId;
             this.activationOptions = activationOptions == null ? new ActivationOptions() : activationOptions;
         }
     }

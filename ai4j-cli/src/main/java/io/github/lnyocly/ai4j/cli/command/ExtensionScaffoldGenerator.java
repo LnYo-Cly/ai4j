@@ -311,12 +311,13 @@ final class ExtensionScaffoldGenerator {
                 + "ai4j-cli extension validate " + options.extensionId + "\n"
                 + "ai4j-cli extension inspect " + options.extensionId + " --runtime\n"
                 + "ai4j-cli extension plan " + options.extensionId + " --enable --expose-tool " + options.toolName + " --allow-command " + options.commandName + " --allow-skill " + options.skillName + " --allow-prompt " + options.promptName + " --allow-guardrail " + options.guardrailName + " --strict\n"
+                + "ai4j-cli extension check " + options.extensionId + " --enable --expose-tool " + options.toolName + " --allow-command " + options.commandName + " --allow-skill " + options.skillName + " --allow-prompt " + options.promptName + " --allow-guardrail " + options.guardrailName + " --strict\n"
                 + "ai4j-cli extension resource --enable " + options.extensionId + " --allow-skill " + options.skillName + " skill " + options.skillName + "\n"
                 + "ai4j-cli extension resource --enable " + options.extensionId + " --allow-prompt " + options.promptName + " prompt " + options.promptName + "\n"
                 + "ai4j-cli extension run --enable " + options.extensionId + " --allow-command " + options.commandName + " " + options.commandName + " hello\n"
                 + "```\n"
                 + "\n"
-                + "CLI validation, runtime inspection, and activation planning may call `apply(...)` to collect contributed resources. They do not expose tools to a model or execute commands.\n"
+                + "CLI validation, runtime inspection, activation planning, and check may call `apply(...)` to collect contributed resources. They do not expose tools to a model or execute commands. `plan` is a preview; `check` returns a non-zero exit code when validation fails or when a requested tool, command, Skill, Prompt, or Guardrail is inactive.\n"
                 + "\n"
                 + "## Host Integration\n"
                 + "\n"
@@ -386,7 +387,7 @@ final class ExtensionScaffoldGenerator {
                 + "- Tools, commands, skills, prompts, and guardrails contributed by the plugin.\n"
                 + "- JSON input schema for each tool and example command invocations.\n"
                 + "- Network, filesystem, database, external API, and credential requirements.\n"
-                + "- Local smoke evidence such as `mvn test` and `ai4j-cli extension validate " + options.extensionId + "`.\n";
+                + "- Local smoke evidence such as `mvn test`, `ai4j-cli extension validate " + options.extensionId + "`, and `ai4j-cli extension check " + options.extensionId + " --enable ... --strict`.\n";
     }
 
     private static Path packagePath(String packageName) {

@@ -101,6 +101,7 @@ public class Ai4jCli {
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
         terminal.println("  ai4j-cli extension validate <extension-id>|--all");
+        terminal.println("  ai4j-cli extension check <extension-id> --enable [activation options]");
         terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
         terminal.println("  ai4j-cli --model <model> [options]   # handled as the code command by default\n");
         terminal.println("Commands:");

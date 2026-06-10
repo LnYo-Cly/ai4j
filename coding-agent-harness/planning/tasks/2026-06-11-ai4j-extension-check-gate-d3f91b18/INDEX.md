@@ -13,7 +13,7 @@ Task Contract: harness-task/v1
 | Long-running | `no` |
 | Created | 2026-06-11 |
 
-## 任务审计元数据
+## Task Audit Metadata
 
 | Field | Value |
 | --- | --- |
@@ -24,18 +24,18 @@ Task Contract: harness-task/v1
 | Template Source | templates-zh-CN/planning/INDEX.md |
 | Task Creator | LnYo-Cly <lnyocly@gmail.com> |
 | Task Creator Source | git-config |
-| Human Review Status | not-confirmed |
-| Confirmation ID | n/a |
-| Confirmed At | n/a |
-| Reviewer | n/a |
-| Reviewer Email | n/a |
-| Confirm Text | n/a |
-| Evidence Checked | n/a |
-| Review Commit SHA | n/a |
+| Human Review Status | confirmed |
+| Confirmation ID | HRC-202606110930 |
+| Confirmed At | 2026-06-11 09:30 |
+| Reviewer | Human Reviewer |
+| Reviewer Email | lnyocly@gmail.com |
+| Confirm Text | 2026-06-11-ai4j-extension-check-gate-d3f91b18 |
+| Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/review.md |
+| Review Commit SHA | pending |
 | Audit Source | native-index |
-| Audit Status | created |
+| Audit Status | commit-pending |
 | Exception Reason | n/a |
-| Message | n/a |
+| Message | 用户在对话中回复确认，作为 human reviewer 确认当前 review 队列任务通过。 |
 | Migration Status | native |
 | Migrated From | n/a |
 | Legacy Extra Fields | {} |

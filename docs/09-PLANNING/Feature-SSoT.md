@@ -14,6 +14,7 @@
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-041 | AI4J Extension Check Gate | 2026-06-11 | `coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/walkthrough.md` |
 | F-040 | AI4J Extension Recipe and Plugin Composition UX | 2026-06-11 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/walkthrough.md` |
 | F-039 | AI4J Extension Permission and Install UX | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/walkthrough.md` |
 | F-038 | AI4J Extension Plugin Contract Hardening | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/walkthrough.md` |

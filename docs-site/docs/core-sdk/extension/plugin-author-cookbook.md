@@ -163,11 +163,19 @@ Guardrail 的职责是在 tool execution 前允许或拒绝，不应该顺手调
 | CLI 校验 | `ai4j-cli extension validate weather-pack` | 插件 jar 在 AI4J CLI classpath 上能被发现和校验 |
 | Runtime inspection | `ai4j-cli extension inspect weather-pack --runtime` | tool / command / skill / prompt / guardrail 实际贡献清单正确 |
 | Activation plan | `ai4j-cli extension plan weather-pack --enable --strict ...` | 使用者计划启用、暴露和授权哪些资源 |
+| Check gate | `ai4j-cli extension check weather-pack --enable --strict ...` | 可放进 CI 或发布前检查；validation 失败或被请求资源 inactive 时返回非零 |
 
 读取资源和执行 command 时要显式 enable：
 
 ```bash
 ai4j-cli extension plan weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather-check \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather.network-policy \
+  --strict
+ai4j-cli extension check weather-pack --enable \
   --expose-tool weather.search \
   --allow-command weather-check \
   --allow-skill weather-skill \
@@ -181,6 +189,8 @@ ai4j-cli extension run --enable weather-pack --allow-command weather-check weath
 
 `validate` 和 `inspect --runtime` 会临时调用 `apply(...)` 收集资源。它们不会把工具暴露给模型，也不会执行 command。
 
+`plan` 是人工预览：即使某个资源没有激活，它也会把原因打印出来并返回 0。`check` 是门禁：它先跑 validation，validation 有 error 时直接失败；validation 通过后再按本次 `--expose-tool` / `--allow-*` 请求检查激活状态。只有被显式请求的资源会让 `check` 失败，未请求的插件资源不会被强制启用。
+
 `enable(...)` 默认仍是对插件包的运行时资源做整包信任，用来兼容旧宿主。更严格的接入方式是让使用者开启显式资源授权：普通 Java 用 `requireExplicitResourceActivation()`，Spring Boot 用 `ai.extensions.explicit-resource-activation=true`。开启后，command、Skill、Prompt 和 Guardrail 必须通过 `allowCommand(...)`、`allowSkill(...)`、`allowPrompt(...)`、`allowGuardrail(...)` 或对应 Spring 配置逐项进入运行态。
 
 插件作者发布 README 时，应该给出一组可复制的检查命令，例如：
@@ -193,9 +203,16 @@ ai4j-cli extension plan weather-pack --enable \
   --allow-prompt weather-summary \
   --allow-guardrail weather.network-policy \
   --strict
+ai4j-cli extension check weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather-check \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather.network-policy \
+  --strict
 ```
 
-这条命令不会把工具暴露给模型，也不会执行 command；它只是让使用者看到资源会处于 `active` 还是 `inactive`，以及未激活原因。
+这些命令不会把工具暴露给模型，也不会执行 command。`plan` 让使用者看到资源会处于 `active` 还是 `inactive`，以及未激活原因；`check` 给 CI / 发布前 smoke 一个明确通过或失败的退出码。
 
 ## 5. 给使用者的接入说明
 
@@ -264,7 +281,7 @@ ai:
 - 每个 tool 的 JSON input schema 和最小调用示例。
 - 是否访问网络、文件系统、数据库、消息队列、外部 API。
 - 需要哪些环境变量，只写变量名，不写真实密钥。
-- 本地 smoke 命令，例如 `mvn test` 和 `ai4j-cli extension validate weather-pack`。
+- 本地 smoke 命令，例如 `mvn test`、`ai4j-cli extension validate weather-pack` 和 `ai4j-cli extension check weather-pack --enable ... --strict`。
 
 ## 7. 常见错误
 

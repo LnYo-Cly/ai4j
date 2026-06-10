@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-candidate-accepted |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-11-ai4j-extension-check-gate-d3f91b18 |
 | Owner | coordinator |
 | Last updated | 2026-06-11 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是对既有插件门禁语义和文档的一次补全，没有抽象出超过现有回归治理、CLI 帮助和插件接入标准的新共享 lesson。
 
 ## Promotion Notes
 

@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory.PreparedCodingAgent;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,6 +45,11 @@ public class Ai4jCliTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    @After
+    public void resetExtensionFixture() {
+        CliExtensionTestExtension.resetApplyCount();
+    }
+
     @Test
     public void test_top_level_help() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -64,6 +70,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("code"));
         Assert.assertTrue(output.contains("acp"));
         Assert.assertTrue(output.contains("extension"));
+        Assert.assertTrue(output.contains("ai4j-cli extension check <extension-id> --enable"));
     }
 
     @Test
@@ -218,6 +225,131 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("name=missing-skill state=inactive reason=not registered by extension"));
         Assert.assertTrue(output.contains("name=cli-prompt state=active reason=resource allowlist"));
         Assert.assertTrue(output.contains("name=cli-guardrail state=active reason=resource allowlist"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_check_passes_requested_activation_gate() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{
+                        "extension", "check", "cli-test-pack",
+                        "--enable",
+                        "--expose-tool", "cli.echo",
+                        "--allow-command", "cli-echo",
+                        "--allow-skill", "cli-skill",
+                        "--allow-prompt", "cli-prompt",
+                        "--allow-guardrail", "cli-guardrail",
+                        "--strict"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(new String(err.toByteArray(), StandardCharsets.UTF_8), 0, exitCode);
+        Assert.assertTrue(output.contains("validation:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack status=pass errors=0 warnings=0"));
+        Assert.assertTrue(output.contains("activation-plan:"));
+        Assert.assertTrue(output.contains("name=cli.echo state=active reason=exposeTool allowlist"));
+        Assert.assertTrue(output.contains("name=cli-skill state=active reason=resource allowlist"));
+        Assert.assertTrue(output.contains("check:"));
+        Assert.assertTrue(output.contains("status=pass"));
+        Assert.assertTrue(output.contains("issues=-"));
+        Assert.assertEquals(2, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_check_fails_when_requested_resource_is_inactive() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{
+                        "extension", "check", "cli-test-pack",
+                        "--enable",
+                        "--expose-tool", "missing.tool",
+                        "--allow-skill", "missing-skill",
+                        "--strict"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(output.contains("validation:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack status=pass errors=0 warnings=0"));
+        Assert.assertTrue(output.contains("name=missing.tool state=inactive reason=not registered by extension"));
+        Assert.assertTrue(output.contains("name=missing-skill state=inactive reason=not registered by extension"));
+        Assert.assertTrue(output.contains("check:"));
+        Assert.assertTrue(output.contains("status=fail"));
+        Assert.assertTrue(output.contains("inactive requested resource type=tool name=missing.tool reason=not registered by extension"));
+        Assert.assertTrue(output.contains("inactive requested resource type=skill name=missing-skill reason=not registered by extension"));
+        Assert.assertEquals(2, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_check_requires_enable() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"extension", "check", "cli-test-pack", "--expose-tool", "cli.echo"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(error.contains("check requires --enable"));
+        Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_check_stops_when_validation_fails() {
+        CliExtensionTestExtension.resetApplyCount();
+        CliExtensionTestExtension.useInvalidToolSchema();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{
+                        "extension", "check", "cli-test-pack",
+                        "--enable",
+                        "--expose-tool", "cli.echo",
+                        "--strict"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, exitCode);
+        Assert.assertTrue(output.contains("validation:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack status=fail errors=1"));
+        Assert.assertTrue(output.contains("code=tool.input_schema.invalid"));
+        Assert.assertTrue(output.contains("check:"));
+        Assert.assertTrue(output.contains("status=fail"));
+        Assert.assertTrue(output.contains("validation failed for extension cli-test-pack"));
+        Assert.assertFalse(output.contains("activation-plan:"));
         Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
     }
 
@@ -630,12 +762,14 @@ public class Ai4jCliTest {
         Assert.assertTrue(readme.contains("## Author Workflow"));
         Assert.assertTrue(readme.contains("ai4j-cli extension validate weather-pack"));
         Assert.assertTrue(readme.contains("ai4j-cli extension plan weather-pack --enable --expose-tool weather.pack.echo"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension check weather-pack --enable --expose-tool weather.pack.echo"));
         Assert.assertTrue(readme.contains("ai4j-cli extension resource --enable weather-pack --allow-skill weather-pack-skill skill weather-pack-skill"));
         Assert.assertTrue(readme.contains(".requireExplicitResourceActivation()"));
         Assert.assertTrue(readme.contains("explicit-resource-activation: true"));
         Assert.assertTrue(readme.contains("Classpath discovery does not enable this extension."));
         Assert.assertTrue(readme.contains("## Security And Side Effects"));
         Assert.assertTrue(readme.contains("## Publish Checklist"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension check weather-pack"));
         Assert.assertTrue(service.contains("com.example.ai4j.weather.WeatherPackExtension"));
         assertGeneratedExtensionCompilesAndLoads(plugin);
     }
