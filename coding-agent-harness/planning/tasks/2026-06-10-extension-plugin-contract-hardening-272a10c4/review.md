@@ -110,3 +110,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 extension API validator/registry tests、agent adapter targeted test、official plugin test、CLI scaffold smoke、完整 CLI 依赖链回归、docs-site typecheck/build、monorepo package smoke、diff check，以及对插件信任边界的 self adversarial review。人工确认仍是用户侧动作，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606100828 |
+| Submitted At | 2026-06-10 08:28 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4 |
+| Materials Checklist Hash | d9bb18db6403d43d |
+| Evidence Summary | Extension plugin contract hardening complete; schema/name contracts, CLI scaffold smoke, docs trust boundary, and regression evidence updated. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4 |

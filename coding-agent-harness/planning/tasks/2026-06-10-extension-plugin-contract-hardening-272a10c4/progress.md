@@ -1,6 +1,6 @@
 # Extension plugin contract hardening - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：reactor build success；extension API 16 tests、core SDK 103 tests、agent 74 tests、coding runtime 59 tests、CLI 262 tests 全部通过。
 - 下一步：提交 Agent Review Submission，等待人工确认。
 - 证据：command:repo:`mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` passed across 6 reactor projects with 514 tests
+
+### [2026-06-10 08:28] - task-review
+
+- 做了什么：Extension plugin contract hardening complete; schema/name contracts, CLI scaffold smoke, docs trust boundary, and regression evidence updated.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
