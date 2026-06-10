@@ -51,3 +51,5 @@
 | 进度记录 | `progress.md` |
 | Feature SSoT | `docs/09-PLANNING/Feature-SSoT.md` |
 | F-023 task-local walkthrough | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md` |
+
+Closeout Status: closed

@@ -1,6 +1,6 @@
 # Feature SSoT closeout drift cleanup - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -88,3 +88,10 @@
 - 验证结果：F-022/F-023 未出现在 active/in_progress；F-023 task-local walkthrough 存在；错误 `docs/10-WALKTHROUGH/2026-06-07-lightweight-chatclient-first-chat-facade.md` 不存在；`git diff --check` 无 whitespace error，仅 Windows LF/CRLF 提示；`harness status` 提交前仅 dirty-state warning。
 - 下一步：提交本地治理修正，提交后复跑 harness status。
 - 证据：command:TARGET:.:`rg -n "F-022|F-023|pending explicit human review|\\| F-02[23] \\|.*in_progress" docs\\09-PLANNING\\Feature-SSoT.md coding-agent-harness\\planning\\tasks -S`; command:TARGET:.:`Test-Path coding-agent-harness\\planning\\tasks\\2026-06-07-chatclient-d5f84742\\walkthrough.md`; command:TARGET:.:`Test-Path docs\\10-WALKTHROUGH\\2026-06-07-lightweight-chatclient-first-chat-facade.md`; command:TARGET:.:`git diff --check`; command:TARGET:.:`npx.cmd --yes coding-agent-harness status --json .`
+
+### [2026-06-10 12:25] - task-complete
+
+- 做了什么：Human review confirmed; closeout finalized after user confirmation.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
