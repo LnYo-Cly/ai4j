@@ -56,3 +56,5 @@
 | 进度记录 | `progress.md` |
 | 发现记录 | `findings.md` |
 | 新增 cookbook | `../../../docs-site/docs/core-sdk/extension/plugin-author-cookbook.md` |
+
+Closeout Status: closed
