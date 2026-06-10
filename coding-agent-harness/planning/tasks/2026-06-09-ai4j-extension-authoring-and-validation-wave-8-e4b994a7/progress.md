@@ -1,6 +1,6 @@
 # AI4J extension authoring and validation wave 8 - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -67,3 +67,10 @@
 - 验证结果：待重新运行 harness status / task-review。
 - 下一步：重新提交 Agent Review Submission。
 - 证据：diff:TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7:task-local material repair
+
+### [2026-06-10 12:32] - task-complete
+
+- 做了什么：Human review confirmed; closeout finalized after user confirmation.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
