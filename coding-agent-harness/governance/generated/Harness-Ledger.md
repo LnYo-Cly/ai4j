@@ -53,6 +53,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | HL-2026-06-10-extension-plugin-contract-hardening-272a10c4 | task | none | Extension plugin contract hardening | closed | none | coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/task_plan.md | pending | pending | pending | Extension plugin contract hardening closed after human review confirmation HRC-202606100936. | 2026-06-10 |
 | HL-2026-06-10-ai4j-extension-permission-and-install-ux-95f89265 | task | none | AI4J Extension Permission and Install UX | closed | none | coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/task_plan.md | pending | pending | pending | Human review confirmed; closeout finalized after user confirmation. | 2026-06-10 |
 | HL-2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc | task | none | AI4J Extension Recipe and Plugin Composition UX | closed | none | coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/task_plan.md | pending | pending | pending | Human review confirmed; closeout finalized after user confirmation. | 2026-06-11 |
+| HL-2026-06-11-ai4j-extension-check-gate-d3f91b18 | task | none | AI4J Extension Check Gate | planned | none | coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-11 |
 
 ## Field Rules
 
