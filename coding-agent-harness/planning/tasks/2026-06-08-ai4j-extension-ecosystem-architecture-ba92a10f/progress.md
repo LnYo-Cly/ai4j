@@ -1,6 +1,6 @@
 # AI4J extension ecosystem architecture - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：首次 review submission 指出 `progress.md` 和 `visual_map.md` 仍有模板残留，已进入修复。
 - 下一步：删除模板残留并重新提交 review。
 - 证据：command:TARGET:.:`npx.cmd --yes coding-agent-harness task-review ...`:missing-materials 指向 progress 和 visual map 的模板残留
+
+### [2026-06-10 12:27] - task-complete
+
+- 做了什么：Human review confirmed; closeout finalized after user confirmation.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
