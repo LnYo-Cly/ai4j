@@ -1,6 +1,6 @@
 # AI4J Extension Recipe and Plugin Composition UX - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-10 14:24] - task-start
+
+- 做了什么：启动 F-040：插件 recipe 与组合体验，先审查现有 extension API、CLI、Spring 配置和 docs-site 文档，再实现最小权限组合示例。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
