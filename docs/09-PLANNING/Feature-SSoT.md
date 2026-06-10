@@ -1,6 +1,6 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-06-10
+> Last updated: 2026-06-11
 > Human-readable planning summary for active delivery work.
 > Harness v2 lifecycle and review queues are generated in `coding-agent-harness/governance/generated/Harness-Ledger.md`.
 > If this summary disagrees with the generated ledger, use the generated ledger and repair this file.
@@ -9,12 +9,12 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-040 | AI4J Extension Recipe and Plugin Composition UX | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/task_plan.md` | main | none | 2026-06-10 |
 
 ## Completed Features
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-040 | AI4J Extension Recipe and Plugin Composition UX | 2026-06-11 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/walkthrough.md` |
 | F-039 | AI4J Extension Permission and Install UX | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/walkthrough.md` |
 | F-038 | AI4J Extension Plugin Contract Hardening | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/walkthrough.md` |
 | F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/walkthrough.md` |
