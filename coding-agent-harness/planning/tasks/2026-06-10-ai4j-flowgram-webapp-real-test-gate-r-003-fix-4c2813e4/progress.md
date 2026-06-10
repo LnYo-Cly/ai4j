@@ -1,6 +1,6 @@
 # AI4J FlowGram webapp real test gate R-003 fix - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -53,3 +53,10 @@
 - 验证结果：`flowgram-webapp-regression` run `27253773916` 在 `main@b0993f56` 通过，包含 `detect-webapp-changes`、`webapp-checks` 中 `Test` / `Lint` / `Typecheck` / `Build` 步骤，以及 aggregate `flowgram-webapp-regression`；同提交 `java-regression` run `27253773802` aggregate 成功，Java package/module jobs 因本次未命中 Java 路径而跳过。
 - 下一步：保持任务在 review / ready-to-confirm，等待人工确认；agent 不运行 `review-confirm`。
 - 证据：command:TARGET:.`gh run view 27253773916 --json databaseId,headSha,conclusion,status,name,workflowName,event,createdAt,updatedAt,jobs,url` confirmed success on `main@b0993f56` with `Test`/`Lint`/`Typecheck`/`Build` and aggregate gate; command:TARGET:.`gh run view 27253773802 --json databaseId,headSha,conclusion,status,name,workflowName,event,createdAt,updatedAt,jobs,url` confirmed same-commit `java-regression` aggregate success with Java package/module jobs skipped by path detection.
+
+### [2026-06-10 12:47] - task-complete
+
+- 做了什么：Human review confirmed; closeout finalized after user confirmation.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
