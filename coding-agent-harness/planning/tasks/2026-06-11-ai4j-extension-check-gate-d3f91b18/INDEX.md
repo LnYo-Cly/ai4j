@@ -35,7 +35,7 @@ Task Contract: harness-task/v1
 | Audit Source | native-index |
 | Audit Status | commit-pending |
 | Exception Reason | n/a |
-| Message | 用户在对话中回复确认，作为 human reviewer 确认当前 review 队列任务通过。 |
+| Message | 用户在对话中回复确认，作为 human reviewer 确认 F-041 review packet 通过。 |
 | Migration Status | native |
 | Migrated From | n/a |
 | Legacy Extra Fields | {} |
