@@ -9,6 +9,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
+| F-040 | AI4J Extension Recipe and Plugin Composition UX | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/task_plan.md` | main | none | 2026-06-10 |
 
 ## Completed Features
 

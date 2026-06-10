@@ -270,3 +270,7 @@ mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test
 - 不替宿主做审批权限判断
 
 这些属于宿主应用、CLI/TUI、Web UI、IDE 插件或未来更高层 runtime 的责任。插件只负责把“需要问用户”变成可发现、可验证、可路由的 AI4J extension package。
+
+## 11. 继续组装
+
+如果你要把 `ask-user` 和其他第三方插件一起接入，继续看 [Plugin Recipes](/docs/core-sdk/extension/plugin-recipes)。那里给出了普通 Java、Spring Boot、CLI 检查和多插件组合的完整配置形态。

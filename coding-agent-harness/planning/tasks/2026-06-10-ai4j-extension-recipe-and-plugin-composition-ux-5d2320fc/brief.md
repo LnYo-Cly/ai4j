@@ -10,42 +10,44 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+为 AI4J 插件生态补一层面向使用者的 recipe 文档，让普通 Java、Spring Boot、CLI 和多插件组合的接入路径可复制、可检查、可授权。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，docs-site 的 Extension 章节会新增 `Plugin Recipes` 页面。读者可以从插件依赖、classpath 检查、activation plan、显式授权、tool 暴露一路走到 Agent / Coding Agent / Spring Boot 接入。第三方插件作者也能看到 README 应该提供的最小 recipe 模板。本任务不改变 Java 运行时，只把已有插件能力组织成更低心智成本的使用路径。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`docs-site/docs/core-sdk/extension/plugin-recipes.md`
+- 修改位置：Extension docs sidebar、extension overview、plugin packages、ask-user plugin 页面、任务材料、Feature SSoT
+- 验证证据：docs-site typecheck/build、harness status、diff check
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先读 `docs-site/docs/core-sdk/extension/plugin-recipes.md`，再看 `progress.md` 的验证记录和 `walkthrough.md` 的收口结论。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：docs-site 插件 recipe 文档、侧边栏入口、相关页面交叉链接、任务材料和 Feature SSoT。
+- 范围外：Java API 行为变更、远程 marketplace、CLI 自动安装插件依赖、运行时 jar 热加载、provider 自动注册。
+- 停止条件：如果发现现有 API 无法支持文档承诺，必须回退文档范围或另开实现任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- Extension 章节存在 `Plugin Recipes` 入口，并位于 `Plugin Packages` 之后。
+- Recipe 页面覆盖普通 Java、Spring Boot、CLI 接入前检查、多插件组合和第三方 README 模板。
+- 文档不暗示已存在 marketplace、自动依赖安装、jar 热加载或 provider 自动注册。
+- docs-site typecheck/build 通过。
+- harness status 通过，任务进度、审查和 walkthrough 有记录。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
   `progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+运行 docs-site typecheck/build、harness status 和 diff check，然后补 review / walkthrough 收口。

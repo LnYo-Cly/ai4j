@@ -24,8 +24,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | done | 100 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc EXEC-01 --state done --completion 100 --evidence present` | agent | present | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `Plugin Recipes` 页面、sidebar 链接、任务材料和验证证据 | diff、typecheck、build、diff check | `harness task-phase 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc --message "<summary>"` | agent | missing | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc --confirm 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

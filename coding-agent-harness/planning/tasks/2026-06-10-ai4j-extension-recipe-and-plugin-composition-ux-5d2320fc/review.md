@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | docs-site recipe 页面、Extension 章节入口、任务材料、验证证据 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：regression / docs / release-readiness
+- 范围内：`docs-site/docs/core-sdk/extension/plugin-recipes.md`、相关 Extension 文档交叉链接、sidebar、Feature SSoT、task-local materials
+- 范围外：Java runtime 行为、插件 API 新增、远程 marketplace、CLI 依赖安装、jar 热加载、provider 自动注册
+- 来源材料：`task_plan.md`、`findings.md`、diff、docs-site typecheck/build、`git diff --check`
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,25 +19,25 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | pending task-review |
+| Submitted At | pending task-review |
+| Submitted By | coordinator |
 | Task Key | 2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | pending task-review |
+| Evidence Summary | docs-site recipe 页面、sidebar/交叉链接、Feature SSoT 和 task materials 已更新；`npm run typecheck`、`npm run build`、`git diff --check` 通过 |
+| Open Findings Count | 0 |
+| Scanner Version | pending task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,11 +46,11 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：yes for agent review submission; final approval still requires human confirmation
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 无阻塞证据缺口。人工确认尚未完成，属于 lifecycle gate，不是实现缺口。
+- Fix loop count：1
+- 当前结论：实现为 docs-only recipe 层，已通过 docs-site typecheck/build 和 diff check，可以提交人工确认。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -66,44 +66,51 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `npm run typecheck` 首次 125 秒超时，300 秒超时重跑通过；属于本地命令超时时间不足，不是代码问题。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:docs-site/docs/core-sdk/extension/plugin-recipes.md | 新增使用者 recipe 页面，覆盖 Java / Spring Boot / CLI / 多插件组合 / 第三方 README 模板 |
+| E-002 | diff | TARGET:docs-site/sidebars.ts | Extension sidebar 新增 `core-sdk/extension/plugin-recipes` |
+| E-003 | diff | TARGET:docs-site/docs/core-sdk/extension/overview.md | Extension 总览增加 recipe 入口和推荐阅读顺序 |
+| E-004 | diff | TARGET:docs-site/docs/core-sdk/extension/plugin-packages.md | Plugin Packages 增加使用者 recipe 跳转 |
+| E-005 | diff | TARGET:docs-site/docs/core-sdk/extension/ask-user-plugin.md | Ask User 页面增加继续组装入口 |
+| E-006 | command | TARGET:docs-site | `npm run typecheck` passed |
+| E-007 | command | TARGET:docs-site | `npm run build` passed |
+| E-008 | command | TARGET:. | `git diff --check` passed |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 人工审查确认尚未完成 | human | yes | 等待用户确认 review packet |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 已准备审查材料包，且可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | brief、task_plan、progress、visual_map、lesson、walkthrough 和 evidence 已补齐。 | 不适用 |
+| Blocked | no | 无 open blocking finding。 | 不适用 |
+| Lessons | no | 本任务仅补 docs-site recipe 层，没有可复用到治理标准的新增 lesson。 | 不适用 |
+| Confirmed / Finalized | no | 尚未人工确认。 | Human Review Confirmation 后 closeout。 |
+| Soft-deleted / Superseded | no | 任务仍有效。 | 不适用 |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：无需继续更新
+- Progress：`progress.md` verification 条目
+- 发现记录：`findings.md` 已记录
+- Regression SSoT：无，未新增固定回归门禁
+- Lessons：checked-none: docs-site recipe documentation only
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+当前 agent review 信心来自已验证的 docs-site 构建、typecheck、diff check，以及对现有 Extension API / CLI / Spring 配置语义的逐项对齐。最终发布确认仍需要人工 review confirmation。

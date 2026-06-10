@@ -115,6 +115,7 @@ const sidebars: SidebarsConfig = {
           items: [
             'core-sdk/extension/overview',
             'core-sdk/extension/plugin-packages',
+            'core-sdk/extension/plugin-recipes',
             'core-sdk/extension/plugin-author-cookbook',
             'core-sdk/extension/ask-user-plugin',
             'core-sdk/extension/provider-extension',

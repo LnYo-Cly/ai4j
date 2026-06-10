@@ -282,7 +282,7 @@ ai4j-cli extension init weather-ai4j-plugin \
   --name "Weather Pack"
 ```
 
-如果你是第三方插件作者，建议先完整走一遍 [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)。那里按 scaffold、替换业务逻辑、校验、发布说明和常见错误组织，比本页更适合作为动手流程。
+如果你是使用者，建议接着看 [Plugin Recipes](/docs/core-sdk/extension/plugin-recipes)，那里把 Java、Spring Boot、CLI 和多插件组合写成可复制接入路径。如果你是第三方插件作者，建议完整走一遍 [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)。那里按 scaffold、替换业务逻辑、校验、发布说明和常见错误组织，比本页更适合作为动手流程。
 
 这个命令只写入一个不存在或空的本地目录。它不会把插件依赖安装到宿主应用，不会拉取远程插件，也不会启用插件。生成后目录结构类似：
 
@@ -540,8 +540,9 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 
 1. [Extension 总览](/docs/core-sdk/extension/overview)
 2. 本页：Plugin Packages
-3. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
+3. [Plugin Recipes](/docs/core-sdk/extension/plugin-recipes)
 4. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
-5. [Tools](/docs/core-sdk/tools/overview)
-6. [Agent Tools and Registry](/docs/agent/tools-and-registry)
-7. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)
+5. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
+6. [Tools](/docs/core-sdk/tools/overview)
+7. [Agent Tools and Registry](/docs/agent/tools-and-registry)
+8. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)
