@@ -1,0 +1,3769 @@
+{
+  "schemaVersion": "task-index/v2",
+  "scannerVersion": "task-scanner/2026-05-25-phase-kind",
+  "sourceRoot": "TARGET:.",
+  "harnessRoot": "TARGET:coding-agent-harness",
+  "planningRoot": "TARGET:coding-agent-harness/planning",
+  "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
+  "generatedAt": "2026-06-10T05:03:28.222Z",
+  "sourceFileHashes": {
+    "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
+    "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78": "cb9694293d67a60e7a2d2dd59242223b4ede59d3ffba2a1741305bbb914532a0",
+    "TASKS/2026-06-04-first-wave-project-upgrades-93da333c": "158309f36642782b1bea0898f4b7a238834b9696d3ef8ddbada42d26ddd5a0f6",
+    "TASKS/2026-06-04-live-provider-test-hygiene-c392a468": "99dfa66908c99239d8425cf733bc53722bc516bcdcc09824f7e32c1968c3ec55",
+    "TASKS/2026-06-04-module-parallel-harness-upgrade-d6ab88ce": "fa4d524e4b477cd7d21d0df90684292ee6087a4654edb2343a55db6c3cee96b5",
+    "TASKS/2026-06-04-regression-baseline-live-split-b2f834db": "50af0419d1bb4bf0de57ea59833f7a661d97d3de231c31e2961143c5edcbab9e",
+    "TASKS/2026-06-05-ai4j-app-builder-user-skill-c784073b": "5f6595306311a18b7851118037d29a4fd609c06f04b1f50b51373862eaf97d79",
+    "TASKS/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a": "58aee176405901770d0e0786bf469aeb3222c26cae2349b1cab78c4c17aa989b",
+    "TASKS/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80": "5caf814a9a80b8c4a9569cd88fbcfc191a65e99fe44c6dd2fb76882bc356a773",
+    "TASKS/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b": "18cd784fbc232ebc771160a23086f7f1be363cf69c1d2842fb8569c34d426836",
+    "TASKS/2026-06-05-docs-site-modular-positioning-pass-c8547bc0": "11e7999130e3932b00121843d6d6c23e2fbca40166d034dfa44e2f4d3103bd2c",
+    "TASKS/2026-06-06-5-c6e2fa16": "a55d850d8c01e4e50f3cb59dbea5df9233e92f0bf7ea1649f03e776c477cc978",
+    "TASKS/2026-06-06-item-885d365a": "23433d8195178ddae1a12ef277d2264d8f07aa63b54edc4c321bd681062796e8",
+    "TASKS/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac": "574eb744dace58a5a7dc9d10d004a95984a48f22425aa4593f3303d591cba279",
+    "TASKS/2026-06-07-chatclient-d5f84742": "2a778b471070eab3d5458c778b62fa569e807d3e4b6bed074b8a750523103725",
+    "TASKS/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f": "b4bc284ce3bb916192171a70fd8df34fd00427f6d7f4222de2bce9909e62e38f",
+    "TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763": "63f590d2697b2081844805e875ef5db359765fa1ab951b85898d86ab84138b70",
+    "TASKS/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb": "0cbbfb4766b616693e4658a5cc647511e681998a5e9032f4d9d0750e09dd3ba0",
+    "TASKS/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6": "8b6e0c6192505bacfdbc2242c62713b9f80c990ab22132830707cc169dda2030",
+    "TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e": "8bbb9973da057fd5a5e4d17953d107036203ff1104fb6b2227582d5027d0066c",
+    "TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f": "78de398c03221656cba1dd7fe43ad739cc751e94d91afefa0c9ac893e9c2993d",
+    "TASKS/2026-06-08-ai4j-extension-system-wave-1-a924bf99": "23b5c971d53c981b24ba2ace65f29c51352dbd3d016d1136e88e4c23408ae093",
+    "TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13": "e2a802700aa575f1ce2611498afc6c559cabb36ae552276f98f17982805084f3",
+    "TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e": "46b31de3dba6841f4a75025f88a7bf51361741a644005e8bfb06c409aa7d7442",
+    "TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb": "83fd0792540ba317543f6415a4997c2dcf456ed25b2d2e070eba000b0d2d395d",
+    "TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7": "b6863ab82506a01b0c1c7024cd0a4137e061fee8760087542c71c63ef93b068d",
+    "TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77": "b9c3cc0d4cedc19d1788544d0874160fc8557b1a869e69840d6d54e89c1756eb",
+    "TASKS/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b": "88930f7d43f1ebe9d57a75f8b4da72ad783e2d8329dd6d7773d4b8060baf10f9",
+    "TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb": "1bd7513975f07a7e3fb334b074a3fb8e561d3364ae3556b4c42286076bc69b06",
+    "TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5": "e646d6c33b5181585f46f9c119e57063fbb53266dcabaf4921b76a43154ee2a9",
+    "TASKS/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6": "8ff3ee8ce842327c970fc7674cdf64aa87fc43919d821be9d2b997cbd22fc9e6",
+    "TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11": "f1d89929e7c2e1d07d9e7ae38ec0e2be57cdda1dea369e5e9c2fbf03d0234ac4",
+    "TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce": "33217ab52594530d85a84c086735623ec586f159792480fbf2c2e46c0cd87125",
+    "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690": "1261d32f794929b2c822318d303bd9cda71e646a7d137239a5cd0d435141580e",
+    "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f": "cd7996eadfb3c490633ca0d3e8802fb0c68415dee235d07d0d70ff51a0cbc724",
+    "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6": "fcf2ac4822e52cf893278a8d1eb8d1139ed4d49d75af576413197670ce10ef7b",
+    "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "f5e99918cf32bf81086473eea7a153e54086f573a062bc684e299373a344b4a4"
+  },
+  "scope": "all",
+  "taskScopes": {
+    "all": 37,
+    "activeCycle": 37,
+    "reviewWorkbench": 37,
+    "archiveHistory": 0,
+    "tombstoneHistory": 0,
+    "taskIndexDefault": 37
+  },
+  "tasks": [
+    {
+      "taskKey": "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27",
+      "id": "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27",
+      "title": "docs site information architecture redesign",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/artifacts/preset/2026-06-04T11-53-19-657Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-docs-site-information-architecture-redesign-6c91ba27",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-information-architecture-redesign-6c91ba27/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+      "id": "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+      "title": "docs site wave 1 entrance redesign",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/artifacts/preset/2026-06-04T12-05-19-453Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-docs-site-wave-1-entrance-redesign-54198b78",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "checked-none",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-04-first-wave-project-upgrades-93da333c",
+      "id": "TASKS/2026-06-04-first-wave-project-upgrades-93da333c",
+      "title": "first wave project upgrades",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/artifacts/preset/2026-06-04T08-29-08-411Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-first-wave-project-upgrades-93da333c",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-first-wave-project-upgrades-93da333c/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-04-live-provider-test-hygiene-c392a468",
+      "id": "TASKS/2026-06-04-live-provider-test-hygiene-c392a468",
+      "title": "live provider test hygiene",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/artifacts/preset/2026-06-04T10-51-54-397Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-live-provider-test-hygiene-c392a468",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-live-provider-test-hygiene-c392a468/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+      "id": "TASKS/2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+      "title": "module parallel harness upgrade",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/artifacts/preset/2026-06-04T08-54-34-188Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-04-regression-baseline-live-split-b2f834db",
+      "id": "TASKS/2026-06-04-regression-baseline-live-split-b2f834db",
+      "title": "regression baseline live split",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/artifacts/preset/2026-06-04T09-15-42-552Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-04-regression-baseline-live-split-b2f834db",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-04-regression-baseline-live-split-b2f834db/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-05-ai4j-app-builder-user-skill-c784073b",
+      "id": "TASKS/2026-06-05-ai4j-app-builder-user-skill-c784073b",
+      "title": "ai4j app builder user skill",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-05-ai4j-app-builder-user-skill-c784073b",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-app-builder-user-skill-c784073b/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a",
+      "id": "TASKS/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a",
+      "title": "ai4j sdk project skill for agent-assisted development",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/artifacts/preset/2026-06-05T04-03-15-436Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-project-skill-for-agent-assisted-develo-6ba2130a/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80",
+      "id": "TASKS/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80",
+      "title": "ai4j sdk skill ab evaluation and docs install command",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/artifacts/preset/2026-06-05T04-17-05-080Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-ai4j-sdk-skill-ab-evaluation-and-docs-install-co-1b4c2b80/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b",
+      "id": "TASKS/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b",
+      "title": "docs-site 文档重构总任务",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/artifacts/preset/2026-06-05T03-27-44-497Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-enterprise-documentation-program-1fdb4d8b/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-05-docs-site-modular-positioning-pass-c8547bc0",
+      "id": "TASKS/2026-06-05-docs-site-modular-positioning-pass-c8547bc0",
+      "title": "docs site modular positioning pass",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "standard-task",
+      "preset": "standard-task",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/artifacts/preset/2026-06-04T16-36-32-446Z",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-05-docs-site-modular-positioning-pass-c8547bc0",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "checked-none",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-05-docs-site-modular-positioning-pass-c8547bc0/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-06-5-c6e2fa16",
+      "id": "TASKS/2026-06-06-5-c6e2fa16",
+      "title": "5 分钟首聊主路径文档",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-06-5-c6e2fa16",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-06-item-885d365a",
+      "id": "TASKS/2026-06-06-item-885d365a",
+      "title": "首聊可复制代码合同",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-06-item-885d365a",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac",
+      "id": "TASKS/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac",
+      "title": "remove ai4j sdk maintainer skill",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [
+        {
+          "id": "F-001",
+          "severity": "P2",
+          "open": false,
+          "blocksRelease": false,
+          "disposition": "closed",
+          "waiverBy": "",
+          "summary": "Plain Java recipe 只配置 provider config，但旧 `Configuration` 没有默认 `OkHttpClient`，复制示例可能在 `OpenAiChatService` 调用时空指针。"
+        }
+      ],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-07-chatclient-d5f84742",
+      "id": "TASKS/2026-06-07-chatclient-d5f84742",
+      "title": "轻量 ChatClient 首聊门面",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-07-chatclient-d5f84742",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
+      "id": "TASKS/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
+      "title": "Core SDK configuration and invocation experience upgrade design",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
+      "id": "TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
+      "title": "core sdk invocation contract audit",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
+      "id": "TASKS/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
+      "title": "docs site wave 1 real onboarding recipes",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
+      "id": "TASKS/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
+      "title": "Feature SSoT closeout drift cleanup",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
+      "id": "TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
+      "title": "AI4J extension CLI inspect wave 2",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
+      "id": "TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
+      "title": "AI4J extension ecosystem architecture",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-08-ai4j-extension-system-wave-1-a924bf99",
+      "id": "TASKS/2026-06-08-ai4j-extension-system-wave-1-a924bf99",
+      "title": "AI4J extension system wave 1",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-08-ai4j-extension-system-wave-1-a924bf99",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
+      "id": "TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
+      "title": "AI4J agent handoff policy R-008 fix",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-narrow-regression-fix",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
+      "id": "TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
+      "title": "AI4J CLI Regression R-009 Fix",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-narrow-regression-fix",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
+      "id": "TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
+      "title": "AI4J docs site Node heap regression R-005 fix",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
+      "id": "TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
+      "title": "AI4J extension authoring and validation wave 8",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
+      "id": "TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
+      "title": "AI4J extension command execution wave 5",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
+      "id": "TASKS/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
+      "title": "AI4J extension guardrail execution wave 7",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-this-task",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
+      "id": "TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
+      "title": "AI4J extension plugin scaffold wave 9",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
+      "completion": 7,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "agent-recommends-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
+      "id": "TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
+      "title": "AI4J extension runtime adapter wave 3",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-this-task",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
+      "id": "TASKS/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
+      "title": "AI4J Extension Scaffold Author Experience Wave 11",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "agent-no-candidate;-human-may-override",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
+      "id": "TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
+      "title": "AI4J extension skill prompt resources wave 6",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-this-task",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
+      "id": "TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
+      "title": "AI4J FlowGram webapp CI R-007 fix",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-narrow-ci-closeout",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
+      "id": "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
+      "title": "AI4J Java regression CI R-001 verification",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-narrow-ci-closeout",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
+      "id": "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
+      "title": "AI4J official ask-user plugin wave 10",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "agent-no-candidate;-human-may-override",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
+      "id": "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
+      "title": "AI4J Spring Boot extension configuration wave 4",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-this-task",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
+      "id": "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
+      "title": "AI4J FlowGram webapp real test gate R-003 fix",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-reusable-governance-lesson-for-narrow-test-gate-closeout",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/walkthrough.md"
+        }
+      ]
+    }
+  ]
+}
