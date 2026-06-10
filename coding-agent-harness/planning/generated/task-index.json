@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-10T06:29:25.390Z",
+  "generatedAt": "2026-06-10T17:59:17.106Z",
   "sourceFileHashes": {
     "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
     "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78": "cb9694293d67a60e7a2d2dd59242223b4ede59d3ffba2a1741305bbb914532a0",
@@ -22,38 +22,42 @@
     "TASKS/2026-06-06-item-885d365a": "23433d8195178ddae1a12ef277d2264d8f07aa63b54edc4c321bd681062796e8",
     "TASKS/2026-06-06-remove-ai4j-sdk-maintainer-skill-40e1d2ac": "574eb744dace58a5a7dc9d10d004a95984a48f22425aa4593f3303d591cba279",
     "TASKS/2026-06-07-chatclient-d5f84742": "2a778b471070eab3d5458c778b62fa569e807d3e4b6bed074b8a750523103725",
-    "TASKS/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f": "b4bc284ce3bb916192171a70fd8df34fd00427f6d7f4222de2bce9909e62e38f",
-    "TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763": "63f590d2697b2081844805e875ef5db359765fa1ab951b85898d86ab84138b70",
-    "TASKS/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb": "0cbbfb4766b616693e4658a5cc647511e681998a5e9032f4d9d0750e09dd3ba0",
-    "TASKS/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6": "8b6e0c6192505bacfdbc2242c62713b9f80c990ab22132830707cc169dda2030",
-    "TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e": "8bbb9973da057fd5a5e4d17953d107036203ff1104fb6b2227582d5027d0066c",
-    "TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f": "78de398c03221656cba1dd7fe43ad739cc751e94d91afefa0c9ac893e9c2993d",
-    "TASKS/2026-06-08-ai4j-extension-system-wave-1-a924bf99": "23b5c971d53c981b24ba2ace65f29c51352dbd3d016d1136e88e4c23408ae093",
-    "TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13": "e2a802700aa575f1ce2611498afc6c559cabb36ae552276f98f17982805084f3",
-    "TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e": "46b31de3dba6841f4a75025f88a7bf51361741a644005e8bfb06c409aa7d7442",
-    "TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb": "83fd0792540ba317543f6415a4997c2dcf456ed25b2d2e070eba000b0d2d395d",
-    "TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7": "b6863ab82506a01b0c1c7024cd0a4137e061fee8760087542c71c63ef93b068d",
-    "TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77": "b9c3cc0d4cedc19d1788544d0874160fc8557b1a869e69840d6d54e89c1756eb",
-    "TASKS/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b": "88930f7d43f1ebe9d57a75f8b4da72ad783e2d8329dd6d7773d4b8060baf10f9",
-    "TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb": "1bd7513975f07a7e3fb334b074a3fb8e561d3364ae3556b4c42286076bc69b06",
-    "TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5": "e646d6c33b5181585f46f9c119e57063fbb53266dcabaf4921b76a43154ee2a9",
-    "TASKS/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6": "8ff3ee8ce842327c970fc7674cdf64aa87fc43919d821be9d2b997cbd22fc9e6",
-    "TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11": "f1d89929e7c2e1d07d9e7ae38ec0e2be57cdda1dea369e5e9c2fbf03d0234ac4",
-    "TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce": "33217ab52594530d85a84c086735623ec586f159792480fbf2c2e46c0cd87125",
-    "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690": "1261d32f794929b2c822318d303bd9cda71e646a7d137239a5cd0d435141580e",
-    "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f": "cd7996eadfb3c490633ca0d3e8802fb0c68415dee235d07d0d70ff51a0cbc724",
-    "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6": "fcf2ac4822e52cf893278a8d1eb8d1139ed4d49d75af576413197670ce10ef7b",
-    "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "f5e99918cf32bf81086473eea7a153e54086f573a062bc684e299373a344b4a4",
-    "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5": "b1106ac7b136a887e732987960d2b80d2e92faef2dcb01994829f0069ecce191"
+    "TASKS/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f": "2a11bb25d4a2abb893fbb39d89b829ea353655988d277a3d26ec5d99c559b507",
+    "TASKS/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763": "57f38207f3fd5e3bf169ea3bd2caf251d6d83b4db38af0b2d41cbbb1f328a46d",
+    "TASKS/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb": "a798f6c7571d7085c40c2f7b07e99cedaaa077ba3000bd48c0b42208c53e558b",
+    "TASKS/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6": "6dd0c390b8cd218324346f18d76c7cb369e50908bc76d018c7894e24fd2116c7",
+    "TASKS/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e": "8c99176b9b53f641d853b22583fa62917ca433ea589d939d52fa2d4174cc015a",
+    "TASKS/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f": "f5d0cf523565326392ddd4daa3b48df04974cecb0ee1848d75c4f3dfd515f124",
+    "TASKS/2026-06-08-ai4j-extension-system-wave-1-a924bf99": "d596a1f59425192ed845214c7cb393d2a31e28ca9457ea169a29511e1fed49a2",
+    "TASKS/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13": "4b4990dbf0a3e230c85e605295f6d6655cd1a2b368fc1c4c0fca7e9fe9a4d8e0",
+    "TASKS/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e": "73ba8394d0235697a6c3c369d28fac493669ffeae62e3201c6b757383bcb6b9e",
+    "TASKS/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb": "e9e468441e98b20c4bbba82d37a3c5946871243eafed380a1ffc0ceffea12a0e",
+    "TASKS/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7": "ad1bc229f41696c45f7ae282b8f9acd325ec15d0807371f2f57d572a5cfb9387",
+    "TASKS/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77": "42bf8a1eaaaea1cc1aa9f92cad252c538775e602fd4406911975e63b01632075",
+    "TASKS/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b": "b8a1126cc858c54f630b6b1299fad35fdb497164582560bae354ca2c9c60c371",
+    "TASKS/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb": "185d9b61d775a3cb68b6bd953b0bc3a80546efb962c1ce23a457c70dc15f1679",
+    "TASKS/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5": "53debaeeb704b0b57c5491b3d6406badccbe73c2c18ada3987dc0851f83492f2",
+    "TASKS/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6": "8487772b842dd84be9fe7c51dee8f678279acf71ce1d5d37ec8ad8b8722f0cf9",
+    "TASKS/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11": "35c434fd01ab2df13992c0a33ed4aa6b2a3af88ff7ff051cd29c00fd46ef26eb",
+    "TASKS/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce": "f6ea8aa0d18ce4bf0409d22c8c919dbf143f7b04beb6fe1b452c3804c926861f",
+    "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690": "1c9a5b985ff76685a394ebe4ff2a86a2dc15565c92df4e47f662ff904d2ba0e1",
+    "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f": "cb492ad9fe5bc6516f6f82960d6ffe72fe08b40b663fc0b78ed17835aee15bb3",
+    "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6": "48daa3ed8db24d8b651e390ccd67004835946933103a5651fd5e1aabc25365c0",
+    "TASKS/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265": "65dba9a6d611c955f9c25c0efeacd8541185070b16ae35fd8df61515b9bd81ba",
+    "TASKS/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc": "4d9bb5de1832cf5af237496f77f2ca9a819e9dc58cb4e8450673c8f59d674628",
+    "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "145ebcf7b2d4a1ee9708d9980c9f9dec221b3590077c4eca12f6132eb3ef9ba3",
+    "TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4": "34930e07c9d31a7a8c2b2f184a5a5c09f6210664673eeb4e33182527719398b1",
+    "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5": "3049810dfe2d1eeda258d7f2071effb66c599bc64ccf76e6584f4be8b9a7fdf3",
+    "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18": "13779cfcd1e084ac600abd6a37a9e086c6ff7e33973bbe6292ddb52986996b51"
   },
   "scope": "all",
   "taskScopes": {
-    "all": 38,
-    "activeCycle": 38,
-    "reviewWorkbench": 38,
+    "all": 42,
+    "activeCycle": 42,
+    "reviewWorkbench": 42,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 38
+    "taskIndexDefault": 42
   },
   "tasks": [
     {
@@ -1574,17 +1578,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-configuration-and-invocation-experience-c7555c2f/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -1603,10 +1607,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -1674,17 +1678,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-core-sdk-invocation-contract-audit-8ef9d763/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -1703,10 +1707,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -1774,17 +1778,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-docs-site-wave-1-real-onboarding-recipes-f62730fb/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -1803,10 +1807,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -1874,17 +1878,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-07-feature-ssot-closeout-drift-cleanup-a8e25ef6/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -1903,10 +1907,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -1974,17 +1978,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2003,10 +2007,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2074,17 +2078,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2103,10 +2107,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2174,17 +2178,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-system-wave-1-a924bf99/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2203,10 +2207,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2274,17 +2278,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2303,10 +2307,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2374,17 +2378,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-cli-regression-r-009-fix-8b01af7e/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2403,10 +2407,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2474,17 +2478,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2503,10 +2507,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2574,17 +2578,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2603,10 +2607,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2674,17 +2678,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2703,10 +2707,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2774,17 +2778,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2803,10 +2807,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2874,17 +2878,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -2892,7 +2896,7 @@
       "packageRole": "local",
       "inferredModule": "base",
       "shortId": "2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb",
-      "completion": 7,
+      "completion": 100,
       "lessonCandidateStatus": "no-candidate-accepted",
       "lessonCandidateReviewDecision": "agent-recommends-no-candidate",
       "lessonCandidatePromotionState": "not-promoted",
@@ -2903,10 +2907,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -2974,17 +2978,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3003,10 +3007,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3074,17 +3078,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3103,10 +3107,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3174,17 +3178,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3203,10 +3207,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3274,17 +3278,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3303,10 +3307,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3374,17 +3378,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3403,10 +3407,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3474,17 +3478,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3503,10 +3507,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3574,17 +3578,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3603,10 +3607,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3667,6 +3671,225 @@
       ]
     },
     {
+      "taskKey": "TASKS/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265",
+      "id": "TASKS/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265",
+      "title": "AI4J Extension Permission and Install UX",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-10-ai4j-extension-permission-and-install-ux-95f89265",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "agent-no-candidate;-human-may-override",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [
+        {
+          "id": "F-039-RF-001",
+          "severity": "P2",
+          "open": false,
+          "blocksRelease": false,
+          "disposition": "closed",
+          "waiverBy": "",
+          "summary": "Regression SSoT / Cadence Ledger and task closeout materials were not yet synchronized."
+        },
+        {
+          "id": "F-039-RF-002",
+          "severity": "P3",
+          "open": false,
+          "blocksRelease": false,
+          "disposition": "closed",
+          "waiverBy": "",
+          "summary": "Prompt and Guardrail allowlist positive paths lacked direct assertions."
+        }
+      ],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc",
+      "id": "TASKS/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc",
+      "title": "AI4J Extension Recipe and Plugin Composition UX",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/walkthrough.md"
+        }
+      ]
+    },
+    {
       "taskKey": "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
       "id": "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
       "title": "AI4J FlowGram webapp real test gate R-003 fix",
@@ -3674,17 +3897,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3703,10 +3926,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3767,6 +3990,106 @@
       ]
     },
     {
+      "taskKey": "TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4",
+      "id": "TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4",
+      "title": "Extension plugin contract hardening",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-10-extension-plugin-contract-hardening-272a10c4",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "agent-no-candidate;-human-may-override",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "finalized"
+      ],
+      "queues": [
+        "finalized"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/walkthrough.md"
+        }
+      ]
+    },
+    {
       "taskKey": "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
       "id": "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
       "title": "Feature SSoT review queue status alignment",
@@ -3774,17 +4097,17 @@
       "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
+      "state": "done",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/review.md",
-      "closeoutStatus": "pending",
+      "closeoutStatus": "closed",
       "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/walkthrough.md",
       "module": "",
       "namespace": "main",
@@ -3803,10 +4126,10 @@
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "review"
+        "finalized"
       ],
       "queues": [
-        "review"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
@@ -3863,6 +4186,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18",
+      "id": "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18",
+      "title": "AI4J Extension Check Gate",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed-review-pending",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "closed-debt",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-06-11-ai4j-extension-check-gate-d3f91b18",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "no-candidate-accepted",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "done"
+      ],
+      "queues": [
+        "done"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/walkthrough.md"
         }
       ]
     }
