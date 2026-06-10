@@ -81,4 +81,4 @@
 | Plugin author cookbook | `../../../docs-site/docs/core-sdk/extension/plugin-author-cookbook.md` |
 | Ask User plugin docs | `../../../docs-site/docs/core-sdk/extension/ask-user-plugin.md` |
 
-Closeout Status: pending-human-review-confirmation
+Closeout Status: closed

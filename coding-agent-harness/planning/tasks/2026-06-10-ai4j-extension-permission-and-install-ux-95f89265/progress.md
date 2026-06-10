@@ -1,6 +1,6 @@
 # AI4J Extension Permission and Install UX - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -75,3 +75,10 @@
 - 验证结果：准备重跑 harness status，确认任务材料不再进入 Missing Materials 队列。
 - 下一步：若 status 通过，提交本地材料修复并推送。
 - 证据：diff:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/progress.md:removed default progress-log-entry placeholder
+
+### [2026-06-10 12:47] - task-complete
+
+- 做了什么：Human review confirmed; closeout finalized after user confirmation.
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
