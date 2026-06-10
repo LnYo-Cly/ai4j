@@ -31,9 +31,9 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-10-extension-plugin-contract-hardening-272a10c4 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/review.md |
-| Review Commit SHA | pending |
+| Review Commit SHA | f86e7c25c5d3f56aca2aa6fb50267505247a3903 |
 | Audit Source | native-index |
-| Audit Status | commit-pending |
+| Audit Status | committed |
 | Exception Reason | n/a |
 | Message | Human review confirmed by user in chat; proceed to closeout. |
 | Migration Status | native |
