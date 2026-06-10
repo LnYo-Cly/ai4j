@@ -9,7 +9,6 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-038 | AI4J Extension Plugin Contract Hardening | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/task_plan.md` | n/a | Agent Review Submission complete; schema parsing, public id/name contracts, CLI/docs trust semantics, scaffold regression evidence, and wider CLI gate recorded; waiting human review confirmation | 2026-06-10 |
 | F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | Agent Review Submission complete; local and remote RG-009 evidence recorded for R-003; waiting human review confirmation | 2026-06-10 |
 | F-036 | AI4J Docs Site Node Heap R-005 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | n/a | Agent Review Submission complete; 8GB Node heap scripts and docs CI entrypoints recorded; waiting human review confirmation | 2026-06-09 |
 | F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | Agent Review Submission complete; dedicated FlowGram webapp lint/type/build CI and remote green evidence recorded; waiting human review confirmation | 2026-06-09 |
@@ -29,6 +28,7 @@
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-038 | AI4J Extension Plugin Contract Hardening | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/walkthrough.md` |
 | F-023 | 首聊对象链修正（撤回轻量 ChatClient 门面） | 2026-06-07 | `coding-agent-harness/planning/tasks/2026-06-07-chatclient-d5f84742/walkthrough.md` |
 | F-022 | 首聊可复制代码合同 | 2026-06-07 | `docs/10-WALKTHROUGH/2026-06-06-first-chat-copyable-code-contract.md` |
 | F-021 | docs-site 5 分钟首聊主路径 | 2026-06-06 | `coding-agent-harness/planning/tasks/2026-06-06-5-c6e2fa16/walkthrough.md` |
