@@ -53,3 +53,5 @@ R-001 已收口：Java regression workflow 现在提供稳定的 `java-regressio
 | 任务计划 | `task_plan.md` |
 | 审查记录 | `review.md` |
 | 进度记录 | `progress.md` |
+
+Closeout Status: closed
