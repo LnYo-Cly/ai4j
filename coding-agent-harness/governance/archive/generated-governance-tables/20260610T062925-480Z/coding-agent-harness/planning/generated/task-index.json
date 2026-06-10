@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-10T06:29:25.390Z",
+  "generatedAt": "2026-06-10T05:03:28.222Z",
   "sourceFileHashes": {
     "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
     "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78": "cb9694293d67a60e7a2d2dd59242223b4ede59d3ffba2a1741305bbb914532a0",
@@ -43,17 +43,16 @@
     "TASKS/2026-06-09-ai4j-java-regression-ci-r-001-verification-daa85690": "1261d32f794929b2c822318d303bd9cda71e646a7d137239a5cd0d435141580e",
     "TASKS/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f": "cd7996eadfb3c490633ca0d3e8802fb0c68415dee235d07d0d70ff51a0cbc724",
     "TASKS/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6": "fcf2ac4822e52cf893278a8d1eb8d1139ed4d49d75af576413197670ce10ef7b",
-    "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "f5e99918cf32bf81086473eea7a153e54086f573a062bc684e299373a344b4a4",
-    "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5": "b1106ac7b136a887e732987960d2b80d2e92faef2dcb01994829f0069ecce191"
+    "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "f5e99918cf32bf81086473eea7a153e54086f573a062bc684e299373a344b4a4"
   },
   "scope": "all",
   "taskScopes": {
-    "all": 38,
-    "activeCycle": 38,
-    "reviewWorkbench": 38,
+    "all": 37,
+    "activeCycle": 37,
+    "reviewWorkbench": 37,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 38
+    "taskIndexDefault": 37
   },
   "tasks": [
     {
@@ -3763,106 +3762,6 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/walkthrough.md"
-        }
-      ]
-    },
-    {
-      "taskKey": "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
-      "id": "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
-      "title": "Feature SSoT review queue status alignment",
-      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
-      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
-      "aliases": [],
-      "identitySource": "path-derived-legacy",
-      "state": "review",
-      "lifecycleState": "in_review",
-      "kind": "general",
-      "preset": "none",
-      "presetVersion": "",
-      "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "ready-to-confirm",
-      "reviewSubmitted": true,
-      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/review.md",
-      "closeoutStatus": "pending",
-      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/walkthrough.md",
-      "module": "",
-      "namespace": "main",
-      "taskRootKind": "project-task",
-      "packageRole": "local",
-      "inferredModule": "base",
-      "shortId": "2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5",
-      "completion": 100,
-      "lessonCandidateStatus": "no-candidate-accepted",
-      "lessonCandidateReviewDecision": "accepted-no-candidate",
-      "lessonCandidatePromotionState": "not-promoted",
-      "lessonCandidateRows": [],
-      "lessonCandidateIssues": [],
-      "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
-      "taskQueues": [
-        "review"
-      ],
-      "queues": [
-        "review"
-      ],
-      "queueReasons": [],
-      "supersedes": [],
-      "supersededBy": "",
-      "deletionState": "active",
-      "visibilityScopes": [
-        "all",
-        "active-cycle",
-        "review-workbench",
-        "task-index-default"
-      ],
-      "deleteReason": "",
-      "archiveMetadata": {},
-      "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
-      "documentRefs": [
-        {
-          "kind": "index",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/INDEX.md"
-        },
-        {
-          "kind": "brief",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/brief.md"
-        },
-        {
-          "kind": "task-plan",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/task_plan.md"
-        },
-        {
-          "kind": "execution-strategy",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/execution_strategy.md"
-        },
-        {
-          "kind": "visual-map",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/visual_map.md"
-        },
-        {
-          "kind": "progress",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/progress.md"
-        },
-        {
-          "kind": "findings",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/findings.md"
-        },
-        {
-          "kind": "review",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/review.md"
-        },
-        {
-          "kind": "lesson-candidates",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/lesson_candidates.md"
-        },
-        {
-          "kind": "walkthrough",
-          "path": "TARGET:coding-agent-harness/planning/tasks/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5/walkthrough.md"
         }
       ]
     }
