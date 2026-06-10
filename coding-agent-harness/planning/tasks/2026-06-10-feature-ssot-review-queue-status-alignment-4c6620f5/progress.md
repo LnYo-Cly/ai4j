@@ -1,6 +1,6 @@
 # Feature SSoT review queue status alignment - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -61,3 +61,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：当前任务 review submission 后需要由 generated ledger 反映。
 - 负责人：coordinator
+
+### [2026-06-10 06:24] - task-review
+
+- 做了什么：Feature SSoT F-024 through F-037 aligned to review queue state; targeted stale-state scan and harness status passed; waiting human review confirmation.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
