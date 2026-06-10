@@ -57,3 +57,5 @@
 | 发现记录 | `findings.md` |
 | Plugin packages docs | `../../../docs-site/docs/core-sdk/extension/plugin-packages.md` |
 | Plugin author cookbook | `../../../docs-site/docs/core-sdk/extension/plugin-author-cookbook.md` |
+
+Closeout Status: closed
