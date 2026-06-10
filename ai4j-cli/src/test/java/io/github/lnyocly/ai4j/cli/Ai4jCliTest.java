@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.cli;
 
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.fixture.CliExtensionTestExtension;
+import io.github.lnyocly.ai4j.extension.Ai4jExtension;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
 import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -18,6 +19,9 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +30,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
+
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 public class Ai4jCliTest {
 
@@ -359,6 +371,38 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_run_rejects_invalid_enable_id_and_command_name() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int badExtensionId = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "bad id", "cli-echo"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+        String badExtensionError = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, badExtensionId);
+        Assert.assertTrue(badExtensionError.contains("extension id must start with a letter or digit"));
+
+        out.reset();
+        err.reset();
+        int badCommandName = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "/bad/command"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+        String badCommandError = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, badCommandName);
+        Assert.assertTrue(badCommandError.contains("command name must start with a letter or digit"));
+    }
+
+    @Test
     public void test_extension_resource_requires_explicit_enable() {
         CliExtensionTestExtension.resetApplyCount();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -478,6 +522,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(readme.contains("## Security And Side Effects"));
         Assert.assertTrue(readme.contains("## Publish Checklist"));
         Assert.assertTrue(service.contains("com.example.ai4j.weather.WeatherPackExtension"));
+        assertGeneratedExtensionCompilesAndLoads(plugin);
     }
 
     @Test
@@ -535,6 +580,64 @@ public class Ai4jCliTest {
 
     private static String read(Path path) throws Exception {
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    }
+
+    private static void assertGeneratedExtensionCompilesAndLoads(Path plugin) throws Exception {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        Assert.assertNotNull("JDK JavaCompiler is required for scaffold smoke test", compiler);
+        Path classes = Files.createDirectories(plugin.resolve("target/test-classes"));
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8);
+        Boolean compiled;
+        try {
+            Iterable<? extends JavaFileObject> units = fileManager.getJavaFileObjects(
+                    plugin.resolve("src/main/java/com/example/ai4j/weather/WeatherPackExtension.java").toFile(),
+                    plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java").toFile()
+            );
+            List<String> options = Arrays.asList(
+                    "-classpath", System.getProperty("java.class.path"),
+                    "-d", classes.toString(),
+                    "-source", "1.8",
+                    "-target", "1.8"
+            );
+            compiled = compiler.getTask(null, fileManager, diagnostics, options, null, units).call();
+        } finally {
+            fileManager.close();
+        }
+        Assert.assertTrue(formatDiagnostics(diagnostics), Boolean.TRUE.equals(compiled));
+
+        URLClassLoader loader = new URLClassLoader(new URL[]{
+                classes.toUri().toURL(),
+                plugin.resolve("src/main/resources").toUri().toURL()
+        }, Ai4jCliTest.class.getClassLoader());
+        try {
+            ServiceLoader<Ai4jExtension> serviceLoader = ServiceLoader.load(Ai4jExtension.class, loader);
+            boolean foundGeneratedExtension = false;
+            for (Ai4jExtension extension : serviceLoader) {
+                if ("weather-pack".equals(extension.manifest().getId())) {
+                    foundGeneratedExtension = true;
+                    break;
+                }
+            }
+            Assert.assertTrue("generated extension should be loadable through ServiceLoader", foundGeneratedExtension);
+        } finally {
+            loader.close();
+        }
+    }
+
+    private static String formatDiagnostics(DiagnosticCollector<JavaFileObject> diagnostics) {
+        StringBuilder builder = new StringBuilder();
+        for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+            if (builder.length() > 0) {
+                builder.append('\n');
+            }
+            builder.append(diagnostic.getKind())
+                    .append(":")
+                    .append(diagnostic.getLineNumber())
+                    .append(":")
+                    .append(diagnostic.getMessage(null));
+        }
+        return builder.toString();
     }
 
     private static final class StubCodingCliAgentFactory implements CodingCliAgentFactory {

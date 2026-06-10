@@ -302,7 +302,7 @@ public class CliExtensionCommand {
                 if (i + 1 >= args.size()) {
                     throw new IllegalArgumentException(arg + " requires an extension id");
                 }
-                enabledExtensionIds.add(ExtensionManifest.requireId(args.get(++i), "extension id"));
+                enabledExtensionIds.add(ExtensionManifest.requireExtensionId(args.get(++i), "extension id"));
                 continue;
             }
             if (!passthrough && arg != null && arg.startsWith("--")) {
@@ -336,7 +336,7 @@ public class CliExtensionCommand {
                 if (i + 1 >= args.size()) {
                     throw new IllegalArgumentException(arg + " requires an extension id");
                 }
-                enabledExtensionIds.add(ExtensionManifest.requireId(args.get(++i), "extension id"));
+                enabledExtensionIds.add(ExtensionManifest.requireExtensionId(args.get(++i), "extension id"));
                 continue;
             }
             if (arg != null && arg.startsWith("--")) {
@@ -347,7 +347,7 @@ public class CliExtensionCommand {
                 continue;
             }
             if (resourceName == null) {
-                resourceName = ExtensionManifest.requireId(arg, "resource name");
+                resourceName = ExtensionManifest.requireResourceName(arg, "resource name");
                 continue;
             }
             throw new IllegalArgumentException("unexpected argument: " + arg);
@@ -392,7 +392,7 @@ public class CliExtensionCommand {
         if (!all && isBlank(extensionId)) {
             throw new IllegalArgumentException("extension id is required");
         }
-        return new ValidateOptions(all, all ? null : ExtensionManifest.requireId(extensionId, "extension id"));
+        return new ValidateOptions(all, all ? null : ExtensionManifest.requireExtensionId(extensionId, "extension id"));
     }
 
     private InspectOptions parseInspectOptions(List<String> args) {
@@ -417,7 +417,7 @@ public class CliExtensionCommand {
         if (isBlank(extensionId)) {
             throw new IllegalArgumentException("extension id is required");
         }
-        return new InspectOptions(ExtensionManifest.requireId(extensionId, "extension id"), runtime);
+        return new InspectOptions(ExtensionManifest.requireExtensionId(extensionId, "extension id"), runtime);
     }
 
     private void printRuntime(ExtensionInspectionSnapshot snapshot, TerminalIO terminal) {
@@ -630,7 +630,7 @@ public class CliExtensionCommand {
         if (normalized.startsWith("/") && normalized.length() > 1) {
             normalized = normalized.substring(1);
         }
-        return normalized;
+        return ExtensionManifest.requireCommandName(normalized, "command name");
     }
 
     private String joinCommandArguments(List<String> values) {
@@ -657,7 +657,7 @@ public class CliExtensionCommand {
         if (isBlank(extensionId)) {
             throw new ExtensionException("extension " + resourceType + " resource is missing extension id");
         }
-        return extensionId.trim();
+        return ExtensionManifest.requireExtensionId(extensionId, "extension " + resourceType + " resource extension id");
     }
 
     private static final class InspectOptions {

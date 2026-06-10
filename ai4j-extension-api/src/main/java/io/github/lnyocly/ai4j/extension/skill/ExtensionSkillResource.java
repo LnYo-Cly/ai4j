@@ -10,10 +10,10 @@ public final class ExtensionSkillResource {
     private final String extensionId;
 
     private ExtensionSkillResource(Builder builder) {
-        this.name = ExtensionManifest.requireId(builder.name, "skill name");
+        this.name = ExtensionManifest.requireResourceName(builder.name, "skill name");
         this.description = ExtensionManifest.emptyToNull(builder.description);
         this.resourcePath = ExtensionManifest.requireId(builder.resourcePath, "skill resource path");
-        this.extensionId = ExtensionManifest.emptyToNull(builder.extensionId);
+        this.extensionId = normalizeExtensionId(builder.extensionId);
     }
 
     public String getName() {
@@ -43,6 +43,11 @@ public final class ExtensionSkillResource {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    private static String normalizeExtensionId(String extensionId) {
+        String normalized = ExtensionManifest.emptyToNull(extensionId);
+        return normalized == null ? null : ExtensionManifest.requireExtensionId(normalized, "skill extension id");
     }
 
     public static final class Builder {

@@ -73,7 +73,7 @@ public final class ExtensionRegistry {
     }
 
     public ExtensionRegistry exposeTool(String toolId) {
-        exposedToolIds.add(ExtensionManifest.requireId(toolId, "tool id"));
+        exposedToolIds.add(ExtensionManifest.requireToolName(toolId, "tool id"));
         return this;
     }
 
@@ -145,7 +145,7 @@ public final class ExtensionRegistry {
     }
 
     private String requireKnownExtension(String extensionId) {
-        String normalized = ExtensionManifest.requireId(extensionId, "extension id");
+        String normalized = ExtensionManifest.requireExtensionId(extensionId, "extension id");
         if (!discovered.containsKey(normalized)) {
             throw new ExtensionException("extension not discovered: " + normalized);
         }

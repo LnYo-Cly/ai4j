@@ -24,7 +24,7 @@ public final class ExtensionValidator {
         if (registry == null) {
             throw new IllegalArgumentException("extension registry must not be null");
         }
-        String normalized = ExtensionManifest.requireId(extensionId, "extension id");
+        String normalized = ExtensionManifest.requireExtensionId(extensionId, "extension id");
         ExtensionManifest manifest = registry.inspect(normalized);
         DiscoveredExtension discovered = find(registry.list(), normalized);
         ExtensionValidationReport.Builder report = ExtensionValidationReport.builder()
@@ -120,9 +120,9 @@ public final class ExtensionValidator {
             report.issue(error("tool.input_schema.missing", "tool must declare an input schema", target));
             return;
         }
-        String trimmed = schema.trim();
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}") || trimmed.indexOf("\"type\"") < 0) {
-            report.issue(error("tool.input_schema.invalid", "tool input schema should be a JSON object containing a type field", target));
+        String schemaError = ExtensionToolSchemaValidator.validate(schema);
+        if (schemaError != null) {
+            report.issue(error("tool.input_schema.invalid", schemaError, target));
         }
     }
 

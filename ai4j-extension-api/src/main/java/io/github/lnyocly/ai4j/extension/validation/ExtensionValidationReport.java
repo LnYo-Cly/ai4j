@@ -13,7 +13,7 @@ public final class ExtensionValidationReport {
     private final List<ExtensionValidationIssue> issues;
 
     private ExtensionValidationReport(Builder builder) {
-        this.extensionId = ExtensionManifest.requireId(builder.extensionId, "extension id");
+        this.extensionId = ExtensionManifest.requireExtensionId(builder.extensionId, "extension id");
         this.sourceClassName = ExtensionManifest.emptyToNull(builder.sourceClassName);
         this.issues = builder.issues == null ? Collections.<ExtensionValidationIssue>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExtensionValidationIssue>(builder.issues));

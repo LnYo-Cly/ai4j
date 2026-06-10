@@ -9,7 +9,7 @@ public final class ExtensionCommandSpec {
     private final String usage;
 
     private ExtensionCommandSpec(Builder builder) {
-        this.name = ExtensionManifest.requireId(builder.name, "command name");
+        this.name = ExtensionManifest.requireCommandName(builder.name, "command name");
         this.description = ExtensionManifest.emptyToNull(builder.description);
         this.usage = ExtensionManifest.emptyToNull(builder.usage);
     }

@@ -73,7 +73,7 @@ public final class ExtensionRuntimeState {
         if (guardrail == null) {
             throw new IllegalArgumentException("guardrail must not be null");
         }
-        String name = ExtensionManifest.requireId(guardrail.name(), "guardrail name");
+        String name = ExtensionManifest.requireGuardrailName(guardrail.name(), "guardrail name");
         ensureUnique(guardrails, name, "guardrail", manifest);
         guardrails.put(name, guardrail);
     }

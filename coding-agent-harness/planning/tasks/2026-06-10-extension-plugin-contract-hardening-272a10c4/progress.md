@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
-- [遗留问题；如无写“无”]
+- P3 非工具资源细粒度 allowlist 未在本轮实现；本轮已在 docs-site 明确 `enable(...)` 是 command / Skill / Prompt / Guardrail 的整包信任边界。后续如果要做 command/resource/guardrail allowlist，应单独设计 API、Spring 配置和 CLI 语义。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：pending-coordinator-pass
+- Registry update needed：不适用
+- Harness Ledger update needed：task-review 后由 lifecycle CLI 同步
+- 负责人：coordinator
 
 ### [2026-06-10 07:53] - task-start
 
@@ -46,3 +39,24 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-10 16:05] - implementation
+
+- 做了什么：收紧 extension 公共 ID/name 校验；新增无外部依赖的 tool schema JSON 结构校验器；修正 CLI extension 参数校验并保留 `/command` 人工输入兼容；新增 validator、registry、CLI scaffold 编译和 ServiceLoader 烟测。
+- 验证结果：`mvn -pl ai4j-extension-api -DskipTests=false test` 首轮通过；`mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` 首轮发现 ServiceLoader 测试假设错误，修正后通过。
+- 下一步：更新 docs-site、回归台账和 closeout。
+- 证据：command:ai4j-extension-api:16 tests passed; command:ai4j-cli:22 targeted tests passed after generated scaffold ServiceLoader smoke fix
+
+### [2026-06-10 16:16] - verification
+
+- 做了什么：完成 docs-site 插件契约说明、Regression SSoT / Cadence Ledger 更新，并运行目标回归矩阵。
+- 验证结果：extension API、agent extension adapter、Ask User plugin、CLI targeted、docs-site typecheck/build、monorepo package smoke、diff check 均通过。
+- 下一步：提交 Agent Review Submission，等待人工确认。
+- 证据：command:ai4j-extension-api:`mvn -pl ai4j-extension-api -DskipTests=false test` passed with 16 tests; command:ai4j-agent:`mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` passed with 5 tests; command:ai4j-plugin-ask-user:`mvn -pl ai4j-plugin-ask-user -am -DfailIfNoTests=false -DskipTests=false test` passed; command:ai4j-cli:`mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 22 tests; command:docs-site:`npm run typecheck` and `npm run build` passed; command:repo:`mvn -DskipTests package` passed across 11 reactor projects; command:repo:`git diff --check` passed with CRLF warnings only
+
+### [2026-06-10 16:24] - wider-cli-regression
+
+- 做了什么：补跑完整 CLI 依赖链测试，覆盖 `ai4j-extension-api`、`ai4j`、`ai4j-agent`、`ai4j-coding`、`ai4j-cli`。
+- 验证结果：reactor build success；extension API 16 tests、core SDK 103 tests、agent 74 tests、coding runtime 59 tests、CLI 262 tests 全部通过。
+- 下一步：提交 Agent Review Submission，等待人工确认。
+- 证据：command:repo:`mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` passed across 6 reactor projects with 514 tests

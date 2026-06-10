@@ -10,10 +10,10 @@ public final class ExtensionPromptResource {
     private final String extensionId;
 
     private ExtensionPromptResource(Builder builder) {
-        this.name = ExtensionManifest.requireId(builder.name, "prompt name");
+        this.name = ExtensionManifest.requireResourceName(builder.name, "prompt name");
         this.description = ExtensionManifest.emptyToNull(builder.description);
         this.resourcePath = ExtensionManifest.requireId(builder.resourcePath, "prompt resource path");
-        this.extensionId = ExtensionManifest.emptyToNull(builder.extensionId);
+        this.extensionId = normalizeExtensionId(builder.extensionId);
     }
 
     public String getName() {
@@ -43,6 +43,11 @@ public final class ExtensionPromptResource {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    private static String normalizeExtensionId(String extensionId) {
+        String normalized = ExtensionManifest.emptyToNull(extensionId);
+        return normalized == null ? null : ExtensionManifest.requireExtensionId(normalized, "prompt extension id");
     }
 
     public static final class Builder {

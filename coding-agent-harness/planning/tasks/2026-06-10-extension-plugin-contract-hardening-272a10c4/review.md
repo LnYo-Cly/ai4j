@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | extension API schema/name contract, CLI extension args/scaffold smoke, docs-site trust boundary, regression evidence |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：adversarial / regression / docs-contract / security-boundary
+- 范围内：`ai4j-extension-api` manifest/spec/validator/runtime state、`ai4j-cli` extension command parsing and scaffold test、extension docs-site pages、Regression SSoT/Cadence、task closeout。
+- 范围外：remote marketplace、CLI 自动安装依赖、runtime jar hotload、provider 自动注册、command/Skill/Prompt/Guardrail 粒度 allowlist。
+- 来源材料：task plan、diff、targeted and broad regression outputs、docs-site typecheck/build、package smoke、Regression SSoT/Cadence updates。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,94 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | agent-self-review-2026-06-10 |
+| Submitted At | 2026-06-10 local |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-06-10-extension-plugin-contract-hardening-272a10c4 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | lifecycle-cli-pending |
+| Evidence Summary | Extension API, agent extension adapter, Ask User plugin, CLI targeted scaffold smoke, docs-site typecheck/build, package smoke, and diff check are recorded in `progress.md`. |
+| Open Findings Count | 0 |
+| Scanner Version | manual-review-v1 |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 本轮没有实现非工具资源细粒度 allowlist；已明确作为 out-of-scope residual。
+  - 人工 review confirmation 尚未由用户侧执行；agent 不能代办。
+- Fix loop count：2
+- 当前结论：可以提交 review；P2 findings 已修复，P3 权限模型扩大项已文档化并路由为后续设计空间。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `ExtensionToolSchemaValidator` 是最小结构校验器，不是完整 JSON Schema 引擎。
+- `enable(...)` 的非 tool 资源整包信任边界已经在 docs-site 中明确；后续要做 allowlist 需要单独 API / Spring / CLI 设计。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionManifest.java | Public extension/tool/command/resource/guardrail name validation split from generic `requireId`. |
+| E-002 | diff | TARGET:ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/validation/ExtensionToolSchemaValidator.java | New no-dependency JSON object/schema shape validator. |
+| E-003 | diff | TARGET:ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/Ai4jCliTest.java | CLI rejects invalid extension args and generated scaffold compiles / loads through ServiceLoader. |
+| E-004 | diff | TARGET:docs-site/docs/core-sdk/extension/plugin-packages.md | Docs now state `apply(...)` side-effect-light, strict names, schema validation, and enable trust boundary. |
+| E-005 | command | TARGET:. | `mvn -pl ai4j-extension-api -DskipTests=false test` passed with 16 tests. |
+| E-006 | command | TARGET:. | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` passed with 5 tests. |
+| E-007 | command | TARGET:. | `mvn -pl ai4j-plugin-ask-user -am -DfailIfNoTests=false -DskipTests=false test` passed. |
+| E-008 | command | TARGET:. | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 22 tests. |
+| E-009 | command | TARGET:docs-site | `npm run typecheck` and `npm run build` passed. |
+| E-010 | command | TARGET:. | `mvn -DskipTests package` passed across 11 reactor projects; `git diff --check` passed with CRLF warnings only. |
+| E-011 | command | TARGET:. | `mvn -pl ai4j-cli -am -DfailIfNoTests=false -DskipTests=false test` passed across 6 reactor projects with 514 tests. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 非工具资源仍无 command / Skill / Prompt / Guardrail 粒度 allowlist | maintainer | yes | 后续插件权限模型设计任务 |
+| 人工 review confirmation 未由用户侧执行 | human | yes | 推送后由用户决定是否运行 `review-confirm` 或退回 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | Agent review packet 已准备，等待人工确认或退回。 | 人工确认或退回。 |
+| Missing Materials | no | 任务包必需文件已补齐。 | n/a |
+| Blocked | no | 无 open blocking finding；P3 allowlist 扩展为 accepted residual。 | n/a |
+| Lessons | no | `lesson_candidates.md` 记录 no-candidate。 | 人工审查覆盖 no-candidate 判断时重新路由。 |
+| Confirmed / Finalized | no | agent 未运行 human confirmation。 | 人工确认后再 closeout ledger。 |
+| Soft-deleted / Superseded | no | 本任务仍为当前 active task。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新，路径 `task_plan.md`。
+- Progress：已记录验证和残余路由，路径 `progress.md`。
+- 发现记录：已更新 `findings.md`。
+- Regression SSoT：调整 RG-010/RG-011/RG-004/RG-007/RG-008；Cadence Ledger 新增 SRB-046。
+- Lessons：checked-none: 本任务无新增可复用 harness lesson。
+- 收口记录：`walkthrough.md`。
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自 extension API validator/registry tests、agent adapter targeted test、official plugin test、CLI scaffold smoke、完整 CLI 依赖链回归、docs-site typecheck/build、monorepo package smoke、diff check，以及对插件信任边界的 self adversarial review。人工确认仍是用户侧动作，不由 agent 代办。

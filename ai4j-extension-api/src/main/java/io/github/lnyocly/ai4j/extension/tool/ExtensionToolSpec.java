@@ -9,7 +9,7 @@ public final class ExtensionToolSpec {
     private final String inputSchema;
 
     private ExtensionToolSpec(Builder builder) {
-        this.name = ExtensionManifest.requireId(builder.name, "tool name");
+        this.name = ExtensionManifest.requireToolName(builder.name, "tool name");
         this.description = ExtensionManifest.emptyToNull(builder.description);
         this.inputSchema = ExtensionManifest.emptyToNull(builder.inputSchema);
     }

@@ -9,6 +9,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
+| F-038 | AI4J Extension Plugin Contract Hardening | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-10-extension-plugin-contract-hardening-272a10c4/task_plan.md` | n/a | Agent Review Submission complete; schema parsing, public id/name contracts, CLI/docs trust semantics, scaffold regression evidence, and wider CLI gate recorded; waiting human review confirmation | 2026-06-10 |
 | F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | Agent Review Submission complete; local and remote RG-009 evidence recorded for R-003; waiting human review confirmation | 2026-06-10 |
 | F-036 | AI4J Docs Site Node Heap R-005 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | n/a | Agent Review Submission complete; 8GB Node heap scripts and docs CI entrypoints recorded; waiting human review confirmation | 2026-06-09 |
 | F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | Agent Review Submission complete; dedicated FlowGram webapp lint/type/build CI and remote green evidence recorded; waiting human review confirmation | 2026-06-09 |

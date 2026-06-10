@@ -18,7 +18,7 @@ public final class ExtensionManifest {
     private final String configPrefix;
 
     private ExtensionManifest(Builder builder) {
-        this.id = requireId(builder.id, "extension id");
+        this.id = requireExtensionId(builder.id, "extension id");
         this.name = emptyToNull(builder.name);
         this.version = emptyToNull(builder.version);
         this.vendor = emptyToNull(builder.vendor);
@@ -86,6 +86,56 @@ public final class ExtensionManifest {
             throw new IllegalArgumentException(field + " must not be blank");
         }
         return normalized;
+    }
+
+    public static String requireExtensionId(String value, String field) {
+        return requireStableName(value, field);
+    }
+
+    public static String requireToolName(String value, String field) {
+        return requireStableName(value, field);
+    }
+
+    public static String requireCommandName(String value, String field) {
+        return requireStableName(value, field);
+    }
+
+    public static String requireResourceName(String value, String field) {
+        return requireStableName(value, field);
+    }
+
+    public static String requireGuardrailName(String value, String field) {
+        return requireStableName(value, field);
+    }
+
+    private static String requireStableName(String value, String field) {
+        String normalized = requireId(value, field);
+        if (!isStableName(normalized)) {
+            throw new IllegalArgumentException(field + " must start with a letter or digit and contain only letters, digits, dot, underscore, or hyphen");
+        }
+        return normalized;
+    }
+
+    private static boolean isStableName(String value) {
+        if (value == null || value.length() == 0) {
+            return false;
+        }
+        if (!isAsciiLetterOrDigit(value.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (!isAsciiLetterOrDigit(ch) && ch != '.' && ch != '_' && ch != '-') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isAsciiLetterOrDigit(char ch) {
+        return (ch >= 'A' && ch <= 'Z')
+                || (ch >= 'a' && ch <= 'z')
+                || (ch >= '0' && ch <= '9');
     }
 
     public static String emptyToNull(String value) {

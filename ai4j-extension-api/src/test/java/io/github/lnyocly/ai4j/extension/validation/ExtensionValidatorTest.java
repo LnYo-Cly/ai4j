@@ -60,6 +60,37 @@ public class ExtensionValidatorTest {
     }
 
     @Test
+    public void shouldRejectMalformedJsonSchemaEvenWhenTypeFieldTextExists() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new MalformedSchemaExtension());
+
+        ExtensionValidationReport report = ExtensionValidator.validate(registry, "malformed-schema");
+
+        Assert.assertFalse(report.isValid());
+        Assert.assertTrue(hasIssue(report, "tool.input_schema.invalid"));
+        Assert.assertTrue(hasIssueMessage(report, "valid JSON"));
+    }
+
+    @Test
+    public void shouldRejectSchemaWithInvalidPropertiesRequiredEnumOrItemsShape() {
+        assertInvalidSchema(new InvalidSchemaShapeExtension(
+                "bad-properties",
+                "{\"type\":\"object\",\"properties\":[]}"
+        ), "properties");
+        assertInvalidSchema(new InvalidSchemaShapeExtension(
+                "bad-required",
+                "{\"type\":\"object\",\"required\":\"city\"}"
+        ), "required");
+        assertInvalidSchema(new InvalidSchemaShapeExtension(
+                "bad-enum",
+                "{\"type\":\"object\",\"properties\":{\"unit\":{\"type\":\"string\",\"enum\":\"celsius\"}}}"
+        ), "enum");
+        assertInvalidSchema(new InvalidSchemaShapeExtension(
+                "bad-items",
+                "{\"type\":\"object\",\"properties\":{\"tags\":{\"type\":\"array\",\"items\":\"string\"}}}"
+        ), "items");
+    }
+
+    @Test
     public void shouldValidateAllDiscoveredExtensions() {
         ExtensionRegistry registry = ExtensionRegistry.of(new CompleteExtension(), new BrokenExtension());
 
@@ -77,6 +108,23 @@ public class ExtensionValidatorTest {
             }
         }
         return false;
+    }
+
+    private static boolean hasIssueMessage(ExtensionValidationReport report, String messagePart) {
+        for (ExtensionValidationIssue issue : report.getIssues()) {
+            if (issue.getMessage() != null && issue.getMessage().contains(messagePart)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void assertInvalidSchema(Ai4jExtension extension, String messagePart) {
+        ExtensionValidationReport report = ExtensionValidator.validate(ExtensionRegistry.of(extension), extension.manifest().getId());
+
+        Assert.assertFalse(report.isValid());
+        Assert.assertTrue(hasIssue(report, "tool.input_schema.invalid"));
+        Assert.assertTrue(report.getIssues().toString(), hasIssueMessage(report, messagePart));
     }
 
     private static class CompleteExtension implements Ai4jExtension {
@@ -189,6 +237,64 @@ public class ExtensionValidatorTest {
                             .usage("/bad")
                             .build(),
                     request -> "");
+        }
+    }
+
+    private static class MalformedSchemaExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("malformed-schema")
+                    .name("Malformed Schema")
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.TOOL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.tools().register(ExtensionToolSpec.builder()
+                            .name("malformed.schema")
+                            .description("Malformed schema")
+                            .inputSchema("{\"type\":\"object\",")
+                            .build(),
+                    new ExtensionToolExecutor() {
+                        public String execute(ExtensionToolCall call) {
+                            return "";
+                        }
+                    });
+        }
+    }
+
+    private static class InvalidSchemaShapeExtension implements Ai4jExtension {
+        private final String id;
+        private final String schema;
+
+        private InvalidSchemaShapeExtension(String id, String schema) {
+            this.id = id;
+            this.schema = schema;
+        }
+
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id(id)
+                    .name(id)
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.TOOL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.tools().register(ExtensionToolSpec.builder()
+                            .name(id + ".tool")
+                            .description("Invalid schema")
+                            .inputSchema(schema)
+                            .build(),
+                    new ExtensionToolExecutor() {
+                        public String execute(ExtensionToolCall call) {
+                            return "";
+                        }
+                    });
         }
     }
 }

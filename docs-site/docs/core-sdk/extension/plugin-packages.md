@@ -43,6 +43,8 @@ ExtensionRegistry registry = ExtensionRegistry.discover()
 
 `discover()` 只负责从 classpath 发现实现。发现不等于启用。
 
+`enable(...)` 是对这个插件包的运行时资源做整包信任：它会调用插件 `apply(...)` 注册 command、Skill、Prompt、Guardrail 和 tool 定义。当前只有 tool 还有下一层 `exposeTool(...)` allowlist；command、Skill、Prompt 和 Guardrail 一旦随插件启用，就会进入对应的人类命令、资源读取、上下文投影或 tool execution 决策点。不要启用不可信插件包。
+
 ### 2.3 显式暴露工具
 
 ```java
@@ -100,6 +102,8 @@ ai4j-cli extension validate weather-pack
 ```
 
 `validate` 会像 `inspect --runtime` 一样临时调用插件 `apply(...)` 做 runtime inspection，并把 manifest、capability 声明、工具 schema、Skill / Prompt classpath 资源和 `apply(...)` 失败情况整理成校验报告。它只报告问题，不会把工具暴露给模型，也不会执行插件 command。
+
+因此插件作者要把 `apply(...)` 写成轻量注册函数：只注册 spec、executor、classpath resource 和 guardrail，不要在 `apply(...)` 里连接远程服务、发起网络请求、写文件、读取用户密钥或执行长耗时初始化。真实副作用应该放到 tool executor、command handler 或宿主显式初始化流程里。
 
 如果要检查当前 classpath 上所有插件：
 
@@ -310,6 +314,16 @@ com.example.ai4j.weather.WeatherExtension
 
 AI4J 会把这些字段映射成现有 OpenAI-compatible tool schema。不要把大段自然语言塞进 `description` 代替结构化参数。
 
+Validator 会做最小结构检查：
+
+- schema 必须是合法 JSON object。
+- 根 `type` 必须是非空字符串，当前要求为 `object`。
+- `properties` 如果存在，必须是 object；每个 property value 也必须是 object。
+- `required` 和 `enum` 如果存在，必须是只包含非空字符串的 array。
+- `items` 如果存在，必须是 object。
+
+这不是完整 JSON Schema 引擎，但足够提前拦住 AI4J 当前 tool mapper 无法稳定消费的 schema。
+
 ### 5.4 打包 Skill / Prompt 资源
 
 插件可以把 Skill 和 Prompt 放在 `src/main/resources` 下，再在 `apply(...)` 中注册资源路径：
@@ -378,6 +392,8 @@ if (!report.isValid()) {
 
 Guardrail 是 enable 级资源，不需要 `exposeTool(...)`。原因是 Guardrail 不会主动给模型增加工具，也不会自动执行业务动作；它只在已经发生的 tool execution 决策点上判断是否允许继续。CLI 的 `extension run` 和 `extension resource` 是人手动触发的命令 / 资源读取路径，不属于 Agent tool loop，因此当前不走这套 `tool.execute` Guardrail。
 
+Command、Skill、Prompt 也是 enable 级资源。CLI 读取或执行它们时仍然要求显式 `--enable <id>`，但当前没有 command / skill / prompt 粒度的 allowlist。宿主需要把“启用哪个插件包”当成信任边界。
+
 ## 7. 命名建议
 
 插件 ID 和工具名应该稳定、可读、可冲突排查：
@@ -389,6 +405,12 @@ repo.scan
 ticket.create
 guardrail.prompt-policy
 ```
+
+公共 ID / name 的硬性规则是：必须以英文字母或数字开头，只能包含英文字母、数字、点、下划线和连字符。这个规则适用于 extension id、tool name、command name、Skill name、Prompt name 和 Guardrail name。
+
+Command name 本身不要带 `/`；`/weather-check <city>` 这种写法只放在 usage 文本里。CLI 为了兼容人工输入，会接受 `ai4j-cli extension run --enable weather-pack /weather-check beijing`，内部会去掉开头的 `/` 后再按 command name 查找。
+
+Classpath resource path 不是公共 name，仍然使用路径语义，例如 `skills/weather/SKILL.md`。路径可以带 `/`，但不能包含 `..`。
 
 避免使用过宽的名字：
 
@@ -436,6 +458,7 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 当前已经可用：
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
+- `ai4j-extension-api` 会在公共 ID / name 构造时执行格式校验，并在 `ExtensionValidator` 中检查 tool schema 的基础 JSON 结构
 - `ai4j-plugin-ask-user` 提供官方样板插件，展示 host-mediated 用户提问 tool / command / Skill / Prompt
 - `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
 - CLI 可以 `extension list / inspect / validate` 查看和校验 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command

@@ -91,6 +91,59 @@ public class ExtensionRegistryTest {
     }
 
     @Test
+    public void shouldRejectInvalidPublicIdsAndResourceNames() {
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionManifest.builder()
+                        .id("bad id")
+                        .capability(ExtensionCapability.TOOL)
+                        .build();
+            }
+        }, "extension id");
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionToolSpec.builder()
+                        .name("bad:tool")
+                        .inputSchema("{\"type\":\"object\"}")
+                        .build();
+            }
+        }, "tool name");
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionCommandSpec.builder().name("/bad-command").build();
+            }
+        }, "command name");
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionSkillResource.builder()
+                        .name("bad skill")
+                        .resourcePath("skills/bad/SKILL.md")
+                        .build();
+            }
+        }, "skill name");
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionPromptResource.builder()
+                        .name("bad/prompt")
+                        .resourcePath("prompts/bad.md")
+                        .build();
+            }
+        }, "prompt name");
+    }
+
+    @Test
+    public void shouldRejectInvalidGuardrailNameDuringRegistration() {
+        try {
+            ExtensionRegistry.of(new InvalidGuardrailNameExtension())
+                    .enable("bad-guardrail")
+                    .snapshot();
+            Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            Assert.assertTrue(ex.getMessage().contains("guardrail name"));
+        }
+    }
+
+    @Test
     public void shouldRejectRegistrationForUndeclaredCapability() {
         ExtensionRegistry registry = ExtensionRegistry.of(new BadCapabilityExtension()).enable("bad-capability");
 
@@ -118,6 +171,15 @@ public class ExtensionRegistryTest {
             return executor.execute(new ExtensionToolCall("weather.search", arguments));
         } catch (Exception ex) {
             throw new AssertionError(ex);
+        }
+    }
+
+    private static void assertInvalid(Runnable action, String messagePart) {
+        try {
+            action.run();
+            Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            Assert.assertTrue(ex.getMessage(), ex.getMessage().contains(messagePart));
         }
     }
 
@@ -191,6 +253,27 @@ public class ExtensionRegistryTest {
         public void apply(ExtensionContext context) {
             context.commands().register(ExtensionCommandSpec.builder().name("bad").build(),
                     request -> "bad");
+        }
+    }
+
+    private static class InvalidGuardrailNameExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("bad-guardrail")
+                    .capability(ExtensionCapability.GUARDRAIL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.guardrails().register(new ExtensionGuardrail() {
+                public String name() {
+                    return "bad/guardrail";
+                }
+
+                public GuardrailDecision evaluate(GuardrailRequest request) {
+                    return GuardrailDecision.allow();
+                }
+            });
         }
     }
 }
