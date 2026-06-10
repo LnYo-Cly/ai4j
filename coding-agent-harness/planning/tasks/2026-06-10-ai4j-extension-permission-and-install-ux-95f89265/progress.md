@@ -22,13 +22,6 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
 - 人工 Review Confirmation 尚未执行；本轮只提交 Agent Review Submission，不代办人工确认。
@@ -75,3 +68,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-10 19:22] - materials-repair
+
+- 做了什么：删除 `progress.md` 中残留的模板示例进度块，保持审查材料只包含真实记录。
+- 验证结果：准备重跑 harness status，确认任务材料不再进入 Missing Materials 队列。
+- 下一步：若 status 通过，提交本地材料修复并推送。
+- 证据：diff:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/progress.md:removed default progress-log-entry placeholder
