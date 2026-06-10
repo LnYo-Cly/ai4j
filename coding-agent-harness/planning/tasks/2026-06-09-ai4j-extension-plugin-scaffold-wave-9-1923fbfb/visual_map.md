@@ -38,11 +38,11 @@ flowchart TD
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和 F-031 已建立 | `task_plan.md`; `docs/09-PLANNING/Feature-SSoT.md` | `harness task-start 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | in_progress | 20 | `extension init` CLI 实现和测试 | diff; targeted tests | n/a | agent | partial | 生成代码与 API 不匹配 | coordinator |
-| EXEC-02 | execution | EXEC-01 | planned | 0 | README、docs-site、Regression/Cadence 更新 | diff | n/a | agent | missing | 文档暗示未实现能力 | coordinator |
-| VERIFY-01 | execution | EXEC-02 | planned | 0 | 目标回归和 harness status | commands in `progress.md` | n/a | agent | missing | Maven/docs build 失败 | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `extension init` CLI 实现和测试已完成 | diff; targeted tests | n/a | agent | present | none | coordinator |
+| EXEC-02 | execution | EXEC-01 | done | 100 | README、docs-site、Regression/Cadence 更新已完成 | diff | n/a | agent | present | none | coordinator |
+| VERIFY-01 | execution | EXEC-02 | done | 100 | 目标回归和 harness status 已记录 | commands in `progress.md` | n/a | agent | present | none | coordinator |
 | GATE-01 | gate | VERIFY-01 | done | 100 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb --message "<summary>"` | agent | present | materials incomplete | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet and human confirmation | `harness review-confirm 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb --confirm 2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb` | human | missing | Agent 不能代办人工确认 | human |
+| GATE-02 | gate | GATE-01 | done | 100 | Human Review Confirmation 已完成 | review packet and human confirmation | Dashboard workbench bulk confirmation | human | present | none | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
