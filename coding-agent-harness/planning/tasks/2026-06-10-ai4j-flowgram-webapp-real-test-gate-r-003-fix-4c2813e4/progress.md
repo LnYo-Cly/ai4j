@@ -1,6 +1,6 @@
 # AI4J FlowGram webapp real test gate R-003 fix - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -40,3 +40,10 @@
 - Registry update needed：`flowgram-webapp-demo` module plan updated with active R-003 task.
 - Harness Ledger update needed：task-review / closeout state via lifecycle CLI.
 - 负责人：coordinator
+
+### [2026-06-10 04:43] - task-review
+
+- 做了什么：R-003 ready for human review: FlowGram webapp npm test is now a real backend workflow contract gate, CI runs it before lint/type/build, local RG-009 passed, and regression governance is synchronized.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

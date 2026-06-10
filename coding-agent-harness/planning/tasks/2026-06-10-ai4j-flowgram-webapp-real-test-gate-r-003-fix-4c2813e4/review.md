@@ -121,3 +121,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自真实 `npm test` 本地通过、lint/type/build 本地通过、generated output 负向扫描、CI workflow 顺序 diff、两套 Regression SSoT / Cadence Ledger 同步，以及 review 明确保留远端 workflow evidence 待推送后补录。提交后需要人工确认，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606100443 |
+| Submitted At | 2026-06-10 04:43 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 |
+| Materials Checklist Hash | 041e5eeb684693fa |
+| Evidence Summary | R-003 ready for human review: FlowGram webapp npm test is now a real backend workflow contract gate, CI runs it before lint/type/build, local RG-009 passed, and regression governance is synchronized. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 |

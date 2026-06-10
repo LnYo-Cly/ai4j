@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | webapp real test gate, CI step, and R-003/RG-009 governance updates | diff、`npm run test`、`npm run lint`、`npm run ts-check`、`npm run build`、dist negative scan | `harness task-phase 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 EXEC-01 --state done --completion 100 --evidence present` | agent | present | remote workflow evidence pending push | coordinator |
-| GATE-01 | gate | EXEC-01 | review | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 --message "<summary>"` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 --confirm 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
