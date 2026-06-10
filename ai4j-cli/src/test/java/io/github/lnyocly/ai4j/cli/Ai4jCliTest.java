@@ -182,6 +182,46 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_plan_previews_activation_state() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{
+                        "extension", "plan", "cli-test-pack",
+                        "--enable",
+                        "--expose-tool", "cli.echo",
+                        "--allow-command", "cli-echo",
+                        "--allow-skill", "missing-skill",
+                        "--allow-prompt", "cli-prompt",
+                        "--allow-guardrail", "cli-guardrail",
+                        "--strict"
+                },
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("activation-plan:"));
+        Assert.assertTrue(output.contains("id=cli-test-pack"));
+        Assert.assertTrue(output.contains("enabled=true"));
+        Assert.assertTrue(output.contains("explicitResourceActivation=true"));
+        Assert.assertTrue(output.contains("permissions=network:example.test"));
+        Assert.assertTrue(output.contains("name=cli.echo state=active reason=exposeTool allowlist"));
+        Assert.assertTrue(output.contains("name=cli-echo state=active reason=resource allowlist"));
+        Assert.assertTrue(output.contains("name=cli-skill state=inactive reason=not allowed"));
+        Assert.assertTrue(output.contains("name=missing-skill state=inactive reason=not registered by extension"));
+        Assert.assertTrue(output.contains("name=cli-prompt state=active reason=resource allowlist"));
+        Assert.assertTrue(output.contains("name=cli-guardrail state=active reason=resource allowlist"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
     public void test_extension_validate_reports_pass_for_discovered_extension() {
         CliExtensionTestExtension.resetApplyCount();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -304,6 +344,42 @@ public class Ai4jCliTest {
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("hello world"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
+    public void test_extension_run_can_require_explicit_command_allowlist() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int blocked = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "--strict", "cli-echo", "hello"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+        String blockedError = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, blocked);
+        Assert.assertTrue(blockedError.contains("command not registered by enabled extensions: cli-echo"));
+
+        out.reset();
+        err.reset();
+        CliExtensionTestExtension.resetApplyCount();
+        int allowed = new Ai4jCli().run(
+                new String[]{"extension", "run", "--enable", "cli-test-pack", "--allow-command", "cli-echo", "cli-echo", "hello"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, allowed);
+        Assert.assertTrue(output.contains("hello"));
         Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
     }
 
@@ -446,6 +522,42 @@ public class Ai4jCliTest {
     }
 
     @Test
+    public void test_extension_resource_can_require_explicit_resource_allowlist() {
+        CliExtensionTestExtension.resetApplyCount();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int blocked = new Ai4jCli().run(
+                new String[]{"extension", "resource", "--enable", "cli-test-pack", "--strict", "skill", "cli-skill"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+        String blockedError = new String(err.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(2, blocked);
+        Assert.assertTrue(blockedError.contains("skill not registered by enabled extensions: cli-skill"));
+
+        out.reset();
+        err.reset();
+        CliExtensionTestExtension.resetApplyCount();
+        int allowed = new Ai4jCli().run(
+                new String[]{"extension", "resource", "--enable", "cli-test-pack", "--allow-skill", "cli-skill", "skill", "cli-skill"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, allowed);
+        Assert.assertTrue(output.contains("name: cli-skill"));
+        Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
+    }
+
+    @Test
     public void test_extension_resource_prints_enabled_prompt_content() {
         CliExtensionTestExtension.resetApplyCount();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -517,7 +629,10 @@ public class Ai4jCliTest {
         Assert.assertTrue(readme.contains("| Extension id | `weather-pack` |"));
         Assert.assertTrue(readme.contains("## Author Workflow"));
         Assert.assertTrue(readme.contains("ai4j-cli extension validate weather-pack"));
-        Assert.assertTrue(readme.contains("ai4j-cli extension resource --enable weather-pack skill weather-pack-skill"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension plan weather-pack --enable --expose-tool weather.pack.echo"));
+        Assert.assertTrue(readme.contains("ai4j-cli extension resource --enable weather-pack --allow-skill weather-pack-skill skill weather-pack-skill"));
+        Assert.assertTrue(readme.contains(".requireExplicitResourceActivation()"));
+        Assert.assertTrue(readme.contains("explicit-resource-activation: true"));
         Assert.assertTrue(readme.contains("Classpath discovery does not enable this extension."));
         Assert.assertTrue(readme.contains("## Security And Side Effects"));
         Assert.assertTrue(readme.contains("## Publish Checklist"));

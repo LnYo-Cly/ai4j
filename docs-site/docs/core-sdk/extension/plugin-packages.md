@@ -1,6 +1,6 @@
 # Plugin Packages
 
-AI4J 的 plugin package 解决的是：**第三方开发者把工具、命令、Skill、Prompt、Guardrail 等运行时资源打包成一个普通 Java 依赖，使用者通过 classpath 引入后再显式启用和暴露**。
+AI4J 的 plugin package 解决的是：**第三方开发者把工具、命令、Skill、Prompt、Guardrail 等运行时资源打包成一个普通 Java 依赖，使用者通过 classpath 引入后再检查、启用、授权和暴露**。
 
 它不是应用商店，也不是远程下载安装器。当前稳定路径是 Maven / Gradle 依赖 + `ServiceLoader` 发现 + `ExtensionRegistry` 安全门禁。
 
@@ -18,7 +18,7 @@ AI4J 现在有两类容易混淆的扩展：
 
 ## 2. 使用者路径
 
-普通 Java 使用者的完整路径分三步。
+普通 Java 使用者的完整路径分四步。
 
 ### 2.1 引入插件依赖
 
@@ -43,7 +43,21 @@ ExtensionRegistry registry = ExtensionRegistry.discover()
 
 `discover()` 只负责从 classpath 发现实现。发现不等于启用。
 
-`enable(...)` 是对这个插件包的运行时资源做整包信任：它会调用插件 `apply(...)` 注册 command、Skill、Prompt、Guardrail 和 tool 定义。当前只有 tool 还有下一层 `exposeTool(...)` allowlist；command、Skill、Prompt 和 Guardrail 一旦随插件启用，就会进入对应的人类命令、资源读取、上下文投影或 tool execution 决策点。不要启用不可信插件包。
+`enable(...)` 是对这个插件包的运行时资源做整包信任：它会调用插件 `apply(...)` 注册 command、Skill、Prompt、Guardrail 和 tool 定义。为了兼容旧代码，默认模式下 command、Skill、Prompt 和 Guardrail 会随插件启用进入运行时；tool 仍然必须再经过 `exposeTool(...)` 才会给模型。
+
+如果你要接入第三方插件，建议启用显式资源授权模式：
+
+```java
+ExtensionRegistry registry = ExtensionRegistry.discover()
+        .enable("weather-pack")
+        .requireExplicitResourceActivation()
+        .allowCommand("weather.status")
+        .allowSkill("weather-skill")
+        .allowPrompt("weather-summary")
+        .allowGuardrail("weather-policy");
+```
+
+开启 `requireExplicitResourceActivation()` 后，未列入 allowlist 的 command、Skill、Prompt 和 Guardrail 不会进入 `ExtensionRuntimeSnapshot`。配置了不存在的资源名时，`snapshot()` 会 fail-fast，避免宿主以为已经授权成功。
 
 ### 2.3 显式暴露工具
 
@@ -54,6 +68,16 @@ ExtensionRegistry registry = ExtensionRegistry.discover()
 ```
 
 启用也不等于把工具交给模型。只有 `exposeTool(...)` 后，工具才会进入 agent tool registry。
+
+`exposeTool(...)` 和 `allowCommand(...)` 不是一回事：
+
+| API | 影响范围 |
+| --- | --- |
+| `exposeTool("weather.search")` | 让指定 tool 进入模型可见工具列表 |
+| `allowCommand("weather.status")` | 允许人工 / 宿主显式执行插件 command |
+| `allowSkill("weather-skill")` | 允许 Skill 被读取或投影到 Coding Agent 上下文 |
+| `allowPrompt("weather-summary")` | 允许 Prompt 被读取或投影到 Coding Agent 上下文 |
+| `allowGuardrail("weather-policy")` | 允许 Guardrail 接入 tool execution 前置判断 |
 
 ### 2.4 Spring Boot 配置路径
 
@@ -69,14 +93,39 @@ ai:
         - weather.search
 ```
 
+如果要启用显式资源授权：
+
+```yaml
+ai:
+  extensions:
+    enabled:
+      - weather-pack
+    explicit-resource-activation: true
+    tools:
+      expose:
+        - weather.search
+    commands:
+      allow:
+        - weather.status
+    skills:
+      allow:
+        - weather-skill
+    prompts:
+      allow:
+        - weather-summary
+    guardrails:
+      allow:
+        - weather-policy
+```
+
 starter 会自动创建两个 bean：
 
 | Bean | 作用 |
 | --- | --- |
-| `ExtensionRegistry` | 保存 classpath 发现、显式启用和工具 allowlist 状态 |
-| `ExtensionRuntimeSnapshot` | 保存已启用资源和已暴露工具的只读快照 |
+| `ExtensionRegistry` | 保存 classpath 发现、显式启用、资源授权和工具 allowlist 状态 |
+| `ExtensionRuntimeSnapshot` | 保存已启用 / 已授权资源和已暴露工具的只读快照 |
 
-如果配置了不存在的插件包，或者只配置 `tools.expose` 却没有启用贡献该工具的插件包，应用启动会失败。这是刻意设计的安全边界：Spring Boot 配置也不能绕过 discover / enable / expose 三段式门禁。
+如果配置了不存在的插件包，或者只配置 `tools.expose` / `commands.allow` / `skills.allow` / `prompts.allow` / `guardrails.allow` 却没有启用贡献该资源的插件包，应用启动会失败。这是刻意设计的安全边界：Spring Boot 配置也不能绕过 discover / enable / allow / expose 门禁。
 
 starter 不会自动创建 Agent 或 Coding Agent。需要 Agent 时，仍然把 `ExtensionRegistry` 传给 Agent builder：
 
@@ -91,15 +140,24 @@ public Agent agent(ModelClient modelClient, ExtensionRegistry extensionRegistry)
 }
 ```
 
-### 2.5 CLI 校验路径
+### 2.5 CLI 检查路径
 
 CLI 可以先查看 classpath 上的插件：
 
 ```bash
 ai4j-cli extension list
 ai4j-cli extension inspect weather-pack --runtime
+ai4j-cli extension plan weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather.status \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather-policy \
+  --strict
 ai4j-cli extension validate weather-pack
 ```
+
+`plan` 用来预览某个插件在当前授权参数下的激活状态。它会列出每个 tool、command、Skill、Prompt、Guardrail 是 `active` 还是 `inactive`，并给出原因，例如 `not exposed`、`not allowed`、`not registered by extension`。它适合放在“依赖已经加入 classpath，但还没接入 Agent”之前做人工检查。
 
 `validate` 会像 `inspect --runtime` 一样临时调用插件 `apply(...)` 做 runtime inspection，并把 manifest、capability 声明、工具 schema、Skill / Prompt classpath 资源和 `apply(...)` 失败情况整理成校验报告。它只报告问题，不会把工具暴露给模型，也不会执行插件 command。
 
@@ -126,21 +184,21 @@ ai4j-cli extension validate --all
 如果插件声明了 command，可以显式启用插件后执行：
 
 ```bash
-ai4j-cli extension run --enable weather-pack weather.status beijing
+ai4j-cli extension run --enable weather-pack --allow-command weather.status weather.status beijing
 ```
 
-`--enable` 是必填项。classpath 发现插件不会自动执行命令，也不会把工具暴露给模型。`extension run` 是人手动调用插件 command 的 CLI 入口；Agent / Coding Agent 的模型可见工具仍然只走 `.exposeTool(...)` 或 Spring Boot `ai.extensions.tools.expose`。
+`--enable` 是必填项。`--allow-command` 会让本次命令进入显式 command 授权模式；没有 `--allow-command` 时，CLI 保持兼容行为：启用插件后可执行它注册的 command。classpath 发现插件不会自动执行命令，也不会把工具暴露给模型。`extension run` 是人手动调用插件 command 的 CLI 入口；Agent / Coding Agent 的模型可见工具仍然只走 `.exposeTool(...)` 或 Spring Boot `ai.extensions.tools.expose`。
 
 ### 2.7 CLI 资源读取路径
 
 插件声明的 Skill / Prompt 是 classpath 资源。开发者可以先用 `inspect --runtime` 查看资源名和路径，再显式启用插件读取内容：
 
 ```bash
-ai4j-cli extension resource --enable weather-pack skill weather-skill
-ai4j-cli extension resource --enable weather-pack prompt weather-summary
+ai4j-cli extension resource --enable weather-pack --allow-skill weather-skill skill weather-skill
+ai4j-cli extension resource --enable weather-pack --allow-prompt weather-summary prompt weather-summary
 ```
 
-这个命令只打印 UTF-8 文本资源，不会执行插件工具，也不会把工具暴露给模型。它的主要用途是让插件作者和使用者确认 jar 内资源是否可被 AI4J 正确读取。
+`--allow-skill` / `--allow-prompt` 会让本次资源读取进入显式资源授权模式；没有 allow 参数时，CLI 保持兼容行为：启用插件后可读取它注册的 Skill / Prompt。这个命令只打印 UTF-8 文本资源，不会执行插件工具，也不会把工具暴露给模型。它的主要用途是让插件作者和使用者确认 jar 内资源是否可被 AI4J 正确读取。
 
 ## 3. 接入 Agent
 
@@ -163,7 +221,7 @@ Agent 主循环不用认识插件实现类。模型看到的是普通 tool schem
 
 ### 3.1 Guardrail 执行点
 
-已启用插件注册的 Guardrail 会在 Agent 执行 tool call 之前评估。AI4J 当前给插件 Guardrail 的请求语义是：
+默认兼容模式下，已启用插件注册的 Guardrail 会在 Agent 执行 tool call 之前评估。如果 registry 开启了 `requireExplicitResourceActivation()`，只有 `allowGuardrail(...)` 列出的 Guardrail 会进入执行链。AI4J 当前给插件 Guardrail 的请求语义是：
 
 | 字段 | 值 |
 | --- | --- |
@@ -200,12 +258,12 @@ CodingAgent agent = CodingAgents.builder()
 
 这意味着插件作者可以提供“项目扫描”“代码生成辅助”“业务规则检查”等工具，但执行权限仍然由宿主应用决定。插件不会绕过 Coding Agent 原有的 workspace、tool policy、approval 和执行边界。
 
-已启用插件注册的 Guardrail 也会覆盖 Coding Agent 的 tool execution。它不仅能拦截已暴露的 extension tools，也能拦截内置 workspace tools，例如 `bash`、`read_file`、`write_file`、`apply_patch`，前提是宿主已经把这些工具交给当前 Coding Agent 会话。Guardrail 的判断发生在实际工具执行前；被拒绝的调用不会触发 shell、文件写入或 extension tool executor。
+已授权插件注册的 Guardrail 也会覆盖 Coding Agent 的 tool execution。它不仅能拦截已暴露的 extension tools，也能拦截内置 workspace tools，例如 `bash`、`read_file`、`write_file`、`apply_patch`，前提是宿主已经把这些工具交给当前 Coding Agent 会话。Guardrail 的判断发生在实际工具执行前；被拒绝的调用不会触发 shell、文件写入或 extension tool executor。
 
 插件 Skill / Prompt 也会进入 Coding Agent 的上下文装配：
 
-- 已启用插件贡献的 Skill 会被物化成只读 `SKILL.md` 文件，进入 `<available_skills>` 清单。
-- 已启用插件贡献的 Prompt 会被物化成只读 Markdown 文件，进入 `<available_prompts>` 清单。
+- 默认兼容模式下，已启用插件贡献的 Skill / Prompt 会被物化成只读文件；显式资源授权模式下，只有 `allowSkill(...)` / `allowPrompt(...)` 列出的资源会被物化。
+- Skill 会进入 `<available_skills>` 清单；Prompt 会进入 `<available_prompts>` 清单。
 - Agent 不会在系统提示里直接塞入完整资源正文，而是先看到资源名、描述和可读路径，再按任务需要用 `read_file` 读取。
 - 这些物化文件只加入 `allowedReadRoots`，不会扩大 workspace 写入权限。
 
@@ -386,13 +444,14 @@ if (!report.isValid()) {
 | --- | --- | --- |
 | discover | 从 classpath 找到插件 manifest | 不执行工具，不暴露给模型 |
 | enable | 调用插件 `apply(...)` 注册资源 | 工具仍不会进入模型可见列表 |
+| allowCommand / allowSkill / allowPrompt / allowGuardrail | 在显式资源授权模式下允许非 tool 资源进入运行态 | 不会让 tool 进入模型可见列表 |
 | exposeTool | 指定工具名进入 agent/coding tool registry | 只暴露被点名的工具 |
 
 这个设计故意不做“安装后自动可用”。原因很直接：tool 一旦暴露给模型，就可能触发网络、文件系统、业务系统或工作区操作。AI4J 要求宿主应用明确决定哪些工具能进入模型上下文。
 
-Guardrail 是 enable 级资源，不需要 `exposeTool(...)`。原因是 Guardrail 不会主动给模型增加工具，也不会自动执行业务动作；它只在已经发生的 tool execution 决策点上判断是否允许继续。CLI 的 `extension run` 和 `extension resource` 是人手动触发的命令 / 资源读取路径，不属于 Agent tool loop，因此当前不走这套 `tool.execute` Guardrail。
+为了兼容旧代码，`enable(...)` 默认仍会激活 command、Skill、Prompt 和 Guardrail。需要更严格边界时，调用 `requireExplicitResourceActivation()`，或在 Spring Boot 中设置 `ai.extensions.explicit-resource-activation=true`。开启后，非 tool 资源必须通过对应 `allow*` API 或配置项逐项进入运行态。
 
-Command、Skill、Prompt 也是 enable 级资源。CLI 读取或执行它们时仍然要求显式 `--enable <id>`，但当前没有 command / skill / prompt 粒度的 allowlist。宿主需要把“启用哪个插件包”当成信任边界。
+CLI 的 `extension run` 和 `extension resource` 是人手动触发的命令 / 资源读取路径，不属于 Agent tool loop，因此当前不走 `tool.execute` Guardrail。它们可以通过 `--allow-command`、`--allow-skill`、`--allow-prompt` 使用同一套显式资源授权语义。
 
 ## 7. 命名建议
 
@@ -458,14 +517,15 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 当前已经可用：
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
+- `ai4j-extension-api` 提供 `ExtensionActivationPlan`，并支持 command、Skill、Prompt、Guardrail 的显式 allowlist
 - `ai4j-extension-api` 会在公共 ID / name 构造时执行格式校验，并在 `ExtensionValidator` 中检查 tool schema 的基础 JSON 结构
 - `ai4j-plugin-ask-user` 提供官方样板插件，展示 host-mediated 用户提问 tool / command / Skill / Prompt
 - `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
-- CLI 可以 `extension list / inspect / validate` 查看和校验 classpath 上的插件，也可以 `extension run --enable <id> <command>` 显式执行插件 command
-- CLI 可以 `extension resource --enable <id> <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
+- CLI 可以 `extension list / inspect / plan / validate` 查看、预览和校验 classpath 上的插件，也可以 `extension run --enable <id> [--allow-command <name>] <command>` 显式执行插件 command
+- CLI 可以 `extension resource --enable <id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
 - Agent 可以通过 `.extensions(registry)` 调用暴露的插件工具，并在 tool execution 前应用已启用插件注册的 Guardrail
 - Coding Agent 可以通过 `.extensions(registry)` 在 coding session 中调用暴露的插件工具，把已启用插件贡献的 Skill / Prompt 投影成只读可读资源，并在内置 / extension tool execution 前应用 Guardrail
-- Spring Boot starter 可以通过 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`
+- Spring Boot starter 可以通过 `ai.extensions.enabled`、`ai.extensions.tools.expose` 和 `ai.extensions.{commands,skills,prompts,guardrails}.allow` 装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`
 
 当前不包含：
 

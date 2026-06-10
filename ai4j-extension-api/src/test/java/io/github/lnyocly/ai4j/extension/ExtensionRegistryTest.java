@@ -51,6 +51,72 @@ public class ExtensionRegistryTest {
     }
 
     @Test
+    public void shouldFilterNonToolResourcesWhenExplicitActivationIsRequired() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
+                .enable("weather-pack")
+                .requireExplicitResourceActivation()
+                .allowCommand("weather")
+                .allowSkill("weather-skill")
+                .allowPrompt("weather-summary")
+                .allowGuardrail("weather-guardrail");
+
+        ExtensionRuntimeSnapshot snapshot = registry.snapshot();
+
+        Assert.assertTrue(registry.isExplicitResourceActivation());
+        Assert.assertTrue(registry.getAllowedCommandIds().contains("weather"));
+        Assert.assertTrue(registry.getAllowedSkillIds().contains("weather-skill"));
+        Assert.assertTrue(registry.getAllowedPromptIds().contains("weather-summary"));
+        Assert.assertTrue(registry.getAllowedGuardrailIds().contains("weather-guardrail"));
+        Assert.assertEquals(1, snapshot.getCommands().size());
+        Assert.assertEquals("weather", snapshot.getCommands().get(0).getName());
+        Assert.assertEquals(1, snapshot.getSkills().size());
+        Assert.assertEquals("weather-skill", snapshot.getSkills().get(0).getName());
+        Assert.assertEquals(1, snapshot.getPrompts().size());
+        Assert.assertEquals("weather-summary", snapshot.getPrompts().get(0).getName());
+        Assert.assertEquals(1, snapshot.getGuardrails().size());
+        Assert.assertEquals("weather-guardrail", snapshot.getGuardrails().get(0).name());
+    }
+
+    @Test
+    public void shouldFailFastWhenAllowedResourceIsNotRegistered() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
+                .enable("weather-pack")
+                .allowPrompt("missing-prompt");
+
+        try {
+            registry.snapshot();
+            Assert.fail("expected ExtensionException");
+        } catch (ExtensionException ex) {
+            Assert.assertTrue(ex.getMessage().contains("prompt not registered by enabled extensions"));
+        }
+    }
+
+    @Test
+    public void shouldDescribeActivationPlanForEnabledAndAllowedResources() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
+                .enable("weather-pack")
+                .exposeTool("weather.search")
+                .allowCommand("weather")
+                .allowSkill("missing-skill")
+                .allowPrompt("weather-summary")
+                .allowGuardrail("weather-guardrail");
+
+        ExtensionActivationPlan plan = registry.activationPlan("weather-pack");
+
+        Assert.assertEquals("weather-pack", plan.getManifest().getId());
+        Assert.assertTrue(plan.isEnabled());
+        Assert.assertTrue(plan.isExplicitResourceActivation());
+        Assert.assertTrue(find(plan.getTools(), "weather.search").isActive());
+        Assert.assertTrue(find(plan.getCommands(), "weather").isActive());
+        Assert.assertFalse(find(plan.getSkills(), "weather-skill").isActive());
+        Assert.assertTrue(find(plan.getSkills(), "weather-skill").getReason().contains("not allowed"));
+        Assert.assertFalse(find(plan.getSkills(), "missing-skill").isActive());
+        Assert.assertTrue(find(plan.getSkills(), "missing-skill").getReason().contains("not registered"));
+        Assert.assertTrue(find(plan.getPrompts(), "weather-summary").isActive());
+        Assert.assertTrue(find(plan.getGuardrails(), "weather-guardrail").isActive());
+    }
+
+    @Test
     public void shouldInspectRuntimeWithoutEnablingExtensionOrExposingTools() {
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension());
 
@@ -181,6 +247,18 @@ public class ExtensionRegistryTest {
         } catch (IllegalArgumentException ex) {
             Assert.assertTrue(ex.getMessage(), ex.getMessage().contains(messagePart));
         }
+    }
+
+    private static ExtensionActivationItem find(List<ExtensionActivationItem> items, String name) {
+        if (items != null) {
+            for (ExtensionActivationItem item : items) {
+                if (item != null && item.getName().equals(name)) {
+                    return item;
+                }
+            }
+        }
+        Assert.fail("missing activation item: " + name);
+        return null;
     }
 
     private static class WeatherExtension implements Ai4jExtension {

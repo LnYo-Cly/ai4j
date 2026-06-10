@@ -46,6 +46,18 @@ ExtensionRegistry registry = ExtensionRegistry.discover()
         .exposeTool("ask_user");
 ```
 
+如果宿主希望 command、Skill 和 Prompt 也逐项授权：
+
+```java
+ExtensionRegistry registry = ExtensionRegistry.discover()
+        .enable("ask-user")
+        .requireExplicitResourceActivation()
+        .allowCommand("ask-user")
+        .allowSkill("ask-user-collaboration")
+        .allowPrompt("ask-user-question")
+        .exposeTool("ask_user");
+```
+
 Spring Boot：
 
 ```yaml
@@ -58,7 +70,29 @@ ai:
         - ask_user
 ```
 
-只 `enable("ask-user")` 时，Skill、Prompt 和 command 会注册进 runtime snapshot，但 `ask_user` 不会进入模型可见工具列表。只有 `exposeTool("ask_user")` 后，Agent / Coding Agent 才能调用它。
+Spring Boot 严格授权：
+
+```yaml
+ai:
+  extensions:
+    enabled:
+      - ask-user
+    explicit-resource-activation: true
+    tools:
+      expose:
+        - ask_user
+    commands:
+      allow:
+        - ask-user
+    skills:
+      allow:
+        - ask-user-collaboration
+    prompts:
+      allow:
+        - ask-user-question
+```
+
+只 `enable("ask-user")` 时，兼容模式下 Skill、Prompt 和 command 会注册进 runtime snapshot，但 `ask_user` 不会进入模型可见工具列表。只有 `exposeTool("ask_user")` 后，Agent / Coding Agent 才能调用它。开启 `requireExplicitResourceActivation()` 或 `ai.extensions.explicit-resource-activation=true` 后，Skill、Prompt 和 command 还需要对应 `allow*` 配置才会进入运行态。
 
 ## 4. 它贡献了哪些能力
 
@@ -156,10 +190,21 @@ configPrefix: ai4j.extensions.ask-user
 
 ## 7. Command 路径
 
+接入前可以先看启用计划：
+
+```bash
+ai4j-cli extension plan ask-user --enable \
+  --expose-tool ask_user \
+  --allow-command ask-user \
+  --allow-skill ask-user-collaboration \
+  --allow-prompt ask-user-question \
+  --strict
+```
+
 如果宿主要用 CLI command 触发：
 
 ```bash
-ai4j-cli extension run --enable ask-user ask-user "Should I continue with this file rewrite?"
+ai4j-cli extension run --enable ask-user --allow-command ask-user ask-user "Should I continue with this file rewrite?"
 ```
 
 返回 envelope 的 `source` 会是 `command`：
@@ -186,16 +231,16 @@ ai4j-cli extension run --enable ask-user ask-user "Should I continue with this f
 插件内置 Skill：
 
 ```bash
-ai4j-cli extension resource --enable ask-user skill ask-user-collaboration
+ai4j-cli extension resource --enable ask-user --allow-skill ask-user-collaboration skill ask-user-collaboration
 ```
 
 插件内置 Prompt：
 
 ```bash
-ai4j-cli extension resource --enable ask-user prompt ask-user-question
+ai4j-cli extension resource --enable ask-user --allow-prompt ask-user-question prompt ask-user-question
 ```
 
-Coding Agent 启用插件后，也可以把这些资源物化成只读上下文资源，让 Agent 按需读取。
+这些命令仍然要求 `--enable ask-user`。`--allow-skill` / `--allow-prompt` 会让本次读取进入显式资源授权模式；如果宿主只使用兼容模式，省略 allow 参数后也可以读取已启用插件注册的资源。Coding Agent 启用插件后，也可以把这些资源物化成只读上下文资源，让 Agent 按需读取；严格模式下只有被 allow 的资源会被物化。
 
 ## 9. 本地校验
 

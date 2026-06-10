@@ -84,9 +84,9 @@ AI4J 当前的扩展链路，大体上是下面这条：
 - CLI 可检查的 extension manifest
 - prompt、skill 或 guardrail 资源
 
-这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用，最后用 `exposeTool(...)` 显式暴露给模型。Spring Boot 项目可以用 `ai.extensions.enabled` 和 `ai.extensions.tools.expose` 完成同样的启用与暴露，但仍不会自动创建 Agent 或自动安装插件依赖。
+这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用。工具必须再用 `exposeTool(...)` 显式暴露给模型；command、Skill、Prompt、Guardrail 可以继续使用默认兼容的整包启用语义，也可以通过 `requireExplicitResourceActivation()` 和 `allow*` API 逐项授权。Spring Boot 项目可以用 `ai.extensions.enabled`、`ai.extensions.tools.expose`、`ai.extensions.explicit-resource-activation` 和 `ai.extensions.{commands,skills,prompts,guardrails}.allow` 完成同样配置，但仍不会自动创建 Agent 或自动安装插件依赖。
 
-插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。
+插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。接入前还可以用 `ai4j-cli extension plan <id> --enable ... --strict` 查看本次计划启用、授权和暴露后的 activation state。
 
 官方 `ai4j-plugin-ask-user` 是第一个样板插件。它展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope，同时贡献 command、Skill 和 Prompt 资源。
 

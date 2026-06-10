@@ -162,18 +162,40 @@ Guardrail 的职责是在 tool execution 前允许或拒绝，不应该顺手调
 | 单元合同 | `mvn test` | manifest、resource path、tool schema 和 `apply(...)` 基本可用 |
 | CLI 校验 | `ai4j-cli extension validate weather-pack` | 插件 jar 在 AI4J CLI classpath 上能被发现和校验 |
 | Runtime inspection | `ai4j-cli extension inspect weather-pack --runtime` | tool / command / skill / prompt / guardrail 实际贡献清单正确 |
+| Activation plan | `ai4j-cli extension plan weather-pack --enable --strict ...` | 使用者计划启用、暴露和授权哪些资源 |
 
 读取资源和执行 command 时要显式 enable：
 
 ```bash
-ai4j-cli extension resource --enable weather-pack skill weather-skill
-ai4j-cli extension resource --enable weather-pack prompt weather-summary
-ai4j-cli extension run --enable weather-pack weather-check beijing
+ai4j-cli extension plan weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather-check \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather.network-policy \
+  --strict
+ai4j-cli extension resource --enable weather-pack --allow-skill weather-skill skill weather-skill
+ai4j-cli extension resource --enable weather-pack --allow-prompt weather-summary prompt weather-summary
+ai4j-cli extension run --enable weather-pack --allow-command weather-check weather-check beijing
 ```
 
 `validate` 和 `inspect --runtime` 会临时调用 `apply(...)` 收集资源。它们不会把工具暴露给模型，也不会执行 command。
 
-`enable(...)` 是对插件包的运行时资源做整包信任。Tool 还有下一层 `exposeTool(...)` allowlist；command、Skill、Prompt 和 Guardrail 当前没有单项 allowlist，一旦启用插件包就会进入对应的人类命令、资源读取、上下文投影或 tool execution 决策点。不要让用户把不可信插件包加入 classpath 并启用。
+`enable(...)` 默认仍是对插件包的运行时资源做整包信任，用来兼容旧宿主。更严格的接入方式是让使用者开启显式资源授权：普通 Java 用 `requireExplicitResourceActivation()`，Spring Boot 用 `ai.extensions.explicit-resource-activation=true`。开启后，command、Skill、Prompt 和 Guardrail 必须通过 `allowCommand(...)`、`allowSkill(...)`、`allowPrompt(...)`、`allowGuardrail(...)` 或对应 Spring 配置逐项进入运行态。
+
+插件作者发布 README 时，应该给出一组可复制的检查命令，例如：
+
+```bash
+ai4j-cli extension plan weather-pack --enable \
+  --expose-tool weather.search \
+  --allow-command weather-check \
+  --allow-skill weather-skill \
+  --allow-prompt weather-summary \
+  --allow-guardrail weather.network-policy \
+  --strict
+```
+
+这条命令不会把工具暴露给模型，也不会执行 command；它只是让使用者看到资源会处于 `active` 还是 `inactive`，以及未激活原因。
 
 ## 5. 给使用者的接入说明
 
@@ -192,6 +214,11 @@ ai4j-cli extension run --enable weather-pack weather-check beijing
 ```java
 ExtensionRegistry registry = ExtensionRegistry.discover()
         .enable("weather-pack")
+        .requireExplicitResourceActivation()
+        .allowCommand("weather-check")
+        .allowSkill("weather-skill")
+        .allowPrompt("weather-summary")
+        .allowGuardrail("weather.network-policy")
         .exposeTool("weather.search");
 ```
 
@@ -202,15 +229,29 @@ ai:
   extensions:
     enabled:
       - weather-pack
+    explicit-resource-activation: true
     tools:
       expose:
         - weather.search
+    commands:
+      allow:
+        - weather-check
+    skills:
+      allow:
+        - weather-skill
+    prompts:
+      allow:
+        - weather-summary
+    guardrails:
+      allow:
+        - weather.network-policy
 ```
 
 这三件事要分开写清楚：
 
 - 引入依赖只是把 jar 放进 classpath。
 - `enable(...)` 才会调用插件 `apply(...)` 注册运行时资源。
+- `allow*` 决定非 tool 资源是否进入显式授权运行态。
 - `exposeTool(...)` 才会让指定 tool 进入模型可见工具列表。
 
 ## 6. 发布前必须声明
@@ -234,7 +275,7 @@ ai:
 | schema 文本里有 `"type"` 但不是合法 JSON | validator 报 `tool.input_schema.invalid` | 用合法 JSON object，并保持 `properties` / `required` / `enum` / `items` 形状正确 |
 | command name 写成 `/weather-check` | 构造 `ExtensionCommandSpec` 失败 | name 写 `weather-check`，usage 写 `/weather-check <city>` |
 | 在 `apply(...)` 里连接远程服务或读取密钥 | `validate` / `inspect --runtime` 会触发副作用 | `apply(...)` 只注册资源，把副作用放到 executor / handler |
-| 以为 `enable` 只开启某个 Skill 或 command | 启用整个插件包的非 tool 资源 | 把插件包作为信任边界；tool 再用 `exposeTool` 控制模型可见性 |
+| 以为 `enable` 只开启某个 Skill 或 command | 默认兼容模式会启用整个插件包的非 tool 资源 | 使用 `requireExplicitResourceActivation()` 和 `allow*` 逐项授权 |
 | README 只写“安装后可用” | 使用者误以为自动暴露给模型 | 写清 discover / enable / exposeTool 三段式 |
 | command 里做长时间阻塞交互 | CLI 和宿主行为不可预测 | command 返回结构化结果，把 UI/确认交给宿主 |
 | 插件里硬编码密钥 | 泄漏风险 | 使用环境变量或宿主配置 |

@@ -24,8 +24,13 @@ public final class ExtensionRegistry {
     private final Map<String, ExtensionManifest> manifests;
     private final Set<String> enabledIds = new LinkedHashSet<String>();
     private final Set<String> exposedToolIds = new LinkedHashSet<String>();
+    private final Set<String> allowedCommandIds = new LinkedHashSet<String>();
+    private final Set<String> allowedSkillIds = new LinkedHashSet<String>();
+    private final Set<String> allowedPromptIds = new LinkedHashSet<String>();
+    private final Set<String> allowedGuardrailIds = new LinkedHashSet<String>();
     private ExtensionRuntimeState runtimeState = new ExtensionRuntimeState();
     private boolean applied;
+    private boolean explicitResourceActivation;
 
     private ExtensionRegistry(Collection<Ai4jExtension> extensions) {
         this.discovered = new LinkedHashMap<String, Ai4jExtension>();
@@ -86,6 +91,71 @@ public final class ExtensionRegistry {
         return this;
     }
 
+    public ExtensionRegistry requireExplicitResourceActivation() {
+        explicitResourceActivation = true;
+        return this;
+    }
+
+    public ExtensionRegistry allowCommand(String commandId) {
+        allowedCommandIds.add(ExtensionManifest.requireCommandName(commandId, "command id"));
+        explicitResourceActivation = true;
+        return this;
+    }
+
+    public ExtensionRegistry allowCommands(Collection<String> commandIds) {
+        if (commandIds != null) {
+            for (String commandId : commandIds) {
+                allowCommand(commandId);
+            }
+        }
+        return this;
+    }
+
+    public ExtensionRegistry allowSkill(String skillId) {
+        allowedSkillIds.add(ExtensionManifest.requireResourceName(skillId, "skill id"));
+        explicitResourceActivation = true;
+        return this;
+    }
+
+    public ExtensionRegistry allowSkills(Collection<String> skillIds) {
+        if (skillIds != null) {
+            for (String skillId : skillIds) {
+                allowSkill(skillId);
+            }
+        }
+        return this;
+    }
+
+    public ExtensionRegistry allowPrompt(String promptId) {
+        allowedPromptIds.add(ExtensionManifest.requireResourceName(promptId, "prompt id"));
+        explicitResourceActivation = true;
+        return this;
+    }
+
+    public ExtensionRegistry allowPrompts(Collection<String> promptIds) {
+        if (promptIds != null) {
+            for (String promptId : promptIds) {
+                allowPrompt(promptId);
+            }
+        }
+        return this;
+    }
+
+    public ExtensionRegistry allowGuardrail(String guardrailId) {
+        allowedGuardrailIds.add(ExtensionManifest.requireGuardrailName(guardrailId, "guardrail id"));
+        explicitResourceActivation = true;
+        return this;
+    }
+
+    public ExtensionRegistry allowGuardrails(Collection<String> guardrailIds) {
+        if (guardrailIds != null) {
+            for (String guardrailId : guardrailIds) {
+                allowGuardrail(guardrailId);
+            }
+        }
+        return this;
+    }
+
     public List<DiscoveredExtension> list() {
         List<DiscoveredExtension> result = new ArrayList<DiscoveredExtension>();
         for (Map.Entry<String, Ai4jExtension> entry : discovered.entrySet()) {
@@ -101,7 +171,14 @@ public final class ExtensionRegistry {
 
     public ExtensionRuntimeSnapshot snapshot() {
         applyEnabledExtensions();
-        return runtimeState.snapshot(exposedToolIds);
+        return runtimeState.snapshot(
+                exposedToolIds,
+                explicitResourceActivation,
+                allowedCommandIds,
+                allowedSkillIds,
+                allowedPromptIds,
+                allowedGuardrailIds
+        );
     }
 
     public ExtensionInspectionSnapshot inspectRuntime(String extensionId) {
@@ -113,12 +190,49 @@ public final class ExtensionRegistry {
         return state.inspectionSnapshot();
     }
 
+    public ExtensionActivationPlan activationPlan(String extensionId) {
+        String normalized = requireKnownExtension(extensionId);
+        ExtensionManifest manifest = manifests.get(normalized);
+        ExtensionInspectionSnapshot snapshot = inspectRuntime(normalized);
+        boolean enabled = enabledIds.contains(normalized);
+        return new ExtensionActivationPlan(
+                manifest,
+                enabled,
+                explicitResourceActivation,
+                toolItems(snapshot.getTools(), enabled),
+                commandItems(snapshot.getCommands(), enabled),
+                skillItems(snapshot.getSkills(), enabled),
+                promptItems(snapshot.getPrompts(), enabled),
+                guardrailItems(snapshot.getGuardrails(), enabled)
+        );
+    }
+
     public Set<String> getEnabledIds() {
         return Collections.unmodifiableSet(enabledIds);
     }
 
     public Set<String> getExposedToolIds() {
         return Collections.unmodifiableSet(exposedToolIds);
+    }
+
+    public boolean isExplicitResourceActivation() {
+        return explicitResourceActivation;
+    }
+
+    public Set<String> getAllowedCommandIds() {
+        return Collections.unmodifiableSet(allowedCommandIds);
+    }
+
+    public Set<String> getAllowedSkillIds() {
+        return Collections.unmodifiableSet(allowedSkillIds);
+    }
+
+    public Set<String> getAllowedPromptIds() {
+        return Collections.unmodifiableSet(allowedPromptIds);
+    }
+
+    public Set<String> getAllowedGuardrailIds() {
+        return Collections.unmodifiableSet(allowedGuardrailIds);
     }
 
     public ClassLoader getExtensionClassLoader(String extensionId) {
@@ -164,6 +278,125 @@ public final class ExtensionRegistry {
         }
         this.runtimeState = nextState;
         this.applied = true;
+    }
+
+    private List<ExtensionActivationItem> toolItems(List<ExtensionToolSpec> tools, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        Set<String> contributed = new LinkedHashSet<String>();
+        if (tools != null) {
+            for (ExtensionToolSpec tool : tools) {
+                String name = tool.getName();
+                contributed.add(name);
+                items.add(item("tool", name, enabled && exposedToolIds.contains(name),
+                        enabled ? "exposeTool allowlist" : "extension not enabled",
+                        enabled ? "not exposed" : "extension not enabled"));
+            }
+        }
+        addMissingItems(items, "tool", exposedToolIds, contributed, enabled);
+        return items;
+    }
+
+    private List<ExtensionActivationItem> commandItems(List<ExtensionCommandSpec> commands, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        Set<String> contributed = new LinkedHashSet<String>();
+        if (commands != null) {
+            for (ExtensionCommandSpec command : commands) {
+                String name = command.getName();
+                contributed.add(name);
+                items.add(item("command", name, isResourceActive(enabled, allowedCommandIds, name),
+                        resourceActiveReason(),
+                        resourceInactiveReason(enabled)));
+            }
+        }
+        addMissingItems(items, "command", allowedCommandIds, contributed, enabled);
+        return items;
+    }
+
+    private List<ExtensionActivationItem> skillItems(List<ExtensionSkillResource> skills, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        Set<String> contributed = new LinkedHashSet<String>();
+        if (skills != null) {
+            for (ExtensionSkillResource skill : skills) {
+                String name = skill.getName();
+                contributed.add(name);
+                items.add(item("skill", name, isResourceActive(enabled, allowedSkillIds, name),
+                        resourceActiveReason(),
+                        resourceInactiveReason(enabled)));
+            }
+        }
+        addMissingItems(items, "skill", allowedSkillIds, contributed, enabled);
+        return items;
+    }
+
+    private List<ExtensionActivationItem> promptItems(List<ExtensionPromptResource> prompts, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        Set<String> contributed = new LinkedHashSet<String>();
+        if (prompts != null) {
+            for (ExtensionPromptResource prompt : prompts) {
+                String name = prompt.getName();
+                contributed.add(name);
+                items.add(item("prompt", name, isResourceActive(enabled, allowedPromptIds, name),
+                        resourceActiveReason(),
+                        resourceInactiveReason(enabled)));
+            }
+        }
+        addMissingItems(items, "prompt", allowedPromptIds, contributed, enabled);
+        return items;
+    }
+
+    private List<ExtensionActivationItem> guardrailItems(List<String> guardrails, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        Set<String> contributed = new LinkedHashSet<String>();
+        if (guardrails != null) {
+            for (String guardrail : guardrails) {
+                contributed.add(guardrail);
+                items.add(item("guardrail", guardrail, isResourceActive(enabled, allowedGuardrailIds, guardrail),
+                        resourceActiveReason(),
+                        resourceInactiveReason(enabled)));
+            }
+        }
+        addMissingItems(items, "guardrail", allowedGuardrailIds, contributed, enabled);
+        return items;
+    }
+
+    private void addMissingItems(List<ExtensionActivationItem> items,
+                                 String type,
+                                 Set<String> requested,
+                                 Set<String> contributed,
+                                 boolean enabled) {
+        if (requested == null || requested.isEmpty()) {
+            return;
+        }
+        for (String name : requested) {
+            if (contributed != null && contributed.contains(name)) {
+                continue;
+            }
+            items.add(ExtensionActivationItem.inactive(type, name, "not registered by extension"));
+        }
+    }
+
+    private ExtensionActivationItem item(String type, String name, boolean active, String activeReason, String inactiveReason) {
+        return active
+                ? ExtensionActivationItem.active(type, name, activeReason)
+                : ExtensionActivationItem.inactive(type, name, inactiveReason);
+    }
+
+    private boolean isResourceActive(boolean enabled, Set<String> allowedIds, String name) {
+        if (!enabled) {
+            return false;
+        }
+        return !explicitResourceActivation || allowedIds.contains(name);
+    }
+
+    private String resourceActiveReason() {
+        return explicitResourceActivation ? "resource allowlist" : "enabled package compatibility";
+    }
+
+    private String resourceInactiveReason(boolean enabled) {
+        if (!enabled) {
+            return "extension not enabled";
+        }
+        return explicitResourceActivation ? "not allowed" : "enabled package compatibility";
     }
 
     public List<ExtensionToolSpec> getTools() {

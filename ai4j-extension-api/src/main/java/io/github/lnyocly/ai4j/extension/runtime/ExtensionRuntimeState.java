@@ -79,6 +79,22 @@ public final class ExtensionRuntimeState {
     }
 
     public ExtensionRuntimeSnapshot snapshot(Set<String> exposedToolIds) {
+        return snapshot(
+                exposedToolIds,
+                false,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    public ExtensionRuntimeSnapshot snapshot(Set<String> exposedToolIds,
+                                             boolean explicitResourceActivation,
+                                             Set<String> allowedCommandIds,
+                                             Set<String> allowedSkillIds,
+                                             Set<String> allowedPromptIds,
+                                             Set<String> allowedGuardrailIds) {
         Set<String> allowlist = exposedToolIds == null
                 ? new LinkedHashSet<String>()
                 : new LinkedHashSet<String>(exposedToolIds);
@@ -95,11 +111,11 @@ public final class ExtensionRuntimeState {
         return new ExtensionRuntimeSnapshot(
                 exposedTools,
                 exposedExecutors,
-                new ArrayList<ExtensionCommandSpec>(commands.values()),
-                new LinkedHashMap<String, ExtensionCommandHandler>(commandHandlers),
-                new ArrayList<ExtensionSkillResource>(skills.values()),
-                new ArrayList<ExtensionPromptResource>(prompts.values()),
-                new ArrayList<ExtensionGuardrail>(guardrails.values())
+                filterList(commands, allowedCommandIds, explicitResourceActivation, "command"),
+                filterMap(commandHandlers, allowedCommandIds, explicitResourceActivation, "command"),
+                filterList(skills, allowedSkillIds, explicitResourceActivation, "skill"),
+                filterList(prompts, allowedPromptIds, explicitResourceActivation, "prompt"),
+                filterList(guardrails, allowedGuardrailIds, explicitResourceActivation, "guardrail")
         );
     }
 
@@ -118,6 +134,42 @@ public final class ExtensionRuntimeState {
             String extensionId = manifest == null ? "unknown" : manifest.getId();
             throw new ExtensionException("duplicate " + type + " id: " + id + " from extension " + extensionId);
         }
+    }
+
+    private <T> List<T> filterList(Map<String, T> source, Set<String> allowedIds, boolean explicit, String type) {
+        if (!explicit) {
+            return new ArrayList<T>(source.values());
+        }
+        Set<String> allowlist = allowedIds == null
+                ? new LinkedHashSet<String>()
+                : new LinkedHashSet<String>(allowedIds);
+        List<T> result = new ArrayList<T>();
+        for (String id : allowlist) {
+            T value = source.get(id);
+            if (value == null) {
+                throw new ExtensionException(type + " not registered by enabled extensions: " + id);
+            }
+            result.add(value);
+        }
+        return result;
+    }
+
+    private <T> Map<String, T> filterMap(Map<String, T> source, Set<String> allowedIds, boolean explicit, String type) {
+        if (!explicit) {
+            return new LinkedHashMap<String, T>(source);
+        }
+        Set<String> allowlist = allowedIds == null
+                ? new LinkedHashSet<String>()
+                : new LinkedHashSet<String>(allowedIds);
+        Map<String, T> result = new LinkedHashMap<String, T>();
+        for (String id : allowlist) {
+            T value = source.get(id);
+            if (value == null) {
+                throw new ExtensionException(type + " not registered by enabled extensions: " + id);
+            }
+            result.put(id, value);
+        }
+        return result;
     }
 
     private ExtensionSkillResource withExtensionId(ExtensionSkillResource resource, ExtensionManifest manifest) {

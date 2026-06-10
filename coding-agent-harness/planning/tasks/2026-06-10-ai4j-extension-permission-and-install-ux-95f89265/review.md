@@ -4,14 +4,15 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | extension API activation contract, CLI plan/run/resource UX, Spring Boot binding, docs-site wording, regression governance |
+| Hypatia | subagent | read-only review of uncommitted F-039 diff across API, CLI, Spring, docs-site, regression/task materials |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：adversarial / regression / architecture / docs-contract / security-boundary
+- 范围内：`ai4j-extension-api` explicit resource activation API and activation plan, `ai4j-cli` plan/run/resource behavior, `ai4j-spring-boot-starter` property binding, docs-site extension pages, Regression SSoT/Cadence updates, task materials。
+- 范围外：远程 marketplace、CLI 自动修改 Maven/Gradle 依赖、运行时热加载 jar、provider 自动注册、Agent 自动创建。
+- 来源材料：task plan、working diff、targeted and broad regression outputs、docs-site typecheck/build、subagent review result、harness status。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +20,100 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | agent-review-f039-2026-06-10 |
+| Submitted At | 2026-06-10 local |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-06-10-ai4j-extension-permission-and-install-ux-95f89265 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | lifecycle-cli-pending |
+| Evidence Summary | Extension API 19 tests, CLI targeted 25 tests, Spring starter targeted 6 tests, Ask User plugin tests, monorepo package smoke, docs-site typecheck/build, diff check, and harness status are recorded in `progress.md`. |
+| Open Findings Count | 0 |
+| Scanner Version | manual-review-v1 |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 未执行 live-provider 或真实第三方插件包验证；本任务只要求本地 deterministic gates。
+  - 人工 Review Confirmation 尚未执行；agent 不能代办。
+- Fix loop count：2
+- 当前结论：可以提交 Agent Review Submission；subagent 的 P2 材料/治理缺口已补齐，P3 prompt/guardrail 正向测试缺口已修复并重跑。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
+| F-039-RF-001 | P2 | Regression SSoT / Cadence Ledger and task closeout materials were not yet synchronized. | Subagent review of `docs/05-TEST-QA/*` and task package. | Update RG-010/RG-004/RG-005/RG-011/RG-007/RG-008, add SRB-047, and fill progress/review/walkthrough/lesson decision. | no | closed | no | This review packet, `progress.md`, Regression SSoT, Cadence Ledger |
+| F-039-RF-002 | P3 | Prompt and Guardrail allowlist positive paths lacked direct assertions. | Subagent review of `ExtensionRegistryTest`, `Ai4jCliTest`, `ExtensionAutoConfigurationTest`. | Add API/Spring/CLI positive assertions and rerun affected gates. | no | closed | no | `ExtensionRegistryTest`, `Ai4jCliTest`, `ExtensionAutoConfigurationTest` |
 
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `enable(...)` keeps compatibility semantics for command, Skill, Prompt, and Guardrail resources unless strict mode or an allowlist is used.
+- `extension plan` is an activation preview; it does not execute commands or expose tools to a model.
+- CLI `run/resource` strict allow parameters are host/manual paths and still do not imply Agent tool exposure.
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionRegistry.java | Added explicit resource activation API, allowlists, and activation plan generation. |
+| E-002 | diff | TARGET:ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/runtime/ExtensionRuntimeState.java | Snapshot now filters non-tool resources in strict mode and fail-fast rejects unknown allowed resources. |
+| E-003 | diff | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/CliExtensionCommand.java | Added `extension plan`, strict allow args for run/resource, and scoped help wording. |
+| E-004 | diff | TARGET:ai4j-spring-boot-starter/src/main/java/io/github/lnyocly/ai4j/AiExtensionProperties.java | Added explicit-resource-activation and commands/skills/prompts/guardrails allow binding model. |
+| E-005 | diff | TARGET:docs-site/docs/core-sdk/extension | Docs now cover plan, strict Java/Spring examples, Ask User strict examples, and non-marketplace boundaries. |
+| E-006 | review | TARGET:subagent:Hypatia | Read-only subagent found no blocker; two material cleanup findings were addressed. |
+| E-007 | command | TARGET:. | `mvn -pl ai4j-extension-api -DskipTests=false test` passed with 19 tests. |
+| E-008 | command | TARGET:. | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 25 tests. |
+| E-009 | command | TARGET:. | `mvn -pl ai4j-spring-boot-starter -am -Dtest=ExtensionAutoConfigurationTest -DfailIfNoTests=false -DskipTests=false test` passed with 6 tests. |
+| E-010 | command | TARGET:. | `mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test` passed with extension API 19 tests and Ask User plugin 6 tests. |
+| E-011 | command | TARGET:. | `mvn -DskipTests package` passed across 11 reactor projects. |
+| E-012 | command | TARGET:docs-site | `npm run typecheck` and `npm run build` passed. |
+| E-013 | command | TARGET:. | `git diff --check` passed with CRLF warnings only. |
+| E-014 | command | TARGET:. | `npx.cmd --yes coding-agent-harness status --json .` returned 0 failures and 1 dirty-state warning. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，所有 material findings 已关闭，未发现阻塞 F-039 目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 未执行 live-provider 或真实外部插件验证 | maintainer | yes | 本任务本地合同足够；真实第三方插件属于后续生态验证 |
+| 人工 Review Confirmation 尚未执行 | human | yes | 由用户通过 dashboard/workbench 或 lifecycle CLI 确认或退回 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | Agent review packet 已准备，且无 open material finding。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节和证据已补齐。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | `lesson_candidates.md` 记录 no-candidate。 | 人工覆盖 no-candidate 判断时重新路由。 |
+| Confirmed / Finalized | no | 尚无人工确认。 | Human Review Confirmation 后再完成。 |
+| Soft-deleted / Superseded | no | 本任务仍为当前 active task。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已执行，路径 `task_plan.md`。
+- Progress：验证和 review fix 已记录，路径 `progress.md`。
+- 发现记录：重要发现记录在本 review 表中，均已关闭。
+- Regression SSoT：更新 RG-010/RG-011/RG-004/RG-005/RG-007/RG-008；Cadence Ledger 新增 SRB-047。
+- Lessons：checked-none: 本任务没有新增可复用 harness 流程规则。
+- 收口记录：`walkthrough.md`。
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自 API/CLI/Spring/official plugin targeted tests、monorepo package smoke、docs-site typecheck/build、diff check、harness status，以及 self + subagent review。人工确认仍是用户侧门禁，不由 agent 代办。

@@ -161,8 +161,23 @@ public class AiConfigAutoConfiguration {
         ExtensionRegistry registry = ExtensionRegistry.discover();
         if (extensionProperties != null) {
             registry.enableAll(extensionProperties.getEnabled());
+            if (extensionProperties.isExplicitResourceActivation()) {
+                registry.requireExplicitResourceActivation();
+            }
             if (extensionProperties.getTools() != null) {
                 registry.exposeTools(extensionProperties.getTools().getExpose());
+            }
+            if (extensionProperties.getCommands() != null) {
+                registry.allowCommands(extensionProperties.getCommands().getAllow());
+            }
+            if (extensionProperties.getSkills() != null) {
+                registry.allowSkills(extensionProperties.getSkills().getAllow());
+            }
+            if (extensionProperties.getPrompts() != null) {
+                registry.allowPrompts(extensionProperties.getPrompts().getAllow());
+            }
+            if (extensionProperties.getGuardrails() != null) {
+                registry.allowGuardrails(extensionProperties.getGuardrails().getAllow());
             }
         }
         return registry;

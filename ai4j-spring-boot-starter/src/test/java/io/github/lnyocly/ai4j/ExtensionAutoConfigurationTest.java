@@ -7,6 +7,12 @@ import io.github.lnyocly.ai4j.extension.ExtensionContext;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
+import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailDecision;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRequest;
+import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
+import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolCall;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolExecutor;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
@@ -52,7 +58,44 @@ public class ExtensionAutoConfigurationTest {
                     Assert.assertTrue(registry.getExposedToolIds().contains("weather.search"));
                     Assert.assertEquals(1, snapshot.getTools().size());
                     Assert.assertEquals("weather.search", snapshot.getTools().get(0).getName());
+                    Assert.assertEquals(1, snapshot.getCommands().size());
+                    Assert.assertEquals(1, snapshot.getSkills().size());
+                    Assert.assertEquals(1, snapshot.getPrompts().size());
+                    Assert.assertEquals(1, snapshot.getGuardrails().size());
                     Assert.assertEquals("spring-weather:{}", execute(snapshot.getToolExecutors().get("weather.search"), "{}"));
+                });
+    }
+
+    @Test
+    public void shouldConfigureExplicitResourceActivationAllowlists() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.extensions.enabled[0]=spring-weather-pack",
+                        "ai.extensions.explicit-resource-activation=true",
+                        "ai.extensions.tools.expose[0]=weather.search",
+                        "ai.extensions.commands.allow[0]=weather",
+                        "ai.extensions.skills.allow[0]=weather-skill",
+                        "ai.extensions.prompts.allow[0]=weather-prompt",
+                        "ai.extensions.guardrails.allow[0]=weather-guardrail"
+                )
+                .run(context -> {
+                    ExtensionRegistry registry = context.getBean(ExtensionRegistry.class);
+                    ExtensionRuntimeSnapshot snapshot = context.getBean(ExtensionRuntimeSnapshot.class);
+
+                    Assert.assertTrue(registry.isExplicitResourceActivation());
+                    Assert.assertTrue(registry.getAllowedCommandIds().contains("weather"));
+                    Assert.assertTrue(registry.getAllowedSkillIds().contains("weather-skill"));
+                    Assert.assertTrue(registry.getAllowedPromptIds().contains("weather-prompt"));
+                    Assert.assertTrue(registry.getAllowedGuardrailIds().contains("weather-guardrail"));
+                    Assert.assertEquals(1, snapshot.getTools().size());
+                    Assert.assertEquals(1, snapshot.getCommands().size());
+                    Assert.assertEquals("weather", snapshot.getCommands().get(0).getName());
+                    Assert.assertEquals(1, snapshot.getSkills().size());
+                    Assert.assertEquals("weather-skill", snapshot.getSkills().get(0).getName());
+                    Assert.assertEquals(1, snapshot.getPrompts().size());
+                    Assert.assertEquals("weather-prompt", snapshot.getPrompts().get(0).getName());
+                    Assert.assertEquals(1, snapshot.getGuardrails().size());
+                    Assert.assertEquals("weather-guardrail", snapshot.getGuardrails().get(0).name());
                 });
     }
 
@@ -67,6 +110,16 @@ public class ExtensionAutoConfigurationTest {
     public void shouldFailFastWhenToolIsExposedWithoutEnablingExtension() {
         contextRunner
                 .withPropertyValues("ai.extensions.tools.expose[0]=weather.search")
+                .run(context -> Assert.assertNotNull(context.getStartupFailure()));
+    }
+
+    @Test
+    public void shouldFailFastWhenAllowedResourceIsNotRegistered() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.extensions.enabled[0]=spring-weather-pack",
+                        "ai.extensions.commands.allow[0]=missing-command"
+                )
                 .run(context -> Assert.assertNotNull(context.getStartupFailure()));
     }
 
@@ -86,6 +139,10 @@ public class ExtensionAutoConfigurationTest {
                     .version("1.0.0")
                     .vendor("tests")
                     .capability(ExtensionCapability.TOOL)
+                    .capability(ExtensionCapability.COMMAND)
+                    .capability(ExtensionCapability.SKILL)
+                    .capability(ExtensionCapability.PROMPT)
+                    .capability(ExtensionCapability.GUARDRAIL)
                     .configPrefix("ai.extensions.weather")
                     .build();
         }
@@ -101,6 +158,31 @@ public class ExtensionAutoConfigurationTest {
                             return "spring-weather:" + call.getArguments();
                         }
                     });
+            context.commands().register(ExtensionCommandSpec.builder()
+                            .name("weather")
+                            .description("Weather command")
+                            .usage("/weather <city>")
+                            .build(),
+                    request -> "spring-command:" + request.getArguments());
+            context.skills().register(ExtensionSkillResource.builder()
+                    .name("weather-skill")
+                    .description("Weather skill")
+                    .resourcePath("skills/weather/SKILL.md")
+                    .build());
+            context.prompts().register(ExtensionPromptResource.builder()
+                    .name("weather-prompt")
+                    .description("Weather prompt")
+                    .resourcePath("prompts/weather.md")
+                    .build());
+            context.guardrails().register(new ExtensionGuardrail() {
+                public String name() {
+                    return "weather-guardrail";
+                }
+
+                public GuardrailDecision evaluate(GuardrailRequest request) {
+                    return GuardrailDecision.allow();
+                }
+            });
         }
     }
 }

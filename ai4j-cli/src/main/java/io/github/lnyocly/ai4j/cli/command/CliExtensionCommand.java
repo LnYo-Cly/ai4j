@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j.cli.command;
 
 import io.github.lnyocly.ai4j.extension.DiscoveredExtension;
+import io.github.lnyocly.ai4j.extension.ExtensionActivationItem;
+import io.github.lnyocly.ai4j.extension.ExtensionActivationPlan;
 import io.github.lnyocly.ai4j.extension.ExtensionCapability;
 import io.github.lnyocly.ai4j.extension.ExtensionException;
 import io.github.lnyocly.ai4j.extension.ExtensionInspectionSnapshot;
@@ -58,6 +60,9 @@ public class CliExtensionCommand {
             }
             if ("inspect".equalsIgnoreCase(command)) {
                 return inspect(arguments.subList(1, arguments.size()), terminal);
+            }
+            if ("plan".equalsIgnoreCase(command)) {
+                return plan(arguments.subList(1, arguments.size()), terminal);
             }
             if ("init".equalsIgnoreCase(command)) {
                 return init(arguments.subList(1, arguments.size()), terminal);
@@ -130,6 +135,7 @@ public class CliExtensionCommand {
         RunOptions options = parseRunOptions(args);
         ExtensionRegistry registry = ExtensionRegistry.discover()
                 .enableAll(options.enabledExtensionIds);
+        applyActivationOptions(registry, options.activationOptions);
         ExtensionRuntimeSnapshot snapshot = registry.snapshot();
         ExtensionCommandHandler handler = snapshot.getCommandHandlers().get(options.commandName);
         if (handler == null) {
@@ -146,6 +152,7 @@ public class CliExtensionCommand {
         ResourceOptions options = parseResourceOptions(args);
         ExtensionRegistry registry = ExtensionRegistry.discover()
                 .enableAll(options.enabledExtensionIds);
+        applyActivationOptions(registry, options.activationOptions);
         ExtensionRuntimeSnapshot snapshot = registry.snapshot();
         String content;
         if ("skill".equals(options.resourceType)) {
@@ -170,6 +177,18 @@ public class CliExtensionCommand {
             throw new IllegalArgumentException("unsupported resource type: " + options.resourceType);
         }
         terminal.print(content == null ? "" : content);
+        return 0;
+    }
+
+    private int plan(List<String> args, TerminalIO terminal) {
+        PlanOptions options = parsePlanOptions(args);
+        ExtensionRegistry registry = ExtensionRegistry.discover();
+        if (options.enable) {
+            registry.enable(options.extensionId);
+        }
+        applyActivationOptions(registry, options.activationOptions);
+        ExtensionActivationPlan plan = registry.activationPlan(options.extensionId);
+        printActivationPlan(plan, terminal);
         return 0;
     }
 
@@ -282,10 +301,11 @@ public class CliExtensionCommand {
 
     private RunOptions parseRunOptions(List<String> args) {
         if (args == null || args.isEmpty()) {
-            throw new IllegalArgumentException("Usage: ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
+            throw new IllegalArgumentException("Usage: ai4j-cli extension run --enable <extension-id> [--allow-command <command>] <command> [arguments...]");
         }
         List<String> enabledExtensionIds = new ArrayList<String>();
         List<String> commandArguments = new ArrayList<String>();
+        ActivationOptions activationOptions = new ActivationOptions();
         String commandName = null;
         boolean passthrough = false;
         for (int i = 0; i < args.size(); i++) {
@@ -305,6 +325,15 @@ public class CliExtensionCommand {
                 enabledExtensionIds.add(ExtensionManifest.requireExtensionId(args.get(++i), "extension id"));
                 continue;
             }
+            if (!passthrough && "--allow-command".equals(arg)) {
+                activationOptions.allowCommand(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if (!passthrough && "--strict".equals(arg)) {
+                activationOptions.strict = true;
+                continue;
+            }
             if (!passthrough && arg != null && arg.startsWith("--")) {
                 throw new IllegalArgumentException("unsupported option: " + arg);
             }
@@ -320,14 +349,15 @@ public class CliExtensionCommand {
         if (isBlank(commandName)) {
             throw new IllegalArgumentException("command name is required");
         }
-        return new RunOptions(enabledExtensionIds, commandName, commandArguments);
+        return new RunOptions(enabledExtensionIds, commandName, commandArguments, activationOptions);
     }
 
     private ResourceOptions parseResourceOptions(List<String> args) {
         if (args == null || args.isEmpty()) {
-            throw new IllegalArgumentException("Usage: ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>");
+            throw new IllegalArgumentException("Usage: ai4j-cli extension resource --enable <extension-id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>");
         }
         List<String> enabledExtensionIds = new ArrayList<String>();
+        ActivationOptions activationOptions = new ActivationOptions();
         String resourceType = null;
         String resourceName = null;
         for (int i = 0; i < args.size(); i++) {
@@ -337,6 +367,20 @@ public class CliExtensionCommand {
                     throw new IllegalArgumentException(arg + " requires an extension id");
                 }
                 enabledExtensionIds.add(ExtensionManifest.requireExtensionId(args.get(++i), "extension id"));
+                continue;
+            }
+            if ("--allow-skill".equals(arg)) {
+                activationOptions.allowSkill(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--allow-prompt".equals(arg)) {
+                activationOptions.allowPrompt(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--strict".equals(arg)) {
+                activationOptions.strict = true;
                 continue;
             }
             if (arg != null && arg.startsWith("--")) {
@@ -364,7 +408,63 @@ public class CliExtensionCommand {
         if (isBlank(resourceName)) {
             throw new IllegalArgumentException("resource name is required");
         }
-        return new ResourceOptions(enabledExtensionIds, resourceType, resourceName);
+        return new ResourceOptions(enabledExtensionIds, resourceType, resourceName, activationOptions);
+    }
+
+    private PlanOptions parsePlanOptions(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            throw new IllegalArgumentException("Usage: ai4j-cli extension plan <id> [--enable] [--expose-tool <name>] [--allow-command <name>] [--allow-skill <name>] [--allow-prompt <name>] [--allow-guardrail <name>] [--strict]");
+        }
+        String extensionId = null;
+        boolean enable = false;
+        ActivationOptions activationOptions = new ActivationOptions();
+        for (int i = 0; i < args.size(); i++) {
+            String arg = args.get(i);
+            if ("--enable".equals(arg)) {
+                enable = true;
+                continue;
+            }
+            if ("--expose-tool".equals(arg) || "--tool".equals(arg)) {
+                activationOptions.exposeTool(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--allow-command".equals(arg)) {
+                activationOptions.allowCommand(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--allow-skill".equals(arg)) {
+                activationOptions.allowSkill(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--allow-prompt".equals(arg)) {
+                activationOptions.allowPrompt(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--allow-guardrail".equals(arg)) {
+                activationOptions.allowGuardrail(requireOptionValue(args, i, arg));
+                i++;
+                continue;
+            }
+            if ("--strict".equals(arg)) {
+                activationOptions.strict = true;
+                continue;
+            }
+            if (arg != null && arg.startsWith("--")) {
+                throw new IllegalArgumentException("unsupported option: " + arg);
+            }
+            if (extensionId != null) {
+                throw new IllegalArgumentException("unexpected argument: " + arg);
+            }
+            extensionId = ExtensionManifest.requireExtensionId(arg, "extension id");
+        }
+        if (isBlank(extensionId)) {
+            throw new IllegalArgumentException("extension id is required");
+        }
+        return new PlanOptions(extensionId, enable, activationOptions);
     }
 
     private ValidateOptions parseValidateOptions(List<String> args) {
@@ -427,6 +527,32 @@ public class CliExtensionCommand {
         terminal.println("skills=" + joinSkills(snapshot.getSkills()));
         terminal.println("prompts=" + joinPrompts(snapshot.getPrompts()));
         terminal.println("guardrails=" + joinValues(snapshot.getGuardrails()));
+    }
+
+    private void printActivationPlan(ExtensionActivationPlan plan, TerminalIO terminal) {
+        terminal.println("activation-plan:");
+        terminal.println("id=" + plan.getManifest().getId());
+        terminal.println("enabled=" + plan.isEnabled());
+        terminal.println("explicitResourceActivation=" + plan.isExplicitResourceActivation());
+        terminal.println("permissions=" + joinValues(plan.getManifest().getPermissions()));
+        printActivationItems("tools", plan.getTools(), terminal);
+        printActivationItems("commands", plan.getCommands(), terminal);
+        printActivationItems("skills", plan.getSkills(), terminal);
+        printActivationItems("prompts", plan.getPrompts(), terminal);
+        printActivationItems("guardrails", plan.getGuardrails(), terminal);
+    }
+
+    private void printActivationItems(String label, List<ExtensionActivationItem> items, TerminalIO terminal) {
+        terminal.println(label + ":");
+        if (items == null || items.isEmpty()) {
+            terminal.println("- -");
+            return;
+        }
+        for (ExtensionActivationItem item : items) {
+            terminal.println("- name=" + item.getName()
+                    + " state=" + item.getState()
+                    + " reason=" + valueOrDash(item.getReason()));
+        }
     }
 
     private void printValidationReports(List<ExtensionValidationReport> reports, TerminalIO terminal) {
@@ -583,14 +709,16 @@ public class CliExtensionCommand {
         terminal.println("Usage:");
         terminal.println("  ai4j-cli extension list");
         terminal.println("  ai4j-cli extension inspect <id> [--runtime]");
+        terminal.println("  ai4j-cli extension plan <id> [--enable] [activation options]");
         terminal.println("  ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]");
         terminal.println("  ai4j-cli extension validate <id>|--all");
-        terminal.println("  ai4j-cli extension run --enable <extension-id> <command> [arguments...]");
-        terminal.println("  ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>\n");
+        terminal.println("  ai4j-cli extension run --enable <extension-id> [--allow-command <command>] <command> [arguments...]");
+        terminal.println("  ai4j-cli extension resource --enable <extension-id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>\n");
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
         terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
+        terminal.println("  plan <id>            Preview enable/expose/allow activation state before wiring the host");
         terminal.println("  init <directory>     Generate a local Maven Java 8 plugin package scaffold");
         terminal.println("  validate <id>|--all  Validate manifest, runtime resources, and authoring contract");
         terminal.println("  run --enable <id> <command>  Execute a command from explicitly enabled extensions");
@@ -604,6 +732,13 @@ public class CliExtensionCommand {
         terminal.println("  --version <version>       Maven and manifest version; defaults to 1.0.0");
         terminal.println("  --class-name <class>      Extension class name; defaults from --id");
         terminal.println("  --vendor <vendor>         Manifest vendor; defaults to example");
+        terminal.println("\nActivation options:");
+        terminal.println("  --expose-tool <name>       Plan-only: mark a model-visible tool as exposed");
+        terminal.println("  --allow-command <name>     Plan/run: allow a command in explicit resource activation mode");
+        terminal.println("  --allow-skill <name>       Plan/resource: allow a Skill resource in explicit resource activation mode");
+        terminal.println("  --allow-prompt <name>      Plan/resource: allow a Prompt resource in explicit resource activation mode");
+        terminal.println("  --allow-guardrail <name>   Plan-only: allow a Guardrail in explicit resource activation mode");
+        terminal.println("  --strict                   Enable explicit resource activation even with an empty allowlist");
         terminal.println("\nNotes:");
         terminal.println("  Discovery does not enable an extension.");
         terminal.println("  init writes only into a missing or empty directory; it does not install dependencies.");
@@ -660,6 +795,20 @@ public class CliExtensionCommand {
         return ExtensionManifest.requireExtensionId(extensionId, "extension " + resourceType + " resource extension id");
     }
 
+    private void applyActivationOptions(ExtensionRegistry registry, ActivationOptions options) {
+        if (registry == null || options == null) {
+            return;
+        }
+        if (options.strict) {
+            registry.requireExplicitResourceActivation();
+        }
+        registry.exposeTools(options.exposedToolIds);
+        registry.allowCommands(options.allowedCommandIds);
+        registry.allowSkills(options.allowedSkillIds);
+        registry.allowPrompts(options.allowedPromptIds);
+        registry.allowGuardrails(options.allowedGuardrailIds);
+    }
+
     private static final class InspectOptions {
         private final String extensionId;
         private final boolean runtime;
@@ -684,8 +833,12 @@ public class CliExtensionCommand {
         private final List<String> enabledExtensionIds;
         private final String commandName;
         private final List<String> arguments;
+        private final ActivationOptions activationOptions;
 
-        private RunOptions(List<String> enabledExtensionIds, String commandName, List<String> arguments) {
+        private RunOptions(List<String> enabledExtensionIds,
+                           String commandName,
+                           List<String> arguments,
+                           ActivationOptions activationOptions) {
             this.enabledExtensionIds = enabledExtensionIds == null
                     ? Collections.<String>emptyList()
                     : Collections.unmodifiableList(new ArrayList<String>(enabledExtensionIds));
@@ -693,6 +846,7 @@ public class CliExtensionCommand {
             this.arguments = arguments == null
                     ? Collections.<String>emptyList()
                     : Collections.unmodifiableList(new ArrayList<String>(arguments));
+            this.activationOptions = activationOptions == null ? new ActivationOptions() : activationOptions;
         }
     }
 
@@ -700,13 +854,59 @@ public class CliExtensionCommand {
         private final List<String> enabledExtensionIds;
         private final String resourceType;
         private final String resourceName;
+        private final ActivationOptions activationOptions;
 
-        private ResourceOptions(List<String> enabledExtensionIds, String resourceType, String resourceName) {
+        private ResourceOptions(List<String> enabledExtensionIds,
+                                String resourceType,
+                                String resourceName,
+                                ActivationOptions activationOptions) {
             this.enabledExtensionIds = enabledExtensionIds == null
                     ? Collections.<String>emptyList()
                     : Collections.unmodifiableList(new ArrayList<String>(enabledExtensionIds));
             this.resourceType = resourceType;
             this.resourceName = resourceName;
+            this.activationOptions = activationOptions == null ? new ActivationOptions() : activationOptions;
+        }
+    }
+
+    private static final class PlanOptions {
+        private final String extensionId;
+        private final boolean enable;
+        private final ActivationOptions activationOptions;
+
+        private PlanOptions(String extensionId, boolean enable, ActivationOptions activationOptions) {
+            this.extensionId = extensionId;
+            this.enable = enable;
+            this.activationOptions = activationOptions == null ? new ActivationOptions() : activationOptions;
+        }
+    }
+
+    private static final class ActivationOptions {
+        private boolean strict;
+        private final List<String> exposedToolIds = new ArrayList<String>();
+        private final List<String> allowedCommandIds = new ArrayList<String>();
+        private final List<String> allowedSkillIds = new ArrayList<String>();
+        private final List<String> allowedPromptIds = new ArrayList<String>();
+        private final List<String> allowedGuardrailIds = new ArrayList<String>();
+
+        private void exposeTool(String value) {
+            exposedToolIds.add(ExtensionManifest.requireToolName(value, "tool id"));
+        }
+
+        private void allowCommand(String value) {
+            allowedCommandIds.add(ExtensionManifest.requireCommandName(value, "command id"));
+        }
+
+        private void allowSkill(String value) {
+            allowedSkillIds.add(ExtensionManifest.requireResourceName(value, "skill id"));
+        }
+
+        private void allowPrompt(String value) {
+            allowedPromptIds.add(ExtensionManifest.requireResourceName(value, "prompt id"));
+        }
+
+        private void allowGuardrail(String value) {
+            allowedGuardrailIds.add(ExtensionManifest.requireGuardrailName(value, "guardrail id"));
         }
     }
 }

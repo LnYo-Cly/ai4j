@@ -6,8 +6,8 @@
 
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| reviewer subagent | allowed by default | read-only | harness task policy | task creation | current task review | n/a | allowed within this task |
-| worker subagent | not authorized | write only after user approval | pending | pending | pending | pending | allowed only within approved task/scope |
+| reviewer subagent | used | read-only | harness task policy | 2026-06-10 | current task review | n/a | completed as Hypatia read-only review |
+| worker subagent | not-needed | n/a | coordinator | 2026-06-10 | n/a | n/a | implementation stayed in coordinator checkout |
 
 ## Subagent Delegation Decision
 
@@ -18,8 +18,8 @@
 
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | yes | 本任务跨 API、CLI、Spring、docs 和治理材料，适合只读 adversarial review。 | 已完成 Hypatia read-only review，findings 写入 `review.md`。 |
+| Would a worker subagent materially help? | no | 实现切片共享 extension API / CLI / docs 语义，且全局治理文件由 coordinator 负责，拆 worker 容易增加冲突。 | 不派写入型 worker。 |
 
 ## User Authorization Decision
 
@@ -28,18 +28,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-10 | n/a | n/a | 本任务未拆写入型 worker；只使用只读 reviewer subagent。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
 | 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
+| Subagent 模式 | reviewer-only | 使用只读 reviewer 检查 API/CLI/Spring/docs/governance 风险；不派写入型 worker。 |
+| 审查模型 | adversarial review | 变更涉及插件权限和安装体验，需要挑战安全边界、兼容性和证据缺口。 |
+| Worktree 策略 | same checkout | coordinator 单线实现；没有写入型 subagent 或并行 worker handoff。 |
 | 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 证据深度 | L1 / L2 | API/CLI/Spring/Ask User plugin 使用 L1 tests；package/docs-site 使用 L2 local_smoke。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,16 +47,16 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| reviewer subagent | task plan, current diff, extension docs, regression docs | read-only | findings report in conversation and `review.md` | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | diff review, stale wording scan | `progress.md`, `review.md` | no known misleading marketplace/install wording |
+| L1 | extension API, CLI targeted, Spring targeted, Ask User plugin tests | `progress.md` | all commands pass |
+| L2 | monorepo package smoke, docs-site typecheck/build, git diff check, harness status | `progress.md`, `walkthrough.md` | package/docs/harness gates pass or have only dirty-state warning before commit |
+| L3 | not required | `review.md` 与 walkthrough | live/provider or real third-party plugin validation is out of scope |
 
 ## 暂停 / 升级条件
 
