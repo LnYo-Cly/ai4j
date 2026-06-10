@@ -7,7 +7,7 @@
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | close FlowGram webapp placeholder test scripts by adding deterministic backend workflow tests and wiring `npm test` into RG-009 CI | 2026-06-10 |
+| F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | local and remote RG-009 evidence recorded for R-003; waiting human review confirmation | 2026-06-10 |
 | F-036 | AI4J Docs Site Node Heap R-005 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | n/a | close docs-site typecheck heap residual by baking 8GB Node heap into package scripts and docs CI entrypoints | 2026-06-09 |
 | F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | add dedicated FlowGram webapp lint/type/build CI and close R-007 after remote green evidence | 2026-06-09 |
 | F-034 | AI4J Agent Handoff Policy R-008 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/task_plan.md` | n/a | restore HandoffPolicy FAIL propagation for allowedTools and maxDepth without changing ordinary tool error behavior | 2026-06-09 |

@@ -44,6 +44,7 @@ Task Package Index: required
 - [x] `.github/workflows/flowgram-webapp-regression.yml` 在 lint/type/build 前执行 `npm test`。
 - [x] 本地 `npm run test`、`npm run lint`、`npm run ts-check`、`npm run build` 通过。
 - [x] R-003/RG-009 在 legacy 与 v2 回归台账同步更新。
+- [x] 远端 `flowgram-webapp-regression` run `27253773916` 通过并已补录。
 
 ## 工作树（Worktree）
 

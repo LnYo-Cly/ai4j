@@ -27,7 +27,7 @@
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| `2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` | review | coordinator | `npm run test`; `npm run lint`; `npm run ts-check`; `npm run build` | R-003 本地关闭，远端 workflow evidence 待 push 后补录。 |
+| `2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` | review | coordinator | `npm run test`; `npm run lint`; `npm run ts-check`; `npm run build`; remote run `27253773916` | R-003 已由本地 RG-009 和远端 `flowgram-webapp-regression` 证据关闭；等待人工确认。 |
 
 ## 验证
 
