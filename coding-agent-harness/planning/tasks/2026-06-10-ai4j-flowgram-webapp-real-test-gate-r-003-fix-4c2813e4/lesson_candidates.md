@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-reusable-governance-lesson-for-narrow-test-gate-closeout |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 |
 | Owner | coordinator |
 | Last updated | 2026-06-10 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是窄范围 R-003 回归缺口收口：用真实 `npm test` 替换占位脚本、把 CI 顺序接到现有 RG-009，并修复测试揭示的同一 backend workflow normalization 缺口。现有 Regression SSoT / Cadence 规则已经覆盖此类 gate 更新，没有新的通用 harness lesson 需要沉淀。
 
 ## Promotion Notes
 

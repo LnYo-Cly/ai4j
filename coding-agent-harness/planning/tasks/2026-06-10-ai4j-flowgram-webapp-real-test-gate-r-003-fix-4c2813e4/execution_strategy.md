@@ -18,8 +18,8 @@
 
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | no | 范围是单一 webapp gate 和治理同步；本轮使用 self adversarial review，人工确认仍由 human gate 处理。 | 在 `review.md` 记录 no-finding / residual。 |
+| Would a worker subagent materially help? | no | 实现、CI 和台账文件高度耦合，并行 worker 反而会增加共享文件冲突。 | coordinator 在 same checkout 内完成。 |
 
 ## User Authorization Decision
 
@@ -28,18 +28,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-10 12:26 | n/a | same checkout | 单一窄范围切片，不拆 worker。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
 | 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| Subagent 模式 | none | 不使用 worker；self review 加人工确认门禁足够覆盖本轮。 |
+| 审查模型 | adversarial review | review 重点检查 test gate 是否真实、CI 是否接入、R-003 是否没有被夸大成 E2E。 |
+| Worktree 策略 | same checkout | 当前分支已承载 R-003 harness commits，改动集中且无并行写入。 |
+| 冲突控制 | coordinator owns shared files | Regression SSoT、Cadence、Feature SSoT 和模块计划由 coordinator 单点写入。 |
+| 证据深度 | L2 | Webapp test/lint/type/build 是 deterministic local smoke；live backend/browser 保持 LV-003 opt-in。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,16 +47,16 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| n/a | C-001..C-004 | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | diff review and generated `dist` negative scan | `progress.md` | CI/test files not bundled into generated output. |
+| L1 | `npm run test` | `progress.md` | backend workflow contract tests pass. |
+| L2 | `npm run lint`; `npm run ts-check`; `npm run build` | `progress.md` | webapp baseline passes with only known warnings. |
+| L3 | n/a | n/a | LV-003 browser/backend validation remains opt-in and out of scope. |
 
 ## 暂停 / 升级条件
 

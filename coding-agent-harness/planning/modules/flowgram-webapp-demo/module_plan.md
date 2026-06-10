@@ -19,21 +19,21 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| WEBAPP-01 | 维护 webapp demo contract | planned | none | flowgram-demo |
-| WEBAPP-02 | build / browser smoke | planned | none | WEBAPP-01 |
+| WEBAPP-01 | 维护 webapp demo contract | review | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | flowgram-demo |
+| WEBAPP-02 | build / browser smoke | review | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | WEBAPP-01 |
 | WEBAPP-03 | backend API sync | planned | none | WEBAPP-01 |
 
 ## 活跃任务
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` | review | coordinator | `npm run test`; `npm run lint`; `npm run ts-check`; `npm run build` | R-003 本地关闭，远端 workflow evidence 待 push 后补录。 |
 
 ## 验证
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| frontend build/test | module-local npm command | yes when webapp changes |
+| frontend build/test | `npm run test`, `npm run lint`, `npm run ts-check`, `npm run build` | yes when webapp changes |
 | browser smoke | local dev server or static preview evidence | risk-based |
 
 ## 交接

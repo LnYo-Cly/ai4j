@@ -44,4 +44,4 @@
 
 ## 当前工作
 
-当前没有独立模块任务；全局任务见 `coding-agent-harness/planning/tasks/`。
+`2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` 正在收口 R-003：把 webapp `npm test` 从占位命令升级为真实 backend workflow contract gate，并纳入 `flowgram-webapp-regression`。

@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex | self | FlowGram webapp test scripts, backend workflow normalization test gate, CI webapp gate order, R-003/RG-009 governance updates |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：adversarial / regression
+- 范围内：`ai4j-flowgram-webapp-demo/package.json` scripts、`scripts/run-tests.cjs`、`src/utils/backend-workflow.ts`、`src/utils/backend-workflow.test.ts`、`.github/workflows/flowgram-webapp-regression.yml`、Regression SSoT / Cadence Ledger、task package materials。
+- 范围外：浏览器 E2E、真实 demo backend 联调、FlowGram starter / Java modules、LV-003 live/browser validation。
+- 来源材料：`task_plan.md`、`progress.md`、`findings.md`、local npm gate output、generated `dist` negative scan、Regression SSoT/Cadence diff。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,25 +19,25 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | agent |
 | Task Key | 2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | R-003 ready for human review: webapp `npm test` is now a real backend workflow contract gate, CI runs it before lint/type/build, local RG-009 passed, and R-003/RG-009 governance is synchronized. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,11 +46,11 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：yes
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 无阻塞缺口；远端 workflow evidence 需在 push 后补录，但本地 RG-009 已完整通过。
+- Fix loop count：2
+- 当前结论：测试脚本已从占位改为真实 contract gate；测试揭示并修复了 loop 归一化问题；CI 顺序已接入 `npm test`；R-003/RG-009 governance 已同步。可进入 Agent Review Submission，等待人工确认。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -66,44 +66,58 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `npm run lint` 通过但仍输出既有 CRLF/prettier warnings，本轮不做大规模格式化。
+- `npm run build` 通过但保留既有 bundle / module-type warnings，本轮不调整 FlowGram editor 依赖或拆包策略。
+- 远端 `flowgram-webapp-regression` evidence 必须在推送后补录；本轮 review 不把本地 evidence 写成远端已通过。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | TARGET:ai4j-flowgram-webapp-demo/package.json | `test` / `test:cov` / `watch` replaced non-functional `exit` scripts. |
+| E-002 | diff | TARGET:ai4j-flowgram-webapp-demo/scripts/run-tests.cjs | Self-contained Node TypeScript test runner added without new dependencies. |
+| E-003 | diff | TARGET:ai4j-flowgram-webapp-demo/src/utils/backend-workflow.test.ts | Contract tests cover UI-only node filtering, backend type mapping, invalid edge filtering, loopFor normalization, and object/string serialization. |
+| E-004 | diff | TARGET:ai4j-flowgram-webapp-demo/src/utils/backend-workflow.ts | Runtime FlowGram enum dependency removed for Node stability; loop `LOOP` normalization and optional edge port output repaired. |
+| E-005 | diff | TARGET:.github/workflows/flowgram-webapp-regression.yml | `npm test` added before lint/type/build in `webapp-checks`. |
+| E-006 | command | TARGET:ai4j-flowgram-webapp-demo | `npm run test` passed with 3 backend workflow contract checks. |
+| E-007 | command | TARGET:ai4j-flowgram-webapp-demo | `npm run lint` passed with existing CRLF/prettier warnings only. |
+| E-008 | command | TARGET:ai4j-flowgram-webapp-demo | `npm run ts-check` passed. |
+| E-009 | command | TARGET:ai4j-flowgram-webapp-demo | `npm run build` passed and generated `dist`. |
+| E-010 | command | TARGET:ai4j-flowgram-webapp-demo/dist | Targeted `rg` scan found no test runner or test strings in generated output. |
+| E-011 | diff | TARGET:docs/05-TEST-QA/Regression-SSoT.md; TARGET:coding-agent-harness/governance/regression/Regression-SSoT.md | RG-009 now includes `npm test`; R-003 closed locally with remote evidence pending push. |
+| E-012 | diff | TARGET:docs/05-TEST-QA/Cadence-Ledger.md; TARGET:coding-agent-harness/governance/regression/Cadence-Ledger.md | SRB-045 / SRB-V2-012 added for local R-003 fix evidence. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| Remote `flowgram-webapp-regression` for this implementation commit is not recorded yet | coordinator | yes | Push commit and append GitHub Actions run evidence. |
+| LV-003 browser/backend demo validation remains out of scope | project coordinator | yes | Run only for demo release or explicit end-to-end task. |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料齐全，本地 RG-009 证据已确认，等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需材料已补齐。 | 不适用 |
+| Blocked | no | 无 open blocking finding。 | 不适用 |
+| Lessons | no | 本轮无新的可复用 governance lesson。 | 不适用 |
+| Confirmed / Finalized | no | 尚未人工确认。 | closeout 后进入 finalized |
+| Soft-deleted / Superseded | no | 任务仍 active。 | 不适用 |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：见 `progress.md` 2026-06-10 12:26 和 12:32 entries
+- 发现记录：见 `findings.md`
+- Regression SSoT：RG-009 更新为 test/lint/type/build；R-003 closed locally, remote evidence pending
+- Lessons：checked-none: narrow-test-gate-closeout-no-new-reusable-lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自真实 `npm test` 本地通过、lint/type/build 本地通过、generated output 负向扫描、CI workflow 顺序 diff、两套 Regression SSoT / Cadence Ledger 同步，以及 review 明确保留远端 workflow evidence 待推送后补录。提交后需要人工确认，不由 agent 代办。

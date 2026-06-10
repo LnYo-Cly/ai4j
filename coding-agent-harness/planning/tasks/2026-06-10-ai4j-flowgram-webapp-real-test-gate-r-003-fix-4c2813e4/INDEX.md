@@ -9,7 +9,7 @@ Task Contract: harness-task/v1
 | Task ID | `2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4` |
 | Budget | `standard` |
 | Preset | `none` |
-| Module | `n/a` |
+| Module | `flowgram-webapp-demo` |
 | Long-running | `no` |
 | Created | 2026-06-10 |
 
