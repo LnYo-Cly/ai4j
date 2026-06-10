@@ -29,6 +29,13 @@
 - 下一步：运行 diff/harness 检查，提交 Agent Review Submission，推送后观察远端 docs workflow。
 - 证据：command:TARGET:docs-site:`npm run typecheck` passed without external NODE_OPTIONS; command:TARGET:docs-site:`npm run build` passed and generated build; command:TARGET:.github/workflows:`npx.cmd --yes yaml-lint .github/workflows/docs-build.yml .github/workflows/docs-pages.yml` passed; diff:TARGET:docs-site/package.json:8GB Node heap baked into typecheck/build scripts; report:TARGET:docs/05-TEST-QA/Regression-SSoT.md:R-005 closed, R-004 remains open
 
+### [2026-06-10 00:37] - remote docs workflow evidence
+
+- 做了什么：推送 `main@0df7094` 后复查 GitHub Actions docs workflows。
+- 验证结果：docs-build run `27220942110` 成功；docs-pages run `27220942127` 成功；同一提交上的 `java-regression` run `27220940620` 和 `flowgram-webapp-regression` run `27220942165` 也成功。
+- 下一步：重新提交 Agent Review Submission，并保持人工确认待处理。
+- 证据：command:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220942110:docs-build passed on main@0df7094; command:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220942127:docs-pages passed on main@0df7094; command:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220940620:java-regression passed on main@0df7094; command:URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220942165:flowgram-webapp-regression passed on main@0df7094
+
 ## 残余
 
 - R-004 仍开放：docs-site build on Windows 可能遇到 Docusaurus 输出/缓存清理 `EPERM` 文件锁，本轮未处理。

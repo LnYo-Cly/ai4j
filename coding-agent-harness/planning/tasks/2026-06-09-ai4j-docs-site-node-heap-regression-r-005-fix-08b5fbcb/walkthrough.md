@@ -20,6 +20,8 @@
 | RG-008 typecheck | `npm run typecheck` in `docs-site/` | pass | `progress.md` |
 | RG-008 build | `npm run build` in `docs-site/` | pass, generated `docs-site/build` | `progress.md` |
 | Workflow YAML | `npx.cmd --yes yaml-lint .github/workflows/docs-build.yml .github/workflows/docs-pages.yml` | pass | `progress.md` |
+| Remote docs-build | GitHub Actions run `27220942110` | pass on `main@0df7094` | `progress.md` |
+| Remote docs-pages | GitHub Actions run `27220942127` | pass on `main@0df7094` | `progress.md` |
 
 ## 审查结论
 
@@ -32,7 +34,7 @@
 | 风险 | Owner | 是否接受 | 跟进 |
 | --- | --- | --- | --- |
 | R-004 Windows Docusaurus output/cache cleanup may still hit `EPERM` locks. | project coordinator | yes | Future R-004-specific task |
-| Remote docs workflow evidence is only available after push. | project coordinator | yes | Observe docs-build/docs-pages after push; append evidence if needed |
+| Future docs workflow drift could reintroduce mismatch between local and remote entrypoints. | project coordinator | yes | Keep RG-008 scripts and docs workflows aligned in future docs tasks |
 
 ## 经验沉淀反思
 

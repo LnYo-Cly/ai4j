@@ -24,7 +24,7 @@
 | Submitted By | [agent 或 coordinator 身份] |
 | Task Key | 2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb |
 | Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | `npm run typecheck` and `npm run build` pass without external `NODE_OPTIONS`; workflow YAML lint passes; R-005 closed in legacy/v2 Regression SSoT while R-004 stays open. |
+| Evidence Summary | `npm run typecheck` and `npm run build` pass without external `NODE_OPTIONS`; workflow YAML lint passes; docs-build run `27220942110` and docs-pages run `27220942127` pass on `main@0df7094`; R-005 closed in legacy/v2 Regression SSoT while R-004 stays open. |
 | Open Findings Count | 0 |
 | Scanner Version | [生成时的 scanner 版本] |
 
@@ -57,7 +57,7 @@
 ## 非阻塞备注（Non-Material Notes）
 
 - R-004 remains open for a later Windows Docusaurus output/cache cleanup lock investigation.
-- Push to `main` should trigger docs workflows; remote run evidence can be appended if needed after push.
+- Remote docs-build/docs-pages evidence has been captured for `main@0df7094`.
 
 ## 已检查证据（Evidence Checked）
 
@@ -69,6 +69,8 @@
 | E-004 | diff | TARGET:docs-site/package.json | `typecheck` and `build` scripts call local CLI through `node --max-old-space-size=8192`. |
 | E-005 | report | TARGET:docs/05-TEST-QA/Regression-SSoT.md | R-005 closed; RG-008 last verified updated; R-004 remains open. |
 | E-006 | report | TARGET:coding-agent-harness/governance/regression/Regression-SSoT.md | v2 projection matches legacy R-005/R-004 state. |
+| E-007 | command | URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220942110 | docs-build passed on `main@0df7094`. |
+| E-008 | command | URL:https://github.com/LnYo-Cly/ai4j/actions/runs/27220942127 | docs-pages passed on `main@0df7094`. |
 
 ## 无重要发现声明
 
@@ -79,7 +81,7 @@
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
 | R-004 Windows Docusaurus cleanup/file-lock risk remains open. | project coordinator | yes | Future R-004-specific task. |
-| Remote docs workflow evidence is not available until after push. | project coordinator | yes | Observe docs-build/docs-pages after push and append evidence only if needed. |
+| Remote docs workflow evidence has been captured; future workflow failures are outside this R-005 closeout. | project coordinator | yes | Reopen or create a new docs workflow task if a later run fails. |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
@@ -103,7 +105,7 @@
 
 ## 最终信心依据（Final Confidence Basis）
 
-最终信心来自标准 `npm run typecheck` / `npm run build` 在无外部 `NODE_OPTIONS` 下通过、workflow YAML lint 通过、R-005 与 R-004 在两套 Regression SSoT 中被明确区分，以及 docs workflows 复用同一 package script 入口。
+最终信心来自标准 `npm run typecheck` / `npm run build` 在无外部 `NODE_OPTIONS` 下通过、workflow YAML lint 通过、docs-build/docs-pages 在 `main@0df7094` 远端通过、R-005 与 R-004 在两套 Regression SSoT 中被明确区分，以及 docs workflows 复用同一 package script 入口。
 
 ## Agent Review Submission
 
