@@ -53,13 +53,13 @@
 ## 残余
 
 - 本任务不确认 F-024 到 F-037 的 human review；这些任务仍等待人工确认。
-- 提交手工材料后需要重新运行 `npx.cmd --yes coding-agent-harness status --json .`，确认 dirty-state warning 消失。
+- 当前任务已提交 Agent Review Submission；不运行 `review-confirm`，等待人工确认。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
 - Global sync status：pending-coordinator-pass
 - Registry update needed：不适用
-- Harness Ledger update needed：当前任务 review submission 后需要由 generated ledger 反映。
+- Harness Ledger update needed：当前任务 review submission 已写入 generated ledger；后续通过 governance rebuild 校准 queue projection。
 - 负责人：coordinator
 
 ### [2026-06-10 06:24] - task-review

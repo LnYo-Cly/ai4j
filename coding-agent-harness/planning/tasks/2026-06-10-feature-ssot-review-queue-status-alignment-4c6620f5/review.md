@@ -19,14 +19,14 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | pending task-review CLI |
-| Submitted At | pending task-review CLI |
+| Submission ID | ARS-202606100624 |
+| Submitted At | 2026-06-10 06:24 |
 | Submitted By | agent |
-| Task Key | 2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5 |
-| Materials Checklist Hash | pending task-review CLI |
-| Evidence Summary | Feature SSoT F-024 through F-037 rows aligned to `🟣 review`; stale `in_progress` scan clean; generated Harness Ledger remains `review | review`; task package completed for agent review. |
+| Task Key | TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5 |
+| Materials Checklist Hash | 72c592e14c66ee0f |
+| Evidence Summary | Feature SSoT F-024 through F-037 aligned to review queue state; targeted stale-state scan and harness status passed; waiting human review confirmation. |
 | Open Findings Count | 0 |
-| Scanner Version | pending task-review CLI |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
 
 ### Material Checklist（材料清单）
 
@@ -77,7 +77,7 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 | E-003 | command | TARGET:docs/09-PLANNING/Feature-SSoT.md | `rg -n "\| F-0(2[4-9]|3[0-7]) \|.*🟣 review"` 命中 F-024 到 F-037 共 14 行。 |
 | E-004 | command | TARGET:coding-agent-harness/governance/generated/Harness-Ledger.md | `rg -n "HL-2026.*\| review \| review"` 显示 generated ledger 中 review queue 投影仍存在。 |
 | E-005 | command | TARGET:. | `git diff --check` 通过，仅 Windows LF/CRLF 提示。 |
-| E-006 | command | TARGET:. | `npx.cmd --yes coding-agent-harness status --json .` 在未提交状态下只有 dirty-state warning；提交后复核。 |
+| E-006 | command | TARGET:. | `npx.cmd --yes coding-agent-harness status --json .` 提交前仅 dirty-state warning；提交后和 task-review 后复核均 pass、无 warnings。 |
 
 ## 无重要发现声明
 

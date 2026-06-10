@@ -41,7 +41,7 @@ Task Package Index: required
 - [x] Feature SSoT Status Legend 包含 `🟣 review`。
 - [x] Feature SSoT 页首说明它是人工可读 summary，generated ledger 是 harness v2 机器投影来源。
 - [x] `git diff --check` 与 `npx.cmd --yes coding-agent-harness status --json .` 通过或有明确 residual。
-- [ ] 当前任务进入 Agent Review Submission，等待人工确认。
+- [x] 当前任务进入 Agent Review Submission，等待人工确认。
 
 ## 工作树（Worktree）
 
