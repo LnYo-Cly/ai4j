@@ -114,3 +114,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 当前 agent review 信心来自已验证的 docs-site 构建、typecheck、diff check，以及对现有 Extension API / CLI / Spring 配置语义的逐项对齐。最终发布确认仍需要人工 review confirmation。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606101456 |
+| Submitted At | 2026-06-10 14:56 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc |
+| Materials Checklist Hash | 743062ebfafb0a41 |
+| Evidence Summary | F-040 docs-site plugin recipe page ready for human review: added Plugin Recipes page, sidebar and cross-links; verified npm run typecheck, npm run build, and git diff --check. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc |
