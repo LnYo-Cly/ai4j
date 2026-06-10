@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-10T17:59:17.106Z",
+  "generatedAt": "2026-06-10T18:02:08.752Z",
   "sourceFileHashes": {
     "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
     "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78": "cb9694293d67a60e7a2d2dd59242223b4ede59d3ffba2a1741305bbb914532a0",
@@ -48,7 +48,7 @@
     "TASKS/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4": "145ebcf7b2d4a1ee9708d9980c9f9dec221b3590077c4eca12f6132eb3ef9ba3",
     "TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4": "34930e07c9d31a7a8c2b2f184a5a5c09f6210664673eeb4e33182527719398b1",
     "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5": "3049810dfe2d1eeda258d7f2071effb66c599bc64ccf76e6584f4be8b9a7fdf3",
-    "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18": "13779cfcd1e084ac600abd6a37a9e086c6ff7e33973bbe6292ddb52986996b51"
+    "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18": "dfc24d322493e8349de90a8b2eb9f5513c3be4663a5f53d358e6cf3e9509e37d"
   },
   "scope": "all",
   "taskScopes": {
@@ -4198,13 +4198,13 @@
       "aliases": [],
       "identitySource": "path-derived-legacy",
       "state": "done",
-      "lifecycleState": "closed-review-pending",
+      "lifecycleState": "closed",
       "kind": "general",
       "preset": "none",
       "presetVersion": "",
       "evidenceBundle": "",
-      "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "closed-debt",
+      "reviewStatus": "confirmed",
+      "reviewQueueState": "not-in-queue",
       "reviewSubmitted": true,
       "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/review.md",
       "closeoutStatus": "closed",
@@ -4222,14 +4222,14 @@
       "lessonCandidateRows": [],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "state-conflicts:1",
+      "residual": "none",
       "materialsReady": true,
       "materialIssues": [],
       "taskQueues": [
-        "done"
+        "finalized"
       ],
       "queues": [
-        "done"
+        "finalized"
       ],
       "queueReasons": [],
       "supersedes": [],
