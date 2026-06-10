@@ -117,3 +117,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 API/CLI/Spring/official plugin targeted tests、monorepo package smoke、docs-site typecheck/build、diff check、harness status，以及 self + subagent review。人工确认仍是用户侧门禁，不由 agent 代办。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606101119 |
+| Submitted At | 2026-06-10 11:19 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265 |
+| Materials Checklist Hash | 34305b7ccb078e86 |
+| Evidence Summary | F-039 extension permission/install UX implementation complete; explicit resource allowlists, activation plan, CLI/Spring/docs updates, subagent review fixes, and regression evidence recorded. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265 |

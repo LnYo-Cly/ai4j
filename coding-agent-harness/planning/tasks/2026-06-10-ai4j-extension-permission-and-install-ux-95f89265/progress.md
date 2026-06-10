@@ -1,6 +1,6 @@
 # AI4J Extension Permission and Install UX - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -68,3 +68,10 @@
 - 验证结果：官方 Ask User 插件、monorepo package smoke、docs-site typecheck/build、diff check、harness status 均通过或无失败；harness status 仅报告当前未提交 dirty-state 警告。
 - 下一步：更新 Regression SSoT、Cadence Ledger、review packet、walkthrough，提交 Agent Review Submission。
 - 证据：command:ai4j-plugin-ask-user:`mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test` passed with extension API 19 tests and Ask User plugin 6 tests; command:repo:`mvn -DskipTests package` passed across 11 reactor projects; command:docs-site:`npm run typecheck` passed; command:docs-site:`npm run build` passed and generated `build`; command:repo:`git diff --check` passed with CRLF warnings only; command:repo:`npx.cmd --yes coding-agent-harness status --json .` returned 0 failures and 1 dirty-state warning
+
+### [2026-06-10 11:19] - task-review
+
+- 做了什么：F-039 extension permission/install UX implementation complete; explicit resource allowlists, activation plan, CLI/Spring/docs updates, subagent review fixes, and regression evidence recorded.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
