@@ -31,7 +31,7 @@ Task Contract: harness-task/v1
 | Reviewer Email | lnyocly@gmail.com |
 | Confirm Text | 2026-06-11-ai4j-extension-check-gate-d3f91b18 |
 | Evidence Checked | TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/review.md |
-| Review Commit SHA | 11c827ea2fe8c2f398d20e0ce275d9e24271fe11 |
+| Review Commit SHA | 11c827ef19364b170639d718d964597004cc8ccd |
 | Audit Source | native-index |
 | Audit Status | committed |
 | Exception Reason | n/a |
