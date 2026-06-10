@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none: feature-ssot-review-queue-status-alignment |
 | Source task | 2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5 |
 | Owner | coordinator |
 | Last updated | 2026-06-10 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务是一次局部 governance projection 修正：把 legacy Feature SSoT 的 active rows 与 generated Harness Ledger 的 review queue 状态重新对齐。规则没有新增通用流程；现有 harness lifecycle 已覆盖 agent review 与 human confirmation 的边界，因此不沉淀新 lesson。
 
 ## Promotion Notes
 

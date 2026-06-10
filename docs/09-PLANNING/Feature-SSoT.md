@@ -1,26 +1,28 @@
 # Feature SSoT - ai4j-sdk
 
 > Last updated: 2026-06-10
-> Single source of truth for active delivery work in this repository.
+> Human-readable planning summary for active delivery work.
+> Harness v2 lifecycle and review queues are generated in `coding-agent-harness/governance/generated/Harness-Ledger.md`.
+> If this summary disagrees with the generated ledger, use the generated ledger and repair this file.
 
 ## Active Features
 
 | ID | Feature | Status | Task Plan | Worktree | Residual | Updated |
 |----|---------|--------|-----------|----------|----------|---------|
-| F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | local and remote RG-009 evidence recorded for R-003; waiting human review confirmation | 2026-06-10 |
-| F-036 | AI4J Docs Site Node Heap R-005 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | n/a | close docs-site typecheck heap residual by baking 8GB Node heap into package scripts and docs CI entrypoints | 2026-06-09 |
-| F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | add dedicated FlowGram webapp lint/type/build CI and close R-007 after remote green evidence | 2026-06-09 |
-| F-034 | AI4J Agent Handoff Policy R-008 Fix | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/task_plan.md` | n/a | restore HandoffPolicy FAIL propagation for allowedTools and maxDepth without changing ordinary tool error behavior | 2026-06-09 |
-| F-033 | AI4J Extension Scaffold Author Experience Wave 11 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md` | n/a | improve local plugin scaffold author README, validation workflow, and docs cookbook without remote marketplace / auto-install / hotload semantics | 2026-06-09 |
-| F-032 | AI4J Official Ask User Plugin Wave 10 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/task_plan.md` | n/a | official plugin sample implementation in progress; no UI blocking, remote marketplace, CLI install, or runtime jar hotload semantics | 2026-06-09 |
-| F-031 | AI4J Extension Plugin Scaffold Wave 9 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/task_plan.md` | n/a | local Maven plugin scaffold implementation in progress; no remote marketplace or dependency install semantics | 2026-06-09 |
-| F-030 | AI4J Extension Authoring / Validation Wave 8 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/task_plan.md` | n/a | validator / CLI / docs implementation in progress; human confirmation not yet recorded | 2026-06-09 |
-| F-029 | AI4J Extension Guardrail Execution Wave 7 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md` | n/a | Agent Review Submission complete; human confirmation not yet recorded | 2026-06-09 |
-| F-028 | AI4J Extension Skill / Prompt Resources Wave 6 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
-| F-027 | AI4J Extension Command Execution Wave 5 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
-| F-026 | AI4J Spring Boot Extension Configuration Wave 4 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
-| F-025 | AI4J Extension Runtime Adapter Wave 3 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | n/a | Agent Review Submission pending; human confirmation not yet recorded | 2026-06-09 |
-| F-024 | AI4J Extension System 架构规划 | 🟡 in_progress | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/task_plan.md` | n/a | 仅规划，不进入运行时代码实现 | 2026-06-08 |
+| F-037 | AI4J FlowGram Webapp Real Test Gate R-003 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-flowgram-webapp-real-test-gate-r-003-fix-4c2813e4/task_plan.md` | n/a | Agent Review Submission complete; local and remote RG-009 evidence recorded for R-003; waiting human review confirmation | 2026-06-10 |
+| F-036 | AI4J Docs Site Node Heap R-005 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | n/a | Agent Review Submission complete; 8GB Node heap scripts and docs CI entrypoints recorded; waiting human review confirmation | 2026-06-09 |
+| F-035 | AI4J FlowGram Webapp CI R-007 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-flowgram-webapp-ci-r-007-fix-eaa0ecce/task_plan.md` | n/a | Agent Review Submission complete; dedicated FlowGram webapp lint/type/build CI and remote green evidence recorded; waiting human review confirmation | 2026-06-09 |
+| F-034 | AI4J Agent Handoff Policy R-008 Fix | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-agent-handoff-policy-r-008-fix-8b30bc13/task_plan.md` | n/a | Agent Review Submission complete; HandoffPolicy FAIL propagation fix recorded; waiting human review confirmation | 2026-06-09 |
+| F-033 | AI4J Extension Scaffold Author Experience Wave 11 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md` | n/a | Agent Review Submission complete; local plugin scaffold author README, validation workflow, and docs cookbook recorded; waiting human review confirmation | 2026-06-09 |
+| F-032 | AI4J Official Ask User Plugin Wave 10 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-official-ask-user-plugin-wave-10-10f4445f/task_plan.md` | n/a | Agent Review Submission complete; official ask-user plugin sample recorded; waiting human review confirmation; no UI blocking, remote marketplace, CLI install, or runtime jar hotload semantics | 2026-06-09 |
+| F-031 | AI4J Extension Plugin Scaffold Wave 9 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-plugin-scaffold-wave-9-1923fbfb/task_plan.md` | n/a | Agent Review Submission complete; local Maven plugin scaffold recorded; waiting human review confirmation; no remote marketplace or dependency install semantics | 2026-06-09 |
+| F-030 | AI4J Extension Authoring / Validation Wave 8 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-authoring-and-validation-wave-8-e4b994a7/task_plan.md` | n/a | Agent Review Submission complete; validator, CLI, and docs implementation recorded; waiting human review confirmation | 2026-06-09 |
+| F-029 | AI4J Extension Guardrail Execution Wave 7 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-guardrail-execution-wave-7-c4da123b/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation | 2026-06-09 |
+| F-028 | AI4J Extension Skill / Prompt Resources Wave 6 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-skill-prompt-resources-wave-6-3c37dd11/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation | 2026-06-09 |
+| F-027 | AI4J Extension Command Execution Wave 5 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation | 2026-06-09 |
+| F-026 | AI4J Spring Boot Extension Configuration Wave 4 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation | 2026-06-09 |
+| F-025 | AI4J Extension Runtime Adapter Wave 3 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation | 2026-06-09 |
+| F-024 | AI4J Extension System 架构规划 | 🟣 review | `coding-agent-harness/planning/tasks/2026-06-08-ai4j-extension-ecosystem-architecture-ba92a10f/task_plan.md` | n/a | Agent Review Submission complete; waiting human review confirmation; planning-only scope, no runtime implementation | 2026-06-08 |
 
 ## Completed Features
 
@@ -62,6 +64,7 @@ Historical work already exists in legacy docs and should be normalized into the 
 
 - 🔴 not_started
 - 🟡 in_progress
+- 🟣 review
 - 🟢 completed
 - ⏸ paused
 - ❌ canceled
