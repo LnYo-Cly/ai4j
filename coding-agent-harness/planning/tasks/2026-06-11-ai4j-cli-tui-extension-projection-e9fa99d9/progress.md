@@ -1,6 +1,6 @@
 # AI4J CLI TUI extension projection - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-11 07:04] - task-start
+
+- 做了什么：开始将现有 Java extension 机制投影到 CLI/TUI 前台，优先覆盖 slash command、command palette 与 extension 状态可见性。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
