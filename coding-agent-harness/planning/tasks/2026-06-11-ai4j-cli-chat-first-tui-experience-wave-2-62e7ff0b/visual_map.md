@@ -16,7 +16,8 @@ Visual Map Contract: v1.0
 flowchart LR
   INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
   EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate\nconfirmed"]
+  GATE02 --> GATE03["GATE-03 任务收口\nkind=gate\npending task-complete"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
@@ -24,9 +25,10 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --confirm 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b` | human | missing | Agent 不能代办人工确认 | human |
+| EXEC-01 | execution | INIT-01 | done | 100 | TUI/status/palette 实现和 targeted regression | diff、Maven command evidence | `harness task-phase 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | present | none | coordinator |
+| GATE-02 | gate | GATE-01 | done | 100 | Human Review Confirmation | review packet、对话确认、Dashboard workbench confirmation | local Dashboard workbench `/api/tasks/review-complete` | human | present | none | human / coordinator |
+| GATE-03 | gate | GATE-02 | review | 50 | Closeout / generated ledger | `task-complete`、walkthrough closeout、generated ledger | `harness task-complete 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | partial | governance sync write scope must be clean before closeout | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
