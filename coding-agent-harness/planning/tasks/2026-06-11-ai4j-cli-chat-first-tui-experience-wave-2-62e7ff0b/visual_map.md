@@ -28,7 +28,7 @@ flowchart LR
 | EXEC-01 | execution | INIT-01 | done | 100 | TUI/status/palette 实现和 targeted regression | diff、Maven command evidence | `harness task-phase 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
 | GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | done | 100 | Human Review Confirmation | review packet、对话确认、Dashboard workbench confirmation | local Dashboard workbench `/api/tasks/review-complete` | human | present | none | human / coordinator |
-| GATE-03 | gate | GATE-02 | review | 50 | Closeout / generated ledger | `task-complete`、walkthrough closeout、generated ledger | `harness task-complete 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | partial | governance sync write scope must be clean before closeout | coordinator |
+| GATE-03 | gate | GATE-02 | done | 100 | Closeout / generated ledger | `task-complete`、walkthrough closeout、generated ledger | `harness task-complete 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b --message "<summary>"` | agent | present | governance sync write scope must be clean before closeout | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
