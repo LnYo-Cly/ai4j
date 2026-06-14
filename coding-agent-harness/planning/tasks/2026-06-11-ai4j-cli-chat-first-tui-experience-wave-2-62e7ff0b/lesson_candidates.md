@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b |
 | Owner | coordinator |
 | Last updated | 2026-06-11 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮是既有 CLI/TUI 渲染与状态栏合同上的小范围展示增强，复用了已有 harness 流程、Java 8 测试方式和 CLI/TUI targeted regression 面；没有形成新的跨任务治理规则、工程标准或可复用 lesson。
 
 ## Promotion Notes
 

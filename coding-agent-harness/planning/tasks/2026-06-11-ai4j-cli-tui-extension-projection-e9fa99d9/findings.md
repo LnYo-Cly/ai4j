@@ -4,21 +4,22 @@
 
 ## 研究发现
 
-### [发现主题 1]
+### [发现主题 1] 现有 extension CLI 已经足够作为 TUI 投影源
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
+- 背景：需要把 extension 能力投影进 TUI，但不想重复实现解析、验证和资源读取逻辑。
+- 发现：`CliExtensionCommand` 已经提供 `list / inspect / plan / check / validate / run / resource`，并且输出语义完整，适合作为 TUI 的唯一执行源。
+- 影响：TUI 只需要做薄适配，不需要再写一套 extension executor。
+- 后续：无。
 
 ## 技术决策
 
 | 决策 | 选择 | 原因 | 替代方案 | 状态 |
 | --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
+| extension TUI 执行路径 | `CodingCliSessionRunner` 复用 `CliExtensionCommand`，仅加输出捕获层 | 保证 CLI 与 TUI 行为一致，避免双实现漂移 | 在 runner 里重新实现 extension 解析 | accepted |
+| extension 入口呈现 | 在 slash 补全、帮助和命令面板里同时投影 `/extensions` 与 `/extension ...` | 让发现路径和执行路径一致 | 只在某一个界面暴露入口 | accepted |
 
 ## 待确认问题
 
 | 问题 | 当前判断 | Owner | 截止点 |
 | --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+| 是否需要把 extension id 也做成 TUI completion supplier | 目前先不做，手动输入 id 足够完成第一波投影 | coordinator | 下一轮如果扩展数量上来再补 |

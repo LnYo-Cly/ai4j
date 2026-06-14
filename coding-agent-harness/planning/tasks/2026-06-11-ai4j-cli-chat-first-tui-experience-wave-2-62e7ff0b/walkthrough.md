@@ -33,10 +33,9 @@
 
 | 风险 | Owner | 是否接受 | 跟进 |
 | --- | --- | --- | --- |
-| 未做真实终端人工 smoke，可能存在配色/宽度体验细节未被纯字符串测试覆盖。 | human / coordinator | yes | 人工确认时可运行 `ai4j` 做一次实际终端查看；若发现显示问题，开后续 TUI polish 任务。 |
+| 未做真实终端人工 smoke，可能存在配色/宽度体验细节未被纯字符串测试覆盖。 | human / coordinator | yes | 若发现显示问题，开后续 TUI polish 任务。 |
 | 工作树包含前置 extension projection 任务的未提交 diff，本轮只验证与其并存的 CLI targeted regression。 | coordinator | yes | 提交前按 task 边界整理 diff，不回滚前置任务改动。 |
-| Harness status 当前仍有 dirty-state warning。 | coordinator | yes | 用户确认提交后消除；若不提交则保留本地 no-commit reason。 |
-| `task-complete` 需要写入 `progress.md`、`visual_map.md`、`walkthrough.md` 和 generated ledger；这些路径已有任务记录改动时会被 governance sync 拒绝。 | coordinator | yes | 先提交当前任务包记录，再运行 `task-complete` 完成 closeout。 |
+| Harness status 当前仍有 dirty-state warning。 | coordinator | yes | 提交本次 CLI/TUI 与任务包差异后消除；若不提交则保留本地 no-commit reason。 |
 
 ## 经验沉淀反思
 

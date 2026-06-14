@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | no-candidate-accepted |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9 |
 | Owner | coordinator |
 | Last updated | 2026-06-11 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本次变更只是在 ai4j-cli 里把已有 extension CLI 做成 TUI 薄投影，没有形成足够稳定、足够独立、值得单独沉淀的通用 lesson。后续如果再做更多宿主投影，再考虑沉淀“CLI 命令复用 + TUI 捕获层”的通用模式。
 
 ## Promotion Notes
 
@@ -65,6 +65,6 @@
 
 | Queue | When this task enters it | Exit condition |
 | --- | --- | --- |
-| Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
+| Lessons | 无候选。 | n/a |
 | Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
 | Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |

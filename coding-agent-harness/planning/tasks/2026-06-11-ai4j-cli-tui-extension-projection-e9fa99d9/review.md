@@ -4,40 +4,41 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| self | self | ai4j-cli 的 TUI slash command、命令面板、帮助文案和 extension 命令投影 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：regression / architecture
+- 范围内：`ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/SlashCommandController.java`、`ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java`、`ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/SlashCommandControllerTest.java`
+- 范围外：extension API 核心实现、docs-site 重写、其他模块的 UI 重构
+- 来源材料：diff、单测输出、reactor 回归输出
 
-## Agent Review Submission（Agent 提交审查）
+## Agent Review Submission
 
 本节由 agent 或 coordinator 在审查材料包准备好时填写。它只表示“提交待审”，不表示人工批准。
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submission ID | ARS-202606111603 |
+| Submitted At | 2026-06-11 16:03 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9 |
+| Materials Checklist Hash | e9fa99d91603 |
+| Evidence Summary | AI4J CLI TUI extension projection ready for human review: `/extensions` and `/extension ...` are exposed through slash suggestions, help, command palette, and the existing `CliExtensionCommand` execution path; targeted slash, TUI/status, and extension argument parsing regression passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9 |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,64 +47,63 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：yes
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - 无
+- Fix loop count：1
+- 当前结论：TUI projection 只做薄适配，没有改 extension 核心语义；定向与完整回归都通过，当前可以进入人工确认。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `mvn -pl ai4j-cli -Dtest=SlashCommandControllerTest ... test` 这类单模块命令会受本地旧 reactor 产物影响；本次最终使用 `-am` 跑通完整 reactor 回归。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | diff | `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/SlashCommandController.java` | 新增 `/extensions`、`/extension` 补全和根建议投影。 |
+| E-002 | diff | `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java` | 新增 TUI 里的 extension 执行入口、帮助和命令面板投影。 |
+| E-003 | diff | `ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/SlashCommandControllerTest.java` | 新增 extension 补全测试。 |
+| E-004 | command | `mvn -pl ai4j-cli -am -Dtest=SlashCommandControllerTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` | 44 个测试通过。 |
+| E-005 | command | `mvn -pl ai4j-cli -am -DskipTests=false test` | reactor 全通过，`ai4j-cli` 272 个测试通过。 |
+| E-006 | diff | `ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunnerArgumentParsingTest.java` | 新增 TUI `/extension ...` 参数解析测试，覆盖 Windows 反斜杠路径和带空格/转义引号参数。 |
+| E-007 | command | `mvn -pl ai4j-cli -am "-Dtest=TuiSessionViewTest,JlineShellTerminalIOTest,CliThemeStylerTest,SlashCommandControllerTest,CodingCliSessionRunnerArgumentParsingTest" -DskipTests=false -DfailIfNoTests=false test` | 93 个测试通过，0 failures，0 errors，0 skipped。 |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 人工 review 确认尚未完成 | human | no | 通过 Dashboard 完成确认 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节、证据和 review submission 已齐。 | n/a |
+| Blocked | no | 未发现开放阻塞项。 | n/a |
+| Lessons | no | 暂无接受的候选。 | n/a |
+| Confirmed / Finalized | no | 还没有人工确认。 | 完成确认与 closeout。 |
+| Soft-deleted / Superseded | no | 任务仍然有效。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：无
+- Progress：`progress.md`
+- 发现记录：`findings.md`
+- Regression SSoT：无
+- Lessons：checked-none: 这次只做了 TUI 投影，没有形成足够稳定的可推广候选
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+实现只做薄适配，没有改 extension 核心语义；`SlashCommandControllerTest`、TUI/status 回归和 `/extension ...` 参数解析回归都通过，因此当前没有阻塞性发现。

@@ -25,14 +25,14 @@
 ## 残余
 
 - Human Review Confirmation 已通过本地 Dashboard workbench 写入；确认提交为 `ec2873f9b5393e38924e2d461f7784e9536eda76`，audit 提交为 `1d10e6be026d5cbd2f3e296b4afdf5f903e9802e`。
-- `task-complete` 仍需在本轮任务包记录提交后执行，避免 governance sync 覆盖已存在的任务记录改动。
+- `task-complete` 已执行，closeout commit 为 `6eb6106`；`task-list` 显示 `state=done`、`lifecycleState=closed`、`reviewStatus=confirmed`、`closeoutStatus=closed`。
 - 未做真实终端人工 smoke，确认时可运行 `ai4j` 查看实际配色、宽度和交互手感。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
 - Global sync status：n/a
 - Registry update needed：不适用
-- Harness Ledger update needed：执行 `task-complete` 完成 closeout / generated ledger rebuild
+- Harness Ledger update needed：已由 `task-complete` 收口；后续只需在提交本次状态修正后保持生成状态一致。
 - 负责人：coordinator
 
 ### [2026-06-11 10:59] - task-start
@@ -98,4 +98,4 @@
 - 做了什么：F-042 CLI/TUI Wave 2 closed after Dashboard workbench Human Review Confirmation.
 - 验证结果：已记录
 - 下一步：完成
-- 证据：n/a
+- 证据：command:TARGET:.:task-complete closed F-042 with commit 6eb6106

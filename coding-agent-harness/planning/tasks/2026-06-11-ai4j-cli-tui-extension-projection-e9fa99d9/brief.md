@@ -10,33 +10,35 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+AI4J CLI 的 TUI 现在可以直接发现并执行现有 extension 命令，`/extensions` 与 `/extension ...` 入口、帮助、命令面板和补全都已经接到同一条命令链路上。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+用户在 TUI 里可以直接查看扩展列表、检查单个扩展、预览/校验激活方案，以及通过同一条命令链路运行扩展命令或读取扩展资源。下一轮 agent 不需要再猜扩展命令入口，也不需要重复实现 extension 解析逻辑，只要继续沿用 `CliExtensionCommand` 即可。这次结果可直接用于后续扩展生态、插件作者文档和更完整的 TUI 交互升级。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`/extensions`、`/extension ...`、TUI 帮助和命令面板中的 extension 入口
+- 修改位置：`ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/SlashCommandController.java`、`ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java`、`ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/SlashCommandControllerTest.java`
+- 验证证据：`mvn -pl ai4j-cli -am -DskipTests=false test`
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先看 `progress.md`、`review.md` 和最近的 `git diff`。如果要继续扩展 TUI，先读 `CodingCliSessionRunner.java` 里 `/extension` 的薄适配层，再看 `SlashCommandController.java` 的补全规则。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：ai4j-cli 的 TUI slash command、命令面板、帮助文案、extension 命令投影、相关单元测试和任务包收口。
+- 范围外：extension API 核心实现、扩展注册机制重写、Pi/Claude 级别的 TUI 全面重构、docs-site 重写。
+- 停止条件：如果需要改 extension 核心协议、引入新命令语义或改动更广泛的 CLI runtime 行为，必须先回到 coordinator。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+1. TUI 根建议和补全里能看到 `/extensions` 与 `/extension `。
+2. `/extensions` 会在 TUI 中直接展示扩展列表。
+3. `/extension inspect|plan|check|validate|run|resource ...` 复用现有 `CliExtensionCommand` 执行。
+4. 命令帮助和命令面板都已经暴露 extension 入口。
+5. `ai4j-cli` 带依赖回归通过。
 
 ## 执行合同
 
@@ -48,4 +50,4 @@
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交审查材料并等待人工确认。

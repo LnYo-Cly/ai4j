@@ -1,6 +1,6 @@
 # Feature SSoT - ai4j-sdk
 
-> Last updated: 2026-06-11
+> Last updated: 2026-06-14
 > Human-readable planning summary for active delivery work.
 > Harness v2 lifecycle and review queues are generated in `coding-agent-harness/governance/generated/Harness-Ledger.md`.
 > If this summary disagrees with the generated ledger, use the generated ledger and repair this file.
@@ -14,6 +14,7 @@
 
 | ID | Feature | Completed | Walkthrough |
 |----|---------|-----------|-------------|
+| F-042 | AI4J CLI Chat First TUI Experience Wave 2 | 2026-06-14 | `coding-agent-harness/planning/tasks/2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b/walkthrough.md` |
 | F-041 | AI4J Extension Check Gate | 2026-06-11 | `coding-agent-harness/planning/tasks/2026-06-11-ai4j-extension-check-gate-d3f91b18/walkthrough.md` |
 | F-040 | AI4J Extension Recipe and Plugin Composition UX | 2026-06-11 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-recipe-and-plugin-composition-ux-5d2320fc/walkthrough.md` |
 | F-039 | AI4J Extension Permission and Install UX | 2026-06-10 | `coding-agent-harness/planning/tasks/2026-06-10-ai4j-extension-permission-and-install-ux-95f89265/walkthrough.md` |
