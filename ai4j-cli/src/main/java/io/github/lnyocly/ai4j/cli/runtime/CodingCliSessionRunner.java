@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.CliUiMode;
 import io.github.lnyocly.ai4j.cli.SlashCommandController;
 import io.github.lnyocly.ai4j.cli.agent.CliCodingAgentRegistry;
+import io.github.lnyocly.ai4j.cli.command.CliExtensionCommand;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.command.CustomCommandRegistry;
 import io.github.lnyocly.ai4j.cli.command.CustomCommandTemplate;
@@ -86,7 +87,9 @@ import io.github.lnyocly.ai4j.tui.AppendOnlyTuiRuntime;
 import io.github.lnyocly.ai4j.tui.TuiTheme;
 import io.github.lnyocly.ai4j.tui.TuiSessionView;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -745,6 +748,14 @@ public class CodingCliSessionRunner {
             renderTui(session);
             return DispatchResult.stay(session);
         }
+        if ("/extensions".equalsIgnoreCase(normalized)) {
+            runExtensionCommand(session, "list");
+            return DispatchResult.stay(session);
+        }
+        if ("/extension".equalsIgnoreCase(normalized) || normalized.startsWith("/extension ")) {
+            runExtensionCommand(session, extractCommandArgument(normalized));
+            return DispatchResult.stay(session);
+        }
         if ("/mcp".equalsIgnoreCase(normalized) || normalized.startsWith("/mcp ")) {
             ManagedCodingSession switched = handleMcpCommand(session, extractCommandArgument(normalized));
             activeSession = switched;
@@ -948,6 +959,8 @@ public class CodingCliSessionRunner {
         builder.append("  /experimental <subagent|agent-teams> <on|off>  Toggle experimental subagent or team runtime tools\n");
         builder.append("  /skills [name]  List discovered coding skills or inspect one skill in detail\n");
         builder.append("  /agents [name]  List available coding agents or inspect one worker definition\n");
+        builder.append("  /extensions  List discovered extension plugins\n");
+        builder.append("  /extension <list|inspect|plan|check|validate|run|resource> ...  Manage extension plugins and resources\n");
         builder.append("  /mcp  Show current MCP services and status\n");
         builder.append("  /mcp add --transport <stdio|sse|http> <name> <target>  Add a global MCP service\n");
         builder.append("  /mcp enable|disable <name>  Toggle workspace MCP enablement\n");
@@ -1138,6 +1151,27 @@ public class CodingCliSessionRunner {
 
     private void printAgents(ManagedCodingSession session, String argument) {
         emitOutput(renderAgentsOutput(session, argument));
+    }
+
+    private void runExtensionCommand(ManagedCodingSession session, String rawArguments) {
+        List<String> arguments;
+        try {
+            arguments = splitShellLikeArguments(rawArguments);
+        } catch (IllegalArgumentException ex) {
+            emitError(safeMessage(ex));
+            renderTui(session);
+            return;
+        }
+        CapturingTerminalIO capture = new CapturingTerminalIO();
+        int exitCode = new CliExtensionCommand(resolveWorkspaceRoot(session)).run(arguments, capture);
+        String output = capture.output();
+        String error = capture.error();
+        if (exitCode == 0) {
+            emitOutput(firstNonBlank(output, error, "extension command completed"));
+        } else {
+            emitError(firstNonBlank(error, output, "extension command failed with exit code " + exitCode));
+        }
+        renderTui(session);
     }
 
     private ManagedCodingSession handleProviderCommand(ManagedCodingSession session, String argument) throws Exception {
@@ -3503,6 +3537,74 @@ public class CodingCliSessionRunner {
         return Arrays.asList(value.trim().split("\\s+"));
     }
 
+    static List<String> splitShellLikeArguments(String value) {
+        if (isBlank(value)) {
+            return Collections.emptyList();
+        }
+        List<String> tokens = new ArrayList<String>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        boolean escaping = false;
+        boolean tokenStarted = false;
+        String raw = value.trim();
+        for (int i = 0; i < raw.length(); i++) {
+            char character = raw.charAt(i);
+            if (escaping) {
+                current.append(character);
+                escaping = false;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '\\' && !inSingleQuote && shouldEscapeNext(raw, i)) {
+                escaping = true;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                tokenStarted = true;
+                continue;
+            }
+            if (Character.isWhitespace(character) && !inSingleQuote && !inDoubleQuote) {
+                if (tokenStarted) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                    tokenStarted = false;
+                }
+                continue;
+            }
+            current.append(character);
+            tokenStarted = true;
+        }
+        if (escaping) {
+            current.append('\\');
+        }
+        if (inSingleQuote || inDoubleQuote) {
+            throw new IllegalArgumentException("Unclosed quote in /extension command");
+        }
+        if (tokenStarted) {
+            tokens.add(current.toString());
+        }
+        return tokens;
+    }
+
+    private static boolean shouldEscapeNext(String value, int index) {
+        if (value == null || index + 1 >= value.length()) {
+            return false;
+        }
+        char next = value.charAt(index + 1);
+        return next == '\\'
+                || next == '"'
+                || next == '\''
+                || Character.isWhitespace(next);
+    }
+
     private String normalizeMcpTransport(String rawTransport) {
         if (isBlank(rawTransport)) {
             return null;
@@ -3702,8 +3804,8 @@ public class CodingCliSessionRunner {
 
     private List<String> renderCommandLines(List<CustomCommandTemplate> commands) {
         List<String> lines = new ArrayList<String>();
-        lines.add("/help /status /session /theme /save /providers /provider /model /experimental /skills /agents");
-        lines.add("/provider use|save|add|edit|default|remove /mcp");
+        lines.add("/help /status /session /theme /save /providers /provider /model /experimental /skills /agents /extensions");
+        lines.add("/provider use|save|add|edit|default|remove /extension list|inspect|plan|check|validate|run|resource");
         lines.add("/experimental subagent|agent-teams on|off");
         lines.add("/mcp add|enable|disable|pause|resume|retry|remove");
         lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /team list|status|messages|resume /compacts /checkpoint");
@@ -3796,6 +3898,13 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("experimental-agent-teams-off", "command", "/experimental agent-teams off", "Disable experimental agent team tool injection", "/experimental agent-teams off"));
         items.add(new TuiPaletteItem("skills", "command", "/skills", "List discovered coding skills", "/skills"));
         items.add(new TuiPaletteItem("agents", "command", "/agents", "List available coding agents", "/agents"));
+        items.add(new TuiPaletteItem("extensions", "command", "/extensions", "List discovered extension plugins", "/extensions"));
+        items.add(new TuiPaletteItem("extension-inspect", "command", "/extension inspect", "Inspect an extension manifest", "/extension inspect "));
+        items.add(new TuiPaletteItem("extension-plan", "command", "/extension plan", "Preview extension activation", "/extension plan "));
+        items.add(new TuiPaletteItem("extension-check", "command", "/extension check", "Validate requested extension activation", "/extension check "));
+        items.add(new TuiPaletteItem("extension-validate", "command", "/extension validate", "Validate an extension package", "/extension validate "));
+        items.add(new TuiPaletteItem("extension-run", "command", "/extension run", "Run an enabled extension command", "/extension run --enable "));
+        items.add(new TuiPaletteItem("extension-resource", "command", "/extension resource", "Read an enabled extension skill or prompt", "/extension resource --enable "));
         items.add(new TuiPaletteItem("mcp", "command", "/mcp", "Show current MCP services and status", "/mcp"));
         items.add(new TuiPaletteItem("mcp-add", "command", "/mcp add", "Add a global MCP service", "/mcp add --transport "));
         items.add(new TuiPaletteItem("mcp-enable", "command", "/mcp enable", "Enable an MCP service in this workspace", "/mcp enable "));
@@ -4463,6 +4572,12 @@ public class CodingCliSessionRunner {
         }
         ((JlineShellTerminalIO) terminal).updateSessionContext(
                 session == null ? null : session.getSessionId(),
+                session == null || isBlank(session.getProvider())
+                        ? (options.getProvider() == null ? null : options.getProvider().getPlatform())
+                        : session.getProvider(),
+                session == null || isBlank(session.getProtocol())
+                        ? (protocol == null ? null : protocol.getValue())
+                        : session.getProtocol(),
                 session == null ? options.getModel() : session.getModel(),
                 session == null ? options.getWorkspace() : session.getWorkspace()
         );
@@ -6581,6 +6696,50 @@ public class CodingCliSessionRunner {
         ASSISTANT
     }
 
+    private static final class CapturingTerminalIO implements TerminalIO {
+
+        private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+        private final ByteArrayOutputStream error = new ByteArrayOutputStream();
+
+        @Override
+        public String readLine(String prompt) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void print(String message) {
+            write(output, message);
+        }
+
+        @Override
+        public void println(String message) {
+            write(output, message);
+            write(output, System.lineSeparator());
+        }
+
+        @Override
+        public void errorln(String message) {
+            write(error, message);
+            write(error, System.lineSeparator());
+        }
+
+        private String output() {
+            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+        }
+
+        private String error() {
+            return new String(error.toByteArray(), StandardCharsets.UTF_8);
+        }
+
+        private void write(ByteArrayOutputStream stream, String message) {
+            if (stream == null || message == null) {
+                return;
+            }
+            byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+            stream.write(bytes, 0, bytes.length);
+        }
+    }
+
     private static final class DispatchResult {
 
         private final ManagedCodingSession session;
@@ -6628,7 +6787,7 @@ public class CodingCliSessionRunner {
         return null;
     }
 
-    private boolean isBlank(String value) {
+    private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 

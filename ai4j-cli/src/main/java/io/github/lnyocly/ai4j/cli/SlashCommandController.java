@@ -44,6 +44,8 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/experimental", "Show or switch experimental runtime feature flags", true),
             new SlashCommandSpec("/skills", "List or inspect discovered coding skills", true),
             new SlashCommandSpec("/agents", "List or inspect available coding agents", true),
+            new SlashCommandSpec("/extensions", "List discovered extension plugins", false),
+            new SlashCommandSpec("/extension", "Inspect or run extension plugin resources", true),
             new SlashCommandSpec("/commands", "List available custom commands", false),
             new SlashCommandSpec("/palette", "Alias of /commands", false),
             new SlashCommandSpec("/cmd", "Run a custom command template", true),
@@ -83,6 +85,18 @@ public final class SlashCommandController implements Completer {
     private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
     private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
     private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
+    private static final List<String> EXTENSION_ACTIONS = Arrays.asList("list", "inspect", "plan", "check", "validate", "run", "resource");
+    private static final List<String> EXTENSION_RESOURCE_TYPES = Arrays.asList("skill", "prompt");
+    private static final List<String> EXTENSION_ACTIVATION_OPTIONS = Arrays.asList(
+            "--enable",
+            "--extension",
+            "--expose-tool",
+            "--allow-command",
+            "--allow-skill",
+            "--allow-prompt",
+            "--allow-guardrail",
+            "--strict"
+    );
     private static final String MCP_TRANSPORT_FLAG = "--transport";
     private static final List<String> MCP_TRANSPORT_OPTIONS = Arrays.asList("stdio", "sse", "http");
     private static final List<String> PROVIDER_ACTIONS = Arrays.asList("use", "save", "add", "edit", "default", "remove");
@@ -110,6 +124,8 @@ public final class SlashCommandController implements Completer {
             "/experimental",
             "/skills",
             "/agents",
+            "/extension",
+            "/extensions",
             "/commands",
             "/palette",
             "/sessions",
@@ -444,6 +460,9 @@ public final class SlashCommandController implements Completer {
         if ("/agents".equalsIgnoreCase(command)) {
             return agentCandidates(tokenFragment(tokens, endsWithSpace));
         }
+        if ("/extension".equalsIgnoreCase(command)) {
+            return extensionCandidates(tokens, endsWithSpace);
+        }
         if ("/provider".equalsIgnoreCase(command)) {
             return providerCandidates(tokens, endsWithSpace);
         }
@@ -490,6 +509,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/agents".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", agentCandidates(""));
+        }
+        if ("/extension".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", extensionActionCandidates(""));
         }
         if ("/provider".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", providerActionCandidates(""));
@@ -1195,6 +1217,134 @@ public final class SlashCommandController implements Completer {
             ));
         }
         return candidates;
+    }
+
+    private List<Candidate> extensionCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 1) {
+            return extensionActionCandidates("");
+        }
+        if (tokens.size() == 2 && !endsWithSpace) {
+            return extensionActionCandidates(tokens.get(1));
+        }
+        String action = tokens.get(1);
+        if ("list".equalsIgnoreCase(action)) {
+            return Collections.emptyList();
+        }
+        if ("validate".equalsIgnoreCase(action)) {
+            return extensionValidateCandidates(tokens, endsWithSpace);
+        }
+        if ("resource".equalsIgnoreCase(action)) {
+            return extensionResourceCandidates(tokens, endsWithSpace);
+        }
+        if ("run".equalsIgnoreCase(action)
+                || "inspect".equalsIgnoreCase(action)
+                || "plan".equalsIgnoreCase(action)
+                || "check".equalsIgnoreCase(action)) {
+            return extensionActivationOptionCandidates(tokenFragment(tokens, endsWithSpace));
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> extensionActionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : EXTENSION_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(action, action, "Extensions", describeExtensionAction(action), true));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> extensionValidateCandidates(List<String> tokens, boolean endsWithSpace) {
+        String partial = tokenFragment(tokens, endsWithSpace);
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        if (matches("--all", partial)) {
+            candidates.add(commandCandidate("--all", "--all", "Extensions", "Validate every discovered extension", false));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> extensionResourceCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.size() < 2) {
+            return Collections.emptyList();
+        }
+        String partial = tokenFragment(tokens, endsWithSpace);
+        if (tokens.size() <= 3) {
+            List<Candidate> candidates = new ArrayList<Candidate>();
+            for (String type : EXTENSION_RESOURCE_TYPES) {
+                if (matches(type, partial)) {
+                    candidates.add(commandCandidate(type, type, "Extensions", "Read extension " + type + " resource", true));
+                }
+            }
+            candidates.addAll(extensionActivationOptionCandidates(partial));
+            return candidates;
+        }
+        return extensionActivationOptionCandidates(partial);
+    }
+
+    private List<Candidate> extensionActivationOptionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String option : EXTENSION_ACTIVATION_OPTIONS) {
+            if (!matches(option, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(option, option, "Extensions", describeExtensionOption(option), true));
+        }
+        return candidates;
+    }
+
+    private String describeExtensionAction(String action) {
+        if ("list".equalsIgnoreCase(action)) {
+            return "List discovered extension plugins";
+        }
+        if ("inspect".equalsIgnoreCase(action)) {
+            return "Inspect extension manifest and optional runtime resources";
+        }
+        if ("plan".equalsIgnoreCase(action)) {
+            return "Preview extension activation without wiring it into the host";
+        }
+        if ("check".equalsIgnoreCase(action)) {
+            return "Validate requested extension activation as a pass/fail gate";
+        }
+        if ("validate".equalsIgnoreCase(action)) {
+            return "Validate extension authoring contract";
+        }
+        if ("run".equalsIgnoreCase(action)) {
+            return "Run an explicitly enabled extension command";
+        }
+        if ("resource".equalsIgnoreCase(action)) {
+            return "Read an explicitly enabled extension skill or prompt";
+        }
+        return "Extension action";
+    }
+
+    private String describeExtensionOption(String option) {
+        if ("--enable".equalsIgnoreCase(option) || "--extension".equalsIgnoreCase(option)) {
+            return "Enable one extension for this operation";
+        }
+        if ("--expose-tool".equalsIgnoreCase(option)) {
+            return "Expose one extension tool";
+        }
+        if ("--allow-command".equalsIgnoreCase(option)) {
+            return "Allow one extension command";
+        }
+        if ("--allow-skill".equalsIgnoreCase(option)) {
+            return "Allow one extension skill resource";
+        }
+        if ("--allow-prompt".equalsIgnoreCase(option)) {
+            return "Allow one extension prompt resource";
+        }
+        if ("--allow-guardrail".equalsIgnoreCase(option)) {
+            return "Allow one extension guardrail";
+        }
+        if ("--strict".equalsIgnoreCase(option)) {
+            return "Use explicit resource activation";
+        }
+        return "Extension activation option";
     }
 
     private List<Candidate> mcpCandidates(List<String> tokens, boolean endsWithSpace) {

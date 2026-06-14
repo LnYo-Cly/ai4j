@@ -216,10 +216,34 @@ public class TuiSessionViewTest {
                 .build());
 
         Assert.assertTrue(rendered.contains("AI4J"));
+        Assert.assertTrue(rendered.contains("zhipu"));
+        Assert.assertTrue(rendered.contains("chat"));
         Assert.assertTrue(rendered.contains("glm-4.5-flash"));
         Assert.assertTrue(rendered.contains("workspace"));
         Assert.assertFalse(rendered.contains("focus="));
         Assert.assertFalse(rendered.contains("overlay="));
+    }
+
+    @Test
+    public void shouldRenderSlashPaletteCategoriesForProviderModelAndExtensions() {
+        TuiSessionView view = new TuiSessionView(new TuiConfig(), new TuiTheme(), false);
+        TuiInteractionState state = new TuiInteractionState();
+        state.replaceInputBuffer("/");
+        state.openSlashPalette(Arrays.asList(
+                new TuiPaletteItem("provider", "command", "/provider", "Show current provider state", "/provider"),
+                new TuiPaletteItem("model", "command", "/model", "Show current effective model", "/model"),
+                new TuiPaletteItem("extensions", "command", "/extensions", "List discovered extension plugins", "/extensions"),
+                new TuiPaletteItem("extension-run", "command", "/extension run", "Run an enabled extension command", "/extension run --enable ")
+        ), "/");
+
+        String rendered = view.render(TuiScreenModel.builder()
+                .interactionState(state)
+                .build());
+
+        Assert.assertTrue(rendered.contains("> /provider  Provider  Show current provider state"));
+        Assert.assertTrue(rendered.contains("/model  Model  Show current effective model"));
+        Assert.assertTrue(rendered.contains("/extensions  Extensions  List discovered extension plugins"));
+        Assert.assertTrue(rendered.contains("/extension run --enable  Extensions  Run an enabled extension command"));
     }
 
     @Test

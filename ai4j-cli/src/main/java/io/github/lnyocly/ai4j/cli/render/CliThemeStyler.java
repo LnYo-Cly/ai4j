@@ -111,7 +111,31 @@ public final class CliThemeStyler {
                                          String model,
                                          String workspace,
                                          String hint) {
+        return buildCompactStatusLine(statusLabel, spinnerActive, spinner, statusDetail, null, null, model, workspace, hint);
+    }
+
+    public String buildCompactStatusLine(String statusLabel,
+                                         boolean spinnerActive,
+                                         String spinner,
+                                         String statusDetail,
+                                         String provider,
+                                         String protocol,
+                                         String model,
+                                         String workspace,
+                                         String hint) {
         StringBuilder builder = new StringBuilder(buildPrimaryStatusLine(statusLabel, spinnerActive, spinner, statusDetail));
+        if (!isBlank(provider)) {
+            builder.append("  ")
+                    .append(styleMutedFragment("provider"))
+                    .append(' ')
+                    .append(CliAnsi.colorize(firstNonBlank(provider, "(unknown)"), brand(), ansi, false));
+        }
+        if (!isBlank(protocol)) {
+            builder.append("  ")
+                    .append(styleMutedFragment("protocol"))
+                    .append(' ')
+                    .append(CliAnsi.colorize(firstNonBlank(protocol, "(unknown)"), accent(), ansi, false));
+        }
         if (!isBlank(model)) {
             builder.append("  ")
                     .append(styleMutedFragment("model"))
@@ -140,6 +164,40 @@ public final class CliThemeStyler {
                 + " " + CliAnsi.colorize(firstNonBlank(model, "(unknown)"), accent(), ansi, false)
                 + "  " + styleMutedFragment("workspace")
                 + " " + styleAssistantFragment(firstNonBlank(workspace, "."));
+    }
+
+    public String buildSessionLine(String provider, String protocol, String sessionId, String model, String workspace) {
+        StringBuilder builder = new StringBuilder();
+        if (!isBlank(provider)) {
+            appendContextChip(builder, "provider", firstNonBlank(provider, "(unknown)"), brand());
+        }
+        if (!isBlank(protocol)) {
+            appendContextChip(builder, "protocol", firstNonBlank(protocol, "(unknown)"), accent());
+        }
+        if (!isBlank(model)) {
+            appendContextChip(builder, "model", firstNonBlank(model, "(unknown)"), accent());
+        }
+        if (!isBlank(workspace)) {
+            appendContextChip(builder, "workspace", firstNonBlank(workspace, "."), null);
+        }
+        if (!isBlank(sessionId)) {
+            appendContextChip(builder, "session", firstNonBlank(sessionId, "(new)"), brand());
+        }
+        return builder.toString();
+    }
+
+    private void appendContextChip(StringBuilder builder, String label, String value, String color) {
+        if (builder == null || isBlank(label) || isBlank(value)) {
+            return;
+        }
+        if (builder.length() > 0) {
+            builder.append("  ");
+        }
+        builder.append(styleMutedFragment(label))
+                .append(' ')
+                .append(color == null
+                        ? styleAssistantFragment(value)
+                        : CliAnsi.colorize(value, color, ansi, false));
     }
 
     public String buildHintLine(String hint) {

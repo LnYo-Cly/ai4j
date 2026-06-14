@@ -255,6 +255,38 @@ public class JlineShellTerminalIOTest {
     }
 
     @Test
+    public void test_session_context_status_line_includes_provider_protocol_model_and_workspace() throws Exception {
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Terminal terminal = newDumbTerminal(input, output);
+        LineReader lineReader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .appName("ai4j-cli-test")
+                .build();
+        JlineShellContext context = newContext(terminal, lineReader, null);
+        JlineShellTerminalIO terminalIO = new JlineShellTerminalIO(context, null);
+        try {
+            terminalIO.updateSessionContext(
+                    "session-alpha",
+                    "zhipu",
+                    "chat",
+                    "glm-4.5-flash",
+                    "G:\\My_Project\\java\\ai4j-sdk"
+            );
+
+            String statusLine = AttributedString.fromAnsi(terminalIO.currentStatusLine()).toString();
+
+            Assert.assertTrue(statusLine.contains("provider zhipu"));
+            Assert.assertTrue(statusLine.contains("protocol chat"));
+            Assert.assertTrue(statusLine.contains("model glm-4.5-flash"));
+            Assert.assertTrue(statusLine.contains("workspace ai4j-sdk"));
+        } finally {
+            terminalIO.close();
+            context.close();
+        }
+    }
+
+    @Test
     public void test_inline_slash_palette_renders_when_status_component_is_unavailable() throws Exception {
         Path workspace = Files.createTempDirectory("ai4j-inline-slash");
         SlashCommandController controller = new SlashCommandController(

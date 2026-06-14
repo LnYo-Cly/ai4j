@@ -48,6 +48,8 @@ public final class JlineShellTerminalIO implements TerminalIO {
     private String statusLabel = "Idle";
     private String statusDetail = "Type /help for commands";
     private String sessionId = "(new)";
+    private String provider = "(unknown)";
+    private String protocol = "(unknown)";
     private String model = "(unknown)";
     private String workspace = ".";
     private String hint = "Enter a prompt or /command";
@@ -154,11 +156,23 @@ public final class JlineShellTerminalIO implements TerminalIO {
     }
 
     public void updateSessionContext(String sessionId, String model, String workspace) {
+        updateSessionContext(sessionId, null, null, model, workspace);
+    }
+
+    public void updateSessionContext(String sessionId, String provider, String protocol, String model, String workspace) {
         boolean changed = false;
         synchronized (statusLock) {
             if (!isBlank(sessionId)) {
                 changed = changed || !sameText(this.sessionId, sessionId);
                 this.sessionId = sessionId;
+            }
+            if (!isBlank(provider)) {
+                changed = changed || !sameText(this.provider, provider);
+                this.provider = provider;
+            }
+            if (!isBlank(protocol)) {
+                changed = changed || !sameText(this.protocol, protocol);
+                this.protocol = protocol;
             }
             if (!isBlank(model)) {
                 changed = changed || !sameText(this.model, model);
@@ -716,6 +730,8 @@ public final class JlineShellTerminalIO implements TerminalIO {
                 snapshot.spinnerActive,
                 snapshot.spinnerActive ? SPINNER[Math.floorMod(spinnerIndex, SPINNER.length)] : null,
                 clip(snapshot.detail, 64),
+                clip(firstNonBlank(provider, "(unknown)"), 18),
+                clip(firstNonBlank(protocol, "(unknown)"), 14),
                 clip(firstNonBlank(model, "(unknown)"), 20),
                 clip(lastPathSegment(firstNonBlank(workspace, ".")), 24),
                 clip(firstNonBlank(hint, "Enter a prompt or /command"), 40)
@@ -791,6 +807,8 @@ public final class JlineShellTerminalIO implements TerminalIO {
 
     private String buildSessionLine() {
         return themeStyler.buildSessionLine(
+                clip(firstNonBlank(provider, "(unknown)"), 18),
+                clip(firstNonBlank(protocol, "(unknown)"), 14),
                 clip(firstNonBlank(sessionId, "(new)"), 18),
                 clip(firstNonBlank(model, "(unknown)"), 24),
                 clip(lastPathSegment(firstNonBlank(workspace, ".")), 24)
