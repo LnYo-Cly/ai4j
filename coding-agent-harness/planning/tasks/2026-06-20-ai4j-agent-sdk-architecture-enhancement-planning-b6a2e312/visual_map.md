@@ -10,6 +10,7 @@ Visual Map Contract: v1.0
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示本规划任务的执行阶段和门禁 | yes | `task_plan.md` | no |
 | MAP-02 | architecture | 展示 ai4j-agent 增强路线和模块边界 | yes | `references/ai4j-agent-sdk-enhancement-plan.md` | yes |
+| MAP-04 | roadmap | 展示执行级路线图和调研门禁 | yes | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` | yes |
 
 ## 阶段关系图（Phase Graph）
 
@@ -121,3 +122,39 @@ P0 ai4j-agent 内核
 ```
 
 MAP-03 Source Evidence: `references/ai4j-agent-sdk-complete-planning-refresh.md`
+
+### MAP-04 执行级路线图
+
+```text
+R0 Source-backed Research
+  Pi / Codex / Claude Code / OpenCode / Spring AI / LangChain4j / AgentScope Java / Sandbox providers
+        |
+        v
+P0 ai4j-agent 内核
+  P0-A Session runtime container
+  P0-B Memory Compact Context Projector
+  P0-C Plugin Lifecycle Hooks
+  P0-D Approval / Permission Policy
+        |
+        v
+P1 YAML Agent Blueprint
+  schema -> loader -> validator -> AgentFactory -> CLI run
+        |
+        v
+P2 Sandbox SPI
+  fake provider -> session binding -> extension provider contribution
+        |
+        v
+P3 ai4j-coding sandbox routing
+  shell/file/git/browser/project run/test runner
+        |
+        v
+P4 ai4j-cli TUI
+  ai4j command -> slash commands -> renderer -> /sandbox -> Harness bridge
+        |
+        v
+P5 Remote Agent Runner decision
+  protocol contract -> event stream -> artifacts -> optional Maven module
+```
+
+MAP-04 Source Evidence: `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`

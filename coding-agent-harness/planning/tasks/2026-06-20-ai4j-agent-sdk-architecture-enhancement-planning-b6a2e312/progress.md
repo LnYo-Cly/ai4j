@@ -53,3 +53,10 @@
 - 验证结果：新增 `references/ai4j-agent-sdk-complete-planning-refresh.md` 与 `references/INDEX.md`，并将刷新结论挂入 brief/task_plan/findings/review/walkthrough。
 - 下一步：运行 Harness status，确认任务包无 failure；后续实施应继续当前 P0-B worktree。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md:complete planning refresh for agent sdk roadmap
+
+### [2026-06-20 04:45] - execution roadmap and research gates recorded
+
+- 做了什么：补充执行级路线图与调研门禁，把 `ai4j-agent` 增强拆为 R0 source-backed research、P0 Agent core、P1 Blueprint YAML、P2 Sandbox SPI、P3 coding sandbox routing、P4 CLI/TUI、P5 Remote Runner decision，并记录当前实际下一步应先收尾 P0-C worktree。
+- 验证结果：新增 `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`；同步更新 `references/INDEX.md`、`brief.md`、`task_plan.md`、`findings.md`、`visual_map.md`、`review.md`、`walkthrough.md`。
+- 下一步：运行 Harness status；如材料通过，重新提交 agent review summary，随后按 P0-C worktree 收尾。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md:execution roadmap and research gates for ai4j-agent roadmap

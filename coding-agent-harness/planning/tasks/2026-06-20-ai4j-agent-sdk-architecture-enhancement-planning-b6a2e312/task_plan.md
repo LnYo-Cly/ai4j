@@ -93,6 +93,7 @@ Task Package Index: required
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
 | C-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md | 最新完整规划刷新稿，补充插件生态、YAML Blueprint、真实 sandbox、远端 Runner、CLI/TUI 和 Harness 轻量桥接原则 | coordinator / reviewer / future worker |
+| C-007 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md | 执行级路线图与调研门禁，明确 P0-P5 拆分、source-backed research gates、docs-site 同步路线和当前实际下一步 | coordinator / reviewer / future worker |
 
 新增验收补充：
 
@@ -100,3 +101,19 @@ Task Package Index: required
 - [ ] 规划明确“不把 Harness 完整内化到 CLI”，只做轻量识别和桥接。
 - [ ] 规划明确“OpenAI-compatible”是通用概念，不把任何中转平台名称写成 SDK 概念。
 - [ ] 规划明确当前下一步是继续 P0-B，而不是重复规划或一次性实现 P0-P5。
+- [ ] 执行级路线图明确 Pi/Codex/Claude/OpenCode/Java SDK/Sandbox 调研必须 source-backed，不能凭印象复刻。
+- [ ] 执行级路线图明确当前仓库现实：先收尾 P0-C worktree，再推进后续任务。
+
+## 执行级路线图补充
+
+| Track | 状态 | 后续任务 |
+| --- | --- | --- |
+| R0 source-backed research | planned | Pi 插件/TUI、Codex/Claude/OpenCode CLI 模式、Spring AI/LangChain4j/AgentScope Java、Sandbox provider API。 |
+| P0 Agent core | active | P0-A/P0-B review closeout；P0-C worktree 提交/PR/merge；P0-D Approval / Permission Policy。 |
+| P1 Blueprint YAML | planned | schema/model/loader/validator -> AgentFactory -> CLI run。 |
+| P2 Sandbox SPI | planned | fake provider、session binding、extension provider contribution。 |
+| P3 Coding sandbox routing | planned | shell/file/git/browser/project run/test runner routing。 |
+| P4 CLI/TUI | planned | JLine renderer abstraction、slash commands、provider/model/session/plugin/sandbox UX、Harness bridge。 |
+| P5 Remote Runner | deferred | 先写协议合同；满足 P0-P4 后再决定是否新增 Maven module。 |
+
+当前实际下一步：P0-C `feature/agent-plugin-lifecycle-hooks` worktree 已存在未提交实现，应优先收尾；本规划任务不应继续扩散范围。

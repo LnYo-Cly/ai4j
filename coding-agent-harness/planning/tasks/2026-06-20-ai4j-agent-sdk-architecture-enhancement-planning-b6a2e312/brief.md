@@ -65,3 +65,18 @@
 - 远端 Agent Runner 的产品化边界。
 - CLI/TUI 体验、JLine 选择和 Harness 轻量桥接原则。
 - 当前下一步应继续 P0-B Memory Compact Context Projector。
+
+## 2026-06-20 执行级路线图补充
+
+本任务新增执行级路线图：`references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`。后续 agent 应先读该文件，因为它把规划落到可执行队列：
+
+- R0 调研门禁：Pi、Codex/Claude Code/OpenCode、Spring AI/LangChain4j/AgentScope Java、Sandbox provider。
+- P0 内核：P0-A/P0-B/P0-C 状态、P0-D Approval / Permission Policy。
+- P1 YAML Agent Blueprint。
+- P2 Sandbox SPI。
+- P3 `ai4j-coding` sandbox routing。
+- P4 CLI/TUI 与 Harness 轻量桥接。
+- P5 远端 Agent Runner 决策。
+- docs-site 同步要求与“不要做的事”。
+
+当前实际下一步：先收尾 `.worktrees/feature/agent-plugin-lifecycle-hooks` 的 P0-C worktree；不要重复开新的总规划任务。
