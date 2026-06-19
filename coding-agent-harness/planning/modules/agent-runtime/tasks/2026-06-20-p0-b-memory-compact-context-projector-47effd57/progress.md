@@ -1,6 +1,6 @@
 # P0-B Memory Compact Context Projector - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -81,3 +81,10 @@
 - 验证结果：`npx --yes coding-agent-harness status --json .` exit 0，failures=0，status=warn；唯一 warning 为 dirty-state，符合提交前状态。
 - 下一步：提交 feature diff，运行 `task-review` 或在干净状态推进 review。
 - 证据：command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failures=0, warnings=dirty-state only
+
+### [2026-06-19 19:30] - task-review
+
+- 做了什么：P0-B Memory Compact Context Projector ready for review: context projector, structured compact result, session compact snapshot persistence, tests, and docs-site page passed targeted/broad/docs/harness checks.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

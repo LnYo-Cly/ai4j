@@ -34,7 +34,7 @@ kind=gate"]
 | EXEC-01 | execution | INIT-01 | done | 100 | context projector 与 compact policy API 已实现 | `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/*`; `compact/*` | n/a | agent | present | broad regression pending | coordinator |
 | EXEC-02 | execution | EXEC-01 | done | 100 | runtime prompt projection 和 session compact snapshot/save/resume 已接入 | `BaseAgentRuntime.java`; `CodeActRuntime.java`; `AgentSession.java`; `AgentSessionSnapshot.java` | n/a | agent | present | broad regression pending | coordinator |
 | EXEC-03 | execution | EXEC-02 | done | 100 | P0-B targeted tests 和 docs-site 页面已补齐 | `AgentMemoryCompactContextProjectorTest.java`; `docs-site/docs/agent/memory-compact-context.md` | targeted Maven + docs build | agent | partial | broad/docs/harness final pending | coordinator |
-| GATE-01 | gate | EXEC-03 | planned | 0 | Agent Review Submission | `review.md`; regression evidence; lesson routing | `harness task-review MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57 --message "<summary>" .` | agent | missing | final checks pending | coordinator |
+| GATE-01 | gate | EXEC-03 | done | 100 | Agent Review Submission | `review.md`; regression evidence; lesson routing | `harness task-review MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57 --message "<summary>" .` | agent | present | final checks pending | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | PR、CI 和 merge | GitHub PR checks and merge commit | `gh pr create`; `gh pr checks --watch`; merge | agent | missing | remote CI may fail | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

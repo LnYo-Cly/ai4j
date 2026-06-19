@@ -97,3 +97,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自四类证据：P0-B 定向测试覆盖 projector/runtime/compact/session save-resume；broad `ai4j-agent -am` regression 覆盖现有 agent/core/extension 兼容性；docs-site build 覆盖新增文档和 sidebar；Harness status 覆盖任务包材料完整性。若 PR CI 出现新增失败，以 CI 结果为准并回到对应阶段修复。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606191930 |
+| Submitted At | 2026-06-19 19:30 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57 |
+| Materials Checklist Hash | 6d56f3f4ea267074 |
+| Evidence Summary | P0-B Memory Compact Context Projector ready for review: context projector, structured compact result, session compact snapshot persistence, tests, and docs-site page passed targeted/broad/docs/harness checks. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57 |
