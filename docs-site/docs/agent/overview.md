@@ -73,6 +73,8 @@ AgentRequest
 
 Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，但它本身不负责宿主产品形态。
 
+如果你关心后续 Agent SDK 会怎样增强 Session、Memory、Blueprint、Sandbox 和 Runner，看 [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)。
+
 ## 生产接入要注意什么
 
 - 给 `maxSteps`、tool loop 和停止条件设置上限。
@@ -91,6 +93,7 @@ Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，
 1. [Why Agent](/docs/agent/why-agent)
 2. [Use Cases and Paths](/docs/agent/use-cases-and-paths)
 3. [Architecture](/docs/agent/architecture)
+4. [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)
 
 ### 想先跑通
 
