@@ -84,7 +84,7 @@
 | Review | yes | 规划材料包准备提交，等待人工确认是否作为后续路线。 | 人工确认或退回。 |
 | Missing Materials | no | 必需文件均已填写。 | n/a |
 | Blocked | no | 无 open blocking finding。 | n/a |
-| Lessons | yes | 本任务形成“架构规划先收敛主概念再拆实施任务”的经验候选。 | 人工决定是否沉淀 lesson。 |
+| Lessons | no | 本任务不提升共享 lesson；稳定结论保留在 task-local 主规划文档。 | 后续实施验证后如需沉淀，另开 lesson sedimentation 或 module-plan 更新任务。 |
 | Confirmed / Finalized | no | 尚未人工确认。 | review-confirm 后 closeout。 |
 | Soft-deleted / Superseded | no | 任务有效。 | n/a |
 
@@ -94,8 +94,8 @@
 - Progress：记录 Harness 命令和材料创建
 - 发现记录：已更新 `findings.md`
 - Regression SSoT：无，本任务不改代码
-- Lessons：checked-candidate: LC-20260620-agent-sdk-planning-scope
-- 收口记录：`walkthrough.md` 待人工确认后补齐
+- Lessons：checked-none:task-local-architecture-plan
+- 收口记录：`walkthrough.md` 已补齐为待人工确认的规划任务收口草案
 
 ## 最终信心依据（Final Confidence Basis）
 

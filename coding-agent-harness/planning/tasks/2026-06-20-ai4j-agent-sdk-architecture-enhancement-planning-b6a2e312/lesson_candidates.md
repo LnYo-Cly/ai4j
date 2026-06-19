@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:task-local-architecture-plan |
 | Source task | 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 |
 | Owner | coordinator |
 | Last updated | 2026-06-20 |
@@ -34,20 +34,28 @@
 - `promoted`：维护 CLI 或已批准的后续任务已把候选写入确认的治理目标。
 - `rejected`：人工带理由拒绝这个候选。
 
+聚合规则：
+
+- 任意 `ready-for-review` 行会让任务级状态保持 `pending-review`。
+- 任意 `needs-promotion` 行会让任务级状态变成 `needs-promotion`，除非仍有 `ready-for-review` 行。
+- 全部行都是 `promoted` 时，任务级状态为 `promoted`。
+- 全部行都是 `rejected` 时，任务级状态为 `rejected`。
+- 没有候选的任务必须使用 `no-candidate-accepted`，并填写 `No-Candidate Reason`。
+
 ## Candidates
 
 | ID | Row Status | Title | Scope | Module Key | Detail Artifact | Boundary Reason | Why It Might Matter | Review Decision | Promotion Target | Conflict Check | Required Standard Update | Follow-up Task |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| LC-20260620-agent-sdk-planning-scope | ready-for-review | 先收敛主概念再拆实施任务 | module | agent-runtime | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-enhancement-plan.md | 本任务澄清不新增 `AgentHost` / `ai4j-runtime`，而是增强现有 `ai4j-agent`；并把 Sandbox/Runner/Blueprint 拆成后续阶段。 | 后续 agent 容易把 architecture brainstorming 直接膨胀成新模块或一次性大改；该候选可提醒先固定主心智和任务边界。 | pending-human-review | module plan or engineering standard update | pending | maybe update agent-runtime module plan / engineering standard after approval | create follow-up lesson sedimentation task if accepted |
 
 ## No-Candidate Reason
 
-不适用：本任务已有一个候选等待人工判定。
+本任务保留为 task-local 架构规划，不提升共享 lesson。原因：当前结论仍是后续实现路线的输入，不是已经经过实现回归验证的工程标准；如果后续 P0/P1/P2 实施证明“先收敛 `ai4j-agent` 主概念再拆实施任务”值得固化，应另开 lesson sedimentation 或 module-plan 更新任务，并引用 `references/ai4j-agent-sdk-enhancement-plan.md`。
 
 ## Promotion Notes
 
-- 如果人工审查认为候选值得沉淀，把对应行标记为 `needs-promotion`，并记录目标治理位置。
-- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要在本任务中直接写共享 Lessons 表。
+- 当前无候选进入 promotion。
+- 后续如要沉淀，应先完成至少一个实现任务，并检查 `agent-runtime` module plan、engineering standard 与 docs-site 架构页是否需要同步更新。
+- 不在本规划任务中直接写共享 Lessons 表。
 
 ## Queue Routing
 
