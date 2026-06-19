@@ -1,6 +1,6 @@
 # P0-A AgentSession runtime container - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -84,3 +84,10 @@
 - 验证结果：module task 和 module plan 对齐；提交后 dirty warning 解除。
 - 下一步：commit feature slice。
 - 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/module_plan.md:P0-A active task row synced
+
+### [2026-06-19 18:36] - task-review
+
+- 做了什么：P0-A AgentSession runtime container ready for review: session id/metadata/event log/snapshot/store/resume foundations implemented, deterministic tests and docs-site build passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

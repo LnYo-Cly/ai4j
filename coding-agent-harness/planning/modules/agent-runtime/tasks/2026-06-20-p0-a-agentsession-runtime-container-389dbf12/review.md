@@ -88,3 +88,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心将来自四类证据：新增 deterministic tests 覆盖 session container 合同、RG-002 owner module broad test、RG-008 docs-site build、Harness status/task-review lifecycle。targeted test、broad Maven、docs-site build 和 Harness status 均已通过；下一步提交 PR 并等待 CI。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606191836 |
+| Submitted At | 2026-06-19 18:36 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12 |
+| Materials Checklist Hash | 54827225ca0c696a |
+| Evidence Summary | P0-A AgentSession runtime container ready for review: session id/metadata/event log/snapshot/store/resume foundations implemented, deterministic tests and docs-site build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12 |
