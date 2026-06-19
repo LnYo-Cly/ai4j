@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 06:39] - P1-B 规划落盘
+
+- 做了什么：创建并启动 P1-B Agent Blueprint to AgentFactory 任务，写入 Factory host-supplied context/resolver 方案、字段映射、非目标和验证计划。
+- 验证结果：任务包包含 `references/agent-blueprint-p1b-factory-plan.md`、更新后的 `task_plan.md` 和 `visual_map.md`。
+- 下一步：创建 `.wt/p1b` worktree 和 `feature/agent-blueprint-factory` 分支。
+- 证据：report:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/references/agent-blueprint-p1b-factory-plan.md:P1-B factory mapping and boundary plan recorded

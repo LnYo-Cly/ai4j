@@ -68,3 +68,9 @@
 | Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
 | Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
 | Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |
+
+## 本任务经验候选判定
+
+- Decision：accepted-no-candidate
+- Closeout token：checked-none:p1-b-task-local
+- Reason：P1-B 仍是单任务实现边界，稳定结论先保留在 task-local reference 和 docs-site；如后续 Factory/Blueprint 形成通用工程标准，再另开 lesson sedimentation。

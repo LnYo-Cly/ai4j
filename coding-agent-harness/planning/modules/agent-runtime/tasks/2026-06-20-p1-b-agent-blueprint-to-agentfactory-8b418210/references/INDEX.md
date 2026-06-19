@@ -1,13 +1,12 @@
-# 任务参考资料索引
+# References - P1-B Agent Blueprint to AgentFactory
 
-仅在任务需要外部资料、跨仓上下文、reviewer 输入包或生成参考材料时使用。不要把无关背景资料堆进来。
+| ID | Path | Purpose | Status |
+| --- | --- | --- | --- |
+| R-001 | `agent-blueprint-p1b-factory-plan.md` | P1-B implementation boundary, API mapping and validation plan. | current |
 
-| ID | Type | Path | Summary | Used By |
-| --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+## 读取顺序
 
-## 使用规则
-
-- 每条参考资料都要说明用途，否则不要登记。
-- 外部链接需要写清访问日期或版本线索，避免后续复查时语境漂移。
-- reviewer 或 worker 只应读取与其 scope 相关的条目。
+1. `agent-blueprint-p1b-factory-plan.md`
+2. `docs-site/docs/agent/agent-blueprint.md`
+3. `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+4. `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/**`
