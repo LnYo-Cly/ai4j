@@ -56,7 +56,7 @@ public class BearerTokenUtils {
         headerClaims.put("alg", "HS256");
         headerClaims.put("sign_type", "SIGN");
         token = JWT.create().withPayload(payload).withHeader(headerClaims).sign(algorithm);
-        cache.put(id, token);
+        cache.put(apiKey, token);
         return token;
     }
 
