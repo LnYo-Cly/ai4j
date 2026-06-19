@@ -55,3 +55,11 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 07:35] - template material repaired
+
+- 做了什么：修复 \rief.md\ 与 \xecution_strategy.md\ 的模板残留，替换为 P1-B AgentFactory 的实际结果、边界、证据计划和 worktree 策略。
+- 验证结果：待复跑 Harness status 确认 missing-materials 消除。
+- 下一步：运行 \git diff --check\ 和 \
+px --yes coding-agent-harness status --json .\，然后提交修复。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/brief.md:P1-B brief materialized; diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/execution_strategy.md:P1-B execution strategy materialized
