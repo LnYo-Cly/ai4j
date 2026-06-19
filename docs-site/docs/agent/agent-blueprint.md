@@ -8,7 +8,9 @@ sidebar_position: 9
 
 > 当 Java API 能动态组装 Agent 之后，如何让一个 Agent 的模型、指令、插件、工具、memory、compact、sandbox 开关和 workflow 参数可以被保存、分享、模板化和校验？
 
-P1-A 先提供基础层：**Java DTO + YAML loader + validator + fixture tests**。它不会直接创建或运行 `Agent`，也不会读取 provider key 或本地 profile。这样做的目的，是先把配置合同做稳定，再让后续 `AgentFactory`、CLI、Runner、FlowGram 或插件生态消费同一套字段。
+P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。P1-B 在此基础上增加 `AgentFactory`：它可以在宿主显式提供 `AgentModelClient` 等依赖后，把 Blueprint 转成 `AgentBuilder` / `Agent`。
+
+注意：`AgentFactory` 仍然不会读取 provider key、本地 profile、插件目录或真实 sandbox。它只做确定性映射，所有敏感配置和外部系统连接都由宿主应用提供。
 
 ## 1. 适合什么场景
 
@@ -18,8 +20,8 @@ P1-A 先提供基础层：**Java DTO + YAML loader + validator + fixture tests**
 | 想把 Agent 配置保存成文件，并让别人复用 | 适合 |
 | 想在 UI / 模板 / 脚手架里生成 Agent 配置 | 适合 |
 | 想先检查配置有没有缺字段、非法 workflow、非法 compact 阈值 | 适合 |
-| 想从 YAML 一步创建并运行 Agent | P1-A 暂不提供，后续 P1-B 做 `AgentFactory` |
-| 想接真实 VM / 容器 / 远端 sandbox | P1-A 只声明和校验字段，真实执行属于后续 Sandbox SPI |
+| 想从 YAML 创建 Agent，但模型客户端由宿主提供 | 适合，P1-B 提供 `AgentFactory` |
+| 想接真实 VM / 容器 / 远端 sandbox | P1-A/P1-B 只声明、校验和 guard 字段，真实执行属于后续 Sandbox SPI |
 
 ## 2. 最小 YAML
 
@@ -106,9 +108,11 @@ workflow:
 
 这份示例仍然是单 Agent Blueprint，不是 Team Blueprint，也不是 workflow graph。Team、handoff、nodes/edges、FlowGram 导出都应该放到后续阶段。
 
-## 4. Java 加载与校验
+## 4. Java 加载、校验与创建 Agent
 
-P1-A 的核心包是：
+### 4.1 加载和校验
+
+P1-A/P1-B 的核心包是：
 
 ```text
 io.github.lnyocly.ai4j.agent.blueprint
@@ -139,7 +143,59 @@ if (!report.isValid()) {
 }
 ```
 
-`load(...)` 负责把 YAML 转成 Java 对象；`validate(...)` 负责输出稳定的错误和 warning。二者分开，是为了让 UI、CLI、测试或后续 Factory 可以根据同一份 report 决定怎么展示或阻断。
+`load(...)` 负责把 YAML 转成 Java 对象；`validate(...)` 负责输出稳定的错误和 warning。二者分开，是为了让 UI、CLI、测试或 Factory 可以根据同一份 report 决定怎么展示或阻断。
+
+
+
+### 4.2 使用 AgentFactory 创建 Agent
+
+P1-B 新增 `AgentFactory` 和 `AgentFactoryContext`：
+
+```java
+import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.blueprint.AgentBlueprint;
+import io.github.lnyocly.ai4j.agent.blueprint.AgentBlueprintLoader;
+import io.github.lnyocly.ai4j.agent.blueprint.AgentFactory;
+import io.github.lnyocly.ai4j.agent.blueprint.AgentFactoryContext;
+import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+
+AgentBlueprint blueprint = new AgentBlueprintLoader().load(Paths.get("agent.yaml"));
+
+AgentModelClient modelClient = createModelClientFromYourHostConfig();
+
+Agent agent = new AgentFactory().create(
+    blueprint,
+    AgentFactoryContext.builder()
+        .modelClient(modelClient)
+        .build()
+);
+```
+
+这里的关键点是：`AgentFactory` 不创建 provider client。宿主应用必须自己从环境变量、配置中心、Spring Bean、CLI profile 或 secret store 中拿到配置，再显式传入 `AgentModelClient`。
+
+P1-B 已映射的字段：
+
+| Blueprint 字段 | Agent 映射 |
+| --- | --- |
+| `model.model` | `AgentBuilder.model(...)` |
+| `model.options.temperature` | `AgentBuilder.temperature(...)` |
+| `model.options.topP` / `top_p` | `AgentBuilder.topP(...)` |
+| `model.options.maxOutputTokens` / `max_output_tokens` | `AgentBuilder.maxOutputTokens(...)` |
+| `instructions.system` | `AgentBuilder.systemPrompt(...)` |
+| `instructions.developer` | `AgentBuilder.instructions(...)` |
+| `workflow.mode=react` | ReAct runtime |
+| `workflow.mode=codeact` | CodeAct runtime |
+| `workflow.maxTurns` | `AgentOptions.maxSteps` |
+
+P1-B 不映射或不执行的字段：
+
+| 字段 | P1-B 行为 |
+| --- | --- |
+| `model.profile` | 只作为宿主元数据；Factory 不读取本地 profile。 |
+| `plugins[]` | 不安装、不扫描、不自动启用插件。 |
+| `tools[]` | 具体工具注册表仍由宿主通过 `AgentFactoryContext` 提供。 |
+| `session.memory` / `session.compact` | 不自动创建外部 memory store 或 compact strategy。 |
+| `sandbox.enabled=true` | 默认报 `blueprint.sandbox.unsupported`；除非宿主显式 `allowSandboxDeclaration(true)`，也只是允许声明通过，不创建真实 sandbox。 |
 
 ## 5. Loader 支持的入口
 
@@ -332,8 +388,8 @@ Warning：
 P1-A:
   YAML -> AgentBlueprint DTO -> ValidationReport
 
-P1-B（后续）:
-  AgentBlueprint DTO -> AgentFactory -> Agent / AgentSession
+P1-B:
+  AgentBlueprint DTO + host AgentFactoryContext -> AgentFactory -> Agent / AgentSession
 ```
 
 这样分层有两个好处：
@@ -351,7 +407,7 @@ tools:
     approval: safe
 ```
 
-P1-A 不直接生成 `AgentPermissionPolicy`。后续 Factory 或 host 可以把不同 approval 值映射到：
+P1-B 仍不直接生成 `AgentPermissionPolicy`。Factory/host 可以在后续版本或业务层把不同 approval 值映射到：
 
 - 允许执行
 - 拒绝执行
@@ -392,11 +448,12 @@ sandbox.enabled=true
 - `AgentBlueprintValidator`
 - `AgentBlueprintValidationReport`
 - `AgentBlueprintValidationIssue`
+- `AgentFactory` / `AgentFactoryContext` / `AgentFactoryException`
 - YAML fixtures 和 deterministic JUnit tests
 
 后续建议：
 
-1. P1-B：实现 `AgentFactory`，把 model/profile/tools/plugins/workflow 映射到真实 Agent 组装流程。
+1. P1-C：CLI 支持加载 Blueprint，例如后续 `ai4j run agent.yaml`。
 2. P2：设计 Sandbox SPI，让 `sandbox` 字段有真实 provider 绑定。
 3. P3：让 `ai4j-coding` 的 file/shell/git/browser 工具感知 sandbox binding。
 4. P4：在 CLI/TUI 里提供 Blueprint 加载、校验和 sandbox 状态交互。
@@ -413,7 +470,7 @@ sandbox.enabled=true
 
 ### 配置了 `sandbox.enabled=true` 但没有远端执行
 
-这是正常的。P1-A 只做声明和校验。真实远端执行需要后续 Sandbox SPI 和 coding tool routing。
+这是正常的。P1-B 的 `AgentFactory` 默认会拒绝 `sandbox.enabled=true`，避免用户误以为已经创建 VM。真实远端执行需要后续 Sandbox SPI 和 coding tool routing。
 
 ### 想把 token 写进 YAML
 

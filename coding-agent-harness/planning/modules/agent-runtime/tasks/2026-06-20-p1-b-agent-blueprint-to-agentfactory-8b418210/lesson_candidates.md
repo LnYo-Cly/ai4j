@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:p1-b-task-local |
 | Source task | 2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210 |
 | Owner | coordinator |
 | Last updated | 2026-06-20 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+P1-B 仍是单任务实现边界，稳定结论先保留在 task-local reference 和 docs-site；如后续 Factory/Blueprint 形成通用工程标准，再另开 lesson sedimentation。
 
 ## Promotion Notes
 
