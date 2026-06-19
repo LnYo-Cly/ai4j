@@ -24,7 +24,7 @@
 | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 | P0-C Agent plugin lifecycle hooks | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009/task_plan.md | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 |
 | T-P0-D-AGENT-APPROVAL-AND-PERMISSION-POLICY-95B57B | P0-D Agent approval and permission policy | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5/task_plan.md | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 |
 | T-P1-A-AGENT-BLUEPRINT-SCHEMA-MODEL-LOADER-VALIDAT | P1-A Agent Blueprint schema model loader validator | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/task_plan.md | T-P0-D-AGENT-APPROVAL-AND-PERMISSION-POLICY-95B57B |
-| T-P1-B-AGENT-BLUEPRINT-TO-AGENTFACTORY-8B418210 | P1-B Agent Blueprint to AgentFactory | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/task_plan.md | T-P1-A-AGENT-BLUEPRINT-SCHEMA-MODEL-LOADER-VALIDAT |
+| T-P1-B-AGENT-BLUEPRINT-TO-AGENTFACTORY-8B418210 | P1-B Agent Blueprint to AgentFactory | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/task_plan.md | T-P1-A-AGENT-BLUEPRINT-SCHEMA-MODEL-LOADER-VALIDAT |
 
 ## 活跃任务
 
