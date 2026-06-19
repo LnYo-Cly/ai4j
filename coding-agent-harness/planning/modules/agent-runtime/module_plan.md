@@ -19,9 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| AGENT-01 | 维护 runtime/workflow 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | core-sdk |
-| AGENT-02 | trace 与 memory 行为回归 | planned | none | AGENT-01 |
-| AGENT-03 | FlowGram / CLI 下游影响同步 | planned | none | AGENT-01 |
+| T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | none |
 
 ## 活跃任务
 
