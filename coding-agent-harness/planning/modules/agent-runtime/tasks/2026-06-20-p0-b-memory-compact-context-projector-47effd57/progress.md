@@ -2,43 +2,9 @@
 
 ## 状态：审查中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
-证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+证据使用 `type:path:summary` 格式。允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
 
 ### [2026-06-19 18:44] - task-start
 
@@ -88,3 +54,22 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+## 残余
+
+- PR/CI/merge 待执行。
+- 人工确认仍需通过 Harness Dashboard / review-confirm 完成，agent 不代办人工确认。
+
+## 协调者交接（Coordinator，启用模块并行时填写）
+
+- Global sync status：pending-pr
+- Registry update needed：P0-B task is in review after materials repair; PR/CI/merge pending
+- Harness Ledger update needed：task-review lifecycle already generated governance commit; final closeout after PR merge
+- 负责人：coordinator
+
+### [2026-06-20 03:34] - missing materials repair
+
+- 做了什么：修复 task-review 后暴露的材料问题：`lesson_candidates.md` 改为可解析 Candidate Status 表，`progress.md` 移除默认模板占位段。
+- 验证结果：准备复跑 Harness status。
+- 下一步：Harness status 通过后提交材料修复，再推送 PR。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57:lesson/progress material repair
