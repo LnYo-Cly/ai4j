@@ -1,6 +1,6 @@
 # AI4J Agent SDK implementation decomposition and docs roadmap - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -38,3 +38,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：task lifecycle CLI 自动同步
 - 负责人：coordinator
+
+### [2026-06-19 17:55] - task-review
+
+- 做了什么：AI4J Agent SDK implementation decomposition and docs roadmap ready for human review: P0-P5 task queue is documented, docs-site Agent SDK Roadmap page is linked from Agent overview/sidebar, docs-site build passed, and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

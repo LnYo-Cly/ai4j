@@ -29,7 +29,7 @@ kind=gate"]
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | worktree 和任务包已创建 | `git worktree list`; `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | P0-P5 拆解和 docs-site roadmap 已写入 | `references/ai4j-agent-implementation-roadmap.md`; `docs-site/docs/agent/sdk-roadmap.md`; `docs-site/sidebars.ts` | `harness task-phase 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add EXEC-01 --state done --completion 100 --evidence present` | agent | present | final harness clean check pending | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; docs build; harness status | `harness task-review 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add --message "<summary>"` | agent | partial | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; docs build; harness status | `harness task-review 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | dashboard workbench confirmation | human | missing | Agent 不能代办人工确认 | human |
 
 ## P0-P5 Roadmap

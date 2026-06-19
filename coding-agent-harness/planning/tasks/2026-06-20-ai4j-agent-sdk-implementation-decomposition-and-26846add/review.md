@@ -79,3 +79,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自三类证据：P0-P5 拆解已落盘、docs-site roadmap 已接入导航、docs-site build 已通过。剩余事项是 Harness 最终状态检查、task-review 生命周期推进、推送和 PR 创建；这些会在提交后继续验证。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606191755 |
+| Submitted At | 2026-06-19 17:55 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add |
+| Materials Checklist Hash | a8d1cf0da9056907 |
+| Evidence Summary | AI4J Agent SDK implementation decomposition and docs roadmap ready for human review: P0-P5 task queue is documented, docs-site Agent SDK Roadmap page is linked from Agent overview/sidebar, docs-site build passed, and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add |
