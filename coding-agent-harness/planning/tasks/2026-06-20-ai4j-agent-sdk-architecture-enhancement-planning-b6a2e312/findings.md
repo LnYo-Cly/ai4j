@@ -34,3 +34,11 @@
 | F-012 | P2 | Approval / Permission Policy 是 sandbox 前置缝隙；本地 permission sandbox 和真实远端 sandbox 需要在 P0-D 先分清。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 5、7 节 | 新建 P0-D planning/implementation task。 | open-follow-up |
 | F-013 | P2 | docs-site 需要按“每个能力能不能用起来”重构，不只是 roadmap 标记。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 11 节 | 每个能力页补：问题、最小示例、API/YAML、关系、限制、FAQ、下一步。 | open-follow-up |
 | F-014 | P3 | 远端 Agent Runner 是产品化差异点，但必须满足 P0-P4 门禁后再决定是否新增模块。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 10 节 | P5 只做协议合同和决策任务，不作为 P0/P1 阻塞项。 | open-follow-up |
+
+## 2026-06-20 最终集成规划新增发现
+
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-015 | P1 | 当前不应继续扩散总规划；真实下一步是收尾 P1-B AgentFactory worktree。 | `git worktree list`; `.wt/p1b` status; `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 11 节 | 在 `.wt/p1b` 修复 docs markdown、复跑 targeted/broad/docs/Harness checks、更新 P1-B task package、提交 PR 并 merge。 | open-follow-up |
+| F-016 | P2 | P2/P3/P4/P5 依赖关系必须保持顺序，否则会把 Sandbox、Coding tools、CLI 和 Runner 过早耦合。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 5-8 节 | Sandbox 先 fake provider + SPI，再 coding routing，再 CLI UX，最后 Runner 决策。 | open-follow-up |
+| F-017 | P2 | CLI/TUI 增强应继续 Java + JLine + renderer abstraction，不应为了视觉效果过早引入 Ink/React 双栈。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 7 节 | P4 任务先做布局、slash command、reply rendering 和 Harness bridge 的 Java 侧抽象。 | open-follow-up |

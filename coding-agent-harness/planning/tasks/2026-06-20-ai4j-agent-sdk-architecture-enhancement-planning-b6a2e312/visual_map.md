@@ -158,3 +158,29 @@ P5 Remote Agent Runner decision
 ```
 
 MAP-04 Source Evidence: `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`
+
+### MAP-05 最终集成实施计划
+
+```text
+Current reality
+  main has planning records
+  .wt/p1b -> feature/agent-blueprint-factory -> P1-B AgentFactory
+        |
+        v
+Close P1-B first
+  fix docs markdown
+  targeted AgentBlueprintFactoryTest
+  broad ai4j-agent regression
+  docs-site build
+  P1-B task package + review
+  PR / CI / merge / cleanup
+        |
+        v
+Continue roadmap
+  P2 Sandbox SPI
+  P3 ai4j-coding sandbox routing
+  P4 ai4j-cli TUI + /sandbox + Harness bridge
+  P5 Remote Runner decision
+```
+
+MAP-05 Source Evidence: `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md`

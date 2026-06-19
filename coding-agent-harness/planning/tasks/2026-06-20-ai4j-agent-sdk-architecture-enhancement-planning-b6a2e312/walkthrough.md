@@ -70,3 +70,13 @@ Closeout Status: pending-human-confirmation
 - `ai4j-agent` 内核优先收尾 P0-A/P0-B/P0-C，并新增 P0-D Approval / Permission Policy。
 - YAML Blueprint、Sandbox SPI、Coding sandbox routing、CLI/TUI、Remote Runner 分阶段推进。
 - 当前仓库已有 P0-C worktree 未提交，实际下一步应先收尾 P0-C，而不是继续扩散总规划。
+
+## 2026-06-20 最终集成实施规划补充
+
+本收口记录新增引用 `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md`。该文件是当前最终实施入口，明确：
+
+- `ai4j-agent` 是通用 Agent SDK 主入口，不新增 `AgentHost` / `Host Kernel` / `ai4j-runtime` 主概念。
+- P0 内核、P1 Blueprint、P2 Sandbox SPI、P3 coding routing、P4 CLI/TUI、P5 Runner 必须分阶段推进。
+- CLI/TUI 保持 Java + JLine + renderer abstraction，不完整内化 Coding Agent Harness。
+- 后续对标 Pi / Codex / Claude Code / OpenCode / Spring AI / LangChain4j / AgentScope Java / Sandbox provider 必须先做 R0 source-backed research。
+- 当前真实下一步是收尾 P1-B `G:\My_Project\java\ai4j-sdk\.wt\p1b` / `feature/agent-blueprint-factory`。

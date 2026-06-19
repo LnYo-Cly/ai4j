@@ -60,3 +60,10 @@
 - 验证结果：新增 `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`；同步更新 `references/INDEX.md`、`brief.md`、`task_plan.md`、`findings.md`、`visual_map.md`、`review.md`、`walkthrough.md`。
 - 下一步：运行 Harness status；如材料通过，重新提交 agent review summary，随后按 P0-C worktree 收尾。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md:execution roadmap and research gates for ai4j-agent roadmap
+
+### [2026-06-20 07:10] - integrated implementation plan recorded
+
+- 做了什么：按用户要求利用 Coding Agent Harness skill 将上方关于 ai4j-agent 改进完善增强方向的完整讨论，合并记录为最终集成实施规划。
+- 验证结果：新增 `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md`，并把它挂入 `references/INDEX.md`、`task_plan.md`、`findings.md`、`visual_map.md`、`review.md`、`walkthrough.md`。
+- 下一步：运行 Harness status；后续实际开发优先收尾 P1-B `.wt/p1b` / `feature/agent-blueprint-factory`。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md:integrated implementation plan for ai4j-agent roadmap and P1-B next step

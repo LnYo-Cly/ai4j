@@ -132,3 +132,11 @@
 | 是否避免凭空复刻 Pi/Codex/Claude/OpenCode | yes；新增 R0 source-backed research gates，后续实现前必须调研。 |
 | 是否明确当前下一步 | yes；先收尾 P0-C `feature/agent-plugin-lifecycle-hooks` worktree，再推进 P0-D/P1-A。 |
 | 是否新增阻塞 material finding | no；新增发现均为后续路线和调研门禁。 |
+
+## 最终集成规划审查补充
+
+| Evidence ID | Type | Path | Summary |
+| --- | --- | --- | --- |
+| E-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 最终集成实施规划固定模块边界、P0-P5 顺序、R0 调研门禁、P1-B 当前 worktree 收尾顺序和不要做事项。 |
+
+补充审查结论：本次补充没有改变 planning-only 边界，反而进一步收敛下一步到 P1-B AgentFactory 收尾；无新增 blocking material finding。

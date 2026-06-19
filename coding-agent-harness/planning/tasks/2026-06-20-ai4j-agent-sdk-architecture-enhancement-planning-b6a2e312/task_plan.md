@@ -117,3 +117,18 @@ Task Package Index: required
 | P5 Remote Runner | deferred | 先写协议合同；满足 P0-P4 后再决定是否新增 Maven module。 |
 
 当前实际下一步：P0-C `feature/agent-plugin-lifecycle-hooks` worktree 已存在未提交实现，应优先收尾；本规划任务不应继续扩散范围。
+
+## 最终集成实施规划补充
+
+| ID | 类型 | 路径 | 为什么需要 | 使用者 |
+| --- | --- | --- | --- | --- |
+| C-008 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 当前最终实施入口，合并 ai4j-agent 增强路线、插件生态、Blueprint、Sandbox、CLI/TUI、Runner、R0 调研门禁和当前 P1-B 收尾顺序 | coordinator / reviewer / future worker |
+
+新增验收补充：
+
+- [ ] 后续实施者能从 `references/INDEX.md` 优先找到集成实施规划。
+- [ ] 规划明确当前活跃实现是 P1-B `.wt/p1b` / `feature/agent-blueprint-factory`，下一步是收尾 P1-B，而不是重复开总规划。
+- [ ] 规划明确 P2 Sandbox SPI、P3 coding routing、P4 CLI/TUI、P5 Runner 的门禁关系。
+- [ ] 规划明确 R0 调研门禁，后续对标 Pi / Codex / Claude Code / OpenCode / Java SDK / Sandbox provider 必须 source-backed。
+
+当前实际下一步：收尾 `MODULES/agent-runtime/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210`，工作树为 `G:\My_Project\java\ai4j-sdk\.wt\p1b`，分支为 `feature/agent-blueprint-factory`。
