@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | none |
+| T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | none |
 
 ## 活跃任务
 
