@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-19 17:03] - task-log
+
+- 做了什么：记录 ai4j-agent SDK 架构增强规划材料：主规划文档、任务计划、visual map、findings、review 与 lesson candidate 已补齐。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-enhancement-plan.md:ai4j-agent enhancement route covering Session/Memory/Compact/Plugin/Sandbox/Runner/Blueprint
