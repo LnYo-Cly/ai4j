@@ -34,32 +34,20 @@
 - `promoted`：维护 CLI 或已批准的后续任务已把候选写入确认的治理目标。
 - `rejected`：人工带理由拒绝这个候选。
 
-聚合规则：
-
-- 任意 `ready-for-review` 行会让任务级状态保持 `pending-review`。
-- 任意 `needs-promotion` 行会让任务级状态变成 `needs-promotion`，除非仍有 `ready-for-review` 行。
-- 全部行都是 `promoted` 时，任务级状态为 `promoted`。
-- 全部行都是 `rejected` 时，任务级状态为 `rejected`。
-- 没有候选的任务必须使用 `no-candidate-accepted`，并填写 `No-Candidate Reason`。
-
 ## Candidates
 
 | ID | Row Status | Title | Scope | Module Key | Detail Artifact | Boundary Reason | Why It Might Matter | Review Decision | Promotion Target | Conflict Check | Required Standard Update | Follow-up Task |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| LC-20260620-agent-sdk-planning-scope | ready-for-review | 先收敛主概念再拆实施任务 | module | agent-runtime | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-enhancement-plan.md | 本任务澄清不新增 `AgentHost` / `ai4j-runtime`，而是增强现有 `ai4j-agent`；并把 Sandbox/Runner/Blueprint 拆成后续阶段。 | 后续 agent 容易把 architecture brainstorming 直接膨胀成新模块或一次性大改；该候选可提醒先固定主心智和任务边界。 | pending-human-review | module plan or engineering standard update | pending | maybe update agent-runtime module plan / engineering standard after approval | create follow-up lesson sedimentation task if accepted |
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+不适用：本任务已有一个候选等待人工判定。
 
 ## Promotion Notes
 
 - 如果人工审查认为候选值得沉淀，把对应行标记为 `needs-promotion`，并记录目标治理位置。
-- 候选标记为 `needs-promotion` 时，必须趁源任务上下文还新鲜写出完整 task-local detail artifact，并在 `Detail Artifact` 中链接。
-- `Scope` 使用 `task`、`module` 或 `global`；module 级候选必须填写 `Module Key`。
-- 如果人工审查拒绝候选，把对应行标记为 `rejected`，并在 review decision 中保留理由。
-- `needs-promotion` 不阻止任务 closeout，但必须继续出现在维护队列和收口记录里。
-- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要写共享 Lessons 表；被接受的候选应成为 promoted lesson 详情文档。
-- 沉淀任务必须先分类 scope、检查既有 lessons 和 standards 冲突、提出目标改动，并在 apply 前报告验证证据。
+- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要在本任务中直接写共享 Lessons 表。
 
 ## Queue Routing
 

@@ -2,19 +2,20 @@
 
 Visual Map Contract: v1.0
 
-本文件是任务图表集合，不只是阶段路线图。只有对人或 agent 理解任务有实际帮助的图才放进来。
+本文件记录 AI4J Agent SDK architecture enhancement planning 的阶段、模块边界和后续路线图。
 
 ## 图表索引（Map Index）
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示本规划任务的执行阶段和门禁 | yes | `task_plan.md` | no |
+| MAP-02 | architecture | 展示 ai4j-agent 增强路线和模块边界 | yes | `references/ai4j-agent-sdk-enhancement-plan.md` | yes |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
+  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 规划材料落盘\nkind=execution"]
   EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
   GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
 ```
@@ -24,8 +25,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `ai4j-agent` 增强规划文档、visual map、findings、review 和 lesson candidate 已落盘 | `references/ai4j-agent-sdk-enhancement-plan.md`; `findings.md`; `review.md`; `lesson_candidates.md` | `harness task-log 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 --message "<summary>"` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 --message "<summary>"` | agent | partial | pending final status check | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 --confirm 2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -40,11 +41,57 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
+### MAP-02 ai4j-agent 增强路线
 
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+```text
+当前基础
+  Agent / Runtime / Session / Memory / Tool / Event / Workflow / Team / Trace
+        |
+        v
+P0 SDK 内核
+  AgentSession
+  SessionEventLog
+  MemoryStore
+  ContextProjector
+  CompactPolicy
+  Plugin Lifecycle
+        |
+        +--------------------+
+        |                    |
+        v                    v
+P1 Agent Blueprint      P2 Sandbox 抽象
+  YAML schema             SandboxProvider
+  loader/validator        SandboxSession
+  factory                 SandboxSpec
+        |                    |
+        v                    v
+P3 ai4j-coding 接入      P4 ai4j-cli 体验
+  shell/file/git/browser   /sandbox status/enable/disable/attach
+        |
+        v
+P5 Remote Agent Runner
+  ai4j-agent-runner in sandbox
+  event stream / artifact / screenshot / remote workspace
+```
+
+### 模块边界
+
+```text
+ai4j
+  模型 SDK 和 provider 基础。
+
+ai4j-agent
+  通用 Agent SDK 主入口，承载 Session/Memory/Compact/Event/Plugin lifecycle/Sandbox binding 抽象。
+
+ai4j-extension-api
+  插件声明能力，包括 Tool/Command/Hook/UI/Memory/Compact/SandboxProvider。
+
+ai4j-coding
+  官方 coding tools 和 workspace 能力，感知可选 sandbox。
+
+ai4j-cli
+  官方终端产品，提供 /sandbox、Blueprint 运行、远端 runner attach 等 UX。
+
+ai4j-agent-runner（未来可选）
+  可部署到远端 sandbox 的 Agent Runner。
+```
