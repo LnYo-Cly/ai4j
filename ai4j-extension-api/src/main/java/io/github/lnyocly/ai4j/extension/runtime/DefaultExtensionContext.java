@@ -9,6 +9,8 @@ import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
 import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRegistry;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
+import io.github.lnyocly.ai4j.extension.lifecycle.LifecycleHookRegistry;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.prompt.PromptRegistry;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
@@ -26,6 +28,7 @@ public final class DefaultExtensionContext implements ExtensionContext {
     private final SkillRegistry skills;
     private final PromptRegistry prompts;
     private final GuardrailRegistry guardrails;
+    private final LifecycleHookRegistry lifecycle;
 
     public DefaultExtensionContext(final ExtensionManifest manifest, final ExtensionRuntimeState runtimeState) {
         if (manifest == null) {
@@ -66,6 +69,12 @@ public final class DefaultExtensionContext implements ExtensionContext {
                 runtimeState.registerGuardrail(manifest, guardrail);
             }
         };
+        this.lifecycle = new LifecycleHookRegistry() {
+            public void register(AgentLifecycleHook hook) {
+                requireCapability(ExtensionCapability.LIFECYCLE);
+                runtimeState.registerLifecycleHook(manifest, hook);
+            }
+        };
     }
 
     public ExtensionManifest manifest() {
@@ -90,6 +99,10 @@ public final class DefaultExtensionContext implements ExtensionContext {
 
     public GuardrailRegistry guardrails() {
         return guardrails;
+    }
+
+    public LifecycleHookRegistry lifecycle() {
+        return lifecycle;
     }
 
     private void requireCapability(ExtensionCapability capability) {

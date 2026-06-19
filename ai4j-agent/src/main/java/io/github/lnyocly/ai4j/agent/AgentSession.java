@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.agent;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionEventLog;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionMetadata;
@@ -11,6 +12,8 @@ import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.session.InMemoryAgentSessionEventLog;
 
 import java.util.Map;
+
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
 public class AgentSession {
 
@@ -141,6 +144,10 @@ public class AgentSession {
             memory.restore(result.getMemory());
         }
         lastCompactResult = result == null ? null : result.copy();
+        AgentLifecycleHookDispatcher dispatcher = context == null ? null : context.getLifecycleHooks();
+        if (dispatcher != null) {
+            dispatcher.dispatch(context, AgentLifecycleEventType.ON_COMPACT, "session", 0, "compact", lastCompactResult);
+        }
         metadata.touch();
         return this;
     }

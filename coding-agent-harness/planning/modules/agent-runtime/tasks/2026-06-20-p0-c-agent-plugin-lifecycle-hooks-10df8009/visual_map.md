@@ -24,8 +24,10 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | extension-api lifecycle contract 和 registry/snapshot 支持 | diff、extension-api targeted tests | `mvn -pl ai4j-extension-api "-Dtest=*Lifecycle*" -DskipTests=false test` | agent | present | none | coordinator |
+| EXEC-02 | execution | EXEC-01 | done | 100 | agent runtime dispatcher、builder/context 接入和 runtime 触发点 | diff、agent targeted tests | `mvn -pl ai4j-agent -am "-Dtest=AgentPluginLifecycleHooksTest" -DskipTests=false -DfailIfNoTests=false test` | agent | present | none | coordinator |
+| EXEC-03 | execution | EXEC-02 | done | 100 | docs-site lifecycle hooks 页面、roadmap/sidebar 和回归治理更新 | docs diff、docs-site build、Regression SSoT / Cadence Ledger diff | `npm run build` in `docs-site` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-03 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing、cross-module regression | `harness task-review MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 --message "<summary>" .` | agent | missing | run after feature commit so CLI can write review metadata | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 --confirm 2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -48,3 +50,38 @@ flowchart LR
 - state：状态机或生命周期。
 - topology：repo、服务、worker、worktree 拓扑。
 - decision：方案分叉和决策树。
+
+## 生命周期接入图（Architecture Map）
+
+```mermaid
+flowchart LR
+  EXT["Third-party Ai4jExtension"] --> CTX["ExtensionContext.lifecycle()"]
+  CTX --> STATE["ExtensionRuntimeState"]
+  STATE --> SNAP["ExtensionRuntimeSnapshot"]
+  SNAP --> BRIDGE["ExtensionAgentTools"]
+  BRIDGE --> BUILDER["AgentBuilder.extensions(...)"]
+  BUILDER --> AGENTCTX["AgentContext.lifecycleHooks"]
+  AGENTCTX --> DISP["AgentLifecycleHookDispatcher"]
+  DISP --> RUNTIME["Base/ReAct + CodeAct Runtime"]
+  DISP --> SESSION["AgentSession.compact(...)"]
+```
+
+## Hook 顺序图（Sequence Map）
+
+```mermaid
+sequenceDiagram
+  participant Runtime
+  participant Hooks
+  participant Model
+  participant Tool
+  Runtime->>Hooks: BEFORE_TURN
+  Runtime->>Hooks: BEFORE_MODEL_REQUEST
+  Runtime->>Model: create/createStream(prompt)
+  Model-->>Runtime: AgentModelResult
+  Runtime->>Hooks: AFTER_MODEL_RESPONSE
+  Runtime->>Hooks: BEFORE_TOOL_CALL
+  Runtime->>Tool: execute(call)
+  Tool-->>Runtime: output
+  Runtime->>Hooks: AFTER_TOOL_CALL
+  Runtime->>Hooks: AFTER_TURN
+```
