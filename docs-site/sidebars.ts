@@ -150,6 +150,7 @@ const sidebars: SidebarsConfig = {
         'agent/session-runtime',
         'agent/memory-compact-context',
         'agent/plugin-lifecycle-hooks',
+        'agent/approval-permission-policy',
         'agent/quickstart',
         'agent/provider-config-examples',
         'agent/model-client-selection',

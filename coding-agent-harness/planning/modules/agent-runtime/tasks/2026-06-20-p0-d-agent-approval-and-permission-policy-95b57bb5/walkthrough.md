@@ -1,47 +1,53 @@
-# 收口记录：P0-D Agent approval and permission policy
+# P0-D Agent approval and permission policy - Walkthrough
 
-## 摘要
+## 1. Outcome
 
-待收口。
+P0-D implemented a minimal host-side tool approval / permission policy foundation in `ai4j-agent`.
 
-## 范围
+Delivered:
 
-| 范围 | 详情 |
+- `io.github.lnyocly.ai4j.agent.permission` API package.
+- `AgentPermissionToolExecutor` wrapper before delegate tool execution.
+- `AgentBuilder.permissionPolicy(...)` and `executionEnvironment(...)` wiring.
+- Deterministic tests for allow, deny, require-approval, environment metadata, and runtime builder integration.
+- docs-site technical page and roadmap/sidebar entry.
+- Regression SSoT and Cadence Ledger updates.
+
+## 2. Changed surfaces
+
+| Surface | Files |
 | --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+| Agent runtime API | `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/permission/*` |
+| Builder/context wiring | `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`; `AgentContext.java` |
+| Tests | `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentApprovalPermissionPolicyTest.java` |
+| Docs-site | `docs-site/docs/agent/approval-permission-policy.md`; `docs-site/docs/agent/sdk-roadmap.md`; `docs-site/sidebars.ts` |
+| Governance | `docs/05-TEST-QA/Regression-SSoT.md`; `docs/05-TEST-QA/Cadence-Ledger.md` |
+| Harness | this task package and `coding-agent-harness/planning/modules/agent-runtime/module_plan.md` |
 
-## 验证
+## 3. Verification
 
-| 检查 | 命令或过程 | 结果 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | not run | pending |
-
-## 审查结论
-
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
-
-## 残余风险
-
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
-
-## 经验沉淀反思
-
-| 问题 | 答案 |
+| Gate | Result |
 | --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
+| Targeted P0-D tests | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` passed, 5 tests |
+| Broad agent runtime | `mvn -pl ai4j-agent -am -DskipTests=false test` passed with extension API 25, core 103, agent 94 tests |
+| Docs-site | `npm run build` passed in `docs-site/` |
+| Harness status | `npx --yes coding-agent-harness status --json .` returned 0 failures and dirty warning only before commit |
+| Diff check | `git diff --check` passed with CRLF warnings only |
 
-## 收口链接
+## 4. Review disposition
 
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+Self-review found no blocking material findings.
+
+Accepted residuals:
+
+- Team dynamic executor wrapping needs a follow-up only if team orchestration must inherit a single global permission policy.
+- CLI/TUI interactive approval belongs to P4.
+- Real VM/container/remote sandbox belongs to P2/P3.
+
+## 5. Lessons Reflection
+
+No new Harness lesson candidate was created. The main reusable technical point is product/API boundary clarity: P0-D is permission metadata and execution gate, not a sandbox. That is already captured in docs-site and task-local findings, so no governance lesson promotion is needed.
+
+## 6. Next step
+
+Run final `harness status --json`, `git diff --check`, commit, `task-review`, push PR, wait CI, merge, and clean the worktree.

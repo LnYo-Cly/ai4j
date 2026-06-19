@@ -8,6 +8,8 @@ import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import lombok.Builder;
@@ -40,6 +42,10 @@ public class AgentContext {
     private AgentEventPublisher eventPublisher;
 
     private AgentLifecycleHookDispatcher lifecycleHooks;
+
+    private AgentPermissionPolicy permissionPolicy;
+
+    private AgentExecutionEnvironment executionEnvironment;
 
     private String sessionId;
 

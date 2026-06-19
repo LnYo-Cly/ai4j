@@ -4,7 +4,8 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | report | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5/references/p0-d-agent-approval-permission-policy-plan.md | P0-D permission/approval policy design boundary, API shape, tests and residuals | coordinator |
+| ART-002 | report | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5/visual_map.md | Phase graph, execution-chain architecture map and decision-state map | coordinator |
 
 ## 使用规则
 

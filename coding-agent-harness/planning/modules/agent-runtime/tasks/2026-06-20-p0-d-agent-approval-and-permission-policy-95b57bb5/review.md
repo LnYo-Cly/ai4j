@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | P0-D implementation, docs-site, regression governance, task package |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：architecture / regression / release-readiness
+- 范围内：`ai4j-agent` permission package、`AgentBuilder` / `AgentContext` wiring、`AgentApprovalPermissionPolicyTest`、docs-site page/sidebar/roadmap、Regression SSoT、Cadence Ledger、task package。
+- 范围外：真实 sandbox provider、CLI/TUI interactive approval、Blueprint YAML、`ai4j-coding` sandbox routing、live provider tests。
+- 来源材料：task plan、diff、targeted Maven test、broad agent Maven test、docs-site build、Harness task materials。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,90 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5 |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | P0-D permission policy API, Builder wiring, deterministic tests, docs-site page, regression governance, and task package ready for task-review after final harness/diff checks. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - Team runtime 动态替换 member executor 的路径未在本轮专项覆盖；如果团队编排也必须强制同一 permission policy，需要后续测试或实现。
+  - CLI/TUI 对 `REQUIRE_APPROVAL` 的交互式处理尚未实现，本轮只提供稳定异常/状态语义。
+- Fix loop count：2
+- 当前结论：剩余问题均在 P0-D 明确范围外，且已记录 residual；本轮可进入 task-review。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `executionEnvironment` 是 metadata，不创建 sandbox；docs-site 已明确该边界。
+- `bash` 非法参数会先被 sanitizer 拦截；测试已改用合法参数证明 permission gate。
+- docs-site worktree 使用本地 `node_modules` junction 复用依赖，不提交。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:ai4j-agent/target/surefire-reports/io.github.lnyocly.agent.AgentApprovalPermissionPolicyTest.txt | targeted P0-D policy tests passed, 5 tests |
+| E-002 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false test` passed with extension API 25, core 103, agent 94 tests |
+| E-003 | command | TARGET:docs-site | `npm run build` passed and generated static files |
+| E-004 | diff | TARGET:docs-site/docs/agent/approval-permission-policy.md | docs page explains API, boundaries, sandbox relationship, troubleshooting |
+| E-005 | diff | TARGET:docs/05-TEST-QA/Regression-SSoT.md; TARGET:docs/05-TEST-QA/Cadence-Ledger.md | regression governance updated for approval/permission policy surface |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞 P0-D 目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| AgentTeam dynamic executor wrapping path not covered by P0-D tests | coordinator | yes | future agent-team permission inheritance task if required |
+| CLI/TUI interactive approval not implemented | coordinator | yes | P4 CLI/TUI approval UX |
+| Real sandbox provider not implemented | coordinator | yes | P2 Sandbox SPI and P3 coding routing |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料包和验证证据齐备后提交审查，等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件和核心证据已补齐。 | n/a |
+| Blocked | no | 无 open blocking finding。 | n/a |
+| Lessons | no | 本任务没有新增可复用 Harness lesson 候选。 | n/a |
+| Confirmed / Finalized | no | 尚未人工确认。 | review-confirm 后进入 closeout。 |
+| Soft-deleted / Superseded | no | 任务仍为 active。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：无需再更新，除非 final checks 失败。
+- Progress：final harness/diff check 后补一条。
+- 发现记录：已记录主要决策和 residual。
+- Regression SSoT：已更新 RG-002。
+- Lessons：checked-none: p0-d-task-local-no-new-harness-lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+信心来自 deterministic policy tests、broad agent runtime regression、docs-site build、明确的非目标范围和已记录 residual。发布前最终仍需 `harness status --json`、`git diff --check`、commit、task-review、PR CI。

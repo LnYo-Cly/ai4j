@@ -11,60 +11,51 @@
 
 ## Subagent Delegation Decision
 
-任务开始时，coordinator 必须根据用户目标主动做这个判断，即使用户完全没有提到 subagent。
-不要假设用户知道 subagent 或 worker 是什么。如果分工有帮助，用白话说明收益，并向用户申请一次授权。
-可以直接对用户说 subagent 或 worker subagent；关键规则是 agent 不能等用户主动提出 subagent。
-如果任务已经明显拆成互不重叠的独立切片，implementation 前就应判断为 `ask-user`。如果还不知道精确文件路径，先确认路径，然后立刻申请独立执行助手授权。
-
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | no | 本轮范围窄、主要是 agent runtime 执行边界 + deterministic tests；先用 self adversarial review，PR 后交给 human/CI。 | 在 `review.md` 中做 confidence challenge。 |
+| Would a worker subagent materially help? | no | 实现、docs、治理文件共享面较多，并行 worker 容易冲突；当前更适合 coordinator 串行收口。 | 不派 worker。 |
 
 ## User Authorization Decision
 
-如果上方 worker 决策是 `ask-user`，implementation 必须暂停，直到这里记录用户答案。
-已解决状态只能是 `authorized`、`denied` 或 `not-needed`。选择 `ask-user` 后不得继续保持 `pending`。
-
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-20 | n/a | n/a | 串行执行，避免共享文件冲突。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
-| 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 主执行者 | coordinator | coordinator 负责 P0-D 从设计、实现、验证到 PR 收口。 |
+| Subagent 模式 | reviewer-only via self review | 不启动 worker；review 由 self adversarial + 后续 human confirmation。 |
+| 审查模型 | adversarial self-check | 重点挑战执行链顺序、真实 sandbox 语义误导、Java 8/API 兼容和测试证据。 |
+| Worktree 策略 | dedicated worktree | `feature/agent-approval-permission-policy` 是唯一写入 worktree；main dirty 同任务差异需归并后清理。 |
+| 冲突控制 | coordinator owns shared files | docs-site sidebar/roadmap、Regression SSoT、Cadence Ledger、module_plan 由 coordinator 串行更新。 |
+| 证据深度 | L1 + L2-lite | L1 targeted/unit tests；L2-lite module regression + docs-site build + harness status。 |
 
 ## 子代理 / Worker 合同
 
-如使用 subagent 或 worker，在这里写清楚输入包、写入范围、handoff 格式和最终集成 owner。
-
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| n/a | C-001..C-008 | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `git diff --check`；API surface review | `progress.md` | 无 whitespace error；无 provider token；Java 8 语法。 |
+| L1 | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` | `progress.md` / surefire reports | P0-D deterministic tests 通过。 |
+| L2-lite | `mvn -pl ai4j-agent -am -DskipTests=false test` | `progress.md` | agent runtime 模块回归通过。 |
+| L2-lite | `cd docs-site; npm run build` | `progress.md` | 文档站构建通过。 |
+| Governance | `npx --yes coding-agent-harness status --json .` | `progress.md` | failures=0；dirty warning 在提交前可接受，提交后应 clean。 |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
-- reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
-- 环境无法提供关键证据，继续执行会变成猜测。
+- 需要改变 `ToolExecutor` 方法签名或模型 tool schema 格式。
+- 需要新增 `ai4j-extension-api` 公共扩展合同。
+- 需要实现真实 sandbox provider 或远端 runner。
+- 需要改 `ai4j-coding` / `ai4j-cli` 行为。
+- 模块回归暴露和本轮无关的大面积失败，需要拆成独立修复或记录 residual。
 
 ## Module Preset Strategy
 
