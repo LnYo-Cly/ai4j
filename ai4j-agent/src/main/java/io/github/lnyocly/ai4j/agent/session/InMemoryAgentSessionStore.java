@@ -43,6 +43,6 @@ public class InMemoryAgentSessionStore implements AgentSessionStore {
     }
 
     private AgentSessionSnapshot copy(AgentSessionSnapshot snapshot) {
-        return new AgentSessionSnapshot(snapshot.getMetadata(), snapshot.getMemory(), snapshot.getEvents());
+        return new AgentSessionSnapshot(snapshot.getMetadata(), snapshot.getMemory(), snapshot.getEvents(), snapshot.getCompactResult());
     }
 }

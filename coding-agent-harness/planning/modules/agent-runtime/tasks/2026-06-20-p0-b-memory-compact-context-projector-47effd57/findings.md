@@ -1,24 +1,18 @@
-# P0-B Memory Compact Context Projector - 发现记录
+# Findings - P0-B Memory Compact Context Projector
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## 发现记录
 
-## 研究发现
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-001 | P1 | Prompt projection 不能只接入 ReAct；CodeActRuntime 也覆盖 `buildPrompt`。 | `CodeActRuntime.buildPrompt(...)` 原先直接使用 `memory.getItems()`。 | 让 CodeActRuntime 调用 Base 的 `projectItems(...)`。 | fixed |
+| F-002 | P2 | `MEMORY_COMPRESS` report 如果只发 publisher 不传 listener，stream 调用方看不到投影事件。 | `BaseAgentRuntime.projectItems(...)` 原先 `publish(context, null, ...)`。 | 将 step/listener 传入 projection publish。 | fixed |
+| F-003 | P2 | Compact 结果不能只是一段 summary 字符串，需要预留结构化字段。 | 总规划刷新稿与 task plan 验收。 | `CompactResult` 保留 completed/pending/decisions/artifacts/failed commands/test results/user confirmations/sandbox/open questions/context report。 | fixed |
+| F-004 | P3 | 内置 compact policy 只是确定性基础策略，不是语义级 LLM 总结。 | `StructuredSummaryCompactPolicy` 只基于 snapshot 和 projection 构造 summary。 | docs-site 明确限制，避免过度承诺。 | fixed |
 
-### [发现主题 1]
+## 残余问题
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
-
-## 技术决策
-
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
-
-## 待确认问题
-
-| 问题 | 当前判断 | Owner | 截止点 |
+| Residual | Owner | Status | Follow-up |
 | --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+| 模型驱动 semantic compact 尚未实现。 | future owner | accepted | 可作为 plugin lifecycle / custom CompactPolicy 示例后续实现。 |
+| token 级预算尚未实现。 | future owner | accepted | 后续可增加 tokenizer-backed `ContextBudgetEstimator`。 |
+| event log/artifact 到 structured compact fields 的提炼尚未实现。 | future owner | accepted | Coding Agent / Runner 阶段结合 artifact 和 sandbox state 设计。 |

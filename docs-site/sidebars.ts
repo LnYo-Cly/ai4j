@@ -148,6 +148,7 @@ const sidebars: SidebarsConfig = {
         'agent/architecture',
         'agent/sdk-roadmap',
         'agent/session-runtime',
+        'agent/memory-compact-context',
         'agent/quickstart',
         'agent/provider-config-examples',
         'agent/model-client-selection',

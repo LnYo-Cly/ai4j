@@ -4,6 +4,8 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
+import io.github.lnyocly.ai4j.agent.context.ContextBudget;
+import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
@@ -50,6 +52,8 @@ public class AgentBuilder {
     private Supplier<AgentMemory> memorySupplier;
     private AgentOptions options;
     private CodeActOptions codeActOptions;
+    private ContextProjector contextProjector;
+    private ContextBudget contextBudget;
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
     private AgentEventPublisher eventPublisher;
@@ -143,6 +147,16 @@ public class AgentBuilder {
 
     public AgentBuilder codeActOptions(CodeActOptions codeActOptions) {
         this.codeActOptions = codeActOptions;
+        return this;
+    }
+
+    public AgentBuilder contextProjector(ContextProjector contextProjector) {
+        this.contextProjector = contextProjector;
+        return this;
+    }
+
+    public AgentBuilder contextBudget(ContextBudget contextBudget) {
+        this.contextBudget = contextBudget;
         return this;
     }
 
@@ -277,6 +291,8 @@ public class AgentBuilder {
                 .memory(memory)
                 .options(resolvedOptions)
                 .codeActOptions(resolvedCodeActOptions)
+                .contextProjector(contextProjector)
+                .contextBudget(contextBudget)
                 .eventPublisher(resolvedEventPublisher)
                 .model(model)
                 .instructions(instructions)

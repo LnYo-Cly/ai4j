@@ -46,3 +46,38 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 03:12] - implementation and targeted test
+
+- 做了什么：实现 context projector / compact policy foundation，接入 BaseAgentRuntime 与 CodeActRuntime prompt projection，扩展 AgentSession compact snapshot/store/resume，新增 P0-B 定向测试，并更新 docs-site 技术页。
+- 验证结果：`mvn -pl ai4j-agent "-Dtest=AgentMemoryCompactContextProjectorTest" -DskipTests=false test` 通过，6 tests passed。
+- 下一步：运行 broad agent regression、docs-site build、harness status，然后提交/PR。
+- 证据：command:TARGET:ai4j-agent/target/surefire-reports/io.github.lnyocly.agent.AgentMemoryCompactContextProjectorTest.txt:6 tests passed; diff:TARGET:docs-site/docs/agent/memory-compact-context.md:P0-B technical docs page
+
+### [2026-06-20 03:23] - broad agent regression
+
+- 做了什么：运行 P0-B 触发的 agent broad regression。
+- 验证结果：`mvn -pl ai4j-agent -am -DskipTests=false test` 通过；extension-api 19、core ai4j 103、ai4j-agent 85 tests passed。
+- 下一步：运行 docs-site build 和 Harness status。
+- 证据：command:TARGET:.:'mvn -pl ai4j-agent -am -DskipTests=false test' -> BUILD SUCCESS
+
+### [2026-06-20 03:27] - docs-site build
+
+- 做了什么：在 worktree 的 `docs-site/` 安装本地依赖后运行 Docusaurus build。
+- 验证结果：`npm run build` 通过，静态文件生成到 `docs-site/build`。
+- 下一步：运行 Harness status，修复任务包材料问题，然后提交/PR。
+- 证据：command:TARGET:docs-site:'npm run build' -> success
+
+### [2026-06-20 03:29] - harness status material repair
+
+- 做了什么：运行 Harness status，发现 `review.md missing Final Confidence Basis`。
+- 验证结果：已在 review 中补充最终信心依据，准备复跑 Harness status。
+- 下一步：复跑 Harness status，确认 failures=0 后提交。
+- 证据：command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failure: review.md missing Final Confidence Basis; diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57/review.md:added Final Confidence Basis
+
+### [2026-06-20 03:30] - harness status pass
+
+- 做了什么：复跑 Harness status。
+- 验证结果：`npx --yes coding-agent-harness status --json .` exit 0，failures=0，status=warn；唯一 warning 为 dirty-state，符合提交前状态。
+- 下一步：提交 feature diff，运行 `task-review` 或在干净状态推进 review。
+- 证据：command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failures=0, warnings=dirty-state only

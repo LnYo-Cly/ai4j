@@ -72,7 +72,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         while (!stepLimited || step < maxSteps) {
             publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null);
 
-            AgentPrompt prompt = buildPrompt(context, memory, false);
+            AgentPrompt prompt = buildPrompt(context, memory, false, step, listener);
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, false);
             lastResult = modelResult;
 
@@ -177,10 +177,19 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
     @Override
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
+        return buildPrompt(context, memory, stream, 0, null);
+    }
+
+    @Override
+    protected AgentPrompt buildPrompt(AgentContext context,
+                                      AgentMemory memory,
+                                      boolean stream,
+                                      int step,
+                                      AgentListener listener) {
         String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions(context));
         AgentPrompt.AgentPromptBuilder builder = AgentPrompt.builder()
                 .model(context.getModel())
-                .items(memory.getItems())
+                .items(projectItems(context, memory.getItems(), step, listener))
                 .systemPrompt(systemPrompt)
                 .instructions(context.getInstructions())
                 .temperature(context.getTemperature())

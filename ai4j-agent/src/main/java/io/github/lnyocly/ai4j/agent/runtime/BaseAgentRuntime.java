@@ -6,6 +6,8 @@ import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
+import io.github.lnyocly.ai4j.agent.context.ContextProjection;
+import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
@@ -78,7 +80,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throwIfInterrupted();
             publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null);
 
-            AgentPrompt prompt = buildPrompt(context, memory, stream);
+            AgentPrompt prompt = buildPrompt(context, memory, stream, step, listener);
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, stream);
             throwIfInterrupted();
             lastResult = modelResult;
@@ -188,6 +190,14 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
+        return buildPrompt(context, memory, stream, 0, null);
+    }
+
+    protected AgentPrompt buildPrompt(AgentContext context,
+                                      AgentMemory memory,
+                                      boolean stream,
+                                      int step,
+                                      AgentListener listener) {
         if (context.getModel() == null || context.getModel().trim().isEmpty()) {
             throw new IllegalStateException("model is required");
         }
@@ -195,9 +205,10 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions());
 
         List<Object> tools = context.getToolRegistry() == null ? null : context.getToolRegistry().getTools();
+        List<Object> promptItems = projectItems(context, memory.getItems(), step, listener);
         AgentPrompt.AgentPromptBuilder builder = AgentPrompt.builder()
                 .model(context.getModel())
-                .items(memory.getItems())
+                .items(promptItems)
                 .systemPrompt(systemPrompt)
                 .instructions(context.getInstructions())
                 .tools(tools)
@@ -214,6 +225,18 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .streamExecution(options == null ? null : options.getStreamExecution());
 
         return builder.build();
+    }
+
+    protected List<Object> projectItems(AgentContext context, List<Object> items, int step, AgentListener listener) {
+        ContextProjector projector = context.getContextProjector();
+        if (projector == null) {
+            return items;
+        }
+        ContextProjection projection = projector.project(items, context.getContextBudget());
+        if (projection != null && projection.getReport() != null) {
+            publish(context, listener, AgentEventType.MEMORY_COMPRESS, step, "context projection", projection.getReport());
+        }
+        return projection == null ? items : projection.getItems();
     }
 
     protected AgentModelResult executeModel(AgentContext context, AgentPrompt prompt, AgentListener listener, int step, boolean stream) throws Exception {

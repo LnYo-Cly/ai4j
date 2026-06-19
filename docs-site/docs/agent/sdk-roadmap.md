@@ -82,7 +82,9 @@ AgentSession =
 
 ### P0-B：Memory、Compact、Context Projector 分层
 
-必须拆清楚三层：
+P0-B 基础已经落地：`ContextBudget`、`ContextProjector`、`ContextReport`、`CompactPolicy`、`CompactResult`、`AgentSession.compact(...)` 和 session snapshot compact state。使用细节见 [Memory Compact Context Projector](/docs/agent/memory-compact-context)。
+
+这一层必须拆清楚三层：
 
 | 层 | 职责 |
 | --- | --- |
@@ -90,11 +92,10 @@ AgentSession =
 | `Memory` | 跨轮或跨会话的稳定信息，例如偏好、项目约定、历史经验 |
 | `ModelContext` / `WorkingContext` | 本轮真正发给模型的上下文 |
 
-后续需要的核心对象包括：
+P0-B 核心对象包括：
 
 - `AgentSessionStore`
-- `AgentEventLog`
-- `AgentMemoryStore`
+- `AgentSessionEventLog`
 - `ContextProjector`
 - `CompactPolicy`
 - `CompactResult`
@@ -325,7 +326,7 @@ Runner 职责包括：
 | 顺序 | 任务 | 最小回归 |
 | --- | --- | --- |
 | 1 | P0-A AgentSession runtime container | `mvn -pl ai4j-agent -DskipTests=false test` |
-| 2 | P0-B Memory / Compact / Context Projector | `mvn -pl ai4j-agent -DskipTests=false test` |
+| 2 | P0-B Memory / Compact / Context Projector | `mvn -pl ai4j-agent "-Dtest=AgentMemoryCompactContextProjectorTest" -DskipTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 3 | P0-C Plugin Lifecycle Hooks | `mvn -pl ai4j-extension-api -DskipTests=false test` + `mvn -pl ai4j-agent -DskipTests=false test` |
 | 4 | P1 Agent Blueprint YAML | `mvn -pl ai4j-agent -DskipTests=false test` |
 | 5 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |

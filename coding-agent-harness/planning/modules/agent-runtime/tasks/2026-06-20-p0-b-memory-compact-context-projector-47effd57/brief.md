@@ -1,51 +1,58 @@
-# P0-B Memory Compact Context Projector
+# P0-B Memory Compact Context Projector - Brief
 
 ## Task ID
 
-`2026-06-20-p0-b-memory-compact-context-projector-47effd57`
-
-## 创建日期
-
-2026-06-20
+`MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57`
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+在 `ai4j-agent` 中落地 Memory / Compact / ModelContext 的基础分层：新增 `ContextProjector`、`ContextBudget`、`ContextReport`、`CompactPolicy`、`CompactResult`，让 runtime prompt 构造可投影、session compact 可保存和恢复，并补齐 docs-site 技术文档。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+开发者可以：
+
+- 在 `AgentBuilder` 上配置 `contextProjector(...)` 与 `contextBudget(...)`。
+- 让 ReAct / DeepResearch / CodeAct 在构造模型 prompt 前按预算投影 memory items。
+- 从 `MEMORY_COMPRESS` 事件中拿到 `ContextReport`，知道本轮上下文是否被裁剪。
+- 调用 `AgentSession.compact(CompactPolicy)` 生成结构化 compact 结果。
+- 将 `CompactResult` 随 `AgentSessionSnapshot` 保存和 resume。
+- 在 docs-site 中阅读 Memory Compact Context Projector 的边界和用法。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：context/compact API、runtime/session 集成、P0-B 定向测试、docs-site 技术页。
+- 修改位置：`ai4j-agent/**`、`docs-site/docs/agent/**`、`docs-site/sidebars.ts`、本任务包。
+- 验证证据：targeted Maven、broad Maven、docs-site build、harness status、PR CI。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/`
+2. `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/compact/`
+3. `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentMemoryCompactContextProjectorTest.java`
+4. `docs-site/docs/agent/memory-compact-context.md`
+5. `task_plan.md` 与 `review.md`
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：`ai4j-agent` runtime/context/compact/session 基础能力、定向测试、docs-site 技术文档、任务包材料。
+- 范围外：不做模型驱动语义总结、不做 token 精确估算、不接真实 sandbox、不做 plugin lifecycle hooks、不做 YAML Blueprint、不做 CLI `/sandbox`。
+- 停止条件：如果转入 P0-C/P1/P2/P3/P4/P5 能力，停止并另开任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- P0-B 定向测试覆盖 projector、runtime projection、compact policy、session save/resume。
+- Broad agent regression 与 docs-site build 通过。
+- Harness task package 无 missing-materials/failure。
+- PR 创建并 CI 通过后 merge。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+运行 broad Maven、docs-site build、Harness status；然后提交、推送、创建 PR 并等待 CI。

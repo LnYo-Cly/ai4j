@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.agent;
 
+import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
+import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionEventLog;
@@ -17,6 +19,7 @@ public class AgentSession {
     private final AgentSessionMetadata metadata;
     private final AgentSessionEventLog eventLog;
     private final AgentSessionStore store;
+    private CompactResult lastCompactResult;
 
     public AgentSession(AgentRuntime runtime, AgentContext context) {
         this(runtime, context, AgentSessionMetadata.create(), new InMemoryAgentSessionEventLog(), null);
@@ -100,7 +103,8 @@ public class AgentSession {
         return new AgentSessionSnapshot(
                 metadata,
                 memory == null ? null : memory.snapshot(),
-                eventLog.getEvents()
+                eventLog.getEvents(),
+                lastCompactResult
         );
     }
 
@@ -120,7 +124,29 @@ public class AgentSession {
             metadata.setUpdatedAtEpochMs(restoredMetadata.getUpdatedAtEpochMs());
         }
         eventLog.restore(snapshot.getEvents());
+        lastCompactResult = snapshot.getCompactResult();
         return this;
+    }
+
+    public AgentSession compact(CompactPolicy policy) {
+        if (policy == null) {
+            return this;
+        }
+        AgentMemory memory = context == null ? null : context.getMemory();
+        if (memory == null) {
+            return this;
+        }
+        CompactResult result = policy.compact(memory.snapshot());
+        if (result != null && result.getMemory() != null) {
+            memory.restore(result.getMemory());
+        }
+        lastCompactResult = result == null ? null : result.copy();
+        metadata.touch();
+        return this;
+    }
+
+    public CompactResult getLastCompactResult() {
+        return lastCompactResult == null ? null : lastCompactResult.copy();
     }
 
     public AgentSession save() {
