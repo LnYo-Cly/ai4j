@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agent.session;
 
+import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 
 import java.util.ArrayList;
@@ -13,15 +14,21 @@ public class AgentSessionSnapshot {
     private AgentSessionMetadata metadata;
     private MemorySnapshot memory;
     private List<AgentSessionEvent> events;
+    private CompactResult compactResult;
 
     public AgentSessionSnapshot() {
-        this(null, null, null);
+        this(null, null, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events) {
+        this(metadata, memory, events, null);
+    }
+
+    public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events, CompactResult compactResult) {
         this.metadata = metadata == null ? AgentSessionMetadata.create() : metadata.copy();
         this.memory = copyMemory(memory);
         this.events = copyEvents(events);
+        this.compactResult = compactResult == null ? null : compactResult.copy();
     }
 
     public String getSessionId() {
@@ -50,6 +57,14 @@ public class AgentSessionSnapshot {
 
     public void setEvents(List<AgentSessionEvent> events) {
         this.events = copyEvents(events);
+    }
+
+    public CompactResult getCompactResult() {
+        return compactResult == null ? null : compactResult.copy();
+    }
+
+    public void setCompactResult(CompactResult compactResult) {
+        this.compactResult = compactResult == null ? null : compactResult.copy();
     }
 
     private static MemorySnapshot copyMemory(MemorySnapshot source) {

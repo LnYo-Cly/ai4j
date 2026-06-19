@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.agent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
+import io.github.lnyocly.ai4j.agent.context.ContextBudget;
+import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
@@ -29,6 +31,10 @@ public class AgentContext {
     private AgentOptions options;
 
     private CodeActOptions codeActOptions;
+
+    private ContextProjector contextProjector;
+
+    private ContextBudget contextBudget;
 
     private AgentEventPublisher eventPublisher;
 
