@@ -13,6 +13,9 @@ import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
@@ -55,6 +58,8 @@ public class AgentBuilder {
     private CodeActOptions codeActOptions;
     private ContextProjector contextProjector;
     private ContextBudget contextBudget;
+    private AgentPermissionPolicy permissionPolicy;
+    private AgentExecutionEnvironment executionEnvironment;
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
     private AgentEventPublisher eventPublisher;
@@ -158,6 +163,16 @@ public class AgentBuilder {
 
     public AgentBuilder contextBudget(ContextBudget contextBudget) {
         this.contextBudget = contextBudget;
+        return this;
+    }
+
+    public AgentBuilder permissionPolicy(AgentPermissionPolicy permissionPolicy) {
+        this.permissionPolicy = permissionPolicy;
+        return this;
+    }
+
+    public AgentBuilder executionEnvironment(AgentExecutionEnvironment executionEnvironment) {
+        this.executionEnvironment = executionEnvironment;
         return this;
     }
 
@@ -272,6 +287,7 @@ public class AgentBuilder {
             resolvedToolExecutor = new SubAgentToolExecutor(resolvedSubAgentRegistry, resolvedToolExecutor, resolvedHandoffPolicy);
         }
         resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
+        resolvedToolExecutor = applyPermissionPolicy(resolvedToolExecutor, permissionPolicy, executionEnvironment);
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
         AgentOptions resolvedOptions = options == null ? AgentOptions.builder().build() : options;
@@ -299,6 +315,8 @@ public class AgentBuilder {
                 .contextBudget(contextBudget)
                 .eventPublisher(resolvedEventPublisher)
                 .lifecycleHooks(lifecycleHooks)
+                .permissionPolicy(permissionPolicy)
+                .executionEnvironment(executionEnvironment == null ? AgentExecutionEnvironment.LOCAL : executionEnvironment)
                 .model(model)
                 .instructions(instructions)
                 .systemPrompt(systemPrompt)
@@ -382,6 +400,15 @@ public class AgentBuilder {
             return executor;
         }
         return new ExtensionGuardrailToolExecutor(executor, extensionTools.getGuardrails());
+    }
+
+    private ToolExecutor applyPermissionPolicy(ToolExecutor executor,
+                                               AgentPermissionPolicy permissionPolicy,
+                                               AgentExecutionEnvironment executionEnvironment) {
+        if (executor == null || permissionPolicy == null) {
+            return executor;
+        }
+        return new AgentPermissionToolExecutor(executor, permissionPolicy, executionEnvironment);
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {

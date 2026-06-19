@@ -134,6 +134,30 @@ ON_COMPACT
 
 `SESSION_START` 和 `SESSION_END` 作为事件类型保留，但首版不自动触发。原因是当前 Agent 还没有稳定的显式 close/end 生命周期。
 
+
+### P0-D：工具审批和权限策略
+
+P0-D 基础已经落地：`ai4j-agent` 增加 `io.github.lnyocly.ai4j.agent.permission` 包，提供 `AgentPermissionPolicy`、`AgentPermissionRequest`、`AgentPermissionDecision`、`AgentPermissionToolExecutor` 和 `AgentExecutionEnvironment`。
+
+这层解决的是工具执行前的 host-side policy gate：
+
+```text
+合法工具调用
+  -> permission policy
+  -> allow / deny / require approval
+  -> delegate ToolExecutor 或 TOOL_ERROR
+```
+
+使用细节见 [Agent Approval / Permission Policy](/docs/agent/approval-permission-policy)。
+
+边界必须说清楚：
+
+- `executionEnvironment` 只是策略元数据，不会创建 sandbox。
+- `REQUIRE_APPROVAL` 只是稳定状态，交互式审批属于 CLI/TUI 或宿主应用。
+- 真实 VM / 容器 / microVM / 远端执行环境属于后续 Sandbox SPI。
+- 进入 sandbox 不等于自动放开危险工具，仍然应该经过 permission policy。
+
+
 插件能贡献的能力可以扩展为：
 
 - Tool
@@ -330,11 +354,12 @@ Runner 职责包括：
 | 1 | P0-A AgentSession runtime container | `mvn -pl ai4j-agent -DskipTests=false test` |
 | 2 | P0-B Memory / Compact / Context Projector | `mvn -pl ai4j-agent "-Dtest=AgentMemoryCompactContextProjectorTest" -DskipTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 3 | P0-C Plugin Lifecycle Hooks | `mvn -pl ai4j-extension-api -DskipTests=false test` + `mvn -pl ai4j-agent -DskipTests=false test` |
-| 4 | P1 Agent Blueprint YAML | `mvn -pl ai4j-agent -DskipTests=false test` |
-| 5 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
-| 6 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
-| 7 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
-| 8 | P5 Runner Decision | contract tests after module decision |
+| 4 | P0-D Approval / Permission Policy | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
+| 5 | P1 Agent Blueprint YAML | `mvn -pl ai4j-agent -DskipTests=false test` |
+| 6 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
+| 7 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
+| 8 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
+| 9 | P5 Runner Decision | contract tests after module decision |
 
 ## 10. 哪些事现在不要做
 

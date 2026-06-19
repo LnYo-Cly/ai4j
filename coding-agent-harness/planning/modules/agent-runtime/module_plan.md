@@ -22,6 +22,7 @@
 | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | none |
 | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 | P0-B Memory Compact Context Projector - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57/task_plan.md | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 |
 | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 | P0-C Agent plugin lifecycle hooks | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009/task_plan.md | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 |
+| T-P0-D-AGENT-APPROVAL-AND-PERMISSION-POLICY-95B57B | P0-D Agent approval and permission policy | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5/task_plan.md | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 |
 
 ## 活跃任务
 
@@ -29,7 +30,8 @@
 | --- | --- | --- | --- | --- |
 | `2026-06-20-p0-a-agentsession-runtime-container-389dbf12` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-A adds AgentSession metadata/event log/snapshot/store/resume foundations; PR/CI/merge pending. |
 | `2026-06-20-p0-b-memory-compact-context-projector-47effd57` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-B adds ContextProjector, ContextBudget, ContextReport, CompactPolicy, CompactResult, and session compact snapshot foundations. |
-| `2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | planning-recorded | coordinator | `references/p0-c-agent-plugin-lifecycle-hooks-plan.md` | P0-C plans optional lifecycle hook contract across extension-api and agent runtime; implementation next. |
+| `2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | merged | coordinator | `mvn -pl ai4j-extension-api,ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-C optional lifecycle hook contract and runtime dispatch merged via PR #105. |
+| `2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-D adds host-side tool approval / permission policy foundation; task-review/PR pending. |
 | `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
 
 ## 验证
