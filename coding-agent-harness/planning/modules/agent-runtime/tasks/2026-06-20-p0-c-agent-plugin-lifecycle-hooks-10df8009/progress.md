@@ -1,6 +1,6 @@
 # P0-C Agent plugin lifecycle hooks - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -66,3 +66,10 @@
 - 验证结果：extension lifecycle 定向测试 6 tests passed；agent lifecycle 定向测试 4 tests passed；跨模块 `ai4j-extension-api,ai4j-agent` 回归 BUILD SUCCESS；docs-site build 成功；Harness status failures=0，仅 dirty-state warning。
 - 下一步：stage 包含被忽略的 `docs-site/docs/agent/plugin-lifecycle-hooks.md`，提交 feature diff，随后运行 task-review / push / PR。
 - 证据：command:TARGET:.:'mvn -pl ai4j-extension-api "-Dtest=*Lifecycle*" -DskipTests=false test' -> 6 tests passed; command:TARGET:.:'mvn -pl ai4j-agent -am "-Dtest=AgentPluginLifecycleHooksTest" -DskipTests=false -DfailIfNoTests=false test' -> 4 tests passed; command:TARGET:.:'mvn -pl ai4j-extension-api,ai4j-agent -am -DskipTests=false test' -> extension API 25, core 103, agent 89 tests passed; command:TARGET:docs-site:'npm run build' -> success; command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failures=0 dirty-state only; diff:TARGET:docs/05-TEST-QA:SRB-049 regression governance update
+
+### [2026-06-19 20:40] - task-review
+
+- 做了什么：P0-C Agent plugin lifecycle hooks ready for review: extension-api lifecycle contract, agent runtime dispatcher, deterministic lifecycle tests, docs-site build, regression governance SRB-049, and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

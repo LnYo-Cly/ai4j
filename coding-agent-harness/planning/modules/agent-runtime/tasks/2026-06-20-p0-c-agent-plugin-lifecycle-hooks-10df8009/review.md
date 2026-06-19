@@ -103,3 +103,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自：公共 API + runtime wiring 代码审查、targeted lifecycle tests、跨模块 Maven 回归、docs-site build、Harness task material 检查。发布前仍需 PR CI 和人工确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606192040 |
+| Submitted At | 2026-06-19 20:40 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 |
+| Materials Checklist Hash | d033bc726f32c1ad |
+| Evidence Summary | P0-C Agent plugin lifecycle hooks ready for review: extension-api lifecycle contract, agent runtime dispatcher, deterministic lifecycle tests, docs-site build, regression governance SRB-049, and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009 |
