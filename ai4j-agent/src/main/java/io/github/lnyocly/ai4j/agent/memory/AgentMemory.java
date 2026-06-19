@@ -14,5 +14,19 @@ public interface AgentMemory {
 
     String getSummary();
 
+    default MemorySnapshot snapshot() {
+        return MemorySnapshot.from(getItems(), getSummary());
+    }
+
+    default void restore(MemorySnapshot snapshot) {
+        clear();
+        if (snapshot == null) {
+            return;
+        }
+        if (snapshot.getItems() != null) {
+            addOutputItems(snapshot.getItems());
+        }
+    }
+
     void clear();
 }

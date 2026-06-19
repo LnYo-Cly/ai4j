@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
@@ -52,6 +53,7 @@ public class AgentBuilder {
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
     private AgentEventPublisher eventPublisher;
+    private AgentSessionStore sessionStore;
     private String model;
     private String instructions;
     private String systemPrompt;
@@ -156,6 +158,11 @@ public class AgentBuilder {
 
     public AgentBuilder eventPublisher(AgentEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
+        return this;
+    }
+
+    public AgentBuilder sessionStore(AgentSessionStore sessionStore) {
+        this.sessionStore = sessionStore;
         return this;
     }
 
@@ -285,7 +292,7 @@ public class AgentBuilder {
                 .extraBody(extraBody)
                 .build();
 
-        return new Agent(resolvedRuntime, context, resolvedMemorySupplier);
+        return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);
     }
 
 

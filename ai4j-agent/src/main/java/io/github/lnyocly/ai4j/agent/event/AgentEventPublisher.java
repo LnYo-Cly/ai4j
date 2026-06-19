@@ -22,6 +22,10 @@ public class AgentEventPublisher {
         }
     }
 
+    public List<AgentListener> getListeners() {
+        return new ArrayList<AgentListener>(listeners);
+    }
+
     public void publish(AgentEvent event) {
         if (event == null) {
             return;

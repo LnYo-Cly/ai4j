@@ -1,47 +1,47 @@
-# 收口记录：P0-A AgentSession runtime container
+# P0-A AgentSession runtime container - Walkthrough
 
-## 摘要
+## Walkthrough Status
 
-待收口。
+- Status：implemented, pending PR / merge
+- Task：MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12
+- Branch：feature/agent-session-runtime-container
+- Worktree：TARGET:.worktrees/feature/agent-session-runtime-container
 
-## 范围
+## 交付摘要
 
-| 范围 | 详情 |
-| --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+本任务为 `ai4j-agent` 增加 P0-A AgentSession runtime container 基础，使 Agent session 可以被识别、观测、快照、保存和恢复。
 
-## 验证
+## 变更清单
 
-| 检查 | 命令或过程 | 结果 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | not run | pending |
+| Area | Files | Summary |
+| --- | --- | --- |
+| Agent session API | `Agent.java`, `AgentSession.java`, `AgentBuilder.java` | 新增 session store/resume/snapshot/save wiring。 |
+| Session package | `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/*` | 新增 metadata、event log、snapshot、store、in-memory 实现。 |
+| Memory contract | `AgentMemory.java` | 新增 default snapshot/restore 合同。 |
+| Events | `AgentEventPublisher.java` | 支持复制 base listeners 到 session publisher。 |
+| Tests | `AgentSessionRuntimeContainerTest.java` | 覆盖 session 隔离、event log、snapshot/restore、store resume、防御性复制。 |
+| Docs | `docs-site/docs/agent/session-runtime.md`, `sdk-roadmap.md`, `sidebars.ts` | 新增技术文档并接入导航。 |
 
-## 审查结论
+## 验证记录
 
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
+| Command | Status | Evidence |
+| --- | --- | --- |
+| `mvn -pl ai4j-agent "-Dtest=AgentSessionRuntimeContainerTest" -DskipTests=false test` | pass | 5 tests passed |
+| `mvn -pl ai4j-agent -am -DskipTests=false test` | pass | extension-api 19, core 103, agent 79 tests passed |
+| `npm run build` in `docs-site/` | pass | Docusaurus generated static files in build |
+| `npx --yes coding-agent-harness status --json .` | pass | status warn with failures=0; only dirty-state warning before commit |
 
-## 残余风险
+## Review 结论
 
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
+Self review 当前无阻塞 finding。最终以 broad verification 和 PR CI 为准。
 
-## 经验沉淀反思
+## Lessons Reflection
 
-| 问题 | 答案 |
-| --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
+本任务未沉淀共享 lesson。原因：这是 P0-A 的具体实现切片，相关设计模式需要后续 P0-B/P0-C/P2 继续验证后再判断是否值得提升为 repo-wide rule。
 
-## 收口链接
+## Residual / 下一步
 
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+- P0-B：Memory / Compact / Context Projector。
+- P0-C：Plugin lifecycle hooks。
+- P1：YAML Agent Blueprint。
+- P2/P3/P4：Sandbox SPI、coding routing、CLI `/sandbox`。
