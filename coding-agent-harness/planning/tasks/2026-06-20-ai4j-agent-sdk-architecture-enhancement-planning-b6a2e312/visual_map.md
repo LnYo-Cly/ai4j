@@ -95,3 +95,29 @@ ai4j-cli
 ai4j-agent-runner（未来可选）
   可部署到远端 sandbox 的 Agent Runner。
 ```
+
+## 规划刷新支持图（MAP-03）
+
+```text
+AI4J 差异化
+  低接入成本 + 好组装 + 插件生态 + CLI/TUI + sandbox agent 产品化
+        |
+        v
+P0 ai4j-agent 内核
+  Session / EventLog / Memory / Compact / ContextProjector / Lifecycle
+        |
+        +--> P1 Blueprint YAML
+        +--> P0-C Plugin Lifecycle
+        +--> P2 Sandbox SPI
+                 |
+                 v
+              P3 ai4j-coding sandbox routing
+                 |
+                 v
+              P4 ai4j-cli /sandbox + TUI
+                 |
+                 v
+              P5 Remote Agent Runner decision
+```
+
+MAP-03 Source Evidence: `references/ai4j-agent-sdk-complete-planning-refresh.md`

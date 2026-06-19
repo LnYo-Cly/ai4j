@@ -15,3 +15,12 @@
 - Remote Agent Runner 是否作为独立 Maven 模块，待 P0/P1 完成后再定。
 - Sandbox provider 示例是否官方提供，待插件生态稳定后再定。
 - docs-site 如何呈现该路线，需单独文档任务处理。
+
+## 2026-06-20 规划刷新新增发现
+
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-006 | P2 | AI4J 的差异化不应是“大而全”，而应是低接入成本、Agent 组装体验、插件生态、CLI/TUI 和远端 agent 产品化能力。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 3 节 | docs-site 和后续 roadmap 文档避免夸张“大厂/企业采用”口吻，聚焦开发者可用性。 | open-follow-up |
+| F-007 | P2 | Harness 不宜完整内化进 `ai4j-cli`，否则会显著增加 CLI 维护成本。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 9.2 节 | CLI 只做 Harness 检测、任务状态展示和 dashboard/task packet 桥接。 | open-follow-up |
+| F-008 | P1 | Sandbox 必须区分本地 permission sandbox 和真实远端 sandbox，不能设计成普通 shell tool。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 7 节 | P2 Sandbox SPI 任务中提供 fake provider 和 session binding tests。 | open-follow-up |
+| F-009 | P2 | 第三方插件生态需要覆盖 Tool/Command/Prompt/Skill/Guardrail/Hook/Memory/Compact/SandboxProvider，而不只是工具注册。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 4 节 | P0-C 先实现 optional lifecycle hooks，不强迫老插件升级。 | open-follow-up |

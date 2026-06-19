@@ -114,3 +114,11 @@
 | Open Findings Count | 0 |
 | Scanner Version | task-scanner/2026-05-25-phase-kind |
 | Target | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312 |
+
+## 规划刷新审查补充
+
+| Evidence ID | Type | Path | Summary |
+| --- | --- | --- | --- |
+| E-004 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md | 最新完整规划刷新稿补充差异化、插件生态、Blueprint、Sandbox、Runner、CLI/TUI 和 Harness 边界。 |
+
+补充审查结论：刷新稿没有改变本任务“只做规划、不改生产代码”的边界；它把后续实施继续收敛到 P0-B/P0-C/P1/P2... 小任务队列，避免一次性大改。

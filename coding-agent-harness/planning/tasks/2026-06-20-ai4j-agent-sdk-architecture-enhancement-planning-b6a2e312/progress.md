@@ -46,3 +46,10 @@
 - Registry update needed：不适用；本任务只记录规划，不改变 `agent-runtime` 模块状态。
 - Harness Ledger update needed：由 task lifecycle / governance rebuild 自动同步。
 - 负责人：coordinator
+
+### [2026-06-20 02:58] - planning refresh recorded
+
+- 做了什么：补充完整规划刷新稿，覆盖 AI4J 差异化定位、插件生态、Memory/Compact/Session 分层、YAML Blueprint、真实 sandbox、远端 Agent Runner、CLI/TUI、Harness 轻量桥接和 P0-B 下一步。
+- 验证结果：新增 `references/ai4j-agent-sdk-complete-planning-refresh.md` 与 `references/INDEX.md`，并将刷新结论挂入 brief/task_plan/findings/review/walkthrough。
+- 下一步：运行 Harness status，确认任务包无 failure；后续实施应继续当前 P0-B worktree。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md:complete planning refresh for agent sdk roadmap

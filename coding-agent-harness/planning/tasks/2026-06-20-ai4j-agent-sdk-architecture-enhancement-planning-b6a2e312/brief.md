@@ -52,3 +52,16 @@
 ## 当前下一步
 
 补齐任务计划、审查材料和 Harness 验证记录。
+
+## 2026-06-20 规划刷新
+
+本任务已补充完整规划刷新稿：`references/ai4j-agent-sdk-complete-planning-refresh.md`。后续 agent 应优先阅读该文件，因为它在初版规划基础上补充了：
+
+- AI4J 与 Spring AI / LangChain4j / AgentScope Java 的差异化定位。
+- 插件生态的能力边界和第三方插件接入方向。
+- `AgentSession` / Memory / Compact / ModelContext 的分层。
+- YAML Agent Blueprint 的分阶段设计。
+- 本地 permission sandbox 与真实远端 sandbox 的差异。
+- 远端 Agent Runner 的产品化边界。
+- CLI/TUI 体验、JLine 选择和 Harness 轻量桥接原则。
+- 当前下一步应继续 P0-B Memory Compact Context Projector。

@@ -57,3 +57,7 @@
 | 发现记录 | `findings.md` |
 
 Closeout Status: pending-human-confirmation
+
+## 2026-06-20 刷新补充
+
+本收口记录补充引用 `references/ai4j-agent-sdk-complete-planning-refresh.md`。该文件是当前最新完整规划入口，后续实现者应优先读取。刷新后的直接下一步是继续 `P0-B Memory Compact Context Projector`，不要重复创建新的总规划任务，也不要一次性实现 P0-P5 全部能力。

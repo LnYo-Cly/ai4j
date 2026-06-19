@@ -87,3 +87,16 @@ Task Package Index: required
 - Registry update needed：不适用，本任务不改变模块状态
 - Harness Ledger update needed：由 lifecycle CLI 自动同步
 - Closeout / Regression update needed：不适用；仅规划记录
+
+## 规划刷新补充
+
+| ID | 类型 | 路径 | 为什么需要 | 使用者 |
+| --- | --- | --- | --- | --- |
+| C-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md | 最新完整规划刷新稿，补充插件生态、YAML Blueprint、真实 sandbox、远端 Runner、CLI/TUI 和 Harness 轻量桥接原则 | coordinator / reviewer / future worker |
+
+新增验收补充：
+
+- [ ] 下一轮实施者能从 `references/INDEX.md` 找到最新完整规划刷新稿。
+- [ ] 规划明确“不把 Harness 完整内化到 CLI”，只做轻量识别和桥接。
+- [ ] 规划明确“OpenAI-compatible”是通用概念，不把任何中转平台名称写成 SDK 概念。
+- [ ] 规划明确当前下一步是继续 P0-B，而不是重复规划或一次性实现 P0-P5。
