@@ -44,13 +44,13 @@ flowchart TB
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和 reference 已记录 | `task_plan.md`; `references/agent-blueprint-p1b-factory-plan.md` | `harness task-start ...` | agent | present | none | coordinator |
-| INIT-02 | init | INIT-01 | planned | 0 | 创建 `.wt/p1b` worktree 和分支 | `git worktree list`; branch status | `git worktree add .wt/p1b -b feature/agent-blueprint-factory main` | agent | missing | cleanup required after merge | coordinator |
-| EXEC-01 | execution | INIT-02 | planned | 0 | Factory API 和 context/resolver | `AgentFactory*` source diff | n/a | agent | missing | API surface creep | coordinator |
-| EXEC-02 | execution | EXEC-01 | planned | 0 | Blueprint to builder mapping | mapping tests | n/a | agent | missing | provider/secret coupling | coordinator |
-| EXEC-03 | execution | EXEC-02 | planned | 0 | deterministic tests | `AgentBlueprintFactoryTest` | n/a | agent | missing | live provider accidental use | coordinator |
-| EXEC-04 | execution | EXEC-03 | planned | 0 | docs-site 和 regression 更新 | docs page; Regression SSoT/Cadence | n/a | agent | missing | docs/code drift | coordinator |
-| VERIFY-01 | execution | EXEC-04 | planned | 0 | targeted/broad/docs/Harness/diff 通过 | Maven/docs/Harness/diff outputs | see task_plan | agent | missing | local deps | coordinator |
-| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | `review.md`; `walkthrough.md`; clean tree | `harness task-review ...` | agent | missing | missing materials | coordinator |
+| INIT-02 | init | INIT-01 | done | 100 | 已创建 `.wt/p1b` worktree 和 `feature/agent-blueprint-factory` 分支 | `git worktree list`; branch status | `git worktree add .wt/p1b -b feature/agent-blueprint-factory main` | agent | present | cleanup required after merge | coordinator |
+| EXEC-01 | execution | INIT-02 | done | 100 | Factory API 和 host-supplied context 实现 | `AgentFactory*` source diff | n/a | agent | present | none | coordinator |
+| EXEC-02 | execution | EXEC-01 | done | 100 | Blueprint to builder mapping 和 deterministic exceptions | `AgentBlueprintFactoryTest` | n/a | agent | present | none | coordinator |
+| EXEC-03 | execution | EXEC-02 | done | 100 | deterministic tests 通过 | `AgentBlueprintFactoryTest` | n/a | agent | present | none | coordinator |
+| EXEC-04 | execution | EXEC-03 | done | 100 | docs-site 和 regression 更新 | docs page; Regression SSoT/Cadence | n/a | agent | present | none | coordinator |
+| VERIFY-01 | execution | EXEC-04 | done | 100 | targeted/broad/docs 已通过，Harness final rerun pending | Maven/docs/Harness/diff outputs | see task_plan | agent | partial | final harness status rerun pending | coordinator |
+| GATE-01 | gate | VERIFY-01 | done | 100 | Agent Review Submission | `review.md`; `walkthrough.md`; clean tree | `harness task-review ...` | agent | present | task-review command pending | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | PR、CI、merge 和 cleanup | PR URL/checks/merge SHA | `gh pr create`; CI; merge | human | missing | remote CI | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
