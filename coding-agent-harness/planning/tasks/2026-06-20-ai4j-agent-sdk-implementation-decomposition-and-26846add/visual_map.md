@@ -2,49 +2,68 @@
 
 Visual Map Contract: v1.0
 
-本文件是任务图表集合，不只是阶段路线图。只有对人或 agent 理解任务有实际帮助的图才放进来。
-
 ## 图表索引（Map Index）
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示本任务执行阶段和门禁 | yes | `task_plan.md` | no |
+| MAP-02 | roadmap | 展示 P0-P5 实施队列 | yes | `references/ai4j-agent-implementation-roadmap.md` | no |
+| MAP-03 | scope | 展示本任务范围和排除项 | yes | `execution_strategy.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  INIT01["INIT-01 创建 worktree 和任务
+kind=init"] --> EXEC01["EXEC-01 拆解和 docs-site 更新
+kind=execution"]
+  EXEC01 --> GATE01["GATE-01 Agent 提交审查
+kind=gate"]
+  GATE01 --> GATE02["GATE-02 人工审查确认
+kind=gate"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
 
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
-| INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add --confirm 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add` | human | missing | Agent 不能代办人工确认 | human |
+| INIT-01 | init | none | done | 100 | worktree 和任务包已创建 | `git worktree list`; `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add` | agent | present | none | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | P0-P5 拆解和 docs-site roadmap 已写入 | `references/ai4j-agent-implementation-roadmap.md`; `docs-site/docs/agent/sdk-roadmap.md`; `docs-site/sidebars.ts` | `harness task-phase 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add EXEC-01 --state done --completion 100 --evidence present` | agent | present | final harness clean check pending | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; docs build; harness status | `harness task-review 2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add --message "<summary>"` | agent | partial | none | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | dashboard workbench confirmation | human | missing | Agent 不能代办人工确认 | human |
 
-允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
+## P0-P5 Roadmap
 
-允许的 `Evidence Status`：`missing`, `partial`, `present`, `waived`。
+```mermaid
+flowchart TD
+  A["已认可架构规划"] --> B["P0-A AgentSession"]
+  A --> C["P0-B Memory/Compact/Context"]
+  A --> D["P0-C Plugin Lifecycle"]
+  B --> E["P1 Agent Blueprint YAML"]
+  C --> E
+  D --> E
+  E --> F["P2 Sandbox SPI"]
+  F --> G["P3 ai4j-coding sandbox routing"]
+  G --> H["P4 ai4j-cli /sandbox"]
+  H --> I["P5 Remote Agent Runner decision"]
+  A --> J["docs-site Agent SDK roadmap"]
+```
 
-允许的 `Kind`：`init`, `execution`, `gate`。
+## 当前任务范围
 
-允许的 `Actor`：`agent`, `human`, `coordinator`。
+```mermaid
+flowchart LR
+  T["本任务"] --> R["Harness P0-P5 拆解"]
+  T --> D["docs-site 技术路线页"]
+  T --> V["docs build + harness status"]
+  T -. 不做 .-> X["Java API 实现"]
+```
 
-`Completion` 使用 `0..100` 的整数；`done` 应为 `100`，`planned` 应为 `0`，`skipped` 不计入 dashboard 总完成度。dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算；`init` 和 `gate` 阶段表达生命周期门禁、下一步命令和责任人，不拉低实现完成度。
+## Evidence Map
 
-## 支持性图表（Supporting Maps）
-
-按需添加，不要求每类都存在：
-
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+| Evidence | Path |
+| --- | --- |
+| P0-P5 decomposition | `references/ai4j-agent-implementation-roadmap.md` |
+| docs-site page | `docs-site/docs/agent/sdk-roadmap.md` |
+| navigation | `docs-site/sidebars.ts` |
+| build | `docs-site` `npm run build` |

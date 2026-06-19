@@ -146,6 +146,7 @@ const sidebars: SidebarsConfig = {
         'agent/why-agent',
         'agent/use-cases-and-paths',
         'agent/architecture',
+        'agent/sdk-roadmap',
         'agent/quickstart',
         'agent/provider-config-examples',
         'agent/model-client-selection',

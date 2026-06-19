@@ -10,42 +10,28 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+把已认可的 `ai4j-agent` 架构增强规划拆成 P0-P5 实施队列，并同步更新 docs-site 的 Agent 技术路线文档。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+后续开发者可以直接读取本任务包，知道先做哪个模块、每个阶段做什么/不做什么、需要跑哪些回归，以及 docs-site 对外如何解释 `ai4j-agent`、Blueprint、Sandbox、Runner 的演进路线。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
-
-## 第一眼应该看什么
-
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+- `references/ai4j-agent-implementation-roadmap.md`
+- `docs-site/docs/agent/sdk-roadmap.md`
+- `docs-site/docs/agent/overview.md` 的路线入口
+- `docs-site/sidebars.ts` 的 Agent sidebar 入口
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：任务拆解、docs-site 技术路线文档、Harness 记录、自测。
+- 范围外：Java 生产代码、真实 sandbox provider、CLI `/sandbox` 实现、provider token 持久化。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
-
-## 执行合同
-
-- Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
-
-## 当前下一步
-
-写明开始实现前的第一个具体动作。
+- [ ] P0-P5 实施队列清晰落盘。
+- [ ] docs-site 有可访问的 Agent SDK 技术路线页。
+- [ ] `npm run build` 验证 docs-site 通过。
+- [ ] `npx --yes coding-agent-harness status --json .` 通过或仅剩已解释 residual。
+- [ ] 分支已推送并创建 PR。

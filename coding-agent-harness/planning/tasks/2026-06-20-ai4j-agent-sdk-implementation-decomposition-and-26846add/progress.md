@@ -2,47 +2,39 @@
 
 ## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
-证据使用 `type:path:summary` 格式。
+证据使用 `type:path:summary` 格式。允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
+### [2026-06-20 01:30] - worktree and task start
 
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
+- 做了什么：同步 main 后创建独立 worktree `.worktrees/docs/ai4j-agent-architecture-roadmap`，分支 `docs/ai4j-agent-architecture-roadmap`；创建并启动本 Harness 任务。
+- 验证结果：worktree 存在，任务进入 `in_progress`，CLI 自动提交任务注册与启动记录。
+- 下一步：写 P0-P5 实施拆解和 docs-site 技术路线页。
+- 证据：command:TARGET:.:'git worktree add -b docs/ai4j-agent-architecture-roadmap .worktrees/docs/ai4j-agent-architecture-roadmap main'; command:TARGET:.:'npx --yes coding-agent-harness new-task ... && task-start ...'
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
+### [2026-06-20 01:45] - implementation roadmap drafted
 
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 做了什么：编写 `references/ai4j-agent-implementation-roadmap.md`，将 P0-P5 拆成可执行任务队列，并补齐 brief/task_plan/execution_strategy/findings。
+- 验证结果：待 docs-site 文件写入后统一运行 build 与 harness status。
+- 下一步：更新 docs-site Agent SDK roadmap 页面和 sidebar/overview 入口。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add/references/ai4j-agent-implementation-roadmap.md:P0-P5 implementation decomposition
+
+### [2026-06-20 02:05] - docs-site roadmap and build
+
+- 做了什么：新增 `docs-site/docs/agent/sdk-roadmap.md`，并从 `docs-site/docs/agent/overview.md` 与 `docs-site/sidebars.ts` 接入导航。
+- 验证结果：`npm run build` 在 `docs-site/` 下通过，Docusaurus 生成静态文件到 `build`。
+- 下一步：运行 Harness status，提交并创建 PR。
+- 证据：command:TARGET:docs-site:'npm run build' -> success; diff:TARGET:docs-site/docs/agent/sdk-roadmap.md:Agent SDK P0-P5 roadmap page
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 本任务不改 Java 生产代码。
+- 上一规划任务的人类确认需通过 Dashboard workbench 完成，CLI 无法执行 `review-confirm`。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
-### [2026-06-19 17:35] - task-start
-
-- 做了什么：开始拆解 ai4j-agent SDK 架构增强实施任务，并更新 docs-site 技术文档路线图。
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- Global sync status：pending PR
+- Registry update needed：不适用
+- Harness Ledger update needed：task lifecycle CLI 自动同步
+- 负责人：coordinator

@@ -5,78 +5,75 @@ Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+承接已认可的 `ai4j-agent` 架构增强规划，完成可执行任务拆解，并把关键技术路线投影到 docs-site，供开发者理解 AI4J Agent SDK 的演进边界。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 做什么：P0-P5 任务拆解、docs-site Agent SDK roadmap 页面、sidebar/overview 入口、自测和 PR。
+- 不做什么：不改 Java 生产代码，不提交任何 provider token，不实现 sandbox/blueprint/runtime API。
+- 主要风险：文档先行可能和后续实现细节漂移；需在每个 implementation task 中回写 docs-site。
 
 ## 预算选择
 
 选择预算：complex
 
-选择理由：[为什么本任务适合这个预算]
+选择理由：本任务跨 Harness 任务治理、docs-site 文档、PR/验证和后续任务队列拆解，需要完整 references/artifacts/review/walkthrough。
 
 ## 上下文包（Context Packet）
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+| C-001 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-enhancement-plan.md | 上一轮已认可架构规划 | coordinator / reviewer |
+| C-002 | docs | TARGET:docs-site/docs/agent/architecture.md | 当前 Agent 架构说明 | coordinator / reviewer |
+| C-003 | docs | TARGET:docs-site/docs/coding-agent/architecture.md | Coding Agent 边界说明 | coordinator / reviewer |
+| C-004 | docs | TARGET:docs-site/sidebars.ts | docs-site 导航入口 | coordinator / reviewer |
+| C-005 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add/references/ai4j-agent-implementation-roadmap.md | 本任务拆解路线图 | future workers |
 
 ## 步骤
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+1. 创建独立 worktree：`.worktrees/docs/ai4j-agent-architecture-roadmap`。
+2. 创建并启动 Harness 任务。
+3. 编写 P0-P5 实施拆解路线图。
+4. 更新 docs-site Agent 技术路线页面和导航入口。
+5. 运行 docs-site build 与 Harness status。
+6. 提交、推送并创建 PR。
 
 ## 验收标准
 
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
+- [ ] `references/ai4j-agent-implementation-roadmap.md` 覆盖 P0-P5。
+- [ ] `docs-site/docs/agent/sdk-roadmap.md` 存在并能被 sidebar 访问。
+- [ ] docs-site build 通过。
+- [ ] Harness status 通过或无阻塞 failure。
+- [ ] PR 已创建，说明验证命令和残余风险。
 
 ## 工作树（Worktree）
 
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
+- 路径：TARGET:.worktrees/docs/ai4j-agent-architecture-roadmap
+- 分支：docs/ai4j-agent-architecture-roadmap
+- Worker owner：coordinator
+- Worker handoff commit required：yes
+- Coordinator integration branch：main
+- 未使用 worktree 的原因：不适用；本任务已使用 worktree。
 
 ## 长程任务判定
 
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
+- 是否属于长程任务：否
+- Stop Condition 摘要：如果开始修改 Java API 或实现代码，停止并另开 implementation task。
 
 ## 审查判定
 
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
+- 是否需要对抗性审查：否
+- Reviewer：self + PR review
+- No-finding 要求：文档不应承诺已实现能力；必须明确路线图和当前边界。
 
-## 关联
+## 模块关联
 
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
+- Module：agent-runtime / docs-site
+- Step：implementation-decomposition-and-docs-roadmap
 
-## 模块关联（启用模块并行时填写）
+## 协调者交接
 
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
+- Global sync owner：coordinator
+- Global sync status：pending until PR
+- Registry update needed：不适用
+- Closeout / Regression update needed：docs-site build 证据写入 progress/walkthrough
