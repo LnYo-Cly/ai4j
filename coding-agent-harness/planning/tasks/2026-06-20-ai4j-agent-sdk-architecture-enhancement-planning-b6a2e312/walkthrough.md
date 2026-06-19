@@ -61,3 +61,12 @@ Closeout Status: pending-human-confirmation
 ## 2026-06-20 刷新补充
 
 本收口记录补充引用 `references/ai4j-agent-sdk-complete-planning-refresh.md`。该文件是当前最新完整规划入口，后续实现者应优先读取。刷新后的直接下一步是继续 `P0-B Memory Compact Context Projector`，不要重复创建新的总规划任务，也不要一次性实现 P0-P5 全部能力。
+
+## 2026-06-20 执行路线补充
+
+本收口记录进一步补充引用 `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`。该文件是当前最新执行入口，明确：
+
+- 后续涉及 Pi、Codex、Claude Code、OpenCode、Spring AI、LangChain4j、AgentScope Java、Sandbox provider 的对标设计，必须先做 source-backed research。
+- `ai4j-agent` 内核优先收尾 P0-A/P0-B/P0-C，并新增 P0-D Approval / Permission Policy。
+- YAML Blueprint、Sandbox SPI、Coding sandbox routing、CLI/TUI、Remote Runner 分阶段推进。
+- 当前仓库已有 P0-C worktree 未提交，实际下一步应先收尾 P0-C，而不是继续扩散总规划。

@@ -24,3 +24,13 @@
 | F-007 | P2 | Harness 不宜完整内化进 `ai4j-cli`，否则会显著增加 CLI 维护成本。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 9.2 节 | CLI 只做 Harness 检测、任务状态展示和 dashboard/task packet 桥接。 | open-follow-up |
 | F-008 | P1 | Sandbox 必须区分本地 permission sandbox 和真实远端 sandbox，不能设计成普通 shell tool。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 7 节 | P2 Sandbox SPI 任务中提供 fake provider 和 session binding tests。 | open-follow-up |
 | F-009 | P2 | 第三方插件生态需要覆盖 Tool/Command/Prompt/Skill/Guardrail/Hook/Memory/Compact/SandboxProvider，而不只是工具注册。 | `references/ai4j-agent-sdk-complete-planning-refresh.md` 第 4 节 | P0-C 先实现 optional lifecycle hooks，不强迫老插件升级。 | open-follow-up |
+
+## 2026-06-20 执行级路线图新增发现
+
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-010 | P1 | 任何对标 Pi 插件/TUI 的实现必须先做公开资料或本仓实测调研，不能凭印象复刻。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 4 节 | 后续开 R0-PI research digest，再进入 CLI/TUI 或插件 API 设计。 | open-follow-up |
+| F-011 | P2 | P0-C worktree 已有未提交实现；当前实际下一步应先收尾 P0-C，而不是继续新增总规划。 | `git worktree list`; `.worktrees/feature/agent-plugin-lifecycle-hooks` status | final harness status、stage、commit、task-review、push、PR、CI、merge。 | open-follow-up |
+| F-012 | P2 | Approval / Permission Policy 是 sandbox 前置缝隙；本地 permission sandbox 和真实远端 sandbox 需要在 P0-D 先分清。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 5、7 节 | 新建 P0-D planning/implementation task。 | open-follow-up |
+| F-013 | P2 | docs-site 需要按“每个能力能不能用起来”重构，不只是 roadmap 标记。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 11 节 | 每个能力页补：问题、最小示例、API/YAML、关系、限制、FAQ、下一步。 | open-follow-up |
+| F-014 | P3 | 远端 Agent Runner 是产品化差异点，但必须满足 P0-P4 门禁后再决定是否新增模块。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 10 节 | P5 只做协议合同和决策任务，不作为 P0/P1 阻塞项。 | open-follow-up |

@@ -120,5 +120,15 @@
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
 | E-004 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md | 最新完整规划刷新稿补充差异化、插件生态、Blueprint、Sandbox、Runner、CLI/TUI 和 Harness 边界。 |
+| E-005 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md | 执行级路线图补充 R0 调研门禁、P0-P5 拆分、docs-site 同步要求和当前 P0-C worktree 收尾顺序。 |
 
 补充审查结论：刷新稿没有改变本任务“只做规划、不改生产代码”的边界；它把后续实施继续收敛到 P0-B/P0-C/P1/P2... 小任务队列，避免一次性大改。
+
+## 执行级路线图审查补充
+
+| Check | Result |
+| --- | --- |
+| 是否仍然 planning-only | yes；只新增任务包 reference 和索引/审查材料，不改 Java 生产代码。 |
+| 是否避免凭空复刻 Pi/Codex/Claude/OpenCode | yes；新增 R0 source-backed research gates，后续实现前必须调研。 |
+| 是否明确当前下一步 | yes；先收尾 P0-C `feature/agent-plugin-lifecycle-hooks` worktree，再推进 P0-D/P1-A。 |
+| 是否新增阻塞 material finding | no；新增发现均为后续路线和调研门禁。 |
