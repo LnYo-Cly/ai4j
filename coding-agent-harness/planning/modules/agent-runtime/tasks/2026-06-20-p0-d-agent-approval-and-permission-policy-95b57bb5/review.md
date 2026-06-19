@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自 deterministic policy tests、broad agent runtime regression、docs-site build、明确的非目标范围和已记录 residual。发布前最终仍需 `harness status --json`、`git diff --check`、commit、task-review、PR CI。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606192129 |
+| Submitted At | 2026-06-19 21:29 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5 |
+| Materials Checklist Hash | e4aecc8b09b00a33 |
+| Evidence Summary | P0-D Agent approval and permission policy ready for review: policy contract, builder wiring, deterministic tests, docs-site page, regression governance, and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5 |

@@ -1,6 +1,6 @@
 # P0-D Agent approval and permission policy - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -84,3 +84,10 @@
 - Registry update needed：`agent-runtime` module plan 已加入 P0-D step，实施后同步状态到 review/handoff。
 - Harness Ledger update needed：task plan path, review path, closeout status / 后续由 lifecycle CLI 或 governance rebuild 处理。
 - 负责人：coordinator
+
+### [2026-06-19 21:29] - task-review
+
+- 做了什么：P0-D Agent approval and permission policy ready for review: policy contract, builder wiring, deterministic tests, docs-site page, regression governance, and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
