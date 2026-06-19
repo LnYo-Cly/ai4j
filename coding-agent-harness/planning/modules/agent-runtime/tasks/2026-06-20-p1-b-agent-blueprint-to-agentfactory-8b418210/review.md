@@ -106,3 +106,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 deterministic fake model tests、broad agent module regression、docs-site build、明确 no-secret/no-profile/no-sandbox side effects 的 API 边界和 task-local self-review。发布前仍以 PR CI 为最终远端证据。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606192329 |
+| Submitted At | 2026-06-19 23:29 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210 |
+| Materials Checklist Hash | 753ced48674db213 |
+| Evidence Summary | P1-B Agent Blueprint to AgentFactory ready for review: host-supplied AgentFactory context, deterministic mapping, no token/profile/sandbox side effects, targeted/broad/docs regression passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210 |

@@ -1,6 +1,6 @@
 # P1-B Agent Blueprint to AgentFactory - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：`未开始`、`计划中`、`进行中`、`审查中`、`已阻塞`、`已完成`。
 
@@ -48,3 +48,10 @@
 - Registry update needed：agent-runtime P1-B 从 active 更新为 implementation-verified，merge 后更新为 merged。
 - Harness Ledger update needed：task-review 后由 Harness lifecycle 扫描生成。
 - 负责人：coordinator
+
+### [2026-06-19 23:29] - task-review
+
+- 做了什么：P1-B Agent Blueprint to AgentFactory ready for review: host-supplied AgentFactory context, deterministic mapping, no token/profile/sandbox side effects, targeted/broad/docs regression passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

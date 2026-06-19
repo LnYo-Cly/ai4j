@@ -50,7 +50,7 @@ flowchart TB
 | EXEC-03 | execution | EXEC-02 | done | 100 | deterministic tests 通过 | `AgentBlueprintFactoryTest` | n/a | agent | present | none | coordinator |
 | EXEC-04 | execution | EXEC-03 | done | 100 | docs-site 和 regression 更新 | docs page; Regression SSoT/Cadence | n/a | agent | present | none | coordinator |
 | VERIFY-01 | execution | EXEC-04 | done | 100 | targeted/broad/docs 已通过，Harness final rerun pending | Maven/docs/Harness/diff outputs | see task_plan | agent | partial | final harness status rerun pending | coordinator |
-| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | `review.md`; `walkthrough.md`; clean tree | `harness task-review ...` | agent | present | task-review command pending | coordinator |
+| GATE-01 | gate | VERIFY-01 | done | 100 | Agent Review Submission | `review.md`; `walkthrough.md`; clean tree | `harness task-review ...` | agent | present | task-review command pending | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | PR、CI、merge 和 cleanup | PR URL/checks/merge SHA | `gh pr create`; CI; merge | human | missing | remote CI | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
