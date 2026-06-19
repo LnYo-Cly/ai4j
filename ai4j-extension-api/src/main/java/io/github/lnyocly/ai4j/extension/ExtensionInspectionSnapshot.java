@@ -16,12 +16,14 @@ public final class ExtensionInspectionSnapshot {
     private final List<ExtensionSkillResource> skills;
     private final List<ExtensionPromptResource> prompts;
     private final List<String> guardrails;
+    private final List<String> lifecycleHooks;
 
     public ExtensionInspectionSnapshot(List<ExtensionToolSpec> tools,
                                        List<ExtensionCommandSpec> commands,
                                        List<ExtensionSkillResource> skills,
                                        List<ExtensionPromptResource> prompts,
-                                       List<String> guardrails) {
+                                       List<String> guardrails,
+                                       List<String> lifecycleHooks) {
         this.tools = tools == null ? Collections.<ExtensionToolSpec>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExtensionToolSpec>(tools));
         this.commands = commands == null ? Collections.<ExtensionCommandSpec>emptyList()
@@ -32,6 +34,8 @@ public final class ExtensionInspectionSnapshot {
                 : Collections.unmodifiableList(new ArrayList<ExtensionPromptResource>(prompts));
         this.guardrails = guardrails == null ? Collections.<String>emptyList()
                 : Collections.unmodifiableList(new ArrayList<String>(guardrails));
+        this.lifecycleHooks = lifecycleHooks == null ? Collections.<String>emptyList()
+                : Collections.unmodifiableList(new ArrayList<String>(lifecycleHooks));
     }
 
     public List<ExtensionToolSpec> getTools() {
@@ -52,5 +56,9 @@ public final class ExtensionInspectionSnapshot {
 
     public List<String> getGuardrails() {
         return guardrails;
+    }
+
+    public List<String> getLifecycleHooks() {
+        return lifecycleHooks;
     }
 }

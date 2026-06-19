@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
 import io.github.lnyocly.ai4j.extension.tool.ExtensionToolExecutor;
@@ -28,6 +29,7 @@ public final class ExtensionRuntimeState {
     private final Map<String, ExtensionSkillResource> skills = new LinkedHashMap<String, ExtensionSkillResource>();
     private final Map<String, ExtensionPromptResource> prompts = new LinkedHashMap<String, ExtensionPromptResource>();
     private final Map<String, ExtensionGuardrail> guardrails = new LinkedHashMap<String, ExtensionGuardrail>();
+    private final Map<String, AgentLifecycleHook> lifecycleHooks = new LinkedHashMap<String, AgentLifecycleHook>();
 
     public void registerTool(ExtensionManifest manifest, ExtensionToolSpec spec, ExtensionToolExecutor executor) {
         if (spec == null) {
@@ -78,6 +80,15 @@ public final class ExtensionRuntimeState {
         guardrails.put(name, guardrail);
     }
 
+    public void registerLifecycleHook(ExtensionManifest manifest, AgentLifecycleHook hook) {
+        if (hook == null) {
+            throw new IllegalArgumentException("lifecycle hook must not be null");
+        }
+        String name = ExtensionManifest.requireResourceName(hook.name(), "lifecycle hook name");
+        ensureUnique(lifecycleHooks, name, "lifecycle hook", manifest);
+        lifecycleHooks.put(name, hook);
+    }
+
     public ExtensionRuntimeSnapshot snapshot(Set<String> exposedToolIds) {
         return snapshot(
                 exposedToolIds,
@@ -115,7 +126,8 @@ public final class ExtensionRuntimeState {
                 filterMap(commandHandlers, allowedCommandIds, explicitResourceActivation, "command"),
                 filterList(skills, allowedSkillIds, explicitResourceActivation, "skill"),
                 filterList(prompts, allowedPromptIds, explicitResourceActivation, "prompt"),
-                filterList(guardrails, allowedGuardrailIds, explicitResourceActivation, "guardrail")
+                filterList(guardrails, allowedGuardrailIds, explicitResourceActivation, "guardrail"),
+                new ArrayList<AgentLifecycleHook>(lifecycleHooks.values())
         );
     }
 
@@ -125,7 +137,8 @@ public final class ExtensionRuntimeState {
                 new ArrayList<ExtensionCommandSpec>(commands.values()),
                 new ArrayList<ExtensionSkillResource>(skills.values()),
                 new ArrayList<ExtensionPromptResource>(prompts.values()),
-                new ArrayList<String>(guardrails.keySet())
+                new ArrayList<String>(guardrails.keySet()),
+                new ArrayList<String>(lifecycleHooks.keySet())
         );
     }
 

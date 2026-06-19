@@ -7,7 +7,8 @@ public enum ExtensionCapability {
     COMMAND("command"),
     SKILL("skill"),
     PROMPT("prompt"),
-    GUARDRAIL("guardrail");
+    GUARDRAIL("guardrail"),
+    LIFECYCLE("lifecycle");
 
     private final String id;
 

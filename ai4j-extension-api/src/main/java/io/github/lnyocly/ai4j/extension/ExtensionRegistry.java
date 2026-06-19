@@ -422,4 +422,8 @@ public final class ExtensionRegistry {
     public List<ExtensionGuardrail> getGuardrails() {
         return snapshot().getGuardrails();
     }
+
+    public List<io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook> getLifecycleHooks() {
+        return snapshot().getLifecycleHooks();
+    }
 }

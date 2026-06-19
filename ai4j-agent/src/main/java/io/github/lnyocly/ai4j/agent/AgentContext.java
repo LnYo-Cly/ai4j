@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.context.ContextBudget;
 import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
+import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
@@ -37,6 +38,10 @@ public class AgentContext {
     private ContextBudget contextBudget;
 
     private AgentEventPublisher eventPublisher;
+
+    private AgentLifecycleHookDispatcher lifecycleHooks;
+
+    private String sessionId;
 
     private String model;
 

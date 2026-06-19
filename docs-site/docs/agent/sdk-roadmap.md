@@ -118,19 +118,21 @@ Compact 结果应尽量结构化，不只是自然语言摘要。至少要保留
 
 插件不应该只贡献工具，还应该能参与 Agent 运行生命周期。
 
-建议逐步支持：
+P0-C 基础已经落地：`ai4j-extension-api` 增加 `io.github.lnyocly.ai4j.extension.lifecycle` 公共合同，`ai4j-agent` 在 ReAct/Base runtime、CodeAct runtime 和 `AgentSession.compact(...)` 中触发观察型 Hook。使用细节见 [Plugin Lifecycle Hooks](/docs/agent/plugin-lifecycle-hooks)。
+
+当前支持：
 
 ```text
-onSessionStart
-beforeTurn
-afterTurn
-beforeModelRequest
-afterModelResponse
-beforeToolCall
-afterToolCall
-onCompact
-onSessionEnd
+BEFORE_TURN
+AFTER_TURN
+BEFORE_MODEL_REQUEST
+AFTER_MODEL_RESPONSE
+BEFORE_TOOL_CALL
+AFTER_TOOL_CALL
+ON_COMPACT
 ```
+
+`SESSION_START` 和 `SESSION_END` 作为事件类型保留，但首版不自动触发。原因是当前 Agent 还没有稳定的显式 close/end 生命周期。
 
 插件能贡献的能力可以扩展为：
 
@@ -145,7 +147,7 @@ onSessionEnd
 - SandboxProvider
 - RemoteAgentRunnerProvider
 
-这部分要同时考虑 `ai4j-agent` 和 `ai4j-extension-api` 的边界：公共合同放到 extension API，运行时编排仍由 `ai4j-agent` 控制。
+这部分要同时考虑 `ai4j-agent` 和 `ai4j-extension-api` 的边界：公共合同放到 extension API，运行时编排仍由 `ai4j-agent` 控制。首版 Hook 是 observation-first，不是 prompt/tool/model response 的可变拦截器。
 
 ## 4. P1：Agent Blueprint YAML
 

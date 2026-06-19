@@ -49,6 +49,7 @@ public class Agent {
         AgentSessionEventLog eventLog = new InMemoryAgentSessionEventLog();
         AgentContext sessionContext = baseContext.toBuilder()
                 .memory(memory)
+                .sessionId(metadata.getSessionId())
                 .eventPublisher(sessionEventPublisher(eventLog))
                 .build();
         return new AgentSession(runtime, sessionContext, metadata, eventLog, sessionStore);

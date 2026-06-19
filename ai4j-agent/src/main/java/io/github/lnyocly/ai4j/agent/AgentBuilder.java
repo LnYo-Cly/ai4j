@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
+import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -282,6 +283,9 @@ public class AgentBuilder {
         if (modelClient == null) {
             throw new IllegalStateException("modelClient is required");
         }
+        AgentLifecycleHookDispatcher lifecycleHooks = extensionTools == null
+                ? AgentLifecycleHookDispatcher.empty()
+                : new AgentLifecycleHookDispatcher(extensionTools.getLifecycleHooks());
 
         AgentContext context = AgentContext.builder()
                 .modelClient(modelClient)
@@ -294,6 +298,7 @@ public class AgentBuilder {
                 .contextProjector(contextProjector)
                 .contextBudget(contextBudget)
                 .eventPublisher(resolvedEventPublisher)
+                .lifecycleHooks(lifecycleHooks)
                 .model(model)
                 .instructions(instructions)
                 .systemPrompt(systemPrompt)

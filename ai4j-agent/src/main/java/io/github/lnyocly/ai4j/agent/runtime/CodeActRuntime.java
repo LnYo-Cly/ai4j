@@ -19,6 +19,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         boolean stepLimited = maxSteps > 0;
         while (!stepLimited || step < maxSteps) {
             publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null);
+            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TURN, step, runtimeName(), null);
 
             AgentPrompt prompt = buildPrompt(context, memory, false, step, listener);
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, false);
@@ -86,6 +88,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                 memory.addOutputItems(java.util.Collections.singletonList(
                         AgentInputItem.systemMessage("FINALIZE_MODE: Do not output code. Use the latest CODE_RESULT to respond with {\"type\":\"final\",\"output\":\"...\"}.")
                 ));
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
                 step += 1;
                 continue;
@@ -93,6 +96,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
             if (message == null || "final".equals(message.type)) {
                 String answer = message == null ? output : message.output;
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, answer, modelResult == null ? null : modelResult.getRawResponse());
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
                 return AgentResult.builder()
                         .outputText(answer == null ? "" : answer)
@@ -105,6 +109,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
             if (!"code".equals(message.type) || message.code == null) {
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, output, modelResult == null ? null : modelResult.getRawResponse());
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
                 return AgentResult.builder()
                         .outputText(output == null ? "" : output)
@@ -122,14 +127,20 @@ public class CodeActRuntime extends BaseAgentRuntime {
                     .build();
             toolCalls.add(toolCall);
             publish(context, listener, AgentEventType.TOOL_CALL, step, toolCall.getName(), toolCall);
+            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step, toolCall.getName(), toolCall);
 
-            CodeExecutionResult execResult = codeExecutor.execute(CodeExecutionRequest.builder()
-                    .language(message.language)
-                    .code(message.code)
-                    .toolNames(extractToolNames(context.getToolRegistry() == null ? null : context.getToolRegistry().getTools()))
-                    .toolExecutor(context.getToolExecutor())
-                    .user(context.getUser())
-                    .build());
+            CodeExecutionResult execResult;
+            try {
+                execResult = codeExecutor.execute(CodeExecutionRequest.builder()
+                        .language(message.language)
+                        .code(message.code)
+                        .toolNames(extractToolNames(context.getToolRegistry() == null ? null : context.getToolRegistry().getTools()))
+                        .toolExecutor(context.getToolExecutor())
+                        .user(context.getUser())
+                        .build());
+            } finally {
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TOOL_CALL, step, toolCall.getName(), toolCall);
+            }
 
             String toolOutput = buildToolOutput(execResult);
             toolResults.add(AgentToolResult.builder()
@@ -151,6 +162,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
             String finalOutput = directOutput == null ? fallbackOutput : directOutput;
             if (!reAct && finalOutput != null) {
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, finalOutput, modelResult == null ? null : modelResult.getRawResponse());
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
                 return AgentResult.builder()
                         .outputText(finalOutput)
@@ -161,6 +173,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                         .build();
             }
 
+            dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
             publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
             step += 1;
         }
