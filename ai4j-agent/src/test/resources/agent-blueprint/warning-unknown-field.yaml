@@ -1,0 +1,11 @@
+version: ai4j.agent/v1
+id: unknown-field-agent
+unknownTopLevel: true
+model:
+  provider: openai-compatible
+  profile: default
+session:
+  memory:
+    enabled: true
+workflow:
+  mode: react

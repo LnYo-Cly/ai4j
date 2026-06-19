@@ -1,0 +1,4 @@
+version: ai4j.agent/v1
+id: [not closed
+model:
+  provider: openai-compatible

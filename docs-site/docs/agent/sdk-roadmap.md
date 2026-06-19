@@ -230,11 +230,13 @@ workflow:
 
 P1 的目标不是做一个完整低代码平台，而是先提供：
 
-- YAML schema
+- YAML schema / Java DTO
 - loader
 - validator
-- factory
 - fixture tests
+- 后续 P1-B 再补 `AgentFactory`
+
+P1-A 基础已经落到 `io.github.lnyocly.ai4j.agent.blueprint` 包中：`AgentBlueprint`、`AgentBlueprintLoader`、`AgentBlueprintValidator`、`AgentBlueprintValidationReport` 和 YAML fixtures。使用细节见 [Agent Blueprint YAML](/docs/agent/agent-blueprint)。
 
 Team Blueprint、Workflow Blueprint、FlowGram 导出可以后置。
 
@@ -355,7 +357,7 @@ Runner 职责包括：
 | 2 | P0-B Memory / Compact / Context Projector | `mvn -pl ai4j-agent "-Dtest=AgentMemoryCompactContextProjectorTest" -DskipTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 3 | P0-C Plugin Lifecycle Hooks | `mvn -pl ai4j-extension-api -DskipTests=false test` + `mvn -pl ai4j-agent -DskipTests=false test` |
 | 4 | P0-D Approval / Permission Policy | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
-| 5 | P1 Agent Blueprint YAML | `mvn -pl ai4j-agent -DskipTests=false test` |
+| 5 | P1-A Agent Blueprint YAML loader / validator | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintLoaderValidatorTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 6 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
 | 7 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
 | 8 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
