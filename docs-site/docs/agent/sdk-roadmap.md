@@ -69,14 +69,16 @@ AgentSession =
   + resume / fork / rewind
 ```
 
-第一版不应该一次做完所有内容。推荐先做：
+第一版不应该一次做完所有内容。当前 P0-A 基础已经落到 `AgentSession` 及 `io.github.lnyocly.ai4j.agent.session` 包中：
 
 - session id / metadata
 - session snapshot
 - session event log
 - in-memory session store
-- checkpoint reference
+- `AgentBuilder.sessionStore(...)` 与 `Agent.resumeSession(...)`
 - 与现有 `Agent.run(...)` 兼容
+
+使用细节见 [Agent Session Runtime](/docs/agent/session-runtime)。
 
 ### P0-B：Memory、Compact、Context Projector 分层
 

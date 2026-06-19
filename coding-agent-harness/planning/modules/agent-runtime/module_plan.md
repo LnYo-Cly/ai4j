@@ -19,15 +19,14 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| AGENT-01 | 维护 runtime/workflow 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | core-sdk |
-| AGENT-02 | trace 与 memory 行为回归 | planned | none | AGENT-01 |
-| AGENT-03 | FlowGram / CLI 下游影响同步 | planned | none | AGENT-01 |
+| T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | none |
 
 ## 活跃任务
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Wave 3 adds extension tool adapter and `.extensions(...)` AgentBuilder entry; full suite still has existing R-008 blocker. |
+| `2026-06-20-p0-a-agentsession-runtime-container-389dbf12` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-A adds AgentSession metadata/event log/snapshot/store/resume foundations; PR/CI/merge pending. |
+| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
 
 ## 验证
 
