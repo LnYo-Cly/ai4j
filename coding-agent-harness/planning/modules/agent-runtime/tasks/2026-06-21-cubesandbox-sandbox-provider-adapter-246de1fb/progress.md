@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 18:57] - task-log
+
+- 做了什么：Implemented CubeSandboxProvider adapter and protocol-level regression baseline; live CubeSandbox env variables are currently absent in this shell, so live smoke remains opt-in pending-env.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest,AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test:passed 13 tests covering CubeSandbox protocol, Sandbox SPI, and AgentSession sandbox binding
