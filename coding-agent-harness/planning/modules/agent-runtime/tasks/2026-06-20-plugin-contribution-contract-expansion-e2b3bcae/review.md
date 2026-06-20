@@ -117,3 +117,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 当前信心来自公共 API 测试、官方插件示例测试、agent extension bridge targeted regression、docs-site build 和 self adversarial review。PR 后仍需远端 CI/维护者审查补充最终合并证据。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200907 |
+| Submitted At | 2026-06-20 09:07 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae |
+| Materials Checklist Hash | ff561e0f6b40edf3 |
+| Evidence Summary | Plugin contribution contract expansion ready for review: manifest-level contributions, inspection/activation/validator projection, ask-user sample metadata, docs-site page, and targeted regressions completed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae |

@@ -1,6 +1,6 @@
 # Plugin contribution contract expansion - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -69,3 +69,10 @@
 - Registry update needed：module plan 应在 task-review / merge 后更新状态。
 - Harness Ledger update needed：由 lifecycle CLI 同步。
 - 负责人：coordinator
+
+### [2026-06-20 09:07] - task-review
+
+- 做了什么：Plugin contribution contract expansion ready for review: manifest-level contributions, inspection/activation/validator projection, ask-user sample metadata, docs-site page, and targeted regressions completed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
