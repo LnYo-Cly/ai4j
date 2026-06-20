@@ -88,3 +88,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 11:44] - PR docs-build repair
+
+- 做了什么：PR #115 的 docs-build CI 失败，原因是 `docs-site/sidebars.ts` 引用了 `coding-agent/sandbox-routing`，但新建页面被仓库根 `.gitignore` 的 `docs/` 规则忽略，未进入上一轮提交。
+- 验证结果：确认 `git check-ignore -v docs-site/docs/coding-agent/sandbox-routing.md` 命中 `.gitignore:72:docs/`；将使用 `git add -f` 纳入该页面并重跑 docs build。
+- 下一步：提交修复并重新推送 PR #115。
+- 证据：command:TARGET:.:'gh run view 27859112205 --job 82451970188 --log-failed' showed missing doc id `coding-agent/sandbox-routing`; command:TARGET:.:'git check-ignore -v docs-site/docs/coding-agent/sandbox-routing.md' showed `.gitignore:72:docs/`
