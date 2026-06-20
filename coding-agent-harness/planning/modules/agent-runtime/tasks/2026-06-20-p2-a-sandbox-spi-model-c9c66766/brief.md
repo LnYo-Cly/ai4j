@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`2026-06-20-p2-a-sandbox-spi-model-c9c66766`
+`MODULES/agent-runtime/2026-06-20-p2-a-sandbox-spi-model-c9c66766`
 
 ## 创建日期
 
@@ -10,42 +10,30 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+在 `ai4j-agent` 中新增 Java 8 兼容的 Sandbox SPI model，为后续真实远端 sandbox provider、AgentSession binding、`ai4j-coding` routing 和 CLI `/sandbox` 体验提供稳定合同。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
-
-## 交付物
-
-- 可见产物：
-- 修改位置：
-- 验证证据：
-
-## 第一眼应该看什么
-
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+- `io.github.lnyocly.ai4j.agent.sandbox` 包含 provider/session/spec/command/result/artifact/event/status/exception 合同。
+- 有 deterministic fake provider 测试证明合同可用、DTO 防御性拷贝、session close/cancel 语义有效。
+- docs-site 有 `Agent Sandbox SPI` 技术页，并在 Agent SDK Roadmap / sidebar 可见。
+- Regression SSoT / Cadence Ledger 记录 P2-A targeted、broad agent 和 docs build 证据。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+范围内：Sandbox SPI model、fake provider tests、docs-site 技术文档、回归记录、Harness 任务材料。
+
+范围外：真实 Docker/K8s/CubeSandbox/E2B provider、AgentSession sandbox binding、extension plugin provider contribution、`ai4j-coding` shell/file/git/browser routing、CLI `/sandbox` command。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
-
-## 执行合同
-
-- Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- [x] Sandbox SPI 类型存在且 Java 8 编译通过。
+- [x] `AgentSandboxSpiModelTest` 覆盖 fake provider/session/command/result/artifact/event/defensive-copy/close 行为。
+- [x] `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -DfailIfNoTests=false test` 通过。
+- [x] `mvn -pl ai4j-agent -am -DskipTests=false test` 通过。
+- [x] `npm --prefix docs-site run build` 通过。
+- [x] Regression SSoT / Cadence Ledger 已更新。
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交 PR、等待 CI、merge 后清理 `.wt/p2a`，然后进入 P2-B AgentSession sandbox binding 或 P2-C Sandbox plugin contribution。

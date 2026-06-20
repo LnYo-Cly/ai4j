@@ -1,24 +1,8 @@
-# P2-A Sandbox SPI model - 发现记录
+# Findings - P2-A Sandbox SPI model
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
-
-## 研究发现
-
-### [发现主题 1]
-
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
-
-## 技术决策
-
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
-
-## 待确认问题
-
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-001 | P2 | Sandbox 必须保持 provider-neutral，不能在 P2-A 绑定 Docker/K8s/CubeSandbox/E2B 等具体实现。 | `io.github.lnyocly.ai4j.agent.sandbox` 只包含 SPI/DTO；fake provider 在 test 内联。 | 后续真实 provider 由插件或业务方实现。 | closed |
+| F-002 | P2 | Sandbox 不应替代 Permission Policy。 | docs-site `agent/sandbox-spi.md` 第 5 节；P0-D policy 已存在。 | P3/P4 接入时仍先过 permission/approval gate。 | open-follow-up |
+| F-003 | P2 | P2-A 不做 AgentSession binding，避免 snapshot/secret 边界混乱。 | 本任务没有修改 `agent.session`。 | P2-B 单独设计非敏感 binding 摘要和 event log。 | open-follow-up |
+| F-004 | P2 | DTO 必须防御性拷贝，避免 provider/test 调用者篡改内部状态。 | `AgentSandboxSpiModelTest.shouldUseDefensiveCopies`。 | 保持 builder/copy/getter copy 约定。 | closed |

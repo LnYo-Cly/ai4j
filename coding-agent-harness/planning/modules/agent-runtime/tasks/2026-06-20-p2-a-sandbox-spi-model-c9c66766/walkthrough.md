@@ -2,46 +2,33 @@
 
 ## 摘要
 
-待收口。
+P2-A 新增 `io.github.lnyocly.ai4j.agent.sandbox`，为真实 sandbox provider、session、command、result、artifact 和 event 提供最小 Java 8 合同。该任务没有接入真实 VM/容器/远端环境，也没有改变现有本地工具执行语义。
 
 ## 范围
 
 | 范围 | 详情 |
 | --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+| 变更模块 | `ai4j-agent`、`docs-site`、Regression docs、Harness task package |
+| 新增代码 | `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/*.java` |
+| 新增测试 | `AgentSandboxSpiModelTest` |
+| 新增文档 | `docs-site/docs/agent/sandbox-spi.md` |
+| 不在范围内 | 真实 provider、AgentSession binding、plugin provider contribution、coding routing、CLI `/sandbox` |
 
 ## 验证
 
 | 检查 | 命令或过程 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| pending | pending | not run | pending |
+| Targeted P2-A | `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -DfailIfNoTests=false test` | pass, 4 tests | `progress.md` |
+| Broad agent | `mvn -pl ai4j-agent -am -DskipTests=false test` | pass, extension API 25, core 103, agent 115 tests | `progress.md` |
+| Docs build | `npm --prefix docs-site run build` | pass after local dependency install | `progress.md` |
+| Regression docs | update RG-002/RG-008/SRB-055 | present | `docs/05-TEST-QA/*` |
 
 ## 审查结论
 
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
+无阻塞 P2-A 的 material finding。残余均属于后续任务：P2-B session binding、P2-C plugin provider contribution、P3 coding routing、P4 CLI/TUI UX。
 
-## 残余风险
+## Lessons Reflection
 
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
+本任务不提升共享 lesson；稳定结论已写入 docs-site 和 task-local materials。
 
-## 经验沉淀反思
-
-| 问题 | 答案 |
-| --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
-
-## 收口链接
-
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+Closeout Status: pending-pr-ci-merge

@@ -151,6 +151,7 @@ const sidebars: SidebarsConfig = {
         'agent/memory-compact-context',
         'agent/plugin-lifecycle-hooks',
         'agent/approval-permission-policy',
+        'agent/sandbox-spi',
         'agent/agent-blueprint',
         'agent/quickstart',
         'agent/provider-config-examples',
