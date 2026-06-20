@@ -236,7 +236,7 @@ P1 的目标不是做一个完整低代码平台，而是先提供：
 - fixture tests
 - `AgentFactory`：由宿主显式提供 `AgentModelClient` 等依赖后，把 Blueprint 转成 `AgentBuilder` / `Agent`
 
-P1-A/P1-B 基础已经落到 `io.github.lnyocly.ai4j.agent.blueprint` 包中：`AgentBlueprint`、`AgentBlueprintLoader`、`AgentBlueprintValidator`、`AgentBlueprintValidationReport`、`AgentFactory`、`AgentFactoryContext` 和 YAML / Factory deterministic tests。使用细节见 [Agent Blueprint YAML](/docs/agent/agent-blueprint)。
+P1-A/P1-B/P1-C 基础已经落地：`io.github.lnyocly.ai4j.agent.blueprint` 包提供 `AgentBlueprint`、`AgentBlueprintLoader`、`AgentBlueprintValidator`、`AgentBlueprintValidationReport`、`AgentFactory`、`AgentFactoryContext` 和 YAML / Factory deterministic tests；`ai4j-cli` 提供 `ai4j-cli run <agent.yaml> --input <task>`，让用户可以从终端直接运行单 Agent Blueprint。使用细节见 [Agent Blueprint YAML](/docs/agent/agent-blueprint)。
 
 Team Blueprint、Workflow Blueprint、FlowGram 导出可以后置。
 
@@ -358,10 +358,11 @@ Runner 职责包括：
 | 3 | P0-C Plugin Lifecycle Hooks | `mvn -pl ai4j-extension-api -DskipTests=false test` + `mvn -pl ai4j-agent -DskipTests=false test` |
 | 4 | P0-D Approval / Permission Policy | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 5 | P1-A/P1-B Agent Blueprint YAML loader / validator / AgentFactory | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintLoaderValidatorTest,AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
-| 6 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
-| 7 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
-| 8 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
-| 9 | P5 Runner Decision | contract tests after module decision |
+| 6 | P1-C CLI `run <agent.yaml>` | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-cli -am -DskipTests=false test` |
+| 7 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
+| 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
+| 9 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
+| 10 | P5 Runner Decision | contract tests after module decision |
 
 ## 10. 哪些事现在不要做
 

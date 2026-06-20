@@ -25,6 +25,7 @@
 | T-P0-D-AGENT-APPROVAL-AND-PERMISSION-POLICY-95B57B | P0-D Agent approval and permission policy | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5/task_plan.md | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 |
 | T-P1-A-AGENT-BLUEPRINT-SCHEMA-MODEL-LOADER-VALIDAT | P1-A Agent Blueprint schema model loader validator | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/task_plan.md | T-P0-D-AGENT-APPROVAL-AND-PERMISSION-POLICY-95B57B |
 | T-P1-B-AGENT-BLUEPRINT-TO-AGENTFACTORY-8B418210 | P1-B Agent Blueprint to AgentFactory | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/task_plan.md | T-P1-A-AGENT-BLUEPRINT-SCHEMA-MODEL-LOADER-VALIDAT |
+| T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 | P1-C CLI run Agent Blueprint YAML | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25/task_plan.md | T-P1-B-AGENT-BLUEPRINT-TO-AGENTFACTORY-8B418210 |
 
 ## 活跃任务
 
@@ -36,6 +37,7 @@
 | `2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-D adds host-side tool approval / permission policy foundation; task-review/PR pending. |
 | `2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0` | planning-recorded | coordinator | `references/agent-blueprint-p1a-execution-plan.md`; `task_plan.md`; `visual_map.md` | P1-A will add single Agent YAML Blueprint schema/model/loader/validator; implementation should continue in `.worktrees/feature/agent-blueprint-schema-loader`. |
 | `2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P1-B adds host-supplied `AgentFactory` / `AgentFactoryContext`, deterministic mapping tests, and docs-site Agent Blueprint update; task-review/PR pending. |
+| `2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | implementation-verified | coordinator | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-cli -am -DskipTests=false test`; `npm --prefix docs-site run build` | P1-C adds top-level `ai4j-cli run <agent.yaml>` and host-side provider/profile resolution with no-token/no-real-sandbox boundaries; task-review/PR pending. |
 | `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
 
 ## 验证
