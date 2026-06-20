@@ -60,3 +60,9 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+### [2026-06-21 00:24] - 修复 execution_strategy 模板残留
+
+- 做了什么：`task-review` 后 Harness scanner 指出 `execution_strategy.md` 仍含默认模板内容；已替换为本 R0 docs/research 任务的实际 subagent、worktree、证据层级和暂停条件。
+- 验证结果：待重新运行 diff check、token scan、Harness status，并再次提交 review。
+- 下一步：提交修复后重新执行 `task-review`。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7/execution_strategy.md:template material replaced with task-specific strategy
