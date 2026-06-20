@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.worktrees/feature/agent-blueprint-schema-export/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk\\.worktrees\\feature\\agent-blueprint-schema-export",
+  "generatedAt": "2026-06-20T12:48:36.309Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/artifacts/preset/2026-06-20T12-48-36-308Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}

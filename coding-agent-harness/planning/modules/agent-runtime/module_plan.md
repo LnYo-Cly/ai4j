@@ -20,7 +20,8 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AGENT-RUNTIME-BACKLOG-RECONCILIATION-AFTER-RUNNE | Agent Runtime backlog reconciliation after runner merge | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a/task_plan.md | none |
+| T-AGENT-BLUEPRINT-SCHEMA-EXPORT-AND-DOCS-HARDENING | Agent Blueprint schema export and docs hardening | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1/task_plan.md | none |
+| T-AGENT-RUNTIME-BACKLOG-RECONCILIATION-AFTER-RUNNE | Agent Runtime backlog reconciliation after runner merge | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a/task_plan.md | T-AGENT-BLUEPRINT-SCHEMA-EXPORT-AND-DOCS-HARDENING |
 | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | T-AGENT-RUNTIME-BACKLOG-RECONCILIATION-AFTER-RUNNE |
 | T-MEMORY-COMPACT-SESSION-API-POLISH-53845A17 | Memory Compact Session API polish | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/task_plan.md | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- |
 | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | T-MEMORY-COMPACT-SESSION-API-POLISH-53845A17 |
