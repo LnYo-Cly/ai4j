@@ -44,3 +44,10 @@
 | Time | Actor | Action | Evidence | Next |
 | --- | --- | --- | --- | --- |
 | 2026-06-20 01:12 | coordinator | task-review: P2-A Sandbox SPI model ready for review: Java 8 provider/session/spec/command/result/artifact/event contracts added, fake provider tests passed, broad ai4j-agent regression passed, docs-site Sandbox SPI page and regression evidence updated. | n/a | continue |
+
+### [2026-06-20 09:18] - review materials repaired
+
+- 做了什么：根据 Harness missing-materials 结果修复 P2-A task-local review 材料：将 `execution_strategy.md` 从模板占位改为任务专属执行策略；将 `lesson_candidates.md` 改为 `lesson-candidate-v1` schema，并明确 `accepted-no-candidate` / `checked-none:p2-a-task-local`。
+- 验证结果：`git diff --check` exit 0；`npx --yes coding-agent-harness status --json .` exit 0，failure 0，P2-A `materialsReady=true`、`reviewQueueState=ready-to-confirm`、`lessonCandidateDecisionComplete=true`；当前仅剩 dirty-state warning，原因是本轮材料修复尚未提交。
+- 下一步：提交材料修复，重新运行 `task-review`，然后推送 PR。
+- 证据：command:TARGET:.:'git diff --check' -> exit 0; command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failures 0, P2-A ready-to-confirm
