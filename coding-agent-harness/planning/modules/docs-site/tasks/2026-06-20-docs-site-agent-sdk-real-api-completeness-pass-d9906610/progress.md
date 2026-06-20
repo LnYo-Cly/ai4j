@@ -1,6 +1,6 @@
 # docs site agent sdk real api completeness pass - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -66,3 +66,10 @@
 - 验证结果：`status=warn`、`failures=0`、`warnings=1`，唯一 warning 是提交前工作区 dirty；当前任务 `materialsReady=true`、`lessonCandidateDecisionComplete=true`。
 - 下一步：清理材料占位，提交并推送 PR。
 - 证据：command:TARGET:.:'npx --yes coding-agent-harness status --json .' failures=0 warnings=1 dirty=true materialsReady=true
+
+### [2026-06-20 12:29] - task-review
+
+- 做了什么：docs-site Agent SDK real API matrix ready: added source-backed capability/status matrix, linked it from Agent docs, fixed AgentSession reference, docs typecheck/build passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

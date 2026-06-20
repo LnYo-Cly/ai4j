@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | 新增真实 API 矩阵并接入 Agent docs 入口 | `docs-site/docs/agent/real-api-matrix.md`; docs diff; docs build/typecheck | `harness task-phase 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610 --message "<summary>"` | agent | missing | must pass verification first | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610 --message "<summary>"` | agent | present | must pass verification first | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610 --confirm 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

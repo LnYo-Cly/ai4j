@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-DOCS-SITE-AGENT-SDK-REAL-API-COMPLETENESS-PASS-D | docs site agent sdk real api completeness pass | active | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610/task_plan.md | none |
+| T-DOCS-SITE-AGENT-SDK-REAL-API-COMPLETENESS-PASS-D | docs site agent sdk real api completeness pass | handoff | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610/task_plan.md | none |
 
 ## 活跃任务
 
