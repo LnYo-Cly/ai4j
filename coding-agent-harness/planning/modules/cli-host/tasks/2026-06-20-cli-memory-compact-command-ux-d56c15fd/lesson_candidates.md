@@ -9,7 +9,7 @@
 | Schema version | lesson-candidate-v1 |
 | Task-level status | pending-review |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | pending-implementation-closeout |
 | Promotion state | not-promoted |
 | Closeout token | pending |
 | Source task | 2026-06-20-cli-memory-compact-command-ux-d56c15fd |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+实现尚未完成，暂不做 lesson 结论。Closeout 时如果没有可复用治理经验，将改为 `no-candidate-accepted` 并填写 `checked-none:<reason>`。
 
 ## Promotion Notes
 

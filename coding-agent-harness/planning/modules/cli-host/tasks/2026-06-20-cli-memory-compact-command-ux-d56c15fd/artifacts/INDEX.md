@@ -1,13 +1,14 @@
-# 任务产物索引
+# Artifacts Index
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
+本目录记录任务执行产生的可复查证据。当前阶段只做规划落盘，尚未产生实现 diff、测试日志或截图。
 
-| ID | Type | Path | Summary | Produced By |
+| ID | 类型 | 路径 | 证明内容 | Owner |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | preset-audit | `artifacts/preset/2026-06-20T09-35-04-206Z/preset-audit.json` | Harness `module` preset 创建本 task package 的审计证据 | coordinator |
 
-## 使用规则
+## 后续实现阶段预期产物
 
-- 路径必须可复查；临时终端输出应先保存为稳定文件再登记。
-- 产物如果包含敏感信息，先脱敏或改为记录复查方式，不要提交原始敏感内容。
-- 与 `review.md`、`progress.md`、walkthrough 互相引用时，使用 `ART-xxx` ID。
+- CLI targeted test 输出摘要
+- docs-site build 输出摘要
+- reviewer no-finding 或 material finding 记录
+- PR / commit / CI 链接

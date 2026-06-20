@@ -7,64 +7,56 @@
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | reviewer subagent | allowed by default | read-only | harness task policy | task creation | current task review | n/a | allowed within this task |
-| worker subagent | not authorized | write only after user approval | pending | pending | pending | pending | allowed only within approved task/scope |
+| worker subagent | not authorized | write only after user approval | pending | pending | CLI `/memory` implementation slice | `.worktrees/feature/cli-memory-compact-ux` / `feature/cli-memory-compact-ux` | allowed only after explicit approval |
 
 ## Subagent Delegation Decision
 
-任务开始时，coordinator 必须根据用户目标主动做这个判断，即使用户完全没有提到 subagent。
-不要假设用户知道 subagent 或 worker 是什么。如果分工有帮助，用白话说明收益，并向用户申请一次授权。
-可以直接对用户说 subagent 或 worker subagent；关键规则是 agent 不能等用户主动提出 subagent。
-如果任务已经明显拆成互不重叠的独立切片，implementation 前就应判断为 `ask-user`。如果还不知道精确文件路径，先确认路径，然后立刻申请独立执行助手授权。
-
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | yes | 命令面涉及 CLI、TUI、ACP、docs-site，一轮只读 reviewer 可以检查是否遗漏命令入口或泄露 raw memory。 | 实现完成后调用只读 reviewer；规划阶段先 self-review。 |
+| Would a worker subagent materially help? | no | 当前切片集中在 `ai4j-cli` 命令注册和 docs-site，小到可以由 coordinator 顺序实现；并行 worker 反而容易和共享 docs/command registry 冲突。 | 暂不派 worker；如后续同时做 ACP 与 docs 可再申请。 |
 
 ## User Authorization Decision
 
-如果上方 worker 决策是 `ask-user`，implementation 必须暂停，直到这里记录用户答案。
-已解决状态只能是 `authorized`、`denied` 或 `not-needed`。选择 `ask-user` 后不得继续保持 `pending`。
-
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-20 | CLI `/memory` command UX | `.worktrees/feature/cli-memory-compact-ux` / `feature/cli-memory-compact-ux` | 本轮规划不需要 worker；实现阶段可由 coordinator 直接做。 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
-| 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 主执行者 | coordinator | coordinator 负责范围控制、实现、验证和最终收口。 |
+| Subagent 模式 | reviewer-only | 实现完成后适合只读 reviewer 检查命令面一致性；不需要 worker 并行。 |
+| 审查模型 | self-check + reviewer-ready | 规划阶段 self-check；实现后至少 self adversarial review，可加 read-only reviewer。 |
+| Worktree 策略 | dedicated worktree | 当前根 checkout 是 roadmap 分支；实现必须从最新 `origin/dev` 切 dedicated worktree。 |
+| 冲突控制 | coordinator owns shared files | `docs-site`、Regression SSoT、module_plan 由 coordinator 串行维护。 |
+| 证据深度 | L1 + docs build | CLI command UX 需要 deterministic targeted tests；docs 更新需要 docs-site build。 |
 
 ## 子代理 / Worker 合同
 
-如使用 subagent 或 worker，在这里写清楚输入包、写入范围、handoff 格式和最终集成 owner。
-
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| reviewer | `task_plan.md`、`references/cli-memory-compact-command-ux-plan.md`、最终 diff、测试输出 | read-only | review report with P0/P1/P2 findings or no-finding statement | coordinator |
+| worker | not used | not applicable | not applicable | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `git diff --check` | `progress.md` | 无 whitespace / conflict marker 问题 |
+| L1 | `mvn -pl ai4j-cli -am "-Dtest=SlashCommandControllerTest,CodeCommandTest,AcpSlashCommandSupportTest,CodexStyleBlockFormatterTest" -DskipTests=false -DfailIfNoTests=false test` | `progress.md` | `/memory` command surface targeted tests 通过 |
+| L1 | `mvn -pl ai4j-cli -am -DskipTests=false test` | `progress.md` | CLI module 全量本地测试通过 |
+| L1 | `npm --prefix docs-site run build` | `progress.md` | docs-site build 通过 |
+| L0 | `npx --yes coding-agent-harness status --json .` | `progress.md` | failures=0，任务材料齐全或 residual 明确 |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
-- reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
-- 环境无法提供关键证据，继续执行会变成猜测。
+- `/memory` 需要字段不在现有 `CodingSessionSnapshot` / export state 中，且无法用 `unknown` 合理降级。
+- 需要读取 raw memory item 才能满足输出；这违反本任务安全边界，必须暂停。
+- 改动扩展到 `ai4j-coding` public API、session persistence schema 或 provider runtime。
+- docs-site 需要展示尚不存在 API 示例。
+- reviewer 发现 CLI/TUI/ACP 三个命令面不一致或存在 raw context 泄露。
 
 ## Module Preset Strategy
 
