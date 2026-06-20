@@ -1,6 +1,6 @@
 # P5 Remote Agent Runner SPI contract - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -33,3 +33,10 @@
 - 验证结果：`git diff --check` 通过（仅 CRLF warning）；`npx --yes coding-agent-harness status --json .` failures=0，当前仅剩提交前 dirty-state warning。
 - 下一步：提交 feature diff；工作树干净后执行 `task-review`。
 - 证据：command:TARGET:.:'git diff --check' passed with CRLF warnings only; command:TARGET:.:'npx --yes coding-agent-harness status --json .' reported 0 failures and dirty-state warning before commit
+
+### [2026-06-20 06:04] - task-review
+
+- 做了什么：P5 Remote Agent Runner SPI contract ready for review: Java 8 runner provider/session/spec/request/result/event contract added, fake runner tests passed, broad ai4j-agent regression passed, docs-site page and roadmap updated.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

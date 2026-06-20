@@ -26,7 +26,7 @@ flowchart LR
 | INIT-01 | init | none | done | 100 | task/worktree created | `task_plan.md`; `execution_strategy.md`; worktree path | `harness task-start 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | in_progress | 70 | runner SPI, fake tests, docs-site page implemented | code diff; docs diff | `harness task-phase ... EXEC-01 --state done --completion 100 --evidence present` | agent | partial | verification pending | coordinator |
 | VERIFY-01 | gate | EXEC-01 | planned | 0 | Maven/docs/Harness verification | commands in progress.md | n/a | agent | missing | tests pending | coordinator |
-| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | review.md; progress evidence; lesson routing | `harness task-review 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-01 | gate | VERIFY-01 | done | 100 | Agent Review Submission | review.md; progress evidence; lesson routing | `harness task-review 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet and human confirmation | `harness review-confirm ...` | human | missing | Agent cannot self-confirm | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

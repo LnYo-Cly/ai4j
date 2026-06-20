@@ -67,3 +67,17 @@
 最终信心来自三类证据：targeted `AgentRunnerSpiContractTest` 通过，broad `ai4j-agent -am` 回归通过，docs-site build 通过。当前信心只覆盖 Remote Agent Runner SPI contract，不覆盖真实远端 runner provider、CLI/TUI runner UX 或云端产品化部署。
 | E-007 | command | TARGET:. | `git diff --check` passed with CRLF warnings only. |
 | E-008 | command | TARGET:. | `npx --yes coding-agent-harness status --json .` reported failures=0 before commit, with dirty-state warning only. |
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200604 |
+| Submitted At | 2026-06-20 06:04 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a |
+| Materials Checklist Hash | dcd4e6ab21470471 |
+| Evidence Summary | P5 Remote Agent Runner SPI contract ready for review: Java 8 runner provider/session/spec/request/result/event contract added, fake runner tests passed, broad ai4j-agent regression passed, docs-site page and roadmap updated. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a |
