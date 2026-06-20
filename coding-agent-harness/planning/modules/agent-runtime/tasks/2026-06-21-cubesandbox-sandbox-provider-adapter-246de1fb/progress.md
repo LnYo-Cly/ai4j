@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest,AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test:passed 13 tests covering CubeSandbox protocol, Sandbox SPI, and AgentSession sandbox binding
+
+### [2026-06-20 19:06] - task-log
+
+- 做了什么：Completed broad agent regression, docs build, diff check, secret-fragment scan, and opt-in live test skip verification for CubeSandbox provider.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:mvn -pl ai4j-agent -am -DskipTests=false test:passed extension API 31, core 103, agent 134 tests
