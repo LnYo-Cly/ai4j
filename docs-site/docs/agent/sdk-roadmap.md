@@ -276,6 +276,8 @@ P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 s
 
 ## 6. P3：`ai4j-coding` 接入 sandbox
 
+P3 首切片已经落地：`CodingAgentBuilder.sandbox(SandboxSession)` 会把 live sandbox 绑定到新建的 coding session，并让 `bash action=exec` 通过 `SandboxShellCommandExecutor` 路由到 `SandboxSession.execute(...)`。使用细节见 [Coding Agent Sandbox Routing](/docs/coding-agent/sandbox-routing)。
+
 `ai4j-agent` 负责通用运行态；`ai4j-coding` 负责 workspace-aware coding 工具。
 
 因此 sandbox 真正影响最多的是：
@@ -364,7 +366,7 @@ Runner 职责包括：
 | 5 | P1-A/P1-B Agent Blueprint YAML loader / validator / AgentFactory | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintLoaderValidatorTest,AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 6 | P1-C CLI `run <agent.yaml>` | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-cli -am -DskipTests=false test` |
 | 7 | P2-A/P2-B Sandbox SPI + AgentSession binding | `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
-| 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
+| 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-coding -am -DskipTests=false test` |
 | 9 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
 | 10 | P5 Runner Decision | contract tests after module decision |
 

@@ -205,6 +205,7 @@ const sidebars: SidebarsConfig = {
         'coding-agent/compact-and-checkpoint',
         'coding-agent/configuration',
         'coding-agent/tools-and-approvals',
+        'coding-agent/sandbox-routing',
         'coding-agent/skills',
         'coding-agent/mcp-and-acp',
         {

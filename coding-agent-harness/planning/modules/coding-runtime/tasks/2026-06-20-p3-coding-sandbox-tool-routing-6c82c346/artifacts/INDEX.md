@@ -1,10 +1,13 @@
 # 任务产物索引
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
-
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | command | TARGET:. | `mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` passed; 14 coding tests covered direct bash executor and coding agent loop routing. | coordinator |
+| ART-002 | command | TARGET:. | `mvn -pl ai4j-coding -am -DskipTests=false test` passed; extension API 25, core 103, agent 119, coding 61 tests. | coordinator |
+| ART-003 | command | TARGET:docs-site | `npm --prefix docs-site run build` passed after restoring ignored `docs-site/node_modules` with `npm --prefix docs-site install`. | coordinator |
+| ART-004 | diff | TARGET:ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding | Sandbox runtime handle, shell executor routing, builder/session wiring, and shell result execution metadata. | coordinator |
+| ART-005 | diff | TARGET:docs-site/docs/coding-agent/sandbox-routing.md | Canonical docs for P3 first slice, including implemented API and explicit non-goals. | coordinator |
+| ART-006 | diff | TARGET:docs/05-TEST-QA | RG-003, RG-008, and SRB-057 evidence updates for this fixed regression surface. | coordinator |
 
 ## 使用规则
 

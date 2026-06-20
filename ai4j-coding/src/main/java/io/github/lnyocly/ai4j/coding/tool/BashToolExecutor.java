@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.coding.process.BashProcessInfo;
 import io.github.lnyocly.ai4j.coding.process.BashProcessLogChunk;
 import io.github.lnyocly.ai4j.coding.process.SessionProcessRegistry;
 import io.github.lnyocly.ai4j.coding.shell.LocalShellCommandExecutor;
+import io.github.lnyocly.ai4j.coding.shell.ShellCommandExecutor;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandRequest;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandResult;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -21,15 +22,29 @@ public class BashToolExecutor implements ToolExecutor {
     private final WorkspaceContext workspaceContext;
     private final CodingAgentOptions options;
     private final SessionProcessRegistry processRegistry;
-    private final LocalShellCommandExecutor shellCommandExecutor;
+    private final ShellCommandExecutor shellCommandExecutor;
 
     public BashToolExecutor(WorkspaceContext workspaceContext,
                             CodingAgentOptions options,
                             SessionProcessRegistry processRegistry) {
+        this(workspaceContext, resolveOptions(options), processRegistry,
+                new LocalShellCommandExecutor(workspaceContext, resolveOptions(options).getDefaultCommandTimeoutMs()));
+    }
+
+    public BashToolExecutor(WorkspaceContext workspaceContext,
+                            CodingAgentOptions options,
+                            SessionProcessRegistry processRegistry,
+                            ShellCommandExecutor shellCommandExecutor) {
         this.workspaceContext = workspaceContext;
-        this.options = options;
+        this.options = resolveOptions(options);
         this.processRegistry = processRegistry;
-        this.shellCommandExecutor = new LocalShellCommandExecutor(workspaceContext, options.getDefaultCommandTimeoutMs());
+        this.shellCommandExecutor = shellCommandExecutor == null
+                ? new LocalShellCommandExecutor(workspaceContext, this.options.getDefaultCommandTimeoutMs())
+                : shellCommandExecutor;
+    }
+
+    private static CodingAgentOptions resolveOptions(CodingAgentOptions options) {
+        return options == null ? CodingAgentOptions.builder().build() : options;
     }
 
     @Override

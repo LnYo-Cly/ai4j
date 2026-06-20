@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | P3 first slice implementation, tests, docs, and regression governance |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：architecture / security / regression / docs
+- 范围内：`ai4j-coding` sandbox routing for `bash action=exec`、session binding、fake sandbox tests、docs-site、Regression SSoT/Cadence Ledger。
+- 范围外：真实 sandbox provider、file/patch/browser/git/project-run routing、CLI `/sandbox` UX、live provider/model tests。
+- 来源材料：task plan、diff、Maven test output、docs build output、Regression SSoT/Cadence Ledger。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,89 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-20-p3-coding-sandbox-tool-routing-6c82c346 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | agent |
+| Task Key | MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346 |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | P3 first slice routes `bash action=exec` through `SandboxSession.execute(...)`, binds non-sensitive sandbox summary to coding sessions, keeps local fallback, updates docs-site and regression governance; targeted/broad coding tests and docs build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
-- 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+- Verdict：yes, for the scoped first slice
+- 如果不是 100%，剩余漏洞或证据缺口：无阻塞缺口；后续未实现能力已明确排除并记录为 residual/follow-up。
+- Fix loop count：1
+- 当前结论：可以提交 review；证据覆盖 direct executor、agent loop、broad coding regression、docs build 和 governance update。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `read_file`、`write_file`、`apply_patch`、browser、git/project-run/test-runner 尚未 sandbox routing；docs-site 已明确列为后续切片。
+- `bash start/status/logs/write/stop/list` 仍是本地 `SessionProcessRegistry`，后续需要 provider-side process lifecycle 设计。
+- docs build 第一次失败是 worktree 缺 ignored `docs-site/node_modules`，不是文档内容失败；`npm --prefix docs-site install` 后 build passed。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:. | `mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` passed with 14 coding tests |
+| E-002 | command | TARGET:. | `mvn -pl ai4j-coding -am -DskipTests=false test` passed with extension API 25, core 103, agent 119, coding 61 tests |
+| E-003 | command | TARGET:docs-site | `npm --prefix docs-site run build` passed after restoring ignored local dependencies |
+| E-004 | diff | TARGET:ai4j-coding/src/main/java | `CodingSandboxRuntime`, `SandboxShellCommandExecutor`, builder/session wiring, and `ShellCommandResult` execution metadata |
+| E-005 | diff | TARGET:docs-site/docs/coding-agent/sandbox-routing.md | New technical docs explain implemented API and unimplemented boundaries |
+| E-006 | diff | TARGET:docs/05-TEST-QA | RG-003/RG-008/SRB-057 updated |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 文件/patch/browser/git/project-run 尚未 sandbox routing | coordinator | yes | 后续 P3 切片 |
+| 后台 process lifecycle 尚未 provider-side 映射 | coordinator | yes | 后续 bash process routing task |
+| CLI `/sandbox` 状态展示未实现 | coordinator | yes | P4 CLI sandbox commands |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 材料包和本地证据已准备好，提交后等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节、证据和 lesson decision 已补齐。 | 不适用。 |
+| Blocked | no | 无 open blocking finding。 | 不适用。 |
+| Lessons | no | 本任务 no-candidate-accepted。 | 不适用。 |
+| Confirmed / Finalized | no | 尚未人工确认。 | closeout 后完成。 |
+| Soft-deleted / Superseded | no | 任务 active。 | 不适用。 |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：见 `progress.md`
+- 发现记录：已更新 `findings.md`
+- Regression SSoT：已更新 RG-003/RG-008
+- Lessons：checked-none:p3-routing-slice-task-local
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自 targeted + broad coding tests、docs-site build、fake sandbox deterministic tests、明确的非目标边界和回归治理记录。PR 合并前仍需 CI 与人工确认。
