@@ -1,6 +1,6 @@
 # Agent SDK task decomposition and technical docs - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-20 17:30] - task-start
+
+- 做了什么：开始拆解 Agent SDK / CLI / Sandbox / Plugin / docs-site 后续任务，并写入 docs-site 技术路线入口。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
