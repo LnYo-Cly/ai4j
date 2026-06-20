@@ -103,3 +103,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自窄范围实现、无真实 provider 依赖的确定性单测、CLI/TUI 相关回归、docs-site build、diff check、token scan 和 Harness status。发布前仍需 PR/CI 作为集成层确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201701 |
+| Submitted At | 2026-06-20 17:01 |
+| Submitted By | agent |
+| Task Key | MODULES/cli-host/2026-06-21-cli-tui-status-context-bar-e2d583b1 |
+| Materials Checklist Hash | 00f5c97b8596d935 |
+| Evidence Summary | CLI TUI status context bar ready for review: dual-line header, memory/compact/sandbox/permissions/approval chips, docs-site update, targeted CLI tests and docs build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-21-cli-tui-status-context-bar-e2d583b1 |

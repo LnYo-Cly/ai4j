@@ -1,6 +1,6 @@
 # CLI TUI status context bar - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 ## 进度记录
 
@@ -51,3 +51,10 @@
 - Registry update needed：cli-host / CLI-TUI-STATUS-CONTEXT-BAR / review after task-review
 - Harness Ledger update needed：task package path、review path、closeout status after task-review
 - 负责人：coordinator
+
+### [2026-06-20 17:01] - task-review
+
+- 做了什么：CLI TUI status context bar ready for review: dual-line header, memory/compact/sandbox/permissions/approval chips, docs-site update, targeted CLI tests and docs build passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
