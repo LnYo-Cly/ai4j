@@ -40,3 +40,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 14:34] - missing material repair
+
+- 做了什么：修复 `execution_strategy.md` 模板残留，补充 contract-first 实施策略、边界、验证计划和风险控制。
+- 验证结果：待重新运行 Harness status。
+- 下一步：重新运行 Harness status；如通过则提交材料修复并保持 review 状态。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a/execution_strategy.md:task-specific execution strategy repaired
