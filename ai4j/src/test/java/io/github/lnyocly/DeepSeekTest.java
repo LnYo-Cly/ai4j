@@ -19,6 +19,7 @@ import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.document.RecursiveCharacterTextSplitter;
 import io.github.lnyocly.ai4j.document.TikaUtil;
 import io.github.lnyocly.ai4j.vector.VectorDataEntity;
@@ -33,6 +34,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.reflections.Reflections;
 import org.xml.sax.SAXException;
 
@@ -40,8 +42,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class DeepSeekTest {
 
     private IChatService chatService;
@@ -64,7 +65,9 @@ public class DeepSeekTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         DeepSeekConfig deepSeekConfig = new DeepSeekConfig();
-        deepSeekConfig.setApiKey("sk-123456789");
+        deepSeekConfig.setApiKey(LiveProviderTestSupport.requireEnv(
+                "Skip because DeepSeek API key is not configured",
+                "DEEPSEEK_API_KEY"));
 
         Configuration configuration = new Configuration();
         configuration.setDeepSeekConfig(deepSeekConfig);
@@ -82,7 +85,6 @@ public class DeepSeekTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 

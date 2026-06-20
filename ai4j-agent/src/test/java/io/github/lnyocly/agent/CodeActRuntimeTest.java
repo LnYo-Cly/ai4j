@@ -17,32 +17,31 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+@Category(LiveProviderTest.class)
 public class CodeActRuntimeTest {
 
     private AiService aiService;
 
     @Before
     public void init() throws NoSuchAlgorithmException, KeyManagementException {
-        String apiKey = System.getenv("ARK_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getenv("DOUBAO_API_KEY");
-        }
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getProperty("doubao.api.key");
-        }
-        Assume.assumeTrue(apiKey != null && !apiKey.isEmpty());
+        String apiKey = LiveProviderTestSupport.requireEnv(
+                "Skip because Doubao API key is not configured",
+                "ARK_API_KEY",
+                "DOUBAO_API_KEY");
         DoubaoConfig doubaoConfig = new DoubaoConfig();
         doubaoConfig.setApiKey(apiKey);
 

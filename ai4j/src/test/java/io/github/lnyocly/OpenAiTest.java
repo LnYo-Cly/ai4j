@@ -30,6 +30,7 @@ import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -37,8 +38,10 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import okio.ByteString;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.reflections.Reflections;
 import org.xml.sax.SAXException;
 
@@ -46,8 +49,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -63,6 +64,7 @@ import java.util.stream.Collectors;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class OpenAiTest {
 
     private IEmbeddingService embeddingService;
@@ -72,16 +74,25 @@ public class OpenAiTest {
 
     private IAudioService audioService;
     private IRealtimeService realtimeService;
+    private String searXngSearchUrl;
     Reflections reflections = new Reflections();
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         SearXNGConfig searXNGConfig = new SearXNGConfig();
-        searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+        searXngSearchUrl = LiveProviderTestSupport.firstEnv("SEARXNG_SEARCH_URL");
+        if (!LiveProviderTestSupport.isBlank(searXngSearchUrl)) {
+            searXNGConfig.setUrl(searXngSearchUrl);
+        }
 
         OpenAiConfig openAiConfig = new OpenAiConfig();
-        openAiConfig.setApiHost("************");
-        openAiConfig.setApiKey("*************");
+        String apiHost = LiveProviderTestSupport.firstEnv("OPENAI_API_HOST");
+        if (!LiveProviderTestSupport.isBlank(apiHost)) {
+            openAiConfig.setApiHost(apiHost);
+        }
+        openAiConfig.setApiKey(LiveProviderTestSupport.requireEnv(
+                "Skip because OpenAI API key is not configured",
+                "OPENAI_API_KEY"));
 
 
         Configuration configuration = new Configuration();
@@ -110,7 +121,6 @@ public class OpenAiTest {
                 .connectionPool(connectionPool)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
@@ -125,7 +135,9 @@ public class OpenAiTest {
 
         realtimeService = aiService.getRealtimeService(PlatformType.OPENAI);
 
-        webEnhance = aiService.webSearchEnhance(chatService);
+        if (!LiveProviderTestSupport.isBlank(searXngSearchUrl)) {
+            webEnhance = aiService.webSearchEnhance(chatService);
+        }
     }
 
 
@@ -200,6 +212,7 @@ public class OpenAiTest {
 
     @Test
     public void test_chatCompletions_common_websearch_enhance() throws Exception {
+        Assume.assumeTrue("Skip because SearXNG search URL is not configured", webEnhance != null);
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("gpt-4o-mini")
                 .message(ChatMessage.withUser("鸡你太美"))
@@ -411,14 +424,18 @@ public class OpenAiTest {
                 .voice(AudioEnum.Voice.ECHO.getValue())
                 .build();
         InputStream inputStream = audioService.textToSpeech(speechRequest);
-        FileUtils.copyToFile(inputStream, new File("C:\\Users\\1\\Desktop\\audio.mp3"));
+        File outputFile = File.createTempFile("ai4j-openai-tts-", ".mp3");
+        outputFile.deleteOnExit();
+        FileUtils.copyToFile(inputStream, outputFile);
 
     }
 
     @Test
     public void test_transcription(){
         Transcription request = Transcription.builder()
-                .file(new File("C:\\Users\\1\\Desktop\\audio.mp3"))
+                .file(LiveProviderTestSupport.requireReadableFile(
+                        "OPENAI_TEST_AUDIO_FILE",
+                        "Skip because OpenAI audio input file is not configured"))
                 .model("whisper-1")
                 .build();
 
@@ -430,7 +447,9 @@ public class OpenAiTest {
     @Test
     public void test_translation(){
         Translation request = Translation.builder()
-                .file(new File("C:\\Users\\1\\Desktop\\audio.mp3"))
+                .file(LiveProviderTestSupport.requireReadableFile(
+                        "OPENAI_TEST_AUDIO_FILE",
+                        "Skip because OpenAI audio input file is not configured"))
                 .model("whisper-1")
                 .build();
 
@@ -602,7 +621,9 @@ public class OpenAiTest {
     public void test__tika() throws TikaException, IOException, SAXException {
 
 
-        File file = new File("C:\\Users\\1\\Desktop\\新建文本文档 (2).txt");
+        File file = LiveProviderTestSupport.requireReadableFile(
+                "AI4J_TEST_DOCUMENT",
+                "Skip because AI4J test document is not configured");
         InputStream inputStream = new FileInputStream(file);
         String s = TikaUtil.parseInputStream(inputStream);
         System.out.println("文本内容");

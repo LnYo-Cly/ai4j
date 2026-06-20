@@ -1,192 +1,367 @@
-﻿---
-sidebar_position: 4
----
+# Custom Agent Development
 
-# 自定义 Agent 开发指南（从 0 到可扩展）
+“自定义 Agent” 在 `ai4j-agent` 里不是一个单独框架，而是沿着现有执行链替换某一层能力。
 
-这一页专门回答三个问题：
+真正需要先回答的问题不是“我要不要自己写一个 Agent”，而是：
 
-1. `Agent` 最小可用配置是什么？
-2. `AgentBuilder` 每个常用参数怎么选？
-3. 我想做“自定义 Agent”（自定义模型适配、运行时、工具执行、记忆）时应该从哪里扩展？
+- 你要替换的是模型协议适配
+- 还是工具暴露与执行
+- 还是记忆与压缩策略
+- 还是整条 runtime loop 的推进语义
 
-## 1. Agent 构建的最小闭环
+这页按源码把这些扩展面拆开，避免把所有定制都堆进一个大而杂的“自定义 Agent”类里。
 
-在当前实现里，真正必填的只有两项：
+## 1. 先看真实装配链
 
-- `modelClient(...)`
-- `model(...)`
+最值得先读的源码入口：
 
-示例：
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agents.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentContext.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
 
-```java
-Agent agent = Agents.react()
-        .modelClient(new ResponsesModelClient(responsesService))
-        .model("doubao-seed-1-8-251228")
-        .build();
+默认装配链可以压缩成：
 
-AgentResult result = agent.run(AgentRequest.builder()
-        .input("用一句话介绍 Responses API")
-        .build());
+```text
+Agents.react() / codeAct() / deepResearch()
+  -> AgentBuilder
+  -> 解析默认值
+  -> AgentContext
+  -> AgentRuntime
+  -> Agent.run(...)
+  -> BaseAgentRuntime.runInternal(...)
 ```
 
-> 其他组件（`runtime/toolExecutor/memory/options/codeExecutor`）都有默认值，会在 `AgentBuilder.build()` 阶段自动补齐。
+理解这条链后，扩展点其实很清楚：
 
-## 2. AgentBuilder 参数全景（按职责分组）
+- `AgentModelClient` 决定模型协议怎么接入
+- `AgentToolRegistry` / `ToolExecutor` 决定工具面和执行面
+- `AgentMemory` / `MemoryCompressor` 决定状态策略
+- `AgentRuntime` 决定一次 run 如何推进
+- `TraceExporter` / `AgentEventPublisher` 决定可观测与事件出口
 
-## 2.1 运行时与核心执行
+## 2. `build()` 的默认值决定了“最小 Agent”长什么样
 
-- `runtime(AgentRuntime)`：切换执行策略（ReAct/CodeAct/DeepResearch/你自己的 Runtime）。
-- `options(AgentOptions)`：通用运行参数。
-  - `maxSteps` 默认 `0`（表示无限）
-  - `stream` 默认 `false`
-- `codeActOptions(CodeActOptions)`：CodeAct 专属参数。
-  - `reAct` 默认 `false`
+`AgentBuilder.build()` 当前会补这些默认值：
 
-## 2.2 模型与提示词
+| 配置项 | 默认值 | 直接后果 |
+| --- | --- | --- |
+| `runtime` | `ReActRuntime` | 普通 Agent 默认就是 ReAct loop |
+| `memorySupplier` | `InMemoryAgentMemory::new` | 新 session 默认只换 memory，不换 runtime |
+| `toolRegistry` | `StaticToolRegistry.empty()` | 最小 Agent 可以完全没有工具 |
+| `toolExecutor` | 基于基础 registry 名称构造 `ToolUtilExecutor` | 默认执行器只对默认工具体系友好 |
+| `codeExecutor` | Java 8 -> `NashornCodeExecutor`；更高版本 -> `GraalVmCodeExecutor` | CodeAct 行为受 JDK 版本影响 |
+| `options` | `AgentOptions.builder().build()` | step/stream 等参数都有默认对象 |
+| `codeActOptions` | `CodeActOptions.builder().build()` | CodeAct 专属参数也有默认对象 |
+| `eventPublisher` | `new AgentEventPublisher()` | 默认有事件总线，即使没有 trace exporter |
 
-- `modelClient(AgentModelClient)`：模型协议适配层（Responses/Chat/自定义）。
-- `model(String)`：模型名。
-- `systemPrompt(String)`：全局角色/规则。
-- `instructions(String)`：当前任务指令。
-- 采样与输出：`temperature/topP/maxOutputTokens`
-- 扩展字段：`reasoning/toolChoice/parallelToolCalls/store/user/extraBody`
+真正硬性要求只有一个：
 
-## 2.3 工具与 MCP
+- `modelClient` 不能为空
 
-- `toolRegistry(List<String> functions, List<String> mcpServices)`
-- 或 `toolRegistry(AgentToolRegistry)` 自定义注册器
-- `toolExecutor(ToolExecutor)` 自定义执行器
+`model` 虽然不是在 Builder 阶段立即校验，但 `BaseAgentRuntime.buildPrompt(...)` 会在运行时要求它存在。
 
-当前工具白名单语义如下：
+## 3. 定制前先选对扩展层
 
-- **传什么，用什么**。
-- `ToolUtil.getAllTools(functionList, mcpServerIds)` 只返回你显式传入的 Function/MCP 工具。
-- 本地 MCP 全量工具不再自动混入普通 Agent 调用。
+很多项目之所以越改越乱，是因为本来只需要替换一层，却重写了整条链。
 
-## 2.4 CodeAct 执行层
+### 3.1 只想接一个新模型协议
 
-- `codeExecutor(CodeExecutor)`：默认 `GraalVmCodeExecutor`
-- 支持 `language=python/js`，并通过工具桥 `callTool(...)` 或工具同名函数调用。
+优先自定义：
 
-## 2.5 记忆与会话
+- `AgentModelClient`
 
-- `memorySupplier(Supplier<AgentMemory>)`：默认 `InMemoryAgentMemory::new`
-- `Agent.newSession()` 会为每个 session 复制 context 并注入独立 memory
+不要先改：
 
-## 2.6 SubAgent 与治理策略
+- `AgentRuntime`
+- `Agent`
 
-- `subAgent(SubAgentDefinition)` / `subAgents(...)`
-- `subAgentRegistry(SubAgentRegistry)`
-- `handoffPolicy(HandoffPolicy)`
+因为大多数模型接入问题，本质上只是把 `AgentPrompt` 映射到底层 API，再把响应映射回 `AgentModelResult`。
 
-## 2.7 可观测
+### 3.2 只想做审批、审计、远程执行、限流
 
-- `eventPublisher(AgentEventPublisher)`
-- `traceExporter(TraceExporter)` + `traceConfig(TraceConfig)`
+优先自定义：
 
-只要配置了 `traceExporter`，`build()` 会自动注册 `AgentTraceListener`。
+- `ToolExecutor`
 
-## 3. 默认装配行为（build() 时发生了什么）
+不要把权限逻辑塞进：
 
-`AgentBuilder.build()` 的核心默认逻辑：
+- `AgentToolCallSanitizer`
+- 每一个工具函数本体
 
-1. `runtime` 为空 -> `ReActRuntime`
-2. `memorySupplier` 为空 -> `InMemoryAgentMemory::new`
-3. `toolRegistry` 为空 -> `StaticToolRegistry.empty()`
-4. `toolExecutor` 为空 -> `ToolUtilExecutor(allowedToolNames)`
-5. 配置了 SubAgent -> 包装成 `SubAgentToolExecutor`
-6. `codeExecutor` 为空 -> `GraalVmCodeExecutor`
-7. `options/codeActOptions/eventPublisher` 都有默认对象
-8. 如果设置 `traceExporter` -> 自动挂 `AgentTraceListener`
-9. `modelClient` 为空会直接抛异常
+因为执行器是统一执行边界，既能保留 loop 一致性，也能集中治理错误、审计和拦截。
 
-## 4. 四种“自定义 Agent”扩展方式
+### 3.3 只想改变上下文保留策略
 
-## 4.1 自定义模型客户端（最常见）
+优先自定义：
 
-你可以实现 `AgentModelClient`，把任何模型协议接入到 Agent runtime：
+- `memorySupplier`
+- `AgentMemory`
+- `MemoryCompressor`
+
+不要先去改：
+
+- `BaseAgentRuntime`
+
+因为 memory 层本来就负责上下文保留与压缩，runtime 只负责在正确时机读写它。
+
+### 3.4 真的要改变执行语义
+
+这时才考虑自定义：
+
+- `AgentRuntime`
+- 或继承 `BaseAgentRuntime`
+
+典型场景：
+
+- 不是标准 ReAct loop
+- 不是 CodeAct 的“模型产代码再执行”
+- 需要在 run 前插 planning、审批、调度或阶段转换
+
+## 4. 最常见扩展面：自定义 `AgentModelClient`
+
+源码入口：
+
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ChatModelClient.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/ResponsesModelClient.java`
+
+这两个类最值得看的不是 provider 细节，而是它们如何把：
+
+- `AgentPrompt`
+
+翻译成底层协议，再把底层返回值翻回：
+
+- `AgentModelResult`
+
+最小实现通常长这样：
 
 ```java
 public class MyModelClient implements AgentModelClient {
     @Override
     public AgentModelResult create(AgentPrompt prompt) {
-        // 1) 把 AgentPrompt 映射到你的模型 API
-        // 2) 把返回值映射成 AgentModelResult
+        // 1. 把 prompt 映射到你的模型 API
+        // 2. 取回文本、tool calls、memory items
         return AgentModelResult.builder()
                 .outputText("...")
-                .toolCalls(Collections.emptyList())
-                .memoryItems(Collections.emptyList())
+                .toolCalls(java.util.Collections.<AgentToolCall>emptyList())
+                .memoryItems(java.util.Collections.<Object>emptyList())
                 .rawResponse(null)
                 .build();
     }
 
     @Override
     public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
-        // 需要流式就推送 delta，再 onComplete
         return create(prompt);
     }
 }
 ```
 
-## 4.2 自定义工具注册/执行
+这里最容易写错的地方有两个：
 
-- 自定义 `AgentToolRegistry`：决定“暴露给模型哪些工具”。
-- 自定义 `ToolExecutor`：决定“工具如何执行、鉴权、限流、审计”。
+- 只映射了文本，没把 tool call 或 memory item 映射回来
+- 流式实现只推文本 delta，却没补完整的最终 `AgentModelResult`
 
-适用场景：
+一旦漏掉这些字段，Agent 看起来“能说话”，但工具链和状态链会悄悄失效。
 
-- 接企业内部工具总线
-- 工具调用前后统一埋点
-- 多租户鉴权
+## 5. 最稳的治理扩展：自定义 `ToolExecutor`
 
-## 4.3 自定义记忆与压缩
+源码入口：
 
-你可以注入 `memorySupplier`，例如：
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolUtilExecutor.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolCallSanitizer.java`
 
-- 基于 Redis 的会话记忆
-- 自定义 `MemoryCompressor` 的窗口压缩/摘要压缩
+如果你要做：
+
+- 权限审批
+- 参数检查
+- 审计日志
+- 外部沙箱
+- 网关代理
+- 失败重试
+
+执行器是第一优先级扩展点：
+
+```java
+ToolExecutor guardedExecutor = call -> {
+    approvalService.check(call.getName(), call.getArguments());
+    auditService.record(call);
+    return delegate.execute(call);
+};
+```
+
+这里要特别注意一个边界：
+
+- `AgentToolCallSanitizer` 只做结构合法性校验，不做权限控制
+
+如果把授权逻辑写进 sanitizer，最终会把“参数不合法”和“业务不允许执行”混成一类错误。
+
+## 6. 状态策略扩展：自定义 `AgentMemory` 和压缩器
+
+源码入口：
+
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/AgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/InMemoryAgentMemory.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/JdbcAgentMemory.java`
+
+适合自定义 memory 的场景：
+
+- 需要 Redis / MongoDB / 自研会话平台
+- 要做长任务摘要
+- 要做多租户隔离
+- 要把某些工具结果压缩得更激进
+
+最小接入方式通常不是重写 runtime，而是：
 
 ```java
 Agent agent = Agents.react()
         .modelClient(modelClient)
-        .model("your-model")
-        .memorySupplier(() -> new InMemoryAgentMemory(new WindowedMemoryCompressor(20)))
+        .model("gpt-4.1")
+        .memorySupplier(() -> new InMemoryAgentMemory(
+                new WindowedMemoryCompressor(20)
+        ))
         .build();
 ```
 
-## 4.4 自定义 Runtime（最高自由度）
+这里的关键原则是：
 
-如果 ReAct/CodeAct/DeepResearch 都不满足，你可以直接实现 `AgentRuntime`，或继承 `BaseAgentRuntime`。
+- state policy 应该放在 memory 层，不应该散落在 runtime 或业务节点里
 
-- 实现 `run(...)` / `runStream(...)`
-- 决定每轮如何构造 prompt、何时结束、何时调用工具
+## 7. 高自由度扩展：继承 `BaseAgentRuntime`
 
-详见下一页《Runtime 实现详解》。
+源码入口：
 
-## 5. 推荐的工程化分层
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/ReActRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/CodeActRuntime.java`
+- `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/DeepResearchRuntime.java`
 
-生产项目推荐按三层拆分：
+如果必须改执行语义，最稳的做法通常不是直接实现 `AgentRuntime`，而是：
 
-1. **模型适配层**（`AgentModelClient`）
-2. **运行策略层**（`AgentRuntime`）
-3. **业务编排层**（`Workflow + SubAgent`）
+- 继承 `BaseAgentRuntime`
 
-这样做的好处：
+原因很简单，`BaseAgentRuntime` 已经帮你处理了：
 
-- 模型迁移不会牵动业务编排
-- 策略升级（ReAct -> CodeAct）成本低
-- 线上排障可定位到明确层次
+- input 写入 memory
+- prompt 构建
+- model 调用
+- tool call 归一化
+- 校验错误转 `TOOL_ERROR`
+- tool result 回写 memory
+- 事件发布
+- 串行 / 并行工具调用
 
-## 6. 可直接复用的测试模板
+一个典型自定义 runtime 往往只需要覆写很少的方法：
 
-- 双 Agent 天气流：`WeatherAgentWorkflowTest`
-- StateGraph 路由/分支/循环：`StateGraphWorkflowTest`
-- CodeAct + Tool + Trace：`CodeActRuntimeTest`、`CodeActRuntimeWithTraceTest`
-- SubAgent handoff 策略：`SubAgentRuntimeTest`、`SubAgentParallelFallbackTest`、`HandoffPolicyTest`
+```java
+public class MyRuntime extends BaseAgentRuntime {
+    @Override
+    protected String runtimeName() {
+        return "my-runtime";
+    }
 
-建议按这个顺序落地：
+    @Override
+    protected String runtimeInstructions() {
+        return "Always produce a plan before acting.";
+    }
+}
+```
 
-1. 先单 Agent + 明确工具白名单
-2. 再接 Workflow
-3. 最后再引入 SubAgent 和复杂 handoff policy
+只有在这些骨架本身都不适合时，才建议直接完全实现 `AgentRuntime`。
+
+## 8. 不建议定制的地方
+
+有几处看起来能改，但通常不值得先动。
+
+### 8.1 不要先改 `Agent`
+
+`Agent` 本身很薄，主要负责把 runtime、base context 和 `memorySupplier` 绑定在一起，再为 `newSession()` 创建独立 memory。
+
+如果你想改的是行为，通常应该改：
+
+- builder
+- runtime
+- memory
+
+而不是 `Agent` 包装器本体。
+
+### 8.2 不要为了接新 provider 重写 runtime
+
+新 provider 问题通常是协议映射问题，不是 loop 语义问题。
+
+### 8.3 不要把业务编排先写进 runtime
+
+固定审批流、多节点状态迁移、更强的条件路由，往往更适合：
+
+- Workflow / StateGraph
+- SubAgent
+- Team runtime
+
+而不是把所有业务流程直接塞进一个自定义 runtime。
+
+## 9. 默认行为带来的几个后果
+
+### 9.1 默认 session 隔离只依赖 `memorySupplier`
+
+`Agent.newSession()` 不会克隆整个 runtime，只会为新 session 换一份 memory。
+
+所以如果你的 `memorySupplier` 返回共享单例，多个 session 仍会串状态。
+
+### 9.2 自定义执行器异常默认会被 runtime 包装
+
+如果你继承的是 `BaseAgentRuntime`，工具异常最终会被包装成 `TOOL_ERROR`，再回写给模型。
+
+这意味着：
+
+- 执行器抛异常不一定会终止整个 Agent
+- 模型有机会自行恢复、重试或换工具
+
+### 9.3 自己完全实现 `AgentRuntime` 会失去很多骨架能力
+
+一旦不再走 `BaseAgentRuntime`，你就要自己负责：
+
+- memory 写回
+- 事件发布
+- tool error 统一语义
+- stream / non-stream 行为一致性
+
+这就是为什么“全自定义 runtime”应该是最后手段，而不是第一选择。
+
+## 10. 一套更稳的工程拆分
+
+生产环境里，最稳的拆分通常是三层：
+
+1. 模型适配层：`AgentModelClient`
+2. 执行策略层：`AgentRuntime`
+3. 能力治理层：`ToolExecutor` / `AgentMemory` / trace
+
+这样做的直接好处是：
+
+- 模型迁移不必动 loop
+- 工具审批不必散落到每个函数
+- 长任务状态策略不必绑死在某个 runtime 上
+
+## 11. 调试与测试入口
+
+做自定义 Agent 时，最值得优先阅读或参考的测试通常是：
+
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/SubAgentRuntimeTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamTest.java`
+- `ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamTaskBoardTest.java`
+
+而代码入口最值得从这里开始：
+
+- `AgentBuilder.build()`
+- `BaseAgentRuntime.runInternal(...)`
+- `ChatModelClient`
+- `ResponsesModelClient`
+- `ToolUtilExecutor`
+- `InMemoryAgentMemory` / `JdbcAgentMemory`
+
+## 12. 继续阅读
+
+1. [Architecture](/docs/agent/architecture)
+2. [Runtime Implementations](/docs/agent/runtime-implementations)
+3. [Tools and Registry](/docs/agent/tools-and-registry)
+4. [Memory and State](/docs/agent/memory-and-state)
+5. [Trace Observability](/docs/agent/trace-observability)

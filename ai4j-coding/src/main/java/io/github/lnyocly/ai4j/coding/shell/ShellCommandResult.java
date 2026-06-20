@@ -15,6 +15,12 @@ public class ShellCommandResult {
 
     private String workingDirectory;
 
+    private String executionEnvironment;
+
+    private String sandboxSessionId;
+
+    private String sandboxProviderId;
+
     private String stdout;
 
     private String stderr;

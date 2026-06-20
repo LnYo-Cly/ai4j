@@ -5,6 +5,13 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
@@ -17,10 +24,21 @@ import io.github.lnyocly.ai4j.coding.task.CodingTaskStatus;
 import io.github.lnyocly.ai4j.coding.task.InMemoryCodingTaskManager;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
+import io.github.lnyocly.ai4j.extension.Ai4jExtension;
+import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContext;
+import io.github.lnyocly.ai4j.extension.ExtensionManifest;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailDecision;
+import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRequest;
+import io.github.lnyocly.ai4j.extension.tool.ExtensionToolCall;
+import io.github.lnyocly.ai4j.extension.tool.ExtensionToolSpec;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +46,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -164,6 +183,161 @@ public class CodingAgentBuilderTest {
         assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
         assertTrue(result.getToolResults().get(0).getOutput().contains("Unsupported patch line"));
         assertTrue(Files.notExists(workspaceRoot.resolve("calculator.py")));
+    }
+
+    @Test
+    public void shouldApplyExtensionGuardrailBeforeBuiltInCodingToolExecution() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-guardrail").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit guardrail workspace")
+                .build();
+        ExtensionRegistry registry = ExtensionRegistry.of(new DenyBashExtension())
+                .enable("deny-bash-pack");
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo should-not-run\"}")
+                        .callId("call-bash-denied")
+                        .build()))
+                .rawResponse("guardrail-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("guardrail handled")
+                .rawResponse("guardrail-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .extensions(registry)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Try to run bash.");
+        }
+
+        assertEquals("guardrail handled", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        assertEquals(CodingToolNames.BASH, result.getToolResults().get(0).getName());
+        String toolOutput = result.getToolResults().get(0).getOutput();
+        assertTrue(toolOutput, toolOutput.contains("TOOL_ERROR:"));
+        assertTrue(toolOutput, toolOutput.contains("Extension guardrail denied tool bash"));
+        assertTrue(toolOutput, toolOutput.contains("bash disabled by extension"));
+        assertTrue(toolOutput, !toolOutput.contains("should-not-run"));
+    }
+
+    @Test
+    public void shouldRouteCodingAgentBashExecThroughSandboxAndBindSessionSummary() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-sandbox").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit sandbox workspace")
+                .build();
+        RecordingSandboxSession sandboxSession = new RecordingSandboxSession(
+                "sandbox-session-1",
+                "fake-sandbox",
+                SandboxSpec.builder()
+                        .providerId("fake-sandbox")
+                        .workspaceId("/sandbox/workspace")
+                        .label("purpose", "unit-test")
+                        .label("apiToken", "must-not-persist")
+                        .build()
+        );
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo sandbox-route\"}")
+                        .callId("sandbox-bash-call")
+                        .build()))
+                .rawResponse("sandbox-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("sandbox done")
+                .rawResponse("sandbox-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .sandbox(sandboxSession)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            AgentSessionSandboxBinding binding = session.getDelegate().getSandboxBinding();
+            assertNotNull(binding);
+            assertEquals("fake-sandbox", binding.getProviderId());
+            assertEquals("sandbox-session-1", binding.getSandboxSessionId());
+            assertEquals("/sandbox/workspace", binding.getWorkspaceId());
+            assertEquals("unit-test", binding.getLabels().get("purpose"));
+            assertTrue(!binding.getLabels().containsKey("apiToken"));
+
+            result = session.run("Run bash inside sandbox.");
+        }
+
+        assertEquals("sandbox done", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        String toolOutput = result.getToolResults().get(0).getOutput();
+        assertTrue(toolOutput, toolOutput.contains("\"executionEnvironment\":\"sandbox\""));
+        assertTrue(toolOutput, toolOutput.contains("\"sandboxSessionId\":\"sandbox-session-1\""));
+        assertTrue(toolOutput, toolOutput.contains("sandbox executed: echo sandbox-route"));
+        assertEquals(1, sandboxSession.commands.size());
+        assertEquals("echo sandbox-route", sandboxSession.commands.get(0).getCommand());
+        assertEquals("/sandbox/workspace", sandboxSession.commands.get(0).getWorkingDirectory());
+    }
+
+    @Test
+    public void shouldAllowModelToInvokeExposedExtensionToolWithinCodingSession() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-extension").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit extension workspace")
+                .build();
+        ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
+                .enable("weather-pack")
+                .exposeTool("weather.search");
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name("weather.search")
+                        .arguments("{\"city\":\"Shanghai\"}")
+                        .callId("coding-weather-call-1")
+                        .build()))
+                .rawResponse("extension-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("extension weather ready")
+                .rawResponse("extension-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .extensions(registry)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Use the extension weather tool.");
+        }
+
+        assertEquals("extension weather ready", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        assertEquals("weather.search", result.getToolResults().get(0).getName());
+        assertEquals("weather:{\"city\":\"Shanghai\"}:coding-weather-call-1",
+                result.getToolResults().get(0).getOutput());
+        assertEquals(2, modelClient.prompts.size());
+        assertTrue(modelClient.prompts.get(0).getTools().toString().contains("weather.search"));
     }
 
     @Test
@@ -372,6 +546,7 @@ public class CodingAgentBuilderTest {
     private static class QueueModelClient implements AgentModelClient {
 
         private final Deque<AgentModelResult> results = new ArrayDeque<>();
+        private final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
 
         private void enqueue(AgentModelResult result) {
             results.addLast(result);
@@ -379,16 +554,125 @@ public class CodingAgentBuilderTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return results.removeFirst();
         }
 
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+            prompts.add(prompt);
             AgentModelResult result = results.removeFirst();
             if (listener != null && result != null && result.getOutputText() != null) {
                 listener.onDeltaText(result.getOutputText());
             }
             return result;
+        }
+    }
+
+    private static class RecordingSandboxSession implements SandboxSession {
+        private final String sessionId;
+        private final String providerId;
+        private final SandboxSpec spec;
+        private final List<SandboxCommand> commands = new ArrayList<SandboxCommand>();
+
+        private RecordingSandboxSession(String sessionId, String providerId, SandboxSpec spec) {
+            this.sessionId = sessionId;
+            this.providerId = providerId;
+            this.spec = spec;
+        }
+
+        @Override
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        @Override
+        public String getProviderId() {
+            return providerId;
+        }
+
+        @Override
+        public SandboxSpec getSpec() {
+            return spec;
+        }
+
+        @Override
+        public SandboxStatus getStatus() {
+            return SandboxStatus.RUNNING;
+        }
+
+        @Override
+        public SandboxResult execute(SandboxCommand command) {
+            commands.add(command.copy());
+            return SandboxResult.builder()
+                    .commandId(command.getCommandId())
+                    .exitCode(0)
+                    .stdout("sandbox executed: " + command.getCommand())
+                    .stderr("")
+                    .build();
+        }
+
+        @Override
+        public boolean cancel(String commandId) {
+            return false;
+        }
+
+        @Override
+        public List<SandboxArtifact> listArtifacts() {
+            return new ArrayList<SandboxArtifact>();
+        }
+
+        @Override
+        public void close() {
+        }
+    }
+
+    private static class WeatherExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("weather-pack")
+                    .name("Weather Pack")
+                    .capability(ExtensionCapability.TOOL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.tools().register(ExtensionToolSpec.builder()
+                            .name("weather.search")
+                            .description("Search weather")
+                            .inputSchema("{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"Target city\"}},\"required\":[\"city\"]}")
+                            .build(),
+                    new io.github.lnyocly.ai4j.extension.tool.ExtensionToolExecutor() {
+                        public String execute(ExtensionToolCall call) {
+                            return "weather:" + call.getArguments() + ":" + call.getAttributes().get("callId");
+                        }
+                    });
+        }
+    }
+
+    private static class DenyBashExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("deny-bash-pack")
+                    .name("Deny Bash Pack")
+                    .capability(ExtensionCapability.GUARDRAIL)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.guardrails().register(new ExtensionGuardrail() {
+                public String name() {
+                    return "deny-bash";
+                }
+
+                public GuardrailDecision evaluate(GuardrailRequest request) {
+                    if ("tool.execute".equals(request.getAction())
+                            && CodingToolNames.BASH.equals(request.getTarget())) {
+                        return GuardrailDecision.deny("bash disabled by extension");
+                    }
+                    return GuardrailDecision.allow();
+                }
+            });
         }
     }
 }

@@ -15,17 +15,20 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
+@Category(LiveProviderTest.class)
 public class DoubaoAgentWorkflowTest {
 
     private AiService aiService;

@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck docs
+        run: npm run typecheck
+
       - name: Build docs
         env:
           GITHUB_PAGES: 'true'

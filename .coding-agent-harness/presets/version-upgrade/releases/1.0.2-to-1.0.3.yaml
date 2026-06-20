@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.2
+toVersion: 1.0.3
+summary: Upgrade Harness projects from 1.0.2 to 1.0.3 with lesson sedimentation, git-backed review confirmation audit, governance table entropy checks, lifecycle suite splits, and bilingual PR standards.
+safeActions:
+  - id: inspect-review-materials
+    title: Capture review material readiness for git-backed confirmation checks
+    mode: report-only
+    command: harness task-index --json
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: review queue evidence includes current review tasks
+  - id: inspect-governance-check
+    title: Run source package governance checks after 1.0.3 adoption
+    mode: report-only
+    command: harness check --profile source-package .
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: check output reviewed
+manualConfirmations:
+  - id: confirm-review-confirmation-boundary
+    title: Confirm no review confirmation is accepted without committed git audit evidence
+    verify: review confirmation records and git SHA evidence
+  - id: confirm-lesson-candidate-routing
+    title: Confirm task-local lesson candidates are routed before promotion
+    verify: lesson_candidates.md and review queue inspection
+blockedActions:
+  - id: synthesize-human-review-confirmations
+    title: Synthesize human review confirmations during upgrade
+    reason: Human review confirmation must remain human-authored and git-backed.
+  - id: move-task-local-lessons-to-shared-table
+    title: Move task-local lesson candidates into a shared Lessons table
+    reason: 1.0.3 replaced shared lesson tables with task-local candidates and promoted detail docs.
+verify:
+  - id: task-index-json
+    command: harness task-index --json
+  - id: source-package-check
+    command: harness check --profile source-package .
+  - id: preset-check
+    command: harness preset check lesson-sedimentation --json

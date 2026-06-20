@@ -202,3 +202,22 @@ sidebar_position: 1
 - [模块架构与包地图](/docs/ai-basics/architecture-and-package-map)
 - [Memory 与 Tool 分层边界](/docs/ai-basics/memory-and-tool-boundaries)
 - [Skill 主题](/docs/ai-basics/skills)
+
+---
+
+## 6. 这一章和当前 canonical 树的关系
+
+`ai-basics/` 仍然保留为有效的低层能力说明树，但当前站点里更面向“产品分层阅读”的入口已经拆成：
+
+- `core-sdk/`
+- `spring-boot/`
+- `agent/`
+- `coding-agent/`
+- `flowgram/`
+
+可以把关系理解成：
+
+- `ai-basics/` 更偏底层能力和历史长文沉淀
+- 新的顶级专题树更偏模块边界、产品路径和当前 canonical 阅读顺序
+
+如果你更关心“这项能力在仓库分层里属于哪里”，优先回到顶级专题树；如果你更关心“某个服务或调用语义的低层细节”，继续读 `ai-basics/` 会更直接。

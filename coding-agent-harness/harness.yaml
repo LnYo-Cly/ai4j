@@ -1,0 +1,183 @@
+version: 2
+locale: zh-CN
+capabilities:
+  - core
+  - dashboard
+  - module-parallel
+structure:
+  harnessRoot: coding-agent-harness
+  planningRoot: coding-agent-harness/planning
+  tasksRoot: coding-agent-harness/planning/tasks
+  modulesRoot: coding-agent-harness/planning/modules
+  externalRoot: coding-agent-harness/planning/external
+  governanceRoot: coding-agent-harness/governance
+  generatedRoot: coding-agent-harness/governance/generated
+modules:
+  schema: harness-modules/v1
+  generatedView: coding-agent-harness/planning/modules/Module-Registry.md
+  items:
+    agent-runtime:
+      title: Agent Runtime
+      prefix: AGENT
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-agent
+      shared: []
+      dependsOn:
+        - core-sdk
+      plan: coding-agent-harness/planning/modules/agent-runtime/module_plan.md
+      brief: coding-agent-harness/planning/modules/agent-runtime/brief.md
+      updated: 2026-06-04
+    ask-user-plugin:
+      title: Ask User Plugin
+      prefix: ASKUSER
+      status: active
+      branch: main
+      owner: coordinator
+      currentStep: MOD-02
+      scope:
+        - ai4j-plugin-ask-user
+      shared: []
+      dependsOn:
+        - extension-api
+      plan: coding-agent-harness/planning/modules/ask-user-plugin/module_plan.md
+      brief: coding-agent-harness/planning/modules/ask-user-plugin/brief.md
+      updated: 2026-06-09
+    bom:
+      title: Version Alignment BOM
+      prefix: BOM
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-bom
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/bom/module_plan.md
+      brief: coding-agent-harness/planning/modules/bom/brief.md
+      updated: 2026-06-04
+    cli-host:
+      title: CLI Host
+      prefix: CLI
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-cli
+      shared: []
+      dependsOn:
+        - coding-runtime
+      plan: coding-agent-harness/planning/modules/cli-host/module_plan.md
+      brief: coding-agent-harness/planning/modules/cli-host/brief.md
+      updated: 2026-06-04
+    coding-runtime:
+      title: Coding Runtime
+      prefix: CODING
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-coding
+      shared: []
+      dependsOn:
+        - core-sdk
+      plan: coding-agent-harness/planning/modules/coding-runtime/module_plan.md
+      brief: coding-agent-harness/planning/modules/coding-runtime/brief.md
+      updated: 2026-06-04
+    core-sdk:
+      title: Core SDK
+      prefix: CORE
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/core-sdk/module_plan.md
+      brief: coding-agent-harness/planning/modules/core-sdk/brief.md
+      updated: 2026-06-04
+    docs-site:
+      title: Documentation Site
+      prefix: DOCS
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - docs-site
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/docs-site/module_plan.md
+      brief: coding-agent-harness/planning/modules/docs-site/brief.md
+      updated: 2026-06-04
+    extension-api:
+      title: Extension API
+      prefix: EXT
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-extension-api
+      shared: []
+      dependsOn: []
+      plan: coding-agent-harness/planning/modules/extension-api/module_plan.md
+      brief: coding-agent-harness/planning/modules/extension-api/brief.md
+      updated: 2026-06-08
+    flowgram-demo:
+      title: FlowGram Demo Backend
+      prefix: FLOWDEMO
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-demo
+      shared: []
+      dependsOn:
+        - flowgram-starter
+      plan: coding-agent-harness/planning/modules/flowgram-demo/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-demo/brief.md
+      updated: 2026-06-04
+    flowgram-starter:
+      title: FlowGram Starter
+      prefix: FLOWSTART
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-spring-boot-starter
+      shared: []
+      dependsOn:
+        - agent-runtime
+      plan: coding-agent-harness/planning/modules/flowgram-starter/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-starter/brief.md
+      updated: 2026-06-04
+    flowgram-webapp-demo:
+      title: FlowGram Webapp Demo
+      prefix: WEBAPP
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-flowgram-webapp-demo
+      shared: []
+      dependsOn:
+        - flowgram-demo
+      plan: coding-agent-harness/planning/modules/flowgram-webapp-demo/module_plan.md
+      brief: coding-agent-harness/planning/modules/flowgram-webapp-demo/brief.md
+      updated: 2026-06-04
+    spring-starter:
+      title: Spring Boot Starter
+      prefix: SPRING
+      status: planned
+      branch: main
+      owner: coordinator
+      scope:
+        - ai4j-spring-boot-starter
+      shared: []
+      dependsOn:
+        - core-sdk
+      plan: coding-agent-harness/planning/modules/spring-starter/module_plan.md
+      brief: coding-agent-harness/planning/modules/spring-starter/brief.md
+      updated: 2026-06-04

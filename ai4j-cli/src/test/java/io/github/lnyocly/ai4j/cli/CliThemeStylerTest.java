@@ -70,6 +70,28 @@ public class CliThemeStylerTest {
     }
 
     @Test
+    public void buildCompactStatusLineIncludesProviderAndProtocol() {
+        CliThemeStyler styler = new CliThemeStyler(theme(), false);
+
+        String value = styler.buildCompactStatusLine(
+                "Thinking",
+                true,
+                "⠋",
+                "Analyzing workspace",
+                "zhipu",
+                "chat",
+                "glm-4.5-flash",
+                "ai4j-sdk",
+                "Enter a prompt or /command"
+        );
+
+        assertTrue(value.contains("provider zhipu"));
+        assertTrue(value.contains("protocol chat"));
+        assertTrue(value.contains("model glm-4.5-flash"));
+        assertTrue(value.contains("workspace ai4j-sdk"));
+    }
+
+    @Test
     public void styleCodeBlockLineUsesAnsiWhenEnabled() {
         CliThemeStyler styler = new CliThemeStyler(theme(), true);
         CliThemeStyler.TranscriptStyleState state = new CliThemeStyler.TranscriptStyleState();

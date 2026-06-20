@@ -3,18 +3,37 @@
  * SPDX-License-Identifier: MIT
  */
 
-const { defineConfig } = require('@flowgram.ai/eslint-config');
+const flowgramWebConfig = require('@flowgram.ai/eslint-config/eslint.web.config.js');
 
-module.exports = defineConfig({
-  preset: 'web',
-  packageRoot: __dirname,
+module.exports = {
+  root: true,
+  ...flowgramWebConfig,
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  parser: '@typescript-eslint/parser',
+  plugins: Array.from(
+    new Set([
+      ...(flowgramWebConfig.plugins || []),
+      '@typescript-eslint',
+      'import',
+      'jsx-a11y',
+      'prettier',
+      'react',
+    ])
+  ),
   rules: {
+    ...(flowgramWebConfig.rules || {}),
     'no-console': 'off',
     'react/prop-types': 'off',
   },
   settings: {
+    ...(flowgramWebConfig.settings || {}),
     react: {
       version: 'detect', // 自动检测 React 版本
     },
   },
-});
+  overrides: flowgramWebConfig.overrides || [],
+};

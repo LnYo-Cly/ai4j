@@ -1,65 +1,53 @@
 ---
-sidebar_position: 6
+sidebar_position: 12
 ---
 
 # 前端自定义节点开发
 
-如果你要做自己的 Agentic 工作流平台，后端只会写 `FlowGramNodeExecutor` 还不够。
+这一页只讲前端这半边，不讲后端 executor。
 
-前端还必须同时定义：
+如果 `custom-nodes.md` 讲的是前后端整体契约，这一页讲的是：在 `ai4j-flowgram-webapp-demo` 里，一个新节点怎样真正成为“可编辑、可校验、可序列化、可映射到后端”的前端节点。
 
-- 节点类型
-- 节点注册器
-- 节点默认数据
-- 表单元数据
-- 前后端类型映射
+## 1. 先明确前端节点真正由哪些部件组成
 
-这页专门讲前端这半边。
-
----
-
-## 1. 前端节点的最小组成
-
-在 `ai4j-flowgram-webapp-demo` 里，一个节点通常至少有这几层：
+在当前 demo 里，一个节点通常至少涉及：
 
 - `src/nodes/constants.ts`
 - `src/nodes/<type>/index.tsx`
-- 可选的 `form-meta.tsx`
+- 可选 `src/nodes/<type>/form-meta.tsx`
 - `src/nodes/index.ts`
+- `src/utils/backend-workflow.ts`
 
-对应关系可以理解成：
+这几层分别解决不同问题：
 
-- `constants.ts`：定义前端节点 type
-- `index.tsx`：定义 node registry 和 `onAdd`
-- `form-meta.tsx`：定义右侧表单渲染、校验、effects
-- `nodes/index.ts`：把节点注册到编辑器
+- type 是什么
+- 节点长什么样、初始数据是什么
+- 右侧表单怎么渲染与校验
+- 编辑器是否认识这个节点
+- 发给后端时怎样映射
 
----
+少任意一层，节点都只是半成品。
 
-## 2. 先定义前端节点类型
+## 2. 第一步先定前端 type
 
-当前 demo 里的前端节点类型都集中在：
+当前前端枚举位于：
 
 - `ai4j-flowgram-webapp-demo/src/nodes/constants.ts`
 
-例如：
+已有类型包括：
 
-```ts
-export enum WorkflowNodeType {
-  Start = 'start',
-  End = 'end',
-  LLM = 'llm',
-  HTTP = 'http',
-  Code = 'code',
-  Tool = 'tool',
-  Knowledge = 'knowledge',
-  Variable = 'variable',
-}
-```
+- `start`
+- `end`
+- `llm`
+- `http`
+- `code`
+- `tool`
+- `knowledge`
+- `variable`
+- `condition`
+- `loop`
 
-如果你要新增自定义节点，第一步通常是先补一个 type。
-
-例如：
+如果你要加自定义节点，第一步就是先把它变成正式前端 type，例如：
 
 ```ts
 export enum WorkflowNodeType {
@@ -68,15 +56,13 @@ export enum WorkflowNodeType {
 }
 ```
 
----
+这一步看似简单，实际上它定义了编辑器侧的协议名。
 
-## 3. 节点注册器怎么写
+## 3. 第二步写节点 registry
 
-前端节点注册器的真实类型是：
+前端真正把节点交给编辑器识别的是 `FlowNodeRegistry`。
 
-- `FlowNodeRegistry`
-
-它在 demo 中至少包含这些关键字段：
+当前 registry 至少会关心：
 
 - `type`
 - `info`
@@ -84,7 +70,35 @@ export enum WorkflowNodeType {
 - `onAdd`
 - `formMeta`
 
-一个最小 `TRANSFORM` 节点前端注册器可以写成：
+### 3.1 `type`
+
+决定这是哪类节点。
+
+### 3.2 `info`
+
+决定节点在节点面板里的图标和说明。
+
+### 3.3 `meta`
+
+决定节点默认尺寸等编辑器元信息。
+
+### 3.4 `onAdd`
+
+这是最关键的部分。它决定一个节点拖进画布时，默认会生成什么 JSON。
+
+### 3.5 `formMeta`
+
+决定右侧表单面板怎样渲染、校验和联动。
+
+## 4. `onAdd()` 其实就是你的前端 schema 工厂
+
+很多人会把 `onAdd()` 理解成“只是在画布里加个节点”。这不够准确。
+
+更准确地说：
+
+> `onAdd()` 负责生成这个节点的初始 schema、输入输出约束和默认绑定值。
+
+例如一个最小 `TRANSFORM` 节点：
 
 ```tsx
 import { nanoid } from 'nanoid';
@@ -101,10 +115,7 @@ export const TransformNodeRegistry: FlowNodeRegistry = {
     description: 'Normalize text and return a transformed result.',
   },
   meta: {
-    size: {
-      width: 360,
-      height: 320,
-    },
+    size: { width: 360, height: 320 },
   },
   onAdd() {
     return {
@@ -144,93 +155,81 @@ export const TransformNodeRegistry: FlowNodeRegistry = {
 };
 ```
 
-这个例子故意保持简单，因为它已经覆盖了最关键的几层：
+这个例子本质上已经定义了：
 
-- 节点类型
-- 初始表单值
+- 节点协议名
+- 表单默认值
 - 输入 schema
 - 输出 schema
-- 默认表单面板
 
----
+## 5. `defaultFormMeta` 为什么值得先复用
 
-## 4. 为什么很多节点先复用 `defaultFormMeta`
-
-当前 demo 里，`Tool`、`Knowledge` 这些节点都直接复用了：
+当前 demo 中多个节点都直接复用了：
 
 - `src/nodes/default-form-meta.tsx`
 
-它已经内置了几类很重要的能力：
+这份默认 meta 比表面上更有用。
 
-- 标题编辑
-- `inputsValues.*` 校验
-- 输出 schema 展示
-- 变量引用校验与同步
+### 5.1 它已经自带基础校验
+
+包括：
+
+- `title` 必填
+- `inputsValues.*` 按 required 字段做校验
+
+### 5.2 它已经带了一组关键 effects
+
+包括：
+
+- `syncVariableTitle`
+- `provideJsonSchemaOutputs`
+- `autoRenameRefEffect`
+- `validateWhenVariableSync`
+- `listenRefSchemaChange`
+
+这意味着默认表单面板并不只是“能输文本”，而是已经帮你处理了：
+
+- 标题同步
 - 输出 schema 派生
+- 引用重命名联动
+- 变量引用校验
+- 引用 schema 变化监听
 
-因此如果你只是想先把新节点跑起来，通常不需要一开始就单独写复杂的 `form-meta.tsx`。
+### 5.3 实际建议
 
-先复用 `defaultFormMeta`，等交互真的有差异时再拆独立面板，成本最低。
+如果你的新节点没有特别强的交互差异，先复用 `defaultFormMeta`，等确认确实需要专属交互时再拆自定义 `form-meta.tsx`。
 
----
+## 6. 第三步要把节点注册到编辑器
 
-## 5. 记得把节点注册到编辑器
-
-定义完 registry 之后，还要把它加入：
+只定义 registry 还不够，还要把它加入：
 
 - `ai4j-flowgram-webapp-demo/src/nodes/index.ts`
 
-例如：
+当前 `nodeRegistries` 是编辑器识别节点的实际来源。
 
-```ts
-export const nodeRegistries: FlowNodeRegistry[] = [
-  ConditionNodeRegistry,
-  StartNodeRegistry,
-  EndNodeRegistry,
-  LLMNodeRegistry,
-  TransformNodeRegistry,
-];
-```
+如果不注册，会出现非常典型的症状：
 
-不注册的话：
+- 代码里明明有节点定义
+- 但节点面板里看不到
+- 已有 workflow JSON 也无法正常识别该 type
 
-- 节点面板不会出现
-- 画布也不会识别这个 type
+## 7. 第四步：前后端 type 映射必须处理
 
----
+这一步经常漏。
 
-## 6. 前后端类型不一致时怎么办
+前端最终不会把原始节点 type 原样交给后端，而是会经过：
 
-这是最容易漏掉的一步。
+- `backend-workflow.ts`
 
-前端画布最终不会直接把原始 schema 原封不动发给后端，而是会走：
+如果你前端 type 用的是：
 
-- `ai4j-flowgram-webapp-demo/src/utils/backend-workflow.ts`
+- `transform`
 
-这里当前会做类型映射，例如：
-
-- `tool -> TOOL`
-- `knowledge -> KNOWLEDGE`
-- `llm -> LLM`
-
-所以新增节点时你有两个选择。
-
-### 6.1 前后端直接用同一个 type
-
-例如前端和后端都用：
+而后端 executor type 用的是：
 
 - `TRANSFORM`
 
-这样不需要额外映射。
-
-### 6.2 前端用小写，后端用大写
-
-例如：
-
-- 前端：`transform`
-- 后端：`TRANSFORM`
-
-那你必须在 `BACKEND_TYPE_MAP` 里补一条：
+那你必须补到：
 
 ```ts
 const BACKEND_TYPE_MAP: Record<string, string> = {
@@ -238,52 +237,77 @@ const BACKEND_TYPE_MAP: Record<string, string> = {
 };
 ```
 
-如果忘了这一步，后端 runtime 会收到一个它不认识的节点类型。
+否则前端看起来一切正常，后端却会在校验阶段报：
 
----
+- unsupported node type
 
-## 7. 前端节点 schema 要和后端执行器对齐
+## 8. 前端真正要对齐的不是外观，而是 schema
 
-前端真正要对齐的不是“长得像不像”，而是：
+一个前端自定义节点是否合格，不取决于卡片做得是否好看，而取决于这几组数据是否稳定：
 
 - `inputs.required`
 - `inputs.properties`
 - `inputsValues`
 - `outputs.properties`
 
-比如如果后端执行器要求：
+这些字段决定了：
 
-- `text`
-- `mode`
+- 表单怎么校验
+- runtime 收到什么输入
+- 下游节点能引用什么输出
 
-那前端节点就必须稳定产出这两个输入。
+如果这些字段定义得含糊，后端 executor 再强也没用。
 
-否则你会遇到的不是“节点渲染问题”，而是运行时报：
+## 9. 与内置节点保持一致时最值得学什么
 
-- 缺少必填参数
-- 输出字段不匹配
-- report 里 inputs/outputs 结构和 UI 预期不一致
+看当前内置节点 registry，最值得复用的不是样式，而是它们的组织方式：
 
----
+- `ToolNodeRegistry` 用默认 form meta 和清晰的输入输出 contract
+- `KnowledgeNodeRegistry` 把 serviceId、embeddingModel、namespace、query 这些后端关键字段前置出来
 
-## 8. 一个完整的前端新增路径
+这说明好的节点前端定义有一个共同特点：
 
-推荐顺序：
+- 它把后端真正需要的 contract 暴露为明确表单字段
 
-1. 在 `constants.ts` 定义节点 type
-2. 新建 `src/nodes/transform/index.tsx`
-3. 先复用 `defaultFormMeta`
-4. 把 registry 加进 `nodes/index.ts`
-5. 在 `backend-workflow.ts` 处理前后端 type 映射
-6. 再去写后端 `FlowGramNodeExecutor`
+而不是把复杂逻辑藏在前端内部。
 
-这个顺序比先写后端更稳，因为你会先把输入输出 schema 想清楚。
+## 10. 最常见的前端错误
 
----
+### 10.1 只加了 type，没加 backend map
 
-## 9. 继续阅读
+结果：
 
-1. [Flowgram Custom Nodes](/docs/flowgram/custom-nodes)
-2. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
-3. [前端画布与后端 Runtime 对接](/docs/flowgram/frontend-backend-integration)
+- 画布能拖出来
+- 后端不认识
 
+### 10.2 `inputs` 和 `inputsValues` 没对齐
+
+结果：
+
+- 表单看起来填了
+- runtime 仍然会报 required missing
+
+### 10.3 输出 schema 写得太随意
+
+结果：
+
+- 下游节点引用路径不稳定
+- 表单和展示面板都不好做
+
+### 10.4 一上来就写复杂专属 form meta
+
+结果：
+
+- UI 复杂度先失控
+- 但节点 contract 还没稳定
+
+## 11. 一个最重要的判断标准
+
+前端自定义节点写得好不好，不看它 JSX 多炫，而看这 4 点：
+
+- 拖进画布时能生成稳定初始 schema
+- 表单校验和 required 字段一致
+- 能正确映射成后端识别的 type
+- 输出 schema 足够稳定，供下游引用
+
+满足这 4 点，它才是正式平台节点的前端半边。

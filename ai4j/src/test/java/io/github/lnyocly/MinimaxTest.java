@@ -11,11 +11,13 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @Description:
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class MinimaxTest {
 
     private IChatService chatService;
@@ -35,7 +38,9 @@ public class MinimaxTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         MinimaxConfig minimaxConfig = new MinimaxConfig();
-        // minimaxConfig.setApiKey("sk-123456789");
+        minimaxConfig.setApiKey(LiveProviderTestSupport.requireEnv(
+                "Skip because MiniMax API key is not configured",
+                "MINIMAX_API_KEY"));
 
         Configuration configuration = new Configuration();
         configuration.setMinimaxConfig(minimaxConfig);
@@ -53,7 +58,6 @@ public class MinimaxTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 

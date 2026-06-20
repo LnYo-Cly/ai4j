@@ -1,24 +1,38 @@
-import { FlowGramNode, WorkflowEdgeSchema, WorkflowNodeSchema, WorkflowSchema } from '@flowgram.ai/runtime-interface';
+import type { WorkflowEdgeSchema, WorkflowNodeSchema, WorkflowSchema } from '@flowgram.ai/runtime-interface';
 
-import { FlowDocumentJSON } from '../typings';
+import type { FlowDocumentJSON } from '../typings';
 
 type SerializableWorkflow = string | WorkflowSchema | FlowDocumentJSON;
 
+const FLOWGRAM_NODE = {
+  Start: 'start',
+  End: 'end',
+  LLM: 'llm',
+  HTTP: 'http',
+  Code: 'code',
+  Condition: 'condition',
+  Loop: 'loop',
+  Comment: 'comment',
+  Group: 'group',
+  BlockStart: 'block-start',
+  BlockEnd: 'block-end',
+} as const;
+
 const UI_ONLY_TYPES = new Set<string>([
-  FlowGramNode.Comment,
-  FlowGramNode.Group,
-  FlowGramNode.BlockStart,
-  FlowGramNode.BlockEnd,
+  FLOWGRAM_NODE.Comment,
+  FLOWGRAM_NODE.Group,
+  FLOWGRAM_NODE.BlockStart,
+  FLOWGRAM_NODE.BlockEnd,
 ]);
 
 const BACKEND_TYPE_MAP: Record<string, string> = {
-  [FlowGramNode.Start]: 'START',
-  [FlowGramNode.End]: 'END',
-  [FlowGramNode.LLM]: 'LLM',
-  [FlowGramNode.HTTP]: 'HTTP',
-  [FlowGramNode.Code]: 'CODE',
-  [FlowGramNode.Condition]: 'CONDITION',
-  [FlowGramNode.Loop]: 'LOOP',
+  [FLOWGRAM_NODE.Start]: 'START',
+  [FLOWGRAM_NODE.End]: 'END',
+  [FLOWGRAM_NODE.LLM]: 'LLM',
+  [FLOWGRAM_NODE.HTTP]: 'HTTP',
+  [FLOWGRAM_NODE.Code]: 'CODE',
+  [FLOWGRAM_NODE.Condition]: 'CONDITION',
+  [FLOWGRAM_NODE.Loop]: 'LOOP',
   variable: 'VARIABLE',
   tool: 'TOOL',
   knowledge: 'KNOWLEDGE',
@@ -88,7 +102,7 @@ const normalizeLoopNodeData = (data: Record<string, unknown>): Record<string, un
 const normalizeNodeData = (type: string, data: unknown): Record<string, unknown> => {
   const normalizedData = isRecord(data) ? clone(data) : {};
 
-  if (type === 'Loop') {
+  if (type === 'LOOP') {
     return normalizeLoopNodeData(normalizedData);
   }
 
@@ -111,12 +125,21 @@ const normalizeEdges = (
         && allowedNodeIds.has(edge.sourceNodeID)
         && allowedNodeIds.has(edge.targetNodeID)
     )
-    .map((edge) => ({
-      sourceNodeID: edge.sourceNodeID,
-      targetNodeID: edge.targetNodeID,
-      sourcePortID: edge.sourcePortID,
-      targetPortID: edge.targetPortID,
-    }));
+    .map((edge) => {
+      const normalizedEdge: WorkflowEdgeSchema = {
+        sourceNodeID: edge.sourceNodeID,
+        targetNodeID: edge.targetNodeID,
+      };
+
+      if (edge.sourcePortID !== undefined) {
+        normalizedEdge.sourcePortID = edge.sourcePortID;
+      }
+      if (edge.targetPortID !== undefined) {
+        normalizedEdge.targetPortID = edge.targetPortID;
+      }
+
+      return normalizedEdge;
+    });
 };
 
 const normalizeNodes = (nodes: WorkflowNodeSchema[] | undefined): WorkflowNodeSchema[] => {

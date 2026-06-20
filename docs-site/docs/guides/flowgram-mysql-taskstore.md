@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Flowgram + MySQL：让工作流任务可落库、可恢复、可查询
+# Flowgram + MySQL：让工作流任务可落库、可查询、可治理
 
 如果你要把 AI4J 的 Flowgram runtime 真正当成一个后端工作流平台使用，`TaskStore` 不能只放内存。
 
@@ -10,23 +10,28 @@ sidebar_position: 3
 
 - 前端画布或调用方提交 schema
 - `FlowGramTaskController` 接收任务
-- `JdbcFlowGramTaskStore` 把任务状态写入 MySQL
-- `report / result` 从数据库里恢复任务状态
+- `JdbcFlowGramTaskStore` 把任务元数据和结果快照写入 MySQL
+- `report / result` 继续走统一 task API，对外暴露状态和结果
 
 ## 1. 这页解决什么问题
 
 默认内存版 `TaskStore` 适合 demo，但不适合：
 
-- 服务重启后继续查任务
+- 持续保存任务元数据与结果快照
 - 多实例部署
 - 按任务 ID 查询历史结果
 - 平台化接入任务审计
 
 切到 JDBC 后，你会得到：
 
-- 任务状态跨进程保留
-- 最终结果和错误信息落库
+- 任务元数据落库
+- 最终结果和错误信息快照落库
 - 更容易接平台侧权限、归属和报表
+
+但要先明确一个边界：
+
+- 当前 `JdbcFlowGramTaskStore` 不等于“可恢复正在执行中的 durable workflow engine”
+- 运行态真相仍主要在 `FlowGramRuntimeService` 进程内 `TaskRecord`
 
 ## 2. 依赖
 
@@ -217,7 +222,7 @@ curl "http://127.0.0.1:8080/flowgram/tasks/{taskId}/result"
 {
   "taskId": "...",
   "status": "success",
-  "terminated": false,
+  "terminated": true,
   "error": null,
   "result": {
     "result": "..."

@@ -1,0 +1,44 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.9
+toVersion: 1.1.0
+summary: Upgrade Harness projects from 1.0.9 to 1.1.0 with the Node.js 24+ runtime baseline, 1.1.0 publish line, prepublishOnly release gate, and missing-dist package install behavior.
+safeActions:
+  - id: inspect-node-runtime
+    title: Capture Node.js runtime version for 1.1.0 baseline review
+    mode: report-only
+    command: node --version
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: runtime version evidence reviewed
+  - id: inspect-prepublish-gate
+    title: Run source-safe release gate before publish readiness
+    mode: report-only
+    command: npm run prepublishOnly
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: prepublish gate evidence reviewed
+manualConfirmations:
+  - id: confirm-node-24-baseline
+    title: Confirm operators and CI use Node.js 24 or newer for 1.1.0
+    verify: CI and local runtime evidence
+  - id: confirm-publish-line
+    title: Confirm the next publish line is 1.1.0 rather than another 1.0.x patch
+    verify: package metadata and release review
+  - id: confirm-missing-dist-message
+    title: Confirm installed package behavior reports missing dist instead of source checkout build fallback
+    verify: installed package smoke evidence
+blockedActions:
+  - id: publish-on-old-node
+    title: Publish or validate 1.1.0 on a Node runtime below the documented baseline
+    reason: Node.js 24+ is release-significant for 1.1.0.
+  - id: bypass-prepublish-only
+    title: Bypass the prepublishOnly dist rebuild and observation gate
+    reason: 1.1.0 publish readiness depends on the source-safe prepublish gate.
+  - id: fallback-to-source-build-in-installed-package
+    title: Attempt source checkout build scripts from incomplete installed package contents
+    reason: Installed package bootstrap must fail with the package-level missing-dist message.
+verify:
+  - id: node-version
+    command: node --version
+  - id: prepublish-only
+    command: npm run prepublishOnly
+  - id: pack-dry-run
+    command: npm pack --dry-run --json

@@ -23,8 +23,11 @@ import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -34,9 +37,9 @@ import java.util.concurrent.TimeUnit;
  * 使用豆包真实大模型的 Agent Teams 集成测试。
  * 场景：模拟完整研发小组（架构/后端/前端/测试/运维）协作完成项目交付规划。
  */
+@Category(LiveProviderTest.class)
 public class DoubaoProjectTeamAgentTeamsTest {
 
-    private static final String DEFAULT_API_KEY = "1cbd1960cdc7e9144ded698a9763569b.seHlVxdOq3eTnY9m";
     private static final String MODEL = (System.getenv("ZHIPU_MODEL") == null || System.getenv("ZHIPU_MODEL").isEmpty())
             ? "GLM-4.5-Flash"
             : System.getenv("ZHIPU_MODEL");
@@ -46,9 +49,8 @@ public class DoubaoProjectTeamAgentTeamsTest {
     @Before
     public void init() throws NoSuchAlgorithmException, KeyManagementException {
         String apiKey = System.getenv("ZHIPU_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = DEFAULT_API_KEY;
-        }
+        Assume.assumeTrue("Skip because Zhipu API key is not configured. Expected env var: ZHIPU_API_KEY",
+                apiKey != null && !apiKey.isEmpty());
 
         ZhipuConfig zhipuConfig = new ZhipuConfig();
         zhipuConfig.setApiKey(apiKey);

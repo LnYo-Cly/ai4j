@@ -10,6 +10,6 @@ sidebar_position: 2
 
 1. [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui)
 2. [配置体系](/docs/coding-agent/configuration)
-3. [配置体系](/docs/coding-agent/configuration)
+3. [命令参考](/docs/coding-agent/command-reference)
 4. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 5. [命令参考](/docs/coding-agent/command-reference)

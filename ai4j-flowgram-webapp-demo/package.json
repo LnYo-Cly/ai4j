@@ -72,8 +72,8 @@
     "lint:fix": "eslint ./src --fix",
     "ts-check": "tsc --noEmit",
     "start": "cross-env MODE=app NODE_ENV=development rsbuild dev",
-    "test": "exit",
-    "test:cov": "exit",
-    "watch": "exit 0"
+    "test": "node ./scripts/run-tests.cjs",
+    "test:cov": "npm run test",
+    "watch": "npm run ts-check -- --watch"
   }
 }

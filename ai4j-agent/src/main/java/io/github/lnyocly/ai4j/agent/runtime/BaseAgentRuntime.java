@@ -6,18 +6,23 @@ import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
+import io.github.lnyocly.ai4j.agent.context.ContextProjection;
+import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicyException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -76,8 +81,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         while (!stepLimited || step < maxSteps) {
             throwIfInterrupted();
             publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null);
+            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TURN, step, runtimeName(), null);
 
-            AgentPrompt prompt = buildPrompt(context, memory, stream);
+            AgentPrompt prompt = buildPrompt(context, memory, stream, step, listener);
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, stream);
             throwIfInterrupted();
             lastResult = modelResult;
@@ -90,6 +96,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             if (calls == null || calls.isEmpty()) {
                 String outputText = modelResult == null ? "" : modelResult.getOutputText();
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, outputText, modelResult == null ? null : modelResult.getRawResponse());
+                dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
                 return AgentResult.builder()
                         .outputText(outputText)
@@ -140,6 +147,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 publish(context, listener, AgentEventType.TOOL_RESULT, step, output, toolResult);
             }
 
+            dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
             publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
             step += 1;
         }
@@ -187,6 +195,14 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
+        return buildPrompt(context, memory, stream, 0, null);
+    }
+
+    protected AgentPrompt buildPrompt(AgentContext context,
+                                      AgentMemory memory,
+                                      boolean stream,
+                                      int step,
+                                      AgentListener listener) {
         if (context.getModel() == null || context.getModel().trim().isEmpty()) {
             throw new IllegalStateException("model is required");
         }
@@ -194,9 +210,10 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions());
 
         List<Object> tools = context.getToolRegistry() == null ? null : context.getToolRegistry().getTools();
+        List<Object> promptItems = projectItems(context, memory.getItems(), step, listener);
         AgentPrompt.AgentPromptBuilder builder = AgentPrompt.builder()
                 .model(context.getModel())
-                .items(memory.getItems())
+                .items(promptItems)
                 .systemPrompt(systemPrompt)
                 .instructions(context.getInstructions())
                 .tools(tools)
@@ -215,7 +232,20 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         return builder.build();
     }
 
+    protected List<Object> projectItems(AgentContext context, List<Object> items, int step, AgentListener listener) {
+        ContextProjector projector = context.getContextProjector();
+        if (projector == null) {
+            return items;
+        }
+        ContextProjection projection = projector.project(items, context.getContextBudget());
+        if (projection != null && projection.getReport() != null) {
+            publish(context, listener, AgentEventType.MEMORY_COMPRESS, step, "context projection", projection.getReport());
+        }
+        return projection == null ? items : projection.getItems();
+    }
+
     protected AgentModelResult executeModel(AgentContext context, AgentPrompt prompt, AgentListener listener, int step, boolean stream) throws Exception {
+        dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_MODEL_REQUEST, step, runtimeName(), prompt);
         publish(context, listener, AgentEventType.MODEL_REQUEST, step, null, prompt);
         AgentModelResult result;
         if (stream) {
@@ -278,6 +308,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
             publish(context, listener, AgentEventType.MODEL_RESPONSE, step, null, result == null ? null : result.getRawResponse());
         }
+        dispatchLifecycle(context, AgentLifecycleEventType.AFTER_MODEL_RESPONSE, step, runtimeName(), result);
         return result;
     }
 
@@ -304,6 +335,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throw new IllegalStateException("toolExecutor is required");
         }
         try {
+            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step == null ? 0 : step, call == null ? null : call.getName(), call);
             return AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
                 @Override
                 public void emit(AgentEventType type, String message, Object payload) {
@@ -318,8 +350,12 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             throw interruptedException;
+        } catch (HandoffPolicyException handoffPolicyException) {
+            throw handoffPolicyException;
         } catch (Exception ex) {
             return buildToolErrorOutput(call, ex);
+        } finally {
+            dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TOOL_CALL, step == null ? 0 : step, call == null ? null : call.getName(), call);
         }
     }
 
@@ -413,6 +449,17 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         }
         if (listener != null) {
             listener.onEvent(event);
+        }
+    }
+
+    protected void dispatchLifecycle(AgentContext context,
+                                     AgentLifecycleEventType type,
+                                     int step,
+                                     String message,
+                                     Object payload) {
+        AgentLifecycleHookDispatcher dispatcher = context == null ? null : context.getLifecycleHooks();
+        if (dispatcher != null) {
+            dispatcher.dispatch(context, type, runtimeName(), step, message, payload);
         }
     }
 

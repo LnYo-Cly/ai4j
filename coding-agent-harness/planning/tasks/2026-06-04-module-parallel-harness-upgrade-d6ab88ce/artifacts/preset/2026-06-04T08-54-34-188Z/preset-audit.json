@@ -1,0 +1,47 @@
+{
+  "preset": "standard-task",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/standard-task/preset.yaml",
+  "manifestSha256": "5015d79c8edaad1358174ee7b8bf7b9f1285ee9a2f957940ea4cc119cd2e9920",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md"
+      },
+      "writes": [
+        "{{paths.tasksRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/tasks/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-04-module-parallel-harness-upgrade-d6ab88ce",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-04T08:54:34.188Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/tasks/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/brief.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/task_plan.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/execution_strategy.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/visual_map.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/findings.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/lesson_candidates.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/progress.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/review.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/references/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/artifacts/INDEX.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/walkthrough.md",
+    "coding-agent-harness/planning/tasks/2026-06-04-module-parallel-harness-upgrade-d6ab88ce/artifacts/preset/2026-06-04T08-54-34-188Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md"
+  ]
+}

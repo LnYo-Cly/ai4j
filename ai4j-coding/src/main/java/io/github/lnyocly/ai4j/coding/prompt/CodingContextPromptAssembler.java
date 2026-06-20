@@ -47,6 +47,7 @@ public final class CodingContextPromptAssembler {
             builder.append("Do not rely on files outside the workspace root unless the user explicitly allows it.\n");
         }
         appendSkillGuidance(builder, workspaceContext.getAvailableSkills());
+        appendPromptGuidance(builder, workspaceContext.getAvailablePrompts());
         return builder.toString().trim();
     }
 
@@ -56,6 +57,24 @@ public final class CodingContextPromptAssembler {
             return;
         }
         builder.append(skillPrompt).append("\n");
+    }
+
+    private static void appendPromptGuidance(StringBuilder builder, List<CodingPromptDescriptor> availablePrompts) {
+        if (availablePrompts == null || availablePrompts.isEmpty()) {
+            return;
+        }
+        builder.append("Some reusable prompt templates are available. Do not paste every prompt file up front. ")
+                .append("When a task clearly matches a prompt, read that file with read_file first and adapt it to the user's request.\n");
+        builder.append("<available_prompts>\n");
+        for (CodingPromptDescriptor prompt : availablePrompts) {
+            if (prompt == null) {
+                continue;
+            }
+            builder.append("- name: ").append(firstNonBlank(prompt.getName(), "prompt")).append("\n");
+            builder.append("  path: ").append(firstNonBlank(prompt.getPromptFilePath(), "(missing)")).append("\n");
+            builder.append("  description: ").append(firstNonBlank(prompt.getDescription(), "No description available.")).append("\n");
+        }
+        builder.append("</available_prompts>\n");
     }
 
     private static List<SkillDescriptor> toSkillDescriptors(List<CodingSkillDescriptor> availableSkills) {

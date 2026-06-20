@@ -72,3 +72,11 @@ chatService.chatCompletionStream(req, new SseListener() {
 - 高复杂/高准确任务 -> 云端模型
 
 在 Agent 场景中，可把模型选择逻辑放到路由节点（`StateGraphWorkflow`）。
+
+## 8. 继续往下看什么
+
+如果你已经跑通本地模型，建议继续看：
+
+1. [Core SDK / Model Access / Streaming](/docs/core-sdk/model-access/streaming)
+2. [Core SDK / Tools / Function Calling](/docs/core-sdk/tools/function-calling)
+3. [Agent / Minimal ReAct Agent](/docs/agent/minimal-react-agent)

@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.0
+toVersion: 1.0.2
+summary: Upgrade Harness projects from 1.0.0 to 1.0.2 with dashboard workbench, review queue, migration rails, refreshed public installation guidance, and v1 task-context routing.
+safeActions:
+  - id: inspect-target-status
+    title: Capture current status before adopting 1.0.2 task surfaces
+    mode: report-only
+    command: harness status --json
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: review captured status evidence
+  - id: inspect-task-index
+    title: Capture task index for dashboard and review queue adoption
+    mode: report-only
+    command: harness task-index --json
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: review task index evidence
+manualConfirmations:
+  - id: confirm-current-work-routed
+    title: Confirm current release and active work are routed into v1 task-context surfaces
+    verify: dashboard review queue and task plan inspection
+  - id: confirm-public-install-guidance
+    title: Confirm target-facing installation guidance no longer includes source checkout or private maintainer instructions
+    verify: public docs review
+blockedActions:
+  - id: rewrite-all-historical-tasks
+    title: Rewrite every historical task into v1 structure
+    reason: 1.0.2 migration should preserve history and only upgrade current or reopened work.
+  - id: publish-private-maintainer-notes
+    title: Publish private maintainer instructions in target-facing reports
+    reason: Public release surfaces must not leak private operating state.
+verify:
+  - id: status-json
+    command: harness status --json
+  - id: task-index-json
+    command: harness task-index --json
+  - id: source-package-check
+    command: harness check --profile source-package .

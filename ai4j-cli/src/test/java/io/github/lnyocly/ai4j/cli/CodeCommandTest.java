@@ -436,7 +436,7 @@ public class CodeCommandTest {
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("Approval required for bash"));
-        Assert.assertTrue(output.contains("type sample.txt"));
+        Assert.assertTrue(output.contains(bashSampleReadCommand()));
     }
 
     @Test
@@ -536,7 +536,7 @@ public class CodeCommandTest {
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("Approval required for bash"));
-        Assert.assertTrue(output.contains("type sample.txt"));
+        Assert.assertTrue(output.contains(bashSampleReadCommand()));
         Assert.assertTrue(output.contains("Approve? [y/N]"));
         Assert.assertTrue(output.contains("Approved"));
     }
@@ -588,7 +588,7 @@ public class CodeCommandTest {
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("Ran type sample.txt"));
+        Assert.assertTrue(output.contains("Ran " + bashSampleReadCommand()));
         Assert.assertFalse(output.contains("exit=0"));
         Assert.assertTrue(output.contains("hello-cli"));
         Assert.assertFalse(output.contains("stdout> hello-cli"));
@@ -2517,6 +2517,11 @@ public class CodeCommandTest {
         }
     }
 
+    private static String bashSampleReadCommand() {
+        String osName = System.getProperty("os.name", "");
+        return osName.toLowerCase().contains("win") ? "type sample.txt" : "cat sample.txt";
+    }
+
     private Object readPrivateField(Object target, String fieldName) throws Exception {
         java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
@@ -2680,7 +2685,7 @@ public class CodeCommandTest {
                         .toolCalls(Collections.singletonList(AgentToolCall.builder()
                                 .callId("call-bash")
                                 .name("bash")
-                                .arguments("{\"action\":\"exec\",\"command\":\"type sample.txt\"}")
+                                .arguments("{\"action\":\"exec\",\"command\":\"" + bashSampleReadCommand() + "\"}")
                                 .build()))
                         .build();
             }

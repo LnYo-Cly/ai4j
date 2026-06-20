@@ -4,33 +4,53 @@ sidebar_position: 16
 
 # ChatMemory 与 sessionId 管理
 
-上一页讲的是“单个 `ChatMemory` 怎么用”，这一页讲更接近真实业务的场景：
+上一页讲的是 `ChatMemory` 本体，这一页讲的是更贴近真实服务的边界问题：
 
-- 一个用户一个 `sessionId`
-- 业务层自己管理 `sessionId -> ChatMemory`
-- 用同一份上下文持续对话
+- 谁创建 memory
+- 谁根据 `sessionId` 取回 memory
+- 谁负责并发、过期和失败补偿
 
-这也是当前 `ai4j` 核心层推荐的做法。
+结论先说在前面：这些都不属于 `ChatMemory` 本体，而属于你的业务会话层。
 
-## 1. 先明确边界
+## 1. 为什么这个边界很重要
 
-`ChatMemory` 当前是轻量基础设施，不自带：
+`ChatMemory` 当前只负责“会话事实怎么存、怎么投影”。
 
-- session manager
-- 多实例同步
+它不自带：
+
+- session registry
+- TTL
+- 多实例协同
 - 分布式锁
+- 失败补偿策略
 
-但现在已经有官方 JDBC 版 `ChatMemory`，所以“是否落库”这件事不再完全需要你从零实现。
+这不是能力缺失，而是分层选择。
 
-所以“按 `sessionId` 管会话”这层，现在仍然由你的业务代码负责。
+如果这些东西全塞进 memory，本体就会从“协议无关的上下文层”变成“带业务假设的会话网关”。
 
-## 2. 最小做法：`ConcurrentHashMap<String, ChatMemory>`
+## 2. 最小可行模型是什么
 
-单机场景下，最直接的写法就是：
+最简单的理解方式就是：
+
+- `sessionId` 决定拿到哪一个 `ChatMemory`
+- `ChatMemory` 决定本轮请求带哪些上下文
+
+单机场景里，这通常就是一张：
+
+- `sessionId -> ChatMemory`
+
+的 map。
 
 ```java
-private final ConcurrentHashMap<String, ChatMemory> sessions = new ConcurrentHashMap<String, ChatMemory>();
+private final ConcurrentHashMap<String, ChatMemory> sessions =
+        new ConcurrentHashMap<String, ChatMemory>();
+```
 
+## 3. 为什么 `computeIfAbsent` 只是开始，不是全部
+
+很多人会停在这一步：
+
+```java
 private ChatMemory getMemory(String sessionId) {
     return sessions.computeIfAbsent(
             sessionId,
@@ -39,21 +59,42 @@ private ChatMemory getMemory(String sessionId) {
 }
 ```
 
-这适合：
+这确实解决了“首次访问创建 memory”的问题。
 
-- 单体应用
-- 内部工具
-- 本地开发
-- 中小规模单实例服务
+但它没有解决：
 
-## 3. 一个更完整的 Service 示例
+- 同一会话并发写入
+- 用户输入已写入、模型请求失败后的半完成状态
+- 空闲 session 回收
+
+所以 `computeIfAbsent` 只是 session lookup，不是完整 session management。
+
+## 4. 同一 `sessionId` 必须串行，是因为消息顺序就是协议本身
+
+`Chat` 和 `Responses` 都依赖上下文顺序。
+
+如果同一个 `sessionId` 同时进来两次请求，而你不做串行化，最容易出现：
+
+- 两次 user message 交叉
+- assistant 回复回写到错误轮次
+- tool output 被并入错误上下文
+
+因此最低限度要满足：
+
+- 同一 `sessionId` 串行
+- 不同 `sessionId` 并行
+
+最简单的做法就是对 memory 或独立 session lock 加锁。
+
+## 5. 一个更真实的 service 写法
 
 ```java
 @Service
 public class ChatSessionService {
 
     private final AiService aiService;
-    private final ConcurrentHashMap<String, ChatMemory> sessions = new ConcurrentHashMap<String, ChatMemory>();
+    private final ConcurrentHashMap<String, ChatMemory> sessions =
+            new ConcurrentHashMap<String, ChatMemory>();
 
     public ChatSessionService(AiService aiService) {
         this.aiService = aiService;
@@ -64,9 +105,8 @@ public class ChatSessionService {
         ChatMemory memory = sessions.computeIfAbsent(
                 sessionId,
                 id -> {
-                    ChatMemory created = new InMemoryChatMemory(
-                            new MessageWindowChatMemoryPolicy(12)
-                    );
+                    ChatMemory created =
+                            new InMemoryChatMemory(new MessageWindowChatMemoryPolicy(12));
                     created.addSystem("你是一个简洁的中文助手");
                     return created;
                 }
@@ -87,83 +127,69 @@ public class ChatSessionService {
             return answer;
         }
     }
-
-    public void clear(String sessionId) {
-        sessions.remove(sessionId);
-    }
 }
 ```
 
-这里有两个关键点：
+这里最重要的不是写法本身，而是这条顺序：
 
-- `computeIfAbsent`：首次访问时创建 memory
-- `synchronized (memory)`：避免同一个会话并发写入时顺序错乱
+1. 找到 session 对应 memory
+2. 串行追加 user message
+3. 发请求
+4. 回写 assistant message
 
-## 4. 为什么要做并发保护
+## 6. 失败补偿才是很多系统真正漏掉的点
 
-如果同一个 `sessionId` 同时进来两次请求，而你不做串行化，很容易出现：
+假设流程是：
 
-- 两次用户输入顺序打乱
-- assistant 输出回写到错误轮次
-- 同一会话上下文交叉污染
+1. `memory.addUser(userInput)`
+2. 调模型
+3. 模型超时或工具执行失败
 
-所以至少要保证：
+这时会发生什么，要由你的业务来定义。
 
-- 同一 `sessionId` 内串行
-- 不同 `sessionId` 间并行
+常见策略有三种：
 
-最简单的做法就是：
+- 保留这条 user message，允许用户重试并沿用上下文
+- 回滚本轮 user message
+- 保留 user message，但写入一条错误占位 assistant message
 
-- 对 `memory` 对象加锁
+`ChatMemory` 不会替你做这个决定，因为这已经是业务恢复语义，不是上下文存储语义。
 
-如果你后面要做更高并发，再考虑：
+## 7. `JdbcChatMemory` 能让你落库，但不会自动给你“会话治理”
 
-- 单独的 session lock map
-- actor/queue 模型
+如果你切到：
 
-## 5. Spring Boot Controller 示例
+- `JdbcChatMemory`
 
-```java
-@RestController
-@RequestMapping("/chat")
-public class ChatController {
+你得到的是：
 
-    private final ChatSessionService chatSessionService;
+- 会话持久化
+- 服务重启可恢复
+- `sessionId` 到会话记录的稳定映射
 
-    public ChatController(ChatSessionService chatSessionService) {
-        this.chatSessionService = chatSessionService;
-    }
+你没有自动得到的是：
 
-    @PostMapping
-    public String chat(@RequestParam String sessionId, @RequestBody String userInput) throws Exception {
-        return chatSessionService.chat(sessionId, userInput);
-    }
+- 多实例互斥
+- session TTL
+- 用户隔离策略
+- 会话关闭规则
 
-    @DeleteMapping
-    public void clear(@RequestParam String sessionId) {
-        chatSessionService.clear(sessionId);
-    }
-}
-```
+所以 JDBC 解决的是“上下文住哪里”，不是“会话怎么治理”。
 
-你也可以把 `sessionId` 放到：
+## 8. `Responses` 链路完全复用同一套 session 模式
 
-- cookie
-- header
-- path variable
-- 登录态用户 ID + 业务会话 ID
+这一点经常被误判。
 
-## 6. Responses 链路也一样
+真正被 `sessionId` 管理的不是：
 
-如果你走的是 `Responses`，思路不变，只是把：
+- `ChatCompletion`
+- `ResponseRequest`
 
-- `memory.toChatMessages()`
+而是：
 
-换成：
+- `ChatMemory`
 
-- `memory.toResponsesInput()`
-
-例如：
+所以如果你切到 `Responses`，变化只是在投影阶段：
 
 ```java
 ResponseRequest request = ResponseRequest.builder()
@@ -172,92 +198,52 @@ ResponseRequest request = ResponseRequest.builder()
         .build();
 ```
 
-所以真正被 `sessionId` 管理的是：
+session registry、本轮串行化、过期清理这些设计完全不需要重写。
 
-- `ChatMemory` 本身
+## 9. 清理策略应该放在哪一层
 
-而不是某个特定协议对象。
-
-## 7. 清理策略怎么做
-
-最简单的方式是显式清理：
+最简单的做法是显式清理：
 
 ```java
 sessions.remove(sessionId);
 ```
 
-适合：
-
-- 用户主动结束会话
-- 一个任务跑完就销毁上下文
-
-如果你想自动清理空闲会话，可以在业务层做：
+更真实的生产场景通常还会叠加：
 
 - 最后访问时间
-- 定时扫描
-- 超时删除
+- 定时清理空闲 session
+- 用户主动结束会话
+- 某类任务完成后自动回收
 
-这层逻辑目前不建议塞进 `ChatMemory` 本体。
+这些逻辑都应放在 session service，而不是塞进 `ChatMemory` 本体。
 
-## 8. 什么时候这套方案不够了
+## 10. 什么时候单机 map 方案已经不够
 
-下面这些场景，说明你已经开始超出“核心层轻量 memory”边界：
+下面这些信号说明你该升级了：
 
-- 服务重启后要保留会话
-- 多实例之间共享上下文
-- 需要 Redis / MySQL 持久化
-- 需要可观测的 session lifecycle
-- 需要和 tool/agent/workflow 状态统一存储
+- 应用重启后还要保留上下文
+- 多实例要共享会话
+- 同一会话可能被不同节点处理
+- 要观察 session 生命周期和内存占用
+- 会话状态要与 workflow、tool 执行态统一管理
 
-这时建议：
+这时通常有三条路：
 
-- 如果只是关系库存储，优先直接切到 `JdbcChatMemory`
-- 如果你要 Redis / 自定义缓存分层 / 会话网关，再继续由业务层自己封装 session store
-- 或直接升级到 `Agent` / 更高层 runtime
+- 先切到 `JdbcChatMemory`
+- 业务层自己封装 Redis / DB session store
+- 直接升级到 `ai4j-agent` 或 `ai4j-coding` 的更高层 runtime
 
-## 8.1 Spring Boot + MySQL 的最小落地方式
+## 11. 推荐的边界理解
 
-如果你已经有 `spring.datasource.*`，可以直接把 `sessionId -> JdbcChatMemory` 接起来：
-
-```java
-@Service
-public class ChatSessionService {
-
-    private final IChatService chatService;
-    private final DataSource dataSource;
-    private final ConcurrentHashMap<String, ChatMemory> sessions = new ConcurrentHashMap<String, ChatMemory>();
-
-    public ChatSessionService(IChatService chatService, DataSource dataSource) {
-        this.chatService = chatService;
-        this.dataSource = dataSource;
-    }
-
-    public ChatMemory getMemory(String sessionId) {
-        return sessions.computeIfAbsent(sessionId, id ->
-                new JdbcChatMemory(
-                        JdbcChatMemoryConfig.builder()
-                                .dataSource(dataSource)
-                                .sessionId(id)
-                                .policy(new MessageWindowChatMemoryPolicy(20))
-                                .build()
-                )
-        );
-    }
-}
-```
-
-## 9. 推荐理解方式
-
-把它理解成两层：
+把整个问题拆成两层最清晰：
 
 - `ChatMemory`
-  - 负责“一个会话里有哪些上下文”
-- 你的业务服务
-  - 负责“这个会话对象归谁管、何时创建、何时删除、如何并发控制”
+  负责一个会话内部有哪些事实，以及这些事实如何投影到模型协议
+- `Session service`
+  负责这个会话何时创建、谁能访问、是否串行、何时清理、失败后如何补偿
 
-这样边界最清晰，也最符合 `ai4j` 当前轻量设计。
+只要这两层不混，后续从 `Chat` 切到 `Responses`，或者从内存切到 JDBC，成本都会低很多。
 
-## 10. 继续阅读
+## 12. 这一页的结论
 
-- [Memory / Overview](/docs/core-sdk/memory/overview)
-- [Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)
+> `ChatMemory` 与 `sessionId` 的关系，本质上是“业务层拿 `sessionId` 找到一份上下文事实集合”。AI4J 负责把这份事实投影给 `Chat` 或 `Responses`，但不会替你承担并发、TTL、多实例协调和失败补偿。把会话治理留在 session service，把协议投影留在 `ChatMemory`，边界才会长期稳定。

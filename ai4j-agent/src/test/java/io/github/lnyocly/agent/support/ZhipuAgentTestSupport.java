@@ -7,18 +7,20 @@ import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
+@Category(LiveProviderTest.class)
 public abstract class ZhipuAgentTestSupport {
 
-    protected static final String DEFAULT_API_KEY = "1cbd1960cdc7e9144ded698a9763569b.seHlVxdOq3eTnY9m";
     protected static final String DEFAULT_MODEL = "GLM-4.5-Flash";
 
     protected AiService aiService;
@@ -27,12 +29,8 @@ public abstract class ZhipuAgentTestSupport {
     @Before
     public void setupZhipuAiService() throws NoSuchAlgorithmException, KeyManagementException {
         String apiKey = System.getenv("ZHIPU_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getProperty("zhipu.api.key");
-        }
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = DEFAULT_API_KEY;
-        }
+        Assume.assumeTrue("Skip because Zhipu API key is not configured. Expected env var: ZHIPU_API_KEY",
+                !isBlank(apiKey));
 
         model = System.getenv("ZHIPU_MODEL");
         if (model == null || model.isEmpty()) {
@@ -63,6 +61,10 @@ public abstract class ZhipuAgentTestSupport {
 
         configuration.setOkHttpClient(okHttpClient);
         aiService = new AiService(configuration);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     protected ChatModelClient chatModelClient() {

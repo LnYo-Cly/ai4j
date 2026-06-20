@@ -17,7 +17,7 @@ import okhttp3.sse.EventSources;
 @Data
 public class Configuration {
 
-    private OkHttpClient okHttpClient;
+    private OkHttpClient okHttpClient = new OkHttpClient();
 
     public EventSource.Factory createRequestFactory() {
         return EventSources.createFactory(okHttpClient);

@@ -10,6 +10,9 @@ import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentToolExecutor;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -23,6 +26,8 @@ import io.github.lnyocly.ai4j.coding.process.SessionProcessRegistry;
 import io.github.lnyocly.ai4j.coding.prompt.CodingContextPromptAssembler;
 import io.github.lnyocly.ai4j.coding.runtime.CodingRuntime;
 import io.github.lnyocly.ai4j.coding.runtime.DefaultCodingRuntime;
+import io.github.lnyocly.ai4j.coding.sandbox.CodingSandboxRuntime;
+import io.github.lnyocly.ai4j.coding.skill.CodingExtensionResources;
 import io.github.lnyocly.ai4j.coding.session.CodingSessionLinkStore;
 import io.github.lnyocly.ai4j.coding.session.InMemoryCodingSessionLinkStore;
 import io.github.lnyocly.ai4j.coding.skill.CodingSkillDiscovery;
@@ -36,9 +41,12 @@ import io.github.lnyocly.ai4j.coding.tool.ReadFileToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.ToolExecutorDecorator;
 import io.github.lnyocly.ai4j.coding.tool.WriteFileToolExecutor;
+import io.github.lnyocly.ai4j.coding.shell.SandboxShellCommandExecutor;
+import io.github.lnyocly.ai4j.coding.shell.ShellCommandExecutor;
 import io.github.lnyocly.ai4j.coding.workspace.LocalWorkspaceFileService;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceFileService;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
@@ -57,6 +65,8 @@ public class CodingAgentBuilder {
     private CodingAgentOptions codingOptions;
     private AgentToolRegistry toolRegistry;
     private ToolExecutor toolExecutor;
+    private ExtensionRegistry extensionRegistry;
+    private ExtensionAgentTools extensionTools;
     private CodingAgentDefinitionRegistry definitionRegistry;
     private SubAgentRegistry subAgentRegistry;
     private HandoffPolicy handoffPolicy;
@@ -65,6 +75,7 @@ public class CodingAgentBuilder {
     private CodingSessionLinkStore sessionLinkStore;
     private CodingToolPolicyResolver toolPolicyResolver;
     private CodingRuntime codingRuntime;
+    private CodingSandboxRuntime sandboxRuntime;
     private String model;
     private String instructions;
     private String systemPrompt;
@@ -110,6 +121,17 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder toolExecutor(ToolExecutor toolExecutor) {
         this.toolExecutor = toolExecutor;
+        return this;
+    }
+
+    public CodingAgentBuilder extensions(ExtensionRegistry registry) {
+        this.extensionRegistry = registry;
+        this.extensionTools = registry == null ? null : ExtensionAgentTools.from(registry);
+        return this;
+    }
+
+    public CodingAgentBuilder extensions(ExtensionAgentTools extensionTools) {
+        this.extensionTools = extensionTools;
         return this;
     }
 
@@ -159,6 +181,16 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder codingRuntime(CodingRuntime codingRuntime) {
         this.codingRuntime = codingRuntime;
+        return this;
+    }
+
+    public CodingAgentBuilder sandbox(SandboxSession sandboxSession) {
+        this.sandboxRuntime = sandboxSession == null ? null : CodingSandboxRuntime.of(sandboxSession);
+        return this;
+    }
+
+    public CodingAgentBuilder sandboxRuntime(CodingSandboxRuntime sandboxRuntime) {
+        this.sandboxRuntime = sandboxRuntime;
         return this;
     }
 
@@ -234,6 +266,7 @@ public class CodingAgentBuilder {
                 ? WorkspaceContext.builder().build()
                 : workspaceContext;
         resolvedWorkspaceContext = CodingSkillDiscovery.enrich(resolvedWorkspaceContext);
+        resolvedWorkspaceContext = CodingExtensionResources.enrich(resolvedWorkspaceContext, extensionRegistry);
         CodingAgentOptions resolvedCodingOptions = codingOptions == null
                 ? CodingAgentOptions.builder().build()
                 : codingOptions;
@@ -248,18 +281,21 @@ public class CodingAgentBuilder {
         CodingTaskManager resolvedTaskManager = taskManager == null ? new InMemoryCodingTaskManager() : taskManager;
         CodingSessionLinkStore resolvedSessionLinkStore = sessionLinkStore == null ? new InMemoryCodingSessionLinkStore() : sessionLinkStore;
         CodingToolPolicyResolver resolvedToolPolicyResolver = toolPolicyResolver == null ? new CodingToolPolicyResolver() : toolPolicyResolver;
+        AgentToolRegistry configuredToolRegistry = mergeExtensionToolRegistry(toolRegistry, extensionTools);
+        ToolExecutor configuredToolExecutor = mergeExtensionToolExecutor(toolRegistry, toolExecutor, extensionTools);
         CodingRuntime resolvedCodingRuntime = codingRuntime == null
                 ? new DefaultCodingRuntime(
                 resolvedWorkspaceContext,
                 resolvedCodingOptions,
-                toolRegistry,
-                toolExecutor,
+                configuredToolRegistry,
+                configuredToolExecutor,
                 resolvedDefinitionRegistry,
                 resolvedTaskManager,
                 resolvedSessionLinkStore,
                 resolvedToolPolicyResolver,
                 resolvedSubAgentRegistry,
-                resolvedHandoffPolicy
+                resolvedHandoffPolicy,
+                extensionTools
         )
                 : codingRuntime;
 
@@ -272,10 +308,11 @@ public class CodingAgentBuilder {
                 resolvedDefinitionRegistry
         );
 
-        AgentToolRegistry resolvedToolRegistry = mergeToolRegistry(builtInRegistry, toolRegistry);
-        ToolExecutor resolvedToolExecutor = mergeToolExecutor(builtInRegistry, builtInExecutor, toolRegistry, toolExecutor);
+        AgentToolRegistry resolvedToolRegistry = mergeToolRegistry(builtInRegistry, configuredToolRegistry);
+        ToolExecutor resolvedToolExecutor = mergeToolExecutor(builtInRegistry, builtInExecutor, configuredToolRegistry, configuredToolExecutor);
         resolvedToolRegistry = mergeSubAgentToolRegistry(resolvedToolRegistry, resolvedSubAgentRegistry);
         resolvedToolExecutor = mergeSubAgentToolExecutor(resolvedToolExecutor, resolvedSubAgentRegistry, resolvedHandoffPolicy);
+        resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
         String resolvedSystemPrompt = resolvedCodingOptions.isPrependWorkspaceInstructions()
                 ? CodingContextPromptAssembler.mergeSystemPrompt(systemPrompt, resolvedWorkspaceContext)
                 : systemPrompt;
@@ -306,11 +343,13 @@ public class CodingAgentBuilder {
                 agent,
                 resolvedWorkspaceContext,
                 resolvedCodingOptions,
-                toolRegistry,
-                toolExecutor,
+                configuredToolRegistry,
+                configuredToolExecutor,
                 resolvedCodingRuntime,
                 resolvedSubAgentRegistry,
-                resolvedHandoffPolicy
+                resolvedHandoffPolicy,
+                extensionTools,
+                sandboxRuntime
         );
     }
 
@@ -342,20 +381,31 @@ public class CodingAgentBuilder {
                                                          SessionProcessRegistry processRegistry,
                                                          CodingRuntime codingRuntime,
                                                          CodingAgentDefinitionRegistry definitionRegistry) {
+        return createBuiltInToolExecutor(workspaceContext, options, processRegistry, codingRuntime, definitionRegistry, null);
+    }
+
+    public static ToolExecutor createBuiltInToolExecutor(WorkspaceContext workspaceContext,
+                                                         CodingAgentOptions options,
+                                                         SessionProcessRegistry processRegistry,
+                                                         CodingRuntime codingRuntime,
+                                                         CodingAgentDefinitionRegistry definitionRegistry,
+                                                         CodingSandboxRuntime sandboxRuntime) {
         if (options == null || !options.isIncludeBuiltInTools()) {
             return null;
         }
+        CodingAgentOptions resolvedOptions = options == null ? CodingAgentOptions.builder().build() : options;
         WorkspaceFileService workspaceFileService = new LocalWorkspaceFileService(workspaceContext);
-        ToolExecutorDecorator decorator = options.getToolExecutorDecorator();
+        ToolExecutorDecorator decorator = resolvedOptions.getToolExecutorDecorator();
+        ShellCommandExecutor shellCommandExecutor = createShellCommandExecutor(workspaceContext, resolvedOptions, sandboxRuntime);
         List<RoutingToolExecutor.Route> routes = new ArrayList<RoutingToolExecutor.Route>();
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.READ_FILE),
-                decorate(CodingToolNames.READ_FILE, new ReadFileToolExecutor(workspaceFileService, options), decorator)));
+                decorate(CodingToolNames.READ_FILE, new ReadFileToolExecutor(workspaceFileService, resolvedOptions), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.WRITE_FILE),
                 decorate(CodingToolNames.WRITE_FILE, new WriteFileToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.APPLY_PATCH),
                 decorate(CodingToolNames.APPLY_PATCH, new ApplyPatchToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.BASH),
-                decorate(CodingToolNames.BASH, new BashToolExecutor(workspaceContext, options, processRegistry), decorator)));
+                decorate(CodingToolNames.BASH, new BashToolExecutor(workspaceContext, resolvedOptions, processRegistry, shellCommandExecutor), decorator)));
         if (codingRuntime != null && definitionRegistry != null) {
             ToolExecutor delegateExecutor = new CodingDelegateToolExecutor(codingRuntime, definitionRegistry);
             routes.add(RoutingToolExecutor.route(resolveToolNames(new CodingDelegateToolRegistry(definitionRegistry)), delegateExecutor));
@@ -390,6 +440,48 @@ public class CodingAgentBuilder {
         return new RoutingToolExecutor(routes, null);
     }
 
+    private static ShellCommandExecutor createShellCommandExecutor(WorkspaceContext workspaceContext,
+                                                                  CodingAgentOptions options,
+                                                                  CodingSandboxRuntime sandboxRuntime) {
+        if (sandboxRuntime == null || sandboxRuntime.getSandboxSession() == null) {
+            return null;
+        }
+        return new SandboxShellCommandExecutor(
+                workspaceContext,
+                sandboxRuntime.getSandboxSession(),
+                options == null ? CodingAgentOptions.builder().build().getDefaultCommandTimeoutMs() : options.getDefaultCommandTimeoutMs()
+        );
+    }
+
+    private static AgentToolRegistry mergeExtensionToolRegistry(AgentToolRegistry customRegistry,
+                                                                ExtensionAgentTools extensionTools) {
+        if (extensionTools == null) {
+            return customRegistry;
+        }
+        if (customRegistry == null) {
+            return extensionTools.getToolRegistry();
+        }
+        return new CompositeToolRegistry(customRegistry, extensionTools.getToolRegistry());
+    }
+
+    private static ToolExecutor mergeExtensionToolExecutor(AgentToolRegistry customRegistry,
+                                                           ToolExecutor customExecutor,
+                                                           ExtensionAgentTools extensionTools) {
+        if (extensionTools == null) {
+            return customExecutor;
+        }
+        if (customExecutor == null) {
+            if (customRegistry != null) {
+                throw new IllegalStateException("toolExecutor is required when custom toolRegistry is provided");
+            }
+            return extensionTools.getToolExecutor();
+        }
+        List<RoutingToolExecutor.Route> routes = new ArrayList<RoutingToolExecutor.Route>();
+        routes.add(RoutingToolExecutor.route(resolveToolNames(customRegistry), customExecutor));
+        routes.add(RoutingToolExecutor.route(resolveToolNames(extensionTools.getToolRegistry()), extensionTools.getToolExecutor()));
+        return new RoutingToolExecutor(routes, null);
+    }
+
     public static AgentToolRegistry mergeSubAgentToolRegistry(AgentToolRegistry baseRegistry,
                                                               SubAgentRegistry subAgentRegistry) {
         if (subAgentRegistry == null || subAgentRegistry.getTools() == null || subAgentRegistry.getTools().isEmpty()) {
@@ -410,6 +502,13 @@ public class CodingAgentBuilder {
                 baseExecutor,
                 handoffPolicy == null ? HandoffPolicy.builder().build() : handoffPolicy
         );
+    }
+
+    public static ToolExecutor applyExtensionGuardrails(ToolExecutor executor, ExtensionAgentTools extensionTools) {
+        if (executor == null || extensionTools == null || extensionTools.getGuardrails().isEmpty()) {
+            return executor;
+        }
+        return new ExtensionGuardrailToolExecutor(executor, extensionTools.getGuardrails());
     }
 
     public static Set<String> resolveToolNames(AgentToolRegistry registry) {

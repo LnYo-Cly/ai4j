@@ -1,6 +1,7 @@
 package io.github.lnyocly.agent;
 
 import io.github.lnyocly.agent.support.ZhipuAgentTestSupport;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -9,10 +10,12 @@ import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.Agents;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Category(LiveProviderTest.class)
 public class UniversalAgentUsageTest extends ZhipuAgentTestSupport {
 
     @Test

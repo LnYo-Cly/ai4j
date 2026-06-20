@@ -1,0 +1,52 @@
+id: codex-thread-orchestration
+version: 1
+purpose: Create complex tasks with a Codex-only background thread orchestration method for human-visible coordinator and worker thread management.
+compatibleBudgets: [complex]
+localeSupport: [en-US, zh-CN]
+task:
+  kind: codex-thread-orchestration-task
+  defaultTaskId: codex-thread-orchestration-task
+entrypoints:
+  newTask:
+    type: template
+    writes: [{{paths.tasksRoot}}/**]
+    audit: true
+    templates:
+      taskPlanAppend: templates/task_plan.append.md
+      executionStrategyAppend: templates/execution_strategy.append.md
+metadata:
+  CodexOnly:
+    label: Codex Only
+    value: yes
+  ThreadOrchestrationPattern:
+    label: Thread Orchestration Pattern
+    value: coordinator-background-threads
+  ThreadEvidenceRequired:
+    label: Thread Evidence Required
+    value: yes
+resources:
+  references:
+    codexThreadOrchestrationProtocol:
+      path: references/codex-thread-orchestration-protocol.md
+      source: resources/references/codex-thread-orchestration-protocol.md
+      index:
+        id: REF-001
+        type: runbook
+        summary: Codex-only coordinator protocol for creating, titling, dispatching, reading, and archiving background worker threads.
+        usedBy: coordinator,worker,reviewer
+context:
+  requiredReads: [REF-001]
+evidence:
+  bundleDir: artifacts/preset
+  files:
+    protocol:
+      path: codex-thread-orchestration-protocol.txt
+      type: text
+      value: codex-thread-orchestration
+audit:
+  manifestRequired: true
+  evidenceFiles: [preset-audit.json, preset-manifest.json, write-scope.json]
+writeScopes:
+  taskDocs:
+    path: {{paths.tasksRoot}}/**
+    access: write

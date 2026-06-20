@@ -11,11 +11,13 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class BaichuanTest {
 
     private IChatService chatService;
@@ -34,7 +37,9 @@ public class BaichuanTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         BaichuanConfig baichuanConfig = new BaichuanConfig();
-        baichuanConfig.setApiKey("sk-4e5717ac51cacaf5d590cff13630cfce");
+        baichuanConfig.setApiKey(LiveProviderTestSupport.requireEnv(
+                "Skip because Baichuan API key is not configured",
+                "BAICHUAN_API_KEY"));
 
         Configuration configuration = new Configuration();
         configuration.setBaichuanConfig(baichuanConfig);
@@ -52,7 +57,6 @@ public class BaichuanTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 

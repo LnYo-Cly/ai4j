@@ -1,19 +1,19 @@
-﻿---
+---
 sidebar_position: 2
 ---
 
 # 平台与服务矩阵
 
-这页回答两个问题：
+这页只回答两个问题：
 
 1. 当前代码到底支持哪些平台
-2. 每个平台支持到哪类服务
+2. 每个平台支持到哪类 service
 
-> 说明：本页以 `AiService` 当前实现为准。
+> 说明：本页以 `AiService` 当前实现为准，不按 README、示例或未来规划估算。
 
 ## 1. 平台枚举
 
-平台枚举定义在 `PlatformType`：
+当前平台枚举定义在 `PlatformType`：
 
 - `OPENAI`
 - `ZHIPU`
@@ -28,7 +28,10 @@ sidebar_position: 2
 - `DOUBAO`
 - `JINA`
 
-## 2. 服务能力矩阵
+要注意一点：平台枚举存在，并不等于它自动支持所有 service 面。  
+真正的支持关系仍然取决于 `AiService.create*Service(...)` 里有没有对应分支。
+
+## 2. 当前 service 支持矩阵
 
 | 平台 | Chat | Responses | Embedding | Rerank | Audio | Realtime | Image |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -45,7 +48,43 @@ sidebar_position: 2
 | MINIMAX | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | BAICHUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-## 3. 统一调用入口
+## 3. 这张矩阵真正说明了什么
+
+### `Chat` 是最广覆盖的主线
+
+几乎所有平台能力都先落在 `Chat` 入口，这使它成为当前最通用的模型访问主线。
+
+### `Responses` 是明确存在、但覆盖更窄的第二主线
+
+当前只支持：
+
+- OpenAI
+- Doubao
+- DashScope
+
+这意味着 `Responses` 在 AI4J 里不是“每个平台都应当自动拥有”的替代接口，而是一条更聚焦的结构化访问主线。
+
+### `Embedding` / `Audio` / `Realtime` 更窄
+
+- `Embedding` 只支持 OpenAI / Ollama
+- `Audio` 只支持 OpenAI
+- `Realtime` 只支持 OpenAI
+
+这说明这些 service 面虽然已经正式进入 SDK，但并没有被伪装成跨平台完全对称能力。
+
+### `Rerank` 是独立矩阵
+
+当前只支持：
+
+- Jina
+- Ollama
+- Doubao
+
+这说明检索相关能力并不总是跟 `Chat` provider 一起出现，实际工程里经常需要“chat provider”和“rerank provider”分离。
+
+## 4. 统一调用入口仍然一致
+
+虽然矩阵不对称，调用入口仍然统一：
 
 ```java
 AiService aiService = new AiService(configuration);
@@ -57,49 +96,42 @@ IRerankService rerank = aiService.getRerankService(PlatformType.JINA);
 IImageService image = aiService.getImageService(PlatformType.DOUBAO);
 ```
 
-如果平台不支持该服务，会抛出 `IllegalArgumentException`。
+如果平台不支持该 service，当前实现会直接抛：
 
-## 4. Spring Boot 配置前缀
+- `IllegalArgumentException("Unknown platform: ...")`
 
-`ai4j-spring-boot-starter` 对应的常用配置前缀：
+也就是说，不支持不是“静默降级”，而是显式失败。
 
-- `ai.openai.*`
-- `ai.doubao.*`
-- `ai.jina.*`
-- `ai.dashscope.*`
-- `ai.ollama.*`
-- `ai.zhipu.*`
-- `ai.deepseek.*`
-- `ai.moonshot.*`
-- `ai.hunyuan.*`
-- `ai.lingyi.*`
-- `ai.minimax.*`
-- `ai.baichuan.*`
-- 通用网络：`ai.okhttp.*`
+## 5. 和多实例注册表怎么结合
 
-## 5. 多平台实例（AiServiceRegistry）
+如果你在一个应用里需要管理多套 provider 实例，通常应结合：
 
-如果你需要“一个应用内管理多套平台实例（按 id 路由）”，优先使用 `AiServiceRegistry`。`FreeAiService` 仍保留兼容静态方法。
+- `AiServiceRegistry`
+
+例如：
 
 ```java
 IChatService tenantA = aiServiceRegistry.getChatService("tenant-a-openai");
 IChatService tenantB = aiServiceRegistry.getChatService("tenant-b-doubao");
-
-// 兼容旧用法
-IChatService legacy = FreeAiService.getChatService("tenant-a-openai");
+IRerankService rerank = aiServiceRegistry.getRerankService("tenant-rerank");
 ```
 
-适合：
+这里的重点不是“能按 id 取对象”，而是你可以把不对称的 provider 能力矩阵显式组织成多实例路由图，而不是把平台选择散落到业务代码里。
 
-- 多租户隔离
-- 灰度切换模型
-- A/B 平台对比
-- 统一路由 rerank provider
+## 6. 阅读这张矩阵时不要犯的错
 
-## 6. 工程建议
+### 不要把 `PlatformType` 当成能力保证
 
-- 业务层只依赖接口（`IChatService` 等），不要直连平台实现类。
-- 平台选择下沉到配置/工厂层。
-- 日志至少记录：`platform + service + model + traceId`。
+平台枚举只是候选集合，真正支持什么要回到 `AiService` 分发实现。
 
-这样后续换平台时，业务代码改动最小。
+### 不要假设 `Responses` 是 `Chat` 的完全覆盖替代
+
+当前矩阵已经说明它不是。
+
+### 不要把检索链 provider 和 chat provider 绑死
+
+`Rerank` 的支持矩阵本身就是独立的。
+
+## 7. 这一页的结论
+
+> AI4J 当前的统一，不在于所有平台能力完全对称，而在于它用统一入口显式维护了一张不对称但清晰的 service 矩阵。理解这张矩阵，比记住某个 provider 的示例更重要，因为它直接决定了你能否正确设计多平台、多 service 的工程边界。

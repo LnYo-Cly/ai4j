@@ -1,0 +1,104 @@
+id: publish-standard
+version: 1
+purpose: Create and run a publish standard task that turns selected release work into user-facing changelog and npm publish readiness materials
+compatibleBudgets: [standard, complex]
+localeSupport: [en-US, zh-CN]
+task:
+  kind: publish-standard
+  defaultTaskId: publish-standard
+  defaultOutcome: Produce a publish standard task whose runner entrypoints generate the public changelog, technical summary, package checklist, and pack evidence placeholder.
+  projectLevelOnly: true
+inputs:
+  release:
+    type: text
+    flag: --release
+    required: true
+  from:
+    type: text
+    flag: --from
+    required: true
+  to:
+    type: text
+    flag: --to
+    required: false
+  taskQuery:
+    type: text
+    flag: --task-query
+    required: false
+  taskList:
+    type: json-file
+    flag: --task-list
+    required: false
+  publishIntent:
+    type: flag
+    flag: --publish-intent
+    required: false
+templateValues:
+  release:
+    from: inputs.release
+  from:
+    from: inputs.from
+  to:
+    from: inputs.to
+  taskQuery:
+    from: inputs.taskQuery
+  taskId:
+    from: task.id
+entrypoints:
+  newTask:
+    type: template
+    writes: [{{paths.tasksRoot}}/**]
+    audit: true
+    templates:
+      taskPlanAppend: templates/task_plan.append.md
+      executionStrategyAppend: templates/execution_strategy.append.md
+      findingsSeed: templates/findings.seed.md
+      reviewSeed: templates/review.seed.md
+  plan:
+    type: script
+    command: scripts/generate-publish-standard.mjs
+    writes: [{{paths.governanceRoot}}/releases/**]
+    reads: [{{paths.tasksRoot}}/**, {{paths.modulesRoot}}/**]
+    audit: true
+  scaffold:
+    type: script
+    command: scripts/generate-publish-standard.mjs
+    writes: [{{paths.governanceRoot}}/releases/**]
+    reads: [{{paths.tasksRoot}}/**, {{paths.modulesRoot}}/**]
+    audit: true
+  check:
+    type: check
+    command: checks/check-publish-standard.mjs
+    writes: [{{paths.governanceRoot}}/releases/**]
+    reads: [{{paths.governanceRoot}}/releases/**, {{paths.tasksRoot}}/**, {{paths.modulesRoot}}/**]
+    audit: true
+evidence:
+  bundleDir: artifacts/preset
+  files:
+    release:
+      path: release.txt
+      type: text
+      value: inputs.release
+    from:
+      path: from.txt
+      type: text
+      value: inputs.from
+    presetAudit:
+      path: preset-audit.json
+      type: preset-audit
+    presetManifest:
+      path: preset-manifest.json
+      type: preset-manifest
+    writeScope:
+      path: write-scope.json
+      type: write-scope
+audit:
+  manifestRequired: true
+  evidenceFiles: [preset-audit.json, preset-manifest.json, write-scope.json]
+writeScopes:
+  taskDocs:
+    path: {{paths.tasksRoot}}/**
+    access: write
+  publishPackage:
+    path: {{paths.governanceRoot}}/releases/**
+    access: write

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.coding.workspace;
 
 import io.github.lnyocly.ai4j.coding.skill.CodingSkillDescriptor;
+import io.github.lnyocly.ai4j.coding.prompt.CodingPromptDescriptor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +39,9 @@ public class WorkspaceContext {
 
     @Builder.Default
     private List<CodingSkillDescriptor> availableSkills = new ArrayList<CodingSkillDescriptor>();
+
+    @Builder.Default
+    private List<CodingPromptDescriptor> availablePrompts = new ArrayList<CodingPromptDescriptor>();
 
     public Path getRoot() {
         return Paths.get(rootPath).toAbsolutePath().normalize();

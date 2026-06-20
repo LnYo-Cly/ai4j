@@ -23,7 +23,11 @@
 一款面向 JDK8+ 的 Java AI Agentic 开发套件，既提供统一的大模型调用与常用 AI 基座能力，也提供更完善的智能体式 Agent 开发能力。  
 覆盖多平台模型接入、统一输入输出、Tool Call、MCP、RAG、统一 `VectorStore`、ChatMemory、Agent Runtime、Coding Agent、CLI / TUI / ACP、FlowGram 集成，以及 Dify / Coze / n8n 等已发布 AgentFlow 端点接入能力，帮助 Java 应用从基础模型接入扩展到更完整的 agentic 应用开发。
 
-当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要 Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
+当前仓库已经演进为多模块 SDK，除核心 `ai4j` 外，还提供 `ai4j-extension-api`、`ai4j-plugin-ask-user`、`ai4j-agent`、`ai4j-coding`、`ai4j-cli`、`ai4j-spring-boot-starter`、`ai4j-flowgram-spring-boot-starter`、`ai4j-bom`。如果只需要基础大模型调用，优先引入 `ai4j`；如果需要插件包、Agent、Coding Agent、CLI / ACP、Spring Boot 或 FlowGram 集成，再按模块引入对应能力。
+
+## 赞助商
+
++ [TroveBox AI 中转平台](https://codex.trovebox.online/)：提供 AI API 中转服务，低至 0.1x 倍率。
 
 ## 适用场景与常见方案对比
 
@@ -69,6 +73,7 @@
 + 内置 Coding Agent CLI / TUI，支持本地代码仓交互式会话、provider profile、workspace model override、session/process 管理
 + 提供 `ai4j-coding` Coding Agent 运行时，支持 workspace tools、outer loop、checkpoint compaction、subagent 与 team 协作
 + 提供 `ai4j-flowgram-spring-boot-starter`，便于在 Spring Boot 中接入 FlowGram 工作流与 trace
++ 提供 `ai4j-extension-api` 与官方 `ai4j-plugin-ask-user` 样板插件，用于按需扩展 Agent / Coding Agent 工具、命令、Skill 与 Prompt
 + 提供 `ai4j-bom`，便于多模块项目统一版本管理
 + 统一的输入输出
 + 统一的错误处理
@@ -92,17 +97,36 @@
 ## 官方文档站
 + 在线文档站：`https://lnyo-cly.github.io/ai4j/`
 + 文档站源码位于 `docs-site/`
-+ 适合直接使用者的入口：`docs-site/docs/coding-agent/`
-+ 适合 SDK 接入的入口：`docs-site/docs/getting-started/` 与 `docs-site/docs/ai-basics/`
-+ 适合协议与扩展集成的入口：`docs-site/docs/mcp/`、`docs-site/docs/agent/`
++ 5 分钟跑通第一条请求：`docs-site/docs/start-here/five-minute-first-chat.md`
++ 普通 Java 接入：`docs-site/docs/start-here/quickstart-java.md`
++ Spring Boot 接入：`docs-site/docs/start-here/quickstart-spring-boot.md`
++ 能力边界与路径选择：`docs-site/docs/start-here/feature-map.md`
++ 插件包生态与第三方扩展：`docs-site/docs/core-sdk/extension/plugin-packages.md`
++ 官方 Ask User 插件：`docs-site/docs/core-sdk/extension/ask-user-plugin.md`
++ Spring Boot 插件配置：`ai.extensions.enabled` + `ai.extensions.tools.expose`
++ CLI 插件骨架生成：`ai4j-cli extension init <directory> --id <extension-id> --package <java-package>`
++ CLI 插件校验：`ai4j-cli extension validate <extension-id>|--all`
++ CLI 插件接入门禁：`ai4j-cli extension check <extension-id> --enable [activation options]`
++ CLI 插件命令执行：`ai4j-cli extension run --enable <extension-id> <command> [arguments...]`
++ CLI 插件资源读取：`ai4j-cli extension resource --enable <extension-id> <skill|prompt> <name>`
++ 插件 Guardrail：已启用插件可在 Agent / Coding Agent 执行 tool call 前拦截内置工具与扩展工具
++ 协议、Agent 与上层集成：`docs-site/docs/mcp/`、`docs-site/docs/agent/`、`docs-site/docs/coding-agent/`、`docs-site/docs/flowgram/`
 
 推荐阅读顺序：
 
 + `docs-site/docs/intro.md`
-+ `docs-site/docs/getting-started/installation.md`
-+ `docs-site/docs/coding-agent/overview.md`
-+ `docs-site/docs/ai-basics/overview.md`
++ `docs-site/docs/start-here/five-minute-first-chat.md`
++ `docs-site/docs/start-here/quickstart-java.md` 或 `docs-site/docs/start-here/quickstart-spring-boot.md`
++ `docs-site/docs/start-here/first-chat.md`
++ `docs-site/docs/core-sdk/overview.md`
++ `docs-site/docs/core-sdk/extension/plugin-packages.md`
 + `docs-site/docs/mcp/overview.md`
+
+如果使用支持 Skills 的 agent 工具，可以安装用户侧接入 Skill：
+
+```bash
+npx skills add LnYo-Cly/ai4j --skill ai4j-app-builder
+```
 
 基础会话上下文新增入口：
 
@@ -363,6 +387,8 @@ skill 发现规则：
 + 需要本地 CLI / TUI / ACP 宿主：引入 `ai4j-cli`
 + 需要 Spring Boot 自动配置：引入 `ai4j-spring-boot-starter`
 + 需要 FlowGram 工作流集成：引入 `ai4j-flowgram-spring-boot-starter`
++ 需要开发第三方插件：引入 `ai4j-extension-api`
++ 需要让 Agent 结构化询问用户：引入 `ai4j-plugin-ask-user`
 + 同时引入多个模块：建议额外引入 `ai4j-bom`
 
 ### Gradle
@@ -370,6 +396,7 @@ skill 发现规则：
 implementation platform("io.github.lnyo-cly:ai4j-bom:${project.version}")
 implementation "io.github.lnyo-cly:ai4j"
 implementation "io.github.lnyo-cly:ai4j-agent"
+implementation "io.github.lnyo-cly:ai4j-plugin-ask-user"
 ```
 
 ```groovy
@@ -407,6 +434,11 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-coding</artifactId>
 </dependency>
+
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-plugin-ask-user</artifactId>
+</dependency>
 ```
 
 ```xml
@@ -429,7 +461,46 @@ implementation group: 'io.github.lnyo-cly', name: 'ai4j-spring-boot-starter', ve
 
 ## 获取AI服务实例
 
-### 非Spring获取
+### 非Spring首聊推荐
+
+如果只是先跑通第一条同步 Chat 请求，直接使用 AI4J 的核心对象链：
+
+```java
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+
+public class Ai4jFirstChat {
+    public static void main(String[] args) throws Exception {
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiKey(System.getenv("OPENAI_API_KEY"));
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        AiService aiService = new AiService(configuration);
+        IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        ChatCompletion request = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("用一句话介绍 AI4J"))
+                .build();
+
+        ChatCompletionResponse response = chatService.chatCompletion(request);
+        String text = response.getChoices().get(0).getMessage().getContent().getText();
+        System.out.println(text);
+    }
+}
+```
+
+这条路径也是 AI4J 的真实主线：`Configuration -> AiService -> IChatService -> ChatCompletion -> ChatCompletionResponse`。后续自定义 `OkHttpClient`、代理、超时、流式、多模态、Tool、MCP、RAG 或读取完整 `ChatCompletionResponse` 时，都沿着同一条对象链继续扩展。
+
+### 非Spring进阶获取
 ```java
     public void test_init(){
         OpenAiConfig openAiConfig = new OpenAiConfig();

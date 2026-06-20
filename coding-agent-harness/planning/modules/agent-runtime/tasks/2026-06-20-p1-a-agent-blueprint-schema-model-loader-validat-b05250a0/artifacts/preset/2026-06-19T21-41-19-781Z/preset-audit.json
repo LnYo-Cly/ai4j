@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-19T21:41:19.782Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0/artifacts/preset/2026-06-19T21-41-19-781Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}

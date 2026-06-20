@@ -1,8 +1,8 @@
 # Spring Boot Bean Extension
 
-默认自动装配只是起点，真正的业务系统通常还需要覆盖 Bean。
+默认自动装配只是起点。真正的业务系统通常会覆盖一部分 Bean，但应该沿着 AI4J 的抽象层去接管。
 
-## 1. 什么时候需要覆盖
+## 1. 什么时候该覆盖
 
 常见场景：
 
@@ -10,25 +10,46 @@
 - 指定自己的 `VectorStore`
 - 自定义 `RagContextAssembler`
 - 自定义 `Reranker`
+- 对接企业内部的装配或路由策略
 
-也就是说，当默认 starter 已经帮你把入口搭好之后，这一页负责解释你应该沿哪条线接管。
+## 2. 应该覆盖哪一层
 
-## 2. 基本原则
+优先顺序是：
 
-- 优先复用 AI4J 的统一抽象
-- 在容器层替换 Bean，而不是直接改底层 provider 实现
-- 显式区分默认能力与业务自定义能力
+1. 先替换容器层 Bean
+2. 再考虑业务层组合
+3. 最后才考虑改底层 SDK 实现
 
-这样做的价值是：你的 Spring Boot 代码仍然留在 AI4J 的工程模型里，而不是重新绕开基座。
+也就是说，Bean extension 的目标不是绕开 AI4J，而是把你的自定义逻辑放回它的容器模型里。
 
-## 3. 常见坑
+## 3. 最容易做错的地方
 
-- 同类型 `VectorStore` 多实例时没有 `@Primary`
-- 把业务路由逻辑直接塞进 Controller
-- 既依赖全局 `AiService`，又在业务里硬编码平台切换
+最常见的问题不是不会写 Bean，而是位置选错：
 
-## 4. 推荐下一步
+- 本该在容器层替换，却去改底层 provider 实现
+- 本该用统一抽象，却在业务代码里写平台私货
+- 本该交给注册表或服务层处理，却硬塞进 Controller
 
-1. [Common Patterns](/docs/spring-boot/common-patterns)
-2. [Core SDK / Extension](/docs/core-sdk/extension/overview)
-3. [Core SDK / Search & RAG](/docs/core-sdk/search-and-rag/overview)
+这会让项目很快失去 AI4J 原本的分层价值。
+
+## 4. 典型覆盖点
+
+starter 默认给出的基础 Bean，通常可以按需接管：
+
+- `AiService`
+- `AiServiceRegistry`
+- `FreeAiService`
+- `VectorStore`
+- `RagContextAssembler`
+- `Reranker`
+
+## 5. 工程原则
+
+- 优先替换统一抽象后的 Bean，而不是修改底层 provider 私有实现
+- 多个同类型 Bean 并存时，显式声明选择策略
+- 让业务路由逻辑留在 service 层，不要回流到 controller 或 util 类
+
+## 6. 这一页的结论
+
+Bean extension 的核心不是“能不能重写一个 Bean”，而是 **你是否还留在 AI4J 的容器和抽象边界里**。  
+只要覆盖动作仍然发生在 Spring 层，通常就还能保持 starter 的统一模型；一旦开始绕开这些抽象，后续治理成本会迅速上升。

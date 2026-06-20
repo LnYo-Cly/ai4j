@@ -16,6 +16,7 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -23,6 +24,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.reflections.Reflections;
 
 import java.security.KeyManagementException;
@@ -35,17 +37,16 @@ import java.util.concurrent.TimeUnit;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class HunyuanTest {
 
     private IChatService chatService;
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
-        String apiKey = System.getenv("HUNYUAN_API_KEY");
-        if (isBlank(apiKey)) {
-            apiKey = System.getProperty("hunyuan.api.key");
-        }
-        Assume.assumeTrue("Skip because Hunyuan API key is not configured", !isBlank(apiKey));
+        String apiKey = LiveProviderTestSupport.requireEnv(
+                "Skip because Hunyuan API key is not configured",
+                "HUNYUAN_API_KEY");
 
         HunyuanConfig hunyuanConfig = new HunyuanConfig();
         hunyuanConfig.setApiKey(apiKey);
@@ -66,7 +67,6 @@ public class HunyuanTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
@@ -75,11 +75,6 @@ public class HunyuanTest {
         chatService = aiService.getChatService(PlatformType.HUNYUAN);
 
     }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
 
     @Test
     public void test_chatCompletions_common() throws Exception {

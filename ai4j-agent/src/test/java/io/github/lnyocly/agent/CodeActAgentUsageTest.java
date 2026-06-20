@@ -1,6 +1,7 @@
 package io.github.lnyocly.agent;
 
 import io.github.lnyocly.agent.support.ZhipuAgentTestSupport;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -11,12 +12,14 @@ import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.SocketTimeoutException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+@Category(LiveProviderTest.class)
 public class CodeActAgentUsageTest extends ZhipuAgentTestSupport {
 
     @Test

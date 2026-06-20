@@ -61,6 +61,7 @@ public class LocalShellCommandExecutor implements ShellCommandExecutor {
         return ShellCommandResult.builder()
                 .command(request.getCommand())
                 .workingDirectory(workingDirectory.toString())
+                .executionEnvironment("local")
                 .stdout(stdout.toString())
                 .stderr(stderr.toString())
                 .exitCode(exitCode)

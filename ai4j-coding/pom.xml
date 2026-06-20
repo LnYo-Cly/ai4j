@@ -57,6 +57,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-extension-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>2.0.43</version>
@@ -150,7 +155,7 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
                         <configuration>
-                            <executable>D:\Develop\DevelopEnv\GnuPG\bin\gpg.exe</executable>
+                            <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
                         </configuration>
                         <executions>

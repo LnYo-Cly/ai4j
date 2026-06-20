@@ -1,8 +1,16 @@
 package io.github.lnyocly.ai4j.agent;
 
+import io.github.lnyocly.ai4j.agent.event.AgentEvent;
+import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionEventLog;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionMetadata;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
+import io.github.lnyocly.ai4j.agent.session.InMemoryAgentSessionEventLog;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class Agent {
@@ -10,11 +18,17 @@ public class Agent {
     private final AgentRuntime runtime;
     private final AgentContext baseContext;
     private final Supplier<AgentMemory> memorySupplier;
+    private final AgentSessionStore sessionStore;
 
     public Agent(AgentRuntime runtime, AgentContext baseContext, Supplier<AgentMemory> memorySupplier) {
+        this(runtime, baseContext, memorySupplier, null);
+    }
+
+    public Agent(AgentRuntime runtime, AgentContext baseContext, Supplier<AgentMemory> memorySupplier, AgentSessionStore sessionStore) {
         this.runtime = runtime;
         this.baseContext = baseContext;
         this.memorySupplier = memorySupplier;
+        this.sessionStore = sessionStore;
     }
 
     public AgentResult run(AgentRequest request) throws Exception {
@@ -31,7 +45,47 @@ public class Agent {
 
     public AgentSession newSession() {
         AgentMemory memory = memorySupplier == null ? baseContext.getMemory() : memorySupplier.get();
-        AgentContext sessionContext = baseContext.toBuilder().memory(memory).build();
-        return new AgentSession(runtime, sessionContext);
+        AgentSessionMetadata metadata = AgentSessionMetadata.create();
+        AgentSessionEventLog eventLog = new InMemoryAgentSessionEventLog();
+        AgentContext sessionContext = baseContext.toBuilder()
+                .memory(memory)
+                .sessionId(metadata.getSessionId())
+                .eventPublisher(sessionEventPublisher(eventLog))
+                .build();
+        return new AgentSession(runtime, sessionContext, metadata, eventLog, sessionStore);
+    }
+
+    public AgentSession newSession(AgentSessionSnapshot snapshot) {
+        AgentSession session = newSession();
+        session.restore(snapshot);
+        return session;
+    }
+
+    public AgentSession resumeSession(String sessionId) {
+        if (sessionStore == null) {
+            throw new IllegalStateException("sessionStore is required to resume a session by id");
+        }
+        AgentSessionSnapshot snapshot = sessionStore.load(sessionId);
+        if (snapshot == null) {
+            throw new IllegalArgumentException("Agent session not found: " + sessionId);
+        }
+        return newSession(snapshot);
+    }
+
+    public AgentSessionStore getSessionStore() {
+        return sessionStore;
+    }
+
+    private AgentEventPublisher sessionEventPublisher(final AgentSessionEventLog eventLog) {
+        AgentEventPublisher basePublisher = baseContext == null ? null : baseContext.getEventPublisher();
+        List<AgentListener> baseListeners = basePublisher == null ? null : basePublisher.getListeners();
+        AgentEventPublisher publisher = new AgentEventPublisher(baseListeners);
+        publisher.addListener(new AgentListener() {
+            @Override
+            public void onEvent(AgentEvent event) {
+                eventLog.append(event);
+            }
+        });
+        return publisher;
     }
 }

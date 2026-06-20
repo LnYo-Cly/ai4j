@@ -1,0 +1,25 @@
+id: module
+version: 1
+purpose: Create module-scoped tasks with module context entry points and auditable preset metadata.
+compatibleBudgets: [simple, standard, complex]
+localeSupport: [en-US, zh-CN]
+task:
+  kind: module-task
+entrypoints:
+  newTask:
+    type: template
+    writes: [{{paths.planningRoot}}/**]
+    audit: true
+    templates:
+      taskPlanAppend: templates/task_plan.append.md
+      executionStrategyAppend: templates/execution_strategy.append.md
+templateValues:
+  moduleKey:
+    from: task.moduleKey
+audit:
+  manifestRequired: true
+  evidenceFiles: [preset-audit.json]
+writeScopes:
+  planningDocs:
+    path: {{paths.planningRoot}}/**
+    access: write

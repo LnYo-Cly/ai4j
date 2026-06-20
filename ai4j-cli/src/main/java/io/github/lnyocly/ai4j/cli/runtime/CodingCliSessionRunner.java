@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.CliUiMode;
 import io.github.lnyocly.ai4j.cli.SlashCommandController;
 import io.github.lnyocly.ai4j.cli.agent.CliCodingAgentRegistry;
+import io.github.lnyocly.ai4j.cli.command.CliExtensionCommand;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.command.CustomCommandRegistry;
 import io.github.lnyocly.ai4j.cli.command.CustomCommandTemplate;
@@ -29,6 +30,8 @@ import io.github.lnyocly.ai4j.cli.render.CliDisplayWidth;
 import io.github.lnyocly.ai4j.cli.render.CliThemeStyler;
 import io.github.lnyocly.ai4j.cli.render.CodexStyleBlockFormatter;
 import io.github.lnyocly.ai4j.cli.render.PatchSummaryFormatter;
+import io.github.lnyocly.ai4j.cli.sandbox.CliAttachedSandboxSession;
+import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxBinding;
 import io.github.lnyocly.ai4j.cli.render.TranscriptPrinter;
 import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
@@ -42,6 +45,7 @@ import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.model.ResponsesModelClient;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.coding.CodingAgentResult;
@@ -86,7 +90,9 @@ import io.github.lnyocly.ai4j.tui.AppendOnlyTuiRuntime;
 import io.github.lnyocly.ai4j.tui.TuiTheme;
 import io.github.lnyocly.ai4j.tui.TuiSessionView;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -155,6 +161,7 @@ public class CodingCliSessionRunner {
     private ManagedCodingSession activeSession;
     private CliMcpRuntimeManager mcpRuntimeManager;
     private boolean streamEnabled = false;
+    private CliSandboxBinding sandboxBinding;
     private volatile ActiveTuiTurn activeTuiTurn;
     private volatile Thread activeMainBufferTurnThread;
     private volatile String activeMainBufferTurnId;
@@ -745,8 +752,22 @@ public class CodingCliSessionRunner {
             renderTui(session);
             return DispatchResult.stay(session);
         }
+        if ("/extensions".equalsIgnoreCase(normalized)) {
+            runExtensionCommand(session, "list");
+            return DispatchResult.stay(session);
+        }
+        if ("/extension".equalsIgnoreCase(normalized) || normalized.startsWith("/extension ")) {
+            runExtensionCommand(session, extractCommandArgument(normalized));
+            return DispatchResult.stay(session);
+        }
         if ("/mcp".equalsIgnoreCase(normalized) || normalized.startsWith("/mcp ")) {
             ManagedCodingSession switched = handleMcpCommand(session, extractCommandArgument(normalized));
+            activeSession = switched;
+            renderTui(switched);
+            return DispatchResult.stay(switched);
+        }
+        if ("/sandbox".equalsIgnoreCase(normalized) || normalized.startsWith("/sandbox ")) {
+            ManagedCodingSession switched = handleSandboxCommand(session, extractCommandArgument(normalized));
             activeSession = switched;
             renderTui(switched);
             return DispatchResult.stay(switched);
@@ -948,12 +969,17 @@ public class CodingCliSessionRunner {
         builder.append("  /experimental <subagent|agent-teams> <on|off>  Toggle experimental subagent or team runtime tools\n");
         builder.append("  /skills [name]  List discovered coding skills or inspect one skill in detail\n");
         builder.append("  /agents [name]  List available coding agents or inspect one worker definition\n");
+        builder.append("  /extensions  List discovered extension plugins\n");
+        builder.append("  /extension <list|inspect|plan|check|validate|run|resource> ...  Manage extension plugins and resources\n");
         builder.append("  /mcp  Show current MCP services and status\n");
         builder.append("  /mcp add --transport <stdio|sse|http> <name> <target>  Add a global MCP service\n");
         builder.append("  /mcp enable|disable <name>  Toggle workspace MCP enablement\n");
         builder.append("  /mcp pause|resume <name>  Toggle current session MCP activation\n");
         builder.append("  /mcp retry <name>  Reconnect an enabled MCP service\n");
         builder.append("  /mcp remove <name>  Delete a global MCP service\n");
+        builder.append("  /sandbox [status]  Show direct-host or attached sandbox binding\n");
+        builder.append("  /sandbox attach <providerId> <sessionId> [workspaceId]  Attach metadata-only sandbox binding for this CLI session\n");
+        builder.append("  /sandbox disable  Clear sandbox binding and return to direct-host\n");
         builder.append("  /commands  List available custom commands\n");
         builder.append("  /palette  Alias of /commands\n");
         builder.append("  /cmd <name> [args]  Run a custom command template\n");
@@ -1039,6 +1065,7 @@ public class CodingCliSessionRunner {
                 + ", activeProcesses=" + (snapshot == null ? 0 : snapshot.getActiveProcessCount())
                 + ", restoredProcesses=" + (snapshot == null ? 0 : snapshot.getRestoredProcessCount())
                 + ", tokens=" + (snapshot == null ? 0 : snapshot.getEstimatedContextTokens())
+                + ", sandbox=" + renderSandboxSummary()
                 + ", checkpointGoal=" + clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 80)
                 + ", compact=" + firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none"));
     }
@@ -1138,6 +1165,27 @@ public class CodingCliSessionRunner {
 
     private void printAgents(ManagedCodingSession session, String argument) {
         emitOutput(renderAgentsOutput(session, argument));
+    }
+
+    private void runExtensionCommand(ManagedCodingSession session, String rawArguments) {
+        List<String> arguments;
+        try {
+            arguments = splitShellLikeArguments(rawArguments);
+        } catch (IllegalArgumentException ex) {
+            emitError(safeMessage(ex));
+            renderTui(session);
+            return;
+        }
+        CapturingTerminalIO capture = new CapturingTerminalIO();
+        int exitCode = new CliExtensionCommand(resolveWorkspaceRoot(session)).run(arguments, capture);
+        String output = capture.output();
+        String error = capture.error();
+        if (exitCode == 0) {
+            emitOutput(firstNonBlank(output, error, "extension command completed"));
+        } else {
+            emitError(firstNonBlank(error, output, "extension command failed with exit code " + exitCode));
+        }
+        renderTui(session);
     }
 
     private ManagedCodingSession handleProviderCommand(ManagedCodingSession session, String argument) throws Exception {
@@ -1265,6 +1313,82 @@ public class CodingCliSessionRunner {
         }
         emitError("Unknown /mcp action: " + action + ". Use /mcp, /mcp list, /mcp add --transport <stdio|sse|http> <name> <target>, /mcp enable <name>, /mcp disable <name>, /mcp pause <name>, /mcp resume <name>, /mcp retry <name>, or /mcp remove <name>.");
         return session;
+    }
+
+    private ManagedCodingSession handleSandboxCommand(ManagedCodingSession session, String argument) throws Exception {
+        if (isBlank(argument)) {
+            emitOutput(renderSandboxOutput());
+            return session;
+        }
+        List<String> arguments;
+        try {
+            arguments = splitShellLikeArguments(argument);
+        } catch (IllegalArgumentException ex) {
+            emitError(safeMessage(ex));
+            return session;
+        }
+        if (arguments.isEmpty() || "status".equalsIgnoreCase(arguments.get(0))) {
+            emitOutput(renderSandboxOutput());
+            return session;
+        }
+        String action = arguments.get(0).toLowerCase(Locale.ROOT);
+        if ("attach".equals(action)) {
+            if (arguments.size() < 3 || arguments.size() > 4) {
+                emitError(sandboxUsage());
+                return session;
+            }
+            CliSandboxBinding nextBinding;
+            try {
+                nextBinding = CliSandboxBinding.attach(
+                        arguments.get(1),
+                        arguments.get(2),
+                        arguments.size() > 3 ? arguments.get(3) : null
+                );
+            } catch (IllegalArgumentException ex) {
+                emitError(safeMessage(ex));
+                return session;
+            }
+            CliSandboxBinding previousBinding = this.sandboxBinding;
+            this.sandboxBinding = nextBinding;
+            ManagedCodingSession rebound;
+            try {
+                rebound = switchSessionRuntime(session, options);
+            } catch (Exception ex) {
+                this.sandboxBinding = previousBinding;
+                throw ex;
+            }
+            emitOutput(renderSandboxOutput());
+            persistSession(rebound, false);
+            return rebound;
+        }
+        if ("disable".equals(action)) {
+            if (arguments.size() != 1) {
+                emitError("Usage: /sandbox disable");
+                return session;
+            }
+            if (sandboxBinding == null) {
+                emitOutput(renderSandboxOutput());
+                return session;
+            }
+            CliSandboxBinding previousBinding = this.sandboxBinding;
+            this.sandboxBinding = null;
+            ManagedCodingSession rebound;
+            try {
+                rebound = switchSessionRuntime(session, options);
+            } catch (Exception ex) {
+                this.sandboxBinding = previousBinding;
+                throw ex;
+            }
+            emitOutput(renderSandboxOutput());
+            persistSession(rebound, false);
+            return rebound;
+        }
+        emitError("Unknown /sandbox action: " + action + ". " + sandboxUsage());
+        return session;
+    }
+
+    private String sandboxUsage() {
+        return "Use /sandbox, /sandbox status, /sandbox attach <providerId> <sessionId> [workspaceId], or /sandbox disable.";
     }
 
     private ManagedCodingSession addMcpServer(ManagedCodingSession session, String rawArguments) throws Exception {
@@ -1876,7 +2000,8 @@ public class CodingCliSessionRunner {
                 nextOptions,
                 terminal,
                 interactionState,
-                pausedMcpServers
+                pausedMcpServers,
+                currentSandboxSession()
         );
         if (session == null || session.getSession() == null) {
             closeMcpRuntimeQuietly(mcpRuntimeManager);
@@ -1916,6 +2041,10 @@ public class CodingCliSessionRunner {
         attachCodingTaskEventBridge();
         refreshSessionContext(rebound);
         return rebound;
+    }
+
+    private SandboxSession currentSandboxSession() {
+        return sandboxBinding == null ? null : CliAttachedSandboxSession.unsupported(sandboxBinding);
     }
 
     private void printCommands() {
@@ -3503,6 +3632,74 @@ public class CodingCliSessionRunner {
         return Arrays.asList(value.trim().split("\\s+"));
     }
 
+    static List<String> splitShellLikeArguments(String value) {
+        if (isBlank(value)) {
+            return Collections.emptyList();
+        }
+        List<String> tokens = new ArrayList<String>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        boolean escaping = false;
+        boolean tokenStarted = false;
+        String raw = value.trim();
+        for (int i = 0; i < raw.length(); i++) {
+            char character = raw.charAt(i);
+            if (escaping) {
+                current.append(character);
+                escaping = false;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '\\' && !inSingleQuote && shouldEscapeNext(raw, i)) {
+                escaping = true;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                tokenStarted = true;
+                continue;
+            }
+            if (character == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                tokenStarted = true;
+                continue;
+            }
+            if (Character.isWhitespace(character) && !inSingleQuote && !inDoubleQuote) {
+                if (tokenStarted) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                    tokenStarted = false;
+                }
+                continue;
+            }
+            current.append(character);
+            tokenStarted = true;
+        }
+        if (escaping) {
+            current.append('\\');
+        }
+        if (inSingleQuote || inDoubleQuote) {
+            throw new IllegalArgumentException("Unclosed quote in /extension command");
+        }
+        if (tokenStarted) {
+            tokens.add(current.toString());
+        }
+        return tokens;
+    }
+
+    private static boolean shouldEscapeNext(String value, int index) {
+        if (value == null || index + 1 >= value.length()) {
+            return false;
+        }
+        char next = value.charAt(index + 1);
+        return next == '\\'
+                || next == '"'
+                || next == '\''
+                || Character.isWhitespace(next);
+    }
+
     private String normalizeMcpTransport(String rawTransport) {
         if (isBlank(rawTransport)) {
             return null;
@@ -3702,10 +3899,10 @@ public class CodingCliSessionRunner {
 
     private List<String> renderCommandLines(List<CustomCommandTemplate> commands) {
         List<String> lines = new ArrayList<String>();
-        lines.add("/help /status /session /theme /save /providers /provider /model /experimental /skills /agents");
-        lines.add("/provider use|save|add|edit|default|remove /mcp");
+        lines.add("/help /status /session /theme /save /providers /provider /model /experimental /skills /agents /extensions");
+        lines.add("/provider use|save|add|edit|default|remove /extension list|inspect|plan|check|validate|run|resource");
         lines.add("/experimental subagent|agent-teams on|off");
-        lines.add("/mcp add|enable|disable|pause|resume|retry|remove");
+        lines.add("/mcp add|enable|disable|pause|resume|retry|remove /sandbox status|attach|disable");
         lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /team list|status|messages|resume /compacts /checkpoint");
         lines.add("/processes /process status|follow|logs|write|stop");
         lines.add("/resume <id> /load <id> /fork ... /compact /clear /exit");
@@ -3796,6 +3993,13 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("experimental-agent-teams-off", "command", "/experimental agent-teams off", "Disable experimental agent team tool injection", "/experimental agent-teams off"));
         items.add(new TuiPaletteItem("skills", "command", "/skills", "List discovered coding skills", "/skills"));
         items.add(new TuiPaletteItem("agents", "command", "/agents", "List available coding agents", "/agents"));
+        items.add(new TuiPaletteItem("extensions", "command", "/extensions", "List discovered extension plugins", "/extensions"));
+        items.add(new TuiPaletteItem("extension-inspect", "command", "/extension inspect", "Inspect an extension manifest", "/extension inspect "));
+        items.add(new TuiPaletteItem("extension-plan", "command", "/extension plan", "Preview extension activation", "/extension plan "));
+        items.add(new TuiPaletteItem("extension-check", "command", "/extension check", "Validate requested extension activation", "/extension check "));
+        items.add(new TuiPaletteItem("extension-validate", "command", "/extension validate", "Validate an extension package", "/extension validate "));
+        items.add(new TuiPaletteItem("extension-run", "command", "/extension run", "Run an enabled extension command", "/extension run --enable "));
+        items.add(new TuiPaletteItem("extension-resource", "command", "/extension resource", "Read an enabled extension skill or prompt", "/extension resource --enable "));
         items.add(new TuiPaletteItem("mcp", "command", "/mcp", "Show current MCP services and status", "/mcp"));
         items.add(new TuiPaletteItem("mcp-add", "command", "/mcp add", "Add a global MCP service", "/mcp add --transport "));
         items.add(new TuiPaletteItem("mcp-enable", "command", "/mcp enable", "Enable an MCP service in this workspace", "/mcp enable "));
@@ -3804,6 +4008,10 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("mcp-resume", "command", "/mcp resume", "Resume an MCP service for this session", "/mcp resume "));
         items.add(new TuiPaletteItem("mcp-retry", "command", "/mcp retry", "Reconnect an MCP service", "/mcp retry "));
         items.add(new TuiPaletteItem("mcp-remove", "command", "/mcp remove", "Delete a global MCP service", "/mcp remove "));
+        items.add(new TuiPaletteItem("sandbox", "command", "/sandbox", "Show sandbox routing state", "/sandbox"));
+        items.add(new TuiPaletteItem("sandbox-status", "command", "/sandbox status", "Show direct-host or attached sandbox binding", "/sandbox status"));
+        items.add(new TuiPaletteItem("sandbox-attach", "command", "/sandbox attach", "Attach metadata-only sandbox binding", "/sandbox attach "));
+        items.add(new TuiPaletteItem("sandbox-disable", "command", "/sandbox disable", "Return to direct-host execution", "/sandbox disable"));
         items.add(new TuiPaletteItem("commands", "command", "/commands", "List available custom commands", "/commands"));
         items.add(new TuiPaletteItem("palette", "command", "/palette", "Alias of /commands", "/palette"));
         items.add(new TuiPaletteItem("cmd", "command", "/cmd", "Run a custom command template", "/cmd"));
@@ -4463,6 +4671,12 @@ public class CodingCliSessionRunner {
         }
         ((JlineShellTerminalIO) terminal).updateSessionContext(
                 session == null ? null : session.getSessionId(),
+                session == null || isBlank(session.getProvider())
+                        ? (options.getProvider() == null ? null : options.getProvider().getPlatform())
+                        : session.getProvider(),
+                session == null || isBlank(session.getProtocol())
+                        ? (protocol == null ? null : protocol.getValue())
+                        : session.getProtocol(),
                 session == null ? options.getModel() : session.getModel(),
                 session == null ? options.getWorkspace() : session.getWorkspace()
         );
@@ -4974,6 +5188,7 @@ public class CodingCliSessionRunner {
                 .append(", restoredProcesses=").append(snapshot == null ? 0 : snapshot.getRestoredProcessCount())
                 .append(", tokens=").append(snapshot == null ? 0 : snapshot.getEstimatedContextTokens()).append('\n');
         builder.append("- stream=").append(streamEnabled ? "on" : "off").append('\n');
+        builder.append("- sandbox=").append(renderSandboxSummary()).append('\n');
         String mcpSummary = renderMcpSummary();
         if (!isBlank(mcpSummary)) {
             builder.append("- mcp=").append(mcpSummary).append('\n');
@@ -5025,6 +5240,44 @@ public class CodingCliSessionRunner {
                 ? "provider responses stream incrementally and assistant text renders incrementally"
                 : "provider responses return as completed payloads and assistant text renders as completed blocks");
         return builder.toString().trim();
+    }
+
+    private String renderSandboxOutput() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("sandbox:\n");
+        if (sandboxBinding == null) {
+            builder.append("- mode=direct-host\n");
+            builder.append("- routing=bash exec uses local host runtime\n");
+            builder.append("- attach=/sandbox attach <providerId> <sessionId> [workspaceId]\n");
+            builder.append("- boundary=this command does not create or authenticate a sandbox provider");
+            return builder.toString().trim();
+        }
+        builder.append("- mode=attached\n");
+        builder.append("- provider=").append(sandboxBinding.getProviderId()).append('\n');
+        builder.append("- session=").append(sandboxBinding.getSessionId()).append('\n');
+        builder.append("- workspace=").append(firstNonBlank(sandboxBinding.getWorkspaceId(), "none")).append('\n');
+        builder.append("- source=").append(firstNonBlank(sandboxBinding.getSource(), "cli-attach")).append('\n');
+        builder.append("- attachedAt=").append(formatTimestamp(sandboxBinding.getAttachedAtEpochMs())).append('\n');
+        builder.append("- runtime=metadata-only\n");
+        builder.append("- routing=bash exec is routed to SandboxSession and fails loudly until a provider bridge is available\n");
+        builder.append("- boundary=this command does not create or authenticate a sandbox provider");
+        return builder.toString().trim();
+    }
+
+    private String renderSandboxSummary() {
+        if (sandboxBinding == null) {
+            return "direct-host";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("attached(")
+                .append(sandboxBinding.getProviderId())
+                .append("/")
+                .append(sandboxBinding.getSessionId());
+        if (!isBlank(sandboxBinding.getWorkspaceId())) {
+            builder.append(", workspace=").append(sandboxBinding.getWorkspaceId());
+        }
+        builder.append(", metadata-only)");
+        return builder.toString();
     }
 
     private String renderSessionOutput(ManagedCodingSession session) {
@@ -6581,6 +6834,50 @@ public class CodingCliSessionRunner {
         ASSISTANT
     }
 
+    private static final class CapturingTerminalIO implements TerminalIO {
+
+        private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+        private final ByteArrayOutputStream error = new ByteArrayOutputStream();
+
+        @Override
+        public String readLine(String prompt) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void print(String message) {
+            write(output, message);
+        }
+
+        @Override
+        public void println(String message) {
+            write(output, message);
+            write(output, System.lineSeparator());
+        }
+
+        @Override
+        public void errorln(String message) {
+            write(error, message);
+            write(error, System.lineSeparator());
+        }
+
+        private String output() {
+            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+        }
+
+        private String error() {
+            return new String(error.toByteArray(), StandardCharsets.UTF_8);
+        }
+
+        private void write(ByteArrayOutputStream stream, String message) {
+            if (stream == null || message == null) {
+                return;
+            }
+            byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+            stream.write(bytes, 0, bytes.length);
+        }
+    }
+
     private static final class DispatchResult {
 
         private final ManagedCodingSession session;
@@ -6628,7 +6925,7 @@ public class CodingCliSessionRunner {
         return null;
     }
 
-    private boolean isBlank(String value) {
+    private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 

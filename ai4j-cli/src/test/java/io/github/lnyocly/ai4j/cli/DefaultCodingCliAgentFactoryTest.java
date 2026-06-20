@@ -11,7 +11,15 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxException;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.service.PlatformType;
@@ -276,6 +284,63 @@ public class DefaultCodingCliAgentFactoryTest {
         Assert.assertFalse(toolNames.contains(DefaultCodingCliAgentFactory.EXPERIMENTAL_TEAM_TOOL_NAME));
     }
 
+    @Test
+    public void test_prepare_with_sandbox_routes_bash_exec_through_sandbox() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-sandbox-prepare");
+        new CliProviderConfigManager(workspace).saveWorkspaceConfig(CliWorkspaceConfig.builder()
+                .experimentalSubagentsEnabled(Boolean.FALSE)
+                .experimentalAgentTeamsEnabled(Boolean.FALSE)
+                .build());
+        TestFactory testFactory = new TestFactory();
+        FakeSandboxSession sandboxSession = new FakeSandboxSession();
+
+        CodeCommandOptions options = new CodeCommandOptions(
+                false,
+                CliUiMode.CLI,
+                PlatformType.OPENAI,
+                CliProtocol.RESPONSES,
+                "gpt-5-mini",
+                null,
+                null,
+                workspace.toString(),
+                null,
+                null,
+                null,
+                null,
+                12,
+                null,
+                null,
+                null,
+                Boolean.FALSE,
+                false,
+                false
+        );
+
+        CodingCliAgentFactory.PreparedCodingAgent prepared = testFactory.prepare(
+                options,
+                null,
+                null,
+                Collections.<String>emptySet(),
+                sandboxSession
+        );
+        ToolExecutor executor = prepared.getAgent()
+                .newSession()
+                .getDelegate()
+                .getContext()
+                .getToolExecutor();
+
+        String output = executor.execute(AgentToolCall.builder()
+                .name("bash")
+                .arguments("{\"action\":\"exec\",\"command\":\"echo hi\"}")
+                .build());
+
+        Assert.assertTrue(output.contains("\"executionEnvironment\":\"sandbox\""));
+        Assert.assertTrue(output.contains("\"sandboxSessionId\":\"sbx_123\""));
+        Assert.assertTrue(output.contains("\"sandboxProviderId\":\"fake-provider\""));
+        Assert.assertTrue(output.contains("from-sandbox"));
+        Assert.assertEquals("echo hi", sandboxSession.lastCommand);
+    }
+
     private List<String> toolNames(CodingCliAgentFactory.PreparedCodingAgent prepared) {
         if (prepared == null || prepared.getAgent() == null) {
             return Collections.emptyList();
@@ -320,6 +385,59 @@ public class DefaultCodingCliAgentFactoryTest {
                     .toolCalls(new ArrayList<AgentToolCall>())
                     .memoryItems(new ArrayList<Object>())
                     .build();
+        }
+    }
+
+    private static final class FakeSandboxSession implements SandboxSession {
+
+        private String lastCommand;
+
+        @Override
+        public String getSessionId() {
+            return "sbx_123";
+        }
+
+        @Override
+        public String getProviderId() {
+            return "fake-provider";
+        }
+
+        @Override
+        public SandboxSpec getSpec() {
+            return SandboxSpec.builder()
+                    .providerId(getProviderId())
+                    .workspaceId("/workspace")
+                    .build();
+        }
+
+        @Override
+        public SandboxStatus getStatus() {
+            return SandboxStatus.RUNNING;
+        }
+
+        @Override
+        public SandboxResult execute(SandboxCommand command) {
+            lastCommand = command == null ? null : command.getCommand();
+            return SandboxResult.builder()
+                    .commandId(command == null ? null : command.getCommandId())
+                    .stdout("from-sandbox")
+                    .stderr("")
+                    .exitCode(Integer.valueOf(0))
+                    .build();
+        }
+
+        @Override
+        public boolean cancel(String commandId) {
+            return false;
+        }
+
+        @Override
+        public List<SandboxArtifact> listArtifacts() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void close() throws SandboxException {
         }
     }
 }

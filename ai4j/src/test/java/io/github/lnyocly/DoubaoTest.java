@@ -12,11 +12,13 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
+@Category(LiveProviderTest.class)
 public class DoubaoTest {
 
     private IChatService chatService;
@@ -31,13 +34,10 @@ public class DoubaoTest {
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         DoubaoConfig doubaoConfig = new DoubaoConfig();
-        String apiKey = System.getenv("ARK_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getenv("DOUBAO_API_KEY");
-        }
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = "************";
-        }
+        String apiKey = LiveProviderTestSupport.requireEnv(
+                "Skip because Doubao API key is not configured",
+                "ARK_API_KEY",
+                "DOUBAO_API_KEY");
         doubaoConfig.setApiKey(apiKey);
 
         Configuration configuration = new Configuration();

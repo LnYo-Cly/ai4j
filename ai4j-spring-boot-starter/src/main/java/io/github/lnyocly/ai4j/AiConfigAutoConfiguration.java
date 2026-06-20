@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import io.github.lnyocly.ai4j.agentflow.AgentFlow;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.network.ConnectionPoolProvider;
@@ -72,7 +74,8 @@ import java.util.Map;
         DashScopeConfigProperties.class,
         DoubaoConfigProperties.class,
         JinaConfigProperties.class,
-        AgentFlowProperties.class
+        AgentFlowProperties.class,
+        AiExtensionProperties.class
 })
 
 public class AiConfigAutoConfiguration {
@@ -150,6 +153,40 @@ public class AiConfigAutoConfiguration {
     @Bean
     public FreeAiService getFreeAiService(AiServiceRegistry aiServiceRegistry) {
         return new FreeAiService(aiServiceRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ExtensionRegistry extensionRegistry(AiExtensionProperties extensionProperties) {
+        ExtensionRegistry registry = ExtensionRegistry.discover();
+        if (extensionProperties != null) {
+            registry.enableAll(extensionProperties.getEnabled());
+            if (extensionProperties.isExplicitResourceActivation()) {
+                registry.requireExplicitResourceActivation();
+            }
+            if (extensionProperties.getTools() != null) {
+                registry.exposeTools(extensionProperties.getTools().getExpose());
+            }
+            if (extensionProperties.getCommands() != null) {
+                registry.allowCommands(extensionProperties.getCommands().getAllow());
+            }
+            if (extensionProperties.getSkills() != null) {
+                registry.allowSkills(extensionProperties.getSkills().getAllow());
+            }
+            if (extensionProperties.getPrompts() != null) {
+                registry.allowPrompts(extensionProperties.getPrompts().getAllow());
+            }
+            if (extensionProperties.getGuardrails() != null) {
+                registry.allowGuardrails(extensionProperties.getGuardrails().getAllow());
+            }
+        }
+        return registry;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ExtensionRuntimeSnapshot extensionRuntimeSnapshot(ExtensionRegistry extensionRegistry) {
+        return extensionRegistry.snapshot();
     }
 
     @Bean

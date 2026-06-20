@@ -199,7 +199,7 @@ mvn -pl ai4j -Dtest=OpenAiTest -DskipTests=false test
 
 ---
 
-## 7. 安装阶段最容易踩的坑
+## 7. 安装注意事项
 
 ### 7.1 测试为什么默认被跳过
 

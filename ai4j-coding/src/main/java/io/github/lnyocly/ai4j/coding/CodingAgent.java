@@ -4,6 +4,8 @@ import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
@@ -13,6 +15,7 @@ import io.github.lnyocly.ai4j.coding.delegate.CodingDelegateRequest;
 import io.github.lnyocly.ai4j.coding.delegate.CodingDelegateResult;
 import io.github.lnyocly.ai4j.coding.process.SessionProcessRegistry;
 import io.github.lnyocly.ai4j.coding.runtime.CodingRuntime;
+import io.github.lnyocly.ai4j.coding.sandbox.CodingSandboxRuntime;
 import io.github.lnyocly.ai4j.coding.session.CodingSessionLink;
 import io.github.lnyocly.ai4j.coding.task.CodingTask;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -30,6 +33,8 @@ public class CodingAgent {
     private final CodingRuntime runtime;
     private final SubAgentRegistry subAgentRegistry;
     private final HandoffPolicy handoffPolicy;
+    private final ExtensionAgentTools extensionTools;
+    private final CodingSandboxRuntime sandboxRuntime;
 
     public CodingAgent(Agent delegate,
                        WorkspaceContext workspaceContext,
@@ -39,6 +44,33 @@ public class CodingAgent {
                        CodingRuntime runtime,
                        SubAgentRegistry subAgentRegistry,
                        HandoffPolicy handoffPolicy) {
+        this(delegate, workspaceContext, options, customToolRegistry, customToolExecutor, runtime,
+                subAgentRegistry, handoffPolicy, null);
+    }
+
+    public CodingAgent(Agent delegate,
+                       WorkspaceContext workspaceContext,
+                       CodingAgentOptions options,
+                       AgentToolRegistry customToolRegistry,
+                       ToolExecutor customToolExecutor,
+                       CodingRuntime runtime,
+                       SubAgentRegistry subAgentRegistry,
+                       HandoffPolicy handoffPolicy,
+                       ExtensionAgentTools extensionTools) {
+        this(delegate, workspaceContext, options, customToolRegistry, customToolExecutor, runtime,
+                subAgentRegistry, handoffPolicy, extensionTools, null);
+    }
+
+    public CodingAgent(Agent delegate,
+                       WorkspaceContext workspaceContext,
+                       CodingAgentOptions options,
+                       AgentToolRegistry customToolRegistry,
+                       ToolExecutor customToolExecutor,
+                       CodingRuntime runtime,
+                       SubAgentRegistry subAgentRegistry,
+                       HandoffPolicy handoffPolicy,
+                       ExtensionAgentTools extensionTools,
+                       CodingSandboxRuntime sandboxRuntime) {
         this.delegate = delegate;
         this.workspaceContext = workspaceContext;
         this.options = options;
@@ -47,6 +79,8 @@ public class CodingAgent {
         this.runtime = runtime;
         this.subAgentRegistry = subAgentRegistry;
         this.handoffPolicy = handoffPolicy;
+        this.extensionTools = extensionTools;
+        this.sandboxRuntime = sandboxRuntime;
     }
 
     public CodingAgentResult run(String input) throws Exception {
@@ -85,7 +119,8 @@ public class CodingAgent {
                 options,
                 processRegistry,
                 runtime,
-                definitionRegistry
+                definitionRegistry,
+                sandboxRuntime
         );
         AgentToolRegistry mergedBaseRegistry = CodingAgentBuilder.mergeToolRegistry(
                 builtInRegistry,
@@ -106,6 +141,7 @@ public class CodingAgent {
                 subAgentRegistry,
                 handoffPolicy
         );
+        mergedExecutor = CodingAgentBuilder.applyExtensionGuardrails(mergedExecutor, extensionTools);
         AgentSession session = new AgentSession(
                 rawSession.getRuntime(),
                 rawSession.getContext().toBuilder()
@@ -113,6 +149,7 @@ public class CodingAgent {
                         .toolExecutor(mergedExecutor)
                         .build()
         );
+        bindSandbox(session);
         CodingSession codingSession = new CodingSession(
                 isBlank(sessionId) ? UUID.randomUUID().toString() : sessionId,
                 session,
@@ -141,6 +178,10 @@ public class CodingAgent {
 
     public CodingRuntime getRuntime() {
         return runtime;
+    }
+
+    public CodingSandboxRuntime getSandboxRuntime() {
+        return sandboxRuntime;
     }
 
     public CodingAgentDefinitionRegistry getDefinitionRegistry() {
@@ -175,5 +216,15 @@ public class CodingAgent {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private void bindSandbox(AgentSession session) {
+        if (session == null || sandboxRuntime == null) {
+            return;
+        }
+        SandboxSession sandboxSession = sandboxRuntime.getSandboxSession();
+        if (sandboxSession != null) {
+            session.bindSandbox(sandboxSession);
+        }
     }
 }

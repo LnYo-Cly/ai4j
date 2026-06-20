@@ -1,26 +1,125 @@
-﻿---
+---
 sidebar_position: 20
 ---
 
 # Responses（非流式）
 
-`Responses API` 适合事件化语义更强的场景。本页先讲非流式。
+这一页讲旧入口下的 `Responses` 非流式调用。
 
-## 1. 核心对象
+如果你还没有建立这条主线的整体心智，建议先读：[Model Access / Responses](/docs/core-sdk/model-access/responses)。
 
-- 服务接口：`IResponsesService`
-- 请求：`ResponseRequest`
-- 响应：`Response`
+## 1. 先给一句工程结论
 
-## 2. 支持平台
+`Responses` 非流式并不是 `Chat` 把 `messages` 改名成 `input`。
 
-当前 `AiService#getResponsesService(...)` 支持：
+它的根本差异在于：
+
+- 请求是结构化 response 协议
+- 返回对象首先是 `Response`
+- 输出主路径是 `output` items，不是 `choices[0].message`
+- 工具解析和 payload 收敛发生在请求发送之前
+- service 本身不负责自动本地 tool loop
+
+## 2. 关键源码入口
+
+建议重点看：
+
+- `platform/openai/response/entity/ResponseRequest.java`
+- `platform/openai/response/entity/Response.java`
+- `platform/openai/response/OpenAiResponsesService.java`
+- `tool/ResponseRequestToolResolver.java`
+- `service/factory/AiService.java`
+
+其中最值得注意的不是数据类本身，而是：
+
+- `ResponseRequestToolResolver.resolve(...)`
+- `OpenAiResponsesService.buildOpenAiPayload(...)`
+
+前者定义“本地工具如何并入请求”，后者定义“最终哪些字段真的会发给 provider”。
+
+## 3. provider 覆盖为什么比 `Chat` 更窄
+
+当前 `AiService.createResponsesService(...)` 支持：
 
 - `OPENAI`
 - `DOUBAO`
 - `DASHSCOPE`
 
-## 3. 最小示例
+这意味着 `Responses` 当前更像：
+
+- 结构化能力主线
+- runtime 友好主线
+
+而不是 provider 覆盖最广的默认接入面。
+
+如果你的第一目标是兼容更多平台，先看 `Chat` 往往更省成本。
+
+## 4. 一次 `create(...)` 调用到底会发生什么
+
+以 `OpenAiResponsesService.create(...)` 为例，执行链大致是：
+
+1. 强制把请求改成非流式：`stream=false`
+2. 清掉 `streamOptions`
+3. 调用 `ResponseRequestToolResolver.resolve(request)`
+4. 把 `ResponseRequest` 收敛成 provider payload
+5. 发起单次 HTTP 请求并反序列化为 `Response`
+
+这里最重要的差异是第 3 步和第 4 步。
+
+它们说明：
+
+- 本地注册字段不会裸传给 provider
+- 甚至连 `extraBody` 也不会无条件原样透传
+
+## 5. `ResponseRequestToolResolver` 做的是“合并”，不是“覆盖”
+
+这是旧入口文档里最值得说清的一点。
+
+`ResponseRequestToolResolver.resolve(...)` 当前行为是：
+
+1. 如果 request 已经有 `tools`，先保留
+2. 再把 `functions` 和 `mcpServices` 解析出的工具追加进去
+3. 返回一个新的 request 副本
+
+这意味着 `Responses` 的工具入口可以同时包含：
+
+- 你手工构造的 `tools`
+- 本地 function registry
+- MCP service registry
+
+所以它比 `Chat` 更像一个“请求装配器”，而不是单一来源的工具展开器。
+
+## 6. `buildOpenAiPayload(...)` 为什么重要
+
+`OpenAiResponsesService` 当前不会把整个 `ResponseRequest` 原样序列化出去。
+
+它只显式写入允许字段，例如：
+
+- `model`
+- `input`
+- `instructions`
+- `max_output_tokens`
+- `parallel_tool_calls`
+- `previous_response_id`
+- `reasoning`
+- `store`
+- `stream`
+- `stream_options`
+- `text`
+- `tool_choice`
+- `tools`
+- `truncation`
+- `user`
+
+并且 `extraBody` 只有命中允许名单的字段才会被补进 payload。
+
+这带来的直接后果是：
+
+- 协议更稳定
+- 非法字段更少
+- 但你不能把 `extraBody` 当成“任意透传口”
+
+## 7. 一个最小调用示例
 
 ```java
 IResponsesService responsesService = aiService.getResponsesService(PlatformType.DOUBAO);
@@ -33,27 +132,22 @@ ResponseRequest request = ResponseRequest.builder()
         .build();
 
 Response response = responsesService.create(request);
-System.out.println(response);
 ```
 
-## 4. 常用字段
+如果你只是想做：
 
-`ResponseRequest` 常用参数：
+- 摘要
+- 改写
+- 结构化抽取
+- 批量离线任务
 
-- `model`
-- `input`（可字符串，也可结构化对象）
-- `instructions`
-- `reasoning`
-- `tools`
-- `toolChoice`
-- `parallelToolCalls`
-- `maxOutputTokens`
-- `temperature`
-- `topP`
-- `metadata`
-- `extraBody`
+且只关心最终结果，这种非流式路径通常已经够用。
 
-如果你要维护多轮上下文，推荐把 `ChatMemory` 转成 `input` 传入，而不是手写结构化 `input` 数组：
+## 8. 为什么多轮上下文更适合走 `ChatMemory`
+
+`Responses` 的 `input` 可以是复杂结构，但手写这套结构通常维护成本很高。
+
+更稳的方式是：
 
 ```java
 ChatMemory memory = new InMemoryChatMemory();
@@ -66,43 +160,78 @@ ResponseRequest request = ResponseRequest.builder()
         .build();
 ```
 
-如果你要按当前 canonical 主线补齐上下文能力，建议连读：[Memory / Chat Memory](/docs/core-sdk/memory/chat-memory)。
+这样做的价值不是少写几行，而是：
 
-## 5. 与 Chat 非流式的差异
+- 多轮消息
+- 多模态内容
+- tool transcript
 
-- Chat 响应主路径是 `choices[0].message`
-- Responses 响应主路径是 `output`（可含 message/reasoning/function_call 等 item）
+都能按统一事实层投影到 `Responses`。
 
-如果你要拿最终文本，通常需要从 `response.output` 中提取 `message` item 的 `output_text`。
+## 9. 为什么 `Responses` 非流式不会像 `Chat` 那样自动把工具跑完
 
-## 6. OpenAI 请求体字段收敛说明
+当前 `OpenAiResponsesService.create(...)` 的职责是：
 
-在 `OpenAiResponsesService` 中，SDK 会对请求体字段做白名单收敛。
+- 解析工具
+- 发送请求
+- 返回 `Response`
 
-含义：
+它没有在 service 内部做那种：
 
-- 只有协议允许字段会被发送
-- `extraBody` 中不在白名单的字段会被忽略
+- 收到 function call
+- 本地执行工具
+- 回填输出
+- 自动发下一轮
 
-这能减少无效字段导致的请求失败。
+的默认闭环。
 
-## 7. 非流式适用场景
+这不是缺功能，而是分层选择：
 
-- 你只关心最终结果，不关心中间事件
-- 你希望简化回调处理逻辑
-- 批量离线任务（摘要、改写、分类）
+- `Responses` 更偏向把过程状态交给上层 runtime 决策
+- `Chat` 更偏向在 service 层直接帮你闭环
 
-## 8. 常见问题
+## 10. 调用后你真正该解析什么
 
-### 8.1 返回对象有内容但你看不到文本
+在 `Responses` 里，不要再带着 `choices[0].message.content` 的心智找结果。
 
-`Response` 不是单一 `content` 字段，注意解析 `output` 列表。
+你真正该关心的是：
 
-### 8.2 延迟比 Chat 更明显
+- `response.getOutput()`
+- 各个 output item 的 `type`
+- item content 里的文本 part
 
-部分模型在 Responses 下会产出更多中间语义项，建议用流式提升体验。
+如果你只想抽最终文本，就写一个明确的提取函数，而不是假设存在单一 `content` 字段。
 
-继续阅读建议：
+## 11. 常见失败路径
 
-- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
-- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
+### 11.1 你传了 `extraBody`，但 provider 端看不到
+
+优先排查：
+
+- 字段名是否在当前 service 允许名单里
+- 该字段是否已经被标准字段占用
+
+### 11.2 工具没进请求
+
+优先排查：
+
+- `functions` / `mcpServices` 是否真的有值
+- `tools` 是否被正确合并
+- 你是不是误把本地注册字段当成最终 payload
+
+### 11.3 返回对象有东西，但你“看不到文本”
+
+这通常不是模型没回答，而是你还在按 `Chat` 的单 message 心智取值。
+
+## 12. 还有哪些 lifecycle 能力别忽略
+
+当前 `IResponsesService` 还提供了：
+
+- `retrieve(responseId)`
+- `delete(responseId)`
+
+这说明 `Responses` 在设计上天然更接近“可追踪的 response 资源”，而不只是“一次聊天返回一段字符串”。
+
+## 13. 这一页的结论
+
+> AI4J 的 `Responses` 非流式是一条结构化 response 主线。请求会先经过 `ResponseRequestToolResolver` 合并工具，再由 service 按允许字段构建 provider payload，最终返回 `Response` 而不是单条 assistant message。它更适合结构化输出和 runtime 编排，但不会像 `Chat` 那样默认替你完成本地工具闭环。

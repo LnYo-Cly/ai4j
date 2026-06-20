@@ -1,100 +1,103 @@
 # Core SDK 总览
 
-`Core SDK` 是 AI4J 的唯一基座层，对应仓库里的核心模块是 `ai4j/`。
+`Core SDK` 对应仓库里的 `ai4j/` 模块，是 AI4J 的基础能力层。你可以只使用这一层完成模型调用、Tool、Skill、MCP、Memory、Search/RAG 和 provider 扩展，也可以在它稳定后再接 Spring Boot、Agent、Coding Agent 或 FlowGram。
 
-如果你只能先讲清楚一个部分，那应该先讲清楚这一层。因为后面的 `Spring Boot`、`Agent`、`Coding Agent`、`Flowgram`，本质上都在复用或扩展这里的能力。
+这页先回答三个问题：
 
-## 1. 先用一句话理解这一层
+- Core SDK 到底解决什么。
+- 你应该从哪条能力线开始。
+- 哪些能力是主线，哪些属于进阶或 provider 相关能力。
 
-`Core SDK` 解决的是：在 Java 里，如何用一套连续的工程模型把模型调用、工具接入、协议扩展、会话上下文、RAG 和能力扩展组织起来。
+## 一句话定位
 
-所以它不是单独的“Chat 章节”，也不是“工具杂项区”，而是整个 AI4J 的基础能力总装层。
+Core SDK 解决的是：
 
-## 2. 这一层到底包含什么
+> 在 Java 8+ 项目里，用一套连续的工程模型接入模型、工具、协议能力、上下文、检索增强和扩展点。
 
-可以把 `Core SDK` 理解成七个并列能力面：
+它不是单独的 `Chat` wrapper，也不是把几个 provider API 简单包一层。它更像 AI4J 的能力底座：上层 starter、Agent、Coding Agent、FlowGram 都应复用这层能力，而不是重新定义模型、工具或 RAG。
 
-- `Model Access`：`Chat`、`Responses`、流式、多模态、统一请求/返回约定
-- `Tools`：本地函数工具、注解式工具、执行模型、安全边界
-- `Skills`：可发现、按需加载的说明/模板/工作流资源
-- `MCP`：外部能力的协议化接入、网关、传输、发布语义
-- `Memory`：基础会话上下文，以及与工具边界的划分
-- `Search & RAG`：联网增强、`Embedding`、`Rerank`、向量存储、入库和检索
-- `Extension`：provider、模型、服务入口与网络栈扩展
+## 你应该从哪里开始
 
-这七块合起来，才构成 AI4J 的基座。
+| 目标 | 入口 | 你会先学到 |
+| --- | --- | --- |
+| 只想发第一条消息 | [Model Access](/docs/core-sdk/model-access/overview) | Chat、Responses、streaming、多模态怎么选 |
+| 想让模型调用本地能力 | [Tools](/docs/core-sdk/tools/overview) | Function Tool、schema、执行模型和安全边界 |
+| 想给模型可复用说明和流程 | [Skills](/docs/core-sdk/skills/overview) | Skill 文件、发现、加载和与 Tool/MCP 的边界 |
+| 想接外部工具或发布 Java 能力 | [MCP](/docs/mcp/overview) | client、transport、gateway、server publish |
+| 想做会话上下文 | [Memory](/docs/core-sdk/memory/overview) | chat memory、session、与 tool 的边界 |
+| 想做知识库或检索增强 | [Search & RAG](/docs/core-sdk/search-and-rag/overview) | ingestion、chunk、embedding、vector、rerank、citation |
+| 想扩展 provider 或服务 | [Extension](/docs/core-sdk/extension/overview) | provider、model、service、HTTP stack 扩展方式 |
 
-## 3. 代码里这层长什么样
+如果你是第一次使用，先看 [Quickstart for Java](/docs/start-here/quickstart-java)，再回到本页选择能力线。
 
-在源码里，`ai4j/src/main/java/io/github/lnyocly/ai4j/` 下面已经能看到这套分层的主干：
+## Core SDK 包含哪些能力
 
-- `service`、`platform`
-- `tool`、`tools`
-- `skill`
-- `mcp`
-- `memory`
-- `rag`、`vector`、`rerank`、`websearch`、`document`
-- `network`、`config`、`interceptor`、`auth`
+| 能力 | 当前定位 | 适合场景 |
+| --- | --- | --- |
+| Model Access | 主线 | 调用 Chat、Responses、streaming、多模态等模型能力 |
+| Tools | 主线 | 把本地 Java 函数或受控能力暴露给模型 |
+| Skills | 进阶主线 | 让模型按需读取说明、模板、任务流程和经验资产 |
+| MCP | 进阶主线 | 通过协议接入外部工具、服务、资源或 prompt |
+| Memory | 主线 | 保留会话状态、历史消息和上下文边界 |
+| Search & RAG | 进阶主线 | 文档入库、检索增强、向量库、rerank、引用追踪 |
+| Extension | 进阶参考 | 新 provider、新模型、新服务实现或网络栈扩展 |
+| Image / Audio / Realtime | provider 相关能力 | 依赖具体 provider 的能力覆盖 |
 
-不需要一开始记住所有包名，但你应该先记住：这个模块不是只围绕某一个接口长出来的，而是围绕一整套基础能力面组织的。
+统一入口不等于所有 provider 能力完全一致。不同平台对 Chat、Responses、Embedding、Rerank、Image、Audio、Realtime 的支持不同，使用前应查看 [Platform and Service Matrix](/docs/core-sdk/platform-service-matrix)。
 
-## 4. 什么属于 Core SDK，什么不属于
+## 三个概念边界
 
-属于这一层的，是“任何上层模块都可能复用的基础能力”。
+### Tool
 
-例如：
+Tool 是可被模型调用的结构化能力。它通常有名称、描述、参数 schema 和执行器。第一条主线是本地 Function Tool。
 
-- provider 与服务访问
-- `Function Call`
-- `Skill`
-- `MCP`
-- `ChatMemory`
-- RAG 与检索链
-- 扩展点和统一入口
+### Skill
 
-不属于这一层的，是更上层、更场景化的运行时：
+Skill 是模型可读取的说明资产，通常包含 `SKILL.md`、模板、流程和经验。它帮助模型“知道怎么做”，但它本身不是可执行工具。
 
-- `Spring Boot` 的自动装配与 Bean 扩展
-- `Agent` 的 runtime、orchestration、trace
-- `Coding Agent` 的 workspace、session、approval、CLI / TUI / ACP
-- `Flowgram` 的节点图运行与平台后端接口
+### MCP
 
-这个边界很重要，因为它决定了文档阅读和代码定位都不会混层。
+MCP 是协议化能力连接层。它既可以连接第三方 MCP server，也可以把 Java 能力发布成 MCP server，还可以通过 gateway 管理多服务工具面。
 
-## 5. 为什么这层必须先学
+这三者可以组合，但不能混成一个概念。Tool 负责调用，Skill 负责说明，MCP 负责协议连接。
 
-### 5.1 它决定你怎么解释整个项目
+## 与上层模块的关系
 
-如果你能讲清楚 `Core SDK`，你基本就能讲清楚：
+| 上层模块 | 复用 Core SDK 的方式 |
+| --- | --- |
+| Spring Boot starter | 把 Core SDK 配置、服务和 Bean 装进 Spring 容器 |
+| Agent | 在模型、工具、memory 之上增加 runtime、workflow、trace、team |
+| Coding Agent | 在 Agent 和 Core SDK 之上增加 workspace、session、approval、CLI/TUI/ACP |
+| FlowGram | 把 Core/Agent 能力嵌进显式工作流节点和 task API |
 
-- AI4J 不是一个单点 SDK
-- 上层模块为什么不是各写各的
-- `Function Call`、`Skill`、`MCP` 的归属为什么要分开
+因此，Core SDK 不是“读完就跳过”的基础章节，而是后续所有专题的共同前提。
 
-### 5.2 它是上层模块共享的能力底座
+## 生产接入要先确认什么
 
-上层模块复用关系可以简化理解为：
+- provider、model、baseUrl、key 来源是否清楚。
+- 使用的 service 面是否被目标 provider 支持。
+- Tool 和 MCP 是否默认最小暴露。
+- RAG 是否继承业务权限和数据来源元信息。
+- streaming、超时、失败重试和日志脱敏是否有边界。
+- 多模块使用时是否通过 BOM 对齐版本。
 
-- `Spring Boot` 复用这层的配置和能力装配
-- `Agent` 复用这层的模型访问、工具和 `MCP`
-- `Coding Agent` 复用这层的工具、`Skill`、`MCP` 和基础模型接入
-- `Flowgram` 复用这层的模型、工具、知识库和部分 agentic 能力
+上线前建议看：
 
-所以这一层不是“读过就算”，而是后续所有专题的共同前提。
+- [Version Compatibility](/docs/reference/version-compatibility)
+- [Security Overview](/docs/security/overview)
+- [Production Checklist](/docs/operations/production-checklist)
+- [Troubleshooting](/docs/troubleshooting/overview)
 
-## 6. 建议怎么读这一层
+## 推荐阅读顺序
 
-推荐按下面顺序：
+1. [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
+2. [Platform and Service Matrix](/docs/core-sdk/platform-service-matrix)
+3. [Model Access](/docs/core-sdk/model-access/overview)
+4. [Tools](/docs/core-sdk/tools/overview)
+5. [Skills](/docs/core-sdk/skills/overview)
+6. [MCP](/docs/mcp/overview)
+7. [Memory](/docs/core-sdk/memory/overview)
+8. [Search & RAG](/docs/core-sdk/search-and-rag/overview)
+9. [Extension](/docs/core-sdk/extension/overview)
 
-1. [Strengths and Differentiators](/docs/core-sdk/strengths-and-differentiators)
-2. [Architecture and Module Map](/docs/core-sdk/architecture-and-module-map)
-3. [Service Entry and Registry](/docs/core-sdk/service-entry-and-registry)
-4. [Model Access](/docs/core-sdk/model-access/overview)
-5. [Tools](/docs/core-sdk/tools/overview)
-6. [Skills](/docs/core-sdk/skills/overview)
-7. [MCP](/docs/core-sdk/mcp/overview)
-8. [Memory](/docs/core-sdk/memory/overview)
-9. [Search & RAG](/docs/core-sdk/search-and-rag/overview)
-10. [Extension](/docs/core-sdk/extension/overview)
-
-如果你是为了面试或架构表达，前 4 页就已经是最值得反复复述的主线。
+旧的 `ai-basics/`、`core-sdk/chat/`、`core-sdk/responses/`、`core-sdk/mcp/` 中仍有历史细节，但当前正式阅读路径以 sidebar 和 [Documentation Map](/docs/start-here/documentation-map) 为准。

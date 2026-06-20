@@ -59,7 +59,13 @@ public final class JlineCodeCommandRunner {
                 slashCommandController.setSessionManager(sessionManager);
             }
             if (terminal instanceof JlineShellTerminalIO) {
-                ((JlineShellTerminalIO) terminal).updateSessionContext(null, options.getModel(), options.getWorkspace());
+                ((JlineShellTerminalIO) terminal).updateSessionContext(
+                        null,
+                        options.getProvider() == null ? null : options.getProvider().getPlatform(),
+                        protocol == null ? null : protocol.getValue(),
+                        options.getModel(),
+                        options.getWorkspace()
+                );
                 ((JlineShellTerminalIO) terminal).showIdle("Enter a prompt or /command");
             }
             CodingCliSessionRunner runner = new CodingCliSessionRunner(

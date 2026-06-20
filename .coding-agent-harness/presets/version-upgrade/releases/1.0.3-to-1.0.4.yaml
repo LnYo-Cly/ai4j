@@ -1,0 +1,38 @@
+schemaVersion: version-upgrade-manifest/v1
+fromVersion: 1.0.3
+toVersion: 1.0.4
+summary: Upgrade Harness projects from 1.0.3 to 1.0.4 with bundled preset seeding, preset discovery guidance, user-level skill installation checks, and idempotent preset repair flows.
+safeActions:
+  - id: seed-project-presets
+    title: Refresh project-seeded bundled presets
+    mode: report-only
+    command: harness preset seed --project --force
+    writeGlobs: [.coding-agent-harness/presets/**]
+    verify: harness preset audit --project
+  - id: audit-bundled-presets
+    title: Audit project presets for stale or missing bundled presets
+    mode: report-only
+    command: harness preset audit --project
+    writeGlobs: [{{paths.tasksRoot}}/**/artifacts/version-upgrade/**]
+    verify: audit output reviewed
+manualConfirmations:
+  - id: confirm-project-preset-overrides
+    title: Confirm project-level preset overrides are intentional before reseeding
+    verify: inspect .coding-agent-harness/presets and preset audit output
+  - id: confirm-agent-installation-guidance
+    title: Confirm agents discover available presets before choosing task presets
+    verify: installation guide and local preset list review
+blockedActions:
+  - id: overwrite-project-preset-overrides-without-review
+    title: Overwrite project preset overrides without owner review
+    reason: Project presets may intentionally override bundled defaults.
+  - id: skip-preset-discovery
+    title: Choose task presets without running preset discovery
+    reason: 1.0.4 makes preset discovery part of the target-facing workflow.
+verify:
+  - id: preset-list
+    command: harness preset list --json
+  - id: preset-audit-project
+    command: harness preset audit --project
+  - id: preset-check-version-upgrade
+    command: harness preset check version-upgrade --json

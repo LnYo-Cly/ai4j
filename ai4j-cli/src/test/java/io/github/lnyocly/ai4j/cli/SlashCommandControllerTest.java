@@ -36,12 +36,15 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/theme ");
         assertContainsValue(candidates, "/stream ");
         assertContainsValue(candidates, "/mcp ");
+        assertContainsValue(candidates, "/sandbox ");
         assertContainsValue(candidates, "/providers");
         assertContainsValue(candidates, "/provider ");
         assertContainsValue(candidates, "/model ");
         assertContainsValue(candidates, "/experimental ");
         assertContainsValue(candidates, "/skills ");
         assertContainsValue(candidates, "/agents ");
+        assertContainsValue(candidates, "/extensions");
+        assertContainsValue(candidates, "/extension ");
         assertContainsValue(candidates, "/process ");
         assertContainsValue(candidates, "/team");
     }
@@ -202,6 +205,50 @@ public class SlashCommandControllerTest {
     }
 
     @Test
+    public void suggestExtensionActionsAfterTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-extension-actions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/extension ", "/extension ".length());
+
+        assertContainsValue(candidates, "list ");
+        assertContainsValue(candidates, "inspect ");
+        assertContainsValue(candidates, "run ");
+        assertContainsValue(candidates, "resource ");
+    }
+
+    @Test
+    public void suggestExtensionValidateAllOption() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-extension-validate");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/extension validate ", "/extension validate ".length());
+
+        assertContainsValue(candidates, "--all");
+    }
+
+    @Test
+    public void suggestExtensionResourceTypesAndActivationOptions() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-extension-resource");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/extension resource ", "/extension resource ".length());
+
+        assertContainsValue(candidates, "skill ");
+        assertContainsValue(candidates, "prompt ");
+        assertContainsValue(candidates, "--enable ");
+    }
+
+    @Test
     public void suggestExactExecutableArgumentCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
         Path workspace = Files.createTempDirectory("ai4j-cli-slash-stream-exact");
         SlashCommandController controller = new SlashCommandController(
@@ -246,6 +293,36 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "enable ");
         assertContainsValue(candidates, "pause ");
         assertContainsValue(candidates, "remove ");
+    }
+
+    @Test
+    public void suggestSandboxActionsAfterTrailingSpaceIncludesStatusAttachAndDisable() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-actions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox ", "/sandbox ".length());
+
+        assertContainsValue(candidates, "status");
+        assertContainsValue(candidates, "attach ");
+        assertContainsValue(candidates, "disable");
+    }
+
+    @Test
+    public void suggestExactSandboxCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-exact");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox", "/sandbox".length());
+
+        assertContainsValue(candidates, "/sandbox ");
+        assertTrue(!containsValue(candidates, "/sandbox status"));
+        assertTrue(!containsValue(candidates, "/sandbox attach "));
     }
 
     @Test

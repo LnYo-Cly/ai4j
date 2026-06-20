@@ -96,9 +96,30 @@ public class CliProviderConfigManager {
                                              String baseUrlOverride,
                                              Map<String, String> env,
                                              Properties properties) {
+        return resolveWithProfile(
+                null,
+                providerOverride,
+                protocolOverride,
+                modelOverride,
+                apiKeyOverride,
+                baseUrlOverride,
+                env,
+                properties
+        );
+    }
+
+    public CliResolvedProviderConfig resolveWithProfile(String profileOverride,
+                                                        String providerOverride,
+                                                        String protocolOverride,
+                                                        String modelOverride,
+                                                        String apiKeyOverride,
+                                                        String baseUrlOverride,
+                                                        Map<String, String> env,
+                                                        Properties properties) {
         CliProvidersConfig providersConfig = loadProvidersConfig();
         CliWorkspaceConfig workspaceConfig = loadWorkspaceConfig();
-        CliProviderProfile activeProfile = resolveProfile(providersConfig, workspaceConfig.getActiveProfile());
+        String activeProfileName = firstNonBlank(profileOverride, workspaceConfig.getActiveProfile());
+        CliProviderProfile activeProfile = resolveProfile(providersConfig, activeProfileName);
         CliProviderProfile defaultProfile = resolveProfile(providersConfig, providersConfig.getDefaultProfile());
         PlatformType explicitProvider = isBlank(providerOverride) ? null : resolveProvider(providerOverride);
         if (explicitProvider != null) {
@@ -106,8 +127,8 @@ public class CliProviderConfigManager {
             defaultProfile = alignProfileWithProvider(defaultProfile, explicitProvider);
         }
 
-        String effectiveProfile = !isBlank(workspaceConfig.getActiveProfile()) && activeProfile != null
-                ? workspaceConfig.getActiveProfile().trim()
+        String effectiveProfile = !isBlank(activeProfileName) && activeProfile != null
+                ? activeProfileName.trim()
                 : (!isBlank(providersConfig.getDefaultProfile()) && defaultProfile != null
                 ? providersConfig.getDefaultProfile().trim()
                 : null);

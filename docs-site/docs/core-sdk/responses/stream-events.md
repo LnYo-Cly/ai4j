@@ -1,12 +1,56 @@
-﻿---
+---
 sidebar_position: 21
 ---
 
 # Responses（流式事件模型）
 
-这是 Responses 与 Chat 最大差异点：Responses 是**事件流**，而不是只吐文本 token。
+这是 `Responses` 和 `Chat` 差异最大的地方。
 
-## 1. 调用方式
+如果你先看统一抽象，建议直接连读：[Model Access / Streaming](/docs/core-sdk/model-access/streaming)。
+
+## 1. 先给一句工程结论
+
+`Responses` 流式不是“文本 token 流”，而是“事件驱动的 response 生命周期流”。
+
+在当前实现里：
+
+- `createStream(...)` 负责把请求组织成 SSE 调用
+- `ResponseSseListener` 负责把离散事件聚合成状态
+
+所以你消费的重点不应该只是“现在屏幕上打印什么字”，而应该是：
+
+- 当前 event 是什么
+- 文本形成到哪了
+- reasoning 有没有形成
+- function arguments 是否闭合
+- response 是否已进入终态
+
+## 2. 关键源码入口
+
+建议重点看：
+
+- `platform/openai/response/OpenAiResponsesService.java`
+- `listener/ResponseSseListener.java`
+- `platform/openai/response/entity/ResponseStreamEvent.java`
+
+其中：
+
+- service 定义了何时补默认流参数、何时结束流
+- listener 定义了怎样把 event 序列收敛成可读状态
+
+## 3. 发起流式请求前，service 会先做什么
+
+以 `OpenAiResponsesService.createStream(...)` 为例：
+
+1. 如果 `request.getStream()` 不是 `true`，就强制设为 `true`
+2. 如果 `streamOptions` 为空，补一个 `new StreamOptions(true)`
+3. 调用 `ResponseRequestToolResolver.resolve(request)` 合并本地 tools
+4. 构建 provider payload
+5. 通过 `EventSource` 发起流式请求
+
+这说明 `Responses` 流式和非流式的差异主要在输出模式，不在工具收敛和 payload 构建逻辑。
+
+## 4. 一个最小监听器示例
 
 ```java
 ResponseRequest request = ResponseRequest.builder()
@@ -25,95 +69,160 @@ ResponseSseListener listener = new ResponseSseListener() {
 };
 
 responsesService.createStream(request, listener);
-System.out.println("\nstream finished");
 ```
 
-## 2. 典型事件类型
+这里真正重要的不是打印文本，而是明白 `onEvent()` 每次拿到的是“已经被 listener 更新过的当前状态”。
 
-常见事件（平台可能有差异）：
+## 5. `ResponseSseListener` 会聚合哪些状态
 
-- `response.created`
-- `response.in_progress`
+当前 listener 维护：
+
+- `events`
+- `currEvent`
+- `response`
+- `outputText`
+- `reasoningSummary`
+- `functionArguments`
+- `currText`
+- `currFunctionArguments`
+
+这意味着它同时承担了三种角色：
+
+- 完整事件序列缓存
+- 当前事件视图
+- 最终 response 快照聚合器
+
+因此它更像一个轻量状态机，而不是 callback 打印器。
+
+## 6. 当前实现明确处理了哪些核心事件
+
+从 `ResponseSseListener` 可以直接看到，当前重点聚合这些事件：
+
 - `response.output_text.delta`
+- `response.output_text.done`
 - `response.reasoning_summary_text.delta`
+- `response.reasoning_summary_text.done`
 - `response.function_call_arguments.delta`
+- `response.function_call_arguments.done`
+
+这些事件分别驱动：
+
+- `outputText`
+- `reasoningSummary`
+- `functionArguments`
+
+的累积。
+
+所以如果你只读最终 `response`，会错过很多对 runtime 很关键的中间状态。
+
+## 7. 为什么这条流更适合 runtime，而不是 service 内自动闭环
+
+和 `Chat` 最大的不同是：
+
+- `Responses` service 不会在内部帮你收到函数参数后立刻执行工具，再自动发下一轮
+
+它做的只是：
+
+- 把流接起来
+- 把事件聚合起来
+- 在终态时结束
+
+这给上层留下了更大的编排空间，例如：
+
+- 是否等待完整 reasoning
+- 是否在参数闭合前就开始预检查
+- 是否把工具执行放到专门的 agent runtime
+
+## 8. 终态判定和 `Chat` 完全不同
+
+`OpenAiResponsesService` 当前把下面几类事件视为终态：
+
 - `response.completed`
 - `response.failed`
 - `response.incomplete`
 
-## 3. `ResponseSseListener` 字段说明
+另外 SSE 的 `[DONE]` 也会触发完成。
 
-- `getCurrEvent()`：当前事件对象
-- `getEvents()`：全部事件列表
-- `getCurrText()`：当前文本增量
-- `getOutputText()`：累计文本
-- `getReasoningSummary()`：累计 reasoning summary
-- `getCurrFunctionArguments()`：当前函数参数增量
-- `getFunctionArguments()`：累计函数参数
-- `getResponse()`：聚合后的 Response 快照
+这说明 `Responses` 的结束语义是“response lifecycle 结束”，不是 `finish_reason=stop` 那种消息式终止心智。
 
-## 4. 为什么看起来“不是 token-by-token”
+## 9. 为什么你看到的刷新粒度不像 token
 
-因为事件粒度由平台决定：
+这里的单位首先是 event，不是 token。
 
-- 有的平台按字输出
-- 有的平台按词或短句输出
-- 有的平台一次给整段
+即使是 `response.output_text.delta`，上游也可能按：
 
-所以你看到“一句话才刷新一次”不一定是错误，有可能是上游分片策略。
+- 字
+- 词
+- 短句
+- 整段
 
-## 5. 终态判定
+发出来。
 
-`OpenAiResponsesService` / `DoubaoResponsesService` 里，以下事件会触发完成：
+因此“不是 token-by-token”通常只是 provider 的事件切片策略不同，不是 SDK 流式坏了。
 
-- `response.completed`
-- `response.failed`
-- `response.incomplete`
+## 10. 什么时候该看 `currText`，什么时候该看 `currFunctionArguments`
 
-以及 SSE 的 `[DONE]`。
+### 你在做普通文本 UI
 
-## 6. 参数流观察技巧
+优先看：
 
-如果你在做函数调用排障，建议在回调里打印：
+- `getCurrText()`
+- `getOutputText()`
 
-```java
-if (!getCurrFunctionArguments().isEmpty()) {
-    System.out.println("ARGS DELTA=" + getCurrFunctionArguments());
-}
-```
+### 你在排查函数调用或想做工具预览
 
-这样可以确认参数是模型没生成，还是你只打印了文本增量。
+优先看：
 
-## 7. 常见坑
+- `getCurrFunctionArguments()`
+- `getFunctionArguments()`
+- `getCurrEvent().getType()`
 
-### 7.1 只看最终 `listener.getResponse()`，误判“流式没输出”
+这能帮你判断到底是：
 
-`getResponse()` 是聚合快照，不代表中间增量没来。
+- 模型根本没规划工具
+- 还是你只消费了文本事件
 
-### 7.2 控制台缓冲导致晚显示
+## 11. 常见失败路径
 
-IDE 控制台可能缓冲，建议：
+### 11.1 只看 `getResponse()`，误判“流式没有过程”
 
-- 简化输出
-- 使用 `System.out.print` + 手动换行
-- 对比事件时间戳
+`getResponse()` 是聚合快照，不是事件回放本身。
 
-### 7.3 流式回调异常中断
+如果你不同时观察 `events` 或 `currText`，自然会以为中间什么都没发生。
 
-在 `onEvent()` 里抛异常会直接中断流式处理，建议回调内部捕获异常。
+### 11.2 流结束了，但只有 `incomplete`
 
-## 8. 生产建议
+这表示 response 生命周期终止了，但没有形成一个完整可用结果。
 
-- 将事件写入结构化日志（type、sequence、latency、traceId）
-- 前端按事件类型渲染，而不是只按文本渲染
-- 高价值场景保存 `response.failed` 的 error payload 便于追查
+这时更应该保留：
 
-## 9. 与 Agent 的关系
+- `currEvent`
+- `events`
+- 错误 payload
 
-如果你要自动处理“函数参数流 -> 执行工具 -> 再请求模型”，
-建议在 Agent runtime 层实现，不要把流程硬写在 Controller。
+而不是只看最终文本为空。
 
-## 10. 继续阅读
+### 11.3 你在回调里把异常抛出去了
 
-- [Model Access / Streaming](/docs/core-sdk/model-access/streaming)
-- [Model Access / Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
+回调层异常会直接破坏流式消费，因此高价值场景最好在 `onEvent()` 内自己捕获并记录错误。
+
+## 12. 生产使用时最有价值的日志字段
+
+如果你要把 `Responses` 真正用到 runtime 或前端事件渲染，至少建议记录：
+
+- event `type`
+- 时间戳或序号
+- `currText`
+- `currFunctionArguments`
+- 终态类型
+- `response` 标识信息
+
+因为很多线上问题不是“模型没回答”，而是：
+
+- reasoning 到了，正文没到
+- 参数流到了，工具没执行
+- response 进入了 `failed` 或 `incomplete`
+
+## 13. 这一页的结论
+
+> `Responses` 流式是事件生命周期接口，不是文本输出接口。`ResponseSseListener` 会同时聚合事件序列、文本、reasoning、函数参数和最终 response 快照，而 service 本身只负责把流接起来并在终态收口，不会替你自动完成工具闭环。因此它天然更适合 agent runtime、trace 和结构化前端，而不是只打印一段回复。

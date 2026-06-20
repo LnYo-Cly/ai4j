@@ -842,15 +842,17 @@ public class AcpJsonRpcServer implements Closeable {
         if (event.getType() == SessionEventType.TEAM_MESSAGE) {
             return toTeamMessageAcpUpdate(event);
         }
-        if (event.getType() == SessionEventType.AUTO_CONTINUE
-                || event.getType() == SessionEventType.AUTO_STOP
-                || event.getType() == SessionEventType.BLOCKED) {
-            return newMap(
-                    "sessionUpdate", "agent_message_chunk",
-                    "content", textContent(firstNonBlank(event.getSummary(), event.getType().name().toLowerCase(Locale.ROOT).replace('_', ' ')))
-            );
+        if (isLoopControlEvent(event)) {
+            return null;
         }
         return null;
+    }
+
+    private boolean isLoopControlEvent(SessionEvent event) {
+        return event != null
+                && (event.getType() == SessionEventType.AUTO_CONTINUE
+                || event.getType() == SessionEventType.AUTO_STOP
+                || event.getType() == SessionEventType.BLOCKED);
     }
 
     private String payloadText(SessionEvent event, String key, String defaultValue) {
@@ -2320,13 +2322,8 @@ public class AcpJsonRpcServer implements Closeable {
                         "content", textContent(payloadText(event, "error", event.getSummary()))
                 );
             }
-            if (event.getType() == SessionEventType.AUTO_CONTINUE
-                    || event.getType() == SessionEventType.AUTO_STOP
-                    || event.getType() == SessionEventType.BLOCKED) {
-                return newMap(
-                        "sessionUpdate", "agent_message_chunk",
-                        "content", textContent(firstNonBlank(event.getSummary(), event.getType().name().toLowerCase(Locale.ROOT).replace('_', ' ')))
-                );
+            if (isLoopControlEvent(event)) {
+                return null;
             }
             return null;
         }

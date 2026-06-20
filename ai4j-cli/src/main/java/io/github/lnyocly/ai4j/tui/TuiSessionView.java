@@ -158,6 +158,16 @@ public class TuiSessionView implements TuiRenderer {
     }
 
     private String renderHeader(CodingSessionDescriptor descriptor, TuiRenderContext context) {
+        String provider = clip(firstNonBlank(
+                descriptor == null ? null : descriptor.getProvider(),
+                context == null ? null : context.getProvider(),
+                "provider"
+        ), 18);
+        String protocol = clip(firstNonBlank(
+                descriptor == null ? null : descriptor.getProtocol(),
+                context == null ? null : context.getProtocol(),
+                "protocol"
+        ), 14);
         String model = clip(firstNonBlank(
                 descriptor == null ? null : descriptor.getModel(),
                 context == null ? null : context.getModel(),
@@ -171,6 +181,10 @@ public class TuiSessionView implements TuiRenderer {
         String sessionId = shortenSessionId(descriptor == null ? null : descriptor.getSessionId());
         StringBuilder line = new StringBuilder();
         line.append(TuiAnsi.bold(TuiAnsi.fg("AI4J", theme.getBrand(), ansi), ansi));
+        line.append("  ");
+        line.append(TuiAnsi.fg(provider, theme.getBrand(), ansi));
+        line.append(TuiAnsi.fg("/", theme.getMuted(), ansi));
+        line.append(TuiAnsi.fg(protocol, theme.getAccent(), ansi));
         line.append("  ");
         line.append(TuiAnsi.fg(model, theme.getSuccess(), ansi));
         line.append("  ");
@@ -1287,6 +1301,10 @@ public class TuiSessionView implements TuiRenderer {
                     : firstNonBlank(item.getCommand(), item.getLabel());
             String detail = clip(firstNonBlank(item.getDetail(), ""), 72);
             String value = prefix + clip(label, 32);
+            String category = slashMode ? paletteCategory(item, label) : trimToNull(item.getGroup());
+            if (!isBlank(category)) {
+                value = value + "  " + category;
+            }
             if (!isBlank(detail)) {
                 value = clip(value + "  " + detail, 108);
             }
@@ -1296,6 +1314,63 @@ public class TuiSessionView implements TuiRenderer {
             lines.add("...");
         }
         return lines;
+    }
+
+    private String paletteCategory(TuiPaletteItem item, String label) {
+        String command = firstNonBlank(
+                item == null ? null : item.getCommand(),
+                label
+        );
+        if (isBlank(command)) {
+            return null;
+        }
+        String normalized = command.trim().toLowerCase(Locale.ROOT);
+        if (normalized.startsWith("/providers") || normalized.startsWith("/provider")) {
+            return "Provider";
+        }
+        if (normalized.startsWith("/model")) {
+            return "Model";
+        }
+        if (normalized.startsWith("/extensions") || normalized.startsWith("/extension")) {
+            return "Extensions";
+        }
+        if (normalized.startsWith("/mcp")) {
+            return "MCP";
+        }
+        if (normalized.startsWith("/team")) {
+            return "Team";
+        }
+        if (normalized.startsWith("/process")) {
+            return "Process";
+        }
+        if (normalized.startsWith("/theme")) {
+            return "Theme";
+        }
+        if (normalized.startsWith("/skills")) {
+            return "Skills";
+        }
+        if (normalized.startsWith("/agents")) {
+            return "Agents";
+        }
+        if (normalized.startsWith("/experimental")) {
+            return "Experimental";
+        }
+        String group = item == null ? null : trimToNull(item.getGroup());
+        if (isBlank(group) || "command".equalsIgnoreCase(group)) {
+            return null;
+        }
+        return titleCase(group);
+    }
+
+    private String titleCase(String value) {
+        String text = trimToNull(value);
+        if (isBlank(text)) {
+            return null;
+        }
+        if (text.length() == 1) {
+            return text.toUpperCase(Locale.ROOT);
+        }
+        return text.substring(0, 1).toUpperCase(Locale.ROOT) + text.substring(1);
     }
 
     private String renderComposer(TuiInteractionState state) {

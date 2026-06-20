@@ -1,0 +1,54 @@
+version: ai4j.agent/v1
+id: coding-assistant
+name: Coding Assistant
+
+model:
+  provider: openai-compatible
+  profile: default
+  model: gpt-4.1
+  options:
+    temperature: 0.2
+
+instructions:
+  system: |
+    You are a careful coding agent.
+  developer: Prefer small, verifiable changes.
+  variables:
+    language: zh-CN
+
+plugins:
+  - id: ask-user
+  - id: todo
+    enabled: true
+    config:
+      limit: 20
+
+tools:
+  - ref: coding.file
+  - ref: coding.shell
+    approval: safe
+    config:
+      timeoutSeconds: 60
+
+session:
+  memory:
+    enabled: true
+    scope: project
+  compact:
+    enabled: true
+    trigger:
+      contextRatio: 0.75
+    strategy: structured-summary
+    preserve:
+      - instructions
+      - open_decisions
+      - changed_files
+      - failed_commands
+      - test_results
+
+sandbox:
+  enabled: false
+
+workflow:
+  mode: react
+  maxTurns: 20

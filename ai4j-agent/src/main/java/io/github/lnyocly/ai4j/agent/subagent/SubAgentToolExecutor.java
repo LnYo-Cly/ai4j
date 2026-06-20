@@ -262,7 +262,7 @@ public class SubAgentToolExecutor implements ToolExecutor {
                 Integer.valueOf(0),
                 System.currentTimeMillis() - startedAt
         ));
-        throw new IllegalStateException("Handoff denied for subagent tool " + toolName + ": " + deniedReason);
+        throw new HandoffPolicyException("Handoff denied for subagent tool " + toolName + ": " + deniedReason);
     }
 
     private String onError(AgentToolCall call,

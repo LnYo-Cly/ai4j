@@ -9,6 +9,13 @@ import io.github.lnyocly.ai4j.coding.skill.CodingSkillDiscovery;
 import io.github.lnyocly.ai4j.coding.workspace.LocalWorkspaceFileService;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceFileReadResult;
+import io.github.lnyocly.ai4j.extension.Ai4jExtension;
+import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContext;
+import io.github.lnyocly.ai4j.extension.ExtensionManifest;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
+import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -120,6 +127,68 @@ public class CodingSkillSupportTest {
         }
     }
 
+    @Test
+    public void shouldInjectEnabledExtensionSkillAndPromptResources() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-extension-resources").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("Extension resource workspace")
+                .build();
+        ExtensionRegistry registry = ExtensionRegistry.of(new CodingResourceExtension())
+                .enable("coding-resource-pack");
+        CapturingModelClient modelClient = new CapturingModelClient();
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .extensions(registry)
+                .systemPrompt("Base prompt.")
+                .build();
+
+        WorkspaceContext enriched = agent.getWorkspaceContext();
+        assertEquals(1, enriched.getAvailableSkills().size());
+        assertEquals("coding-extension-skill", enriched.getAvailableSkills().get(0).getName());
+        assertEquals("extension:coding-resource-pack", enriched.getAvailableSkills().get(0).getSource());
+        assertEquals(1, enriched.getAvailablePrompts().size());
+        assertEquals("coding-extension-prompt", enriched.getAvailablePrompts().get(0).getName());
+        assertEquals("extension:coding-resource-pack", enriched.getAvailablePrompts().get(0).getSource());
+
+        LocalWorkspaceFileService fileService = new LocalWorkspaceFileService(enriched);
+        WorkspaceFileReadResult skillRead = fileService.readFile(
+                enriched.getAvailableSkills().get(0).getSkillFilePath(),
+                1,
+                10,
+                4000
+        );
+        assertTrue(skillRead.getContent().contains("name: coding-extension-skill"));
+        assertTrue(skillRead.getContent().contains("Verify coding agent extension skill projection."));
+        WorkspaceFileReadResult promptRead = fileService.readFile(
+                enriched.getAvailablePrompts().get(0).getPromptFilePath(),
+                1,
+                10,
+                4000
+        );
+        assertTrue(promptRead.getContent().contains("Coding extension prompt fixture"));
+
+        try {
+            fileService.writeFile(enriched.getAvailableSkills().get(0).getSkillFilePath(), "mutated", false);
+            fail("extension resources should be read-only outside the workspace root");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("escapes workspace root"));
+        }
+
+        try (CodingSession session = agent.newSession()) {
+            session.run("Use extension resources.");
+        }
+        AgentPrompt prompt = modelClient.getLastPrompt();
+        assertNotNull(prompt);
+        assertTrue(prompt.getSystemPrompt().contains("<available_skills>"));
+        assertTrue(prompt.getSystemPrompt().contains("name: coding-extension-skill"));
+        assertTrue(prompt.getSystemPrompt().contains("<available_prompts>"));
+        assertTrue(prompt.getSystemPrompt().contains("name: coding-extension-prompt"));
+    }
+
     private static Path writeSkill(Path skillFile, String content) throws Exception {
         Files.createDirectories(skillFile.getParent());
         Files.write(skillFile, content.getBytes(StandardCharsets.UTF_8));
@@ -132,6 +201,30 @@ public class CodingSkillSupportTest {
             return;
         }
         System.setProperty(key, value);
+    }
+
+    private static final class CodingResourceExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("coding-resource-pack")
+                    .name("Coding Resource Pack")
+                    .capability(ExtensionCapability.SKILL)
+                    .capability(ExtensionCapability.PROMPT)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            context.skills().register(ExtensionSkillResource.builder()
+                    .name("coding-extension-skill")
+                    .description("Coding extension skill")
+                    .resourcePath("skills/coding-extension/SKILL.md")
+                    .build());
+            context.prompts().register(ExtensionPromptResource.builder()
+                    .name("coding-extension-prompt")
+                    .description("Coding extension prompt")
+                    .resourcePath("prompts/coding-extension.md")
+                    .build());
+        }
     }
 
     private static final class CapturingModelClient implements AgentModelClient {

@@ -4,11 +4,20 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
+import io.github.lnyocly.ai4j.agent.context.ContextBudget;
+import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
+import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
@@ -16,11 +25,13 @@ import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.trace.AgentTraceListener;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
+import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.lang.reflect.Constructor;
@@ -36,6 +47,7 @@ public class AgentBuilder {
     private AgentRuntime runtime;
     private AgentModelClient modelClient;
     private AgentToolRegistry toolRegistry;
+    private ExtensionAgentTools extensionTools;
     private SubAgentRegistry subAgentRegistry;
     private HandoffPolicy handoffPolicy;
     private final List<SubAgentDefinition> subAgentDefinitions = new ArrayList<>();
@@ -44,9 +56,14 @@ public class AgentBuilder {
     private Supplier<AgentMemory> memorySupplier;
     private AgentOptions options;
     private CodeActOptions codeActOptions;
+    private ContextProjector contextProjector;
+    private ContextBudget contextBudget;
+    private AgentPermissionPolicy permissionPolicy;
+    private AgentExecutionEnvironment executionEnvironment;
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
     private AgentEventPublisher eventPublisher;
+    private AgentSessionStore sessionStore;
     private String model;
     private String instructions;
     private String systemPrompt;
@@ -72,6 +89,16 @@ public class AgentBuilder {
 
     public AgentBuilder toolRegistry(AgentToolRegistry toolRegistry) {
         this.toolRegistry = toolRegistry;
+        return this;
+    }
+
+    public AgentBuilder extensions(ExtensionRegistry registry) {
+        this.extensionTools = ExtensionAgentTools.from(registry);
+        return this;
+    }
+
+    public AgentBuilder extensions(ExtensionAgentTools extensionTools) {
+        this.extensionTools = extensionTools;
         return this;
     }
 
@@ -129,6 +156,26 @@ public class AgentBuilder {
         return this;
     }
 
+    public AgentBuilder contextProjector(ContextProjector contextProjector) {
+        this.contextProjector = contextProjector;
+        return this;
+    }
+
+    public AgentBuilder contextBudget(ContextBudget contextBudget) {
+        this.contextBudget = contextBudget;
+        return this;
+    }
+
+    public AgentBuilder permissionPolicy(AgentPermissionPolicy permissionPolicy) {
+        this.permissionPolicy = permissionPolicy;
+        return this;
+    }
+
+    public AgentBuilder executionEnvironment(AgentExecutionEnvironment executionEnvironment) {
+        this.executionEnvironment = executionEnvironment;
+        return this;
+    }
+
     public AgentBuilder traceExporter(TraceExporter traceExporter) {
         this.traceExporter = traceExporter;
         return this;
@@ -141,6 +188,11 @@ public class AgentBuilder {
 
     public AgentBuilder eventPublisher(AgentEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
+        return this;
+    }
+
+    public AgentBuilder sessionStore(AgentSessionStore sessionStore) {
+        this.sessionStore = sessionStore;
         return this;
     }
 
@@ -209,19 +261,33 @@ public class AgentBuilder {
         Supplier<AgentMemory> resolvedMemorySupplier = memorySupplier == null ? InMemoryAgentMemory::new : memorySupplier;
         AgentMemory memory = resolvedMemorySupplier.get();
 
-        AgentToolRegistry baseToolRegistry = toolRegistry == null ? StaticToolRegistry.empty() : toolRegistry;
+        AgentToolRegistry configuredToolRegistry = toolRegistry == null ? StaticToolRegistry.empty() : toolRegistry;
+        ToolExecutor configuredToolExecutor = toolExecutor;
+        if (configuredToolExecutor == null) {
+            Set<String> allowedToolNames = resolveToolNames(configuredToolRegistry);
+            configuredToolExecutor = createToolUtilExecutor(allowedToolNames);
+        }
+        AgentToolRegistry baseToolRegistry = configuredToolRegistry;
+        ToolExecutor baseToolExecutor = configuredToolExecutor;
+        if (extensionTools != null) {
+            baseToolRegistry = new CompositeToolRegistry(configuredToolRegistry, extensionTools.getToolRegistry());
+            baseToolExecutor = mergeToolExecutors(
+                    configuredToolRegistry,
+                    configuredToolExecutor,
+                    extensionTools.getToolRegistry(),
+                    extensionTools.getToolExecutor()
+            );
+        }
         SubAgentRegistry resolvedSubAgentRegistry = resolveSubAgentRegistry();
         AgentToolRegistry resolvedToolRegistry = resolveToolRegistry(baseToolRegistry, resolvedSubAgentRegistry);
 
-        ToolExecutor resolvedToolExecutor = toolExecutor;
-        if (resolvedToolExecutor == null) {
-            Set<String> allowedToolNames = resolveToolNames(baseToolRegistry);
-            resolvedToolExecutor = createToolUtilExecutor(allowedToolNames);
-        }
+        ToolExecutor resolvedToolExecutor = baseToolExecutor;
         if (resolvedSubAgentRegistry != null) {
             HandoffPolicy resolvedHandoffPolicy = handoffPolicy == null ? HandoffPolicy.builder().build() : handoffPolicy;
             resolvedToolExecutor = new SubAgentToolExecutor(resolvedSubAgentRegistry, resolvedToolExecutor, resolvedHandoffPolicy);
         }
+        resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
+        resolvedToolExecutor = applyPermissionPolicy(resolvedToolExecutor, permissionPolicy, executionEnvironment);
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
         AgentOptions resolvedOptions = options == null ? AgentOptions.builder().build() : options;
@@ -233,6 +299,9 @@ public class AgentBuilder {
         if (modelClient == null) {
             throw new IllegalStateException("modelClient is required");
         }
+        AgentLifecycleHookDispatcher lifecycleHooks = extensionTools == null
+                ? AgentLifecycleHookDispatcher.empty()
+                : new AgentLifecycleHookDispatcher(extensionTools.getLifecycleHooks());
 
         AgentContext context = AgentContext.builder()
                 .modelClient(modelClient)
@@ -242,7 +311,12 @@ public class AgentBuilder {
                 .memory(memory)
                 .options(resolvedOptions)
                 .codeActOptions(resolvedCodeActOptions)
+                .contextProjector(contextProjector)
+                .contextBudget(contextBudget)
                 .eventPublisher(resolvedEventPublisher)
+                .lifecycleHooks(lifecycleHooks)
+                .permissionPolicy(permissionPolicy)
+                .executionEnvironment(executionEnvironment == null ? AgentExecutionEnvironment.LOCAL : executionEnvironment)
                 .model(model)
                 .instructions(instructions)
                 .systemPrompt(systemPrompt)
@@ -257,7 +331,7 @@ public class AgentBuilder {
                 .extraBody(extraBody)
                 .build();
 
-        return new Agent(resolvedRuntime, context, resolvedMemorySupplier);
+        return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);
     }
 
 
@@ -303,6 +377,38 @@ public class AgentBuilder {
             }
         }
         return names;
+    }
+
+    private ToolExecutor mergeToolExecutors(AgentToolRegistry firstRegistry,
+                                            ToolExecutor firstExecutor,
+                                            AgentToolRegistry secondRegistry,
+                                            ToolExecutor secondExecutor) {
+        if (firstExecutor == null) {
+            return secondExecutor;
+        }
+        if (secondExecutor == null) {
+            return firstExecutor;
+        }
+        List<RoutingToolExecutor.Route> routes = new ArrayList<RoutingToolExecutor.Route>();
+        routes.add(RoutingToolExecutor.route(resolveToolNames(firstRegistry), firstExecutor));
+        routes.add(RoutingToolExecutor.route(resolveToolNames(secondRegistry), secondExecutor));
+        return new RoutingToolExecutor(routes, null);
+    }
+
+    private ToolExecutor applyExtensionGuardrails(ToolExecutor executor, ExtensionAgentTools extensionTools) {
+        if (executor == null || extensionTools == null || extensionTools.getGuardrails().isEmpty()) {
+            return executor;
+        }
+        return new ExtensionGuardrailToolExecutor(executor, extensionTools.getGuardrails());
+    }
+
+    private ToolExecutor applyPermissionPolicy(ToolExecutor executor,
+                                               AgentPermissionPolicy permissionPolicy,
+                                               AgentExecutionEnvironment executionEnvironment) {
+        if (executor == null || permissionPolicy == null) {
+            return executor;
+        }
+        return new AgentPermissionToolExecutor(executor, permissionPolicy, executionEnvironment);
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {

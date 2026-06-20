@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentSession;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
@@ -53,6 +54,7 @@ public class DefaultCodingRuntime implements CodingRuntime {
     private final CodingToolPolicyResolver toolPolicyResolver;
     private final SubAgentRegistry subAgentRegistry;
     private final HandoffPolicy handoffPolicy;
+    private final ExtensionAgentTools extensionTools;
     private final ExecutorService executorService;
     private final CopyOnWriteArrayList<CodingRuntimeListener> listeners = new CopyOnWriteArrayList<CodingRuntimeListener>();
 
@@ -77,6 +79,21 @@ public class DefaultCodingRuntime implements CodingRuntime {
                                 CodingToolPolicyResolver toolPolicyResolver,
                                 SubAgentRegistry subAgentRegistry,
                                 HandoffPolicy handoffPolicy) {
+        this(workspaceContext, options, customToolRegistry, customToolExecutor, definitionRegistry, taskManager, sessionLinkStore,
+                toolPolicyResolver, subAgentRegistry, handoffPolicy, null);
+    }
+
+    public DefaultCodingRuntime(WorkspaceContext workspaceContext,
+                                CodingAgentOptions options,
+                                AgentToolRegistry customToolRegistry,
+                                ToolExecutor customToolExecutor,
+                                CodingAgentDefinitionRegistry definitionRegistry,
+                                CodingTaskManager taskManager,
+                                CodingSessionLinkStore sessionLinkStore,
+                                CodingToolPolicyResolver toolPolicyResolver,
+                                SubAgentRegistry subAgentRegistry,
+                                HandoffPolicy handoffPolicy,
+                                ExtensionAgentTools extensionTools) {
         this(workspaceContext, options, customToolRegistry, customToolExecutor, definitionRegistry, taskManager, sessionLinkStore, toolPolicyResolver,
                 Executors.newCachedThreadPool(new ThreadFactory() {
                     @Override
@@ -87,7 +104,8 @@ public class DefaultCodingRuntime implements CodingRuntime {
                     }
                 }),
                 subAgentRegistry,
-                handoffPolicy);
+                handoffPolicy,
+                extensionTools);
     }
 
     public DefaultCodingRuntime(WorkspaceContext workspaceContext,
@@ -113,6 +131,22 @@ public class DefaultCodingRuntime implements CodingRuntime {
                                 ExecutorService executorService,
                                 SubAgentRegistry subAgentRegistry,
                                 HandoffPolicy handoffPolicy) {
+        this(workspaceContext, options, customToolRegistry, customToolExecutor, definitionRegistry, taskManager, sessionLinkStore,
+                toolPolicyResolver, executorService, subAgentRegistry, handoffPolicy, null);
+    }
+
+    public DefaultCodingRuntime(WorkspaceContext workspaceContext,
+                                CodingAgentOptions options,
+                                AgentToolRegistry customToolRegistry,
+                                ToolExecutor customToolExecutor,
+                                CodingAgentDefinitionRegistry definitionRegistry,
+                                CodingTaskManager taskManager,
+                                CodingSessionLinkStore sessionLinkStore,
+                                CodingToolPolicyResolver toolPolicyResolver,
+                                ExecutorService executorService,
+                                SubAgentRegistry subAgentRegistry,
+                                HandoffPolicy handoffPolicy,
+                                ExtensionAgentTools extensionTools) {
         this.workspaceContext = workspaceContext;
         this.options = options == null ? CodingAgentOptions.builder().build() : options;
         this.customToolRegistry = customToolRegistry;
@@ -123,6 +157,7 @@ public class DefaultCodingRuntime implements CodingRuntime {
         this.toolPolicyResolver = toolPolicyResolver == null ? new CodingToolPolicyResolver() : toolPolicyResolver;
         this.subAgentRegistry = subAgentRegistry;
         this.handoffPolicy = handoffPolicy;
+        this.extensionTools = extensionTools;
         this.executorService = executorService;
     }
 
@@ -276,6 +311,7 @@ public class DefaultCodingRuntime implements CodingRuntime {
         );
         mergedRegistry = CodingAgentBuilder.mergeSubAgentToolRegistry(mergedRegistry, subAgentRegistry);
         mergedExecutor = CodingAgentBuilder.mergeSubAgentToolExecutor(mergedExecutor, subAgentRegistry, handoffPolicy);
+        mergedExecutor = CodingAgentBuilder.applyExtensionGuardrails(mergedExecutor, extensionTools);
         CodingToolContextPolicy toolPolicy = toolPolicyResolver.resolve(mergedRegistry, mergedExecutor, definition);
         AgentContext parentContext = parentAgentSession.getContext();
         AgentContext childContext = parentContext.toBuilder()

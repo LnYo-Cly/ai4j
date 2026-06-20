@@ -16,12 +16,15 @@ import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
 import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -37,6 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @Date 2024/8/3 18:22
  */
 @Slf4j
+@Category(LiveProviderTest.class)
 public class OllamaTest {
 
     private IChatService chatService;
@@ -44,13 +48,20 @@ public class OllamaTest {
     private IChatService webEnhance;
 
     private IEmbeddingService embeddingService;
+    private String searXngSearchUrl;
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {
         SearXNGConfig searXNGConfig = new SearXNGConfig();
-        searXNGConfig.setUrl("http://127.0.0.1:8080/search");
+        searXngSearchUrl = LiveProviderTestSupport.firstEnv("SEARXNG_SEARCH_URL");
+        if (!LiveProviderTestSupport.isBlank(searXngSearchUrl)) {
+            searXNGConfig.setUrl(searXngSearchUrl);
+        }
 
+        String ollamaApiHost = LiveProviderTestSupport.firstEnv("OLLAMA_API_HOST", "OLLAMA_BASE_URL");
+        Assume.assumeTrue("Skip because Ollama API host is not configured", !LiveProviderTestSupport.isBlank(ollamaApiHost));
         OllamaConfig ollamaConfig = new OllamaConfig();
+        ollamaConfig.setApiHost(ollamaApiHost);
 
         Configuration configuration = new Configuration();
         configuration.setOllamaConfig(ollamaConfig);
@@ -70,14 +81,15 @@ public class OllamaTest {
                 .readTimeout(300, TimeUnit.SECONDS)
                 //.sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
                 //.hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
-                //.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10809)))
                 .build();
         configuration.setOkHttpClient(okHttpClient);
 
         AiService aiService = new AiService(configuration);
 
         chatService = aiService.getChatService(PlatformType.OLLAMA);
-        webEnhance = aiService.webSearchEnhance(chatService);
+        if (!LiveProviderTestSupport.isBlank(searXngSearchUrl)) {
+            webEnhance = aiService.webSearchEnhance(chatService);
+        }
 
         embeddingService = aiService.getEmbeddingService(PlatformType.OLLAMA);
     }
@@ -100,6 +112,7 @@ public class OllamaTest {
     }
     @Test
     public void test_chatCompletions_common_websearch_enhance() throws Exception {
+        Assume.assumeTrue("Skip because SearXNG search URL is not configured", webEnhance != null);
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model("qwen2.5:7b")
                 .message(ChatMessage.withUser("鸡你太美是什么梗"))
