@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.worktrees/feature/cli-permissions-command-ux/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-20-cli-permissions-command-ux-7bbbc71d",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk\\.worktrees\\feature\\cli-permissions-command-ux",
+  "generatedAt": "2026-06-20T14:10:40.534Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/INDEX.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/brief.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/task_plan.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/execution_strategy.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/visual_map.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/findings.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/progress.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/review.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/references/INDEX.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/walkthrough.md",
+    "coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/artifacts/preset/2026-06-20T14-10-40-533Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/cli-host/module_plan.md"
+  ]
+}

@@ -130,6 +130,29 @@ public class CodeCommandTest {
     }
 
     @Test
+    public void test_help_lists_permissions_command() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-help-permissions");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        CodeCommand command = new CodeCommand(
+                new FakeCodingCliAgentFactory(),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                workspace
+        );
+
+        int exitCode = command.run(
+                Collections.singletonList("--help"),
+                new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(0, exitCode);
+        Assert.assertTrue(output.contains("/permissions [status]  Show current approval and tool permission status"));
+    }
+
+    @Test
     public void test_interactive_compact_command() throws Exception {
         Path workspace = Files.createTempDirectory("ai4j-cli-compact");
         ByteArrayInputStream input = new ByteArrayInputStream(
@@ -146,6 +169,9 @@ public class CodeCommandTest {
                         + "/compact\n"
                         + "/memory\n"
                         + "/memory status\n"
+                        + "/permissions\n"
+                        + "/permissions status\n"
+                        + "/permissions inspect\n"
                         + "/compacts 10\n"
                         + "/status\n"
                         + "/exit\n").getBytes(StandardCharsets.UTF_8)
@@ -166,6 +192,7 @@ public class CodeCommandTest {
         );
 
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        String errors = new String(err.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("saved session: session-alpha"));
         Assert.assertTrue(output.contains("session"));
@@ -181,6 +208,12 @@ public class CodeCommandTest {
         Assert.assertTrue(output.contains("estimatedTokens="));
         Assert.assertTrue(output.contains("autoCompact=on"));
         Assert.assertTrue(output.contains("raw memory and tool output are not printed"));
+        Assert.assertTrue(output.contains("permissions:"));
+        Assert.assertTrue(output.contains("approvalMode=auto"));
+        Assert.assertTrue(output.contains("AI4J_APPROVAL"));
+        Assert.assertTrue(output.contains("sandbox changes where tools execute"));
+        Assert.assertTrue(output.contains("raw tool input, prompts, provider keys, and tool output are not printed"));
+        Assert.assertTrue(errors.contains("Unknown /permissions option: inspect"));
         Assert.assertTrue(output.contains("compacts:"));
         Assert.assertTrue(output.contains("items="));
         Assert.assertTrue(output.contains("checkpointGoal=Continue the CLI session."));

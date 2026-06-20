@@ -114,6 +114,15 @@ public class CodexStyleBlockFormatterTest {
     }
 
     @Test
+    public void formatOutputParsesPermissionsInfoBlock() {
+        List<String> lines = formatter.formatOutput("permissions:\n- approvalMode=safe\n- note=summary only");
+
+        assertEquals("• Permissions", lines.get(0));
+        assertTrue(lines.get(1).contains("approvalMode=safe"));
+        assertTrue(lines.get(2).contains("summary only"));
+    }
+
+    @Test
     public void formatInfoBlockKeepsInnerSeparators() {
         List<String> lines = formatter.formatInfoBlock("Replay", Arrays.asList("first", "", "second"));
 

@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.cli.acp;
 
+import io.github.lnyocly.ai4j.cli.ApprovalMode;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
@@ -59,6 +60,7 @@ final class AcpSlashCommandSupport {
             new CommandSpec("events", "Show recent session events", "optional limit"),
             new CommandSpec("team", "Show current team board or persisted team state", "optional: list | status [team-id] | messages [team-id] [limit] | resume [team-id]"),
             new CommandSpec("memory", "Show current memory and compact status", "optional: status"),
+            new CommandSpec("permissions", "Show current approval and tool permission status", "optional: status"),
             new CommandSpec("compacts", "Show compact history", "optional limit"),
             new CommandSpec("checkpoint", "Show current checkpoint summary", null),
             new CommandSpec("processes", "List managed processes", null),
@@ -145,6 +147,9 @@ final class AcpSlashCommandSupport {
         }
         if ("memory".equals(name)) {
             return ExecutionResult.of(renderMemory(context, command.argument));
+        }
+        if ("permissions".equals(name)) {
+            return ExecutionResult.of(renderPermissions(context, command.argument));
         }
         if ("compacts".equals(name)) {
             return ExecutionResult.of(renderCompacts(context, command.argument));
@@ -311,6 +316,35 @@ final class AcpSlashCommandSupport {
                 .append(", restored=").append(snapshot == null ? 0 : snapshot.getRestoredProcessCount()).append('\n');
         builder.append("- note=summary only; raw memory and tool output are not printed");
         return builder.toString().trim();
+    }
+
+
+    private static String renderPermissions(Context context, String argument) {
+        if (!isBlank(argument) && !"status".equalsIgnoreCase(argument.trim())) {
+            return "Unknown /permissions option: " + argument.trim() + ". Use /permissions or /permissions status.";
+        }
+        ApprovalMode approvalMode = context.options == null || context.options.getApprovalMode() == null
+                ? ApprovalMode.AUTO
+                : context.options.getApprovalMode();
+        StringBuilder builder = new StringBuilder();
+        builder.append("permissions:\n");
+        builder.append("- approvalMode=").append(approvalMode.getValue()).append('\n');
+        builder.append("- source=--approval / AI4J_APPROVAL / ai4j.approval / default(auto)\n");
+        builder.append("- toolGate=").append(describeApprovalMode(approvalMode)).append('\n');
+        builder.append("- acp=manual/safe approval uses session/request_permission when this session runs through ACP\n");
+        builder.append("- sandbox=sandbox changes where tools execute, not whether they are allowed\n");
+        builder.append("- note=summary only; raw tool input, prompts, provider keys, and tool output are not printed");
+        return builder.toString().trim();
+    }
+
+    private static String describeApprovalMode(ApprovalMode approvalMode) {
+        if (approvalMode == ApprovalMode.MANUAL) {
+            return "manual prompts before every tool call";
+        }
+        if (approvalMode == ApprovalMode.SAFE) {
+            return "safe prompts before high-impact local tools and lets low-risk tools continue";
+        }
+        return "auto delegates tool calls without an interactive prompt";
     }
 
     private static String renderSkills(Context context, String argument) {

@@ -56,6 +56,7 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/replay", "Replay recent turns grouped from the event ledger", true),
             new SlashCommandSpec("/team", "Show the current agent team board", false),
             new SlashCommandSpec("/memory", "Show current memory and compact status", true),
+            new SlashCommandSpec("/permissions", "Show current approval and tool permission status", true),
             new SlashCommandSpec("/compacts", "Show recent compact history", true),
             new SlashCommandSpec("/stream", "Show or switch model request streaming", true),
             new SlashCommandSpec("/mcp", "Show or manage MCP services", true),
@@ -87,6 +88,7 @@ public final class SlashCommandController implements Completer {
     private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
     private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
     private static final List<String> MEMORY_ACTIONS = Arrays.asList("status");
+    private static final List<String> PERMISSION_ACTIONS = Arrays.asList("status");
     private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
     private static final List<String> SANDBOX_ACTIONS = Arrays.asList("status", "attach", "disable");
     private static final List<String> EXTENSION_ACTIONS = Arrays.asList("list", "inspect", "plan", "check", "validate", "run", "resource");
@@ -139,6 +141,7 @@ public final class SlashCommandController implements Completer {
             "/replay",
             "/team",
             "/memory",
+            "/permissions",
             "/compacts",
             "/stream",
             "/mcp",
@@ -497,6 +500,9 @@ public final class SlashCommandController implements Completer {
         if ("/memory".equalsIgnoreCase(command)) {
             return memoryCandidates(tokenFragment(tokens, endsWithSpace));
         }
+        if ("/permissions".equalsIgnoreCase(command)) {
+            return permissionCandidates(tokenFragment(tokens, endsWithSpace));
+        }
         return Collections.emptyList();
     }
 
@@ -549,6 +555,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/memory".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", memoryCandidates(""));
+        }
+        if ("/permissions".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", permissionCandidates(""));
         }
         return Collections.emptyList();
     }
@@ -1410,6 +1419,23 @@ public final class SlashCommandController implements Completer {
             return "Use explicit resource activation";
         }
         return "Extension activation option";
+    }
+
+    private List<Candidate> permissionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : PERMISSION_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(
+                    action,
+                    action,
+                    "Permissions",
+                    "Show current approval and tool permission status",
+                    false
+            ));
+        }
+        return candidates;
     }
 
     private List<Candidate> mcpCandidates(List<String> tokens, boolean endsWithSpace) {

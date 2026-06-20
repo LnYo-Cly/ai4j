@@ -197,6 +197,7 @@ public class CodeCommand {
         terminal.println("  /status  Show current session status");
         terminal.println("  /session Show current session metadata");
         terminal.println("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health");
+        terminal.println("  /permissions [status]  Show current approval and tool permission status");
         terminal.println("  /theme [name]  Show or switch the active TUI theme");
         terminal.println("  /save    Persist the current session state");
         terminal.println("  /providers  List saved provider profiles");
@@ -222,6 +223,7 @@ public class CodeCommand {
         terminal.println("  /team  Show the current agent team board by member lane");
         terminal.println("  /team list|status [team-id]|messages [team-id] [limit]|resume [team-id]  Manage persisted team snapshots");
         terminal.println("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health");
+        terminal.println("  /permissions [status]  Show current approval and tool permission status");
         terminal.println("  /stream [on|off]  Show or switch model request streaming");
         terminal.println("  /processes  List active and restored process metadata");
         terminal.println("  /process status <id>  Show metadata for one process");

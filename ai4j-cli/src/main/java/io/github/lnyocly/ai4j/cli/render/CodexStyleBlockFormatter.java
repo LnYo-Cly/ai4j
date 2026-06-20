@@ -256,6 +256,7 @@ public final class CodexStyleBlockFormatter {
                 || "events".equals(normalized)
                 || "replay".equals(normalized)
                 || "memory".equals(normalized)
+                || "permissions".equals(normalized)
                 || "compacts".equals(normalized)
                 || "processes".equals(normalized)
                 || "process status".equals(normalized)

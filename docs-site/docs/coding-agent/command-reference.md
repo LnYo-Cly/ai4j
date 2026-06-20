@@ -36,6 +36,7 @@ sidebar_position: 11
 - `/events`
 - `/team`
 - `/memory`
+- `/permissions`
 - `/compacts`
 - `/checkpoint`
 - `/processes`
@@ -564,6 +565,34 @@ sandbox:
 
 ---
 
+### `/permissions`
+
+显示当前 CLI / TUI / ACP 会话的审批模式和工具权限边界。
+
+```text
+/permissions
+/permissions status
+```
+
+当前输出只包含摘要字段，例如：
+
+- `approvalMode`：当前审批模式，来自 `--approval`、`AI4J_APPROVAL`、`ai4j.approval` 或默认 `auto`；
+- `toolGate`：当前模式对工具调用的大致拦截行为；
+- `acp`：当会话运行在 ACP 宿主里时，`manual` / `safe` 审批会走 `session/request_permission`；
+- `sandbox`：说明 sandbox 改变工具执行位置，不替代审批；
+- `note`：确认命令只输出摘要，不打印 raw tool input、prompt、provider key 或工具输出全文。
+
+和其它命令的区别：
+
+- `/status`：看 session/provider/model/memory/process/sandbox 的运行大盘；
+- `/permissions`：只看审批和工具权限边界；
+- `/sandbox`：只看当前工具执行位置是否绑定到 sandbox；
+- `/mcp` / `/skills`：看可扩展能力是否被发现或启用。
+
+这个命令不会切换审批模式，也不会修改任何 permission policy。要改变审批模式，请在启动 CLI 时使用 `--approval <auto|safe|manual>`，或通过 `AI4J_APPROVAL` / `ai4j.approval` 配置。
+
+---
+
 ### `/save`
 
 持久化当前 session 状态。
@@ -905,6 +934,7 @@ sandbox:
 - `/skills` 候选
 - `/sandbox status|attach|disable` 候选
 - `/memory status` 候选
+- `/permissions status` 候选
 - `/stream on|off`
 
 ---

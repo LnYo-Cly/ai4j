@@ -710,6 +710,15 @@ public class CodingCliSessionRunner {
             emitError("Unknown /memory option: " + extractCommandArgument(normalized) + ". Use /memory or /memory status.");
             return DispatchResult.stay(session);
         }
+        if ("/permissions".equalsIgnoreCase(normalized) || "/permissions status".equalsIgnoreCase(normalized)) {
+            printPermissions();
+            renderTui(session);
+            return DispatchResult.stay(session);
+        }
+        if (normalized.toLowerCase(Locale.ROOT).startsWith("/permissions ")) {
+            emitError("Unknown /permissions option: " + extractCommandArgument(normalized) + ". Use /permissions or /permissions status.");
+            return DispatchResult.stay(session);
+        }
         if ("/theme".equalsIgnoreCase(normalized)) {
             printThemes();
             renderTui(session);
@@ -962,6 +971,7 @@ public class CodingCliSessionRunner {
         builder.append("  /status  Show current session status\n");
         builder.append("  /session Show current session metadata\n");
         builder.append("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health\n");
+        builder.append("  /permissions [status]  Show current approval and tool permission status\n");
         builder.append("  /theme [name]  Show or switch the active TUI theme\n");
         builder.append("  /save    Persist the current session state\n");
         builder.append("  /providers  List saved provider profiles\n");
@@ -1001,6 +1011,7 @@ public class CodingCliSessionRunner {
         builder.append("  /team    Show the current agent team board grouped by member lane\n");
         builder.append("  /team list|status [team-id]|messages [team-id] [limit]|resume [team-id]  Manage persisted team snapshots\n");
         builder.append("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health\n");
+        builder.append("  /permissions [status]  Show current approval and tool permission status\n");
         builder.append("  /compacts [n]  Show recent compact history from the event ledger\n");
         builder.append("  /stream [on|off]  Show or switch model request streaming\n");
         builder.append("  /processes  List active and restored process metadata\n");
@@ -1084,6 +1095,23 @@ public class CodingCliSessionRunner {
     private void printMemory(ManagedCodingSession session) {
         CodingSessionSnapshot snapshot = session == null || session.getSession() == null ? null : session.getSession().snapshot();
         String output = renderMemoryOutput(session, snapshot);
+        if (useMainBufferInteractiveShell()) {
+            emitOutput(output);
+            return;
+        }
+        if (useAppendOnlyTranscriptTui()) {
+            emitOutput(output);
+            return;
+        }
+        if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
+            setTuiAssistantOutput(output);
+            return;
+        }
+        terminal.println(output);
+    }
+
+    private void printPermissions() {
+        String output = renderPermissionsOutput();
         if (useMainBufferInteractiveShell()) {
             emitOutput(output);
             return;
@@ -5252,6 +5280,29 @@ public class CodingCliSessionRunner {
                 .append(", restored=").append(snapshot == null ? 0 : snapshot.getRestoredProcessCount()).append('\n');
         builder.append("- note=summary only; raw memory and tool output are not printed");
         return builder.toString().trim();
+    }
+
+    private String renderPermissionsOutput() {
+        ApprovalMode approvalMode = options.getApprovalMode() == null ? ApprovalMode.AUTO : options.getApprovalMode();
+        StringBuilder builder = new StringBuilder();
+        builder.append("permissions:\n");
+        builder.append("- approvalMode=").append(approvalMode.getValue()).append('\n');
+        builder.append("- source=--approval / AI4J_APPROVAL / ai4j.approval / default(auto)\n");
+        builder.append("- toolGate=").append(describeApprovalMode(approvalMode)).append('\n');
+        builder.append("- acp=manual/safe approval uses session/request_permission when this session runs through ACP\n");
+        builder.append("- sandbox=sandbox changes where tools execute, not whether they are allowed\n");
+        builder.append("- note=summary only; raw tool input, prompts, provider keys, and tool output are not printed");
+        return builder.toString().trim();
+    }
+
+    private static String describeApprovalMode(ApprovalMode approvalMode) {
+        if (approvalMode == ApprovalMode.MANUAL) {
+            return "manual prompts before every tool call";
+        }
+        if (approvalMode == ApprovalMode.SAFE) {
+            return "safe prompts before high-impact local tools and lets low-risk tools continue";
+        }
+        return "auto delegates tool calls without an interactive prompt";
     }
 
     private ManagedCodingSession handleStreamCommand(ManagedCodingSession session, String argument) throws Exception {
