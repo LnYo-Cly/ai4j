@@ -76,3 +76,10 @@
 - 验证结果：`git diff --check` 通过；`npx --yes coding-agent-harness status --json .` failures=0、当前任务 `materialsReady=true`、`reviewQueueState=ready-to-confirm`，仅因本轮补充尚未提交而显示 dirty-state warning。
 - 下一步：提交本轮补充；后续实现任务按优先级从插件贡献契约、Blueprint/docs hardening、sandbox routing 继续。
 - 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md:final user-confirmed agent sdk enhancement summary
+
+### [2026-06-20 13:54] - task-log
+
+- 做了什么：补充记录 ai4j-agent 增强任务的最终实施规划：覆盖 Agent SDK 分层、插件生态、YAML Blueprint、Memory Compact、Sandbox/Remote Runner、CLI/TUI、Harness 边界和后续任务队列。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md:pending master implementation plan
