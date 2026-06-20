@@ -26,7 +26,7 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | task package 已创建并启动 | `task_plan.md`; `execution_strategy.md`; `progress.md` | `harness task-start 2026-06-20-cli-memory-compact-command-ux-d56c15fd` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | in_progress | 20 | 规划已记录；实现尚未开始 | `references/cli-memory-compact-command-ux-plan.md`; final diff; targeted tests; docs build | `harness task-phase 2026-06-20-cli-memory-compact-command-ux-d56c15fd EXEC-01 --state done --completion 100 --evidence present` | agent | partial | implementation pending | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | 规划已记录；实现尚未开始 | `references/cli-memory-compact-command-ux-plan.md`; final diff; targeted tests; docs build | `harness task-phase 2026-06-20-cli-memory-compact-command-ux-d56c15fd EXEC-01 --state done --completion 100 --evidence present` | agent | present | implementation pending | coordinator |
 | GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; progress update; lesson routing | `harness task-review 2026-06-20-cli-memory-compact-command-ux-d56c15fd --message "CLI memory command UX ready for review"` | agent | present | implementation and evidence required first | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-cli-memory-compact-command-ux-d56c15fd --confirm 2026-06-20-cli-memory-compact-command-ux-d56c15fd` | human | missing | Agent 不能代办人工确认 | human |
 
