@@ -4,7 +4,14 @@
 
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | repo-guidance | TARGET:AGENTS.md | monorepo/Harness 任务边界、Java 8 和 regression 更新规则。 | coordinator / reviewer |
+| REF-002 | reference | TARGET:docs/11-REFERENCE/testing-standard.md | CLI/TUI 与 docs-site 触发的测试入口。 | coordinator / reviewer |
+| REF-003 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java | slash dispatch、runtime rebind、status/help/palette 的主实现点。 | coordinator |
+| REF-004 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/SlashCommandController.java | root/action completion 和 command palette 的主实现点。 | coordinator |
+| REF-005 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/factory/DefaultCodingCliAgentFactory.java | CLI 创建 `CodingAgentBuilder` 并接入 sandbox 的位置。 | coordinator |
+| REF-006 | code | TARGET:ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentBuilder.java | P3 `.sandbox(SandboxSession)` 与 `SandboxShellCommandExecutor` 已存在。 | coordinator |
+| REF-007 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox | 当前 Sandbox SPI 边界：provider/create/session/execute，无通用 attach。 | coordinator |
+| REF-008 | task-plan | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/references/cli-sandbox-command-plan.md | P4 `/sandbox` 详细命令合同、实现接缝、测试矩阵和 out-of-scope。 | coordinator / reviewer |
 
 ## 使用规则
 

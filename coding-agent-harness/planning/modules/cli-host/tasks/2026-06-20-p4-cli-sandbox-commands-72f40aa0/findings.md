@@ -4,21 +4,48 @@
 
 ## 研究发现
 
-### [发现主题 1]
+### F-001：P3 已提供 coding 层 sandbox route，CLI 需要做 host binding
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
+- 背景：本任务要把 sandbox 体验暴露到 CLI，而不是重新实现 shell routing。
+- 发现：`TARGET:ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentBuilder.java` 已有 `.sandbox(SandboxSession)` / `.sandboxRuntime(CodingSandboxRuntime)`，并在 built-in bash tool 中创建 `SandboxShellCommandExecutor`。
+- 影响：P4 不应修改 coding runtime 主逻辑；CLI 只需把当前 binding 传入 factory/builder。
+- 后续：实现时优先改 `DefaultCodingCliAgentFactory` 的非破坏性 overload 和 `CodingCliSessionRunner` rebind。
+
+### F-002：当前 sandbox SPI 不支持通用 attach/resume
+
+- 背景：用户期望 `/sandbox attach <providerId> <sessionId>`，但真实 provider 后端不在本任务范围内。
+- 发现：`SandboxProvider` 目前只有 `createSession(SandboxSpec)`，`SandboxSession` 代表 live session 并提供 `execute(...)`；没有 `attachSession(sessionId)` 或 provider registry/transport bridge。
+- 影响：P4 不能声称“已连接真实远端 sandbox”。attach 只能记录 CLI 侧非敏感 binding，或通过后续 provider bridge 才能变成真实执行。
+- 后续：本任务必须在输出和文档里明确边界；真实 attach/resume 应拆成后续 `SandboxProvider` / `Remote Agent Runner` 任务。
+
+### F-003：`CodingCliSessionRunner` 是 slash dispatch 与 runtime rebind 的正确接点
+
+- 背景：需要让 `/sandbox attach/disable` 不只显示状态，还能影响后续 agent runtime。
+- 发现：`/provider`、`/model`、`/experimental`、`/mcp`、`/stream` 已在 `CodingCliSessionRunner` 中通过 `switchSessionRuntime(...)` 重建 runtime；`/help`、`/status`、palette 也在同一类附近维护。
+- 影响：P4 应仿照 `/stream` 和 `/mcp` 的模式，在 attach/disable 后调用 runtime rebind，并保持 `activeSession` 与持久化逻辑一致。
+- 后续：实现前先补小型状态模型，避免把大量 parsing 逻辑散落到多个类。
+
+### F-004：`SlashCommandController` 需要同时更新 root、action 和 palette 体验
+
+- 背景：用户关注 Codex/Claude Code/Pi 一类 TUI 体验，命令必须可发现。
+- 发现：root commands、`EXECUTABLE_ROOT_COMMANDS`、action candidates、`suggest(...)` 分支和 command palette 都要同步；已有 `SlashCommandControllerTest` 可覆盖 root/action suggestions。
+- 影响：只实现 dispatch 不够，必须把 `/sandbox` 加入 completion、palette、help/status。
+- 后续：新增或扩展 `SlashCommandControllerTest`，至少验证 `/sandbox`、`/sandbox `、`/sandbox attach `。
 
 ## 技术决策
 
 | 决策 | 选择 | 原因 | 替代方案 | 状态 |
 | --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
+| P4 目标 | CLI 可见 binding + runtime rebind，不做真实 provider | 符合当前 P3 能力和本任务范围，避免伪造云端 sandbox | 直接实现 CubeSandbox/VM provider | accepted |
+| attach 语义 | 记录非敏感 `providerId/sessionId/workspaceId` 并显式说明后端边界 | 当前 SPI 无通用 attach；不能误导用户 | 静默当作真实 live session | accepted |
+| runtime 接线 | 给 `CodingCliAgentFactory` 增加默认 overload，`DefaultCodingCliAgentFactory` 调用 `builder.sandbox(...)` | 降低破坏面，兼容其他实现 | 把 sandbox 写进 `CodeCommandOptions` 或全局 config | accepted |
+| 用户体验 | `/sandbox` 默认等价 status，`attach/disable` 是本轮唯一 mutating action | 和 `/stream`、`/mcp` 风格一致，简单可发现 | 一次性加入 create/list/destroy/logs | accepted |
+| 真实后端 | 后续任务处理 provider bridge / remote runner | 需要新的 provider/transport/凭据/网络边界 | 在 CLI 里硬编码一个后端 | accepted |
 
 ## 待确认问题
 
 | 问题 | 当前判断 | Owner | 截止点 |
 | --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+| `DefaultCodingCliAgentFactoryTest` 是否已有足够 seam 测 sandbox overload | 需要实现时确认；如果没有，新增最小 fake model/factory test 或调整 targeted set | coordinator | EXEC-01 |
+| attach 后没有真实 provider 时，是否传入 metadata-only `SandboxSession` 还是只记录状态 | 初步倾向：必须避免静默 direct-host；最终实现时以测试可证明的最小行为为准，并在 docs 说明 | coordinator | EXEC-01 |
+| docs-site 是否新增页面还是更新现有 `sandbox-routing.md` / CLI command docs | 初步倾向：更新现有页面，减少 `.gitignore docs/` 新文件风险 | coordinator | DOCS step |

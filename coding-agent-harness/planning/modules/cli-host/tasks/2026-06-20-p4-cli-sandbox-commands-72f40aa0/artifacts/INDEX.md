@@ -4,7 +4,10 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | command | TARGET:. | `git status --short --branch`; `git worktree list` confirmed root `main` clean and active worktree `feature/cli-sandbox-commands`. | coordinator |
+| ART-002 | command | TARGET:. | `npx --yes coding-agent-harness status --json .` passed with 0 failures before P4 planning edits; review queue still contains tasks awaiting human confirmation. | coordinator |
+| ART-003 | code-inspection | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java | Confirmed slash dispatch and runtime rebind patterns for `/mcp`, `/stream`, `/provider`, `/model`. | coordinator |
+| ART-004 | code-inspection | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox | Confirmed sandbox SPI does not yet expose attach/resume by session id. | coordinator |
 
 ## 使用规则
 
