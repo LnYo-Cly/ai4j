@@ -183,3 +183,24 @@ Continue roadmap
 ```
 
 MAP-05 Source Evidence: `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md`
+
+### MAP-06 当前状态校正与下一批任务
+
+```text
+Repository reality at 2026-06-20 13:30 +08:00
+  root main @ 83e75ae
+    includes P1-B / P1-C / P2 sandbox SPI / P2-B binding / P3 coding sandbox routing
+  dev worktree @ 91e07b1
+    includes P4 /sandbox status attach disable metadata-only commands
+        |
+        v
+Next selectable slices
+  R0 source-backed research
+  Agent Runtime backlog reconciliation
+  Remote Agent Runner SPI contract
+  One-command install design/prototype
+  CLI/TUI interaction polish
+  docs-site completeness pass
+```
+
+MAP-06 Source Evidence: `references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md`
