@@ -115,3 +115,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自 schema resource/accessor/loader/CLI/docs 的窄范围实现、agent/CLI targeted regression、docs-site typecheck/build、CLI package smoke 和 Harness status。该任务不依赖 live provider token，不读取或保存用户提供的 provider secrets。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201326 |
+| Submitted At | 2026-06-20 13:26 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 |
+| Materials Checklist Hash | 5e1990348c660b4a |
+| Evidence Summary | Agent Blueprint schema export and docs hardening ready for review: bundled JSON Schema resource, Java accessor, CLI schema export command, docs-site authoring guidance, and targeted regressions passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 |

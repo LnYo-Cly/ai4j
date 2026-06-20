@@ -1,6 +1,6 @@
 # Agent Blueprint schema export and docs hardening - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -54,3 +54,10 @@
 - Registry update needed：agent-runtime module task remains on `feature/agent-blueprint-schema-export`; lifecycle phase/review will update generated governance after implementation commit.
 - Harness Ledger update needed：clean-tree lifecycle commands should run after implementation commit: `task-phase EXEC-01 --state done --completion 100 --evidence present` then `task-review`.
 - 负责人：coordinator
+
+### [2026-06-20 13:26] - task-review
+
+- 做了什么：Agent Blueprint schema export and docs hardening ready for review: bundled JSON Schema resource, Java accessor, CLI schema export command, docs-site authoring guidance, and targeted regressions passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
