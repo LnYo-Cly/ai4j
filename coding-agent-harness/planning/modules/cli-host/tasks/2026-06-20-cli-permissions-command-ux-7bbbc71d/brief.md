@@ -1,51 +1,30 @@
-# CLI permissions command UX
+# CLI permissions command UX - Brief
 
-## Task ID
+## 任务目标
 
-`2026-06-20-cli-permissions-command-ux-7bbbc71d`
+为 `ai4j-cli` 增加只读 `/permissions` slash command，让用户在 coding-agent CLI/TUI/ACP 中一眼确认当前 approval / permission 边界。
 
-## 创建日期
+## 为什么做
 
-2026-06-20
+当前 `origin/dev` 已有 `--approval <auto|safe|manual>`、CLI/TUI approval prompt、ACP `session/request_permission` 和 `ai4j-agent` permission policy，但 CLI 内缺少一等诊断入口。用户需要知道“当前工具调用会不会问我、sandbox 是否改变审批、ACP 怎么处理 permission request”。
 
-## 一句话结果
+## 范围
 
-用一句话说明这个任务完成后会产生什么具体结果。
+- 新增 `/permissions` 与 `/permissions status`；
+- 同步 SlashCommandController、CodingCliSessionRunner、ACP slash command support、help/palette、docs-site；
+- 添加 deterministic tests；
+- 不做运行时权限编辑器，不打印 raw tool input / prompt / secret。
 
-## 完成后能得到什么
+## 验收摘要
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
-
-## 交付物
-
-- 可见产物：
-- 修改位置：
-- 验证证据：
-
-## 第一眼应该看什么
-
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
-
-## 边界
-
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
-
-## 完成判断
-
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
-
-## 执行合同
-
-- Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- [x] `/permissions` 在 CLI/TUI root、补全、help、ACP command list 中可见；
+- [x] 输出只包含 approval mode 和边界说明；
+- [x] docs-site 解释 `/permissions` 与 `/status`、ACP permission request、sandbox 的关系；
+- [x] targeted CLI tests 通过；
+- [x] broad CLI tests 通过；
+- [x] docs-site build 通过；
+- [ ] final `git diff --check` 与 Harness status 通过后提交/PR。
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+完成 final static checks，提交 feature diff，然后执行 Harness `task-review` 并创建 PR 到 `dev`。

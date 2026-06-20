@@ -1,24 +1,9 @@
 # CLI permissions command UX - 发现记录
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## 发现
 
-## 研究发现
-
-### [发现主题 1]
-
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
-
-## 技术决策
-
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
+| ID | Severity | Finding | Evidence | Decision |
 | --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
-
-## 待确认问题
-
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+| F-001 | medium | `origin/dev` 已有 `--approval <auto|safe|manual>`、CLI/TUI approval prompt 和 ACP `session/request_permission`，但没有 `/permissions` 一等诊断入口。 | `rg "approval|permission" ai4j-cli/src/main/java` | 新增只读 `/permissions`，不做编辑器。 |
+| F-002 | medium | Sandbox 会改变工具执行位置，但不能替代 permission/approval。 | docs-site `sandbox-routing.md` 和 `approval-permission-policy.md` | `/permissions` 输出必须明确 sandbox does not grant permission。 |
+| F-003 | high | 权限诊断如果打印 raw tool input 或 prompt 可能泄露敏感信息。 | task threat review | 输出只写策略摘要和边界，不打印 raw input/output。 |

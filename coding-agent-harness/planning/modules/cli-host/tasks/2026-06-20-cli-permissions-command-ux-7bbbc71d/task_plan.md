@@ -9,96 +9,76 @@ Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+新增 `ai4j-cli` 只读 `/permissions` 命令，展示当前 Coding Agent session 的 approval mode、tool permission 行为、ACP permission gateway 与 sandbox 边界，让用户不用翻启动参数或文档就能理解当前工具审批策略。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 做什么：`/permissions`、`/permissions status`；CLI/TUI dispatch；JLine completion/palette；ACP command；CodeCommand help；docs-site command reference / tools approvals 文档；targeted tests。
+- 不做什么：不做权限编辑器；不在运行中切换 approval mode；不改 agent runtime permission policy；不改 coding tool 执行；不打印 raw tool input、prompt、secret、工具输出全文。
+- 主要风险：把诊断命令误做成权限管理器；把 sandbox 当成 permission 替代；输出过多导致敏感信息泄露。
 
 ## 预算选择
 
 选择预算：complex
 
-选择理由：[为什么本任务适合这个预算]
+选择理由：虽是小功能，但涉及 CLI/TUI/ACP/docs/regression parity，是固定 slash command surface。
 
 ## 上下文包（Context Packet）
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+| C-001 | repo-guidance | TARGET:AGENTS.md | Monorepo、Harness、Java 8、任务位置约束 | coordinator / reviewer |
+| C-002 | module-plan | TARGET:coding-agent-harness/planning/modules/cli-host/module_plan.md | CLI host 当前任务与边界 | coordinator / reviewer |
+| C-003 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/SlashCommandController.java | slash root/completion/palette | worker |
+| C-004 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/runtime/CodingCliSessionRunner.java | interactive dispatch 和 TUI 输出 | worker |
+| C-005 | code | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/acp/AcpSlashCommandSupport.java | ACP command list / headless 输出 | worker |
+| C-006 | docs | TARGET:docs-site/docs/coding-agent/command-reference.md | 用户命令参考 | worker / reviewer |
+| C-007 | docs | TARGET:docs-site/docs/coding-agent/tools-and-approvals.md | approval 机制文档 | worker / reviewer |
+| C-008 | task-reference | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/references/cli-permissions-command-ux-plan.md | 本任务设计与执行方案 | coordinator / worker / reviewer |
 
 ## 步骤
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+1. 从最新 `origin/dev` 创建 `.worktrees/feature/cli-permissions-command-ux`。
+2. 创建 Harness module task 并启动。
+3. 注册 `/permissions` root command 和 `status` 补全。
+4. 在 CLI runtime 和 ACP 中渲染只读 permission summary。
+5. 更新 top-level help、in-session help、docs-site。
+6. 添加/更新 tests。
+7. 运行 targeted tests、broad CLI tests、docs build、diff check、Harness status。
+8. 更新 progress/review/walkthrough，提交、推送、创建 PR 到 `dev`。
 
 ## 验收标准
 
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
+- [ ] `/permissions` 在 root completion、palette、help、runtime dispatch 中可用。
+- [ ] `/permissions status` 是显式别名。
+- [ ] `/permissions inspect` 等未知子命令返回明确错误。
+- [ ] ACP `available_commands` 包含 `permissions`，执行返回 deterministic summary。
+- [ ] 输出不包含 raw tool input、prompt、provider key、baseUrl credential 或工具输出全文。
+- [ ] docs-site 写清 `/permissions` 与 approval mode、ACP、sandbox 的关系。
+- [ ] RG-004 targeted/broad、RG-008 docs build、Harness status 通过。
 
 ## 工作树（Worktree）
 
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
+- 路径：TARGET:.worktrees/feature/cli-permissions-command-ux
+- 分支：feature/cli-permissions-command-ux
+- Worker owner：coordinator
+- Worker handoff commit required：yes
+- Coordinator integration branch：dev
 
 ## 长程任务判定
 
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
+- 是否属于长程任务：否；本切片 bounded。
+- Stop Condition 摘要：如果需要做权限编辑器、动态切换 approval、或跨模块改 permission policy，则停止并另开任务。
 
 ## 审查判定
 
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
+- 是否需要对抗性审查：是，self review。
+- Reviewer：self + PR/CI。
+- No-finding 要求：不得存在敏感信息泄露、权限语义误导或 CLI/ACP/docs 不一致。
 
 ## 关联
 
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
-
-## 模块关联（启用模块并行时填写）
-
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
-
-## Module Preset
-
-This module task was created through the `module` preset.
-
-| Field | Value |
-| --- | --- |
-| Module Key | cli-host |
-
-## Module Context Entry Points
-
-Read these module-level entry points before changing shared module behavior. Continue into narrower context only when the task surface requires it.
-
-| Reference | Path | Why / When |
-| --- | --- | --- |
-| Module brief | coding-agent-harness/planning/modules/cli-host/brief.md | Start here for the module purpose and current scope. |
-| Module plan | coding-agent-harness/planning/modules/cli-host/module_plan.md | Use this for module steps, active task links, and handoff state. |
-| Module visual map | coding-agent-harness/planning/modules/cli-host/visual_map.md | Inspect when the change affects module sequencing or dependencies. |
+- 相关 Regression Gate：RG-004、RG-008。
+- 审查报告：`review.md`
+- Module：cli-host
+- Module Plan：TARGET:coding-agent-harness/planning/modules/cli-host/module_plan.md

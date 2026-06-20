@@ -48,6 +48,7 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/process ");
         assertContainsValue(candidates, "/team");
         assertContainsValue(candidates, "/memory ");
+        assertContainsValue(candidates, "/permissions ");
     }
 
     @Test
@@ -150,6 +151,33 @@ public class SlashCommandControllerTest {
         List<Candidate> candidates = controller.suggest("/memory ", "/memory ".length());
 
         assertContainsValue(candidates, "status");
+    }
+
+    @Test
+    public void suggestPermissionsStatusAliasAfterTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-permissions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/permissions ", "/permissions ".length());
+
+        assertContainsValue(candidates, "status");
+    }
+
+    @Test
+    public void suggestExactPermissionsCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-permissions-exact");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/permissions", "/permissions".length());
+
+        assertContainsValue(candidates, "/permissions ");
+        assertTrue(!containsValue(candidates, "/permissions status"));
     }
 
     @Test

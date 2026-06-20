@@ -1,5 +1,10 @@
 package io.github.lnyocly.ai4j.cli.acp;
 
+import io.github.lnyocly.ai4j.cli.ApprovalMode;
+import io.github.lnyocly.ai4j.cli.CliProtocol;
+import io.github.lnyocly.ai4j.cli.CliUiMode;
+import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
+import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMemberSnapshot;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamState;
@@ -36,6 +41,7 @@ public class AcpSlashCommandSupportTest {
         Assert.assertTrue(containsCommand("model"));
         Assert.assertTrue(containsCommand("experimental"));
         Assert.assertTrue(containsCommand("memory"));
+        Assert.assertTrue(containsCommand("permissions"));
     }
 
     @Test
@@ -83,6 +89,90 @@ public class AcpSlashCommandSupportTest {
         );
         Assert.assertNotNull(unknownResult);
         Assert.assertTrue(unknownResult.getOutput().contains("Unknown /memory option"));
+    }
+
+    @Test
+    public void executePermissionsShouldRenderSafeApprovalSummary() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-acp-permissions-command");
+        String sessionId = "permissions-command-session";
+        DefaultCodingSessionManager sessionManager = seedTeamHistory(workspace, sessionId);
+
+        ManagedCodingSession session = new ManagedCodingSession(
+                new CodingSession(sessionId, null, null, null, null),
+                "openai",
+                "responses",
+                "fake-model",
+                workspace.toString(),
+                null,
+                null,
+                null,
+                sessionId,
+                null,
+                System.currentTimeMillis(),
+                System.currentTimeMillis()
+        );
+        CodeCommandOptions options = new CodeCommandOptions(
+                false,
+                CliUiMode.CLI,
+                PlatformType.OPENAI,
+                CliProtocol.RESPONSES,
+                "fake-model",
+                null,
+                null,
+                workspace.toString(),
+                null,
+                null,
+                null,
+                null,
+                0,
+                null,
+                null,
+                null,
+                Boolean.FALSE,
+                false,
+                sessionId,
+                null,
+                null,
+                workspace.resolve(".ai4j").resolve("sessions").toString(),
+                null,
+                ApprovalMode.SAFE,
+                false,
+                true,
+                true,
+                128000,
+                16384,
+                20000,
+                400,
+                false
+        );
+
+        AcpSlashCommandSupport.ExecutionResult result = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, options, null, null),
+                "/permissions"
+        );
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.getOutput().contains("permissions:"));
+        Assert.assertTrue(result.getOutput().contains("approvalMode=safe"));
+        Assert.assertTrue(result.getOutput().contains("AI4J_APPROVAL"));
+        Assert.assertTrue(result.getOutput().contains("session/request_permission"));
+        Assert.assertTrue(result.getOutput().contains("sandbox changes where tools execute"));
+        Assert.assertTrue(result.getOutput().contains("raw tool input, prompts, provider keys, and tool output are not printed"));
+        Assert.assertFalse(result.getOutput().contains("sk-"));
+
+        AcpSlashCommandSupport.ExecutionResult statusResult = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, options, null, null),
+                "/permissions status"
+        );
+        Assert.assertNotNull(statusResult);
+        Assert.assertTrue(statusResult.getOutput().contains("permissions:"));
+
+        AcpSlashCommandSupport.ExecutionResult unknownResult = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, options, null, null),
+                "/permissions inspect"
+        );
+        Assert.assertNotNull(unknownResult);
+        Assert.assertTrue(unknownResult.getOutput().contains("Unknown /permissions option"));
     }
 
     @Test
