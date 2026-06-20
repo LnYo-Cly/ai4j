@@ -22,34 +22,27 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-
 ### [2026-06-20 18:10] - task-start
 
 - 做了什么：Start CubeSandbox adapter: official API research completed; implement optional SandboxProvider adapter, docs, and real live-test hooks.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 验证结果：已记录。
+- 下一步：继续执行 adapter implementation。
+- 证据：report:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/task_plan.md:scope and context packet established
 
-### [2026-06-20 18:57] - task-log
+### [2026-06-20 18:57] - initial-protocol-implementation
 
-- 做了什么：Implemented CubeSandboxProvider adapter and protocol-level regression baseline; live CubeSandbox env variables are currently absent in this shell, so live smoke remains opt-in pending-env.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：command:mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest,AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test:passed 13 tests covering CubeSandbox protocol, Sandbox SPI, and AgentSession sandbox binding
+- 做了什么：Implemented CubeSandboxProvider adapter and protocol-level regression baseline; live CubeSandbox env variables were absent in this shell, so live smoke remained opt-in pending-env.
+- 验证结果：initial combined test passed before later review hardening.
+- 下一步：broad regression, docs, review.
+- 证据：command:TARGET:.:`mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest,AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test` passed initial 13-test baseline
 
-### [2026-06-20 19:06] - task-log
+### [2026-06-20 19:06] - initial-broad-validation
 
-- 做了什么：Completed broad agent regression, docs build, diff check, secret-fragment scan, and opt-in live test skip verification for CubeSandbox provider.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：command:mvn -pl ai4j-agent -am -DskipTests=false test:passed extension API 31, core 103, agent 134 tests
+- 做了什么：Completed broad agent regression, docs build, diff check, secret-fragment scan, and opt-in live test skip verification for the first CubeSandbox provider cut.
+- 验证结果：initial broad gate passed before later review hardening; final broad result is recorded below.
+- 下一步：subagent review and hardening.
+- 证据：command:TARGET:.:`mvn -pl ai4j-agent -am -DskipTests=false test` passed initial broad agent baseline
+
 ### [2026-06-21 03:27] - reviewer-fix-loop
 
 - 做了什么：处理 read-only subagent review 的 blocking findings：新增 `CUBE_ENVD_PORT` / `spec.config.envdPort` 兼容 49983/49999 数据面端口差异；为 raw socket HTTP path 增加 virtual host/header CRLF 拒绝；移除远端 metadata 中的 `ai4jWorkspaceId` 和 session labels 中的 `apiUrl/proxyNodeIp`；补 `X-Access-Token`、49999 override、invalid domain、requestTimeoutMillis 回归。
@@ -57,22 +50,11 @@
 - 下一步：运行 combined/broad/docs/diff/Harness/live pending-env final gates。
 - 证据：command:TARGET:.:`mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test` passed with 8 tests
 
-## 残余
-
-- CubeSandbox live smoke 当前 shell 缺少 `AI4J_CUBESANDBOX_LIVE`、`CUBE_API_URL`/`E2B_API_URL`、`CUBE_TEMPLATE_ID`，只能记录 LV-002 pending-env，不能声称 live 通过。
-- `proxyNodeIp + https`、files/Jupyter/snapshot/browser、`ai4j-coding` 全量 tool routing 不在本任务范围，后续另开任务。
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass
-- Registry update needed：agent-runtime step should move to review after final commit / task-review
-- Harness Ledger update needed：task lifecycle commands will sync generated ledger after clean commit
-- 负责人：coordinator
 ### [2026-06-21 03:35] - final-validation
 
-- 做了什么：完成 CubeSandbox adapter final gate；同步 Regression SSoT / Cadence Ledger 为最终结果；确认 docs page 被 `.gitignore` 忽略，提交时需 `git add -f`。
+- 做了什么：完成 CubeSandbox adapter final gate；同步 Regression SSoT / Cadence Ledger 为最终结果；确认 docs page 被 `.gitignore` 忽略并通过 `git add -f` 纳入提交。
 - 验证结果：targeted、combined、broad agent、docs build、diff check、Harness status、live opt-in skip 均有真实输出；secret scan 只命中代码中的 header 名称和 lesson token，不包含真实密钥。
-- 下一步：写 `walkthrough.md`，stage/commit，clean tree 后执行 `task-review`，再推送分支。
+- 下一步：commit, task-review, push, PR。
 - 证据：command:TARGET:.:`mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest,AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test` passed with 16 tests
 - 证据：command:TARGET:.:`mvn -pl ai4j-agent -am -DskipTests=false test` passed with extension API 31, core 103, agent 137 tests
 - 证据：command:TARGET:docs-site:`npm --prefix docs-site run build` passed
@@ -82,7 +64,26 @@
 
 ### [2026-06-20 19:38] - task-review
 
-- 做了什么：CubeSandbox sandbox provider adapter ready for review
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 做了什么：Lifecycle `task-review` created Agent Review Submission and governance commit `1933493`, then scanner reported remaining template residue in `visual_map.md` and `progress.md`.
+- 验证结果：review submission created but queue state became `missing-materials` until task-local material repair.
+- 下一步：repair task-local materials and re-run Harness status/review.
+- 证据：command:TARGET:.:`npx --yes coding-agent-harness task-review 2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb --message "CubeSandbox sandbox provider adapter ready for review" .` committed governance and reported two repairable material issues
+
+### [2026-06-21 03:43] - material-repair
+
+- 做了什么：Rewrote `visual_map.md` and `progress.md` to remove default example placeholders and reflect actual CubeSandbox phase/protocol/validation state.
+- 验证结果：pending `harness status --json` rerun.
+- 下一步：commit material repair, re-run Harness status, then re-run or rely on review lifecycle state as appropriate.
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb:visual_map/progress material repair
+
+## 残余
+
+- CubeSandbox live smoke 当前 shell 缺少 `AI4J_CUBESANDBOX_LIVE`、`CUBE_API_URL`/`E2B_API_URL`、`CUBE_TEMPLATE_ID`，只能记录 LV-002 pending-env，不能声称 live 通过。
+- `proxyNodeIp + https`、files/Jupyter/snapshot/browser、`ai4j-coding` 全量 tool routing 不在本任务范围，后续另开任务。
+
+## 协调者交接（Coordinator，启用模块并行时填写）
+
+- Global sync status：pending-coordinator-pass
+- Registry update needed：agent-runtime step should remain review after material repair / review lifecycle
+- Harness Ledger update needed：task lifecycle commands sync generated ledger; repair commit follows task-review governance commit
+- 负责人：coordinator
