@@ -1,6 +1,6 @@
 # AI4J Agent SDK architecture enhancement roadmap - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-20 02:02] - task-start
+
+- 做了什么：开始记录 AI4J Agent SDK 架构增强规划：以 ai4j-agent 为主，不新增 Host Kernel/AgentHost 模块，覆盖 memory/compact、YAML Agent、插件生态、sandbox/remote runner、coding CLI/TUI。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
