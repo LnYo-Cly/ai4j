@@ -19,9 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| CODING-01 | 维护 workspace-aware runtime 合同 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5/task_plan.md` | core-sdk |
-| CODING-02 | outer loop / compaction 回归 | planned | none | CODING-01 |
-| CODING-03 | CLI host 同步评估 | planned | none | CODING-01 |
+| T-P3-CODING-SANDBOX-TOOL-ROUTING-6C82C346 | P3 Coding sandbox tool routing | reserved | coding-agent-harness/planning/modules/coding-runtime/tasks/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346/task_plan.md | none |
 
 ## 活跃任务
 
