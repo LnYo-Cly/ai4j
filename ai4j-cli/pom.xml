@@ -115,19 +115,35 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>filter-cli-dist-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/filtered-dist</outputDirectory>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <useDefaultDelimiters>false</useDefaultDelimiters>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/dist</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.7.1</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>io.github.lnyocly.ai4j.cli.Ai4jCliMain</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <appendAssemblyId>true</appendAssemblyId>
-                </configuration>
                 <executions>
                     <execution>
                         <id>bundle-cli</id>
@@ -135,6 +151,30 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>io.github.lnyocly.ai4j.cli.Ai4jCliMain</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bundle-cli-distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/assembly/dist.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

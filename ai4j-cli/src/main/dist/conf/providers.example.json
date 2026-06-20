@@ -1,0 +1,19 @@
+{
+  "defaultProfile": "openai-compatible",
+  "profiles": {
+    "openai-compatible": {
+      "provider": "openai",
+      "protocol": "chat",
+      "model": "gpt-4o-mini",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": "${OPENAI_API_KEY}"
+    },
+    "private-compatible": {
+      "provider": "openai",
+      "protocol": "chat",
+      "model": "your-model-name",
+      "baseUrl": "https://your-openai-compatible-endpoint/v1",
+      "apiKey": "${YOUR_PROVIDER_API_KEY}"
+    }
+  }
+}

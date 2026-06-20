@@ -37,7 +37,29 @@ ai4j-cli acp ...    -> ACP stdio server
 
 ---
 
-## 2. 构建当前仓库里真正可直接运行的产物
+## 2. 先选择运行入口：安装脚本、dist 包，还是 fat jar
+
+如果你只是想像使用 Codex / Claude Code 一样在终端输入 `ai4j`，优先看安装脚本或 dist 包。
+
+### 2.1 在线安装脚本
+
+Unix / macOS：
+
+```bash
+curl -fsSL https://ai4j.cn/install.sh | sh
+ai4j --help
+```
+
+Windows PowerShell：
+
+```powershell
+iwr https://ai4j.cn/install.ps1 -UseBasicParsing | iex
+ai4j --help
+```
+
+这条路径会下载 Maven 仓库里的 fat jar，并在用户目录生成 launcher。
+
+### 2.2 从源码构建 dist 包
 
 构建命令：
 
@@ -45,22 +67,46 @@ ai4j-cli acp ...    -> ACP stdio server
 mvn -pl ai4j-cli -am -DskipTests package
 ```
 
-当前最值得直接使用的产物是：
+会生成：
 
 ```text
 ai4j-cli/target/ai4j-cli-2.3.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.3.0-dist.zip
+ai4j-cli/target/ai4j-cli-2.3.0-dist.tar.gz
 ```
 
-为什么是这个文件，而不是普通 jar：
+`dist` 包里已经包含：
 
-- `ai4j-cli/pom.xml` 里通过 `maven-assembly-plugin` 生成 `jar-with-dependencies`
-- manifest 主类是 `io.github.lnyocly.ai4j.cli.Ai4jCliMain`
-- 这个产物把 CLI 依赖一并打进去，更适合直接 `java -jar`
+```text
+bin/ai4j
+bin/ai4j.cmd
+lib/ai4j-cli-2.3.0-jar-with-dependencies.jar
+conf/providers.example.json
+conf/workspace.example.json
+README.md
+```
 
-所以当前“最快跑起来”的最稳路径就是：
+Windows 解压后可以直接：
 
-- 先构建 fat jar
-- 再直接 `java -jar`
+```powershell
+.\ai4j-cli-2.3.0\bin\ai4j.cmd --help
+```
+
+Unix / macOS 解压后可以直接：
+
+```bash
+./ai4j-cli-2.3.0/bin/ai4j --help
+```
+
+### 2.3 直接用 fat jar
+
+如果你在开发源码，fat jar 仍然是最直接的 smoke 路径：
+
+```powershell
+java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar --help
+```
+
+三条路径最终都会进入同一个 Java 主类：`io.github.lnyocly.ai4j.cli.Ai4jCliMain`。
 
 ---
 
@@ -295,7 +341,7 @@ quickstart 只能证明最小主链打通，不能替代完整运行验证。
 
 - 当前真正的运行入口是 `code`、`tui`、`acp`
 - `tui` 只是 `code --ui tui` 的宿主别名，不是另一套 runtime
-- quickstart 最稳的直接产物是 `ai4j-cli-<version>-jar-with-dependencies.jar`
+- quickstart 有三条真实入口：在线安装脚本、dist 包、fat jar
 - `--prompt` 决定 one-shot；不传 `--prompt` 才进入持续会话
 - quickstart 跑通后，下一步应该验证 session、workspace、provider/model 状态，而不是立刻堆更多功能
 

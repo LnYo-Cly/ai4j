@@ -25,6 +25,8 @@ target/
 /nbproject/private/
 /nbbuild/
 /dist/
+!ai4j-cli/src/main/dist/
+!ai4j-cli/src/main/dist/**
 /nbdist/
 /.nb-gradle/
 build/
@@ -41,6 +43,8 @@ skills-lock.json
 AGENTS.md
 node_modules/
 dist/
+!ai4j-cli/src/main/dist/
+!ai4j-cli/src/main/dist/**
 .rsbuild/
 .turbo/
 npm-debug.log*
