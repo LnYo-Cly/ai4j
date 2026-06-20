@@ -19,11 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| DOCS-01 | 维护 docs-site build contract | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-spring-boot-extension-configuration-wave-4-cb1cd3f6/task_plan.md` | none |
-| DOCS-02 | SSoT 同步检查 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | DOCS-01 |
-| DOCS-03 | 站点构建验证 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-docs-site-node-heap-regression-r-005-fix-08b5fbcb/task_plan.md` | DOCS-01 |
-| DOCS-EXT-01 | 插件包文档同步 | review-pending | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77/task_plan.md` | none |
-| DOCS-EXT-02 | 插件作者 cookbook 与 scaffold 文档同步 | in_progress | `coding-agent-harness/planning/tasks/2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6/task_plan.md` | DOCS-EXT-01 |
+| T-DOCS-SITE-AGENT-SDK-REAL-API-COMPLETENESS-PASS-D | docs site agent sdk real api completeness pass | reserved | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610/task_plan.md | none |
 
 ## 活跃任务
 
