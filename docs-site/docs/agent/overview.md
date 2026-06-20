@@ -73,7 +73,7 @@ AgentRequest
 
 Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，但它本身不负责宿主产品形态。
 
-如果你关心后续 Agent SDK 会怎样增强 Session、Memory、Blueprint、Sandbox 和 Runner，看 [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)。
+如果你想确认一个能力是否已经有真实 API，先看 [Agent SDK 真实 API 能力矩阵](/docs/agent/real-api-matrix)。如果你关心后续 Agent SDK 会怎样增强 Session、Memory、Blueprint、Sandbox 和 Runner，再看 [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)。
 
 ## 生产接入要注意什么
 
@@ -90,10 +90,11 @@ Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，
 
 ### 想先判断是否需要 Agent
 
-1. [Why Agent](/docs/agent/why-agent)
-2. [Use Cases and Paths](/docs/agent/use-cases-and-paths)
-3. [Architecture](/docs/agent/architecture)
-4. [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)
+1. [Agent SDK 真实 API 能力矩阵](/docs/agent/real-api-matrix)
+2. [Why Agent](/docs/agent/why-agent)
+3. [Use Cases and Paths](/docs/agent/use-cases-and-paths)
+4. [Architecture](/docs/agent/architecture)
+5. [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)
 
 ### 想先跑通
 

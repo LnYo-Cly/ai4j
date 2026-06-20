@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:docs-task-local |
 | Source task | 2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610 |
 | Owner | coordinator |
 | Last updated | 2026-06-20 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务沉淀的是 docs-site task-local 做法：新增能力矩阵前要用源码入口确认真实 API。该做法已写入本任务 `findings.md` 和页面自身的文档编写规则，暂不提升为全局 lesson；后续若多次复现，再单独开 lesson promotion。
 
 ## Promotion Notes
 

@@ -117,16 +117,24 @@ Agents / AgentBuilder
 
 ### `AgentSession`
 
-`AgentSession` 是“在同一 runtime 和大部分同一上下文下，换了一份新的 memory”。
+`AgentSession` 是同一 `Agent` 装配下的长程运行态容器。它仍然会为每个 session 创建独立 `AgentMemory`，但当前职责已经不止“切换 memory”。
 
-它回答的问题不是“新的 Agent 是什么”，而是：
+它回答的问题是：
 
-- 同一 Agent 如何开始一个新的状态空间
+- 同一 Agent 如何开始一个新的状态空间；
+- 这个状态空间如何拥有稳定 `sessionId`、metadata、event log 和 snapshot；
+- 如何通过 `AgentSessionStore` 保存/恢复；
+- 如何记录最近一次 compact 结果；
+- 如何绑定非敏感 sandbox 摘要。
 
 所以如果你理解了 `Agent.newSession()` 的实现，就会明白：
 
-- Session 不是完整克隆 Agent 运行环境
-- 它只是切换 memory
+- Session 不是完整克隆 Agent 运行环境；
+- 它会复用 runtime 和大部分 `AgentContext`；
+- 它会替换 memory、sessionId 和 event publisher；
+- 它把 metadata/event log/snapshot/store/compact/sandbox binding 收拢在 `AgentSession` 边界内。
+
+详细能力矩阵见 [Agent SDK 真实 API 能力矩阵](/docs/agent/real-api-matrix)，长程会话用法见 [Agent Session Runtime](/docs/agent/session-runtime)。
 
 ## 4. 第三层：runtime 线
 
