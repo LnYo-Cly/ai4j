@@ -17,6 +17,7 @@ public final class ExtensionInspectionSnapshot {
     private final List<ExtensionPromptResource> prompts;
     private final List<String> guardrails;
     private final List<String> lifecycleHooks;
+    private final List<ExtensionContribution> contributions;
 
     public ExtensionInspectionSnapshot(List<ExtensionToolSpec> tools,
                                        List<ExtensionCommandSpec> commands,
@@ -24,6 +25,16 @@ public final class ExtensionInspectionSnapshot {
                                        List<ExtensionPromptResource> prompts,
                                        List<String> guardrails,
                                        List<String> lifecycleHooks) {
+        this(tools, commands, skills, prompts, guardrails, lifecycleHooks, null);
+    }
+
+    public ExtensionInspectionSnapshot(List<ExtensionToolSpec> tools,
+                                       List<ExtensionCommandSpec> commands,
+                                       List<ExtensionSkillResource> skills,
+                                       List<ExtensionPromptResource> prompts,
+                                       List<String> guardrails,
+                                       List<String> lifecycleHooks,
+                                       List<ExtensionContribution> contributions) {
         this.tools = tools == null ? Collections.<ExtensionToolSpec>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExtensionToolSpec>(tools));
         this.commands = commands == null ? Collections.<ExtensionCommandSpec>emptyList()
@@ -36,6 +47,8 @@ public final class ExtensionInspectionSnapshot {
                 : Collections.unmodifiableList(new ArrayList<String>(guardrails));
         this.lifecycleHooks = lifecycleHooks == null ? Collections.<String>emptyList()
                 : Collections.unmodifiableList(new ArrayList<String>(lifecycleHooks));
+        this.contributions = contributions == null ? Collections.<ExtensionContribution>emptyList()
+                : Collections.unmodifiableList(new ArrayList<ExtensionContribution>(contributions));
     }
 
     public List<ExtensionToolSpec> getTools() {
@@ -60,5 +73,9 @@ public final class ExtensionInspectionSnapshot {
 
     public List<String> getLifecycleHooks() {
         return lifecycleHooks;
+    }
+
+    public List<ExtensionContribution> getContributions() {
+        return contributions;
     }
 }

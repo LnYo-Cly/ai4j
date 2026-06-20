@@ -14,6 +14,7 @@ public final class ExtensionActivationPlan {
     private final List<ExtensionActivationItem> skills;
     private final List<ExtensionActivationItem> prompts;
     private final List<ExtensionActivationItem> guardrails;
+    private final List<ExtensionActivationItem> contributions;
 
     public ExtensionActivationPlan(ExtensionManifest manifest,
                                    boolean enabled,
@@ -23,6 +24,18 @@ public final class ExtensionActivationPlan {
                                    List<ExtensionActivationItem> skills,
                                    List<ExtensionActivationItem> prompts,
                                    List<ExtensionActivationItem> guardrails) {
+        this(manifest, enabled, explicitResourceActivation, tools, commands, skills, prompts, guardrails, null);
+    }
+
+    public ExtensionActivationPlan(ExtensionManifest manifest,
+                                   boolean enabled,
+                                   boolean explicitResourceActivation,
+                                   List<ExtensionActivationItem> tools,
+                                   List<ExtensionActivationItem> commands,
+                                   List<ExtensionActivationItem> skills,
+                                   List<ExtensionActivationItem> prompts,
+                                   List<ExtensionActivationItem> guardrails,
+                                   List<ExtensionActivationItem> contributions) {
         if (manifest == null) {
             throw new IllegalArgumentException("extension manifest must not be null");
         }
@@ -34,6 +47,7 @@ public final class ExtensionActivationPlan {
         this.skills = copy(skills);
         this.prompts = copy(prompts);
         this.guardrails = copy(guardrails);
+        this.contributions = copy(contributions);
     }
 
     public ExtensionManifest getManifest() {
@@ -66,6 +80,10 @@ public final class ExtensionActivationPlan {
 
     public List<ExtensionActivationItem> getGuardrails() {
         return guardrails;
+    }
+
+    public List<ExtensionActivationItem> getContributions() {
+        return contributions;
     }
 
     private static List<ExtensionActivationItem> copy(List<ExtensionActivationItem> items) {

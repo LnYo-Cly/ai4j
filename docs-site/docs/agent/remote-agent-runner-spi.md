@@ -214,7 +214,7 @@ mvn -pl ai4j-agent -am "-Dtest=AgentRunnerSpiContractTest" -DskipTests=false -Df
 
 Remote Runner 后续仍应分阶段推进：
 
-1. 在 `ai4j-extension-api` 中定义第三方 Runner provider 的插件贡献方式。
+1. 在 `ai4j-extension-api` 中已定义第三方 Runner provider 的 manifest-level 插件贡献方式：`ExtensionContributionType.RUNNER_PROVIDER`，见 [Plugin Contribution Contract](/docs/agent/plugin-contribution-contract)。
 2. 在 `ai4j-cli` 增加 attach/status/logs 等可见 UX。
 3. 在 docs-site 增加云端 Agent 产品化 guide。
 4. 等真实 provider 需求明确后，再决定是否新增独立 runner 模块或 starter。

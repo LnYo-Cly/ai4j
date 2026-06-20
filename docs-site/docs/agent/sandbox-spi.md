@@ -234,6 +234,6 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 推荐后续顺序：
 
 1. P2-B：已把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
-2. P2-C：允许第三方插件声明和贡献 `SandboxProvider`。
+2. P2-C：已允许第三方插件用 `ExtensionContributionType.SANDBOX_PROVIDER` 声明 `SandboxProvider` 贡献元数据；真实绑定仍由宿主完成，见 [Plugin Contribution Contract](/docs/agent/plugin-contribution-contract)。
 3. P3：让 `ai4j-coding` 的 file/shell/git/browser/project run/test runner 根据 sandbox binding 路由执行。
 4. P4：在 CLI/TUI 中显示 `/sandbox status`、provider、workspace、最近执行位置和 artifact。

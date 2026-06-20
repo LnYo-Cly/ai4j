@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.extension.validation;
 
 import io.github.lnyocly.ai4j.extension.Ai4jExtension;
 import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContribution;
+import io.github.lnyocly.ai4j.extension.ExtensionContributionType;
 import io.github.lnyocly.ai4j.extension.ExtensionContext;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
@@ -99,6 +101,41 @@ public class ExtensionValidatorTest {
         Assert.assertEquals(2, reports.size());
         Assert.assertEquals("complete-pack", reports.get(0).getExtensionId());
         Assert.assertEquals("broken-pack", reports.get(1).getExtensionId());
+    }
+
+    @Test
+    public void shouldWarnWhenMetadataOnlyCapabilityHasNoContributionMetadata() {
+        ExtensionValidationReport report = ExtensionValidator.validate(
+                ExtensionRegistry.of(new MetadataOnlyCapabilityWithoutContributionExtension()),
+                "metadata-only-missing"
+        );
+
+        Assert.assertTrue(report.isValid());
+        Assert.assertEquals("warn", report.getStatus());
+        Assert.assertTrue(hasIssue(report, "capability.contribution.missing"));
+    }
+
+    @Test
+    public void shouldValidateProviderStyleContributionMetadata() {
+        ExtensionValidationReport report = ExtensionValidator.validate(
+                ExtensionRegistry.of(new ProviderContributionExtension()),
+                "provider-pack"
+        );
+
+        Assert.assertTrue(report.isValid());
+        Assert.assertEquals("pass", report.getStatus());
+    }
+
+    @Test
+    public void shouldWarnWhenExplicitProviderContributionHasNoPermissionMetadata() {
+        ExtensionValidationReport report = ExtensionValidator.validate(
+                ExtensionRegistry.of(new ProviderContributionWithoutPermissionExtension()),
+                "provider-no-permission"
+        );
+
+        Assert.assertTrue(report.isValid());
+        Assert.assertEquals("warn", report.getStatus());
+        Assert.assertTrue(hasIssue(report, "contribution.permission.missing"));
     }
 
     private static boolean hasIssue(ExtensionValidationReport report, String code) {
@@ -295,6 +332,69 @@ public class ExtensionValidatorTest {
                             return "";
                         }
                     });
+        }
+    }
+
+    private static class MetadataOnlyCapabilityWithoutContributionExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("metadata-only-missing")
+                    .name("Metadata Only Missing")
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.SANDBOX_PROVIDER)
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+        }
+    }
+
+    private static class ProviderContributionExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("provider-pack")
+                    .name("Provider Pack")
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.SANDBOX_PROVIDER)
+                    .capability(ExtensionCapability.RUNNER_PROVIDER)
+                    .contribution(ExtensionContribution.builder()
+                            .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                            .name("cube-sandbox")
+                            .description("Create sandbox sessions through a host-bound provider.")
+                            .permission("sandbox.create")
+                            .build())
+                    .contribution(ExtensionContribution.builder()
+                            .type(ExtensionContributionType.RUNNER_PROVIDER)
+                            .name("remote-runner")
+                            .description("Create remote agent runner sessions through a host-bound provider.")
+                            .permission("runner.create")
+                            .build())
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+        }
+    }
+
+    private static class ProviderContributionWithoutPermissionExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("provider-no-permission")
+                    .name("Provider No Permission")
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.SANDBOX_PROVIDER)
+                    .contribution(ExtensionContribution.builder()
+                            .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                            .name("sandbox-without-permission")
+                            .description("Missing permission metadata.")
+                            .build())
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
         }
     }
 }

@@ -171,7 +171,7 @@ P0-D 基础已经落地：`ai4j-agent` 增加 `io.github.lnyocly.ai4j.agent.perm
 - SandboxProvider
 - RemoteAgentRunnerProvider
 
-这部分要同时考虑 `ai4j-agent` 和 `ai4j-extension-api` 的边界：公共合同放到 extension API，运行时编排仍由 `ai4j-agent` 控制。首版 Hook 是 observation-first，不是 prompt/tool/model response 的可变拦截器。
+这部分要同时考虑 `ai4j-agent` 和 `ai4j-extension-api` 的边界：公共合同放到 extension API，运行时编排仍由 `ai4j-agent` 控制。P2-C 已把 manifest-level 贡献声明落到 `ExtensionContribution` / `ExtensionContributionType`，使用细节见 [Plugin Contribution Contract](/docs/agent/plugin-contribution-contract)。首版 Hook 是 observation-first，不是 prompt/tool/model response 的可变拦截器。
 
 ## 4. P1：Agent Blueprint YAML
 

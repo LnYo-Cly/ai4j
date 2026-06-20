@@ -132,13 +132,18 @@ public final class ExtensionRuntimeState {
     }
 
     public ExtensionInspectionSnapshot inspectionSnapshot() {
+        return inspectionSnapshot(null);
+    }
+
+    public ExtensionInspectionSnapshot inspectionSnapshot(ExtensionManifest manifest) {
         return new ExtensionInspectionSnapshot(
                 new ArrayList<ExtensionToolSpec>(tools.values()),
                 new ArrayList<ExtensionCommandSpec>(commands.values()),
                 new ArrayList<ExtensionSkillResource>(skills.values()),
                 new ArrayList<ExtensionPromptResource>(prompts.values()),
                 new ArrayList<String>(guardrails.keySet()),
-                new ArrayList<String>(lifecycleHooks.keySet())
+                new ArrayList<String>(lifecycleHooks.keySet()),
+                manifest == null ? null : manifest.getContributions()
         );
     }
 

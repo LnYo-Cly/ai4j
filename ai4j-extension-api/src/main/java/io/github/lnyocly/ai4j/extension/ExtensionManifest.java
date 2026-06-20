@@ -14,6 +14,7 @@ public final class ExtensionManifest {
     private final String version;
     private final String vendor;
     private final Set<ExtensionCapability> capabilities;
+    private final List<ExtensionContribution> contributions;
     private final List<String> permissions;
     private final String configPrefix;
 
@@ -23,11 +24,13 @@ public final class ExtensionManifest {
         this.version = emptyToNull(builder.version);
         this.vendor = emptyToNull(builder.vendor);
         this.capabilities = Collections.unmodifiableSet(new LinkedHashSet<ExtensionCapability>(builder.capabilities));
+        this.contributions = Collections.unmodifiableList(copyContributions(builder.contributions));
         this.permissions = Collections.unmodifiableList(copyNormalized(builder.permissions));
         this.configPrefix = emptyToNull(builder.configPrefix);
         if (this.capabilities.isEmpty()) {
             throw new IllegalArgumentException("extension capabilities must not be empty");
         }
+        validateContributions(this.capabilities, this.contributions);
     }
 
     public String getId() {
@@ -50,6 +53,10 @@ public final class ExtensionManifest {
         return capabilities;
     }
 
+    public List<ExtensionContribution> getContributions() {
+        return contributions;
+    }
+
     public List<String> getPermissions() {
         return permissions;
     }
@@ -64,6 +71,39 @@ public final class ExtensionManifest {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    private static List<ExtensionContribution> copyContributions(Collection<ExtensionContribution> values) {
+        List<ExtensionContribution> copy = new ArrayList<ExtensionContribution>();
+        if (values == null) {
+            return copy;
+        }
+        for (ExtensionContribution value : values) {
+            if (value != null) {
+                copy.add(value);
+            }
+        }
+        return copy;
+    }
+
+    private static void validateContributions(Set<ExtensionCapability> capabilities,
+                                              List<ExtensionContribution> contributions) {
+        if (contributions == null || contributions.isEmpty()) {
+            return;
+        }
+        Set<String> seen = new LinkedHashSet<String>();
+        for (ExtensionContribution contribution : contributions) {
+            String key = contribution.getTypeId() + ":" + contribution.getName();
+            if (!seen.add(key)) {
+                throw new IllegalArgumentException("duplicate extension contribution: " + key);
+            }
+            ExtensionContributionType type = contribution.getType();
+            if (type != null && type.hasRuntimeCapability()
+                    && !capabilities.contains(type.getRuntimeCapability())) {
+                throw new IllegalArgumentException("extension contribution " + contribution.getName()
+                        + " requires capability: " + type.getRuntimeCapability().getId());
+            }
+        }
     }
 
     private static List<String> copyNormalized(Collection<String> values) {
@@ -152,6 +192,7 @@ public final class ExtensionManifest {
         private String version;
         private String vendor;
         private final Set<ExtensionCapability> capabilities = new LinkedHashSet<ExtensionCapability>();
+        private final List<ExtensionContribution> contributions = new ArrayList<ExtensionContribution>();
         private final List<String> permissions = new ArrayList<String>();
         private String configPrefix;
 
@@ -194,6 +235,36 @@ public final class ExtensionManifest {
             if (capabilities != null) {
                 for (ExtensionCapability capability : capabilities) {
                     capability(capability);
+                }
+            }
+            return this;
+        }
+
+        public Builder contribution(ExtensionContribution contribution) {
+            if (contribution != null) {
+                this.contributions.add(contribution);
+            }
+            return this;
+        }
+
+        public Builder contribution(ExtensionContributionType type, String name) {
+            return contribution(ExtensionContribution.builder()
+                    .type(type)
+                    .name(name)
+                    .build());
+        }
+
+        public Builder contribution(String type, String name) {
+            return contribution(ExtensionContribution.builder()
+                    .type(type)
+                    .name(name)
+                    .build());
+        }
+
+        public Builder contributions(Collection<ExtensionContribution> contributions) {
+            if (contributions != null) {
+                for (ExtensionContribution contribution : contributions) {
+                    contribution(contribution);
                 }
             }
             return this;

@@ -187,7 +187,7 @@ public final class ExtensionRegistry {
         Ai4jExtension extension = discovered.get(normalized);
         ExtensionManifest manifest = manifests.get(normalized);
         extension.apply(new DefaultExtensionContext(manifest, state));
-        return state.inspectionSnapshot();
+        return state.inspectionSnapshot(manifest);
     }
 
     public ExtensionActivationPlan activationPlan(String extensionId) {
@@ -203,7 +203,8 @@ public final class ExtensionRegistry {
                 commandItems(snapshot.getCommands(), enabled),
                 skillItems(snapshot.getSkills(), enabled),
                 promptItems(snapshot.getPrompts(), enabled),
-                guardrailItems(snapshot.getGuardrails(), enabled)
+                guardrailItems(snapshot.getGuardrails(), enabled),
+                contributionItems(snapshot.getContributions(), enabled)
         );
     }
 
@@ -359,6 +360,24 @@ public final class ExtensionRegistry {
         return items;
     }
 
+    private List<ExtensionActivationItem> contributionItems(List<ExtensionContribution> contributions, boolean enabled) {
+        List<ExtensionActivationItem> items = new ArrayList<ExtensionActivationItem>();
+        if (contributions == null) {
+            return items;
+        }
+        for (ExtensionContribution contribution : contributions) {
+            if (contribution == null) {
+                continue;
+            }
+            boolean active = enabled && !contribution.isRequiresExplicitActivation();
+            String reason = active ? "enabled package contribution" : contributionInactiveReason(enabled, contribution);
+            items.add(active
+                    ? ExtensionActivationItem.active(contribution.getTypeId(), contribution.getName(), reason)
+                    : ExtensionActivationItem.inactive(contribution.getTypeId(), contribution.getName(), reason));
+        }
+        return items;
+    }
+
     private void addMissingItems(List<ExtensionActivationItem> items,
                                  String type,
                                  Set<String> requested,
@@ -397,6 +416,16 @@ public final class ExtensionRegistry {
             return "extension not enabled";
         }
         return explicitResourceActivation ? "not allowed" : "enabled package compatibility";
+    }
+
+    private String contributionInactiveReason(boolean enabled, ExtensionContribution contribution) {
+        if (!enabled) {
+            return "extension not enabled";
+        }
+        if (contribution != null && contribution.isRequiresExplicitActivation()) {
+            return "requires host binding";
+        }
+        return "inactive";
     }
 
     public List<ExtensionToolSpec> getTools() {
