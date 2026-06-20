@@ -2,43 +2,18 @@
 
 ## 状态：审查中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
-
-证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- PR CI 尚未运行；推送 PR 后继续 watch checks。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：synced by `harness task-review` commit `080d15a`.
+- Registry update needed：已由 Harness lifecycle 写入 `coding-agent-harness/planning/modules/docs-site/module_plan.md`。
+- Harness Ledger update needed：已由 Harness lifecycle 写入 `coding-agent-harness/governance/generated/Harness-Ledger.md`。
+- 负责人：coordinator
 
 ### [2026-06-20 17:30] - task-start
 
@@ -67,3 +42,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-21 02:18] - material repair
+
+- 做了什么：移除 `progress.md` 中默认模板示例段落，保留真实任务记录、残余和协调者交接。
+- 验证结果：准备重新运行 Harness status，确认 missing-materials 清空。
+- 下一步：提交修复，重新检查任务队列，推送 PR。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/docs-site/tasks/2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e/progress.md:removed default progress-log-entry template material.
