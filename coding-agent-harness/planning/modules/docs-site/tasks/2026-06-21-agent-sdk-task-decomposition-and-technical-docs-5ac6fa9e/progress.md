@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 17:43] - task-log
+
+- 做了什么：完成 Agent SDK 任务拆解 reference 与 docs-site 技术文档入口；新增 sidebar/overview/roadmap 链接，并完成 docs build、diff check、token scan 初步验证。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:TARGET:coding-agent-harness/planning/modules/docs-site/tasks/2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e/references/agent-sdk-task-decomposition-2026-06-21.md:T0-T10 task decomposition recorded
