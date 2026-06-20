@@ -62,3 +62,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 08:23] - task-log
+
+- 做了什么：补充记录用户最终规划要求：memory/compact 设计需参考 Codex/Claude Code 等优秀上下文管理经验但不照搬泄露源码；支持 YAML declarative agent；插件生态、sandbox/remote runner、CLI/TUI 按现有模块边界拆任务推进。
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md:final planning supplement requested by user
