@@ -90,3 +90,9 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md:pending master implementation plan
+### [2026-06-20 23:55] - 完整任务规划记录
+
+- 做了什么：新增 `references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md`，把本轮关于 AI4J Agent SDK / Coding Agent CLI/TUI / 插件生态 / Sandbox / Remote Runner / YAML Blueprint / Memory Compact / docs-site 的完整讨论整理成后续实现首读规划；同步更新 `references/INDEX.md`、`task_plan.md` 和 `findings.md`。
+- 验证结果：待运行 `git diff --check` 与 `npx --yes coding-agent-harness status --json .`。
+- 下一步：验证规划材料；后续实现前先用 `harness status --json` 和最新 PR 状态校准队列。
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md:complete agent sdk enhancement task planning record

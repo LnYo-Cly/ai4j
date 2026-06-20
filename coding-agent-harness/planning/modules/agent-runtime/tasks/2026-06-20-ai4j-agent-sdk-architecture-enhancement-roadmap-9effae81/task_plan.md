@@ -38,6 +38,7 @@ Task Package Index: required
 | C-009 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md | 本任务沉淀的完整规划正文 | coordinator / reviewer / worker |
 | C-010 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md | 用户最终确认后的可执行摘要，便于后续实现任务快速读取 | coordinator / reviewer / worker |
 | C-011 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md | 当前实施总计划，按 R0/P0-P7 和推荐任务顺序组织后续实现队列 | coordinator / reviewer / worker |
+| C-012 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md | 本轮完整讨论规划记录，作为后续实现任务的首读材料 | coordinator / reviewer / worker |
 
 ## 步骤
 
@@ -46,8 +47,9 @@ Task Package Index: required
 3. 写入完整规划 reference，覆盖 Session/Memory、Blueprint、插件、Sandbox/Remote Runner、Coding CLI/TUI、Harness 关系和任务队列。
 4. 写入用户最终确认后的摘要版 reference，明确 memory/compact 参考优秀公开设计但不照搬泄露源码、支持 YAML declarative agent、插件生态和 sandbox/runner 的落地边界。
 5. 更新 task-local brief、plan、strategy、findings、visual map、progress、review、walkthrough，使下一轮 agent 可直接接续。
-6. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
-7. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
+6. 追加完整任务规划记录，覆盖产品定位、模块边界、Session/Memory/Compact、YAML Blueprint、插件生态、Sandbox/Remote Runner、CLI/TUI、docs-site 和实施队列。
+7. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
+8. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
 
 ## 验收标准
 
@@ -57,6 +59,8 @@ Task Package Index: required
 - [x] 规划记录“不写不存在 API 示例”和 docs-site 质量要求。
 - [x] 最终摘要单独记录到 `references/final-agent-sdk-enhancement-summary.md`，便于下一轮实现任务读取。
 - [x] 实施总计划单独记录到 `references/agent-sdk-enhancement-master-plan-2026-06-20.md`，便于后续按队列切分任务。
+- [x] 完整任务规划单独记录到
+eferences/agent-sdk-complete-enhancement-task-plan-2026-06-20.md，便于后续 agent 从单一入口读取本轮全部设计结论。
 - [x] `git diff --check` 通过。
 - [x] `npx --yes coding-agent-harness status --json .` 通过或只剩已解释 residual。
 
