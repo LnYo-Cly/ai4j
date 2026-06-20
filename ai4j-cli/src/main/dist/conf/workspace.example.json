@@ -1,0 +1,13 @@
+{
+  "activeProfile": "openai-compatible",
+  "modelOverride": null,
+  "experimentalSubagentsEnabled": false,
+  "experimentalAgentTeamsEnabled": false,
+  "agentDirectories": [
+    ".ai4j/agents"
+  ],
+  "skillDirectories": [
+    ".ai4j/skills"
+  ],
+  "enabledMcpServers": []
+}

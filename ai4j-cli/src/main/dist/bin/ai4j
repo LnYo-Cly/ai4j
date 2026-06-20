@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+set -eu
+
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls_output=$(ls -ld "$PRG")
+  link=$(expr "$ls_output" : '.*-> \(.*\)$')
+  if expr "$link" : '/.*' >/dev/null 2>&1; then
+    PRG="$link"
+  else
+    PRG=$(dirname "$PRG")/"$link"
+  fi
+done
+
+BIN_DIR=$(CDPATH= cd -- "$(dirname -- "$PRG")" && pwd)
+APP_HOME=$(CDPATH= cd -- "$BIN_DIR/.." && pwd)
+JAVA_BIN="${AI4J_JAVA:-java}"
+JAR_PATH="${AI4J_CLI_JAR:-$APP_HOME/lib/ai4j-cli-@project.version@-jar-with-dependencies.jar}"
+
+if [ ! -f "$JAR_PATH" ]; then
+  printf 'ai4j launcher: missing %s\n' "$JAR_PATH" >&2
+  exit 1
+fi
+
+if [ -n "${AI4J_JAVA_OPTS:-}" ]; then
+  # shellcheck disable=SC2086
+  exec "$JAVA_BIN" $AI4J_JAVA_OPTS -jar "$JAR_PATH" "$@"
+fi
+
+exec "$JAVA_BIN" -jar "$JAR_PATH" "$@"
