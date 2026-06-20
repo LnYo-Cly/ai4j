@@ -1,6 +1,6 @@
 # Agent SDK task decomposition and technical docs - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：`git diff --check` 通过；changed-file sensitive fragment scan 返回 `TOKEN_FRAGMENT_HITS=0`；`npm --prefix docs-site run build` 通过；Harness status 在提交前返回 `check=warn`/`dirty=true`/`missing=0`/`blocked=0`。
 - 下一步：提交 diff，运行 `harness task-review`，推送 PR 并等待 CI。
 - 证据：command:TARGET:docs-site:`npm --prefix docs-site run build` passed; command:TARGET:.`git diff --check` passed; command:TARGET:.changed-file sensitive fragment scan `TOKEN_FRAGMENT_HITS=0`; command:TARGET:.`npx --yes coding-agent-harness status --json .` check=warn because dirty before commit.
+
+### [2026-06-20 18:03] - task-review
+
+- 做了什么：Agent SDK task decomposition docs ready for review: docs build, diff check, changed-file sensitive fragment scan, and Harness status evidence recorded.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

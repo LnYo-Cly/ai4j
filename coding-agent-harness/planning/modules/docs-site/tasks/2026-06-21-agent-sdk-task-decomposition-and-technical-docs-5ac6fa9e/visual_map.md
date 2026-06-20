@@ -48,7 +48,7 @@ flowchart TD
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | task package created and started | `task_plan.md`; `execution_strategy.md`; `task-start` output | `harness task-start 2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | task decomposition reference and docs-site page written | `references/agent-sdk-task-decomposition-2026-06-21.md`; `docs-site/docs/agent/sdk-task-decomposition.md`; sidebar/overview/roadmap links | `harness task-phase ... EXEC-01 --state done --completion 100 --evidence present` | agent | present | verification pending | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; progress update; validation commands | `harness task-review 2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e --message "<summary>"` | agent | missing | must pass checks | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; progress update; validation commands | `harness task-review 2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e --message "<summary>"` | agent | present | must pass checks | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e --confirm 2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
