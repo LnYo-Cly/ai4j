@@ -64,7 +64,7 @@
 - 本地 permission sandbox 与真实远端 sandbox 的差异。
 - 远端 Agent Runner 的产品化边界。
 - CLI/TUI 体验、JLine 选择和 Harness 轻量桥接原则。
-- 当前下一步应继续 P0-B Memory Compact Context Projector。
+- P1-C CLI run Agent Blueprint YAML 已通过 PR #110 合并；当前下一步应启动 P2 Sandbox SPI。
 
 ## 2026-06-20 执行级路线图补充
 
@@ -79,4 +79,4 @@
 - P5 远端 Agent Runner 决策。
 - docs-site 同步要求与“不要做的事”。
 
-当前实际下一步：先收尾 `.worktrees/feature/agent-plugin-lifecycle-hooks` 的 P0-C worktree；不要重复开新的总规划任务。
+当前实际下一步：P1-C 已合并到 `origin/main`（PR #110，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`）；不要重复开总规划任务，下一步进入 P2 Sandbox SPI。

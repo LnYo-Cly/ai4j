@@ -120,9 +120,9 @@
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
 | E-004 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md | 最新完整规划刷新稿补充差异化、插件生态、Blueprint、Sandbox、Runner、CLI/TUI 和 Harness 边界。 |
-| E-005 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md | 执行级路线图补充 R0 调研门禁、P0-P5 拆分、docs-site 同步要求和当前 P0-C worktree 收尾顺序。 |
+| E-005 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md | 执行级路线图补充 R0 调研门禁、P0-P5 拆分、docs-site 同步要求；当前已推进至 P2 Sandbox SPI。 |
 
-补充审查结论：刷新稿没有改变本任务“只做规划、不改生产代码”的边界；它把后续实施继续收敛到 P0-B/P0-C/P1/P2... 小任务队列，避免一次性大改。
+补充审查结论：刷新稿没有改变本任务“只做规划、不改生产代码”的边界；P1-C 已合并后，后续实施继续收敛到 P2/P3/P4/P5 小任务队列，避免一次性大改。
 
 ## 执行级路线图审查补充
 
@@ -130,13 +130,13 @@
 | --- | --- |
 | 是否仍然 planning-only | yes；只新增任务包 reference 和索引/审查材料，不改 Java 生产代码。 |
 | 是否避免凭空复刻 Pi/Codex/Claude/OpenCode | yes；新增 R0 source-backed research gates，后续实现前必须调研。 |
-| 是否明确当前下一步 | yes；先收尾 P0-C `feature/agent-plugin-lifecycle-hooks` worktree，再推进 P0-D/P1-A。 |
+| 是否明确当前下一步 | yes；P1-B/P1-C 已合并；下一步推进 P2-A Sandbox SPI model，再进入 P3/P4/P5。 |
 | 是否新增阻塞 material finding | no；新增发现均为后续路线和调研门禁。 |
 
 ## 最终集成规划审查补充
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 最终集成实施规划固定模块边界、P0-P5 顺序、R0 调研门禁、P1-B 当前 worktree 收尾顺序和不要做事项。 |
+| E-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 最终集成实施规划固定模块边界、P0-P5 顺序、R0 调研门禁、P1-C 合并状态、P2 下一步和不要做事项。 |
 
-补充审查结论：本次补充没有改变 planning-only 边界，反而进一步收敛下一步到 P1-B AgentFactory 收尾；无新增 blocking material finding。
+补充审查结论：本次补充没有改变 planning-only 边界；P1-C 已合并，下一步收敛到 P2-A Sandbox SPI model；无新增 blocking material finding。

@@ -163,17 +163,16 @@ MAP-04 Source Evidence: `references/ai4j-agent-sdk-execution-roadmap-and-researc
 
 ```text
 Current reality
-  main has planning records
-  .wt/p1b -> feature/agent-blueprint-factory -> P1-B AgentFactory
+  main includes P1-B -> PR #109 / 908e410f
+  main includes P1-C -> PR #110 / 384edd1
         |
         v
-Close P1-B first
-  fix docs markdown
-  targeted AgentBlueprintFactoryTest
-  broad ai4j-agent regression
-  docs-site build
-  P1-B task package + review
-  PR / CI / merge / cleanup
+Start P2-A next
+  feature/agent-sandbox-spi-model worktree
+  SandboxProvider / SandboxSession / SandboxSpec
+  SandboxCommand / SandboxResult / SandboxArtifact / SandboxEvent
+  fake provider tests
+  docs-site Sandbox SPI page
         |
         v
 Continue roadmap

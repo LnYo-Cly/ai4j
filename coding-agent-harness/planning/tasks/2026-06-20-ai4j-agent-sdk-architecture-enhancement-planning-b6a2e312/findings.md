@@ -30,7 +30,7 @@
 | ID | Severity | Finding | Evidence | Required Action | Status |
 | --- | --- | --- | --- | --- | --- |
 | F-010 | P1 | 任何对标 Pi 插件/TUI 的实现必须先做公开资料或本仓实测调研，不能凭印象复刻。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 4 节 | 后续开 R0-PI research digest，再进入 CLI/TUI 或插件 API 设计。 | open-follow-up |
-| F-011 | P2 | P0-C worktree 已有未提交实现；当前实际下一步应先收尾 P0-C，而不是继续新增总规划。 | `git worktree list`; `.worktrees/feature/agent-plugin-lifecycle-hooks` status | final harness status、stage、commit、task-review、push、PR、CI、merge。 | open-follow-up |
+| F-011 | P2 | P1-B/P1-C 已合并，当前实际下一步应启动 P2 Sandbox SPI，而不是继续新增总规划。 | P1-B PR #109 merge commit `908e410f946563dd204caad2cb3bcb0430edfd96`; P1-C PR #110 merge commit `384edd11424884e308c047f7e2a4b20997e95e49` | 新建 P2-A Sandbox SPI model task，先实现 fake provider 与 Java 8 SPI 合同。 | open-follow-up |
 | F-012 | P2 | Approval / Permission Policy 是 sandbox 前置缝隙；本地 permission sandbox 和真实远端 sandbox 需要在 P0-D 先分清。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 5、7 节 | 新建 P0-D planning/implementation task。 | open-follow-up |
 | F-013 | P2 | docs-site 需要按“每个能力能不能用起来”重构，不只是 roadmap 标记。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 11 节 | 每个能力页补：问题、最小示例、API/YAML、关系、限制、FAQ、下一步。 | open-follow-up |
 | F-014 | P3 | 远端 Agent Runner 是产品化差异点，但必须满足 P0-P4 门禁后再决定是否新增模块。 | `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md` 第 10 节 | P5 只做协议合同和决策任务，不作为 P0/P1 阻塞项。 | open-follow-up |
@@ -39,6 +39,6 @@
 
 | ID | Severity | Finding | Evidence | Required Action | Status |
 | --- | --- | --- | --- | --- | --- |
-| F-015 | P1 | 当前不应继续扩散总规划；真实下一步是收尾 P1-B AgentFactory worktree。 | `git worktree list`; `.wt/p1b` status; `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 11 节 | 在 `.wt/p1b` 修复 docs markdown、复跑 targeted/broad/docs/Harness checks、更新 P1-B task package、提交 PR 并 merge。 | open-follow-up |
+| F-015 | P1 | 当前不应继续扩散总规划；真实下一步是 P2-A Sandbox SPI model。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 14 节；PR #110 已合并 | 创建 P2-A worktree/branch/task package，先做 Sandbox SPI model + fake provider tests。 | open-follow-up |
 | F-016 | P2 | P2/P3/P4/P5 依赖关系必须保持顺序，否则会把 Sandbox、Coding tools、CLI 和 Runner 过早耦合。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 5-8 节 | Sandbox 先 fake provider + SPI，再 coding routing，再 CLI UX，最后 Runner 决策。 | open-follow-up |
 | F-017 | P2 | CLI/TUI 增强应继续 Java + JLine + renderer abstraction，不应为了视觉效果过早引入 Ink/React 双栈。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 7 节 | P4 任务先做布局、slash command、reply rendering 和 Harness bridge 的 Java 侧抽象。 | open-follow-up |

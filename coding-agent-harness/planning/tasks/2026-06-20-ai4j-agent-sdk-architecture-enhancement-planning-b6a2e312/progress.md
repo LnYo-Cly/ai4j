@@ -49,21 +49,28 @@
 
 ### [2026-06-20 02:58] - planning refresh recorded
 
-- 做了什么：补充完整规划刷新稿，覆盖 AI4J 差异化定位、插件生态、Memory/Compact/Session 分层、YAML Blueprint、真实 sandbox、远端 Agent Runner、CLI/TUI、Harness 轻量桥接和 P0-B 下一步。
+- 做了什么：补充完整规划刷新稿，覆盖 AI4J 差异化定位、插件生态、Memory/Compact/Session 分层、YAML Blueprint、真实 sandbox、远端 Agent Runner、CLI/TUI、Harness 轻量桥接和后续 P2/P3/P4/P5 路线。
 - 验证结果：新增 `references/ai4j-agent-sdk-complete-planning-refresh.md` 与 `references/INDEX.md`，并将刷新结论挂入 brief/task_plan/findings/review/walkthrough。
-- 下一步：运行 Harness status，确认任务包无 failure；后续实施应继续当前 P0-B worktree。
+- 下一步：运行 Harness status，确认任务包无 failure；后续实施按当前最终集成规划推进。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-complete-planning-refresh.md:complete planning refresh for agent sdk roadmap
 
 ### [2026-06-20 04:45] - execution roadmap and research gates recorded
 
-- 做了什么：补充执行级路线图与调研门禁，把 `ai4j-agent` 增强拆为 R0 source-backed research、P0 Agent core、P1 Blueprint YAML、P2 Sandbox SPI、P3 coding sandbox routing、P4 CLI/TUI、P5 Remote Runner decision，并记录当前实际下一步应先收尾 P0-C worktree。
+- 做了什么：补充执行级路线图与调研门禁，把 `ai4j-agent` 增强拆为 R0 source-backed research、P0 Agent core、P1 Blueprint YAML、P2 Sandbox SPI、P3 coding sandbox routing、P4 CLI/TUI、P5 Remote Runner decision。
 - 验证结果：新增 `references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md`；同步更新 `references/INDEX.md`、`brief.md`、`task_plan.md`、`findings.md`、`visual_map.md`、`review.md`、`walkthrough.md`。
-- 下一步：运行 Harness status；如材料通过，重新提交 agent review summary，随后按 P0-C worktree 收尾。
+- 下一步：运行 Harness status；如材料通过，按最终集成规划推进后续小任务。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-execution-roadmap-and-research-gates.md:execution roadmap and research gates for ai4j-agent roadmap
 
 ### [2026-06-20 07:10] - integrated implementation plan recorded
 
 - 做了什么：按用户要求利用 Coding Agent Harness skill 将上方关于 ai4j-agent 改进完善增强方向的完整讨论，合并记录为最终集成实施规划。
 - 验证结果：新增 `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md`，并把它挂入 `references/INDEX.md`、`task_plan.md`、`findings.md`、`visual_map.md`、`review.md`、`walkthrough.md`。
-- 下一步：运行 Harness status；后续实际开发优先收尾 P1-B `.wt/p1b` / `feature/agent-blueprint-factory`。
+- 下一步：运行 Harness status；后续实际开发优先按当前队列推进。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md:integrated implementation plan for ai4j-agent roadmap and P1-B next step
+
+### [2026-06-20 08:30] - current-state planning refresh recorded
+
+- 做了什么：按当前真实仓库状态刷新最终集成规划，将早期 “P0-B/P0-C/P1-B/P1-C 下一步” 统一修正为 “P1-B/P1-C 已合并，当前进入 P2 Sandbox SPI”。
+- 验证结果：PR #110 已合并到 `origin/main`，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`；当前规划任务保持 planning-only。
+- 下一步：清理 P1-C worktree 后，创建 P2-A Sandbox SPI model worktree/task，继续 implementation + docs-site + regression。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md:current-state plan updated after P1-C merge for P2 Sandbox SPI next step

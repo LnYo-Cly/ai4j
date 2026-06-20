@@ -60,7 +60,7 @@ Closeout Status: pending-human-confirmation
 
 ## 2026-06-20 刷新补充
 
-本收口记录补充引用 `references/ai4j-agent-sdk-complete-planning-refresh.md`。该文件是当前最新完整规划入口，后续实现者应优先读取。刷新后的直接下一步是继续 `P0-B Memory Compact Context Projector`，不要重复创建新的总规划任务，也不要一次性实现 P0-P5 全部能力。
+本收口记录补充引用 `references/ai4j-agent-sdk-complete-planning-refresh.md`。该文件是历史完整规划入口；后续实现者应优先读取最终集成实施规划。P1-C 已通过 PR #110 合并，当前直接下一步是启动 `P2-A Sandbox SPI model`，不要重复创建新的总规划任务，也不要一次性实现 P0-P5 全部能力。
 
 ## 2026-06-20 执行路线补充
 
@@ -69,7 +69,7 @@ Closeout Status: pending-human-confirmation
 - 后续涉及 Pi、Codex、Claude Code、OpenCode、Spring AI、LangChain4j、AgentScope Java、Sandbox provider 的对标设计，必须先做 source-backed research。
 - `ai4j-agent` 内核优先收尾 P0-A/P0-B/P0-C，并新增 P0-D Approval / Permission Policy。
 - YAML Blueprint、Sandbox SPI、Coding sandbox routing、CLI/TUI、Remote Runner 分阶段推进。
-- 当前仓库已有 P0-C worktree 未提交，实际下一步应先收尾 P0-C，而不是继续扩散总规划。
+- 当前仓库 P1-C 已通过 PR #110 合并，实际下一步应进入 P2 Sandbox SPI，而不是继续扩散总规划。
 
 ## 2026-06-20 最终集成实施规划补充
 
@@ -79,4 +79,4 @@ Closeout Status: pending-human-confirmation
 - P0 内核、P1 Blueprint、P2 Sandbox SPI、P3 coding routing、P4 CLI/TUI、P5 Runner 必须分阶段推进。
 - CLI/TUI 保持 Java + JLine + renderer abstraction，不完整内化 Coding Agent Harness。
 - 后续对标 Pi / Codex / Claude Code / OpenCode / Spring AI / LangChain4j / AgentScope Java / Sandbox provider 必须先做 R0 source-backed research。
-- 当前真实下一步是收尾 P1-B `G:\My_Project\java\ai4j-sdk\.wt\p1b` / `feature/agent-blueprint-factory`。
+- 当前真实下一步是启动 P2-A Sandbox SPI model；P1-C merge commit 为 `384edd11424884e308c047f7e2a4b20997e95e49`。
