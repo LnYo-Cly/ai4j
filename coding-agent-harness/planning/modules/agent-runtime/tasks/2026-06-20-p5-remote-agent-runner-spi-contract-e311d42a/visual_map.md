@@ -2,49 +2,45 @@
 
 Visual Map Contract: v1.0
 
-本文件是任务图表集合，不只是阶段路线图。只有对人或 agent 理解任务有实际帮助的图才放进来。
-
 ## 图表索引（Map Index）
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示本任务执行阶段和验证门禁 | yes | task_plan.md | no |
+| MAP-02 | architecture | 展示 Remote Runner 与 Sandbox SPI 的边界 | yes | docs-site/docs/agent/remote-agent-runner-spi.md | yes |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  INIT01["INIT-01 task/worktree"] --> EXEC01["EXEC-01 runner SPI + tests + docs"]
+  EXEC01 --> VERIFY01["VERIFY-01 maven + docs + harness"]
+  VERIFY01 --> GATE01["GATE-01 Agent review submission"]
+  GATE01 --> GATE02["GATE-02 Human review confirmation"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
 
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
-| INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a --confirm 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a` | human | missing | Agent 不能代办人工确认 | human |
+| INIT-01 | init | none | done | 100 | task/worktree created | `task_plan.md`; `execution_strategy.md`; worktree path | `harness task-start 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a` | agent | present | none | coordinator |
+| EXEC-01 | execution | INIT-01 | in_progress | 70 | runner SPI, fake tests, docs-site page implemented | code diff; docs diff | `harness task-phase ... EXEC-01 --state done --completion 100 --evidence present` | agent | partial | verification pending | coordinator |
+| VERIFY-01 | gate | EXEC-01 | planned | 0 | Maven/docs/Harness verification | commands in progress.md | n/a | agent | missing | tests pending | coordinator |
+| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | review.md; progress evidence; lesson routing | `harness task-review 2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a --message "<summary>"` | agent | missing | none | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet and human confirmation | `harness review-confirm ...` | human | missing | Agent cannot self-confirm | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
-允许的 `Evidence Status`：`missing`, `partial`, `present`, `waived`。
+## MAP-02 Remote Runner boundary
 
-允许的 `Kind`：`init`, `execution`, `gate`。
+```text
+Host-driven sandbox tools
+  Java Agent loop runs in host process
+  Shell/file/browser/project tools route to SandboxSession
 
-允许的 `Actor`：`agent`, `human`, `coordinator`。
-
-`Completion` 使用 `0..100` 的整数；`done` 应为 `100`，`planned` 应为 `0`，`skipped` 不计入 dashboard 总完成度。dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算；`init` 和 `gate` 阶段表达生命周期门禁、下一步命令和责任人，不拉低实现完成度。
-
-## 支持性图表（Supporting Maps）
-
-按需添加，不要求每类都存在：
-
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+Remote Agent Runner
+  Host creates AgentRunnerSession
+  Agent loop runs inside remote sandbox / hosted workspace
+  Runner streams AgentRunnerEvent
+  Runner returns AgentRunnerResult + artifacts
+```

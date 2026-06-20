@@ -354,7 +354,9 @@ Runner 职责包括：
 - 收集 artifacts
 - 流式发送事件
 
-但它必须晚于 P0-P4。否则会过早把 SDK 内核、coding tools、沙箱、产品协议绑死。
+P5 首切片已经新增 io.github.lnyocly.ai4j.agent.runner SPI contract：AgentRunnerProvider、AgentRunnerSession、AgentRunnerSpec、AgentRunnerRequest、AgentRunnerResult 和事件流模型。它只定义 Java host/provider 合同，并用 fake runner 测试验证，不接真实云服务。使用细节见 [Remote Agent Runner SPI](/docs/agent/remote-agent-runner-spi)。
+
+但它仍必须晚于 P0-P4 逐步产品化。否则会过早把 SDK 内核、coding tools、沙箱、产品协议绑死。
 
 ## 9. 推荐实施顺序
 

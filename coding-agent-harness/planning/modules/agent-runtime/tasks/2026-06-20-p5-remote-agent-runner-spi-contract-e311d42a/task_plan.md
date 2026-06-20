@@ -3,102 +3,82 @@
 Task Contract: harness-task/v1
 Task Kind: module-task
 Task Preset: module
+Task Package Index: required
+Task Kind: module-task
+Task Preset: module
 Preset Version: 1
 Evidence Bundle: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a/artifacts/preset/2026-06-20T05-41-54-401Z
-Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+新增 `ai4j-agent` 的 Remote Agent Runner SPI contract，支持后续第三方或业务方把完整 Agent loop 运行到远端 sandbox / hosted workspace 中。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
-- 主要风险：[当前已知的技术、产品、协作或验证风险]
+- 做什么：`ai4j-agent` 新增 runner SPI + DTO；新增 deterministic fake runner tests；更新 docs-site 技术页和 roadmap。
+- 不做什么：不新增 `ai4j-agent-runner` Maven 模块；不接真实云服务；不使用任何 token；不实现 CLI/TUI runner UX；不改变 sandbox SPI 或本地 Agent 行为。
+- 主要风险：contract 过大或和 Sandbox SPI 混淆；本任务保持最小合同，区别 Host-driven sandbox tools 与 Remote Agent Runner。
 
 ## 预算选择
 
 选择预算：complex
 
-选择理由：[为什么本任务适合这个预算]
+选择理由：这是 public-ish SDK contract + docs-site + regression 的跨面任务，需要完整 task package、fake tests 和后续 residual 记录。
 
 ## 上下文包（Context Packet）
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [说明这份上下文如何影响任务] | coordinator / reviewer / worker |
+| C-001 | repo-guidance | TARGET:AGENTS.md | Java 8、模块边界、Harness 流程、docs-site 验证规则 | coordinator / reviewer |
+| C-002 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox | P2 Sandbox SPI 风格和边界 | implementer / reviewer |
+| C-003 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint | Blueprint 与 RunnerSpec 的关系 | implementer / reviewer |
+| C-004 | docs | TARGET:docs-site/docs/agent/sandbox-spi.md | 文档结构、边界和示例风格 | implementer / reviewer |
+| C-005 | plan | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md | P5 contract-first 路线和不要做事项 | coordinator / reviewer |
 
 ## 步骤
 
-1. [步骤 1]
-2. [步骤 2]
-3. [步骤 3]
+1. 诊断现有 sandbox/blueprint/session 代码风格。
+2. 设计最小 runner contract：provider/session/spec/request/result/event/status/exception/listener。
+3. 实现 Java 8 DTO/SPI，保持 defensive copy 和 checked exception 风格。
+4. 添加 fake runner tests，覆盖 run、stream、cancel、close、artifact、event 和 defensive copy。
+5. 更新 docs-site：新增 Remote Agent Runner SPI 页，sidebar 和 Agent roadmap 可达。
+6. 运行 targeted agent tests、broad agent tests、docs-site build、diff check、Harness status。
+7. 提交、推送、创建 PR。
 
 ## 验收标准
 
-- [ ] [标准 1]
-- [ ] [标准 2]
-- [ ] [标准 3]
+- [x] `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runner` 存在最小 SPI contract。
+- [x] `AgentRunnerSpiContractTest` 覆盖 fake provider/session/result/events/defensive copies。
+- [x] docs-site 新增 `agent/remote-agent-runner-spi.md` 并挂到 sidebar。
+- [ ] targeted regression 通过。
+- [ ] broad `ai4j-agent` regression 通过。
+- [ ] docs-site build 通过。
+- [ ] Harness status 通过。
 
 ## 工作树（Worktree）
 
-- 路径：[worktree 路径，例如 `.worktrees/feat/xxx`]
-- 分支：[分支名]
-- Worker owner：[coordinator / subagent id / 不适用]
-- Worker handoff commit required：[yes / no / 不适用]
-- Coordinator integration branch：[分支名 / 不适用]
-- 未使用 worktree 的原因：[说明]
-
-## 长程任务判定
-
-- 是否属于长程任务：[是 / 否]
-- 若是，合同文件：`long-running-task-contract.md`
-- 连续执行权限：[已授权 / 未授权 / 不适用]
-- Stop Condition 摘要：[一句话说明什么时候必须停]
+- 路径：`G:\My_Project\java\ai4j-sdk\.worktrees\feature\agent-runner-spi`
+- 分支：`feature/agent-runner-spi`
+- Worker owner：coordinator
+- Worker handoff commit required：是
+- Coordinator integration branch：`dev`
+- 未使用 worktree 的原因：不适用；本任务已使用 dedicated worktree。
 
 ## 审查判定
 
-- 是否需要对抗性审查：[是 / 否]
-- 若是，报告文件：`review.md`
-- Reviewer：[self / subagent / external / human / 不适用]
-- No-finding 要求：[例如 reviewer 无重要发现 / 不适用]
+- 是否需要对抗性审查：self review + PR review。
+- Reviewer：coordinator / CI / human reviewer。
+- No-finding 要求：不能存在真实云依赖、secret 泄露、Java 8 破坏、Sandbox SPI 混淆或 docs 与代码不一致。
 
 ## 关联
 
-- 相关 Regression Gate：[引用]
-- 审查报告：[路径 / 不适用]
-- Generated Ledger：由 lifecycle CLI / `harness governance rebuild` 重建
-- 前置任务：[引用；如无写“无”]
+- 相关 Regression Gate：RG-004 / agent runtime；RG-008 / docs-site build。
+- 审查报告：`review.md`
+- Generated Ledger：由 lifecycle CLI 同步。
+- 前置任务：P2 Sandbox SPI、P3 coding sandbox routing、P4 CLI sandbox commands。
 
-## 模块关联（启用模块并行时填写）
+## 模块关联
 
-- Module：[module key，例如 reader / graph / 不适用]
-- Step：[step ID，例如 RDR-02 / 不适用]
-- Module Plan：[link to module_plan.md / 不适用]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync owner：coordinator / 不适用
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- Closeout / Regression update needed：[路径或 n/a]
-
-## Module Preset
-
-This module task was created through the `module` preset.
-
-| Field | Value |
-| --- | --- |
-| Module Key | agent-runtime |
-
-## Module Context Entry Points
-
-Read these module-level entry points before changing shared module behavior. Continue into narrower context only when the task surface requires it.
-
-| Reference | Path | Why / When |
-| --- | --- | --- |
-| Module brief | coding-agent-harness/planning/modules/agent-runtime/brief.md | Start here for the module purpose and current scope. |
-| Module plan | coding-agent-harness/planning/modules/agent-runtime/module_plan.md | Use this for module steps, active task links, and handoff state. |
-| Module visual map | coding-agent-harness/planning/modules/agent-runtime/visual_map.md | Inspect when the change affects module sequencing or dependencies. |
+- Module：agent-runtime
+- Step：P5-RUNNER-SPI-CONTRACT
+- Module Plan：TARGET:coding-agent-harness/planning/modules/agent-runtime/module_plan.md

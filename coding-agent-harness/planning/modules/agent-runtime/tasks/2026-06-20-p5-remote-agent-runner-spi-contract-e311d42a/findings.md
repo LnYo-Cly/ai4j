@@ -1,24 +1,16 @@
-# P5 Remote Agent Runner SPI contract - 发现记录
+# P5 Remote Agent Runner SPI contract - Findings
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## Findings
 
-## 研究发现
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-001 | P1 | Remote Runner 必须 contract-first，不能在本任务新增真实云 runner 或大 Maven 模块。 | task_plan.md；新增代码仅 `ai4j-agent` runner 包 | 保持 fake-testable；真实 provider 后续独立任务。 | mitigated |
+| F-002 | P1 | Runner SPI 和 Sandbox SPI 容易混淆。 | docs-site `remote-agent-runner-spi.md` 第 7 节 | 文档明确 Host-driven sandbox tools vs Remote Agent Runner。 | mitigated |
+| F-003 | P1 | Spec/config 可能被误用来保存 secret。 | docs-site 安全边界；代码不读取 token | 文档声明 token 只能来自宿主 secret store/env；测试不含真实 token。 | mitigated |
+| F-004 | P2 | `origin/dev` 基线缺少 root `AGENT.md` 和部分 legacy reference 文件。 | local file check | 以 AGENTS.md 和当前模块代码为准；不要伪造读取缺失文件。 | accepted-residual |
 
-### [发现主题 1]
+## Residual
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
-
-## 技术决策
-
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
-
-## 待确认问题
-
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+- 没有真实 provider discovery / plugin contribution；后续在 `ai4j-extension-api` 任务中处理。
+- 没有 CLI `/runner` 或 `/sandbox create/list/logs` UX；后续 `ai4j-cli` 任务处理。
+- 没有新增 `ai4j-agent-runner` Maven 模块；待产品化需求和 provider contract 稳定后再决策。

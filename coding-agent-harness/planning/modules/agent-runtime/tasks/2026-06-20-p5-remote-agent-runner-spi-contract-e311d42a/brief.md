@@ -1,51 +1,19 @@
-# P5 Remote Agent Runner SPI contract
+# P5 Remote Agent Runner SPI contract - Brief
 
-## Task ID
+## 目标
 
-`2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a`
+在 `ai4j-agent` 中新增 Remote Agent Runner 的最小 Java 8 SPI 合同，让 AI4J 后续可以支持“Agent loop 本身运行在远端 sandbox / VM / container / hosted workspace”这一产品化方向。
 
-## 创建日期
+## 范围
 
-2026-06-20
+- 做什么：新增 `io.github.lnyocly.ai4j.agent.runner` 包，提供 provider/session/spec/request/result/event/status/exception/listener 合同；添加 fake runner deterministic tests；更新 docs-site 技术文档和路线图。
+- 不做什么：不新增 Maven 模块；不接真实云 runner；不接真实 sandbox provider；不读取、保存或使用 provider token；不改变现有本地 Agent 执行路径；不实现 CLI attach/logs/create。
+- 主要风险：Runner 容易过早产品化，本任务只做 contract-first + fake-testable，不承诺托管平台。
 
-## 一句话结果
+## 成功标准
 
-用一句话说明这个任务完成后会产生什么具体结果。
-
-## 完成后能得到什么
-
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
-
-## 交付物
-
-- 可见产物：
-- 修改位置：
-- 验证证据：
-
-## 第一眼应该看什么
-
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
-
-## 边界
-
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
-
-## 完成判断
-
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
-
-## 执行合同
-
-- Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
-
-## 当前下一步
-
-写明开始实现前的第一个具体动作。
+- `AgentRunnerProvider` / `AgentRunnerSession` 能表达远端 runner 创建、run、stream、cancel、artifact、close。
+- `AgentRunnerSpec` 能携带非敏感 profile/workspace/blueprint/sandboxSpec/labels/config。
+- `AgentRunnerResult` 能携带 `AgentResult`、output、error、duration、artifact 和 events。
+- fake runner 测试证明 contract 可用且 DTO defensive copy 稳定。
+- docs-site 有独立 `Remote Agent Runner SPI` 页，并从 Agent roadmap/sidebar 可达。
