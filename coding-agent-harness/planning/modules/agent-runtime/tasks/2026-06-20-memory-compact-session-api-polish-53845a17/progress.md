@@ -1,6 +1,6 @@
 # Memory Compact Session API polish - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -70,3 +70,10 @@
 - 验证结果：targeted compact test 仍通过；token scan 无仓库命中；模板残留扫描无命中；`git diff --check` 通过；Harness status failures=0，仅有提交前 dirty-state warning。
 - 下一步：提交实现和任务材料，然后运行 `task-review` 并创建 PR。
 - 证据：command:.:`mvn -pl ai4j-agent -am "-Dtest=AgentMemoryCompactContextProjectorTest" -DskipTests=false -DfailIfNoTests=false test` -> BUILD SUCCESS, 8 tests passed; command:.:token fragment scan -> TOKEN_SCAN_OK_NO_WORKSPACE_HITS; command:.:template residual scan -> no hits; command:.:`git diff --check` -> pass; command:.:`npx --yes coding-agent-harness status --json .` -> failures=0, dirty-state warning before commit
+
+### [2026-06-20 08:04] - task-review
+
+- 做了什么：Memory/Compact Session API polish ready for review: SessionCompactPlan and SessionCompactReport implemented, targeted and broad agent tests passed, docs-site build passed, token scan and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

@@ -115,3 +115,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 deterministic unit tests、agent broad gate、docs-site build、API 兼容性检查、token scan 和 Harness status。发布前最终信心还需要 PR CI 与人工 review。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200804 |
+| Submitted At | 2026-06-20 08:04 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-memory-compact-session-api-polish-53845a17 |
+| Materials Checklist Hash | 89ed2e2ab089d318 |
+| Evidence Summary | Memory/Compact Session API polish ready for review: SessionCompactPlan and SessionCompactReport implemented, targeted and broad agent tests passed, docs-site build passed, token scan and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17 |
