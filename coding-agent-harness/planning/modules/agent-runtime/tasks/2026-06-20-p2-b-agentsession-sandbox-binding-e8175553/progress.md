@@ -2,47 +2,39 @@
 
 ## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
+证据使用 `type:path:summary` 格式。允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
 
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
+### [2026-06-20 09:31] - task-start
 
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
+- 做了什么：创建 `.wt/p2b` / `feature/agent-session-sandbox-binding`，新建并启动 P2-B Harness module task。
+- 验证结果：Harness 自动提交 new-task 与 task-start，任务进入 active。
+- 下一步：实现 AgentSession sandbox binding。
+- 证据：command:TARGET:.:'npx --yes coding-agent-harness new-task ...'; command:TARGET:.:'npx --yes coding-agent-harness task-start MODULES/agent-runtime/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553 ...'
 
-## 进度记录
+### [2026-06-20 09:39] - binding model implemented
 
-证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 做了什么：新增 `AgentSessionSandboxBinding`，扩展 `AgentSession` / `AgentSessionSnapshot` / `InMemoryAgentSessionStore` 和 `AgentEventType`，让 session 可绑定、更新、清除 sandbox 摘要并记录 event log。
+- 验证结果：targeted test 通过，4 tests。
+- 下一步：运行 broad agent regression、docs build、Harness status。
+- 证据：command:TARGET:.:'mvn -pl ai4j-agent -am "-Dtest=AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test' -> BUILD SUCCESS, 4 tests; diff:TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/AgentSessionSandboxBinding.java:non-sensitive sandbox binding summary
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- P2-B 不实现真实 sandbox provider。
+- P2-B 不让插件贡献 provider；该能力留给 P2-C。
+- P2-B 不接 `ai4j-coding` file/shell/git/browser routing；该能力留给 P3。
+- P2-B 不实现 CLI/TUI `/sandbox`；该能力留给 P4。
 
-## 协调者交接（Coordinator，启用模块并行时填写）
+### [2026-06-20 09:43] - broad regression and docs build
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- 做了什么：运行 P2-B broad Maven regression 和 docs-site build；首次 docs build 因 worktree 缺少 ignored `docs-site/node_modules` 失败，执行 `npm --prefix docs-site install` 后重跑通过。npm install 报告 50 个既有依赖漏洞，本任务不调整依赖。
+- 验证结果：`mvn -pl ai4j-agent -am -DskipTests=false test` 通过；extension API 25 tests、core 103 tests、agent 115 tests。`npm --prefix docs-site run build` 通过并生成 `docs-site/build`。
+- 下一步：运行 `git diff --check` 和 Harness status，修复 review 材料后提交。
+- 证据：command:TARGET:.:'mvn -pl ai4j-agent -am -DskipTests=false test' -> BUILD SUCCESS, extension API 25, core 103, agent 115 tests; command:TARGET:docs-site:'npm --prefix docs-site run build' -> success after local dependency install
 
-### [2026-06-20 01:33] - task-start
+### [2026-06-20 09:50] - worktree-boundary repair and final local checks
 
-- 做了什么：Start P2-B AgentSession sandbox binding: bind provider-neutral sandbox summary into AgentSession snapshot/event log without real sandbox provider, token handling, coding routing, or CLI UX.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 做了什么：发现代码 patch 曾误落到主 checkout 后，立即将 Java 变更迁移到 `.wt/p2b`，并恢复主 checkout 干净状态；随后在 `.wt/p2b` 重新运行真实 targeted/broad/docs 检查。
+- 验证结果：主 checkout 只剩未跟踪 `.wt/` 容器；P2-B worktree 持有全部代码/docs/task 变更。targeted、broad、docs build 均通过。
+- 下一步：运行 Harness status，提交实现，执行 task-review。
+- 证据：command:TARGET:.:'mvn -pl ai4j-agent -am "-Dtest=AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test' -> BUILD SUCCESS, 4 tests; command:TARGET:.:'mvn -pl ai4j-agent -am -DskipTests=false test' -> BUILD SUCCESS, extension API 25, core 103, agent 119 tests; command:TARGET:docs-site:'npm --prefix docs-site run build' -> success

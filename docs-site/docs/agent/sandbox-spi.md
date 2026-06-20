@@ -109,7 +109,46 @@ for (SandboxArtifact artifact : result.getArtifacts()) {
 }
 ```
 
-## 5. 与 Permission Policy 的关系
+
+## 5. P2-B：绑定到 AgentSession
+
+P2-B 在 P2-A SPI 之上新增了 `AgentSessionSandboxBinding`。它不是 live provider，也不会启动 VM；它只把当前 sandbox 的**非敏感摘要**绑定到 `AgentSession`：
+
+```java
+SandboxSession sandbox = provider.createSession(spec);
+
+AgentSession session = agent.newSession()
+        .bindSandbox(sandbox);
+
+AgentSessionSnapshot snapshot = session.snapshot();
+System.out.println(snapshot.getSandboxBinding().getProviderId());
+System.out.println(snapshot.getSandboxBinding().getWorkspaceId());
+```
+
+这个 binding 会进入：
+
+- `AgentSession.getSandboxBinding()`
+- `AgentSession.snapshot()`
+- `AgentSession.restore(snapshot)`
+- `AgentSessionStore.save/load(...)`
+- session event log：`SANDBOX_BOUND`、`SANDBOX_UPDATED`、`SANDBOX_CLEARED`
+
+可以更新或清除状态：
+
+```java
+session.updateSandboxStatus(SandboxStatus.CLOSED);
+session.clearSandbox();
+```
+
+### 安全边界
+
+`AgentSessionSandboxBinding` 只保存摘要字段：providerId、sandboxSessionId、status、profile、image、workspaceId、labels、boundAt、updatedAt。
+
+它不会保存 `SandboxSpec.config`，因为 provider config 可能包含 token、cookie、API key、连接串或租户信息。label 中包含 `secret`、`token`、`key`、`password`、`credential`、`cookie`、`authorization` 等敏感含义的 key 也会被过滤。
+
+也就是说，P2-B 让 session 能“知道自己绑定了哪个 sandbox”，但不会把真实 sandbox provider 的 secret 带进 snapshot、store、event log 或 docs 示例。
+
+## 6. 与 Permission Policy 的关系
 
 两者是不同层：
 
@@ -127,7 +166,7 @@ Agent / Coding Tool
 3. 但 `AgentExecutionEnvironment` 只是 metadata；真实路由要等 P3 `ai4j-coding` 接入 `SandboxSession`。
 4. 任何 provider 都不应该把 token、cookie、API key 写进 `SandboxSpec.config`、`SandboxEvent.message` 或 artifact 名称。
 
-## 6. 与 Agent Blueprint 的关系
+## 7. 与 Agent Blueprint 的关系
 
 P1 的 YAML 里已经有声明字段：
 
@@ -142,7 +181,7 @@ sandbox:
 
 P2-A 仍不让 Blueprint 自动创建 sandbox。后续 P2-B/P3 会把声明转成安全的 `SandboxSpec`，并在 host 显式允许时绑定到 `AgentSession` 或 coding session。
 
-## 7. 与 `ai4j-coding` 的关系
+## 8. 与 `ai4j-coding` 的关系
 
 P2-A 只落在 `ai4j-agent`。真正影响 coding agent 的是下一阶段：
 
@@ -156,7 +195,7 @@ P2-A 只落在 `ai4j-agent`。真正影响 coding agent 的是下一阶段：
 
 这部分属于 P3 `ai4j-coding` sandbox routing，不在 P2-A 里实现。
 
-## 8. Fake provider 测试
+## 9. Fake provider 测试
 
 P2-A 的确定性测试使用内联 fake provider，验证：
 
@@ -172,7 +211,7 @@ P2-A 的确定性测试使用内联 fake provider，验证：
 mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -DfailIfNoTests=false test
 ```
 
-## 9. 常见问题
+## 10. 常见问题
 
 ### 有了 Sandbox SPI，就能马上跑远端命令吗？
 
@@ -190,11 +229,11 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 不能。sandbox 降低执行环境风险，permission policy 管控“是否允许执行”。两者应该叠加，而不是互相替代。
 
-## 10. 下一步
+## 11. 下一步
 
 推荐后续顺序：
 
-1. P2-B：把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
+1. P2-B：已把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
 2. P2-C：允许第三方插件声明和贡献 `SandboxProvider`。
 3. P3：让 `ai4j-coding` 的 file/shell/git/browser/project run/test runner 根据 sandbox binding 路由执行。
 4. P4：在 CLI/TUI 中显示 `/sandbox status`、provider、workspace、最近执行位置和 artifact。

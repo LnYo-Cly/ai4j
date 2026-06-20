@@ -15,20 +15,30 @@ public class AgentSessionSnapshot {
     private MemorySnapshot memory;
     private List<AgentSessionEvent> events;
     private CompactResult compactResult;
+    private AgentSessionSandboxBinding sandboxBinding;
 
     public AgentSessionSnapshot() {
-        this(null, null, null, null);
+        this(null, null, null, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events) {
-        this(metadata, memory, events, null);
+        this(metadata, memory, events, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events, CompactResult compactResult) {
+        this(metadata, memory, events, compactResult, null);
+    }
+
+    public AgentSessionSnapshot(AgentSessionMetadata metadata,
+                                MemorySnapshot memory,
+                                List<AgentSessionEvent> events,
+                                CompactResult compactResult,
+                                AgentSessionSandboxBinding sandboxBinding) {
         this.metadata = metadata == null ? AgentSessionMetadata.create() : metadata.copy();
         this.memory = copyMemory(memory);
         this.events = copyEvents(events);
         this.compactResult = compactResult == null ? null : compactResult.copy();
+        this.sandboxBinding = sandboxBinding == null ? null : sandboxBinding.copy();
     }
 
     public String getSessionId() {
@@ -65,6 +75,14 @@ public class AgentSessionSnapshot {
 
     public void setCompactResult(CompactResult compactResult) {
         this.compactResult = compactResult == null ? null : compactResult.copy();
+    }
+
+    public AgentSessionSandboxBinding getSandboxBinding() {
+        return sandboxBinding == null ? null : sandboxBinding.copy();
+    }
+
+    public void setSandboxBinding(AgentSessionSandboxBinding sandboxBinding) {
+        this.sandboxBinding = sandboxBinding == null ? null : sandboxBinding.copy();
     }
 
     private static MemorySnapshot copyMemory(MemorySnapshot source) {

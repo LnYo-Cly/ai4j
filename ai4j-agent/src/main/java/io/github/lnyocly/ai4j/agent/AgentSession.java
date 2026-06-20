@@ -3,10 +3,15 @@ package io.github.lnyocly.ai4j.agent;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.event.AgentEvent;
+import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionEventLog;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionMetadata;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.session.InMemoryAgentSessionEventLog;
@@ -23,6 +28,7 @@ public class AgentSession {
     private final AgentSessionEventLog eventLog;
     private final AgentSessionStore store;
     private CompactResult lastCompactResult;
+    private AgentSessionSandboxBinding sandboxBinding;
 
     public AgentSession(AgentRuntime runtime, AgentContext context) {
         this(runtime, context, AgentSessionMetadata.create(), new InMemoryAgentSessionEventLog(), null);
@@ -107,7 +113,8 @@ public class AgentSession {
                 metadata,
                 memory == null ? null : memory.snapshot(),
                 eventLog.getEvents(),
-                lastCompactResult
+                lastCompactResult,
+                sandboxBinding
         );
     }
 
@@ -128,6 +135,7 @@ public class AgentSession {
         }
         eventLog.restore(snapshot.getEvents());
         lastCompactResult = snapshot.getCompactResult();
+        sandboxBinding = snapshot.getSandboxBinding();
         return this;
     }
 
@@ -156,6 +164,39 @@ public class AgentSession {
         return lastCompactResult == null ? null : lastCompactResult.copy();
     }
 
+    public AgentSession bindSandbox(SandboxSession sandboxSession) {
+        return bindSandbox(AgentSessionSandboxBinding.from(sandboxSession));
+    }
+
+    public AgentSession bindSandbox(AgentSessionSandboxBinding binding) {
+        sandboxBinding = binding == null ? null : binding.copy();
+        metadata.touch();
+        appendSessionEvent(AgentEventType.SANDBOX_BOUND, "sandbox bound", sandboxBinding);
+        return this;
+    }
+
+    public AgentSession updateSandboxStatus(SandboxStatus status) {
+        if (sandboxBinding == null) {
+            return this;
+        }
+        sandboxBinding = sandboxBinding.withStatus(status);
+        metadata.touch();
+        appendSessionEvent(AgentEventType.SANDBOX_UPDATED, "sandbox updated", sandboxBinding);
+        return this;
+    }
+
+    public AgentSession clearSandbox() {
+        AgentSessionSandboxBinding previous = sandboxBinding;
+        sandboxBinding = null;
+        metadata.touch();
+        appendSessionEvent(AgentEventType.SANDBOX_CLEARED, "sandbox cleared", previous);
+        return this;
+    }
+
+    public AgentSessionSandboxBinding getSandboxBinding() {
+        return sandboxBinding == null ? null : sandboxBinding.copy();
+    }
+
     public AgentSession save() {
         if (store != null) {
             store.save(snapshot());
@@ -165,5 +206,17 @@ public class AgentSession {
 
     public AgentSessionStore getStore() {
         return store;
+    }
+
+    private void appendSessionEvent(AgentEventType type, String message, Object payload) {
+        if (eventLog == null || type == null) {
+            return;
+        }
+        eventLog.append(AgentEvent.builder()
+                .type(type)
+                .step(0)
+                .message(message)
+                .payload(payload)
+                .build());
     }
 }

@@ -1,24 +1,15 @@
-# P2-B AgentSession sandbox binding - 发现记录
+# P2-B AgentSession sandbox binding - 发现
 
-本文件记录任务执行中形成的判断、事实和技术决策。它不是审查报告；阻塞性问题请写入 `review.md`。
+## Findings
 
-## 研究发现
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-001 | P1 | Sandbox binding 只能保存非敏感摘要，不能保存 `SandboxSpec.config`。 | `AgentSessionSandboxBinding` class comment and tests | 过滤 config；敏感 label key 不进入 snapshot。 | done |
+| F-002 | P2 | P2-B 只解决 session/snapshot/store/event log 可见性，不路由 coding tools。 | task_plan scope / docs-site boundary | P3 再实现 file/shell/git/browser routing。 | open-follow-up |
+| F-003 | P2 | sandbox 状态事件需要进入 session event log，供后续 CLI/TUI 展示。 | `SANDBOX_BOUND` / `SANDBOX_UPDATED` / `SANDBOX_CLEARED` | P4 可读取 session event log 呈现 `/sandbox status`。 | open-follow-up |
 
-### [发现主题 1]
+## Residuals
 
-- 背景：[为什么需要调查这个问题]
-- 发现：[查到了什么事实，证据来自哪里]
-- 影响：[这会如何改变计划、范围、实现或验证]
-- 后续：[需要继续跟进的动作；如无写“无”]
-
-## 技术决策
-
-| 决策 | 选择 | 原因 | 替代方案 | 状态 |
-| --- | --- | --- | --- | --- |
-| [决策 1] | [选了什么] | [为什么这样选] | [未采用的方案] | proposed / accepted / superseded |
-
-## 待确认问题
-
-| 问题 | 当前判断 | Owner | 截止点 |
-| --- | --- | --- | --- |
-| [问题] | [当前可用判断] | [负责人] | [什么时候必须确认] |
+- 不实现真实 sandbox provider。
+- 不接插件 provider contribution。
+- 不改 `ai4j-coding` 或 `ai4j-cli`。
