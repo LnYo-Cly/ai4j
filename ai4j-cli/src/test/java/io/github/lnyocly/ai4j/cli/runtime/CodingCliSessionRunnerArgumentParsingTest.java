@@ -26,4 +26,16 @@ public class CodingCliSessionRunnerArgumentParsingTest {
         Assert.assertEquals("hello world", arguments.get(4));
         Assert.assertEquals("say \"hi\"", arguments.get(5));
     }
+
+    @Test
+    public void splitShellLikeArgumentsParsesSandboxAttachCommand() {
+        List<String> arguments = CodingCliSessionRunner.splitShellLikeArguments(
+                "attach cubesandbox sbx_123 \"workspace main\""
+        );
+
+        Assert.assertEquals("attach", arguments.get(0));
+        Assert.assertEquals("cubesandbox", arguments.get(1));
+        Assert.assertEquals("sbx_123", arguments.get(2));
+        Assert.assertEquals("workspace main", arguments.get(3));
+    }
 }

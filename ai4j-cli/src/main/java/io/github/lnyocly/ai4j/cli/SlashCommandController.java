@@ -58,6 +58,7 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/compacts", "Show recent compact history", true),
             new SlashCommandSpec("/stream", "Show or switch model request streaming", true),
             new SlashCommandSpec("/mcp", "Show or manage MCP services", true),
+            new SlashCommandSpec("/sandbox", "Show or switch current sandbox binding", true),
             new SlashCommandSpec("/processes", "List active and restored process metadata", false),
             new SlashCommandSpec("/process", "Inspect or control a process", true),
             new SlashCommandSpec("/checkpoint", "Show the current structured checkpoint summary", false),
@@ -85,6 +86,7 @@ public final class SlashCommandController implements Completer {
     private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
     private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
     private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
+    private static final List<String> SANDBOX_ACTIONS = Arrays.asList("status", "attach", "disable");
     private static final List<String> EXTENSION_ACTIONS = Arrays.asList("list", "inspect", "plan", "check", "validate", "run", "resource");
     private static final List<String> EXTENSION_RESOURCE_TYPES = Arrays.asList("skill", "prompt");
     private static final List<String> EXTENSION_ACTIVATION_OPTIONS = Arrays.asList(
@@ -137,6 +139,7 @@ public final class SlashCommandController implements Completer {
             "/compacts",
             "/stream",
             "/mcp",
+            "/sandbox",
             "/processes",
             "/checkpoint",
             "/fork",
@@ -469,6 +472,9 @@ public final class SlashCommandController implements Completer {
         if ("/mcp".equalsIgnoreCase(command)) {
             return mcpCandidates(tokens, endsWithSpace);
         }
+        if ("/sandbox".equalsIgnoreCase(command)) {
+            return sandboxCandidates(tokenFragment(tokens, endsWithSpace));
+        }
         if ("/model".equalsIgnoreCase(command)) {
             return modelCandidates(tokenFragment(tokens, endsWithSpace));
         }
@@ -515,6 +521,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/provider".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", providerActionCandidates(""));
+        }
+        if ("/sandbox".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", sandboxCandidates(""));
         }
         if ("/model".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", modelCandidates(""));
@@ -992,6 +1001,36 @@ public final class SlashCommandController implements Completer {
             ));
         }
         return candidates;
+    }
+
+    private List<Candidate> sandboxCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : SANDBOX_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(
+                    action,
+                    action,
+                    "Sandbox",
+                    describeSandboxAction(action),
+                    "attach".equalsIgnoreCase(action)
+            ));
+        }
+        return candidates;
+    }
+
+    private String describeSandboxAction(String action) {
+        if ("status".equalsIgnoreCase(action)) {
+            return "Show direct-host or attached sandbox binding";
+        }
+        if ("attach".equalsIgnoreCase(action)) {
+            return "Attach metadata-only sandbox binding";
+        }
+        if ("disable".equalsIgnoreCase(action)) {
+            return "Return to direct-host execution";
+        }
+        return "Sandbox action";
     }
 
     private List<Candidate> experimentalCandidates(List<String> tokens, boolean endsWithSpace) {

@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
 import io.github.lnyocly.ai4j.tui.TerminalIO;
 import io.github.lnyocly.ai4j.tui.TuiInteractionState;
@@ -29,6 +30,14 @@ public interface CodingCliAgentFactory {
                                         TuiInteractionState interactionState,
                                         Collection<String> pausedMcpServers) throws Exception {
         return prepare(options, terminal, interactionState);
+    }
+
+    default PreparedCodingAgent prepare(CodeCommandOptions options,
+                                        TerminalIO terminal,
+                                        TuiInteractionState interactionState,
+                                        Collection<String> pausedMcpServers,
+                                        SandboxSession sandboxSession) throws Exception {
+        return prepare(options, terminal, interactionState, pausedMcpServers);
     }
 
     final class PreparedCodingAgent {

@@ -303,23 +303,24 @@ P3 首切片已经落地：`CodingAgentBuilder.sandbox(SandboxSession)` 会把 l
 
 CLI/TUI 层应该提供明确、可见、可切换的 sandbox 状态。
 
-推荐命令：
+P4 首切片已经落地 CLI/TUI 可见命令：
 
 ```text
 /sandbox
 /sandbox status
-/sandbox enable <provider>
+/sandbox attach <providerId> <sessionId> [workspaceId]
 /sandbox disable
-/sandbox attach
 ```
+
+当前 `attach` 是 metadata-only：它记录非敏感 provider/session/workspace 摘要并重建 runtime；如果没有真实 provider bridge，`bash action=exec` 会明确失败，不能静默回退到宿主机。命令细节见 [命令参考](/docs/coding-agent/command-reference) 和 [Coding Agent Sandbox Routing](/docs/coding-agent/sandbox-routing)。
 
 TUI 上至少要让用户知道：
 
-- 当前是否启用 sandbox
+- 当前是 `direct-host` 还是 `attached`
 - provider 是什么
 - workspace 在哪里
-- 最近一次命令是在本地还是 sandbox 执行
-- sandbox 是否可恢复或已销毁
+- 当前是否是 metadata-only attach
+- 没有真实 provider bridge 时不会伪装 sandbox 执行成功
 
 如果后续需要测试交互体验，可以使用 tmux 驱动 CLI，验证输入命令和输出渲染。
 

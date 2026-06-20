@@ -19,14 +19,14 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | pending |
-| Submitted At | pending |
-| Submitted By | pending |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | agent |
 | Task Key | MODULES/cli-host/2026-06-20-p4-cli-sandbox-commands-72f40aa0 |
-| Materials Checklist Hash | pending |
-| Evidence Summary | pending implementation and verification |
-| Open Findings Count | pending |
-| Scanner Version | pending |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | P4 CLI sandbox commands ready for review: `/sandbox status|attach|disable` are implemented, attach is metadata-only, shell execution fails loudly without provider bridge, docs and regression governance are updated, targeted/broad CLI tests and docs build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
@@ -34,10 +34,10 @@
 | --- | --- | --- | --- |
 | Brief | yes | present | `brief.md` |
 | Task plan | yes | present | `task_plan.md` |
-| Progress and evidence | yes | partial | `progress.md`; implementation evidence pending |
+| Progress and evidence | yes | present | `progress.md`; targeted/broad CLI tests, docs build, diff hygiene, Harness status |
 | Visual map | yes | present | `visual_map.md` |
-| Lesson candidate decision | yes | pending | `lesson_candidates.md` still pending closeout decision |
-| Walkthrough or closeout link | yes | pending | `walkthrough.md` will be updated at closeout |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` checked-none |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,12 +46,10 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：no，计划阶段信心足够，但实现和验证尚未完成。
-- 如果不是 100%，剩余漏洞或证据缺口：
-  - attach 后无真实 provider bridge 的运行时行为需要实现阶段用测试钉住，不能只靠文档声明。
-  - factory overload 和 runtime rebind 需要证明不破坏现有 provider/model/stream/mcp 切换。
-- Fix loop count：0，implementation 尚未开始。
-- 当前结论：可以进入 EXEC-01；不能提交 review 或 closeout。
+- Verdict：yes, for the scoped P4 slice
+- 如果不是 100%，剩余漏洞或证据缺口：无 P4 阻塞缺口；真实 provider bridge / remote runner / `/sandbox create` 等能力已明确排除并记录为后续任务。
+- Fix loop count：1
+- 当前结论：可以提交 Agent Review Submission；实现、文档、回归和治理证据均已记录。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -68,7 +66,7 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 非阻塞备注（Non-Material Notes）
 
 - P4 计划刻意不实现真实 provider/runner；这是范围控制，不是遗漏。
-- docs-site 更新必须避免不存在 API 示例。
+- docs-site 更新已避免不存在 API 示例，只说明已实现的 P3/P4 API 和未实现边界。
 
 ## 已检查证据（Evidence Checked）
 
@@ -77,38 +75,45 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 | E-001 | report | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/references/cli-sandbox-command-plan.md | 已记录 P4 命令合同、实现接缝、测试矩阵和 out-of-scope。 |
 | E-002 | code | TARGET:ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentBuilder.java | 已确认 P3 `.sandbox(SandboxSession)` 接入点存在。 |
 | E-003 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox | 已确认当前 SPI 没有通用 attach/resume，P4 不应 overclaim。 |
+| E-004 | command | TARGET:. | `mvn -pl ai4j-cli -am "-Dtest=SlashCommandControllerTest,CodingCliSessionRunnerArgumentParsingTest,DefaultCodingCliAgentFactoryTest,CliAttachedSandboxSessionTest" -DskipTests=false -DfailIfNoTests=false test` passed with 60 tests. |
+| E-005 | command | TARGET:. | `mvn -pl ai4j-cli -am -DskipTests=false test` passed with extension API 25, core 103, agent 119, coding 61, CLI 289 tests. |
+| E-006 | command | TARGET:docs-site | `npm --prefix docs-site run build` passed after restoring ignored local dependencies with `npm --prefix docs-site install`. |
+| E-007 | diff | TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/sandbox | `CliSandboxBinding` and `CliAttachedSandboxSession` expose non-sensitive metadata and fail loudly without provider bridge. |
+| E-008 | diff | TARGET:docs/05-TEST-QA | RG-004/RG-008 and SRB-058 updated. |
+| E-009 | command | TARGET:. | `git diff --check` passed with CRLF warnings only; `npx --yes coding-agent-harness status --json .` reported 0 failures and 1 pre-commit dirty-state warning. |
 
 ## 无重要发现声明
 
-计划阶段未发现阻塞进入实现的重要发现；最终无重要发现声明必须在实现 diff 和回归证据完成后重写。
+本轮已检查 P4 implementation diff、targeted/broad CLI tests、docs-site build、diff hygiene、Harness status 和治理记录，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| attach 无真实 provider bridge 的行为需要用测试和文档约束 | coordinator | no | EXEC-01 实现时关闭 |
-| CLI runtime rebind 可能影响 stream/mcp/provider 状态 | coordinator | no | targeted + broad CLI tests |
+| 真实 provider bridge / attachSession / remote runner 尚未实现 | coordinator | yes | 后续 provider bridge / Remote Agent Runner task |
+| `/sandbox create/list/destroy/logs` 尚未实现 | coordinator | yes | 后续 CLI sandbox provider task |
+| metadata-only attach 无法执行真实 sandbox 命令 | coordinator | yes | 当前明确失败并不执行本地命令；后续 bridge 落地后替换为真实 session |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | no | 还没有提交 agent review，implementation/verification 未完成。 | 执行 `task-review`。 |
-| Missing Materials | no | 计划材料已补齐；实现证据待后续阶段，不属于当前 planning 缺材料。 | n/a |
+| Review | yes | 材料包和本地证据已准备好；feature commit 后执行 `task-review`。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节、实现证据、验证证据和 lesson decision 已补齐。 | n/a |
 | Blocked | no | 当前无 blocker。 | n/a |
-| Lessons | yes | `lesson_candidates.md` 仍待 closeout 前决定。 | 人工/agent 在 closeout 阶段判定。 |
+| Lessons | no | 本任务 no-candidate-accepted。 | n/a |
 | Confirmed / Finalized | no | 未完成 review-confirm / closeout。 | 后续 PR/CI/review/closeout。 |
 | Soft-deleted / Superseded | no | 任务仍 active。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
 - 任务计划：已更新 `task_plan.md`。
-- Progress：见 `progress.md` 2026-06-20 12:02 planning entry。
+- Progress：见 `progress.md` 2026-06-20 12:02 / 12:57 / 12:58 / 13:01 / 13:03 entries。
 - 发现记录：已更新 `findings.md`。
-- Regression SSoT：实现阶段根据 RG-004/RG-008 证据决定是否更新。
-- Lessons：pending，closeout 时写 `checked-none:<reason>` 或候选。
-- 收口记录：实现验证后更新 `walkthrough.md`。
+- Regression SSoT：已更新 RG-004/RG-008 和 SRB-058。
+- Lessons：checked-none:p4-cli-sandbox-slice-task-local。
+- 收口记录：`walkthrough.md`。
 
 ## 最终信心依据（Final Confidence Basis）
 
-pending implementation, tests, docs build, Harness status, review, PR/CI evidence.
+最终信心来自 targeted + broad CLI tests、metadata-only no-local-fallback deterministic test、docs-site build、明确的未实现边界和回归治理记录。PR 合并前仍需 CI 与人工确认。

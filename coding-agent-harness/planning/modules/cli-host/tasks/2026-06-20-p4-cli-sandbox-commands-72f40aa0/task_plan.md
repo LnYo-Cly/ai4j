@@ -53,16 +53,16 @@ Task Package Index: required
 
 ## 验收标准
 
-- [ ] `/sandbox` 与 `/sandbox status` 输出当前 mode、provider/session/workspace 摘要和执行边界。
-- [ ] `/sandbox attach <providerId> <sessionId> [workspaceId]` 能在当前 CLI session 内记录绑定并触发 runtime rebind。
-- [ ] `/sandbox disable` 能清除绑定并回到 direct-host runtime。
-- [ ] attached 状态不会静默把 shell 执行伪装成 sandbox 成功；没有真实 provider bridge 时必须给出清晰限制或错误。
-- [ ] Slash completion、TUI palette、help/status 命令均能发现 sandbox 入口。
-- [ ] 文档明确 P4 不提供真实 sandbox 创建/恢复后端，真实 provider/runner 是后续任务。
-- [ ] `mvn -pl ai4j-cli -am "-Dtest=SlashCommandControllerTest,CodingCliSessionRunnerArgumentParsingTest,DefaultCodingCliAgentFactoryTest" -DskipTests=false -DfailIfNoTests=false test` 通过或记录替代 targeted set。
-- [ ] `mvn -pl ai4j-cli -am -DskipTests=false test` 根据变更风险通过或记录明确 residual。
-- [ ] `npm --prefix docs-site run build` 在 docs-site 变更时通过。
-- [ ] `git diff --check` 和 `npx --yes coding-agent-harness status --json .` 通过或只剩已解释 residual。
+- [x] `/sandbox` 与 `/sandbox status` 输出当前 mode、provider/session/workspace 摘要和执行边界。
+- [x] `/sandbox attach <providerId> <sessionId> [workspaceId]` 能在当前 CLI session 内记录绑定并触发 runtime rebind。
+- [x] `/sandbox disable` 能清除绑定并回到 direct-host runtime。
+- [x] attached 状态不会静默把 shell 执行伪装成 sandbox 成功；没有真实 provider bridge 时必须给出清晰限制或错误。
+- [x] Slash completion、TUI palette、help/status 命令均能发现 sandbox 入口。
+- [x] 文档明确 P4 不提供真实 sandbox 创建/恢复后端，真实 provider/runner 是后续任务。
+- [x] `mvn -pl ai4j-cli -am "-Dtest=SlashCommandControllerTest,CodingCliSessionRunnerArgumentParsingTest,DefaultCodingCliAgentFactoryTest,CliAttachedSandboxSessionTest" -DskipTests=false -DfailIfNoTests=false test` 通过。
+- [x] `mvn -pl ai4j-cli -am -DskipTests=false test` 通过。
+- [x] `npm --prefix docs-site run build` 在本 worktree 执行；首次因 ignored `docs-site/node_modules` 缺失失败，`npm --prefix docs-site install` 后通过。
+- [x] `git diff --check` 通过（仅 CRLF warning）；`npx --yes coding-agent-harness status --json .` 返回 0 failures，仅剩提交前 dirty-state warning。
 
 ## 工作树（Worktree）
 

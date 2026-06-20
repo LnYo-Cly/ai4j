@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:p4-cli-sandbox-slice-task-local |
 | Source task | 2026-06-20-p4-cli-sandbox-commands-72f40aa0 |
 | Owner | coordinator |
 | Last updated | 2026-06-20 |
@@ -49,7 +49,7 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务的关键经验是任务本地的 P4 范围控制：metadata-only attach 必须显式失败且不执行本地命令。该原则已写入本任务的 `findings.md`、`review.md`、docs-site sandbox routing 和 Regression SSoT；当前不需要沉淀为跨仓共享 lesson。真实 provider bridge / Remote Agent Runner 会在后续任务中重新评估是否需要抽象级 lesson。
 
 ## Promotion Notes
 

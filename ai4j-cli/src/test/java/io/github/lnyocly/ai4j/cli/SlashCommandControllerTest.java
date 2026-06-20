@@ -36,6 +36,7 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/theme ");
         assertContainsValue(candidates, "/stream ");
         assertContainsValue(candidates, "/mcp ");
+        assertContainsValue(candidates, "/sandbox ");
         assertContainsValue(candidates, "/providers");
         assertContainsValue(candidates, "/provider ");
         assertContainsValue(candidates, "/model ");
@@ -292,6 +293,36 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "enable ");
         assertContainsValue(candidates, "pause ");
         assertContainsValue(candidates, "remove ");
+    }
+
+    @Test
+    public void suggestSandboxActionsAfterTrailingSpaceIncludesStatusAttachAndDisable() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-actions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox ", "/sandbox ".length());
+
+        assertContainsValue(candidates, "status");
+        assertContainsValue(candidates, "attach ");
+        assertContainsValue(candidates, "disable");
+    }
+
+    @Test
+    public void suggestExactSandboxCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-exact");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox", "/sandbox".length());
+
+        assertContainsValue(candidates, "/sandbox ");
+        assertTrue(!containsValue(candidates, "/sandbox status"));
+        assertTrue(!containsValue(candidates, "/sandbox attach "));
     }
 
     @Test

@@ -32,6 +32,13 @@
 - 影响：只实现 dispatch 不够，必须把 `/sandbox` 加入 completion、palette、help/status。
 - 后续：新增或扩展 `SlashCommandControllerTest`，至少验证 `/sandbox`、`/sandbox `、`/sandbox attach `。
 
+### F-005：P4 采用 metadata-only `SandboxSession`，用显式失败防止 host fallback
+
+- 背景：`/sandbox attach` 必须让后续 runtime 感知 attached 状态，但当前没有真实 provider bridge。
+- 发现：如果只记录状态但不传入 `SandboxSession`，用户可能以为 runtime 已切换而实际仍走 direct-host；如果传入假成功 session，则会伪造 sandbox 执行成功。最终实现用 `CliAttachedSandboxSession` 包装非敏感 binding，并在 `execute(...)` 中抛出 `SandboxException`，提示 `Command was not executed locally`。
+- 影响：P4 可以证明 `/sandbox attach` 会触发 `CodingAgentBuilder.sandbox(...)` 路由，同时不会在缺 provider bridge 时把命令静默落回宿主机。
+- 后续：真实 attach/resume/create/list/destroy/logs 仍应由后续 provider bridge / Remote Agent Runner 任务实现。
+
 ## 技术决策
 
 | 决策 | 选择 | 原因 | 替代方案 | 状态 |
@@ -41,11 +48,12 @@
 | runtime 接线 | 给 `CodingCliAgentFactory` 增加默认 overload，`DefaultCodingCliAgentFactory` 调用 `builder.sandbox(...)` | 降低破坏面，兼容其他实现 | 把 sandbox 写进 `CodeCommandOptions` 或全局 config | accepted |
 | 用户体验 | `/sandbox` 默认等价 status，`attach/disable` 是本轮唯一 mutating action | 和 `/stream`、`/mcp` 风格一致，简单可发现 | 一次性加入 create/list/destroy/logs | accepted |
 | 真实后端 | 后续任务处理 provider bridge / remote runner | 需要新的 provider/transport/凭据/网络边界 | 在 CLI 里硬编码一个后端 | accepted |
+| 无 provider bridge 的执行语义 | `CliAttachedSandboxSession.execute(...)` 显式失败并声明没有本地执行 | 防止用户误以为已进入 sandbox，同时防止 host fallback | 只做 status-only binding 或伪造成功 | accepted |
 
 ## 待确认问题
 
 | 问题 | 当前判断 | Owner | 截止点 |
 | --- | --- | --- | --- |
-| `DefaultCodingCliAgentFactoryTest` 是否已有足够 seam 测 sandbox overload | 需要实现时确认；如果没有，新增最小 fake model/factory test 或调整 targeted set | coordinator | EXEC-01 |
-| attach 后没有真实 provider 时，是否传入 metadata-only `SandboxSession` 还是只记录状态 | 初步倾向：必须避免静默 direct-host；最终实现时以测试可证明的最小行为为准，并在 docs 说明 | coordinator | EXEC-01 |
-| docs-site 是否新增页面还是更新现有 `sandbox-routing.md` / CLI command docs | 初步倾向：更新现有页面，减少 `.gitignore docs/` 新文件风险 | coordinator | DOCS step |
+| `DefaultCodingCliAgentFactoryTest` 是否已有足够 seam 测 sandbox overload | 已新增 fake `SandboxSession` 验证 factory overload 会进入 sandbox routing，并保留正常 prepare path | coordinator | resolved |
+| attach 后没有真实 provider 时，是否传入 metadata-only `SandboxSession` 还是只记录状态 | 已选择 metadata-only `CliAttachedSandboxSession`，`execute(...)` 明确失败且不执行本地命令 | coordinator | resolved |
+| docs-site 是否新增页面还是更新现有 `sandbox-routing.md` / CLI command docs | 已更新现有 `sandbox-routing.md`、`command-reference.md`、`sdk-roadmap.md`，避免新增页面和 `.gitignore docs/` 风险 | coordinator | resolved |

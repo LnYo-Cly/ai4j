@@ -29,6 +29,7 @@ sidebar_position: 11
 - `/skills`
 - `/agents`
 - `/mcp`
+- `/sandbox`
 - `/sessions`
 - `/history`
 - `/tree`
@@ -252,7 +253,7 @@ sidebar_position: 11
 
 ---
 
-## 2. Skills / MCP / Stream
+## 2. Skills / MCP / Sandbox / Stream
 
 ### `/skills`
 
@@ -379,6 +380,78 @@ sidebar_position: 11
 ```text
 /mcp remove <name>
 ```
+
+---
+
+### `/sandbox`
+
+显示当前 CLI session 的 sandbox routing 状态。
+
+```text
+/sandbox
+/sandbox status
+```
+
+常见输出：
+
+```text
+sandbox:
+- mode=direct-host
+- routing=bash exec uses local host runtime
+- attach=/sandbox attach <providerId> <sessionId> [workspaceId]
+- boundary=this command does not create or authenticate a sandbox provider
+```
+
+或：
+
+```text
+sandbox:
+- mode=attached
+- provider=cubesandbox
+- session=sbx_123
+- workspace=project-a
+- runtime=metadata-only
+- routing=bash exec is routed to SandboxSession and fails loudly until a provider bridge is available
+- boundary=this command does not create or authenticate a sandbox provider
+```
+
+---
+
+### `/sandbox attach`
+
+把当前 CLI session 绑定到一个外部 sandbox session 摘要，并立即重建当前 coding runtime。
+
+```text
+/sandbox attach <providerId> <sessionId> [workspaceId]
+```
+
+示例：
+
+```text
+/sandbox attach cubesandbox sbx_123 project-a
+```
+
+说明：
+
+- 当前实现是 **metadata-only attach**，只记录 provider/session/workspace 等非敏感信息。
+- 它不会创建真实 VM / 容器 / microVM，也不会认证 provider。
+- 没有真实 provider bridge 时，后续 `bash action=exec` 会明确失败，并提示 `Command was not executed locally`。
+- 这避免了“用户以为进入 sandbox，但命令实际在宿主机执行”的误导。
+
+---
+
+### `/sandbox disable`
+
+清除当前 CLI session 的 sandbox binding，并立即重建回 direct-host runtime。
+
+```text
+/sandbox disable
+```
+
+说明：
+
+- 作用域只限当前 CLI session。
+- 关闭后，`bash action=exec` 回到宿主机本地执行语义。
 
 ---
 
@@ -767,6 +840,7 @@ sidebar_position: 11
 - `/model` 候选
 - `/experimental` 的 feature / on|off 候选
 - `/skills` 候选
+- `/sandbox status|attach|disable` 候选
 - `/stream on|off`
 
 ---
