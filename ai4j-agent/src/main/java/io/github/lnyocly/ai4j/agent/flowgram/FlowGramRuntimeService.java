@@ -1506,7 +1506,7 @@ public class FlowGramRuntimeService implements AutoCloseable {
             nodeOutputs.put(nodeId, copyMap(outputs));
         }
 
-        private void updateWorkflow(String status, boolean terminated, String error) {
+        private synchronized void updateWorkflow(String status, boolean terminated, String error) {
             long now = System.currentTimeMillis();
             this.workflowStatus = status;
             this.terminated = terminated;
@@ -1522,7 +1522,7 @@ public class FlowGramRuntimeService implements AutoCloseable {
             }
         }
 
-        private FlowGramTaskReportOutput toReport() {
+        private synchronized FlowGramTaskReportOutput toReport() {
             Map<String, FlowGramTaskReportOutput.NodeStatus> snapshot =
                     new LinkedHashMap<String, FlowGramTaskReportOutput.NodeStatus>();
             for (Map.Entry<String, FlowGramTaskReportOutput.NodeStatus> entry : nodeStatuses.entrySet()) {
@@ -1546,7 +1546,7 @@ public class FlowGramRuntimeService implements AutoCloseable {
                     .build();
         }
 
-        private FlowGramTaskResultOutput toResult() {
+        private synchronized FlowGramTaskResultOutput toResult() {
             return FlowGramTaskResultOutput.builder()
                     .status(workflowStatus)
                     .terminated(terminated)

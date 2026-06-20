@@ -48,9 +48,9 @@
 - 下一步：重新运行 Harness status；如通过则提交材料修复并保持 review 状态。
 - 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a/execution_strategy.md:task-specific execution strategy repaired
 
-### [2026-06-20 06:30] - task-log
+### [2026-06-20 14:30] - PR #118 CI repair
 
-- 做了什么：CI repair: reproduced FlowGram starter async report race from PR #118, synchronized FlowGram workflow snapshots, made integration report polling deterministic, and re-ran targeted/broad FlowGram plus agent regressions.
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：command:TARGET:.:mvn -pl ai4j-flowgram-spring-boot-starter -am \
+- 做了什么：复现 PR #118 的 FlowGram starter 异步 report race；让 FlowGram workflow snapshot 读写在同一 monitor 下形成确定快照；将集成测试的 report 断言改为等待 terminal report，避免刚提交任务后立即读取到 `processing` / 空 node outputs。
+- 验证结果：FlowGram controller targeted 4 tests 通过；FlowGram starter broad 13 tests 通过；ai4j-agent broad 124 tests 通过。
+- 下一步：运行 Harness status，提交并推送 `feature/agent-runner-spi`。
+- 证据：command:TARGET:.:'mvn -pl ai4j-flowgram-spring-boot-starter -am "-Dtest=FlowGramTaskControllerIntegrationTest" -DskipTests=false -DfailIfNoTests=false test' passed with 4 tests; command:TARGET:.:'mvn -pl ai4j-flowgram-spring-boot-starter -am -DskipTests=false test' passed with 13 tests; command:TARGET:.:'mvn -pl ai4j-agent -am -DskipTests=false test' passed with 124 tests
