@@ -148,6 +148,7 @@ const sidebars: SidebarsConfig = {
         'agent/use-cases-and-paths',
         'agent/architecture',
         'agent/sdk-roadmap',
+        'agent/source-backed-research-digest',
         'agent/session-runtime',
         'agent/memory-compact-context',
         'agent/plugin-contribution-contract',

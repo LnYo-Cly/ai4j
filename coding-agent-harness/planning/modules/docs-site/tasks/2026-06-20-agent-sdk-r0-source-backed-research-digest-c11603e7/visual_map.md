@@ -24,8 +24,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | R0 digest、docs-site 页面、sidebar/roadmap 链接和 task package 已写入 | `references/agent-sdk-r0-source-backed-research-digest.md`; `docs-site/docs/agent/source-backed-research-digest.md`; validation commands | `harness task-phase 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 EXEC-01 --state done --completion 100 --evidence present` | agent | present | validation pending | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review MODULES/docs-site/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 --message "<summary>"` | agent | missing | requires clean tree after commit | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 --confirm 2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

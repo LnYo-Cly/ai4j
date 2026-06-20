@@ -10,42 +10,45 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+沉淀一份公开资料支撑的 Agent SDK R0 调研 digest，约束 AI4J 后续插件生态、CLI/TUI、Memory/Compact、Sandbox/Remote Runner 和 docs-site 改进不再凭印象设计。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+完成后，后续实现任务可以直接读取 task-local digest 和 docs-site 页面，知道 Pi、Codex、Claude Code、OpenCode、Spring AI、LangChain4j、AgentScope Java、E2B/Daytona/Modal 等公开资料对 AI4J 的真实启发与边界。它会明确哪些模式值得借鉴，哪些来源不足不能臆造，以及每个后续任务应如何落到 AI4J 现有模块边界。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`docs-site/docs/agent/source-backed-research-digest.md`
+- 修改位置：docs-site Agent sidebar、`docs-site/docs/agent/sdk-roadmap.md`、本 task package references/progress/review/walkthrough。
+- 验证证据：`npm --prefix docs-site run build`、`git diff --check`、token fragment scan、`npx --yes coding-agent-harness status --json .`。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `references/agent-sdk-r0-source-backed-research-digest.md`：完整公开资料 digest。
+2. `docs-site/docs/agent/source-backed-research-digest.md`：用户可读的 docs-site 页面。
+3. `findings.md`：关键判断和 source gap。
+4. `review.md`：资料边界和无重要发现声明。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：公开资料 digest、docs-site 技术页面、sidebar/roadmap 链接、task-local review/progress/walkthrough。
+- 范围外：不改 Java 实现；不实现插件、sandbox、runner 或 CLI 命令；不复制泄露源码；不使用用户提供的 provider token 测试。
+- 停止条件：如果来源无法公开验证，只记录 source gap，不把它写成已确认事实。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- [x] Digest 覆盖 Pi、Codex、Claude Code、OpenCode、Spring AI、LangChain4j、AgentScope Java、sandbox providers。
+- [x] docs-site 新增可读页面并从 Agent sidebar/roadmap 可达。
+- [x] 对 source gap 和不做事项明确标注。
+- [x] 验证命令通过并记录在 `progress.md`。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+运行 docs build、diff check、token fragment scan 和 Harness status；通过后提交并进入 `task-review`。

@@ -4,6 +4,12 @@ sidebar_position: 4
 
 # AI4J Agent SDK Roadmap
 
+## 0. 公开资料调研门禁
+
+后续 Agent SDK、插件生态、Sandbox、CLI/TUI 的规划不再只凭印象推进。已新增 [Agent SDK R0 公开资料调研](./source-backed-research-digest.md)，把 Pi、Codex、Claude Code、OpenCode、Spring AI、LangChain4j、AgentScope Java 和 sandbox provider 的公开资料结论整理成设计约束。
+
+本 roadmap 里的后续任务需要遵守这份 digest 的边界：只写真实 API，不引入新的 `Host Kernel` / `AgentHost` 核心概念，不把具体 OpenAI-compatible 中转平台名写成架构概念，不默认绑定重型云 sandbox。
+
 这一页说明 `ai4j-agent` 接下来要怎样从“可用的 Agent runtime”升级为更完整的 Java Agent SDK。
 
 先明确一个边界：这里是技术路线图，不代表所有能力都已经发布。当前已经存在的能力包括 `Agent`、`AgentBuilder`、`AgentRuntime`、`AgentSession`、memory、runtime、workflow、team、trace 等；下面的路线是后续要逐步补强的方向。

@@ -1,10 +1,11 @@
 # 任务产物索引
 
-仅在任务产生较多证据或大体量产物时使用，例如命令输出、截图、fixture、生成报告、review transcript、导出的数据文件等。核心任务文件只引用这里的 ID，不粘贴长输出。
-
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | report | TARGET:coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7/references/agent-sdk-r0-source-backed-research-digest.md | 完整 R0 公开资料 digest | coordinator |
+| ART-002 | report | TARGET:docs-site/docs/agent/source-backed-research-digest.md | docs-site 用户可读页面 | coordinator |
+| ART-003 | diff | TARGET:docs-site/sidebars.ts | Agent sidebar 增加 source-backed digest 页面 | coordinator |
+| ART-004 | diff | TARGET:docs-site/docs/agent/sdk-roadmap.md | Roadmap 增加 R0 公开资料调研门禁 | coordinator |
 
 ## 使用规则
 
