@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| coordinator | self | PR #118 后 backlog 状态、module plan、下一步实现切片、Harness 材料完整性 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：architecture / planning / regression
+- 范围内：本任务包、`agent-runtime/module_plan.md`、PR #118 合并事实、P0-P5 关键代码/docs 路径、下一步任务队列。
+- 范围外：Java 代码实现、真实 sandbox/runner provider、docs-site 页面新增、人工 review-confirm。
+- 来源材料：`AGENTS.md`、`module_plan.md`、`docs-site/docs/agent/sdk-roadmap.md`、`docs-site/docs/agent/remote-agent-runner-spi.md`、GitHub PR #118、`gh pr list --base dev --state open`、关键路径存在性检查、Harness status。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,25 +19,25 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submission ID | pending-task-review |
+| Submitted At | pending-task-review |
+| Submitted By | coordinator |
+| Task Key | MODULES/agent-runtime/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a |
+| Materials Checklist Hash | pending-task-review |
+| Evidence Summary | Agent Runtime backlog reconciliation prepared: PR #118 merged, open dev PR list empty, P0/P1/P2/P5 paths verified, module_plan updated, next slice identified. |
+| Open Findings Count | 0 |
+| Scanner Version | pending-task-review |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,11 +46,13 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - Harness task lifecycle 仍需要人工 review-confirm；agent 不能自行把 review 队列任务标成最终完成。
+  - 下一步 `Memory/Compact Session API polish` 只是实现方向，还没有独立设计、API diff、测试和 PR。
+  - 本轮没有跑 Maven/docs build，因为不改生产代码或 docs-site 页面。
+- Fix loop count：1
+- 当前结论：作为 backlog reconciliation 可以提交审查；不能替代后续实现任务和人工确认。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
@@ -66,44 +68,52 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `AGENT.md` 在当前 `dev` worktree 不存在；本轮以用户提供的 `AGENTS.md` 指令、module plan 和现有 `docs/05-TEST-QA` 为准。
+- P3/P4 是 coding/cli 模块成果；module plan 只作为依赖事实引用，不把后续 CLI UX 继续塞进 agent-runtime。
+- 下一步实现应先写新的 Harness task，不要在本 reconciliation 分支顺手改 API。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:. | `gh pr view 118 --json ...` confirmed PR #118 merged into `dev` at `5f4426c9909ffa62851c40bacbc3617c87700287`. |
+| E-002 | command | TARGET:. | `gh pr list --base dev --state open` returned no open PRs. |
+| E-003 | command | TARGET:. | Key P0/P1/P2/P5 code and docs paths all exist in current worktree. |
+| E-004 | diff | TARGET:coding-agent-harness/planning/modules/agent-runtime/module_plan.md | Backlog statuses updated to current merged/review/closeout facts. |
+| E-005 | command | TARGET:. | `git diff --check` passed; `npx --yes coding-agent-harness status --json .` reported failures=0 with only dirty-state warning before commit. |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞“PR #118 后 backlog/module plan 校准”目标的重要发现。剩余风险均是 lifecycle 人工确认和后续实现任务范围。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 多个既有 agent-runtime task 仍处于 review queue，尚未 human review-confirm / closeout | human / coordinator | yes | 使用 dashboard 或 `review-confirm` 后逐个 closeout |
+| 下一步 `Memory/Compact Session API polish` 尚未设计实现 | coordinator | yes | 新建 agent-runtime implementation task |
+| 本轮没有运行 Maven/docs build | coordinator | yes | 本轮不改代码/docs；后续实现任务必须跑 targeted regression |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
-| --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| --- | --- | --- |
+| Review | yes | 材料准备后提交给人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需 task package 文件已补齐；最终以 Harness status 为准。 | n/a |
+| Blocked | no | 当前无 open blocking finding。 | n/a |
+| Lessons | no | 本任务无 lesson candidate，已记录 checked-none。 | n/a |
+| Confirmed / Finalized | no | 尚未人工确认。 | 人工确认后 closeout。 |
+| Soft-deleted / Superseded | no | 当前任务有效。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：对应 `progress.md` 的 backlog 校准记录
+- 发现记录：已更新 `findings.md`
+- Regression SSoT：无，本轮不新增固定 regression gate
+- Lessons：checked-none: backlog-reconciliation-only
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+当前信心来自 GitHub PR 合并证据、当前 worktree 关键路径存在性、open PR 空列表、module plan diff 和 Harness status。正式实现下一步前仍需独立 task、worktree、targeted regression 和 review。

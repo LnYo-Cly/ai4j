@@ -8,13 +8,14 @@ Visual Map Contract: v1.0
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示本任务执行阶段和证据门禁 | yes | `task_plan.md` | no |
+| MAP-02 | dependency | 展示 P0-P5 已合并基座与下一步实现切片的关系 | yes | `findings.md` / `module_plan.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
+  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 backlog 校准\nkind=execution"]
   EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
   GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
 ```
@@ -24,8 +25,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | PR #118 后 agent-runtime backlog 与 module plan 已校准 | `findings.md`; `module_plan.md`; path/PR evidence | `harness task-phase 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --message "Agent runtime backlog reconciliation ready for review"` | agent | partial | must pass final status first | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --confirm 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -40,11 +41,15 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
-
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+```mermaid
+flowchart TB
+  P0["P0 Session / Memory / Hook / Permission\nmerged on dev"] --> P1["P1 YAML Blueprint / AgentFactory / CLI run\nmerged on dev"]
+  P1 --> P2["P2 Sandbox SPI + Session Binding\nmerged on dev"]
+  P2 --> P3["P3 Coding Sandbox Routing\nmerged in coding-runtime"]
+  P3 --> P4["P4 CLI Sandbox Commands\nmerged via PR #116"]
+  P2 --> P5["P5 Remote Agent Runner SPI\nmerged via PR #118"]
+  P0 --> NEXT["Next: Memory/Compact Session API polish"]
+  P5 --> NEXT
+  NEXT --> PLUGIN["Then: Plugin contribution contract expansion"]
+  NEXT --> DOCS["Then: docs-site real API completeness pass"]
+```
