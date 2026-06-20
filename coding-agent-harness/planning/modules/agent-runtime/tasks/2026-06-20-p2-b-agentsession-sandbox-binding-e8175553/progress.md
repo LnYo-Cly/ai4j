@@ -1,6 +1,6 @@
 # P2-B AgentSession sandbox binding - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 证据使用 `type:path:summary` 格式。允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
 
@@ -38,3 +38,9 @@
 - 验证结果：主 checkout 只剩未跟踪 `.wt/` 容器；P2-B worktree 持有全部代码/docs/task 变更。targeted、broad、docs build 均通过。
 - 下一步：运行 Harness status，提交实现，执行 task-review。
 - 证据：command:TARGET:.:'mvn -pl ai4j-agent -am "-Dtest=AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test' -> BUILD SUCCESS, 4 tests; command:TARGET:.:'mvn -pl ai4j-agent -am -DskipTests=false test' -> BUILD SUCCESS, extension API 25, core 103, agent 119 tests; command:TARGET:docs-site:'npm --prefix docs-site run build' -> success
+
+## Log
+
+| Time | Actor | Action | Evidence | Next |
+| --- | --- | --- | --- | --- |
+| 2026-06-20 01:54 | coordinator | task-review: P2-B AgentSession sandbox binding ready for review: non-sensitive Sandbox binding summary added to AgentSession snapshot/store/event log, secret-bearing config is excluded, targeted and broad ai4j-agent regressions passed, docs-site Sandbox SPI page and regression evidence updated. | n/a | continue |

@@ -60,3 +60,16 @@
 
 Confidence is based on deterministic local tests covering binding/snapshot/store/event/security behavior, broad `ai4j-agent` regression, docs-site build, and explicit scope boundaries. P2-B remains intentionally limited: real provider contribution, coding tool routing, and CLI/TUI sandbox UX are follow-up tasks.
 
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200154 |
+| Submitted At | 2026-06-20 01:54 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553 |
+| Materials Checklist Hash | e4965933f010cc1a |
+| Evidence Summary | P2-B AgentSession sandbox binding ready for review: non-sensitive Sandbox binding summary added to AgentSession snapshot/store/event log, secret-bearing config is excluded, targeted and broad ai4j-agent regressions passed, docs-site Sandbox SPI page and regression evidence updated. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553 |
