@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.plugin.askuser;
 
 import io.github.lnyocly.ai4j.extension.Ai4jExtension;
 import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContribution;
+import io.github.lnyocly.ai4j.extension.ExtensionContributionType;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
@@ -31,6 +33,15 @@ public class AskUserExtensionTest {
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.SKILL));
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.PROMPT));
         Assert.assertFalse(manifest.hasCapability(ExtensionCapability.GUARDRAIL));
+        Assert.assertEquals(4, manifest.getContributions().size());
+        Assert.assertEquals(AskUserExtension.TOOL_NAME,
+                contribution(manifest, ExtensionContributionType.TOOL).getName());
+        Assert.assertEquals(AskUserExtension.COMMAND_NAME,
+                contribution(manifest, ExtensionContributionType.CLI_COMMAND).getName());
+        Assert.assertEquals(AskUserExtension.SKILL_NAME,
+                contribution(manifest, ExtensionContributionType.SKILL).getName());
+        Assert.assertEquals(AskUserExtension.PROMPT_NAME,
+                contribution(manifest, ExtensionContributionType.PROMPT).getName());
         Assert.assertEquals("ai4j.extensions.ask-user", manifest.getConfigPrefix());
     }
 
@@ -104,5 +115,15 @@ public class AskUserExtensionTest {
             }
         }
         Assert.assertTrue("ask-user extension should be discoverable by ServiceLoader", found);
+    }
+
+    private static ExtensionContribution contribution(ExtensionManifest manifest, ExtensionContributionType type) {
+        for (ExtensionContribution contribution : manifest.getContributions()) {
+            if (type.equals(contribution.getType())) {
+                return contribution;
+            }
+        }
+        Assert.fail("missing contribution type: " + type);
+        return null;
     }
 }

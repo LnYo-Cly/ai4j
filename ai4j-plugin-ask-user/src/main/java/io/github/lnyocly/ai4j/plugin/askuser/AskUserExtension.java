@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.plugin.askuser;
 
 import io.github.lnyocly.ai4j.extension.Ai4jExtension;
 import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContribution;
+import io.github.lnyocly.ai4j.extension.ExtensionContributionType;
 import io.github.lnyocly.ai4j.extension.ExtensionContext;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandRequest;
@@ -35,6 +37,30 @@ public final class AskUserExtension implements Ai4jExtension {
                 .capability(ExtensionCapability.COMMAND)
                 .capability(ExtensionCapability.SKILL)
                 .capability(ExtensionCapability.PROMPT)
+                .contribution(ExtensionContribution.builder()
+                        .type(ExtensionContributionType.TOOL)
+                        .name(TOOL_NAME)
+                        .description("Host-mediated user clarification tool; requires explicit tool exposure.")
+                        .permission("ui.prompt")
+                        .build())
+                .contribution(ExtensionContribution.builder()
+                        .type(ExtensionContributionType.CLI_COMMAND)
+                        .name(COMMAND_NAME)
+                        .description("CLI command for creating a host-mediated user clarification request.")
+                        .permission("ui.prompt")
+                        .build())
+                .contribution(ExtensionContribution.builder()
+                        .type(ExtensionContributionType.SKILL)
+                        .name(SKILL_NAME)
+                        .description("Skill resource describing when the agent should ask a user.")
+                        .requiresExplicitActivation(false)
+                        .build())
+                .contribution(ExtensionContribution.builder()
+                        .type(ExtensionContributionType.PROMPT)
+                        .name(PROMPT_NAME)
+                        .description("Prompt resource for concise user clarification questions.")
+                        .requiresExplicitActivation(false)
+                        .build())
                 .permission("ui.prompt")
                 .configPrefix("ai4j.extensions.ask-user")
                 .build();

@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.extension.validation;
 
 import io.github.lnyocly.ai4j.extension.DiscoveredExtension;
 import io.github.lnyocly.ai4j.extension.ExtensionCapability;
+import io.github.lnyocly.ai4j.extension.ExtensionContribution;
+import io.github.lnyocly.ai4j.extension.ExtensionContributionType;
 import io.github.lnyocly.ai4j.extension.ExtensionInspectionSnapshot;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
@@ -71,6 +73,7 @@ public final class ExtensionValidator {
         if (isBlank(manifest.getVendor())) {
             report.issue(warning("manifest.vendor.missing", "extension manifest should declare a vendor", manifest.getId()));
         }
+        validateContributions(manifest, report);
     }
 
     private static void validateRuntime(ExtensionManifest manifest,
@@ -106,6 +109,75 @@ public final class ExtensionValidator {
             report.issue(warning(
                     "capability.empty",
                     "extension declares capability but contributes no " + capability.getId() + " resources",
+                    manifest.getId() + ":" + capability.getId()
+            ));
+        }
+    }
+
+    private static void validateContributions(ExtensionManifest manifest,
+                                              ExtensionValidationReport.Builder report) {
+        List<ExtensionContribution> contributions = manifest.getContributions();
+        if (contributions == null || contributions.isEmpty()) {
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.MEMORY_STORE, report);
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.COMPACT_POLICY, report);
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.CONTEXT_PROJECTOR, report);
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.SANDBOX_PROVIDER, report);
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.RUNNER_PROVIDER, report);
+            validateMetadataOnlyCapability(manifest, ExtensionCapability.UI, report);
+            return;
+        }
+        for (ExtensionContribution contribution : contributions) {
+            if (contribution == null) {
+                continue;
+            }
+            String target = "contribution:" + contribution.getTypeId() + ":" + contribution.getName();
+            if (isBlank(contribution.getDescription())) {
+                report.issue(warning(
+                        "contribution.description.missing",
+                        "extension contribution should declare a concise description",
+                        target
+                ));
+            }
+            ExtensionContributionType type = contribution.getType();
+            if (type != null && type.hasRuntimeCapability()
+                    && !manifest.hasCapability(type.getRuntimeCapability())) {
+                report.issue(error(
+                        "contribution.capability.missing",
+                        "extension contribution requires manifest capability: " + type.getRuntimeCapability().getId(),
+                        target
+                ));
+            }
+            if (contribution.isRequiresExplicitActivation()
+                    && requiresPermissionMetadata(type)
+                    && (contribution.getPermissions() == null || contribution.getPermissions().isEmpty())) {
+                report.issue(warning(
+                        "contribution.permission.missing",
+                        "explicitly activated contribution should declare host permission metadata",
+                        target
+                ));
+            }
+        }
+    }
+
+    private static boolean requiresPermissionMetadata(ExtensionContributionType type) {
+        return ExtensionContributionType.TOOL.equals(type)
+                || ExtensionContributionType.GUARDRAIL.equals(type)
+                || ExtensionContributionType.MEMORY_STORE.equals(type)
+                || ExtensionContributionType.COMPACT_POLICY.equals(type)
+                || ExtensionContributionType.CONTEXT_PROJECTOR.equals(type)
+                || ExtensionContributionType.SANDBOX_PROVIDER.equals(type)
+                || ExtensionContributionType.RUNNER_PROVIDER.equals(type)
+                || ExtensionContributionType.CLI_COMMAND.equals(type)
+                || ExtensionContributionType.UI.equals(type);
+    }
+
+    private static void validateMetadataOnlyCapability(ExtensionManifest manifest,
+                                                       ExtensionCapability capability,
+                                                       ExtensionValidationReport.Builder report) {
+        if (manifest.hasCapability(capability)) {
+            report.issue(warning(
+                    "capability.contribution.missing",
+                    "extension declares metadata-only capability but no contribution metadata: " + capability.getId(),
                     manifest.getId() + ":" + capability.getId()
             ));
         }

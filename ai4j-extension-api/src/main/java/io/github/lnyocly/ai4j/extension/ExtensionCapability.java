@@ -8,7 +8,13 @@ public enum ExtensionCapability {
     SKILL("skill"),
     PROMPT("prompt"),
     GUARDRAIL("guardrail"),
-    LIFECYCLE("lifecycle");
+    LIFECYCLE("lifecycle"),
+    MEMORY_STORE("memory-store"),
+    COMPACT_POLICY("compact-policy"),
+    CONTEXT_PROJECTOR("context-projector"),
+    SANDBOX_PROVIDER("sandbox-provider"),
+    RUNNER_PROVIDER("runner-provider"),
+    UI("ui");
 
     private final String id;
 

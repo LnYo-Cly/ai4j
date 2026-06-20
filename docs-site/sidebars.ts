@@ -149,6 +149,7 @@ const sidebars: SidebarsConfig = {
         'agent/sdk-roadmap',
         'agent/session-runtime',
         'agent/memory-compact-context',
+        'agent/plugin-contribution-contract',
         'agent/plugin-lifecycle-hooks',
         'agent/approval-permission-policy',
         'agent/sandbox-spi',

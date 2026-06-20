@@ -137,6 +137,28 @@ public class ExtensionRegistryTest {
     }
 
     @Test
+    public void shouldExposeManifestContributionMetadataDuringInspectionAndActivationPlanning() {
+        ExtensionRegistry registry = ExtensionRegistry.of(new SandboxProviderExtension())
+                .enable("sandbox-pack");
+
+        ExtensionManifest manifest = registry.inspect("sandbox-pack");
+        ExtensionInspectionSnapshot inspected = registry.inspectRuntime("sandbox-pack");
+        ExtensionActivationPlan plan = registry.activationPlan("sandbox-pack");
+
+        Assert.assertTrue(manifest.hasCapability(ExtensionCapability.SANDBOX_PROVIDER));
+        Assert.assertEquals(1, manifest.getContributions().size());
+        Assert.assertEquals(ExtensionContributionType.SANDBOX_PROVIDER, manifest.getContributions().get(0).getType());
+        Assert.assertEquals("cube-sandbox", manifest.getContributions().get(0).getName());
+        Assert.assertEquals(1, inspected.getContributions().size());
+        Assert.assertEquals("cube-sandbox", inspected.getContributions().get(0).getName());
+        Assert.assertEquals(1, plan.getContributions().size());
+        Assert.assertEquals("sandbox-provider", plan.getContributions().get(0).getType());
+        Assert.assertEquals("cube-sandbox", plan.getContributions().get(0).getName());
+        Assert.assertFalse(plan.getContributions().get(0).isActive());
+        Assert.assertTrue(plan.getContributions().get(0).getReason().contains("requires host binding"));
+    }
+
+    @Test
     public void shouldRejectUnknownExtensionEnable() {
         try {
             ExtensionRegistry.of(new WeatherExtension()).enable("missing-pack");
@@ -195,6 +217,56 @@ public class ExtensionRegistryTest {
                         .build();
             }
         }, "prompt name");
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionContribution.builder()
+                        .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                        .name("bad provider")
+                        .build();
+            }
+        }, "extension contribution name");
+    }
+
+    @Test
+    public void shouldRejectContributionWhenMatchingCapabilityIsMissing() {
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionManifest.builder()
+                        .id("bad-contribution")
+                        .capability(ExtensionCapability.TOOL)
+                        .contribution(ExtensionContribution.builder()
+                                .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                                .name("cube-sandbox")
+                                .description("CubeSandbox provider")
+                                .permission("sandbox.create")
+                                .build())
+                        .build();
+            }
+        }, "requires capability");
+    }
+
+    @Test
+    public void shouldRejectDuplicateContributionTypeAndName() {
+        assertInvalid(new Runnable() {
+            public void run() {
+                ExtensionManifest.builder()
+                        .id("duplicate-contribution")
+                        .capability(ExtensionCapability.SANDBOX_PROVIDER)
+                        .contribution(ExtensionContribution.builder()
+                                .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                                .name("cube-sandbox")
+                                .description("Sandbox provider")
+                                .permission("sandbox.create")
+                                .build())
+                        .contribution(ExtensionContribution.builder()
+                                .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                                .name("cube-sandbox")
+                                .description("Duplicate sandbox provider")
+                                .permission("sandbox.create")
+                                .build())
+                        .build();
+            }
+        }, "duplicate extension contribution");
     }
 
     @Test
@@ -352,6 +424,29 @@ public class ExtensionRegistryTest {
                     return GuardrailDecision.allow();
                 }
             });
+        }
+    }
+
+    private static class SandboxProviderExtension implements Ai4jExtension {
+        public ExtensionManifest manifest() {
+            return ExtensionManifest.builder()
+                    .id("sandbox-pack")
+                    .name("Sandbox Pack")
+                    .version("1.0.0")
+                    .vendor("tests")
+                    .capability(ExtensionCapability.SANDBOX_PROVIDER)
+                    .contribution(ExtensionContribution.builder()
+                            .type(ExtensionContributionType.SANDBOX_PROVIDER)
+                            .name("cube-sandbox")
+                            .description("Create external sandbox sessions through a host-supplied provider.")
+                            .permission("sandbox.create")
+                            .build())
+                    .configPrefix("ai4j.extensions.sandbox")
+                    .build();
+        }
+
+        public void apply(ExtensionContext context) {
+            // Provider-style contributions are declared in the manifest and bound by the host.
         }
     }
 }

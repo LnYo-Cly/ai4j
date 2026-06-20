@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Plugin Lifecycle Hooks
 
-`ai4j-extension-api` 现在支持 Agent 生命周期 Hook。它让插件不只贡献 Tool、Command、Skill、Prompt 或 Guardrail，还可以观察 Agent 的运行过程。
+`ai4j-extension-api` 现在支持 Agent 生命周期 Hook。它让插件不只贡献 Tool、Command、Skill、Prompt 或 Guardrail，还可以观察 Agent 的运行过程。插件包能贡献什么由 manifest-level [Plugin Contribution Contract](/docs/agent/plugin-contribution-contract) 描述；Lifecycle Hook 是其中一个已经有运行时 registry 的贡献类型。
 
 这是一层插件生态基础能力，适合做：
 
