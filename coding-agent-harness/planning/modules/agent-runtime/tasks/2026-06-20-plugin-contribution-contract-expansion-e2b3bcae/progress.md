@@ -76,3 +76,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 17:14] - visual_map 材料修复
+
+- 做了什么：修复 `visual_map.md` 中 EXEC-01/GATE-01 的模板占位内容，将实现输出、证据、review exit command、risk 和 owner 改为本任务真实材料。
+- 验证结果：`npx --yes coding-agent-harness status --json .` 显示本任务 `reviewQueueState=ready-to-confirm`、`materialsReady=true`、`taskQueues=[review]`，missing-materials 队列已清空。
+- 下一步：提交本次材料修复；等待人工 review-confirm 或继续 PR/合并流程。
+- 证据：diff:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/visual_map.md:removed visual-map-execution-phase template placeholders
