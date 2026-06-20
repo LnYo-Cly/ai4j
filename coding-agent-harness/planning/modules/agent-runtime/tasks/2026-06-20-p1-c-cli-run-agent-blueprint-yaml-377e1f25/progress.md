@@ -1,6 +1,6 @@
 # P1-C CLI run Agent Blueprint YAML - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：`未开始`、`计划中`、`进行中`、`审查中`、`已阻塞`、`已完成`。
 
@@ -64,3 +64,10 @@
 - 验证结果：`git diff --check` 无 whitespace error，仅 CRLF warning；`npx --yes coding-agent-harness status --json .` 返回 failures=0，P1-C `materialsReady=true`、仍处于 active，等待 task-review。
 - 下一步：执行 `task-review`，然后提交、推送、PR。
 - 证据：command:TARGET:.:'git diff --check' -> no whitespace errors; command:TARGET:.:'npx --yes coding-agent-harness status --json .' -> failures=0, P1-C materialsReady=true
+
+### [2026-06-20 00:39] - task-review
+
+- 做了什么：P1-C CLI run Agent Blueprint YAML ready for review: top-level ai4j-cli run command loads and validates single-agent YAML, resolves host provider/profile/model config, rejects missing profiles, preserves no-token/no-real-sandbox boundaries, and targeted/broad/docs/Harness checks passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
