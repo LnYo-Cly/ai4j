@@ -22,27 +22,36 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
 ### [2026-06-20 02:02] - task-start
 
 - 做了什么：开始记录 AI4J Agent SDK 架构增强规划：以 ai4j-agent 为主，不新增 Host Kernel/AgentHost 模块，覆盖 memory/compact、YAML Agent、插件生态、sandbox/remote runner、coding CLI/TUI。
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
+- 验证结果：已记录。
+- 下一步：补全规划 task package。
+- 证据：command:.:`npx --yes coding-agent-harness task-start MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81 ...` succeeded
+
+### [2026-06-20 10:10] - 规划落盘
+
+- 做了什么：补全 task-local `brief.md`、`task_plan.md`、`execution_strategy.md`、`findings.md`、`visual_map.md`、`lesson_candidates.md`、`review.md`、`walkthrough.md`，并新增 `references/agent-sdk-architecture-enhancement-plan.md` 作为完整规划正文。
+- 验证结果：`git diff --check` 通过；`npx --yes coding-agent-harness status --json .` failures=0、materialsReady=true、lessonCandidateDecisionComplete=true，仅因本规划文件尚未提交而有 dirty-state warning。
+- 下一步：提交本地规划材料；后续先收口 P2-B。
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md:AI4J Agent SDK architecture enhancement roadmap recorded
+
+## 残余
+
+- P2-B `AgentSession sandbox binding` 仍需在 `.wt/p2b` 修复 review material、PR、CI、merge；本规划把它列为后续任务 0。
+- One-command install 方案未在本任务拍板，后续由 `ai4j-cli` packaging task 调研。
+- 真实 sandbox provider 和 remote runner 不在本规划任务验证范围内，后续以 fake provider / SPI 任务推进。
+
+## 协调者交接（Coordinator，启用模块并行时填写）
+
+- Global sync status：pending-coordinator-pass
+- Registry update needed：agent-runtime module plan 已由 Harness CLI 添加本任务；后续 review/closeout 由 lifecycle CLI 同步。
+- Harness Ledger update needed：已由 `new-task` / `task-start` 同步；提交本规划后视需要运行 status。
+- 负责人：coordinator
+
+### [2026-06-20 10:18] - 本地验证
+
+- 做了什么：运行规划材料静态检查和 Harness status。
+- 验证结果：git diff --check 通过；harness status --json failures=0、当前任务 materialsReady=true、lessonCandidateDecisionComplete=true；dirty-state warning 来自本规划文件尚未提交。
+- 下一步：提交本地规划记录，后续继续 P2-B review material 修复和 PR/CI/merge。
+- 证据：command:.:git diff --check passed; command:.:npx --yes coding-agent-harness status --json . failures=0 materialsReady=true

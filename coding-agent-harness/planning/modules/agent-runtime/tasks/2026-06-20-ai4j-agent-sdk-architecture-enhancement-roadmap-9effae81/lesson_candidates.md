@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:planning-record-only |
 | Source task | 2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81 |
 | Owner | coordinator |
 | Last updated | 2026-06-20 |
@@ -49,22 +49,17 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本任务本身已经把可复用判断沉淀为 task-local 架构规划和 findings；当前不需要提升为全局 harness lesson。后续如果实现任务反复遇到同类模块边界或文档/API 脱节问题，再在对应实现任务中创建 lesson candidate。
 
 ## Promotion Notes
 
-- 如果人工审查认为候选值得沉淀，把对应行标记为 `needs-promotion`，并记录目标治理位置。
-- 候选标记为 `needs-promotion` 时，必须趁源任务上下文还新鲜写出完整 task-local detail artifact，并在 `Detail Artifact` 中链接。
-- `Scope` 使用 `task`、`module` 或 `global`；module 级候选必须填写 `Module Key`。
-- 如果人工审查拒绝候选，把对应行标记为 `rejected`，并在 review decision 中保留理由。
-- `needs-promotion` 不阻止任务 closeout，但必须继续出现在维护队列和收口记录里。
-- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要写共享 Lessons 表；被接受的候选应成为 promoted lesson 详情文档。
-- 沉淀任务必须先分类 scope、检查既有 lessons 和 standards 冲突、提出目标改动，并在 apply 前报告验证证据。
+- 当前无待 promotion 候选。
+- 后续实现任务若验证“docs 示例必须绑定真实 API”或“sandbox provider 不应进入核心模块”等规则具有跨任务复用价值，可另开 lesson sedimentation。
 
 ## Queue Routing
 
 | Queue | When this task enters it | Exit condition |
 | --- | --- | --- |
-| Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
+| Lessons | 不进入；当前无候选。 | n/a |
 | Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
-| Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |
+| Confirmed / Finalized | 已人工确认且无 lesson residual。 | Closeout 完成。 |
