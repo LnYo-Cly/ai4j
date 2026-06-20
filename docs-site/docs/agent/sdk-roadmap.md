@@ -253,7 +253,7 @@ Team Blueprint、Workflow Blueprint、FlowGram 导出可以后置。
 
 AI4J 更应该先做抽象，不应该官方维护一堆具体 provider。
 
-建议最小合同：
+P2-A 已落地最小合同：
 
 - `SandboxProvider`
 - `SandboxSession`
@@ -261,6 +261,10 @@ AI4J 更应该先做抽象，不应该官方维护一堆具体 provider。
 - `SandboxCommand`
 - `SandboxResult`
 - `SandboxArtifact`
+- `SandboxEvent` / `SandboxEventType`
+- `SandboxStatus`
+
+使用细节见 [Agent Sandbox SPI](/docs/agent/sandbox-spi)。
 
 原则：
 
@@ -359,7 +363,7 @@ Runner 职责包括：
 | 4 | P0-D Approval / Permission Policy | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 5 | P1-A/P1-B Agent Blueprint YAML loader / validator / AgentFactory | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintLoaderValidatorTest,AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 6 | P1-C CLI `run <agent.yaml>` | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-cli -am -DskipTests=false test` |
-| 7 | P2 Sandbox SPI | fake provider tests + `ai4j-agent` / `ai4j-extension-api` tests |
+| 7 | P2-A Sandbox SPI model | `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -DskipTests=false test` |
 | 9 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
 | 10 | P5 Runner Decision | contract tests after module decision |
