@@ -119,3 +119,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自：独立 subagent 对协议/安全/材料的对抗性审查、blocking findings 的代码级修复、协议级 HTTP server regression、Java 8 Maven 编译、docs-site build、diff/secret/Harness 检查，以及对 live-provider pending-env 的诚实记录。当前信心只覆盖命令级 CubeSandbox Provider；不覆盖完整云端 coding-agent 产品能力。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201938 |
+| Submitted At | 2026-06-20 19:38 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb |
+| Materials Checklist Hash | c95e45745e1f4c74 |
+| Evidence Summary | CubeSandbox sandbox provider adapter ready for review |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb |

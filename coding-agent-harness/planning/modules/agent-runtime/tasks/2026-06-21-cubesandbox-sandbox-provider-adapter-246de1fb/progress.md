@@ -1,6 +1,6 @@
 # CubeSandbox sandbox provider adapter - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -79,3 +79,10 @@
 - 证据：command:TARGET:.:`mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=CubeSandboxLiveProviderTest" -DskipTests=false -DfailIfNoTests=false test` build success, 1 skipped because live env vars absent
 - 证据：command:TARGET:.:`git diff --check` passed with CRLF warnings only
 - 证据：command:TARGET:.:`npx --yes coding-agent-harness status --json .` failures=0, dirty-state warning only; task materialsReady=true, lessonCandidateDecisionComplete=true
+
+### [2026-06-20 19:38] - task-review
+
+- 做了什么：CubeSandbox sandbox provider adapter ready for review
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
