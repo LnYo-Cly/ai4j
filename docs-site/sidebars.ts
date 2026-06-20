@@ -149,6 +149,7 @@ const sidebars: SidebarsConfig = {
         'agent/architecture',
         'agent/sdk-roadmap',
         'agent/source-backed-research-digest',
+        'agent/sdk-task-decomposition',
         'agent/session-runtime',
         'agent/memory-compact-context',
         'agent/plugin-contribution-contract',

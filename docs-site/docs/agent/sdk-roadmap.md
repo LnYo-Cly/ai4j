@@ -10,6 +10,8 @@ sidebar_position: 4
 
 本 roadmap 里的后续任务需要遵守这份 digest 的边界：只写真实 API，不引入新的 `Host Kernel` / `AgentHost` 核心概念，不把具体 OpenAI-compatible 中转平台名写成架构概念，不默认绑定重型云 sandbox。
 
+如果你要接着做实现，不要只看 roadmap。请先读 [Agent SDK 任务拆解](./sdk-task-decomposition.md)，那里按当前 `dev` 基线列出了已有任务、后续切片、依赖关系和验证命令。
+
 这一页说明 `ai4j-agent` 接下来要怎样从“可用的 Agent runtime”升级为更完整的 Java Agent SDK。
 
 先明确一个边界：这里是技术路线图，不代表所有能力都已经发布。当前已经存在的能力包括 `Agent`、`AgentBuilder`、`AgentRuntime`、`AgentSession`、memory、runtime、workflow、team、trace 等；下面的路线是后续要逐步补强的方向。
