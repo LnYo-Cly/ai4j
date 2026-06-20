@@ -94,7 +94,7 @@ public class FlowGramTaskControllerIntegrationTest {
         assertTrue(result.getBooleanValue("terminated"));
         assertEquals("custom:HELLO-FLOWGRAM", result.getJSONObject("result").getString("result"));
 
-        JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
+        JSONObject report = awaitReport(taskId);
         assertEquals("hello-flowgram", report.getJSONObject("inputs").getString("prompt"));
         assertEquals("custom:HELLO-FLOWGRAM", report.getJSONObject("outputs").getString("result"));
         assertEquals("success", report.getJSONObject("workflow").getString("status"));
@@ -151,7 +151,7 @@ public class FlowGramTaskControllerIntegrationTest {
         String taskId = runResponse.getString("taskId");
         assertNotNull(taskId);
 
-        JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
+        JSONObject report = awaitReport(taskId);
         JSONObject llmOutputs = report.getJSONObject("nodes").getJSONObject("llm_0").getJSONObject("outputs");
         JSONObject outputMetrics = llmOutputs.getJSONObject("metrics");
         assertEquals(159L, outputMetrics.getLongValue("promptTokens"));
@@ -191,6 +191,21 @@ public class FlowGramTaskControllerIntegrationTest {
             Thread.sleep(20L);
         }
         throw new AssertionError("Timed out waiting for FlowGram task result");
+    }
+
+    private JSONObject awaitReport(String taskId) throws Exception {
+        long deadline = System.currentTimeMillis() + 5000L;
+        JSONObject lastResponse = null;
+        while (System.currentTimeMillis() < deadline) {
+            lastResponse = getForJson("/flowgram/tasks/" + taskId + "/report");
+            JSONObject workflow = lastResponse.getJSONObject("workflow");
+            if (workflow != null && workflow.getBooleanValue("terminated")) {
+                return lastResponse;
+            }
+            Thread.sleep(20L);
+        }
+        throw new AssertionError("Timed out waiting for FlowGram task report: "
+                + (lastResponse == null ? "no response" : lastResponse.toJSONString()));
     }
 
     private JSONObject postForJson(String path, Object body) throws Exception {
