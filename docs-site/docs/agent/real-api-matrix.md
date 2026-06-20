@@ -50,6 +50,7 @@ sidebar_position: 2
 | Blueprint DTO | 可直接使用 | `AgentBlueprint` 及 `AgentBlueprint*` 子对象 | 用结构化对象描述模型、指令、memory、tools、plugins、permissions、sandbox、workflow | [Agent Blueprint YAML](/docs/agent/agent-blueprint) |
 | YAML loader | 可直接使用 | `AgentBlueprintLoader` | 从 `agent.yaml` 加载单 Agent 定义 | [Agent Blueprint YAML](/docs/agent/agent-blueprint) |
 | 校验器 | 可直接使用 | `AgentBlueprintValidator`、`AgentBlueprintValidationReport` | 在运行前检查必填字段、重复项和不支持配置 | [Agent Blueprint YAML](/docs/agent/agent-blueprint) |
+| JSON Schema | 可直接使用 | `AgentBlueprintSchemas`、`ai4j-cli blueprint schema` | 给 IDE/YAML 插件/模板仓库提供字段提示和编辑期校验 | [Agent Blueprint YAML](/docs/agent/agent-blueprint#6-json-schema-与-ide-提示) |
 | Factory 映射 | 可直接使用 | `AgentFactory`、`AgentFactoryContext` | 由宿主显式提供 `AgentModelClient`、tools、plugin 绑定后创建 `Agent` | [Agent Blueprint YAML](/docs/agent/agent-blueprint) |
 | CLI 运行 YAML | 可直接使用 | `ai4j-cli run <agent.yaml> --input <task>`、`AgentBlueprintRunCommand` | 从终端运行一次单 Agent Blueprint | [Agent Blueprint YAML](/docs/agent/agent-blueprint) |
 

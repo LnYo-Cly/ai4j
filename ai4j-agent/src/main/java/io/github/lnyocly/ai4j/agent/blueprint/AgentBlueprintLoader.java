@@ -26,7 +26,7 @@ import java.util.Set;
 public class AgentBlueprintLoader {
 
     private static final Set<String> TOP_LEVEL_FIELDS = new LinkedHashSet<String>(Arrays.asList(
-            "version", "id", "name", "model", "instructions", "plugins", "tools", "session", "sandbox", "workflow", "extensions"));
+            "$schema", "version", "id", "name", "model", "instructions", "plugins", "tools", "session", "sandbox", "workflow", "extensions"));
 
     public AgentBlueprint load(String yaml) {
         if (yaml == null) {

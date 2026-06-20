@@ -49,6 +49,40 @@ sidebar_position: 11
 
 ---
 
+## 0.1 顶层 Blueprint authoring 命令
+
+除了进入 coding session，`ai4j-cli` 也提供 Agent Blueprint 的 authoring 辅助命令。这个命令不发起模型请求，也不读取 provider token。
+
+### `ai4j-cli blueprint schema`
+
+打印内置 `ai4j.agent/v1` JSON Schema：
+
+```bash
+ai4j-cli blueprint schema
+```
+
+导出到项目文件：
+
+```bash
+ai4j-cli blueprint schema --out agent-blueprint.schema.json
+```
+
+然后在 `agent.yaml` 顶部引用：
+
+```yaml
+$schema: ./agent-blueprint.schema.json
+version: ai4j.agent/v1
+id: my-agent
+```
+
+边界：
+
+- 它只提供 IDE/YAML 插件和模板仓库的编辑期提示。
+- 它不会安装插件、创建 tool、创建 sandbox 或执行 Agent。
+- 运行期仍以 `AgentBlueprintValidator`、`AgentFactory` 和 CLI host policy 为准。
+
+---
+
 ## 1. Provider / Model / Runtime Flags
 
 ### `/providers`
