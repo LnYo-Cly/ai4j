@@ -1,6 +1,6 @@
 # Agent SDK R0 source backed research digest - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -53,3 +53,10 @@
 - 验证结果：`npm --prefix docs-site run build` 通过；`git diff --check` 通过；token fragment scan 无命中；`npx --yes coding-agent-harness status --json .` failures=0、materialsReady=true、lessonDecisionComplete=true，仅因本轮 diff 尚未提交显示 dirty warning。
 - 下一步：提交本轮 R0 digest diff，然后运行 `task-review`。
 - 证据：command:TARGET:docs-site:`npm run build` passed; command:TARGET:.:`git diff --check` passed; command:TARGET:.:token fragment scan no matches; command:TARGET:.:`npx --yes coding-agent-harness status --json .` failures=0 materialsReady=true
+
+### [2026-06-20 16:20] - task-review
+
+- 做了什么：Agent SDK R0 source-backed research digest ready for review: public-source digest, docs-site page, roadmap/sidebar links, docs build, diff check, token scan, and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

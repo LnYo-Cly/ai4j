@@ -114,3 +114,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 R0 digest 使用公开链接作为依据，并在来源不足处明确 source gap。它足以作为后续任务的设计门禁，但不能替代任何实现任务的代码验证。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201620 |
+| Submitted At | 2026-06-20 16:20 |
+| Submitted By | agent |
+| Task Key | MODULES/docs-site/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 |
+| Materials Checklist Hash | 25ccfe7c805b29cb |
+| Evidence Summary | Agent SDK R0 source-backed research digest ready for review: public-source digest, docs-site page, roadmap/sidebar links, docs build, diff check, token scan, and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7 |
