@@ -8,15 +8,43 @@ Visual Map Contract: v1.0
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示本任务从实现到 review 的生命周期 | yes | `task_plan.md`, `progress.md` | no |
+| MAP-02 | data-flow | 展示 Blueprint schema 从 resource 到 Java/CLI/docs 的交付路径 | yes | implementation diff | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  INIT01["INIT-01 范围与上下文
+kind=init"] --> EXEC01["EXEC-01 Schema/accessor/CLI/docs 实现
+kind=execution"]
+  EXEC01 --> GATE01["GATE-01 Agent 提交审查
+kind=gate"]
+  GATE01 --> GATE02["GATE-02 人工审查确认
+kind=gate"]
+  GATE02 --> CLOSE["PR merge 后 closeout
+kind=gate"]
+```
+
+## Blueprint Schema 交付流
+
+```mermaid
+flowchart TD
+  Schema["agent-blueprint.schema.json
+内置 resource"] --> Accessor["AgentBlueprintSchemas
+Java accessor/write API"]
+  Schema --> Cli["ai4j-cli blueprint schema
+stdout 或 --out 导出"]
+  Accessor --> Tests["AgentBlueprintSchemasTest
+resource/write/$schema ignore"]
+  Cli --> CliTests["AgentBlueprintCommandTest
+Ai4jCliTest"]
+  Cli --> Docs["docs-site Agent Blueprint
+本地 $schema authoring 指南"]
+  Loader["AgentBlueprintLoader
+known top-level fields"] --> Runtime["$schema 仅 authoring hint
+不进入 DTO/runtime"]
+  Runtime --> Tests
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
@@ -24,8 +52,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | done | 100 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 EXEC-01 --state done --completion 100 --evidence present` | agent | present | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 --message "<summary>"` | agent | present | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | Schema resource、Java accessor、CLI schema command、docs-site authoring guidance 已实现并验证 | implementation diff; targeted tests; docs build; CLI smoke | `harness task-phase 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; `progress.md`; `lesson_candidates.md` | `harness task-review 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 --message "Agent Blueprint schema export and docs hardening ready for review"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1 --confirm 2026-06-20-agent-blueprint-schema-export-and-docs-hardening-4741edc1` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
@@ -40,11 +68,5 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
-
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+- architecture：本任务不新增 Maven 模块；schema authoring 能力留在 `ai4j-agent`，CLI 导出留在 `ai4j-cli`，用户说明留在 `docs-site`。
+- decision：不引入 runtime JSON Schema validator；不默认远端 `$schema` URL；不使用 live provider token。
