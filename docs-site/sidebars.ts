@@ -156,6 +156,7 @@ const sidebars: SidebarsConfig = {
         'agent/plugin-lifecycle-hooks',
         'agent/approval-permission-policy',
         'agent/sandbox-spi',
+        'agent/cubesandbox-provider',
         'agent/remote-agent-runner-spi',
         'agent/agent-blueprint',
         'agent/quickstart',

@@ -8,7 +8,7 @@ sidebar_position: 9
 
 > Agent 已经决定要执行 shell、文件、浏览器或项目命令时，宿主如何把这次执行交给一个真实的隔离环境，并拿回 stdout、stderr、artifact 和事件？
 
-P2-A 只提供 Java 8 SPI 和数据模型，不绑定任何具体云厂商、容器平台或虚拟机实现。你可以把它接到 CubeSandbox、Docker/K8s、E2B、公司内部 VM/microVM 或自己的远端执行平台。
+P2-A 提供 Java 8 SPI 和数据模型；CubeSandbox Provider 已作为第一个真实远端适配器落在 `ai4j-agent`，但 SPI 仍保持 provider-neutral。你也可以继续把它接到 Docker/K8s、E2B、公司内部 VM/microVM 或自己的远端执行平台。
 
 ## 1. 它不是什么
 
@@ -18,7 +18,7 @@ Sandbox SPI 不是再加一个普通工具，也不是安全承诺。
 | --- | --- |
 | 不是 `run_in_sandbox` tool | 它是工具执行环境的 provider/session 合同，不是模型直接看到的一个工具。 |
 | 不是本地 permission policy | 权限策略决定能不能执行；Sandbox SPI 决定在哪里执行、怎么取回结果。 |
-| 不是内置 VM | AI4J 不在 P2-A 内置 Docker、K8s、浏览器或远端机器。 |
+| 不是内置 VM | AI4J 不内置虚拟机；真实隔离环境由 provider 提供，例如 CubeSandbox 集群。 |
 | 不是绕过审批 | 进入 sandbox 不代表自动放开危险能力，仍应经过 `AgentPermissionPolicy`。 |
 
 ## 2. 最小 API
@@ -197,7 +197,9 @@ P2-A 只落在 `ai4j-agent`。真正影响 coding agent 的是下一阶段：
 
 ## 9. Fake provider 测试
 
-P2-A 的确定性测试使用内联 fake provider，验证：
+P2-A 的确定性测试先使用内联 fake provider 验证 SPI 模型；CubeSandbox Provider 另有协议级 HTTP server 测试，验证真实 CubeAPI/envd 交互形态。
+
+Fake provider 覆盖：
 
 - provider 能根据 `SandboxSpec` 创建 `SandboxSession`。
 - `SandboxCommand` 能携带 command、cwd、timeout、env、metadata。
@@ -208,14 +210,16 @@ P2-A 的确定性测试使用内联 fake provider，验证：
 本地回归命令：
 
 ```bash
-mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -DfailIfNoTests=false test
+mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest,CubeSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test
 ```
+
+CubeSandbox Provider 的使用方式见 [CubeSandbox Provider](/docs/agent/cubesandbox-provider)。
 
 ## 10. 常见问题
 
 ### 有了 Sandbox SPI，就能马上跑远端命令吗？
 
-不能。P2-A 只是接口和数据模型。你还需要一个 provider 实现，后续还要在 `ai4j-coding` 里把 file/shell/git/browser 工具路由到 sandbox。
+可以通过 `CubeSandboxProvider` 做命令级远端执行；但要让 `ai4j-coding` 的 file/shell/git/browser 全部自动路由到 sandbox，还需要后续 coding tool routing。
 
 ### AI4J 会官方内置很多 provider 吗？
 
