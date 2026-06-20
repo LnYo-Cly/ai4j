@@ -44,3 +44,10 @@
 | Time | Actor | Action | Evidence | Next |
 | --- | --- | --- | --- | --- |
 | 2026-06-20 01:54 | coordinator | task-review: P2-B AgentSession sandbox binding ready for review: non-sensitive Sandbox binding summary added to AgentSession snapshot/store/event log, secret-bearing config is excluded, targeted and broad ai4j-agent regressions passed, docs-site Sandbox SPI page and regression evidence updated. | n/a | continue |
+
+### [2026-06-20 10:30] - brief material repaired
+
+- 做了什么：修复 `brief.md` 模板残留，补齐 P2-B outcome、deliverables、boundaries、completion criteria 和 next step。
+- 验证结果：待重跑 `git diff --check` 与 Harness status；目标是 failures=0 且本任务进入 `ready-to-confirm`。
+- 下一步：运行材料检查，提交修复并推送 PR。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/brief.md:P2-B review material repaired
