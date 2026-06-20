@@ -4,22 +4,24 @@
 
 - 模块 Key：`agent-runtime`
 - 负责人：coordinator
-- 分支：`main`
+- 分支：`dev`
 - 写入范围：`ai4j-agent/**`
-- 共享面：`AGENT.md`、`docs/11-REFERENCE/**`、trace 或 workflow 相关 docs
+- 共享面：`ai4j-extension-api/**`、`ai4j-cli/**`、`ai4j-coding/**`、`docs-site/**`、`docs/05-TEST-QA/**`（仅在任务明确跨模块时）
 - 依赖模块：`core-sdk`
 
 ## 边界
 
-- 可以编辑：agent runtime 源码、测试、模块 POM。
+- 可以编辑：agent runtime 源码、测试、模块 POM，以及任务明确批准的 agent docs。
 - 禁止编辑：core SDK、CLI、FlowGram starter 和 demo，除非任务列为跨模块变更。
-- 外部依赖：provider credentials、trace sinks 或外部 orchestration 只通过配置接入。
+- 外部依赖：provider credentials、trace sinks、sandbox provider 或外部 orchestration 只通过配置/SPI 接入。
+- 当前口径：代码/文档是否合并到 `dev` 与 Harness task 是否完成是两个状态；不要把 `review-confirmation-pending` 误读成代码缺失。
 
 ## 步骤
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | none |
+| T-AGENT-RUNTIME-BACKLOG-RECONCILIATION-AFTER-RUNNE | Agent Runtime backlog reconciliation after runner merge | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a/task_plan.md | none |
+| T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | T-AGENT-RUNTIME-BACKLOG-RECONCILIATION-AFTER-RUNNE |
 | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- |
 | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 | P0-B Memory Compact Context Projector - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57/task_plan.md | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 |
 | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 | P0-C Agent plugin lifecycle hooks | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009/task_plan.md | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 |
@@ -33,29 +35,53 @@
 
 ## 活跃任务
 
-| 任务 | 状态 | 负责人 | 证据 | 备注 |
+| 任务 | 当前事实状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| `2026-06-20-p0-a-agentsession-runtime-container-389dbf12` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-A adds AgentSession metadata/event log/snapshot/store/resume foundations; PR/CI/merge pending. |
-| `2026-06-20-p0-b-memory-compact-context-projector-47effd57` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-B adds ContextProjector, ContextBudget, ContextReport, CompactPolicy, CompactResult, and session compact snapshot foundations. |
-| `2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | merged | coordinator | `mvn -pl ai4j-extension-api,ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-C optional lifecycle hook contract and runtime dispatch merged via PR #105. |
-| `2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentApprovalPermissionPolicyTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P0-D adds host-side tool approval / permission policy foundation; task-review/PR pending. |
-| `2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0` | planning-recorded | coordinator | `references/agent-blueprint-p1a-execution-plan.md`; `task_plan.md`; `visual_map.md` | P1-A will add single Agent YAML Blueprint schema/model/loader/validator; implementation should continue in `.worktrees/feature/agent-blueprint-schema-loader`. |
-| `2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P1-B adds host-supplied `AgentFactory` / `AgentFactoryContext`, deterministic mapping tests, and docs-site Agent Blueprint update; task-review/PR pending. |
-| `2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | implementation-verified | coordinator | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-cli -am -DskipTests=false test`; `npm --prefix docs-site run build` | P1-C adds top-level `ai4j-cli run <agent.yaml>` and host-side provider/profile resolution with no-token/no-real-sandbox boundaries; task-review/PR pending. |
-| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
+| `2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a` | active | coordinator | 本任务 `findings.md`; `gh pr view 118`; path checks | 本轮只校准 backlog/module plan，不改生产代码。 |
+| `2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81` | review-confirmation-pending | coordinator / human | `references/agent-sdk-architecture-enhancement-plan.md`; Harness status | 架构规划已落盘，等待人工确认和 closeout。 |
+| `2026-06-20-p0-a-agentsession-runtime-container-389dbf12` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../session/AgentSessionStore.java`; `docs-site/docs/agent/session-runtime.md` | AgentSession runtime container 基座已存在；剩余 lifecycle 收口。 |
+| `2026-06-20-p0-b-memory-compact-context-projector-47effd57` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../context/ContextProjector.java`; `docs-site/docs/agent/memory-compact-context.md` | Memory/compact/context projector 基座已存在；下一步进入 API polish。 |
+| `2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009` | merged / review-confirmation-pending | coordinator / human | PR #105; `ai4j-extension-api/.../lifecycle/AgentLifecycleHook.java`; `docs-site/docs/agent/plugin-lifecycle-hooks.md` | Hook contract 已存在；后续做插件贡献合同扩展。 |
+| `2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../permission/AgentPermissionPolicy.java`; `docs-site/docs/agent/approval-permission-policy.md` | Permission policy 基座已存在；真实审批 UX 属于 CLI/host 后续。 |
+| `2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../blueprint/AgentBlueprint.java`; `docs-site/docs/agent/agent-blueprint.md` | YAML Blueprint schema/loader/validator 基座已存在。 |
+| `2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../blueprint/AgentFactory.java` | Blueprint 到 AgentFactory 映射基座已存在。 |
+| `2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-cli/.../command/AgentBlueprintRunCommand.java` | CLI `run <agent.yaml>` 基座已存在；后续 UX 属于 cli-host。 |
+| `2026-06-20-p2-a-sandbox-spi-model-c9c66766` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../sandbox/SandboxProvider.java`; `docs-site/docs/agent/sandbox-spi.md` | Sandbox SPI 基座已存在。 |
+| `2026-06-20-p2-b-agentsession-sandbox-binding-e8175553` | merged-on-dev / review-confirmation-pending | coordinator / human | `ai4j-agent/.../session/AgentSessionSandboxBinding.java`; `docs-site/docs/agent/sandbox-spi.md` | Session sandbox binding 已存在；后续只需 lifecycle 收口。 |
+| `2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a` | merged-on-dev / review-confirmation-pending | coordinator / human | PR #118; merge commit `5f4426c`; `ai4j-agent/.../runner/AgentRunnerProvider.java`; `docs-site/docs/agent/remote-agent-runner-spi.md` | Remote Runner SPI contract 已合并到 `dev`。 |
+| `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | historical review-pending | coordinator / human | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | 历史 active item；不在本轮实现范围。 |
+
+## 已合并但属于其他模块的关联事实
+
+| 切片 | 所属模块 | 当前事实 | 证据 | 后续归属 |
+| --- | --- | --- | --- | --- |
+| P3 Coding Sandbox Routing | `coding-runtime` | merged-on-dev | `docs-site/docs/coding-agent/sandbox-routing.md`; `ai4j-coding/.../coding/sandbox` | 后续 workspace/sandbox tool polish 走 `coding-runtime` |
+| P4 CLI Sandbox Commands | `cli-host` | merged via PR #116 / dev commit `91e07b1` | `docs-site/docs/coding-agent/command-reference.md`; `gh pr list` history | 后续 `/memory`、`/compact`、TUI 走 `cli-host` |
+
+## 下一步建议队列
+
+| 优先级 | 任务 | 主模块 | 为什么现在做 | 最小验证 |
+| ---: | --- | --- | --- | --- |
+| 1 | Memory/Compact Session API polish | `agent-runtime` | P0-A/P0-B/P2-B/P5 都依赖稳定 session/memory/compact 语义；这是提升 Java Agent SDK 易用性的核心 | `mvn -pl ai4j-agent -am "-Dtest=*Memory*,*Compact*,*Session*" -DskipTests=false -DfailIfNoTests=false test` + broad `ai4j-agent` tests |
+| 2 | Plugin contribution contract expansion | `extension-api` + `agent-runtime` | 插件生态需要更清晰的 tool/memory/sandbox/runner contribution contract | extension + agent targeted tests |
+| 3 | docs-site real API completeness pass | `docs-site` | 用户已指出 docs-site 质量要逐点讲清楚，且不能写不存在 API | `npm --prefix docs-site run build` + sample/API audit |
+| 4 | CLI `/memory` `/compact` UX | `cli-host` | 把 Agent SDK 的 memory/compact 能力暴露给 coding agent 体验 | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` + manual smoke |
+| 5 | One-command install prototype | `cli-host` | 让终端输入 `ai4j` 类似 codex/claude/opencode | packaging smoke；不影响 Java 8 modules |
 
 ## 验证
 
 | 检查 | 命令或证据 | 必需 |
 | --- | --- | --- |
-| 模块测试 | `mvn -pl ai4j-agent -DskipTests=false test` | yes |
-| 依赖构建 | `mvn -pl ai4j-agent -am -DskipTests package` | risk-based |
+| 规划静态检查 | `git diff --check` | yes |
+| Harness 状态 | `npx --yes coding-agent-harness status --json .` | yes |
+| Agent 模块测试 | 后续实现任务运行 `mvn -pl ai4j-agent -am -DskipTests=false test` | risk-based |
+| Docs build | 后续 docs-site 变更运行 `npm --prefix docs-site run build` | risk-based |
 
 ## 交接
 
-- 分支：`feature/<name>` 或 `.worktrees/feature/<name>`。
-- Commit SHA：worker handoff 必须提供。
-- 检查：记录 agent runtime targeted test。
-- 变更文件：只列 `ai4j-agent/**` 及批准的共享文件。
-- 残余风险：live provider 或外部 trace sink 未跑时必须说明。
-- 需要 coordinator 同步：影响 FlowGram starter、CLI 或 docs 时同步。
+- 分支：`docs/agent-runtime-backlog-reconciliation`。
+- Commit SHA：本轮提交后填写。
+- 检查：记录 `git diff --check` 和 Harness status。
+- 变更文件：本任务包 + `coding-agent-harness/planning/modules/agent-runtime/module_plan.md`。
+- 残余风险：human review-confirm / closeout 未完成；后续实现任务未创建。
+- 需要 coordinator 同步：人工确认后逐个 closeout；下一步创建 `Memory/Compact Session API polish` task。
