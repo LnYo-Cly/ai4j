@@ -143,6 +143,7 @@ const sidebars: SidebarsConfig = {
       label: 'Agent',
       items: [
         'agent/overview',
+        'agent/real-api-matrix',
         'agent/why-agent',
         'agent/use-cases-and-paths',
         'agent/architecture',

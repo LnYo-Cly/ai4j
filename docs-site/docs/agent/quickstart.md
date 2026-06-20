@@ -348,8 +348,9 @@ quickstart 的使命是帮你先把入口打通，不是承载全部复杂度。
 
 ## 11. 下一步读什么
 
-1. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
-2. [Model Client Selection](/docs/agent/model-client-selection)
-3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Memory and State](/docs/agent/memory-and-state)
-5. [Runtime Implementations](/docs/agent/runtime-implementations)
+1. [Agent SDK 真实 API 能力矩阵](/docs/agent/real-api-matrix)
+2. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+3. [Model Client Selection](/docs/agent/model-client-selection)
+4. [Tools and Registry](/docs/agent/tools-and-registry)
+5. [Memory and State](/docs/agent/memory-and-state)
+6. [Runtime Implementations](/docs/agent/runtime-implementations)
