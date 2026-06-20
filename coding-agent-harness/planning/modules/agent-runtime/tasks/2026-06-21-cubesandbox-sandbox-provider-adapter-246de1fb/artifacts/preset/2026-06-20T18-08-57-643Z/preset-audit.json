@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.worktrees/feature/cubesandbox-provider/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk\\.worktrees\\feature\\cubesandbox-provider",
+  "generatedAt": "2026-06-20T18:08:57.644Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-cubesandbox-sandbox-provider-adapter-246de1fb/artifacts/preset/2026-06-20T18-08-57-643Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}
