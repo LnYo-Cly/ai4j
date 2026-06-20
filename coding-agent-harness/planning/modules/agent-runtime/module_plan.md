@@ -33,7 +33,7 @@
 | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 | P2-A Sandbox SPI model | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-a-sandbox-spi-model-c9c66766/task_plan.md | T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 |
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
 | T-P5-REMOTE-AGENT-RUNNER-SPI-CONTRACT-E311D42A | P5 Remote Agent Runner SPI contract - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p5-remote-agent-runner-spi-contract-e311d42a/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
-| T-PLUGIN-CONTRIBUTION-CONTRACT-EXPANSION-E2B3BCAE | Plugin contribution contract expansion | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/task_plan.md | T-P5-REMOTE-AGENT-RUNNER-SPI-CONTRACT-E311D42A |
+| T-PLUGIN-CONTRIBUTION-CONTRACT-EXPANSION-E2B3BCAE | Plugin contribution contract expansion | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/task_plan.md | T-P5-REMOTE-AGENT-RUNNER-SPI-CONTRACT-E311D42A |
 
 ## 活跃任务
 
