@@ -4696,9 +4696,34 @@ public class CodingCliSessionRunner {
                 .sessionStore(String.valueOf(sessionManager.getDirectory()))
                 .sessionMode(options.isNoSession() ? "memory-only" : "persistent")
                 .approvalMode(options.getApprovalMode() == null ? null : options.getApprovalMode().getValue())
+                .sandboxSummary(buildSandboxSummary())
                 .terminalRows(terminal == null ? 0 : terminal.getTerminalRows())
                 .terminalColumns(terminal == null ? 0 : terminal.getTerminalColumns())
                 .build();
+    }
+
+    private String buildSandboxSummary() {
+        CliSandboxBinding binding = sandboxBinding;
+        if (binding == null) {
+            return "direct";
+        }
+        StringBuilder summary = new StringBuilder("attached:");
+        summary.append(binding.getProviderId());
+        if (!isBlank(binding.getSessionId())) {
+            summary.append('/').append(shortenForStatus(binding.getSessionId(), 12));
+        }
+        if (!isBlank(binding.getWorkspaceId())) {
+            summary.append('@').append(shortenForStatus(binding.getWorkspaceId(), 14));
+        }
+        return summary.toString();
+    }
+
+    private String shortenForStatus(String value, int maxChars) {
+        if (isBlank(value)) {
+            return "";
+        }
+        String normalized = value.trim();
+        return normalized.length() <= maxChars ? normalized : normalized.substring(0, maxChars) + "...";
     }
 
     private void closeQuietly(ManagedCodingSession session) {
