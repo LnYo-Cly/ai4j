@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.worktrees/feature/memory-compact-session-api-polish/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-20-memory-compact-session-api-polish-53845a17",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk\\.worktrees\\feature\\memory-compact-session-api-polish",
+  "generatedAt": "2026-06-20T07:24:53.972Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-memory-compact-session-api-polish-53845a17/artifacts/preset/2026-06-20T07-24-53-971Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}
