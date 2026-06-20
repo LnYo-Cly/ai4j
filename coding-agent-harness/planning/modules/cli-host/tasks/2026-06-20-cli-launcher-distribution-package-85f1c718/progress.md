@@ -68,3 +68,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-20 19:55] - material repair after task-review
+
+- 做了什么：修复 `task-review` 后暴露的 task-local missing-materials：将 `execution_strategy.md` 从默认模板替换为本任务真实执行策略；将 `lesson_candidates.md` 补齐为 `lesson-candidate-v1` schema 并记录 `checked-none:cli-distribution-bounded-slice`。
+- 验证结果：待复跑 Harness status。
+- 下一步：复跑 Harness status、提交材料修复、推送并创建 PR。
+- 证据：diff:TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-launcher-distribution-package-85f1c718/execution_strategy.md:template residue removed; diff:TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-launcher-distribution-package-85f1c718/lesson_candidates.md:lesson decision completed
