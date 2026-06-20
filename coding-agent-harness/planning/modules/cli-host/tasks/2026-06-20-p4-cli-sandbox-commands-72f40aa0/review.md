@@ -117,3 +117,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 targeted + broad CLI tests、metadata-only no-local-fallback deterministic test、docs-site build、明确的未实现边界和回归治理记录。PR 合并前仍需 CI 与人工确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200515 |
+| Submitted At | 2026-06-20 05:15 |
+| Submitted By | agent |
+| Task Key | MODULES/cli-host/2026-06-20-p4-cli-sandbox-commands-72f40aa0 |
+| Materials Checklist Hash | 7b3037a4ff337c0a |
+| Evidence Summary | P4 CLI sandbox commands ready for review: /sandbox status attach disable implemented, metadata-only attach fails loudly without provider bridge, targeted and broad CLI tests plus docs build passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0 |
