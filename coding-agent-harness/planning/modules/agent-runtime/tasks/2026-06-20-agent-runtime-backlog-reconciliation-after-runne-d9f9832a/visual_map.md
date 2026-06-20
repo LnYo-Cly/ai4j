@@ -26,7 +26,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | PR #118 后 agent-runtime backlog 与 module plan 已校准 | `findings.md`; `module_plan.md`; path/PR evidence | `harness task-phase 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --message "Agent runtime backlog reconciliation ready for review"` | agent | partial | must pass final status first | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --message "Agent runtime backlog reconciliation ready for review"` | agent | present | must pass final status first | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a --confirm 2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

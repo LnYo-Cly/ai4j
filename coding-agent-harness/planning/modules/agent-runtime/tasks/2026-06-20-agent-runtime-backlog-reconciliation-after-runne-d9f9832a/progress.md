@@ -1,6 +1,6 @@
 # Agent Runtime backlog reconciliation after runner merge - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -63,3 +63,10 @@
 - Registry update needed：agent-runtime module plan 已更新；task-review 后等待人工确认。
 - Harness Ledger update needed：由 `task-review` / lifecycle CLI 派生。
 - 负责人：coordinator
+
+### [2026-06-20 07:17] - task-review
+
+- 做了什么：Agent Runtime backlog reconciliation ready for review: PR #118 merge verified, P0-P5 merged-on-dev facts aligned, module plan updated, next Memory/Compact Session API polish slice identified.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

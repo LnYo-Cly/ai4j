@@ -117,3 +117,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 当前信心来自 GitHub PR 合并证据、当前 worktree 关键路径存在性、open PR 空列表、module plan diff 和 Harness status。正式实现下一步前仍需独立 task、worktree、targeted regression 和 review。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200717 |
+| Submitted At | 2026-06-20 07:17 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a |
+| Materials Checklist Hash | 25c93e591576ef2d |
+| Evidence Summary | Agent Runtime backlog reconciliation ready for review: PR #118 merge verified, P0-P5 merged-on-dev facts aligned, module plan updated, next Memory/Compact Session API polish slice identified. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-agent-runtime-backlog-reconciliation-after-runne-d9f9832a |
