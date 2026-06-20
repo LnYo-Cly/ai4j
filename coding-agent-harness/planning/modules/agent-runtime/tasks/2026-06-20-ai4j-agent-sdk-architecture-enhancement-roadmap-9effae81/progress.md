@@ -1,6 +1,6 @@
 # AI4J Agent SDK architecture enhancement roadmap - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -55,3 +55,10 @@
 - 验证结果：git diff --check 通过；harness status --json failures=0、当前任务 materialsReady=true、lessonCandidateDecisionComplete=true；dirty-state warning 来自本规划文件尚未提交。
 - 下一步：提交本地规划记录，后续继续 P2-B review material 修复和 PR/CI/merge。
 - 证据：command:.:git diff --check passed; command:.:npx --yes coding-agent-harness status --json . failures=0 materialsReady=true
+
+### [2026-06-20 02:21] - task-review
+
+- 做了什么：AI4J Agent SDK architecture enhancement roadmap ready for review: module boundaries, plugin ecosystem, sandbox/runner, CLI/TUI, docs-site API alignment, and next task queue recorded.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
