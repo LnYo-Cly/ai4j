@@ -125,3 +125,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 本地 review 信心来自 implementation diff、targeted CLI tests、broad CLI tests、docs-site build、token scan、Regression/Cadence 更新和 no-open-finding 审查；最终发布信心仍需 final static checks、Harness status、PR CI 与人工确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201042 |
+| Submitted At | 2026-06-20 10:42 |
+| Submitted By | agent |
+| Task Key | MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd |
+| Materials Checklist Hash | 78154b38658fd94f |
+| Evidence Summary | CLI memory command UX ready for review: /memory and /memory status are wired through CLI/TUI/ACP, docs-site explains memory vs compact/checkpoint, targeted CLI tests, docs-site build, diff check, secret scan, and Harness status passed locally. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-memory-compact-command-ux-d56c15fd |

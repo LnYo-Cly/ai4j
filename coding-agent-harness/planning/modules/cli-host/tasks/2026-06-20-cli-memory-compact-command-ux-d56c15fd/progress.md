@@ -1,6 +1,6 @@
 # CLI memory compact command UX - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -103,3 +103,10 @@
 - Registry update needed：`cli-host/module_plan.md` 已新增本任务；实现开始后更新状态和证据。
 - Harness Ledger update needed：已由 `new-task` / `task-start` 同步；后续 review/closeout 再同步。
 - 负责人：coordinator
+
+### [2026-06-20 10:42] - task-review
+
+- 做了什么：CLI memory command UX ready for review: /memory and /memory status are wired through CLI/TUI/ACP, docs-site explains memory vs compact/checkpoint, targeted CLI tests, docs-site build, diff check, secret scan, and Harness status passed locally.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

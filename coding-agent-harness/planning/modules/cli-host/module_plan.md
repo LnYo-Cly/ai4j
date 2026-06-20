@@ -19,8 +19,8 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 | P4 CLI sandbox commands | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/task_plan.md | none |
-| T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD | CLI memory compact command UX | active | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-memory-compact-command-ux-d56c15fd/task_plan.md | T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 |
+| T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD | CLI memory compact command UX | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-memory-compact-command-ux-d56c15fd/task_plan.md | none |
+| T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 | P4 CLI sandbox commands | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/task_plan.md | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD |
 
 ## 活跃任务
 
