@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- |
 | T-CLI-LAUNCHER-DISTRIBUTION-PACKAGE-85F1C718 | CLI launcher distribution package | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-launcher-distribution-package-85f1c718/task_plan.md | none |
 | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD | CLI memory compact command UX | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-memory-compact-command-ux-d56c15fd/task_plan.md | T-CLI-LAUNCHER-DISTRIBUTION-PACKAGE-85F1C718 |
-| T-CLI-PERMISSIONS-COMMAND-UX-7BBBC71D | CLI permissions command UX | reserved | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/task_plan.md | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD |
+| T-CLI-PERMISSIONS-COMMAND-UX-7BBBC71D | CLI permissions command UX - Brief | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d/task_plan.md | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD |
 | T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 | P4 CLI sandbox commands | handoff | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/task_plan.md | T-CLI-PERMISSIONS-COMMAND-UX-7BBBC71D |
 
 ## 活跃任务

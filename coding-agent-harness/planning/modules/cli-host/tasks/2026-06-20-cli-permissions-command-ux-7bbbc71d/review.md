@@ -119,3 +119,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 本地 review 信心来自 implementation diff、targeted CLI tests、broad CLI tests、docs-site build、Regression/Cadence 更新和 no-open-finding 审查；最终发布信心仍需 final static checks、Harness status、PR CI 与人工确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201510 |
+| Submitted At | 2026-06-20 15:10 |
+| Submitted By | agent |
+| Task Key | MODULES/cli-host/2026-06-20-cli-permissions-command-ux-7bbbc71d |
+| Materials Checklist Hash | d442130a51e52301 |
+| Evidence Summary | CLI permissions command UX ready for review: /permissions and /permissions status are wired through CLI/TUI/ACP, docs-site explains approval and sandbox boundaries, targeted CLI tests, broad CLI tests, docs build, diff check, and token scan passed locally. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-permissions-command-ux-7bbbc71d |
