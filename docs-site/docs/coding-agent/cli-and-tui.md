@@ -123,7 +123,35 @@ sidebar_position: 3
 
 这说明 TUI 在 AI4J 里不是“多了几种颜色”，而是一个独立渲染运行时层。
 
-## 6. `code` 和 `tui` 的差别究竟该落在哪一层理解
+
+## 6. TUI 顶部状态栏怎么看
+
+当前 `TuiSessionView` 的顶部不是单行标题，而是两行状态：
+
+```text
+AI4J  <provider>/<protocol>  <model>  <workspace>  <session-id>
+ctx   memory=<items/tokens>  compact=<mode>  sandbox=<binding>  permissions=<mode>  approval=<state>
+```
+
+第一行回答“当前连到哪里、用哪个模型、在哪个 workspace 和 session 工作”：
+
+- `provider/protocol` 来自 session descriptor 或 `TuiRenderContext`
+- `model` 是当前 CLI/TUI 生效模型
+- `workspace` 会显示最后一级路径，避免把完整本机路径塞进顶部
+- `session-id` 会截短，只用于快速识别当前会话
+
+第二行回答“这个 agent 现在处于什么运行上下文”：
+
+- `memory` 来自 `CodingSessionSnapshot.memoryItemCount` 和 `estimatedContextTokens`
+- `compact` 来自最近一次 compact 的 mode / strategy，以及可用时的 `before -> after` item 数
+- `sandbox` 默认是 `direct`；如果 CLI 通过 `/sandbox attach ...` 绑定了外部 sandbox，会显示非敏感摘要
+- `permissions` 来自当前 approval mode，例如 `ask` / `auto` / `never`
+- `approval` 显示 `idle`、最近决策，或当前 `pending:<tool>` 审批
+
+这里的关键点是：状态栏只展示 runtime 已经知道、并且适合持久化或展示的非敏感信息。
+它不会显示 provider key、sandbox secret、完整本机路径或外部连接串。
+
+## 7. `code` 和 `tui` 的差别究竟该落在哪一层理解
 
 最稳的心智模型是：
 
@@ -139,7 +167,7 @@ sidebar_position: 3
 
 但两者不是“两个不同产品”，而是共用执行内核的两个宿主面。
 
-## 7. provider / protocol / model 在这里怎么落
+## 8. provider / protocol / model 在这里怎么落
 
 `DefaultCodingCliAgentFactory.resolveProtocol(...)` 和 `createModelClient(...)` 决定了当前会话底层怎么调模型。
 
@@ -157,7 +185,7 @@ sidebar_position: 3
 
 所以 CLI/TUI 页里讲协议选择时，不能只讲“推荐哪个”，还要讲这是运行时工厂的实际默认逻辑。
 
-## 8. slash command 和 palette 为什么是宿主层，不是 agent 层
+## 9. slash command 和 palette 为什么是宿主层，不是 agent 层
 
 当前 slash command 主控是：
 
@@ -183,7 +211,7 @@ sidebar_position: 3
 
 所以 slash command 不是模型的一部分，而是 host-side command surface。
 
-## 9. 为什么 `/stream` 不是简单 UI 开关
+## 10. 为什么 `/stream` 不是简单 UI 开关
 
 `/stream` 虽然在交互层暴露为命令，但它最终影响的是后续请求是否使用流式模式。
 
@@ -200,7 +228,7 @@ sidebar_position: 3
 - 入口在宿主
 - 影响落在 runtime
 
-## 10. session store 为什么和 UI 模式无关
+## 11. session store 为什么和 UI 模式无关
 
 `CodeCommand.createSessionManager(...)` 会根据：
 
@@ -223,7 +251,7 @@ sidebar_position: 3
 
 这两者是分开的配置轴。
 
-## 11. MCP 启动告警为什么在 CLI/TUI 启动阶段就出现
+## 12. MCP 启动告警为什么在 CLI/TUI 启动阶段就出现
 
 `CodeCommand` 在拿到 `PreparedCodingAgent` 后，会直接读取：
 
@@ -240,7 +268,7 @@ sidebar_position: 3
 
 而不是等任务跑一半才发现工具面不完整。
 
-## 12. `code` one-shot、持续 CLI、TUI 三种形态的真正差别
+## 13. `code` one-shot、持续 CLI、TUI 三种形态的真正差别
 
 ### one-shot
 
@@ -266,29 +294,35 @@ sidebar_position: 3
 
 从架构上说，它们共享底层执行面，但宿主交互复杂度逐级提高。
 
-## 13. 最容易踩坑的 5 个点
+## 14. 最容易踩坑的 5 个点
 
-### 13.1 把 `code` 和 `tui` 当成两套不同 runtime
+### 14.1 把 `code` 和 `tui` 当成两套不同 runtime
 
 当前它们主要共享同一套 coding/session/model/MCP 语义。
 
-### 13.2 以为 `--ui tui` 一定走同一后端实现
+### 14.2 以为 `--ui tui` 一定走同一后端实现
 
 当前还有 JLINE 与 legacy 的后端分叉。
 
-### 13.3 把 slash command 当模型能力
+### 14.3 把 slash command 当模型能力
 
 它们属于宿主命令面，不属于 agent 内核。
 
-### 13.4 把 `/stream` 当纯显示选项
+### 14.4 把 `/stream` 当纯显示选项
 
 它影响的是模型请求模式。
 
-### 13.5 把 session 持久化理解成 UI 自带能力
+### 14.5 把 session 持久化理解成 UI 自带能力
 
 真正决定它的是 session manager/store 配置。
 
-## 14. 这页最该记住的结论
+
+### 14.6 以为状态栏能证明 sandbox 已经接管所有工具
+
+状态栏里的 `sandbox=attached:...` 只说明当前 CLI session 有非敏感 sandbox binding。
+具体 shell/file/browser/project 工具是否路由到 sandbox，还要看 runtime 组装和工具执行结果。
+
+## 15. 这页最该记住的结论
 
 AI4J 当前的 `CLI / TUI`，不是“一个简版、一个美化版”，而是共享同一套 coding runtime 的不同宿主交互面：
 
@@ -304,7 +338,7 @@ AI4J 当前的 `CLI / TUI`，不是“一个简版、一个美化版”，而是
 
 会比只盯着界面表现更有效。
 
-## 15. 继续阅读
+## 16. 继续阅读
 
 1. [Runtime 架构](/docs/coding-agent/runtime-architecture)
 2. [会话、流式与进程](/docs/coding-agent/session-runtime)

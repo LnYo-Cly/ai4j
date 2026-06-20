@@ -9,6 +9,7 @@ public class TuiRenderContext {
     private final String sessionStore;
     private final String sessionMode;
     private final String approvalMode;
+    private final String sandboxSummary;
     private final int terminalRows;
     private final int terminalColumns;
 
@@ -20,6 +21,7 @@ public class TuiRenderContext {
         this.sessionStore = builder.sessionStore;
         this.sessionMode = builder.sessionMode;
         this.approvalMode = builder.approvalMode;
+        this.sandboxSummary = builder.sandboxSummary;
         this.terminalRows = builder.terminalRows;
         this.terminalColumns = builder.terminalColumns;
     }
@@ -56,6 +58,10 @@ public class TuiRenderContext {
         return approvalMode;
     }
 
+    public String getSandboxSummary() {
+        return sandboxSummary;
+    }
+
     public int getTerminalRows() {
         return terminalRows;
     }
@@ -73,6 +79,7 @@ public class TuiRenderContext {
         private String sessionStore;
         private String sessionMode;
         private String approvalMode;
+        private String sandboxSummary;
         private int terminalRows;
         private int terminalColumns;
 
@@ -111,6 +118,11 @@ public class TuiRenderContext {
 
         public Builder approvalMode(String approvalMode) {
             this.approvalMode = approvalMode;
+            return this;
+        }
+
+        public Builder sandboxSummary(String sandboxSummary) {
+            this.sandboxSummary = sandboxSummary;
             return this;
         }
 

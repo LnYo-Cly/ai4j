@@ -2,43 +2,9 @@
 
 ## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
 证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
 
 ### [2026-06-20 16:35] - task-start
 
@@ -46,3 +12,42 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-06-21 00:42] - 状态巡检和实现入口确认
+
+- 做了什么：确认当前 worktree 为 `feature/cli-tui-status-context-bar`，基于 `origin/dev`，任务包处于进行中；读取 `TuiSessionView`、`TuiScreenModel`、`TuiInteractionState`、`CodingSessionSnapshot` 和 CLI sandbox binding 相关实现。
+- 验证结果：确认实现应集中在 `ai4j-cli` TUI 渲染层，不引入 Ink，不触碰真实 provider token。
+- 下一步：实现双行 header/context bar。
+- 证据：command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`git status --short --branch`; report:TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/tui/TuiSessionView.java:现有单行 header 是本切片入口
+
+### [2026-06-21 00:49] - TUI context bar 实现和单测
+
+- 做了什么：`TuiSessionView` 改为双行 header；新增 `ctx` chips，覆盖 `memory`、`compact`、`sandbox`、`permissions`、`approval`；`TuiRenderContext` 增加非敏感 `sandboxSummary`；`CodingCliSessionRunner` 从 CLI sandbox binding 投影 `attached:<provider>/<session>@<workspace>` 摘要。
+- 验证结果：`TuiSessionViewTest` 通过，覆盖默认 direct 状态、memory/compact chips、sandbox binding、permissions 和 pending approval。
+- 下一步：更新 docs-site。
+- 证据：command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`mvn -pl ai4j-cli -am "-Dtest=TuiSessionViewTest" -DskipTests=false -DfailIfNoTests=false test` -> 23 tests passed; diff:TARGET:ai4j-cli/src/main/java/io/github/lnyocly/ai4j/tui/TuiSessionView.java:双行 header/context bar
+
+### [2026-06-21 00:53] - docs-site 技术说明
+
+- 做了什么：更新 `docs-site/docs/coding-agent/cli-and-tui.md`，新增 “TUI 顶部状态栏怎么看” 章节，并补充 sandbox 状态栏限制说明。
+- 验证结果：首次 docs build 因当前 worktree 缺少 `docs-site/node_modules` 失败；运行 `npm --prefix docs-site ci` 后，`npm --prefix docs-site run build` 成功生成静态文件。
+- 下一步：运行完整目标回归。
+- 证据：command:TARGET:docs-site:`npm --prefix docs-site ci` -> dependencies installed; command:TARGET:docs-site:`npm --prefix docs-site run build` -> success
+
+### [2026-06-21 00:55] - 目标回归和安全检查
+
+- 做了什么：运行 CLI/TUI 目标回归、docs build、diff check、token fragment scan 和 Harness status。
+- 验证结果：CLI targeted tests 97 passed；docs build passed；`git diff --check` passed；token fragment scan 无命中；Harness status 当前为 warn，仅因 worktree dirty，未见 missing/blocked。
+- 下一步：提交实现 diff，然后运行 `task-review` 推进到审查。
+- 证据：command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`mvn -pl ai4j-cli -am "-Dtest=TuiSessionViewTest,JlineShellTerminalIOTest,CliThemeStylerTest,SlashCommandControllerTest" -DskipTests=false -DfailIfNoTests=false test` -> 97 tests passed; command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`git diff --check` -> pass; command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`rg -n "<token-fragments>" ...` -> no matches; command:TARGET:.worktrees/feature/cli-tui-status-context-bar:`npx --yes coding-agent-harness status --json .` -> check warn because dirty, missing=0, blocked=0
+
+## 残余
+
+- 无。当前仅剩提交、task-review、PR/CI/merge 收口流程。
+
+## 协调者交接（Coordinator，启用模块并行时填写）
+
+- Global sync status：pending-coordinator-pass
+- Registry update needed：cli-host / CLI-TUI-STATUS-CONTEXT-BAR / review after task-review
+- Harness Ledger update needed：task package path、review path、closeout status after task-review
+- 负责人：coordinator

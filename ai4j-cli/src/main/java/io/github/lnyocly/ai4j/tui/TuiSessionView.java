@@ -96,7 +96,11 @@ public class TuiSessionView implements TuiRenderer {
     public String render(TuiScreenModel screenModel) {
         TuiScreenModel model = screenModel == null ? TuiScreenModel.builder().build() : screenModel;
         applyModel(model);
-        String header = renderHeader(model.getDescriptor(), model.getRenderContext());
+        String header = renderHeaderBlock(
+                model.getDescriptor(),
+                model.getSnapshot(),
+                model.getRenderContext(),
+                model.getInteractionState());
         String overlay = renderOverlay(model.getInteractionState());
         String composer = renderComposer(model.getInteractionState());
         String composerAddon = renderComposerAddon(model.getInteractionState());
@@ -157,6 +161,13 @@ public class TuiSessionView implements TuiRenderer {
         setAssistantViewModel(screenModel.getAssistantViewModel());
     }
 
+    private String renderHeaderBlock(CodingSessionDescriptor descriptor,
+                                     CodingSessionSnapshot snapshot,
+                                     TuiRenderContext context,
+                                     TuiInteractionState interactionState) {
+        return renderHeader(descriptor, context) + '\n' + renderContextBar(snapshot, context, interactionState);
+    }
+
     private String renderHeader(CodingSessionDescriptor descriptor, TuiRenderContext context) {
         String provider = clip(firstNonBlank(
                 descriptor == null ? null : descriptor.getProvider(),
@@ -194,6 +205,77 @@ public class TuiSessionView implements TuiRenderer {
             line.append(TuiAnsi.fg(sessionId, theme.getMuted(), ansi));
         }
         return line.toString();
+    }
+
+    private String renderContextBar(CodingSessionSnapshot snapshot,
+                                    TuiRenderContext context,
+                                    TuiInteractionState interactionState) {
+        List<String> chips = new ArrayList<String>();
+        chips.add(memoryChip(snapshot));
+        chips.add(compactChip(snapshot));
+        chips.add("sandbox=" + clip(firstNonBlank(context == null ? null : context.getSandboxSummary(), "direct"), 48));
+        chips.add("permissions=" + clip(firstNonBlank(context == null ? null : context.getApprovalMode(), "default"), 18));
+        chips.add(approvalChip(interactionState));
+
+        StringBuilder line = new StringBuilder();
+        line.append(TuiAnsi.fg("ctx", theme.getMuted(), ansi));
+        for (String chip : chips) {
+            if (isBlank(chip)) {
+                continue;
+            }
+            line.append("  ");
+            line.append(TuiAnsi.fg(chip, chip.startsWith("approval=pending") ? theme.getAccent() : theme.getMuted(), ansi));
+        }
+        return line.toString();
+    }
+
+    private String memoryChip(CodingSessionSnapshot snapshot) {
+        if (snapshot == null) {
+            return "memory=empty";
+        }
+        int items = Math.max(0, snapshot.getMemoryItemCount());
+        int tokens = Math.max(0, snapshot.getEstimatedContextTokens());
+        if (items <= 0 && tokens <= 0) {
+            return "memory=empty";
+        }
+        if (tokens <= 0) {
+            return "memory=" + items + " items";
+        }
+        return "memory=" + items + " items/" + tokens + "tok";
+    }
+
+    private String compactChip(CodingSessionSnapshot snapshot) {
+        if (snapshot == null) {
+            return "compact=none";
+        }
+        if (snapshot.isAutoCompactCircuitBreakerOpen()) {
+            return "compact=blocked";
+        }
+        String mode = firstNonBlank(snapshot.getLastCompactMode(), snapshot.getLastCompactStrategy());
+        if (isBlank(mode)) {
+            return "compact=none";
+        }
+        int before = Math.max(0, snapshot.getLastCompactBeforeItemCount());
+        int after = Math.max(0, snapshot.getLastCompactAfterItemCount());
+        StringBuilder chip = new StringBuilder("compact=");
+        chip.append(clip(mode, 18));
+        if (before > 0 || after > 0) {
+            chip.append('(').append(before).append("->").append(after).append(')');
+        }
+        return chip.toString();
+    }
+
+    private String approvalChip(TuiInteractionState interactionState) {
+        TuiInteractionState.ApprovalSnapshot snapshot = interactionState == null ? null : interactionState.getApprovalSnapshot();
+        if (snapshot == null) {
+            return "approval=idle";
+        }
+        if (snapshot.isPending()) {
+            String tool = trimToNull(snapshot.getToolName());
+            return isBlank(tool) ? "approval=pending" : "approval=pending:" + clip(tool, 14);
+        }
+        String last = trimToNull(snapshot.getLastDecision());
+        return isBlank(last) ? "approval=idle" : "approval=" + clip(last, 28);
     }
 
     private List<String> buildFeedLines(int transcriptViewport) {
@@ -400,7 +482,7 @@ public class TuiSessionView implements TuiRenderer {
         if (terminalRows <= 0) {
             return Math.max(8, TRANSCRIPT_VIEWPORT_LINES);
         }
-        int reservedLines = 1; // header
+        int reservedLines = 2; // header + context bar
         reservedLines += 2; // gap before transcript
         reservedLines += 2; // gap before composer
         reservedLines += 1; // composer

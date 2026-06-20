@@ -193,6 +193,7 @@ public class TuiSessionViewTest {
         TuiSessionView view = new TuiSessionView(new TuiConfig(), new TuiTheme(), false);
         TuiInteractionState state = new TuiInteractionState();
         state.openReplayViewer();
+        state.showApproval("ask", "bash", "run mvn test");
 
         String rendered = view.render(TuiScreenModel.builder()
                 .descriptor(CodingSessionDescriptor.builder()
@@ -205,8 +206,15 @@ public class TuiSessionViewTest {
                         .build())
                 .snapshot(CodingSessionSnapshot.builder()
                         .sessionId("session-alpha")
+                        .memoryItemCount(2)
                         .estimatedContextTokens(512)
                         .lastCompactMode("manual")
+                        .lastCompactBeforeItemCount(9)
+                        .lastCompactAfterItemCount(4)
+                        .build())
+                .renderContext(TuiRenderContext.builder()
+                        .approvalMode("ask")
+                        .sandboxSummary("attached:cubesandbox/sbx_123@workspace-a")
                         .build())
                 .cachedReplay(Arrays.asList(
                         "you> first",
@@ -220,8 +228,28 @@ public class TuiSessionViewTest {
         Assert.assertTrue(rendered.contains("chat"));
         Assert.assertTrue(rendered.contains("glm-4.5-flash"));
         Assert.assertTrue(rendered.contains("workspace"));
+        Assert.assertTrue(rendered.contains("ctx"));
+        Assert.assertTrue(rendered.contains("memory=2 items/512tok"));
+        Assert.assertTrue(rendered.contains("compact=manual(9->4)"));
+        Assert.assertTrue(rendered.contains("sandbox=attached:cubesandbox/sbx_123@workspace-a"));
+        Assert.assertTrue(rendered.contains("permissions=ask"));
+        Assert.assertTrue(rendered.contains("approval=pending:bash"));
         Assert.assertFalse(rendered.contains("focus="));
         Assert.assertFalse(rendered.contains("overlay="));
+    }
+
+    @Test
+    public void shouldRenderDefaultContextBarWithoutRuntimeState() {
+        TuiSessionView view = new TuiSessionView(new TuiConfig(), new TuiTheme(), false);
+
+        String rendered = view.render(TuiScreenModel.builder().build());
+
+        Assert.assertTrue(rendered.contains("ctx"));
+        Assert.assertTrue(rendered.contains("memory=empty"));
+        Assert.assertTrue(rendered.contains("compact=none"));
+        Assert.assertTrue(rendered.contains("sandbox=direct"));
+        Assert.assertTrue(rendered.contains("permissions=default"));
+        Assert.assertTrue(rendered.contains("approval=idle"));
     }
 
     @Test
@@ -481,9 +509,9 @@ public class TuiSessionViewTest {
                 .renderContext(context)
                 .build());
 
-        Assert.assertTrue(bottomRendered.contains("line 23"));
+        Assert.assertTrue(bottomRendered.contains("line 24"));
         Assert.assertTrue(bottomRendered.contains("line 30"));
-        Assert.assertFalse(bottomRendered.contains("line 22"));
+        Assert.assertFalse(bottomRendered.contains("line 23"));
 
         state.moveTranscriptScroll(3);
         String scrolledRendered = view.render(TuiScreenModel.builder()
@@ -492,9 +520,9 @@ public class TuiSessionViewTest {
                 .renderContext(context)
                 .build());
 
-        Assert.assertTrue(scrolledRendered.contains("line 20"));
+        Assert.assertTrue(scrolledRendered.contains("line 21"));
         Assert.assertTrue(scrolledRendered.contains("line 27"));
-        Assert.assertFalse(scrolledRendered.contains("line 19"));
+        Assert.assertFalse(scrolledRendered.contains("line 20"));
         Assert.assertFalse(scrolledRendered.contains("line 28"));
     }
 
