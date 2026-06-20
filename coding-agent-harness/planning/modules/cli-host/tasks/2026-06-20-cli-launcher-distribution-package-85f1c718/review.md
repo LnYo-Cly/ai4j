@@ -107,3 +107,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 本地 targeted test、package smoke、archive inspection、launcher help smoke 和 docs diff 支撑当前实现。最终提交前仍需 docs-site build、diff check、Harness status 和 PR CI。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606201150 |
+| Submitted At | 2026-06-20 11:50 |
+| Submitted By | agent |
+| Task Key | MODULES/cli-host/2026-06-20-cli-launcher-distribution-package-85f1c718 |
+| Materials Checklist Hash | 433e99ccbfdeb86f |
+| Evidence Summary | CLI launcher distribution package ready for review: source-built zip/tar.gz distribution, ai4j launchers, example configs, layout tests, package smoke, docs-site build, broad CLI tests, diff check, secret scan, and harness status passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-launcher-distribution-package-85f1c718 |

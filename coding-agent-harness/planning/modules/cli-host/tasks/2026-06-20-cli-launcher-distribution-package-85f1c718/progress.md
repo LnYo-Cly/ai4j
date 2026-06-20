@@ -1,6 +1,6 @@
 # CLI launcher distribution package - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -61,3 +61,10 @@
 - 验证结果：docs-site build 通过；`mvn -pl ai4j-cli -am -DskipTests=false test` 通过，extension API 31、core 103、agent 126、coding 61、CLI 295 tests。
 - 下一步：运行 diff check、secret pattern scan、Harness status，然后提交。
 - 证据：command:TARGET:docs-site:`npm --prefix docs-site run build` -> success; command:TARGET:.:`mvn -pl ai4j-cli -am -DskipTests=false test` -> BUILD SUCCESS, CLI 295 tests
+
+### [2026-06-20 11:50] - task-review
+
+- 做了什么：CLI launcher distribution package ready for review: source-built zip/tar.gz distribution, ai4j launchers, example configs, layout tests, package smoke, docs-site build, broad CLI tests, diff check, secret scan, and harness status passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

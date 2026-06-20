@@ -30,7 +30,7 @@ flowchart TD
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | task package 已创建并启动 | `task_plan.md`; `execution_strategy.md`; `progress.md` | `harness task-start 2026-06-20-cli-launcher-distribution-package-85f1c718` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | Maven dist assembly、launcher、测试、文档与治理更新 | diff; targeted test; package smoke; archive inspection; docs build | `harness task-phase 2026-06-20-cli-launcher-distribution-package-85f1c718 EXEC-01 --state done --completion 100 --evidence present` | agent | present | final diff/secret/harness gate pending | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`; progress update; lesson routing | `harness task-review 2026-06-20-cli-launcher-distribution-package-85f1c718 --message "CLI launcher distribution package ready for review"` | agent | missing | requires final verification | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`; progress update; lesson routing | `harness task-review 2026-06-20-cli-launcher-distribution-package-85f1c718 --message "CLI launcher distribution package ready for review"` | agent | present | requires final verification | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-cli-launcher-distribution-package-85f1c718 --confirm 2026-06-20-cli-launcher-distribution-package-85f1c718` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
