@@ -100,35 +100,35 @@ Task Package Index: required
 - [ ] 下一轮实施者能从 `references/INDEX.md` 找到最新完整规划刷新稿。
 - [ ] 规划明确“不把 Harness 完整内化到 CLI”，只做轻量识别和桥接。
 - [ ] 规划明确“OpenAI-compatible”是通用概念，不把任何中转平台名称写成 SDK 概念。
-- [ ] 规划明确当前下一步是继续 P0-B，而不是重复规划或一次性实现 P0-P5。
+- [ ] 规划明确 P1-C 已合并，当前下一步是 P2 Sandbox SPI，而不是重复规划或一次性实现 P0-P5。
 - [ ] 执行级路线图明确 Pi/Codex/Claude/OpenCode/Java SDK/Sandbox 调研必须 source-backed，不能凭印象复刻。
-- [ ] 执行级路线图明确当前仓库现实：先收尾 P0-C worktree，再推进后续任务。
+- [ ] 执行级路线图明确当前仓库现实：P1-B/P1-C 已合并，下一步推进 P2 Sandbox SPI，再进入 P3/P4/P5。
 
 ## 执行级路线图补充
 
 | Track | 状态 | 后续任务 |
 | --- | --- | --- |
 | R0 source-backed research | planned | Pi 插件/TUI、Codex/Claude/OpenCode CLI 模式、Spring AI/LangChain4j/AgentScope Java、Sandbox provider API。 |
-| P0 Agent core | active | P0-A/P0-B review closeout；P0-C worktree 提交/PR/merge；P0-D Approval / Permission Policy。 |
+| P0 Agent core | active | P0-A/P0-B/P0-C/P0-D 按 Harness 生命周期补 closeout；P1-C CLI run YAML 已合并。 |
 | P1 Blueprint YAML | planned | schema/model/loader/validator -> AgentFactory -> CLI run。 |
 | P2 Sandbox SPI | planned | fake provider、session binding、extension provider contribution。 |
 | P3 Coding sandbox routing | planned | shell/file/git/browser/project run/test runner routing。 |
 | P4 CLI/TUI | planned | JLine renderer abstraction、slash commands、provider/model/session/plugin/sandbox UX、Harness bridge。 |
 | P5 Remote Runner | deferred | 先写协议合同；满足 P0-P4 后再决定是否新增 Maven module。 |
 
-当前实际下一步：P0-C `feature/agent-plugin-lifecycle-hooks` worktree 已存在未提交实现，应优先收尾；本规划任务不应继续扩散范围。
+当前实际下一步：P1-C 已通过 PR #110 合并到 `origin/main`；本规划任务不应继续扩散范围，后续实现应转入 P2-A Sandbox SPI model。
 
 ## 最终集成实施规划补充
 
 | ID | 类型 | 路径 | 为什么需要 | 使用者 |
 | --- | --- | --- | --- | --- |
-| C-008 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 当前最终实施入口，合并 ai4j-agent 增强路线、插件生态、Blueprint、Sandbox、CLI/TUI、Runner、R0 调研门禁和当前 P1-B 收尾顺序 | coordinator / reviewer / future worker |
+| C-008 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 当前最终实施入口，合并 ai4j-agent 增强路线、插件生态、Blueprint、Sandbox、CLI/TUI、Runner、R0 调研门禁和 P2 Sandbox SPI 下一步 | coordinator / reviewer / future worker |
 
 新增验收补充：
 
 - [ ] 后续实施者能从 `references/INDEX.md` 优先找到集成实施规划。
-- [ ] 规划明确当前活跃实现是 P1-B `.wt/p1b` / `feature/agent-blueprint-factory`，下一步是收尾 P1-B，而不是重复开总规划。
+- [ ] 规划明确 P1-B/P1-C 均已合并，下一步是启动 P2-A Sandbox SPI model，而不是重复开总规划。
 - [ ] 规划明确 P2 Sandbox SPI、P3 coding routing、P4 CLI/TUI、P5 Runner 的门禁关系。
 - [ ] 规划明确 R0 调研门禁，后续对标 Pi / Codex / Claude Code / OpenCode / Java SDK / Sandbox provider 必须 source-backed。
 
-当前实际下一步：收尾 `MODULES/agent-runtime/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210`，工作树为 `G:\My_Project\java\ai4j-sdk\.wt\p1b`，分支为 `feature/agent-blueprint-factory`。
+当前实际下一步：启动 P2-A Sandbox SPI model 任务；P1-C 已通过 PR #110 合并，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`。
