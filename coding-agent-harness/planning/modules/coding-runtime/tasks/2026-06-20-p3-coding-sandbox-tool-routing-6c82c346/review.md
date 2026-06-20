@@ -105,3 +105,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 最终信心来自 targeted + broad coding tests、docs-site build、fake sandbox deterministic tests、明确的非目标边界和回归治理记录。PR 合并前仍需 CI 与人工确认。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200337 |
+| Submitted At | 2026-06-20 03:37 |
+| Submitted By | agent |
+| Task Key | MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346 |
+| Materials Checklist Hash | 4350cf683ba4357e |
+| Evidence Summary | P3 coding sandbox routing first slice ready for review: bash exec routes through SandboxSession, local fallback preserved, docs and regression governance updated, targeted coding regression and docs build evidence recorded. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/coding-runtime/tasks/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346 |

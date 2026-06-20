@@ -1,6 +1,6 @@
 # P3 Coding sandbox tool routing - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -81,3 +81,10 @@
 - 验证结果：`mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` 通过，14 tests；`git diff --check` 无 whitespace error；`npx --yes coding-agent-harness status --json .` 0 failures，当前仅剩 dirty-state warning，待提交后消失。
 - 下一步：提交 feature diff，然后用 lifecycle CLI 推进 VERIFY-01 / Agent Review Submission。
 - 证据：command:TARGET:.:'mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test' passed with 14 tests; command:TARGET:.:'git diff --check' passed; command:TARGET:.:'npx --yes coding-agent-harness status --json .' reported 0 failures before clean commit
+
+### [2026-06-20 03:37] - task-review
+
+- 做了什么：P3 coding sandbox routing first slice ready for review: bash exec routes through SandboxSession, local fallback preserved, docs and regression governance updated, targeted coding regression and docs build evidence recorded.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
