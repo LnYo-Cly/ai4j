@@ -5,6 +5,13 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
@@ -222,6 +229,69 @@ public class CodingAgentBuilderTest {
         assertTrue(toolOutput, toolOutput.contains("Extension guardrail denied tool bash"));
         assertTrue(toolOutput, toolOutput.contains("bash disabled by extension"));
         assertTrue(toolOutput, !toolOutput.contains("should-not-run"));
+    }
+
+    @Test
+    public void shouldRouteCodingAgentBashExecThroughSandboxAndBindSessionSummary() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-sandbox").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit sandbox workspace")
+                .build();
+        RecordingSandboxSession sandboxSession = new RecordingSandboxSession(
+                "sandbox-session-1",
+                "fake-sandbox",
+                SandboxSpec.builder()
+                        .providerId("fake-sandbox")
+                        .workspaceId("/sandbox/workspace")
+                        .label("purpose", "unit-test")
+                        .label("apiToken", "must-not-persist")
+                        .build()
+        );
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo sandbox-route\"}")
+                        .callId("sandbox-bash-call")
+                        .build()))
+                .rawResponse("sandbox-tool-call")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("sandbox done")
+                .rawResponse("sandbox-final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .sandbox(sandboxSession)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            AgentSessionSandboxBinding binding = session.getDelegate().getSandboxBinding();
+            assertNotNull(binding);
+            assertEquals("fake-sandbox", binding.getProviderId());
+            assertEquals("sandbox-session-1", binding.getSandboxSessionId());
+            assertEquals("/sandbox/workspace", binding.getWorkspaceId());
+            assertEquals("unit-test", binding.getLabels().get("purpose"));
+            assertTrue(!binding.getLabels().containsKey("apiToken"));
+
+            result = session.run("Run bash inside sandbox.");
+        }
+
+        assertEquals("sandbox done", result.getOutputText());
+        assertEquals(1, result.getToolResults().size());
+        String toolOutput = result.getToolResults().get(0).getOutput();
+        assertTrue(toolOutput, toolOutput.contains("\"executionEnvironment\":\"sandbox\""));
+        assertTrue(toolOutput, toolOutput.contains("\"sandboxSessionId\":\"sandbox-session-1\""));
+        assertTrue(toolOutput, toolOutput.contains("sandbox executed: echo sandbox-route"));
+        assertEquals(1, sandboxSession.commands.size());
+        assertEquals("echo sandbox-route", sandboxSession.commands.get(0).getCommand());
+        assertEquals("/sandbox/workspace", sandboxSession.commands.get(0).getWorkingDirectory());
     }
 
     @Test
@@ -496,6 +566,64 @@ public class CodingAgentBuilderTest {
                 listener.onDeltaText(result.getOutputText());
             }
             return result;
+        }
+    }
+
+    private static class RecordingSandboxSession implements SandboxSession {
+        private final String sessionId;
+        private final String providerId;
+        private final SandboxSpec spec;
+        private final List<SandboxCommand> commands = new ArrayList<SandboxCommand>();
+
+        private RecordingSandboxSession(String sessionId, String providerId, SandboxSpec spec) {
+            this.sessionId = sessionId;
+            this.providerId = providerId;
+            this.spec = spec;
+        }
+
+        @Override
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        @Override
+        public String getProviderId() {
+            return providerId;
+        }
+
+        @Override
+        public SandboxSpec getSpec() {
+            return spec;
+        }
+
+        @Override
+        public SandboxStatus getStatus() {
+            return SandboxStatus.RUNNING;
+        }
+
+        @Override
+        public SandboxResult execute(SandboxCommand command) {
+            commands.add(command.copy());
+            return SandboxResult.builder()
+                    .commandId(command.getCommandId())
+                    .exitCode(0)
+                    .stdout("sandbox executed: " + command.getCommand())
+                    .stderr("")
+                    .build();
+        }
+
+        @Override
+        public boolean cancel(String commandId) {
+            return false;
+        }
+
+        @Override
+        public List<SandboxArtifact> listArtifacts() {
+            return new ArrayList<SandboxArtifact>();
+        }
+
+        @Override
+        public void close() {
         }
     }
 
