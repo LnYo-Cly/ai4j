@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 | P4 CLI sandbox commands | reserved | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/task_plan.md | none |
+| T-P4-CLI-SANDBOX-COMMANDS-72F40AA0 | P4 CLI sandbox commands | active | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-p4-cli-sandbox-commands-72f40aa0/task_plan.md | none |
 
 ## 活跃任务
 
