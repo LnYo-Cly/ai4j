@@ -1,51 +1,28 @@
-# Agent SDK task decomposition and technical docs
+# Agent SDK task decomposition and technical docs - Brief
 
-## Task ID
+## 背景
 
-`2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e`
+用户已经认可 AI4J Agent SDK / Coding Agent CLI/TUI / Sandbox / Plugin / YAML Blueprint / docs-site 的增强方向，并要求开始完成“所有任务拆解”，同时继续使用 worktree、PR、合并、自测和 docs-site 技术文档更新流程。
 
-## 创建日期
+当前 `origin/dev` 已经包含大量基础切片；本任务的重点不是重复实现，而是把当前事实状态、后续任务队列、依赖关系、验证命令和 docs-site 接手入口整理清楚。
 
-2026-06-21
+## 本任务目标
 
-## 一句话结果
+1. 在 Harness 任务包中记录完整、可执行的 Agent SDK 后续任务拆解。
+2. 在 docs-site 增加 `Agent SDK 任务拆解` 技术文档页，并从 Agent sidebar / overview / roadmap 链接。
+3. 明确每个切片的模块边界、当前状态、下一步、验证命令和禁止事项。
+4. 保持本轮只做规划和文档，不混入生产代码实现。
 
-用一句话说明这个任务完成后会产生什么具体结果。
+## 范围
 
-## 完成后能得到什么
+- 允许修改：本任务包、docs-site Agent 文档、sidebar、roadmap/overview 链接。
+- 不修改：Java 源码、CLI runtime、provider 配置、token、真实 sandbox provider。
+- 输出受众：后续 coordinator / worker / reviewer / 用户自己。
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+## 完成定义
 
-## 交付物
-
-- 可见产物：
-- 修改位置：
-- 验证证据：
-
-## 第一眼应该看什么
-
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
-
-## 边界
-
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
-
-## 完成判断
-
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
-
-## 执行合同
-
-- Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
-
-## 当前下一步
-
-写明开始实现前的第一个具体动作。
+- task-local reference 存在并覆盖 T0-T10 后续任务。
+- docs-site 页面存在并进入导航。
+- overview / roadmap 能引导读者到任务拆解页。
+- task package 无模板占位，lesson decision 完成。
+- docs build、diff check、token scan、Harness status 通过。

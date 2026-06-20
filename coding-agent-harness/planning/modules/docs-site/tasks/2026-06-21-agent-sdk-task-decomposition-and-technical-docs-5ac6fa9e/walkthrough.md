@@ -1,47 +1,37 @@
-# 收口记录：Agent SDK task decomposition and technical docs
+# Agent SDK task decomposition and technical docs - Walkthrough
 
-## 摘要
+## Summary
 
-待收口。
+本任务把 AI4J Agent SDK / Coding Agent CLI/TUI / Sandbox / Plugin / YAML Blueprint / docs-site 的后续工作拆成 T0-T10 可执行队列，并新增 docs-site 技术文档入口。
 
-## 范围
+## Changed Files
 
-| 范围 | 详情 |
-| --- | --- |
-| 变更模块 | pending |
-| 新增文件 | pending |
-| 删除文件 | pending |
-| 不在范围内 | pending |
+- `coding-agent-harness/planning/modules/docs-site/tasks/2026-06-21-agent-sdk-task-decomposition-and-technical-docs-5ac6fa9e/**`
+- `docs-site/docs/agent/sdk-task-decomposition.md`
+- `docs-site/docs/agent/overview.md`
+- `docs-site/docs/agent/sdk-roadmap.md`
+- `docs-site/sidebars.ts`
 
-## 验证
+## Verification
 
-| 检查 | 命令或过程 | 结果 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | not run | pending |
+- `git diff --check`：通过。
+- changed-file sensitive fragment scan：通过，`TOKEN_FRAGMENT_HITS=0`。
+- `npm --prefix docs-site run build`：通过，Docusaurus 生成 `docs-site/build`。
+- `npx --yes coding-agent-harness status --json .`：返回 `check=warn`、`dirty=true`、`missing=0`、`blocked=0`；dirty 来自本任务待提交 diff，属于提交前预期状态。
+- PR checks：推送 PR 后继续 watch。
 
-## 审查结论
+## Residuals
 
-| 来源 | 重要发现 | 处理 | 证据 |
-| --- | --- | --- | --- |
-| pending | pending | pending | `review.md` |
+- 本任务不实现 Java/CLI 行为。
+- 后续实现按任务拆解页逐项创建 worktree/PR。
+- review queue 中历史任务仍需人工确认和 closeout。
 
-## 残余风险
+## Lessons Reflection
 
-| 风险 | Owner | 是否接受 | 跟进 |
-| --- | --- | --- | --- |
-| pending | owner | pending | pending |
+本任务不提升全局 lesson。局部经验是：大批任务处于 Harness review 状态时，必须先用当前源码/PR 状态校准，避免重复实现。
 
-## 经验沉淀反思
+## Closeout State
 
-| 问题 | 答案 |
-| --- | --- |
-| 是否完成经验候选检查？ | pending |
-| 经验候选详情文件 | `lesson_candidates.md` |
-
-## 收口链接
-
-| 产物 | 链接 |
-| --- | --- |
-| 任务计划 | `task_plan.md` |
-| 审查记录 | `review.md` |
-| 进度记录 | `progress.md` |
+- Agent Review Submission：ready after commit and `harness task-review`
+- Human Review Confirmation：pending
+- Closeout Index：pending after review/merge
