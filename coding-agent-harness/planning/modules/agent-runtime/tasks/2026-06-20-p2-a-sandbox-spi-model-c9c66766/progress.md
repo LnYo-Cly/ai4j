@@ -1,6 +1,6 @@
 # P2-A Sandbox SPI model - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 证据使用 `type:path:summary` 格式。允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
 
@@ -38,3 +38,9 @@
 - P2-A 不把 sandbox 绑定到 AgentSession snapshot/event log；该能力留给 P2-B。
 - P2-A 不让插件贡献 provider；该能力留给 P2-C。
 - P2-A 不接 `ai4j-coding` file/shell/git/browser routing；该能力留给 P3。
+
+## Log
+
+| Time | Actor | Action | Evidence | Next |
+| --- | --- | --- | --- | --- |
+| 2026-06-20 01:12 | coordinator | task-review: P2-A Sandbox SPI model ready for review: Java 8 provider/session/spec/command/result/artifact/event contracts added, fake provider tests passed, broad ai4j-agent regression passed, docs-site Sandbox SPI page and regression evidence updated. | n/a | continue |

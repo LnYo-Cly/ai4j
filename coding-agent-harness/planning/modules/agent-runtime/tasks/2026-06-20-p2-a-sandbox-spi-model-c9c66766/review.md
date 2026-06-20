@@ -65,3 +65,17 @@
 ## Final Confidence Basis
 
 最终信心来自三类证据：P2-A targeted fake provider tests 通过，broad `ai4j-agent -am` 回归通过，docs-site build 通过。当前信心只覆盖 Sandbox SPI model 合同，不覆盖真实 provider、AgentSession binding、coding routing 或 CLI `/sandbox`。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606200112 |
+| Submitted At | 2026-06-20 01:12 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-20-p2-a-sandbox-spi-model-c9c66766 |
+| Materials Checklist Hash | 90a1ccf9da894cda |
+| Evidence Summary | P2-A Sandbox SPI model ready for review: Java 8 provider/session/spec/command/result/artifact/event contracts added, fake provider tests passed, broad ai4j-agent regression passed, docs-site Sandbox SPI page and regression evidence updated. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-a-sandbox-spi-model-c9c66766 |
