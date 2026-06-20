@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.worktrees/feature/cli-sandbox-commands/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-20-plugin-contribution-contract-expansion-e2b3bcae",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk\\.worktrees\\feature\\cli-sandbox-commands",
+  "generatedAt": "2026-06-20T08:13:20.160Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-plugin-contribution-contract-expansion-e2b3bcae/artifacts/preset/2026-06-20T08-13-20-159Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}
