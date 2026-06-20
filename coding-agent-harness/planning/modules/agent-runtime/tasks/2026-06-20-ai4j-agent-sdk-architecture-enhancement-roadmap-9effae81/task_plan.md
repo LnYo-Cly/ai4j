@@ -36,15 +36,17 @@ Task Package Index: required
 | C-007 | module-plan | TARGET:coding-agent-harness/planning/modules/agent-runtime/module_plan.md | 当前 P0/P1/P2 任务队列和依赖状态 | coordinator |
 | C-008 | docs-roadmap | TARGET:docs-site/docs/agent/sdk-roadmap.md | 已存在 Agent SDK roadmap，避免重复和漂移 | coordinator / reviewer |
 | C-009 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md | 本任务沉淀的完整规划正文 | coordinator / reviewer / worker |
+| C-010 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md | 用户最终确认后的可执行摘要，便于后续实现任务快速读取 | coordinator / reviewer / worker |
 
 ## 步骤
 
 1. 诊断现有 harness、模块注册和 agent roadmap，确认本任务挂在 `agent-runtime` 下。
 2. 记录核心判断：不新增核心 Maven 拆分；`ai4j-agent` 是 Agent SDK 核心；插件生态走 `ai4j-extension-api` + runtime hooks；sandbox 作为可选 SPI；CLI/TUI 在 `ai4j-cli`。
 3. 写入完整规划 reference，覆盖 Session/Memory、Blueprint、插件、Sandbox/Remote Runner、Coding CLI/TUI、Harness 关系和任务队列。
-4. 更新 task-local brief、plan、strategy、findings、visual map、progress、review、walkthrough，使下一轮 agent 可直接接续。
-5. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
-6. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
+4. 写入用户最终确认后的摘要版 reference，明确 memory/compact 参考优秀公开设计但不照搬泄露源码、支持 YAML declarative agent、插件生态和 sandbox/runner 的落地边界。
+5. 更新 task-local brief、plan、strategy、findings、visual map、progress、review、walkthrough，使下一轮 agent 可直接接续。
+6. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
+7. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
 
 ## 验收标准
 
@@ -52,8 +54,9 @@ Task Package Index: required
 - [x] 规划覆盖 memory/compact/session、YAML Agent、插件生态、sandbox/remote runner、coding CLI/TUI、harness 关系。
 - [x] 规划明确后续任务队列和依赖顺序，先收口 P2-B 与已有任务。
 - [x] 规划记录“不写不存在 API 示例”和 docs-site 质量要求。
-- [ ] `git diff --check` 通过。
-- [ ] `npx --yes coding-agent-harness status --json .` 通过或只剩已解释 residual。
+- [x] 最终摘要单独记录到 `references/final-agent-sdk-enhancement-summary.md`，便于下一轮实现任务读取。
+- [x] `git diff --check` 通过。
+- [x] `npx --yes coding-agent-harness status --json .` 通过或只剩已解释 residual。
 
 ## 工作树（Worktree）
 

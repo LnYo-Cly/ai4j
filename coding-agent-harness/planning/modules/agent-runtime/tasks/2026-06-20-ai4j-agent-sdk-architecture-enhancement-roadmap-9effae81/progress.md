@@ -69,3 +69,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md:final planning supplement requested by user
+
+### [2026-06-20 16:30] - 最终摘要补充
+
+- 做了什么：新增 `references/final-agent-sdk-enhancement-summary.md`，把本轮讨论最终结论单独整理为后续实现者可读摘要；同步更新 `references/INDEX.md` 与 `task_plan.md` 上下文包。
+- 验证结果：`git diff --check` 通过；`npx --yes coding-agent-harness status --json .` failures=0、当前任务 `materialsReady=true`、`reviewQueueState=ready-to-confirm`，仅因本轮补充尚未提交而显示 dirty-state warning。
+- 下一步：提交本轮补充；后续实现任务按优先级从插件贡献契约、Blueprint/docs hardening、sandbox routing 继续。
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md:final user-confirmed agent sdk enhancement summary
