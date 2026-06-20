@@ -1,50 +1,81 @@
-# Visual Map / 可视化图谱
+# Visual Map / 可视化图谱 - P1-C CLI run Agent Blueprint YAML
 
 Visual Map Contract: v1.0
-
-本文件是任务图表集合，不只是阶段路线图。只有对人或 agent 理解任务有实际帮助的图才放进来。
 
 ## 图表索引（Map Index）
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示 P1-C 执行阶段和门禁 | yes | `task_plan.md` | no |
+| MAP-02 | dataflow | 展示 CLI run 从 YAML 到 Agent run 的数据流 | yes | `AgentBlueprintRunCommand.java` | no |
+| MAP-03 | boundary | 展示 token/profile/sandbox 边界 | yes | `review.md` / docs-site | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  INIT01["INIT-01 创建任务和 worktree\nkind=init"] --> EXEC01["EXEC-01 CLI run command\nkind=execution"]
+  EXEC01 --> EXEC02["EXEC-02 tests/docs/regression materials\nkind=execution"]
+  EXEC02 --> VERIFY01["VERIFY-01 targeted/broad/docs/Harness\nkind=execution"]
+  VERIFY01 --> GATE01["GATE-01 Agent Review Submission\nkind=gate"]
+  GATE01 --> GATE02["GATE-02 PR/CI/merge\nkind=gate"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
 
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
-| INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25 --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25 --confirm 2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | human | missing | Agent 不能代办人工确认 | human |
+| INIT-01 | init | none | done | 100 | `.wt/p1c` worktree and task-start | `git worktree list`; `progress.md` | `harness task-start ...` | coordinator | present | none | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `AgentBlueprintRunCommand` and top-level `run` dispatch | source diff; targeted compile | n/a | coordinator | present | none | coordinator |
+| EXEC-02 | execution | EXEC-01 | in_progress | 80 | tests, docs, regression docs, task materials | targeted tests passed; docs/regression pending | n/a | coordinator | partial | broad/docs/Harness pending | coordinator |
+| VERIFY-01 | execution | EXEC-02 | planned | 0 | broad CLI/docs/Harness/diff checks | command outputs | n/a | coordinator | missing | verification incomplete | coordinator |
+| GATE-01 | gate | VERIFY-01 | planned | 0 | Agent Review Submission | `review.md`; `task-review` | `npx --yes coding-agent-harness task-review ...` | coordinator | missing | not submitted | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | PR/CI/merge/cleanup | PR URL; CI checks; merge commit | `gh pr create/checks/merge` | coordinator | missing | remote pending | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
-允许的 `Evidence Status`：`missing`, `partial`, `present`, `waived`。
+## MAP-02 CLI run 数据流
 
-允许的 `Kind`：`init`, `execution`, `gate`。
+```text
+ai4j-cli run agent.yaml --input "task"
+  -> parse args
+  -> AgentBlueprintLoader.load(path)
+  -> resolve model/profile/provider via CliProviderConfigManager.resolveWithProfile(...)
+  -> reject missing/incompatible explicit profile
+  -> DefaultAgentBlueprintRunModelClientFactory.create(options)
+  -> AgentFactory.create(blueprint, AgentFactoryContext.modelClient(...))
+  -> Agent.run(AgentRequest.input(...))
+  -> print AgentResult.outputText
+```
 
-允许的 `Actor`：`agent`, `human`, `coordinator`。
+## MAP-03 边界图
 
-`Completion` 使用 `0..100` 的整数；`done` 应为 `100`，`planned` 应为 `0`，`skipped` 不计入 dashboard 总完成度。dashboard 的实现完成度只由非 skipped 的 `execution` 阶段计算；`init` 和 `gate` 阶段表达生命周期门禁、下一步命令和责任人，不拉低实现完成度。
+```text
+YAML Blueprint
+  contains: id/name/model/profile/instructions/tools/session/sandbox/workflow
+  does not contain: provider token, secret, installed plugin, real sandbox session
 
-## 支持性图表（Supporting Maps）
+CLI host
+  may read: CLI profile/env/properties/--api-key/--base-url
+  must not commit: tokens or local secrets
+  supplies: AgentModelClient
 
-按需添加，不要求每类都存在：
+AgentFactory
+  reads: Blueprint + explicit AgentFactoryContext
+  does not read: env, user profile, token store
 
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+Sandbox
+  enabled=true default: fail with blueprint.sandbox.unsupported
+  --allow-sandbox-declaration: only accepts declaration, no VM/container created
+```
+
+## Evidence Map
+
+| Evidence | Path |
+| --- | --- |
+| Run command | `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/AgentBlueprintRunCommand.java` |
+| CLI top-level routing | `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/Ai4jCli.java` |
+| Provider profile resolution | `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/provider/CliProviderConfigManager.java` |
+| Deterministic tests | `ai4j-cli/src/test/java/io/github/lnyocly/ai4j/cli/command/AgentBlueprintRunCommandTest.java` |
+| Docs | `docs-site/docs/agent/agent-blueprint.md` |
+| Regression gates | `docs/05-TEST-QA/Regression-SSoT.md`; `docs/05-TEST-QA/Cadence-Ledger.md` |

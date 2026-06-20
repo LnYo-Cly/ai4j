@@ -68,6 +68,7 @@ public class Ai4jCliTest {
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("ai4j-cli"));
         Assert.assertTrue(output.contains("code"));
+        Assert.assertTrue(output.contains("run"));
         Assert.assertTrue(output.contains("acp"));
         Assert.assertTrue(output.contains("extension"));
         Assert.assertTrue(output.contains("ai4j-cli extension check <extension-id> --enable"));
@@ -90,6 +91,27 @@ public class Ai4jCliTest {
         String error = new String(err.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(2, exitCode);
         Assert.assertTrue(error.contains("Unknown command: unknown"));
+    }
+
+    @Test
+    public void test_top_level_run_help_routes_to_blueprint_runner() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"run", "--help"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(new String(err.toByteArray(), StandardCharsets.UTF_8), 0, exitCode);
+        Assert.assertTrue(output.contains("ai4j-cli run"));
+        Assert.assertTrue(output.contains("Run a single-agent AI4J Agent Blueprint YAML once"));
+        Assert.assertTrue(output.contains("ai4j-cli run <agent.yaml> --input"));
     }
 
     @Test

@@ -8,7 +8,7 @@ sidebar_position: 9
 
 > 当 Java API 能动态组装 Agent 之后，如何让一个 Agent 的模型、指令、插件、工具、memory、compact、sandbox 开关和 workflow 参数可以被保存、分享、模板化和校验？
 
-P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。P1-B 在此基础上增加 `AgentFactory`：它可以在宿主显式提供 `AgentModelClient` 等依赖后，把 Blueprint 转成 `AgentBuilder` / `Agent`。
+P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。P1-B 在此基础上增加 `AgentFactory`，可以在宿主显式提供 `AgentModelClient` 等依赖后把 Blueprint 转成 `AgentBuilder` / `Agent`。P1-C 进一步提供 `ai4j-cli run <agent.yaml>`，让单 Agent Blueprint 可以从终端直接运行一次。
 
 注意：`AgentFactory` 仍然不会读取 provider key、本地 profile、插件目录或真实 sandbox。它只做确定性映射，所有敏感配置和外部系统连接都由宿主应用提供。
 
@@ -21,6 +21,7 @@ P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。
 | 想在 UI / 模板 / 脚手架里生成 Agent 配置 | 适合 |
 | 想先检查配置有没有缺字段、非法 workflow、非法 compact 阈值 | 适合 |
 | 想从 YAML 创建 Agent，但模型客户端由宿主提供 | 适合，P1-B 提供 `AgentFactory` |
+| 想在终端直接运行一份单 Agent YAML | 适合，P1-C 提供 `ai4j-cli run <agent.yaml> --input <task>` |
 | 想接真实 VM / 容器 / 远端 sandbox | P1-A/P1-B 只声明、校验和 guard 字段，真实执行属于后续 Sandbox SPI |
 
 ## 2. 最小 YAML
@@ -196,6 +197,41 @@ P1-B 不映射或不执行的字段：
 | `tools[]` | 具体工具注册表仍由宿主通过 `AgentFactoryContext` 提供。 |
 | `session.memory` / `session.compact` | 不自动创建外部 memory store 或 compact strategy。 |
 | `sandbox.enabled=true` | 默认报 `blueprint.sandbox.unsupported`；除非宿主显式 `allowSandboxDeclaration(true)`，也只是允许声明通过，不创建真实 sandbox。 |
+
+### 4.3 用 CLI 运行一份 Agent YAML
+
+P1-C 增加 `ai4j-cli run`，用于把一份单 Agent Blueprint 直接跑起来：
+
+```bash
+ai4j-cli run agent.yaml --input "结合知识库回答"
+```
+
+也可以显式覆盖运行时 provider / protocol / model：
+
+```bash
+ai4j-cli run agent.yaml \
+  --input "总结这个任务" \
+  --provider openai \
+  --protocol responses \
+  --model gpt-4.1-mini
+```
+
+这个命令的边界和 `AgentFactory` 一致：YAML 不保存 token；CLI host 从 `--api-key`、环境变量、provider profile 或工作区配置中解析运行时模型客户端，然后传给 `AgentFactoryContext`。`model.profile` 可以作为 CLI 宿主的 profile 名称使用，但不是由 `AgentFactory` 自己读取 secret。
+
+常用参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `<agent.yaml>` | Blueprint YAML 文件路径。 |
+| `--input` / `--prompt` | 本次运行的用户输入，必填。 |
+| `--provider` | 覆盖 YAML 中的 `model.provider`。`openai-compatible` 会按 CLI host 的 OpenAI-compatible 运行时处理。 |
+| `--protocol` | `chat` 或 `responses`。 |
+| `--model` | 覆盖 YAML 中的 `model.model`。 |
+| `--profile` | 使用 CLI host provider profile；不存在或与显式 `--provider` 不兼容时会失败，不会静默回退 default profile。 |
+| `--base-url` | OpenAI-compatible 或其他 provider 的自定义 base URL。 |
+| `--allow-sandbox-declaration` | 只允许 `sandbox.enabled=true` 声明通过，不创建真实 sandbox。 |
+
+如果 YAML 中声明了 `sandbox.enabled=true`，CLI 默认会失败并提示 `blueprint.sandbox.unsupported`。这是有意设计，避免用户误以为已经创建了 VM / 容器。
 
 ## 5. Loader 支持的入口
 
@@ -453,10 +489,9 @@ sandbox.enabled=true
 
 后续建议：
 
-1. P1-C：CLI 支持加载 Blueprint，例如后续 `ai4j run agent.yaml`。
-2. P2：设计 Sandbox SPI，让 `sandbox` 字段有真实 provider 绑定。
-3. P3：让 `ai4j-coding` 的 file/shell/git/browser 工具感知 sandbox binding。
-4. P4：在 CLI/TUI 里提供 Blueprint 加载、校验和 sandbox 状态交互。
+1. P2：设计 Sandbox SPI，让 `sandbox` 字段有真实 provider 绑定。
+2. P3：让 `ai4j-coding` 的 file/shell/git/browser 工具感知 sandbox binding。
+3. P4：在 CLI/TUI 里补齐 `ai4j` 主命令、TUI 布局、provider/model 切换、`/sandbox` 状态和更完整的回复渲染。
 
 ## 12. 排查问题
 
@@ -470,7 +505,12 @@ sandbox.enabled=true
 
 ### 配置了 `sandbox.enabled=true` 但没有远端执行
 
-这是正常的。P1-B 的 `AgentFactory` 默认会拒绝 `sandbox.enabled=true`，避免用户误以为已经创建 VM。真实远端执行需要后续 Sandbox SPI 和 coding tool routing。
+这是正常的。P1-B 的 `AgentFactory` 和 P1-C 的 `ai4j-cli run` 默认都会拒绝 `sandbox.enabled=true`，避免用户误以为已经创建 VM。`--allow-sandbox-declaration` 只允许声明通过，不创建真实远端执行环境。真实远端执行需要后续 Sandbox SPI 和 coding tool routing。
+
+### `model.profile` 写错后为什么没有用 default profile？
+
+这是有意设计。`model.profile` 或 `--profile` 表示用户明确指定一个 CLI host profile。
+如果这个 profile 不存在，或者它和显式 `--provider` 不兼容，`ai4j-cli run` 会直接失败，避免静默使用 default profile 导致模型、base URL 或密钥用错。
 
 ### 想把 token 写进 YAML
 
