@@ -10,42 +10,46 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+为 `ai4j.agent/v1` Agent Blueprint 提供内置 JSON Schema、CLI 导出命令和 docs-site 使用说明，让 YAML Agent 具备 IDE 提示、编辑期校验和更清晰的真实运行边界。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+用户可以通过 `ai4j-cli blueprint schema` 打印内置 Agent Blueprint JSON Schema，或用 `--out` 导出到项目中，再通过 YAML 顶部 `$schema` 获得 IDE / YAML 插件提示。Java 宿主也可以用 `AgentBlueprintSchemas` 读取或写出同一份 schema。docs-site 会说明 schema 只负责 authoring hint，不能替代 `AgentBlueprintValidator`、`AgentFactory`、provider profile、插件启用、tool 注册或 sandbox 创建。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`AgentBlueprintSchemas`、`ai4j/agent-blueprint.schema.json`、`ai4j-cli blueprint schema`、docs-site Blueprint/command 文档。
+- 修改位置：`ai4j-agent/**`、`ai4j-cli/**`、`docs-site/docs/agent/**`、`docs-site/docs/coding-agent/command-reference.md`、本 task package。
+- 验证证据：agent/cli targeted JUnit、docs-site typecheck/build、`git diff --check`、Harness status。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `ai4j-agent/src/main/resources/ai4j/agent-blueprint.schema.json`
+2. `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprintSchemas.java`
+3. `ai4j-cli/src/main/java/io/github/lnyocly/ai4j/cli/command/AgentBlueprintCommand.java`
+4. `docs-site/docs/agent/agent-blueprint.md`
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：schema resource、Java accessor、CLI schema 导出、runtime 忽略 `$schema`、相关测试和 docs-site 说明。
+- 范围外：不实现完整 JSON Schema validation runtime、不创建真实 sandbox、不运行 live provider、不把 schema 发布到远端 URL、不改变 Blueprint v1 字段语义。
+- 停止条件：如果需要引入新的 schema validator 依赖、改变 Blueprint v1 字段、或涉及真实 provider/sandbox，则停下另开任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- [ ] 内置 JSON Schema 覆盖当前 `AgentBlueprintLoader` / `AgentBlueprintValidator` 的主要字段与边界。
+- [ ] `$schema` 字段不会被 runtime 误报 unknown field。
+- [ ] `ai4j-cli blueprint schema` 可以打印 schema，并可通过 `--out` 写入文件。
+- [ ] docs-site 说明 schema 的用法、边界和真实校验链路。
+- [ ] Targeted regression 和 docs build 通过并记录。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+完成代码与 docs-site 修改后，运行 targeted JUnit、docs-site typecheck/build、diff check 和 Harness status。

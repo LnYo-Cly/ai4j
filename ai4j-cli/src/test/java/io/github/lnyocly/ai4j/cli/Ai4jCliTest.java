@@ -69,6 +69,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("ai4j-cli"));
         Assert.assertTrue(output.contains("code"));
         Assert.assertTrue(output.contains("run"));
+        Assert.assertTrue(output.contains("blueprint"));
         Assert.assertTrue(output.contains("acp"));
         Assert.assertTrue(output.contains("extension"));
         Assert.assertTrue(output.contains("ai4j-cli extension check <extension-id> --enable"));
@@ -112,6 +113,27 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("ai4j-cli run"));
         Assert.assertTrue(output.contains("Run a single-agent AI4J Agent Blueprint YAML once"));
         Assert.assertTrue(output.contains("ai4j-cli run <agent.yaml> --input"));
+    }
+
+    @Test
+    public void test_top_level_blueprint_schema_prints_authoring_schema() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        int exitCode = new Ai4jCli().run(
+                new String[]{"blueprint", "schema"},
+                new ByteArrayInputStream(new byte[0]),
+                out,
+                err,
+                Collections.<String, String>emptyMap(),
+                new Properties()
+        );
+
+        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        Assert.assertEquals(new String(err.toByteArray(), StandardCharsets.UTF_8), 0, exitCode);
+        Assert.assertTrue(output.contains("https://schemas.ai4j.dev/agent-blueprint.v1.schema.json"));
+        Assert.assertTrue(output.contains("\"version\""));
+        Assert.assertTrue(output.contains("\"model\""));
     }
 
     @Test

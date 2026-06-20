@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.ai4j.dev/agent-blueprint.v1.schema.json",
+  "title": "AI4J Agent Blueprint",
+  "description": "Schema for a single-agent AI4J Agent Blueprint YAML document. Secrets must stay in host configuration, environment variables, or a secret store.",
+  "type": "object",
+  "required": [
+    "version",
+    "id",
+    "model"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional editor hint. AI4J ignores this field at runtime."
+    },
+    "version": {
+      "const": "ai4j.agent/v1",
+      "description": "Blueprint contract version supported by this schema."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "Stable blueprint id. Use letters, digits, '.', '_' or '-'."
+    },
+    "name": {
+      "type": "string",
+      "description": "Optional display name."
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "provider"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "model"
+          ]
+        },
+        {
+          "required": [
+            "profile"
+          ]
+        }
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "Host model provider. For compatible endpoints prefer openai-compatible."
+        },
+        "profile": {
+          "type": "string",
+          "description": "Host-side provider profile name. The blueprint does not store secrets."
+        },
+        "model": {
+          "type": "string",
+          "description": "Model name used by the host model client."
+        },
+        "options": {
+          "$ref": "#/$defs/freeformObject"
+        }
+      }
+    },
+    "instructions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "developer": {
+          "type": "string"
+        },
+        "variables": {
+          "$ref": "#/$defs/freeformObject"
+        }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "config": {
+            "$ref": "#/$defs/freeformObject"
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "approval": {
+            "type": "string",
+            "enum": [
+              "always",
+              "safe",
+              "never",
+              "manual",
+              "auto",
+              "deny"
+            ]
+          },
+          "config": {
+            "$ref": "#/$defs/freeformObject"
+          }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "memory": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "scope": {
+              "type": "string"
+            },
+            "store": {
+              "type": "string"
+            },
+            "config": {
+              "$ref": "#/$defs/freeformObject"
+            }
+          }
+        },
+        "compact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "trigger": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "contextRatio": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "maxTurns": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "strategy": {
+              "type": "string"
+            },
+            "preserve": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/$defs/freeformObject"
+        }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "provider"
+            ]
+          },
+          {
+            "required": [
+              "profile"
+            ]
+          }
+        ]
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "react",
+            "codeact"
+          ]
+        },
+        "maxTurns": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/freeformObject"
+    }
+  },
+  "$defs": {
+    "freeformObject": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

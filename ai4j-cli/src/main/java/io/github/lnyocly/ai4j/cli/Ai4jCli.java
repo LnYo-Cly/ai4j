@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.cli;
 
 import io.github.lnyocly.ai4j.cli.acp.AcpCommand;
+import io.github.lnyocly.ai4j.cli.command.AgentBlueprintCommand;
 import io.github.lnyocly.ai4j.cli.command.AgentBlueprintRunCommand;
 import io.github.lnyocly.ai4j.cli.command.CliExtensionCommand;
 import io.github.lnyocly.ai4j.cli.command.CodeCommand;
@@ -58,6 +59,7 @@ public class Ai4jCli {
             AcpCommand acpCommand = new AcpCommand(env, properties, currentDirectory);
             CliExtensionCommand extensionCommand = new CliExtensionCommand(currentDirectory);
             AgentBlueprintRunCommand runCommand = new AgentBlueprintRunCommand(env, properties, currentDirectory);
+            AgentBlueprintCommand blueprintCommand = new AgentBlueprintCommand(currentDirectory);
 
             if (arguments.isEmpty()) {
                 return codeCommand.run(Collections.<String>emptyList(), terminal);
@@ -81,6 +83,9 @@ public class Ai4jCli {
             if ("run".equalsIgnoreCase(first)) {
                 return runCommand.run(arguments.subList(1, arguments.size()), terminal);
             }
+            if ("blueprint".equalsIgnoreCase(first) || "blueprints".equalsIgnoreCase(first)) {
+                return blueprintCommand.run(arguments.subList(1, arguments.size()), terminal);
+            }
             if ("extension".equalsIgnoreCase(first) || "extensions".equalsIgnoreCase(first)) {
                 return extensionCommand.run(arguments.subList(1, arguments.size()), terminal);
             }
@@ -102,6 +107,7 @@ public class Ai4jCli {
         terminal.println("Usage:");
         terminal.println("  ai4j-cli code --model <model> [options]");
         terminal.println("  ai4j-cli run <agent.yaml> --input <task> [options]");
+        terminal.println("  ai4j-cli blueprint schema [--out agent-blueprint.schema.json]");
         terminal.println("  ai4j-cli tui --model <model> [options]");
         terminal.println("  ai4j-cli acp --model <model> [options]");
         terminal.println("  ai4j-cli extension list");
@@ -113,12 +119,14 @@ public class Ai4jCli {
         terminal.println("Commands:");
         terminal.println("  code      Start a coding session in one-shot or interactive REPL mode\n");
         terminal.println("  run       Run a single-agent Agent Blueprint YAML once\n");
+        terminal.println("  blueprint Print Agent Blueprint authoring helpers such as JSON Schema\n");
         terminal.println("  tui       Start the same coding session with a richer text UI shell\n");
         terminal.println("  acp       Start the coding session as an ACP stdio server\n");
         terminal.println("  extension Inspect AI4J extension packages on the current classpath\n");
         terminal.println("Examples:");
         terminal.println("  ai4j-cli code --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .");
         terminal.println("  ai4j-cli run agent.yaml --input \"结合知识库回答\" --provider openai --protocol responses");
+        terminal.println("  ai4j-cli blueprint schema --out agent-blueprint.schema.json");
         terminal.println("  ai4j-cli tui --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .");
         terminal.println("  ai4j-cli acp --provider openai --protocol responses --model gpt-5-mini --workspace .");
         terminal.println("  ai4j-cli code --provider openai --protocol responses --model gpt-5-mini --prompt \"Investigate why tests fail in this workspace\"");
