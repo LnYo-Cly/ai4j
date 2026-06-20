@@ -35,6 +35,54 @@ public class AcpSlashCommandSupportTest {
         Assert.assertTrue(containsCommand("provider"));
         Assert.assertTrue(containsCommand("model"));
         Assert.assertTrue(containsCommand("experimental"));
+        Assert.assertTrue(containsCommand("memory"));
+    }
+
+    @Test
+    public void executeMemoryShouldRenderSafeSummary() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-acp-memory-command");
+        String sessionId = "memory-command-session";
+        DefaultCodingSessionManager sessionManager = seedTeamHistory(workspace, sessionId);
+
+        ManagedCodingSession session = new ManagedCodingSession(
+                new CodingSession(sessionId, null, null, null, null),
+                "openai",
+                "responses",
+                "fake-model",
+                workspace.toString(),
+                null,
+                null,
+                null,
+                sessionId,
+                null,
+                System.currentTimeMillis(),
+                System.currentTimeMillis()
+        );
+
+        AcpSlashCommandSupport.ExecutionResult result = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, null, null, null),
+                "/memory"
+        );
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.getOutput().contains("memory:"));
+        Assert.assertTrue(result.getOutput().contains("estimatedTokens="));
+        Assert.assertTrue(result.getOutput().contains("autoCompact=off"));
+        Assert.assertTrue(result.getOutput().contains("raw memory and tool output are not printed"));
+
+        AcpSlashCommandSupport.ExecutionResult statusResult = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, null, null, null),
+                "/memory status"
+        );
+        Assert.assertNotNull(statusResult);
+        Assert.assertTrue(statusResult.getOutput().contains("memory:"));
+
+        AcpSlashCommandSupport.ExecutionResult unknownResult = AcpSlashCommandSupport.execute(
+                new AcpSlashCommandSupport.Context(session, sessionManager, null, null, null),
+                "/memory inspect"
+        );
+        Assert.assertNotNull(unknownResult);
+        Assert.assertTrue(unknownResult.getOutput().contains("Unknown /memory option"));
     }
 
     @Test

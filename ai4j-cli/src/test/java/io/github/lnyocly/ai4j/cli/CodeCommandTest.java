@@ -144,6 +144,8 @@ public class CodeCommandTest {
                         + "/processes\n"
                         + "/resume session-alpha\n"
                         + "/compact\n"
+                        + "/memory\n"
+                        + "/memory status\n"
                         + "/compacts 10\n"
                         + "/status\n"
                         + "/exit\n").getBytes(StandardCharsets.UTF_8)
@@ -175,6 +177,10 @@ public class CodeCommandTest {
         Assert.assertTrue(output.contains("processes:"));
         Assert.assertTrue(output.contains("resumed session: session-alpha"));
         Assert.assertTrue(output.contains("compact: mode=manual"));
+        Assert.assertTrue(output.contains("memory:"));
+        Assert.assertTrue(output.contains("estimatedTokens="));
+        Assert.assertTrue(output.contains("autoCompact=on"));
+        Assert.assertTrue(output.contains("raw memory and tool output are not printed"));
         Assert.assertTrue(output.contains("compacts:"));
         Assert.assertTrue(output.contains("items="));
         Assert.assertTrue(output.contains("checkpointGoal=Continue the CLI session."));

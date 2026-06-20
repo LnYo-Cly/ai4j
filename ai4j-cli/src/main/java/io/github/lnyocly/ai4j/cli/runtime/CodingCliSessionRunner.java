@@ -701,6 +701,15 @@ public class CodingCliSessionRunner {
             printCurrentSession(session);
             return DispatchResult.stay(session);
         }
+        if ("/memory".equalsIgnoreCase(normalized) || "/memory status".equalsIgnoreCase(normalized)) {
+            printMemory(session);
+            renderTui(session);
+            return DispatchResult.stay(session);
+        }
+        if (normalized.toLowerCase(Locale.ROOT).startsWith("/memory ")) {
+            emitError("Unknown /memory option: " + extractCommandArgument(normalized) + ". Use /memory or /memory status.");
+            return DispatchResult.stay(session);
+        }
         if ("/theme".equalsIgnoreCase(normalized)) {
             printThemes();
             renderTui(session);
@@ -952,6 +961,7 @@ public class CodingCliSessionRunner {
         builder.append("  /help    Show help\n");
         builder.append("  /status  Show current session status\n");
         builder.append("  /session Show current session metadata\n");
+        builder.append("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health\n");
         builder.append("  /theme [name]  Show or switch the active TUI theme\n");
         builder.append("  /save    Persist the current session state\n");
         builder.append("  /providers  List saved provider profiles\n");
@@ -990,6 +1000,7 @@ public class CodingCliSessionRunner {
         builder.append("  /replay [n]  Replay recent turns grouped from the event ledger\n");
         builder.append("  /team    Show the current agent team board grouped by member lane\n");
         builder.append("  /team list|status [team-id]|messages [team-id] [limit]|resume [team-id]  Manage persisted team snapshots\n");
+        builder.append("  /memory [status]  Show memory, compact, checkpoint, and auto-compact health\n");
         builder.append("  /compacts [n]  Show recent compact history from the event ledger\n");
         builder.append("  /stream [on|off]  Show or switch model request streaming\n");
         builder.append("  /processes  List active and restored process metadata\n");
@@ -1068,6 +1079,24 @@ public class CodingCliSessionRunner {
                 + ", sandbox=" + renderSandboxSummary()
                 + ", checkpointGoal=" + clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 80)
                 + ", compact=" + firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none"));
+    }
+
+    private void printMemory(ManagedCodingSession session) {
+        CodingSessionSnapshot snapshot = session == null || session.getSession() == null ? null : session.getSession().snapshot();
+        String output = renderMemoryOutput(session, snapshot);
+        if (useMainBufferInteractiveShell()) {
+            emitOutput(output);
+            return;
+        }
+        if (useAppendOnlyTranscriptTui()) {
+            emitOutput(output);
+            return;
+        }
+        if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
+            setTuiAssistantOutput(output);
+            return;
+        }
+        terminal.println(output);
     }
 
     private void printCurrentSession(ManagedCodingSession session) {
@@ -3903,7 +3932,7 @@ public class CodingCliSessionRunner {
         lines.add("/provider use|save|add|edit|default|remove /extension list|inspect|plan|check|validate|run|resource");
         lines.add("/experimental subagent|agent-teams on|off");
         lines.add("/mcp add|enable|disable|pause|resume|retry|remove /sandbox status|attach|disable");
-        lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /team list|status|messages|resume /compacts /checkpoint");
+        lines.add("/commands /palette /cmd <name> /sessions /history /tree /events /replay /team /team list|status|messages|resume /memory /compacts /checkpoint");
         lines.add("/processes /process status|follow|logs|write|stop");
         lines.add("/resume <id> /load <id> /fork ... /compact /clear /exit");
         if (commands != null) {
@@ -4025,6 +4054,7 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("team-status", "command", "/team status ", "Inspect one persisted team snapshot", "/team status "));
         items.add(new TuiPaletteItem("team-messages", "command", "/team messages ", "Inspect persisted team mailbox messages", "/team messages "));
         items.add(new TuiPaletteItem("team-resume", "command", "/team resume ", "Reopen a persisted team board from disk", "/team resume "));
+        items.add(new TuiPaletteItem("memory", "command", "/memory", "Show memory and compact health", "/memory"));
         items.add(new TuiPaletteItem("compacts", "command", "/compacts", "Show compact history from the event ledger", "/compacts 20"));
         items.add(new TuiPaletteItem("processes", "command", "/processes", "List active and restored process metadata", "/processes"));
         items.add(new TuiPaletteItem("process-status", "command", "/process status", "Show metadata for one process", "/process status"));
@@ -5195,6 +5225,32 @@ public class CodingCliSessionRunner {
         }
         builder.append("- checkpointGoal=").append(clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 120)).append('\n');
         builder.append("- compact=").append(firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none"));
+        return builder.toString().trim();
+    }
+
+    private String renderMemoryOutput(ManagedCodingSession session, CodingSessionSnapshot snapshot) {
+        if (session == null) {
+            return "memory: (none)";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("memory:\n");
+        builder.append("- mode=").append(options.isNoSession() ? "memory-only" : "persistent").append('\n');
+        builder.append("- items=").append(snapshot == null ? 0 : snapshot.getMemoryItemCount())
+                .append(", estimatedTokens=").append(snapshot == null ? 0 : snapshot.getEstimatedContextTokens()).append('\n');
+        builder.append("- checkpointGoal=").append(clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 160)).append('\n');
+        builder.append("- compact=").append(firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none"));
+        if (snapshot != null && !isBlank(snapshot.getLastCompactMode())) {
+            builder.append(", tokens=").append(snapshot.getLastCompactTokensBefore())
+                    .append("->").append(snapshot.getLastCompactTokensAfter())
+                    .append(", strategy=").append(firstNonBlank(snapshot.getLastCompactStrategy(), "checkpoint"));
+        }
+        builder.append('\n');
+        builder.append("- autoCompact=").append(options.isAutoCompact() ? "on" : "off")
+                .append(", failures=").append(snapshot == null ? 0 : snapshot.getAutoCompactFailureCount())
+                .append(", breaker=").append(snapshot != null && snapshot.isAutoCompactCircuitBreakerOpen() ? "open" : "closed").append('\n');
+        builder.append("- processes active=").append(snapshot == null ? 0 : snapshot.getActiveProcessCount())
+                .append(", restored=").append(snapshot == null ? 0 : snapshot.getRestoredProcessCount()).append('\n');
+        builder.append("- note=summary only; raw memory and tool output are not printed");
         return builder.toString().trim();
     }
 

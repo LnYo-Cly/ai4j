@@ -102,6 +102,7 @@ try (CodingSession session = agent.newSession()) {
 命令入口主要是：
 
 - `/compact`
+- `/memory`
 - `/compacts`
 - `/checkpoint`
 - `/session`
@@ -110,9 +111,10 @@ try (CodingSession session = agent.newSession()) {
 其中：
 
 - `/compact` 是主动压缩；
+- `/memory` 看当前 memory / compact / checkpoint / auto-compact 健康概览；
 - `/compacts` 看 compact 历史和诊断字段；
 - `/checkpoint` 看结构化 checkpoint 本身；
-- `/session` / `/status` 更多是看当前会话状态与最近 compact 摘要。
+- `/session` / `/status` 更多是看当前会话元信息和运行状态大盘。
 
 ---
 
@@ -441,6 +443,7 @@ compact 真正难的地方不是“生成摘要”，而是“摘要生成后还
 
 `CodingCliSessionRunner` 会把 compact 结果转成：
 
+- `/memory` 当前健康概览；
 - `/compacts` 可读诊断行；
 - `/checkpoint` 的结构化摘要；
 - `/session` / `/status` 中的最近 compact 状态。

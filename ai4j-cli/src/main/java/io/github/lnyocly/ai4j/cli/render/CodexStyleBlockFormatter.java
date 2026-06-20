@@ -255,6 +255,7 @@ public final class CodexStyleBlockFormatter {
                 || "tree".equals(normalized)
                 || "events".equals(normalized)
                 || "replay".equals(normalized)
+                || "memory".equals(normalized)
                 || "compacts".equals(normalized)
                 || "processes".equals(normalized)
                 || "process status".equals(normalized)

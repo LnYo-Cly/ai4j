@@ -105,6 +105,15 @@ public class CodexStyleBlockFormatterTest {
     }
 
     @Test
+    public void formatOutputParsesMemoryInfoBlock() {
+        List<String> lines = formatter.formatOutput("memory:\n- items=2, estimatedTokens=42\n- note=summary only");
+
+        assertEquals("• Memory", lines.get(0));
+        assertTrue(lines.get(1).contains("items=2"));
+        assertTrue(lines.get(2).contains("summary only"));
+    }
+
+    @Test
     public void formatInfoBlockKeepsInnerSeparators() {
         List<String> lines = formatter.formatInfoBlock("Replay", Arrays.asList("first", "", "second"));
 

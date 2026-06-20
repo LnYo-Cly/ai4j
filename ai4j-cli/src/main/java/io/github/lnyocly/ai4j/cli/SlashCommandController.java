@@ -55,6 +55,7 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/events", "Show the latest session ledger events", true),
             new SlashCommandSpec("/replay", "Replay recent turns grouped from the event ledger", true),
             new SlashCommandSpec("/team", "Show the current agent team board", false),
+            new SlashCommandSpec("/memory", "Show current memory and compact status", true),
             new SlashCommandSpec("/compacts", "Show recent compact history", true),
             new SlashCommandSpec("/stream", "Show or switch model request streaming", true),
             new SlashCommandSpec("/mcp", "Show or manage MCP services", true),
@@ -85,6 +86,7 @@ public final class SlashCommandController implements Completer {
     private static final List<String> EXPERIMENTAL_FEATURES = Arrays.asList("subagent", "agent-teams");
     private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
     private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
+    private static final List<String> MEMORY_ACTIONS = Arrays.asList("status");
     private static final List<String> MCP_ACTIONS = Arrays.asList("list", "add", "enable", "disable", "pause", "resume", "retry", "remove");
     private static final List<String> SANDBOX_ACTIONS = Arrays.asList("status", "attach", "disable");
     private static final List<String> EXTENSION_ACTIONS = Arrays.asList("list", "inspect", "plan", "check", "validate", "run", "resource");
@@ -136,6 +138,7 @@ public final class SlashCommandController implements Completer {
             "/events",
             "/replay",
             "/team",
+            "/memory",
             "/compacts",
             "/stream",
             "/mcp",
@@ -491,6 +494,9 @@ public final class SlashCommandController implements Completer {
         if ("/team".equalsIgnoreCase(command)) {
             return teamCandidates(tokens, endsWithSpace);
         }
+        if ("/memory".equalsIgnoreCase(command)) {
+            return memoryCandidates(tokenFragment(tokens, endsWithSpace));
+        }
         return Collections.emptyList();
     }
 
@@ -540,6 +546,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/team".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", teamActionCandidates(""));
+        }
+        if ("/memory".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", memoryCandidates(""));
         }
         return Collections.emptyList();
     }
@@ -1031,6 +1040,23 @@ public final class SlashCommandController implements Completer {
             return "Return to direct-host execution";
         }
         return "Sandbox action";
+    }
+
+    private List<Candidate> memoryCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : MEMORY_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(
+                    action,
+                    action,
+                    "Memory",
+                    "Show current memory and compact status",
+                    false
+            ));
+        }
+        return candidates;
     }
 
     private List<Candidate> experimentalCandidates(List<String> tokens, boolean endsWithSpace) {

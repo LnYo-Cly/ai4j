@@ -58,6 +58,7 @@ final class AcpSlashCommandSupport {
             new CommandSpec("tree", "Show the session tree", "optional root session id"),
             new CommandSpec("events", "Show recent session events", "optional limit"),
             new CommandSpec("team", "Show current team board or persisted team state", "optional: list | status [team-id] | messages [team-id] [limit] | resume [team-id]"),
+            new CommandSpec("memory", "Show current memory and compact status", "optional: status"),
             new CommandSpec("compacts", "Show compact history", "optional limit"),
             new CommandSpec("checkpoint", "Show current checkpoint summary", null),
             new CommandSpec("processes", "List managed processes", null),
@@ -141,6 +142,9 @@ final class AcpSlashCommandSupport {
         }
         if ("team".equals(name)) {
             return ExecutionResult.of(renderTeam(context, command.argument));
+        }
+        if ("memory".equals(name)) {
+            return ExecutionResult.of(renderMemory(context, command.argument));
         }
         if ("compacts".equals(name)) {
             return ExecutionResult.of(renderCompacts(context, command.argument));
@@ -275,6 +279,37 @@ final class AcpSlashCommandSupport {
         builder.append("- checkpoint=").append(clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 160)).append('\n');
         builder.append("- compact=").append(firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none")).append('\n');
         builder.append("- summary=").append(clip(descriptor.getSummary(), 220));
+        return builder.toString().trim();
+    }
+
+    private static String renderMemory(Context context, String argument) {
+        if (!isBlank(argument) && !"status".equalsIgnoreCase(argument.trim())) {
+            return "Unknown /memory option: " + argument.trim() + ". Use /memory or /memory status.";
+        }
+        ManagedCodingSession session = context.session;
+        if (session == null) {
+            return "memory: (none)";
+        }
+        CodingSessionSnapshot snapshot = snapshot(session);
+        StringBuilder builder = new StringBuilder();
+        builder.append("memory:\n");
+        builder.append("- mode=").append(context.options != null && context.options.isNoSession() ? "memory-only" : "persistent").append('\n');
+        builder.append("- items=").append(snapshot == null ? 0 : snapshot.getMemoryItemCount())
+                .append(", estimatedTokens=").append(snapshot == null ? 0 : snapshot.getEstimatedContextTokens()).append('\n');
+        builder.append("- checkpointGoal=").append(clip(snapshot == null ? null : snapshot.getCheckpointGoal(), 160)).append('\n');
+        builder.append("- compact=").append(firstNonBlank(snapshot == null ? null : snapshot.getLastCompactMode(), "none"));
+        if (snapshot != null && !isBlank(snapshot.getLastCompactMode())) {
+            builder.append(", tokens=").append(snapshot.getLastCompactTokensBefore())
+                    .append("->").append(snapshot.getLastCompactTokensAfter())
+                    .append(", strategy=").append(firstNonBlank(snapshot.getLastCompactStrategy(), "checkpoint"));
+        }
+        builder.append('\n');
+        builder.append("- autoCompact=").append(context.options != null && context.options.isAutoCompact() ? "on" : "off")
+                .append(", failures=").append(snapshot == null ? 0 : snapshot.getAutoCompactFailureCount())
+                .append(", breaker=").append(snapshot != null && snapshot.isAutoCompactCircuitBreakerOpen() ? "open" : "closed").append('\n');
+        builder.append("- processes active=").append(snapshot == null ? 0 : snapshot.getActiveProcessCount())
+                .append(", restored=").append(snapshot == null ? 0 : snapshot.getRestoredProcessCount()).append('\n');
+        builder.append("- note=summary only; raw memory and tool output are not printed");
         return builder.toString().trim();
     }
 
