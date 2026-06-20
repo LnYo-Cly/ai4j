@@ -39,6 +39,7 @@ Task Package Index: required
 | C-010 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md | 用户最终确认后的可执行摘要，便于后续实现任务快速读取 | coordinator / reviewer / worker |
 | C-011 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md | 当前实施总计划，按 R0/P0-P7 和推荐任务顺序组织后续实现队列 | coordinator / reviewer / worker |
 | C-012 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md | 本轮完整讨论规划记录，作为后续实现任务的首读材料 | coordinator / reviewer / worker |
+| C-013 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-cloud-runner-cli-product-plan-2026-06-21.md | 本轮补充规划：把云端 Agent Runner、Sandbox、插件生态、CLI/TUI、安装分发和 docs-site 任务队列收敛为下一轮实现入口 | coordinator / reviewer / worker |
 
 ## 步骤
 
@@ -48,8 +49,9 @@ Task Package Index: required
 4. 写入用户最终确认后的摘要版 reference，明确 memory/compact 参考优秀公开设计但不照搬泄露源码、支持 YAML declarative agent、插件生态和 sandbox/runner 的落地边界。
 5. 更新 task-local brief、plan、strategy、findings、visual map、progress、review、walkthrough，使下一轮 agent 可直接接续。
 6. 追加完整任务规划记录，覆盖产品定位、模块边界、Session/Memory/Compact、YAML Blueprint、插件生态、Sandbox/Remote Runner、CLI/TUI、docs-site 和实施队列。
-7. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
-8. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
+7. 追加云端 Agent Runner / Sandbox / Coding Agent CLI 产品化补充规划，明确运行形态、隔离策略、插件贡献点、安装分发和任务队列。
+8. 运行 `git diff --check` 和 `npx --yes coding-agent-harness status --json .`，确认规划材料无模板残留。
+9. 提交 Harness 规划记录；后续实现任务再单独使用 worktree。
 
 ## 验收标准
 

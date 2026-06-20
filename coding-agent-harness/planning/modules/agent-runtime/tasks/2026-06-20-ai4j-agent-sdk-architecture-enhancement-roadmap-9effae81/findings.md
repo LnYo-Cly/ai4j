@@ -65,3 +65,10 @@
 - 发现：已有 master plan 分散记录了 R0/P0-P7 队列，但后续 agent 仍需要一份单文件入口，避免从长对话中提取结论或遗漏“不要新增 Host Kernel / 不拆核心 Maven / 不写伪 API / sandbox 非默认”等关键边界。
 - 影响：新增 `references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md` 作为后续实现任务首读材料；实现前仍必须以最新 `origin/dev`、PR 状态和 `harness status --json` 校准。
 - 后续：每个实现切片继续单独建 task/worktree/PR，不能把本规划当成代码已完成的证明。
+
+### 云端 Agent Runner 与 Coding Agent CLI 产品化规划已补充
+
+- 背景：用户继续追问 ai4j-agent 的完整增强方向，包括 sandbox/远端运行环境、memory/compact、YAML Agent、插件生态、CLI/TUI、安装入口和 docs-site 质量。
+- 发现：AI4J 应提供 Sandbox / Remote Agent Runner 抽象和 fake/test provider，帮助开发者构建云端 Agent 产品；但不应首版内置重型云控制平台，也不应把 Harness 内化为 SDK 核心能力。
+- 影响：新增 `references/agent-sdk-cloud-runner-cli-product-plan-2026-06-21.md`，作为后续实现任务读取的产品化补充规划；推荐先做 backlog reconciliation 和 source-backed research digest，再推进 session/memory/compact、sandbox routing、CLI/TUI、one-command install 和 docs-site completeness。
+- 后续：实现任务必须从最新 `origin/dev` 校准，单独创建 Harness task、worktree 和 PR；不能把本规划视为代码已实现证明。
