@@ -77,6 +77,13 @@
 - 下一步：提交本轮补充；后续实现任务按优先级从插件贡献契约、Blueprint/docs hardening、sandbox routing 继续。
 - 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md:final user-confirmed agent sdk enhancement summary
 
+### [2026-06-20 22:05] - 实施总计划补充
+
+- 做了什么：新增 `references/agent-sdk-enhancement-master-plan-2026-06-20.md`，将 AI4J Agent SDK 增强方向整理为 R0/P0-P7 实施队列；覆盖 Agent SDK 分层、插件生态、YAML Blueprint、Memory/Compact、Sandbox/Remote Runner、CLI/TUI、docs-site 和固定门禁。
+- 验证结果：`git diff --check` 通过；`npx --yes coding-agent-harness status --json .` failures=0，当前 task `materialsReady=true`、`reviewQueueState=ready-to-confirm`；dirty-state warning 来自本轮规划文件尚未提交。
+- 下一步：提交本轮规划补充；后续建议优先执行 `/memory` + compact command UX、R0 调研 digest、one-command install / CLI/TUI polish、docs-site completeness。
+- 证据：report:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md:agent sdk enhancement master implementation plan; command:.:git diff --check passed; command:.:npx --yes coding-agent-harness status --json . failures=0 task materialsReady=true
+
 ### [2026-06-20 13:54] - task-log
 
 - 做了什么：补充记录 ai4j-agent 增强任务的最终实施规划：覆盖 Agent SDK 分层、插件生态、YAML Blueprint、Memory Compact、Sandbox/Remote Runner、CLI/TUI、Harness 边界和后续任务队列。

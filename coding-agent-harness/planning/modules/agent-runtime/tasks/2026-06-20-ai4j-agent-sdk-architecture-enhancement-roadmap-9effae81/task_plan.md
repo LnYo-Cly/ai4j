@@ -37,6 +37,7 @@ Task Package Index: required
 | C-008 | docs-roadmap | TARGET:docs-site/docs/agent/sdk-roadmap.md | 已存在 Agent SDK roadmap，避免重复和漂移 | coordinator / reviewer |
 | C-009 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-architecture-enhancement-plan.md | 本任务沉淀的完整规划正文 | coordinator / reviewer / worker |
 | C-010 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/final-agent-sdk-enhancement-summary.md | 用户最终确认后的可执行摘要，便于后续实现任务快速读取 | coordinator / reviewer / worker |
+| C-011 | task-reference | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-enhancement-master-plan-2026-06-20.md | 当前实施总计划，按 R0/P0-P7 和推荐任务顺序组织后续实现队列 | coordinator / reviewer / worker |
 
 ## 步骤
 
@@ -55,6 +56,7 @@ Task Package Index: required
 - [x] 规划明确后续任务队列和依赖顺序，先收口 P2-B 与已有任务。
 - [x] 规划记录“不写不存在 API 示例”和 docs-site 质量要求。
 - [x] 最终摘要单独记录到 `references/final-agent-sdk-enhancement-summary.md`，便于下一轮实现任务读取。
+- [x] 实施总计划单独记录到 `references/agent-sdk-enhancement-master-plan-2026-06-20.md`，便于后续按队列切分任务。
 - [x] `git diff --check` 通过。
 - [x] `npx --yes coding-agent-harness status --json .` 通过或只剩已解释 residual。
 
