@@ -1,6 +1,6 @@
 # Agent SDK R0 source backed research digest - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-06-20 15:35] - task-start
+
+- 做了什么：Start R0 source-backed research digest for AI4J Agent SDK: Pi plugin/TUI, Codex/Claude/OpenCode public behavior, Java AI SDK comparisons, and sandbox provider patterns.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

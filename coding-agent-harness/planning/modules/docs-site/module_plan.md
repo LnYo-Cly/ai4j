@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AGENT-SDK-R0-SOURCE-BACKED-RESEARCH-DIGEST-C1160 | Agent SDK R0 source backed research digest | reserved | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7/task_plan.md | none |
+| T-AGENT-SDK-R0-SOURCE-BACKED-RESEARCH-DIGEST-C1160 | Agent SDK R0 source backed research digest | active | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-agent-sdk-r0-source-backed-research-digest-c11603e7/task_plan.md | none |
 | T-DOCS-SITE-AGENT-SDK-REAL-API-COMPLETENESS-PASS-D | docs site agent sdk real api completeness pass | handoff | coding-agent-harness/planning/modules/docs-site/tasks/2026-06-20-docs-site-agent-sdk-real-api-completeness-pass-d9906610/task_plan.md | T-AGENT-SDK-R0-SOURCE-BACKED-RESEARCH-DIGEST-C1160 |
 
 ## 活跃任务
