@@ -10,6 +10,8 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicyMemoryCompressor;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
+import io.github.lnyocly.ai4j.agent.compact.SessionCompactPlan;
+import io.github.lnyocly.ai4j.agent.compact.SessionCompactReport;
 import io.github.lnyocly.ai4j.agent.compact.StructuredSummaryCompactPolicy;
 import io.github.lnyocly.ai4j.agent.context.ContextBudget;
 import io.github.lnyocly.ai4j.agent.context.ContextProjection;
@@ -193,6 +195,56 @@ public class AgentMemoryCompactContextProjectorTest {
         Assert.assertEquals(2, resumedItems.size());
         Assert.assertTrue(String.valueOf(resumedItems.get(0)).contains("goal"));
         Assert.assertTrue(String.valueOf(resumedItems.get(1)).contains("recent"));
+    }
+
+    @Test
+    public void sessionCompactPlanReturnsDiagnosticReport() {
+        Agent agent = Agents.react()
+                .modelClient(new CapturingModelClient("ok"))
+                .memorySupplier(InMemoryAgentMemory::new)
+                .options(AgentOptions.builder().maxSteps(1).build())
+                .model("test-model")
+                .build();
+        AgentSession session = agent.newSession();
+        session.getContext().getMemory().addUserInput("goal");
+        session.getContext().getMemory().addUserInput("old");
+        session.getContext().getMemory().addUserInput("recent");
+
+        SessionCompactReport report = session.compact(
+                SessionCompactPlan.keepRecentItems(2).withPinnedPrefixItems(1)
+        );
+
+        Assert.assertTrue(report.isCompacted());
+        Assert.assertEquals(session.getSessionId(), report.getSessionId());
+        Assert.assertNotNull(report.getSummary());
+        Assert.assertTrue(report.getSummary().contains("AI4J_COMPACT_SUMMARY"));
+        Assert.assertEquals(3, report.getSourceItemCount());
+        Assert.assertEquals(2, report.getProjectedItemCount());
+        Assert.assertEquals(1, report.getDroppedItemCount());
+        Assert.assertTrue(report.hasDroppedItems());
+        Assert.assertNotNull(session.getLastCompactResult());
+        Assert.assertEquals(report.getSummary(), session.getLastCompactResult().getSummary());
+        Assert.assertEquals(2, session.snapshot().getMemory().getItems().size());
+    }
+
+    @Test
+    public void sessionCompactReportIsDefensiveCopy() {
+        Agent agent = Agents.react()
+                .modelClient(new CapturingModelClient("ok"))
+                .memorySupplier(InMemoryAgentMemory::new)
+                .options(AgentOptions.builder().maxSteps(1).build())
+                .model("test-model")
+                .build();
+        AgentSession session = agent.newSession();
+        session.getContext().getMemory().addUserInput("one");
+        session.getContext().getMemory().addUserInput("two");
+
+        SessionCompactReport report = session.compact(SessionCompactPlan.keepRecentItems(1));
+        CompactResult copy = report.getCompactResult();
+        copy.setSummary("mutated");
+
+        Assert.assertNotEquals("mutated", report.getSummary());
+        Assert.assertNotEquals("mutated", session.getLastCompactResult().getSummary());
     }
 
     private static AgentEvent firstEvent(List<AgentEvent> events, AgentEventType type) {

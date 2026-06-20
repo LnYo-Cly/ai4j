@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.agent;
 
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
+import io.github.lnyocly.ai4j.agent.compact.SessionCompactPlan;
+import io.github.lnyocly.ai4j.agent.compact.SessionCompactReport;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
@@ -140,12 +142,24 @@ public class AgentSession {
     }
 
     public AgentSession compact(CompactPolicy policy) {
+        compactAndReport(policy);
+        return this;
+    }
+
+    public SessionCompactReport compact(SessionCompactPlan plan) {
+        if (plan == null) {
+            return SessionCompactReport.skipped(getSessionId());
+        }
+        return compactAndReport(plan.toPolicy());
+    }
+
+    public SessionCompactReport compactAndReport(CompactPolicy policy) {
         if (policy == null) {
-            return this;
+            return SessionCompactReport.skipped(getSessionId());
         }
         AgentMemory memory = context == null ? null : context.getMemory();
         if (memory == null) {
-            return this;
+            return SessionCompactReport.skipped(getSessionId());
         }
         CompactResult result = policy.compact(memory.snapshot());
         if (result != null && result.getMemory() != null) {
@@ -157,7 +171,7 @@ public class AgentSession {
             dispatcher.dispatch(context, AgentLifecycleEventType.ON_COMPACT, "session", 0, "compact", lastCompactResult);
         }
         metadata.touch();
-        return this;
+        return new SessionCompactReport(getSessionId(), result != null, lastCompactResult);
     }
 
     public CompactResult getLastCompactResult() {

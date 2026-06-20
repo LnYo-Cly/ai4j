@@ -1,13 +1,15 @@
 # 任务参考资料索引
 
-仅在任务需要外部资料、跨仓上下文、reviewer 输入包或生成参考材料时使用。不要把无关背景资料堆进来。
-
 | ID | Type | Path | Summary | Used By |
 | --- | --- | --- | --- | --- |
-| REF-001 | public-doc / private-plan / external / code | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [这份资料为什么影响本任务] | coordinator |
+| REF-001 | repo-guidance | TARGET:AGENTS.md | Java 8、Harness 任务目录、Regression SSoT / Cadence Ledger 更新和 worktree 规则。 | coordinator / reviewer |
+| REF-002 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java | 新增 session compact API 的宿主类。 | coordinator / reviewer |
+| REF-003 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/compact | `CompactPolicy`、`CompactResult`、`StructuredSummaryCompactPolicy` 现有契约。 | coordinator / reviewer |
+| REF-004 | code | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context | `ContextBudget`、`ContextReport`、`DefaultContextProjector` 现有契约。 | coordinator / reviewer |
+| REF-005 | docs | TARGET:docs-site/docs/agent/memory-compact-context.md | docs-site 新 API 示例和解释。 | coordinator / reviewer |
+| REF-006 | docs | TARGET:docs-site/docs/agent/session-runtime.md | Session runtime 文档同步。 | coordinator / reviewer |
 
 ## 使用规则
 
-- 每条参考资料都要说明用途，否则不要登记。
-- 外部链接需要写清访问日期或版本线索，避免后续复查时语境漂移。
-- reviewer 或 worker 只应读取与其 scope 相关的条目。
+- reviewer 先读 `task_plan.md`、`review.md` 和 REF-002..REF-006。
+- 不需要外部资料；本任务不使用用户提供的 provider token。

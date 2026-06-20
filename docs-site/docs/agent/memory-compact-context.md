@@ -125,6 +125,22 @@ public interface CompactPolicy {
 3. 返回新的 `MemorySnapshot`。
 4. 返回 `ContextReport`。
 
+如果只是想在 session 上做一次常见 compact，推荐先用更高层的 `SessionCompactPlan`：
+
+```java
+AgentSession session = agent.newSession();
+
+SessionCompactReport report = session.compact(
+    SessionCompactPlan.keepRecentItems(30)
+        .withPinnedPrefixItems(1)
+);
+
+System.out.println(report.getSummary());
+System.out.println(report.getDroppedItemCount());
+```
+
+这个写法适合大多数 Java 应用：保留一个稳定前缀（例如长期 summary / 任务目标），再保留最近上下文，并且直接拿到诊断报告。
+
 示例：
 
 ```java
@@ -140,6 +156,8 @@ session.compact(new StructuredSummaryCompactPolicy(
 CompactResult result = session.getLastCompactResult();
 System.out.println(result.getContextReport().getDroppedItemCount());
 ```
+
+`compact(CompactPolicy)` 仍然保留，适合已经有自定义策略的高级用法；`compact(SessionCompactPlan)` 是更易用的 session-first 入口。
 
 ## 6. CompactResult 为什么是结构化的
 
@@ -163,6 +181,8 @@ System.out.println(result.getContextReport().getDroppedItemCount());
 P0-A 已经让 `AgentSession` 可以 snapshot / save / resume。P0-B 在此基础上增加：
 
 - `AgentSession.compact(CompactPolicy)`
+- `AgentSession.compact(SessionCompactPlan)`
+- `SessionCompactReport`
 - `AgentSession.getLastCompactResult()`
 - `AgentSessionSnapshot.compactResult`
 
@@ -174,6 +194,18 @@ resume 后仍能读取 last compact result
 ```
 
 这对长任务恢复、UI 展示和远端 Runner 都很重要。
+
+`SessionCompactReport` 面向 UI / CLI / 后端接口，常用字段包括：
+
+| 字段 | 说明 |
+| --- | --- |
+| `sessionId` | 本次 compact 所属 session |
+| `compacted` | 是否真正执行 compact |
+| `summary` | compact 后 summary |
+| `sourceItemCount` | compact 前 item 数 |
+| `projectedItemCount` | compact 后保留 item 数 |
+| `droppedItemCount` | 丢弃 item 数 |
+| `contextReport` | 完整 `ContextReport` |
 
 ## 8. 与旧 MemoryCompressor 的兼容
 
