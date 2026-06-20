@@ -35,6 +35,7 @@ sidebar_position: 11
 - `/tree`
 - `/events`
 - `/team`
+- `/memory`
 - `/compacts`
 - `/checkpoint`
 - `/processes`
@@ -506,6 +507,29 @@ sandbox:
 
 ---
 
+### `/memory`
+
+显示当前 session 的 memory、compact、checkpoint 和 auto-compact 健康概览。
+
+```text
+/memory
+/memory status
+```
+
+输出只包含摘要字段，例如：
+
+- `mode`：当前是持久化 session 还是 memory-only；
+- `items` / `estimatedTokens`：当前 memory item 数和估算上下文 token；
+- `checkpointGoal`：当前结构化 checkpoint 的目标；
+- `compact`：最近一次 compact 模式、token 变化和 strategy；
+- `autoCompact` / `failures` / `breaker`：自动 compact 是否启用、连续失败次数和 breaker 状态；
+- `processes active/restored`：当前会话关联的进程摘要。
+
+这个命令不会打印 raw memory item、原始 prompt、API key、baseUrl credential 或工具输出全文。
+它适合快速判断“现在是否需要 `/compact`，或为什么 auto-compact 暂停了”。
+
+---
+
 ### `/save`
 
 持久化当前 session 状态。
@@ -633,6 +657,11 @@ sandbox:
 - `deltaItemCount`
 - `checkpointReused`
 - `fallbackSummary`
+
+和 `/memory` 的区别：
+
+- `/memory`：看当前 memory / compact / checkpoint / auto-compact 健康概览；
+- `/compacts`：看最近多次 compact 事件历史和诊断字段。
 
 ---
 
@@ -841,6 +870,7 @@ sandbox:
 - `/experimental` 的 feature / on|off 候选
 - `/skills` 候选
 - `/sandbox status|attach|disable` 候选
+- `/memory status` 候选
 - `/stream on|off`
 
 ---

@@ -47,6 +47,7 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/extension ");
         assertContainsValue(candidates, "/process ");
         assertContainsValue(candidates, "/team");
+        assertContainsValue(candidates, "/memory ");
     }
 
     @Test
@@ -136,6 +137,19 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "status ");
         assertContainsValue(candidates, "messages ");
         assertContainsValue(candidates, "resume ");
+    }
+
+    @Test
+    public void suggestMemoryStatusAliasAfterTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-memory");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/memory ", "/memory ".length());
+
+        assertContainsValue(candidates, "status");
     }
 
     @Test
