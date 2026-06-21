@@ -94,3 +94,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：本任务 closeout 后可由 lifecycle CLI / governance rebuild 统一刷新
 - 负责人：coordinator
+
+### [2026-06-21 16:14] - strict review submission repair
+
+- 做了什么：补齐 checker 可解析的严格 ## Agent Review Submission 块，使用 TASKS/2026-06-21-cubesandbox-live-install-and-coding-sandbox-rout-fd63343a 作为 Task Key，并保留既有人工可读 self-review 内容。
+- 验证结果：已重新运行 `npx --yes coding-agent-harness status --json .`，确认 missing-materials 队列退出，当前 `reviewQueueState=ready-to-confirm`。
+- 下一步：通过 harness status 后提交修复并更新 PR。
+- 证据：diff:TASK:review.md/progress.md:strict Agent Review Submission metadata added

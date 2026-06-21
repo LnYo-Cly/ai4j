@@ -105,3 +105,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自：CubeSandbox provider 已有协议级测试；CLI live attach 新增 resolver/runtime tests 覆盖成功、失败、回滚和关闭；docs-site build 通过；live-provider profile 证明缺 env 是受控 skip；文档不再把 CubeSandbox 误写为 metadata-only。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606211608 |
+| Submitted At | 2026-06-21 16:08 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-06-21-cubesandbox-live-install-and-coding-sandbox-rout-fd63343a |
+| Materials Checklist Hash | 80e777a7702e13de |
+| Evidence Summary | CubeSandbox live routing ready for review: CLI live attach resolver/runtime implemented, deterministic CLI/agent regressions passed, docs-site typecheck/build passed, live smoke remains pending environment and is recorded as accepted residual. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-06-21-cubesandbox-live-install-and-coding-sandbox-rout-fd63343a |
