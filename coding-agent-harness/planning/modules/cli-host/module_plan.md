@@ -20,7 +20,7 @@
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
 | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD | CLI memory compact command UX | active | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-20-cli-memory-compact-command-ux-d56c15fd/task_plan.md | none |
-| T-P4-CLI-SANDBOX-COMMANDS-AND-STATUS-UX-4E7E51C6 | P4 CLI sandbox commands and status UX | active | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6/task_plan.md | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD |
+| T-P4-CLI-SANDBOX-COMMANDS-AND-STATUS-UX-4E7E51C6 | P4 CLI sandbox commands and status UX | review | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6/task_plan.md | T-CLI-MEMORY-COMPACT-COMMAND-UX-D56C15FD |
 
 ## 活跃任务
 
@@ -29,6 +29,7 @@
 | `2026-06-08-ai4j-extension-cli-inspect-wave-2-35a94c8e` | review | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test`; `mvn -DskipTests package` | Wave 2 只交付 classpath extension list/inspect；完整 RG-004 仍受 R-008 上游 agent residual 阻塞 |
 | `2026-06-09-ai4j-extension-command-execution-wave-5-3b0bed77` | review-pending | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test`; `mvn -DskipTests package` | Wave 5 adds `extension run --enable <id> <command>` for explicit human-invoked extension commands. |
 | `2026-06-09-ai4j-extension-scaffold-author-experience-wave-1-50e4b9e6` | in_progress | coordinator | `mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test` passed with 21 tests; broader checks pending | Wave 11 strengthens generated scaffold README author contract and docs cookbook without changing extension runtime semantics. |
+| `2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6` | review | coordinator | targeted 61 tests; broad `mvn -pl ai4j-cli -am -DskipTests=false test` with CLI 298 tests | Adds `/sandbox status|enable daytona|attach daytona|disable` and runtime binding for shell exec through `SandboxSession`; live Daytona rerun skipped because env credential absent. |
 
 ## 验证
 

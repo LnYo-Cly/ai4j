@@ -22,6 +22,7 @@ import io.github.lnyocly.ai4j.agent.team.AgentTeamMemberResult;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamOptions;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamPlan;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTask;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.CodingAgent;
@@ -97,10 +98,19 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
                                        TerminalIO terminal,
                                        TuiInteractionState interactionState,
                                        Collection<String> pausedMcpServers) throws Exception {
+        return prepare(options, terminal, interactionState, pausedMcpServers, null);
+    }
+
+    @Override
+    public PreparedCodingAgent prepare(CodeCommandOptions options,
+                                       TerminalIO terminal,
+                                       TuiInteractionState interactionState,
+                                       Collection<String> pausedMcpServers,
+                                       SandboxSession sandboxSession) throws Exception {
         CliProtocol protocol = resolveProtocol(options);
         AgentModelClient modelClient = createModelClient(options, protocol);
         CliMcpRuntimeManager mcpRuntimeManager = prepareMcpRuntime(options, pausedMcpServers, terminal);
-        CodingAgent agent = buildAgent(options, terminal, interactionState, modelClient, mcpRuntimeManager);
+        CodingAgent agent = buildAgent(options, terminal, interactionState, modelClient, mcpRuntimeManager, sandboxSession);
         return new PreparedCodingAgent(agent, protocol, mcpRuntimeManager);
     }
 
@@ -163,7 +173,8 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
                                    TerminalIO terminal,
                                    TuiInteractionState interactionState,
                                    AgentModelClient modelClient,
-                                   CliMcpRuntimeManager mcpRuntimeManager) {
+                                   CliMcpRuntimeManager mcpRuntimeManager,
+                                   SandboxSession sandboxSession) {
         String workspace = options == null ? "." : defaultIfBlank(options.getWorkspace(), ".");
         CliWorkspaceConfig workspaceConfig = loadWorkspaceConfig(workspace);
         WorkspaceContext workspaceContext = buildWorkspaceContext(options, workspaceConfig);
@@ -186,6 +197,9 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
                 .store(Boolean.FALSE)
                 .agentOptions(agentOptions);
 
+        if (sandboxSession != null) {
+            builder.sandbox(sandboxSession);
+        }
         attachMcpRuntime(builder, mcpRuntimeManager);
         attachExperimentalAgents(builder, options, workspaceConfig, modelClient, workspaceContext, codingOptions, agentOptions);
         return builder.build();

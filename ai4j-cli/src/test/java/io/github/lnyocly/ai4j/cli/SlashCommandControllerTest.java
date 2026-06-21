@@ -35,6 +35,7 @@ public class SlashCommandControllerTest {
         assertContainsValue(candidates, "/cmd ");
         assertContainsValue(candidates, "/theme ");
         assertContainsValue(candidates, "/stream ");
+        assertContainsValue(candidates, "/sandbox ");
         assertContainsValue(candidates, "/mcp ");
         assertContainsValue(candidates, "/providers");
         assertContainsValue(candidates, "/provider ");
@@ -91,6 +92,85 @@ public class SlashCommandControllerTest {
 
         assertContainsValue(candidates, "on");
         assertContainsValue(candidates, "off");
+    }
+
+    @Test
+    public void suggestExactSandboxCommandKeepsRootCandidateWithoutTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-exact");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox", "/sandbox".length());
+
+        assertContainsValue(candidates, "/sandbox ");
+        assertTrue(!containsValue(candidates, "/sandbox status"));
+        assertTrue(!containsValue(candidates, "/sandbox enable "));
+    }
+
+    @Test
+    public void suggestSandboxActionsAfterTrailingSpace() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-actions");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox ", "/sandbox ".length());
+
+        assertContainsValue(candidates, "status");
+        assertContainsValue(candidates, "enable ");
+        assertContainsValue(candidates, "attach ");
+        assertContainsValue(candidates, "disable");
+    }
+
+    @Test
+    public void suggestSandboxProviderAfterEnableOrAttachAction() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-provider");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> enableCandidates = controller.suggest("/sandbox enable ", "/sandbox enable ".length());
+        List<Candidate> attachCandidates = controller.suggest("/sandbox attach ", "/sandbox attach ".length());
+
+        assertContainsValue(enableCandidates, "daytona ");
+        assertContainsValue(attachCandidates, "daytona ");
+    }
+
+    @Test
+    public void suggestSandboxOptionsAfterEnableProvider() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-enable-options");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> candidates = controller.suggest("/sandbox enable daytona ", "/sandbox enable daytona ".length());
+
+        assertContainsValue(candidates, "--workspace ");
+        assertContainsValue(candidates, "--image ");
+        assertContainsValue(candidates, "--delete-on-close ");
+        assertContainsValue(candidates, "--no-create-if-missing ");
+    }
+
+    @Test
+    public void suggestSandboxOptionsAfterAttachSandboxId() throws Exception {
+        Path workspace = Files.createTempDirectory("ai4j-cli-slash-sandbox-attach-options");
+        SlashCommandController controller = new SlashCommandController(
+                new CustomCommandRegistry(workspace),
+                new TuiConfigManager(workspace)
+        );
+
+        List<Candidate> idCandidates = controller.suggest("/sandbox attach daytona sbx_123", "/sandbox attach daytona sbx_123".length());
+        List<Candidate> optionCandidates = controller.suggest("/sandbox attach daytona sbx_123 ", "/sandbox attach daytona sbx_123 ".length());
+
+        assertTrue("Sandbox id is free text and should not be completed", idCandidates.isEmpty());
+        assertContainsValue(optionCandidates, "--workspace ");
+        assertContainsValue(optionCandidates, "--delete-on-close ");
+        assertContainsValue(optionCandidates, "--create-if-missing ");
     }
 
     @Test

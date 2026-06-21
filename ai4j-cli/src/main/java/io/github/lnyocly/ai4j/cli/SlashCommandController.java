@@ -57,6 +57,7 @@ public final class SlashCommandController implements Completer {
             new SlashCommandSpec("/team", "Show the current agent team board", false),
             new SlashCommandSpec("/compacts", "Show recent compact history", true),
             new SlashCommandSpec("/stream", "Show or switch model request streaming", true),
+            new SlashCommandSpec("/sandbox", "Show or manage sandbox execution", true),
             new SlashCommandSpec("/mcp", "Show or manage MCP services", true),
             new SlashCommandSpec("/processes", "List active and restored process metadata", false),
             new SlashCommandSpec("/process", "Inspect or control a process", true),
@@ -81,6 +82,19 @@ public final class SlashCommandController implements Completer {
     private static final List<String> PROCESS_FOLLOW_LIMITS = Arrays.asList("200", "400", "800", "1600");
     private static final List<String> PROCESS_LOG_LIMITS = Arrays.asList("200", "480", "800", "1600");
     private static final List<String> STREAM_OPTIONS = Arrays.asList("on", "off");
+    private static final List<String> SANDBOX_ACTIONS = Arrays.asList("status", "enable", "attach", "disable");
+    private static final List<String> SANDBOX_PROVIDERS = Arrays.asList("daytona");
+    private static final List<String> SANDBOX_OPTIONS = Arrays.asList(
+            "--workspace",
+            "--sandbox-id",
+            "--sandbox-name",
+            "--image",
+            "--snapshot",
+            "--delete-on-close",
+            "--keep-on-close",
+            "--create-if-missing",
+            "--no-create-if-missing"
+    );
     private static final List<String> EXPERIMENTAL_FEATURES = Arrays.asList("subagent", "agent-teams");
     private static final List<String> TEAM_ACTIONS = Arrays.asList("list", "status", "messages", "resume");
     private static final List<String> TEAM_MESSAGE_LIMITS = Arrays.asList("10", "20", "50", "100");
@@ -136,6 +150,7 @@ public final class SlashCommandController implements Completer {
             "/team",
             "/compacts",
             "/stream",
+            "/sandbox",
             "/mcp",
             "/processes",
             "/checkpoint",
@@ -451,6 +466,9 @@ public final class SlashCommandController implements Completer {
         if ("/stream".equalsIgnoreCase(command)) {
             return streamCandidates(tokenFragment(tokens, endsWithSpace));
         }
+        if ("/sandbox".equalsIgnoreCase(command)) {
+            return sandboxCandidates(tokens, endsWithSpace);
+        }
         if ("/experimental".equalsIgnoreCase(command)) {
             return experimentalCandidates(tokens, endsWithSpace);
         }
@@ -500,6 +518,9 @@ public final class SlashCommandController implements Completer {
         }
         if ("/stream".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", streamCandidates(""));
+        }
+        if ("/sandbox".equalsIgnoreCase(command)) {
+            return prefixCandidates(command + " ", sandboxActionCandidates(""));
         }
         if ("/experimental".equalsIgnoreCase(command)) {
             return prefixCandidates(command + " ", experimentalFeatureCandidates(""));
@@ -992,6 +1013,143 @@ public final class SlashCommandController implements Completer {
             ));
         }
         return candidates;
+    }
+
+    private List<Candidate> sandboxCandidates(List<String> tokens, boolean endsWithSpace) {
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 1) {
+            return sandboxActionCandidates("");
+        }
+        if (tokens.size() == 2 && !endsWithSpace) {
+            return sandboxActionCandidates(tokens.get(1));
+        }
+        if (tokens.size() == 2 && endsWithSpace) {
+            String action = tokens.get(1);
+            if ("status".equalsIgnoreCase(action) || "disable".equalsIgnoreCase(action)) {
+                return Collections.emptyList();
+            }
+            if ("enable".equalsIgnoreCase(action) || "attach".equalsIgnoreCase(action)) {
+                return sandboxProviderCandidates("");
+            }
+            return Collections.emptyList();
+        }
+
+        String action = tokens.get(1);
+        if (!"enable".equalsIgnoreCase(action) && !"attach".equalsIgnoreCase(action)) {
+            return Collections.emptyList();
+        }
+        if (tokens.size() == 3 && !endsWithSpace) {
+            return sandboxProviderCandidates(tokens.get(2));
+        }
+        if (tokens.size() == 3 && endsWithSpace) {
+            if ("enable".equalsIgnoreCase(action)) {
+                return sandboxOptionCandidates("");
+            }
+            // attach requires the sandbox id/name as free text before options.
+            return Collections.emptyList();
+        }
+        if (tokens.size() >= 4) {
+            if ("attach".equalsIgnoreCase(action) && tokens.size() == 4 && !endsWithSpace) {
+                return Collections.emptyList();
+            }
+            return sandboxOptionCandidates(tokenFragment(tokens, endsWithSpace));
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Candidate> sandboxActionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String action : SANDBOX_ACTIONS) {
+            if (!matches(action, partial)) {
+                continue;
+            }
+            boolean appendSpace = "enable".equalsIgnoreCase(action) || "attach".equalsIgnoreCase(action);
+            candidates.add(commandCandidate(
+                    action,
+                    action,
+                    "Sandbox",
+                    describeSandboxAction(action),
+                    appendSpace
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> sandboxProviderCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String provider : SANDBOX_PROVIDERS) {
+            if (!matches(provider, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(
+                    provider,
+                    provider,
+                    "Sandbox",
+                    "Use " + provider + " sandbox provider",
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private List<Candidate> sandboxOptionCandidates(String partial) {
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        for (String option : SANDBOX_OPTIONS) {
+            if (!matches(option, partial)) {
+                continue;
+            }
+            candidates.add(commandCandidate(
+                    option,
+                    option,
+                    "Sandbox",
+                    describeSandboxOption(option),
+                    true
+            ));
+        }
+        return candidates;
+    }
+
+    private String describeSandboxAction(String action) {
+        if ("status".equalsIgnoreCase(action)) {
+            return "Show active sandbox binding";
+        }
+        if ("enable".equalsIgnoreCase(action)) {
+            return "Create or attach a sandbox and route agent shell exec through it";
+        }
+        if ("attach".equalsIgnoreCase(action)) {
+            return "Attach an existing sandbox by id or name";
+        }
+        if ("disable".equalsIgnoreCase(action)) {
+            return "Return agent shell exec to direct host";
+        }
+        return "Sandbox command";
+    }
+
+    private String describeSandboxOption(String option) {
+        if ("--workspace".equalsIgnoreCase(option) || "--sandbox-name".equalsIgnoreCase(option)) {
+            return "Set Daytona sandbox name/workspace";
+        }
+        if ("--sandbox-id".equalsIgnoreCase(option)) {
+            return "Attach or target a Daytona sandbox id";
+        }
+        if ("--image".equalsIgnoreCase(option) || "--snapshot".equalsIgnoreCase(option)) {
+            return "Use a Daytona snapshot/image";
+        }
+        if ("--delete-on-close".equalsIgnoreCase(option)) {
+            return "Delete the sandbox when the CLI closes or disables it";
+        }
+        if ("--keep-on-close".equalsIgnoreCase(option)) {
+            return "Keep the sandbox after the CLI closes or disables it";
+        }
+        if ("--create-if-missing".equalsIgnoreCase(option)) {
+            return "Create the sandbox when attach target is missing";
+        }
+        if ("--no-create-if-missing".equalsIgnoreCase(option)) {
+            return "Fail instead of creating a missing sandbox";
+        }
+        return "Sandbox option";
     }
 
     private List<Candidate> experimentalCandidates(List<String> tokens, boolean endsWithSpace) {

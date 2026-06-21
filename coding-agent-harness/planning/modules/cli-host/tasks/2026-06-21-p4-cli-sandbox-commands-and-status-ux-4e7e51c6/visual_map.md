@@ -24,9 +24,9 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 --message "<summary>"` | agent | missing | [risk] | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 --confirm 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6` | human | missing | Agent 不能代办人工确认 | human |
+| EXEC-01 | execution | INIT-01 | done | 100 | CLI /sandbox 实现、completion、runtime rebind、targeted/broad tests、回归治理 | diff、targeted Maven、broad Maven、RG-004/SRB-059 | `harness task-phase 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | review | 100 | Agent Review Submission 已写入 `review.md` | `review.md`、`progress.md`、`lesson_candidates.md`、`walkthrough.md` | `harness task-review 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 --message "P4 CLI sandbox UX ready for review"` | agent | present | none | coordinator |
+| GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 --confirm 2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6` | human | partial | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
@@ -48,3 +48,25 @@ flowchart LR
 - state：状态机或生命周期。
 - topology：repo、服务、worker、worktree 拓扑。
 - decision：方案分叉和决策树。
+
+
+## Runtime Binding Map
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant CLI as ai4j-cli /sandbox
+  participant Resolver as CliSandboxSessionResolver
+  participant Daytona as DaytonaSandboxProvider
+  participant Factory as CodingCliAgentFactory
+  participant Coding as CodingAgentBuilder
+
+  User->>CLI: /sandbox enable daytona
+  CLI->>Resolver: open(command, env)
+  Resolver->>Daytona: createSession(spec)
+  Daytona-->>Resolver: SandboxSession
+  Resolver-->>CLI: session + non-secret binding
+  CLI->>Factory: prepare(options, terminal, state, pausedMcp, SandboxSession)
+  Factory->>Coding: builder.sandbox(session)
+  CLI-->>User: sandbox enabled + shellExec=remote-sandbox
+```
