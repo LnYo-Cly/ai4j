@@ -442,12 +442,12 @@ sandbox:
 
 ```text
 sandbox:
-- mode=attached
+- mode=attached-live
 - provider=cubesandbox
 - session=sbx_123
 - workspace=project-a
-- runtime=metadata-only
-- routing=bash exec is routed to SandboxSession and fails loudly until a provider bridge is available
+- runtime=live-session
+- routing=bash exec is routed to live SandboxSession
 - boundary=this command does not create or authenticate a sandbox provider
 ```
 
@@ -455,7 +455,7 @@ sandbox:
 
 ### `/sandbox attach`
 
-把当前 CLI session 绑定到一个外部 sandbox session 摘要，并立即重建当前 coding runtime。
+把当前 CLI session 绑定到一个外部 sandbox session，并立即重建当前 coding runtime。
 
 ```text
 /sandbox attach <providerId> <sessionId> [workspaceId]
@@ -469,9 +469,10 @@ sandbox:
 
 说明：
 
-- 当前实现是 **metadata-only attach**，只记录 provider/session/workspace 等非敏感信息。
-- 它不会创建真实 VM / 容器 / microVM，也不会认证 provider。
-- 没有真实 provider bridge 时，后续 `bash action=exec` 会明确失败，并提示 `Command was not executed locally`。
+- `cubesandbox` / `cube` 会通过 `CubeSandboxProvider.connect(sessionId, spec)` 连接已有 CubeSandbox session，状态显示为 `attached-live`。
+- 其它 provider 仍是 `attached-metadata-only`：只记录 provider/session/workspace 等非敏感信息。
+- 它不会创建真实 VM / 容器 / microVM，也不会认证 provider；CubeAPI、template、api key 和 session 生命周期由外部系统准备。
+- metadata-only provider 下，后续 `bash action=exec` 会明确失败，并提示 `Command was not executed locally`。
 - 这避免了“用户以为进入 sandbox，但命令实际在宿主机执行”的误导。
 
 ---

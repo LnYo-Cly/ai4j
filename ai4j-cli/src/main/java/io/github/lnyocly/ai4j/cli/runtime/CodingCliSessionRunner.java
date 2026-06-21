@@ -32,6 +32,8 @@ import io.github.lnyocly.ai4j.cli.render.CodexStyleBlockFormatter;
 import io.github.lnyocly.ai4j.cli.render.PatchSummaryFormatter;
 import io.github.lnyocly.ai4j.cli.sandbox.CliAttachedSandboxSession;
 import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxBinding;
+import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxSessionResolver;
+import io.github.lnyocly.ai4j.cli.sandbox.DefaultCliSandboxSessionResolver;
 import io.github.lnyocly.ai4j.cli.render.TranscriptPrinter;
 import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
@@ -133,6 +135,7 @@ public class CodingCliSessionRunner {
     private final TuiRenderer tuiRenderer;
     private final TuiRuntime tuiRuntime;
     private final CodingCliAgentFactory agentFactory;
+    private final CliSandboxSessionResolver sandboxSessionResolver;
     private final Map<String, String> env;
     private final Properties properties;
     private TuiConfig tuiConfig;
@@ -162,6 +165,7 @@ public class CodingCliSessionRunner {
     private CliMcpRuntimeManager mcpRuntimeManager;
     private boolean streamEnabled = false;
     private CliSandboxBinding sandboxBinding;
+    private SandboxSession sandboxSession;
     private volatile ActiveTuiTurn activeTuiTurn;
     private volatile Thread activeMainBufferTurnThread;
     private volatile String activeMainBufferTurnId;
@@ -213,7 +217,23 @@ public class CodingCliSessionRunner {
                                   Map<String, String> env,
                                   Properties properties) {
         this(agent, protocol, options, terminal, sessionManager, interactionState,
-                tuiFactory, slashCommandController, agentFactory, env, properties, true);
+                tuiFactory, slashCommandController, agentFactory, null, env, properties, true);
+    }
+
+    public CodingCliSessionRunner(CodingAgent agent,
+                                  CliProtocol protocol,
+                                  CodeCommandOptions options,
+                                  TerminalIO terminal,
+                                  CodingSessionManager sessionManager,
+                                  TuiInteractionState interactionState,
+                                  CodingCliTuiFactory tuiFactory,
+                                  SlashCommandController slashCommandController,
+                                  CodingCliAgentFactory agentFactory,
+                                  CliSandboxSessionResolver sandboxSessionResolver,
+                                  Map<String, String> env,
+                                  Properties properties) {
+        this(agent, protocol, options, terminal, sessionManager, interactionState,
+                tuiFactory, slashCommandController, agentFactory, sandboxSessionResolver, env, properties, true);
     }
 
     private CodingCliSessionRunner(CodingAgent agent,
@@ -225,6 +245,7 @@ public class CodingCliSessionRunner {
                                    CodingCliTuiFactory tuiFactory,
                                    SlashCommandController slashCommandController,
                                    CodingCliAgentFactory agentFactory,
+                                   CliSandboxSessionResolver sandboxSessionResolver,
                                    Map<String, String> env,
                                    Properties properties,
                                    boolean unused) {
@@ -240,6 +261,7 @@ public class CodingCliSessionRunner {
         this.customCommandRegistry = new CustomCommandRegistry(java.nio.file.Paths.get(options.getWorkspace()));
         this.interactionState = interactionState == null ? new TuiInteractionState() : interactionState;
         this.agentFactory = agentFactory;
+        this.sandboxSessionResolver = sandboxSessionResolver == null ? new DefaultCliSandboxSessionResolver() : sandboxSessionResolver;
         this.env = env == null ? Collections.<String, String>emptyMap() : new LinkedHashMap<String, String>(env);
         this.properties = properties == null ? new Properties() : properties;
         attachCodingTaskEventBridge();
@@ -353,6 +375,9 @@ public class CodingCliSessionRunner {
             detachCodingTaskEventBridge();
             closeQuietly(activeSession);
             closeMcpRuntimeQuietly(mcpRuntimeManager);
+            closeSandboxSessionQuietly(sandboxSession, null);
+            sandboxSession = null;
+            sandboxBinding = null;
             persistSession(activeSession, false);
         }
     }
@@ -998,7 +1023,7 @@ public class CodingCliSessionRunner {
         builder.append("  /mcp retry <name>  Reconnect an enabled MCP service\n");
         builder.append("  /mcp remove <name>  Delete a global MCP service\n");
         builder.append("  /sandbox [status]  Show direct-host or attached sandbox binding\n");
-        builder.append("  /sandbox attach <providerId> <sessionId> [workspaceId]  Attach metadata-only sandbox binding for this CLI session\n");
+        builder.append("  /sandbox attach <providerId> <sessionId> [workspaceId]  Attach sandbox binding; cubesandbox/cube resolves to a live session\n");
         builder.append("  /sandbox disable  Clear sandbox binding and return to direct-host\n");
         builder.append("  /commands  List available custom commands\n");
         builder.append("  /palette  Alias of /commands\n");
@@ -1405,15 +1430,27 @@ public class CodingCliSessionRunner {
                 emitError(safeMessage(ex));
                 return session;
             }
+            SandboxSession nextSandboxSession;
+            try {
+                nextSandboxSession = sandboxSessionResolver.resolve(nextBinding);
+            } catch (Exception ex) {
+                emitError("Failed to resolve sandbox session: " + safeMessage(ex));
+                return session;
+            }
             CliSandboxBinding previousBinding = this.sandboxBinding;
+            SandboxSession previousSandboxSession = this.sandboxSession;
             this.sandboxBinding = nextBinding;
+            this.sandboxSession = nextSandboxSession;
             ManagedCodingSession rebound;
             try {
                 rebound = switchSessionRuntime(session, options);
             } catch (Exception ex) {
                 this.sandboxBinding = previousBinding;
+                this.sandboxSession = previousSandboxSession;
+                closeSandboxSessionQuietly(nextSandboxSession, previousSandboxSession);
                 throw ex;
             }
+            closeSandboxSessionQuietly(previousSandboxSession, nextSandboxSession);
             emitOutput(renderSandboxOutput());
             persistSession(rebound, false);
             return rebound;
@@ -1428,14 +1465,18 @@ public class CodingCliSessionRunner {
                 return session;
             }
             CliSandboxBinding previousBinding = this.sandboxBinding;
+            SandboxSession previousSandboxSession = this.sandboxSession;
             this.sandboxBinding = null;
+            this.sandboxSession = null;
             ManagedCodingSession rebound;
             try {
                 rebound = switchSessionRuntime(session, options);
             } catch (Exception ex) {
                 this.sandboxBinding = previousBinding;
+                this.sandboxSession = previousSandboxSession;
                 throw ex;
             }
+            closeSandboxSessionQuietly(previousSandboxSession, null);
             emitOutput(renderSandboxOutput());
             persistSession(rebound, false);
             return rebound;
@@ -2101,7 +2142,7 @@ public class CodingCliSessionRunner {
     }
 
     private SandboxSession currentSandboxSession() {
-        return sandboxBinding == null ? null : CliAttachedSandboxSession.unsupported(sandboxBinding);
+        return sandboxSession;
     }
 
     private void printCommands() {
@@ -4067,7 +4108,7 @@ public class CodingCliSessionRunner {
         items.add(new TuiPaletteItem("mcp-remove", "command", "/mcp remove", "Delete a global MCP service", "/mcp remove "));
         items.add(new TuiPaletteItem("sandbox", "command", "/sandbox", "Show sandbox routing state", "/sandbox"));
         items.add(new TuiPaletteItem("sandbox-status", "command", "/sandbox status", "Show direct-host or attached sandbox binding", "/sandbox status"));
-        items.add(new TuiPaletteItem("sandbox-attach", "command", "/sandbox attach", "Attach metadata-only sandbox binding", "/sandbox attach "));
+        items.add(new TuiPaletteItem("sandbox-attach", "command", "/sandbox attach", "Attach sandbox binding; cubesandbox/cube resolves live", "/sandbox attach "));
         items.add(new TuiPaletteItem("sandbox-disable", "command", "/sandbox disable", "Return to direct-host execution", "/sandbox disable"));
         items.add(new TuiPaletteItem("commands", "command", "/commands", "List available custom commands", "/commands"));
         items.add(new TuiPaletteItem("palette", "command", "/palette", "Alias of /commands", "/palette"));
@@ -4748,6 +4789,19 @@ public class CodingCliSessionRunner {
         }
     }
 
+    private void closeSandboxSessionQuietly(SandboxSession session, SandboxSession keepSession) {
+        if (session == null || session == keepSession) {
+            return;
+        }
+        try {
+            session.close();
+        } catch (Exception ex) {
+            if (terminal != null) {
+                terminal.errorln("Failed to close sandbox session: " + ex.getMessage());
+            }
+        }
+    }
+
     private void refreshSessionContext(ManagedCodingSession session) {
         if (!(terminal instanceof JlineShellTerminalIO)) {
             return;
@@ -5384,14 +5438,17 @@ public class CodingCliSessionRunner {
             builder.append("- boundary=this command does not create or authenticate a sandbox provider");
             return builder.toString().trim();
         }
-        builder.append("- mode=attached\n");
+        boolean metadataOnly = isMetadataOnlySandboxSession();
+        builder.append("- mode=").append(metadataOnly ? "attached-metadata-only" : "attached-live").append('\n');
         builder.append("- provider=").append(sandboxBinding.getProviderId()).append('\n');
         builder.append("- session=").append(sandboxBinding.getSessionId()).append('\n');
         builder.append("- workspace=").append(firstNonBlank(sandboxBinding.getWorkspaceId(), "none")).append('\n');
         builder.append("- source=").append(firstNonBlank(sandboxBinding.getSource(), "cli-attach")).append('\n');
         builder.append("- attachedAt=").append(formatTimestamp(sandboxBinding.getAttachedAtEpochMs())).append('\n');
-        builder.append("- runtime=metadata-only\n");
-        builder.append("- routing=bash exec is routed to SandboxSession and fails loudly until a provider bridge is available\n");
+        builder.append("- runtime=").append(metadataOnly ? "metadata-only" : "live-session").append('\n');
+        builder.append("- routing=").append(metadataOnly
+                ? "metadata-only attach; bash exec fails loudly until a provider bridge is available"
+                : "bash exec is routed to live SandboxSession").append('\n');
         builder.append("- boundary=this command does not create or authenticate a sandbox provider");
         return builder.toString().trim();
     }
@@ -5401,15 +5458,19 @@ public class CodingCliSessionRunner {
             return "direct-host";
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("attached(")
+        builder.append(isMetadataOnlySandboxSession() ? "attached-meta(" : "attached-live(")
                 .append(sandboxBinding.getProviderId())
                 .append("/")
                 .append(sandboxBinding.getSessionId());
         if (!isBlank(sandboxBinding.getWorkspaceId())) {
             builder.append(", workspace=").append(sandboxBinding.getWorkspaceId());
         }
-        builder.append(", metadata-only)");
+        builder.append(")");
         return builder.toString();
+    }
+
+    private boolean isMetadataOnlySandboxSession() {
+        return sandboxSession == null || sandboxSession instanceof CliAttachedSandboxSession;
     }
 
     private String renderSessionOutput(ManagedCodingSession session) {
