@@ -4,7 +4,11 @@
 
 | ID | Type | Path | Summary | Produced By |
 | --- | --- | --- | --- | --- |
-| ART-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [该产物证明了什么] | coordinator |
+| ART-001 | report | TARGET:ai4j-agent/target/surefire-reports/io.github.lnyocly.agent.daytona.DaytonaSandboxProviderTest.txt | deterministic Daytona provider tests: 5 run, 0 failures, 0 errors, 0 skipped | coordinator |
+| ART-002 | report | TARGET:ai4j-agent/target/surefire-reports/io.github.lnyocly.agent.daytona.DaytonaSandboxLiveSmokeTest.txt | opt-in Daytona live smoke: 1 run, 0 failures, 0 errors, 0 skipped; sanitized report contains no secret values | coordinator |
+| ART-003 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false -Dtest=DaytonaSandboxProviderTest -DfailIfNoTests=false test` passed | coordinator |
+| ART-004 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false test` passed with extension API 25, core 103, agent 124 | coordinator |
+| ART-005 | command | TARGET:docs-site | `npm --prefix docs-site run build` passed after local ignored dependency restore | coordinator |
 
 ## 使用规则
 

@@ -8,15 +8,19 @@ Visual Map Contract: v1.0
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` / `progress.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 Agent 提交审查\nkind=gate"]
-  GATE01 --> GATE02["GATE-02 人工审查确认\nkind=gate"]
+  INIT01["INIT-01 范围与上下文
+kind=init"] --> EXEC01["EXEC-01 实现切片
+kind=execution"]
+  EXEC01 --> GATE01["GATE-01 Agent 提交审查
+kind=gate"]
+  GATE01 --> GATE02["GATE-02 人工审查确认
+kind=gate"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
@@ -24,8 +28,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 有边界的实现、文档切片和验证证据 | diff、commands、worker handoff 或 artifact path | `harness task-phase 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | Daytona provider、tests、docs、regression governance 已实现 | diff; Maven targeted/broad; docs build; live smoke report | n/a | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | review | 100 | Agent Review Submission 已写入 | `review.md`、`progress.md`、`lesson_candidates.md`、`walkthrough.md` | `harness task-review 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 --message "P2-C Daytona sandbox provider ready for review" .` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 --confirm 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

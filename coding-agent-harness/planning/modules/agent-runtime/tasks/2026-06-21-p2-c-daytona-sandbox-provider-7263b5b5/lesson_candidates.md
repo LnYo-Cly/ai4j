@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | checked-none |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none |
 | Source task | 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 |
 | Owner | coordinator |
 | Last updated | 2026-06-21 |
@@ -49,22 +49,17 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮没有接受新的可复用 harness lesson。Daytona provider 的关键经验已经记录在任务本地 `findings.md`、`review.md` 和 regression governance 中；它主要是 provider-specific implementation / verification evidence，不需要新增全局标准或 promoted lesson。
 
 ## Promotion Notes
 
-- 如果人工审查认为候选值得沉淀，把对应行标记为 `needs-promotion`，并记录目标治理位置。
-- 候选标记为 `needs-promotion` 时，必须趁源任务上下文还新鲜写出完整 task-local detail artifact，并在 `Detail Artifact` 中链接。
-- `Scope` 使用 `task`、`module` 或 `global`；module 级候选必须填写 `Module Key`。
-- 如果人工审查拒绝候选，把对应行标记为 `rejected`，并在 review decision 中保留理由。
-- `needs-promotion` 不阻止任务 closeout，但必须继续出现在维护队列和收口记录里。
-- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要写共享 Lessons 表；被接受的候选应成为 promoted lesson 详情文档。
-- 沉淀任务必须先分类 scope、检查既有 lessons 和 standards 冲突、提出目标改动，并在 apply 前报告验证证据。
+- 无候选进入 promotion。
+- 后续如果多个真实 sandbox provider 重复出现同类接入问题，再在 provider registry / sandbox provider authoring 任务中沉淀通用 lesson。
 
 ## Queue Routing
 
 | Queue | When this task enters it | Exit condition |
 | --- | --- | --- |
-| Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
+| Lessons | 不适用；当前任务级状态为 `no-candidate-accepted`。 | n/a |
 | Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
 | Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |

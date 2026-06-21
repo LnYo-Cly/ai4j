@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | Daytona provider implementation, deterministic/live test isolation, docs/governance evidence, secret hygiene |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：adversarial / security / regression / architecture
+- 范围内：`ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/daytona/**`、`ai4j-agent/src/test/java/io/github/lnyocly/agent/daytona/**`、`docs-site/docs/agent/sandbox-spi.md`、`docs-site/docs/agent/sdk-roadmap.md`、Regression SSoT / Cadence Ledger、本任务包。
+- 范围外：CLI `/sandbox` UX、ServiceLoader/provider registry、E2B/Cube/Docker provider、Daytona cancel/artifact API、远端 runner 产品化。
+- 来源材料：当前 diff、targeted/broad Maven output、docs-site build output、surefire reports、task findings/progress。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,25 +19,25 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
-| Task Key | 2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Submission ID | ARS-202606212335 |
+| Submitted At | 2026-06-21 23:35 |
+| Submitted By | Codex coordinator |
+| Task Key | MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 |
+| Materials Checklist Hash | 7263b5b5daytona |
+| Evidence Summary | Daytona targeted 5/0/0/0 pass; broad `ai4j-agent -am` pass with extension API 25, core 103, agent 124; docs-site build pass; prior live Daytona smoke 1/0/0/0 pass; no secrets in committed files |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md`; `artifacts/INDEX.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
 如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
@@ -46,64 +46,83 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
+- Verdict：no
 - 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+  - Daytona cancel/artifact API 未接入。
+  - 当前 shell 缺少 Daytona env，final pass 未复跑 live smoke；但已有同日 sanitized surefire pass，且代码改动后的 deterministic/broad/docs gate 已通过。
+  - provider registry / third-party contribution 仍需后续切片。
+- Fix loop count：2
+- 当前结论：核心 create/attach/start/execute/close 合同已由 deterministic tests 覆盖，真实可用性已有 opt-in live smoke 证据；剩余项已明确排除，不阻塞 P2-C provider 合并。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `cancel(...)` / `listArtifacts()` 是已接受 residual，不应在本轮伪造能力。
+- `DAYTONA_API_URL` 不再是 live smoke 必填项，默认 URL 行为已增加 deterministic 覆盖。
+- 当前 review 为 coordinator self-review；尝试启动独立 subagent review 时本会话 subagent 并发额度已满，未产生独立 reviewer artifact。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false -Dtest=DaytonaSandboxProviderTest -DfailIfNoTests=false test` passed with 5 Daytona tests |
+| E-002 | command | TARGET:. | `mvn -pl ai4j-agent -am -DskipTests=false test` passed with extension API 25, core 103, agent 124 |
+| E-003 | command | TARGET:docs-site | `npm --prefix docs-site run build` passed after local ignored dependency restore |
+| E-004 | report | TARGET:ai4j-agent/target/surefire-reports/io.github.lnyocly.agent.daytona.DaytonaSandboxLiveSmokeTest.txt | Daytona live smoke 1/0/0/0 pass, sanitized report contains no key/token value |
+| E-005 | diff | TARGET:ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/daytona | Provider uses env/spec config, Java 8 APIs, no CLI/starter leakage |
+| E-006 | diff | TARGET:docs/05-TEST-QA/Regression-SSoT.md; TARGET:docs/05-TEST-QA/Cadence-Ledger.md | RG-002/LV-004/SRB-058 updated for Daytona provider and opt-in live smoke |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| Daytona cancel API 未实现 | coordinator | yes | 后续 provider hardening / CLI `/sandbox` 任务 |
+| Daytona artifact/file API 未实现 | coordinator | yes | 后续 artifact collection 任务 |
+| Provider registry/插件贡献 provider 未实现 | coordinator | yes | 后续 extension/provider registry 任务 |
+| Final pass 未复跑 live smoke | coordinator | yes | 用户重新设置 `DAYTONA_API_KEY` 后可运行 `mvn -pl ai4j-agent -am -P live-provider-tests -Dtest=DaytonaSandboxLiveSmokeTest -DskipTests=false -DfailIfNoTests=false test` |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | Agent review packet 已补齐，open material findings 为 0；等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需任务材料、progress、review、walkthrough、lesson decision 均已补齐。 | n/a |
+| Blocked | no | 无 open P0/P1/P2 blocker；live rerun 缺 env 已作为 opt-in residual 记录。 | n/a |
+| Lessons | no | 本任务无可复用 lesson candidate，已记录 no-candidate decision。 | n/a |
+| Confirmed / Finalized | no | 尚未收到本任务的人工作业确认。 | closeout、ledger 和 lesson routing 完成后进入 finalized。 |
+| Soft-deleted / Superseded | no | 任务仍为当前 P2-C 切片。 | n/a |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新 `task_plan.md`
+- Progress：对应 2026-06-21 23:28 / 23:31 条目
+- 发现记录：已更新 `findings.md`
+- Regression SSoT：已新增/调整 RG-002、LV-004；Cadence Ledger 已新增 SRB-058
+- Lessons：checked-none: Daytona-specific provider implementation，无新的跨任务流程/标准 lesson
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+信心来自 deterministic local server tests 覆盖 create/attach/start/execute/delete/config merge，broad `ai4j-agent -am` 证明未破坏 agent runtime baseline，docs-site build 证明用户文档可生成，LV-004 记录同日真实 Daytona create/execute/close smoke pass。剩余 cancel/artifact/registry/CLI UX 均已明确为后续切片，不阻塞 P2-C provider。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202606212335 |
+| Submitted At | 2026-06-21 23:35 |
+| Submitted By | agent |
+| Task Key | MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 |
+| Materials Checklist Hash | 7263b5b5daytona |
+| Evidence Summary | P2-C Daytona sandbox provider ready for review: deterministic Daytona provider tests, broad agent runtime regression, docs-site build, regression governance SRB-058/LV-004, and sanitized Daytona live smoke evidence are recorded. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 |

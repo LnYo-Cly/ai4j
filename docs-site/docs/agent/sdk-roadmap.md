@@ -251,9 +251,9 @@ Team Blueprint、Workflow Blueprint、FlowGram 导出可以后置。
 | 本地 permission sandbox | 类似 CLI 的文件写入、网络、审批限制，不一定是 VM |
 | 真实远端 sandbox | 云端 VM / 容器 / microVM，可安装依赖、运行项目、打开浏览器、保存 artifact |
 
-AI4J 更应该先做抽象，不应该官方维护一堆具体 provider。
+AI4J 更应该先做抽象，不应该官方维护一堆具体 provider。当前路线是：先有稳定 SPI，再保留少量官方验证过的真实 provider。Daytona 已作为 P2-C 的首个真实 provider 落地；其他 provider 不应挤进核心概念。
 
-P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 session snapshot/store/event log 能保留非敏感 sandbox 摘要。P2-A 最小合同包括：
+P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 session snapshot/store/event log 能保留非敏感 sandbox 摘要；P2-C 已提供 `DaytonaSandboxProvider`。P2-A 最小合同包括：
 
 - `SandboxProvider`
 - `SandboxSession`
@@ -272,7 +272,7 @@ P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 s
 - file / shell / git / browser / project run 等执行型工具自动感知 sandbox。
 - 无 sandbox 时保持本地执行。
 - 有 sandbox 时进入 sandbox 执行。
-- 具体 CubeSandbox / Docker / E2B / K8s / 公司内部沙箱由插件或业务方实现。
+- Daytona 作为官方首个真实 provider 可以直接试用；CubeSandbox / Docker / E2B / K8s / 公司内部沙箱仍建议通过插件、业务方或独立 provider 包接入。
 
 ## 6. P3：`ai4j-coding` 接入 sandbox
 
@@ -367,13 +367,14 @@ Runner 职责包括：
 | 6 | P1-C CLI `run <agent.yaml>` | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-cli -am -DskipTests=false test` |
 | 7 | P2-A/P2-B Sandbox SPI + AgentSession binding | `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-coding -am -DskipTests=false test` |
-| 9 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
-| 10 | P5 Runner Decision | contract tests after module decision |
+| 9 | P2-C Daytona SandboxProvider | `mvn -pl ai4j-agent -am "-Dtest=DaytonaSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test`；live smoke 用 `-P live-provider-tests` 单独显式运行 |
+| 10 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
+| 11 | P5 Runner Decision | contract tests after module decision |
 
 ## 10. 哪些事现在不要做
 
 - 不要一次性新增 `ai4j-agent-runner` 模块。
-- 不要先接真实云沙箱 provider。
+- 不要把真实云沙箱 provider 的 token、租户、workspace 私有路径写进 Blueprint、文档示例、测试 fixture 或日志。
 - 不要把 `ai4j-coding` 的所有 compact/checkpoint 逻辑直接搬到 `ai4j-agent`。
 - 不要在文档里写死某个 OpenAI-compatible 中转平台名称作为 SDK 概念。
 - 不要把 provider token 写进配置示例、测试 fixture 或文档。

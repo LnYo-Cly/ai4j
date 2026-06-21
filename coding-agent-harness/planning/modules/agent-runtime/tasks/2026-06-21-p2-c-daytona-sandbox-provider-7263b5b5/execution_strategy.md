@@ -6,65 +6,58 @@
 
 | Role | Status | Permission | Authorized By | Authorized At | Scope | Worktree / Branch | Reuse |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| reviewer subagent | allowed by default | read-only | harness task policy | task creation | current task review | n/a | allowed within this task |
-| worker subagent | not authorized | write only after user approval | pending | pending | pending | pending | allowed only within approved task/scope |
+| reviewer subagent | allowed by task policy | read-only | harness task policy / prior user approval for subagents when useful | task creation + conversation context | Daytona provider code/docs/governance review | n/a | allowed within this task |
+| worker subagent | not authorized | write not used in this task | coordinator | 2026-06-21 | no worker write scope | current checkout only | not used in final pass |
 
 ## Subagent Delegation Decision
 
-任务开始时，coordinator 必须根据用户目标主动做这个判断，即使用户完全没有提到 subagent。
-不要假设用户知道 subagent 或 worker 是什么。如果分工有帮助，用白话说明收益，并向用户申请一次授权。
-可以直接对用户说 subagent 或 worker subagent；关键规则是 agent 不能等用户主动提出 subagent。
-如果任务已经明显拆成互不重叠的独立切片，implementation 前就应判断为 `ask-user`。如果还不知道精确文件路径，先确认路径，然后立刻申请独立执行助手授权。
-
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | attempted-but-unavailable | A read-only review would have been useful for the Daytona provider/security boundary, but current Codex subagent/thread concurrency limit was reached. | Use coordinator adversarial self-review, record limitation in `review.md`, keep evidence depth through tests/docs/harness. |
+| Would a worker subagent materially help? | no | Remaining work after takeover was integration/docs/governance/final verification in shared files; parallel writes would increase conflict risk. | Coordinator owns final integration. |
 
 ## User Authorization Decision
 
-如果上方 worker 决策是 `ask-user`，implementation 必须暂停，直到这里记录用户答案。
-已解决状态只能是 `authorized`、`denied` 或 `not-needed`。选择 `ask-user` 后不得继续保持 `pending`。
-
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-06-21 | final integration/docs/governance | current branch `docs/agent-final-roadmap-record` | User had generally allowed subagents, but no write worker was needed for this narrow final pass. |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
-| 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 主执行者 | coordinator | coordinator 负责编排实现整合、共享治理文件、最终验证和提交。 |
+| Subagent 模式 | reviewer attempted, worker not used | reviewer 因并发额度不可用；worker 不适合接管共享收口文件。 |
+| 审查模型 | adversarial self-review + executable evidence | 没有独立 reviewer artifact，因此通过 targeted/broad/docs/live-smoke evidence 加强。 |
+| Worktree 策略 | same checkout | 当前任务在已有 agent-roadmap branch 上连续收口；无并行 worker 写入。 |
+| 冲突控制 | coordinator owns shared files | Regression SSoT、Cadence Ledger、docs-site、task package 由 coordinator 统一更新。 |
+| 证据深度 | L1 + L2 + L3 opt-in | RG-002 targeted/broad，RG-008 docs build，LV-004 prior Daytona live smoke。 |
 
 ## 子代理 / Worker 合同
 
-如使用 subagent 或 worker，在这里写清楚输入包、写入范围、handoff 格式和最终集成 owner。
-
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| reviewer subagent | current Daytona diff and task context | read-only | no output; spawn failed due thread limit | coordinator |
+| worker | n/a | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | `git diff --check`; secret regex scan | `progress.md` / final summary | no whitespace errors; no actual Daytona/E2B token values |
+| L1 | `mvn -pl ai4j-agent -am -DskipTests=false -Dtest=DaytonaSandboxProviderTest -DfailIfNoTests=false test` | `progress.md`; `artifacts/INDEX.md` | 5 Daytona deterministic tests pass |
+| L1 | `mvn -pl ai4j-agent -am -DskipTests=false test` | `progress.md`; Regression SSoT | extension API/core/agent baseline pass |
+| L2 | `npm --prefix docs-site run build` | `progress.md`; Cadence Ledger | docs-site static build pass |
+| L3 | `DaytonaSandboxLiveSmokeTest` under `-P live-provider-tests` | `progress.md`; `artifacts/INDEX.md`; LV-004 | real Daytona create/execute/close smoke pass with sanitized evidence |
+| Harness | `npx --yes coding-agent-harness status --json .` | `progress.md` | no validation failures; dirty-state warning acceptable before commit |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
-- reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
-- 环境无法提供关键证据，继续执行会变成猜测。
+- Daytona API/toolbox 字段与 local deterministic 或 live smoke evidence 冲突。
+- 需要把 API key 写入 fixture、docs 或 command log 才能继续。
+- `deleteOnClose` 行为无法用 local fake 或 live evidence 解释清楚。
+- RG-002 broad baseline 失败且不是无关环境问题。
+- docs-site build failure 不是本地 ignored dependency 缺失，而是内容/路由错误。
 
 ## Module Preset Strategy
 

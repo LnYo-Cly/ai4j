@@ -8,7 +8,7 @@ sidebar_position: 9
 
 > Agent 已经决定要执行 shell、文件、浏览器或项目命令时，宿主如何把这次执行交给一个真实的隔离环境，并拿回 stdout、stderr、artifact 和事件？
 
-P2-A 只提供 Java 8 SPI 和数据模型，不绑定任何具体云厂商、容器平台或虚拟机实现。你可以把它接到 CubeSandbox、Docker/K8s、E2B、公司内部 VM/microVM 或自己的远端执行平台。
+P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；P2-C 已提供首个真实 provider：Daytona。你仍然可以把同一套 SPI 接到 CubeSandbox、Docker/K8s、E2B、公司内部 VM/microVM 或自己的远端执行平台。
 
 ## 1. 它不是什么
 
@@ -219,7 +219,7 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 ### AI4J 会官方内置很多 provider 吗？
 
-不建议。更稳的路径是：AI4J 提供小而稳定的 SPI，官方最多提供 fake/demo provider；第三方或业务团队自己接实际平台。
+不会内置一堆 provider。更稳的路径是：AI4J 提供小而稳定的 SPI，并保留少量官方验证过的真实 provider。Daytona 是首个官方真实 provider；E2B、CubeSandbox、Docker/K8s、内部平台等可以继续由插件、业务方或后续独立任务接入。
 
 ### 每个用户应该一个 sandbox，还是共享一个？
 
@@ -229,11 +229,104 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 不能。sandbox 降低执行环境风险，permission policy 管控“是否允许执行”。两者应该叠加，而不是互相替代。
 
-## 11. 下一步
+
+## 11. P2-C：Daytona provider
+
+P2-C 在通用 SPI 之上新增了一个真实可用的 Daytona 接入：
+
+```text
+io.github.lnyocly.ai4j.agent.sandbox.daytona
+```
+
+核心类：
+
+| 类型 | 作用 |
+| --- | --- |
+| `DaytonaSandboxProvider` | `SandboxProvider` 实现，`providerId=daytona`。 |
+| `DaytonaSandboxConfig` | 从环境变量和 `SandboxSpec.config` 读取 Daytona 连接、创建、启动和清理配置。 |
+| `DaytonaSandboxClient` | Java 8 `HttpURLConnection` 客户端，调用 Daytona API 和 toolbox execute API。 |
+| `DaytonaSandboxSession` | 把 `SandboxCommand` 转成 Daytona process execute 请求，并返回 `SandboxResult`。 |
+
+### 最小使用
+
+推荐把密钥放在环境变量里，不要写进代码、YAML 或日志：
+
+```bash
+export DAYTONA_API_KEY="..."
+# 可选；不传时使用 Daytona 默认 API URL
+export DAYTONA_API_URL="https://app.daytona.io/api"
+```
+
+Java 侧只声明 provider、workspace 和非敏感策略：
+
+```java
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.daytona.DaytonaSandboxProvider;
+
+SandboxSession session = new DaytonaSandboxProvider().createSession(
+        SandboxSpec.builder()
+                .providerId("daytona")
+                .workspaceId("ai4j-demo")
+                .config("createIfMissing", Boolean.TRUE)
+                .config("deleteOnClose", Boolean.TRUE)
+                .build());
+
+try {
+    SandboxResult result = session.execute(SandboxCommand.builder()
+            .command("printf ai4j-daytona-ok")
+            .timeoutMillis(30000L)
+            .build());
+    System.out.println(result.getExitCode());
+    System.out.println(result.getStdout());
+} finally {
+    session.close();
+}
+```
+
+### 配置来源
+
+| 配置 | 来源 | 说明 |
+| --- | --- | --- |
+| `DAYTONA_API_KEY` / `apiKey` | env / `SandboxSpec.config` | Daytona API key；生产用法优先 env。 |
+| `DAYTONA_API_URL` / `apiUrl` | env / config | Daytona API 地址；不传时使用 SDK 默认值。 |
+| `DAYTONA_TOOLBOX_PROXY_URL` / `toolboxProxyUrl` | env / config | 可选；不传时 provider 会查询 toolbox proxy URL。 |
+| `DAYTONA_ORGANIZATION_ID` / `organizationId` | env / config | 可选组织/租户 header。 |
+| `DAYTONA_TARGET` / `target` | env / config | 可选 Daytona target。 |
+| `sandboxId` | config | 附加已有 sandbox。 |
+| `sandboxName` / `name` / `workspaceId` | config / spec | 附加或创建 sandbox 的名字。 |
+| `createIfMissing` | config | attach 404 时是否创建，默认 `true`。 |
+| `deleteOnClose` | config | `close()` 时是否删除 sandbox，默认 `false`。 |
+| `snapshot` / `image` | config / spec | Daytona snapshot/image。 |
+| `env` | config | 创建 sandbox 时注入的非敏感环境变量。 |
+| `connectTimeoutMillis`、`readTimeoutMillis`、`startTimeoutMillis`、`pollIntervalMillis` | config | HTTP 和启动轮询超时。 |
+
+### 当前边界
+
+- 支持 create-or-attach、start/poll、process execute、`deleteOnClose` 清理。
+- `SandboxCommand` 的 `command`、`workingDirectory`、`stdin`、`environment`、`timeoutMillis` 会映射到 Daytona toolbox execute 请求。
+- `cancel(...)` 暂时返回 `false`；artifact 列表暂时为空，后续应随 Daytona artifact/file API 单独接入。
+- Live smoke 属于 `live-provider-opt-in`，通过 `-P live-provider-tests` 显式运行，并且只从环境变量读取密钥。
+
+本地确定性回归：
+
+```bash
+mvn -pl ai4j-agent -am "-Dtest=DaytonaSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test
+```
+
+真实 Daytona 冒烟（需要环境变量）：
+
+```bash
+mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=DaytonaSandboxLiveSmokeTest" -DskipTests=false -DfailIfNoTests=false test
+```
+
+## 12. 下一步
 
 推荐后续顺序：
 
 1. P2-B：已把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
-2. P2-C：允许第三方插件声明和贡献 `SandboxProvider`。
-3. P3：让 `ai4j-coding` 的 file/shell/git/browser/project run/test runner 根据 sandbox binding 路由执行。
+2. P2-C：已落地 Daytona 官方真实 provider，并保留 provider registry / 插件贡献 provider 的后续扩展空间。
+3. P3：已让 `ai4j-coding` 的 `bash exec` 根据 sandbox binding 路由执行；file/git/browser/project runner 仍应按边界继续拆小切片。
 4. P4：在 CLI/TUI 中显示 `/sandbox status`、provider、workspace、最近执行位置和 artifact。
