@@ -30,6 +30,7 @@
 | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 | P2-A Sandbox SPI model | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-a-sandbox-spi-model-c9c66766/task_plan.md | T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 |
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
 | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
+| T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
 
 ## 活跃任务
 
