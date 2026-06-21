@@ -1043,7 +1043,7 @@ public final class SlashCommandController implements Completer {
             return "Show direct-host or attached sandbox binding";
         }
         if ("attach".equalsIgnoreCase(action)) {
-            return "Attach metadata-only sandbox binding";
+            return "Attach sandbox binding; cubesandbox/cube resolves live";
         }
         if ("disable".equalsIgnoreCase(action)) {
             return "Return to direct-host execution";

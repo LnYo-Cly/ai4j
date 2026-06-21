@@ -111,7 +111,7 @@ mvn -pl ai4j-cli -am "-Dtest=*Memory*,*Compact*,SlashCommandControllerTest" -Dsk
 
 - 无 sandbox 时保持 direct host runtime。
 - 有 live sandbox 时执行型工具不能静默回退宿主机。
-- metadata-only attach 明确提示它只是绑定摘要。
+- CubeSandbox/cube attach 明确进入 live session；其它 metadata-only attach 明确提示它只是绑定摘要。
 - fake provider / fake runner 可以覆盖生命周期、事件流、artifact 和失败路径。
 
 ### CLI/TUI
