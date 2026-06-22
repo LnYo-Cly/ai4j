@@ -73,6 +73,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | HL-2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5 | module | agent-runtime | P2-C Daytona sandbox provider | active | none | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | pending | pending | pending | Start Daytona sandbox provider implementation. | 2026-06-21 |
 | HL-2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 | module | agent-runtime | P2-D E2B sandbox provider | planned | none | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-21 |
 | HL-2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6 | module | cli-host | P4 CLI sandbox commands and status UX | active | none | coding-agent-harness/planning/modules/cli-host/tasks/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6/task_plan.md | pending | pending | pending | Start P4 CLI sandbox commands and status UX implementation. | 2026-06-21 |
+| HL-2026-06-22-agent-observability-enhancement-57c03f6b | module | agent-runtime | Agent observability enhancement | planned | none | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-22-agent-observability-enhancement-57c03f6b/task_plan.md | pending | pending | pending | task registered by CLI | 2026-06-22 |
 
 ## Field Rules
 
