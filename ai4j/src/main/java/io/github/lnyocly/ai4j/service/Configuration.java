@@ -24,6 +24,7 @@ public class Configuration {
     }
 
     private OpenAiConfig openAiConfig;
+    private AnthropicConfig anthropicConfig;
     private ZhipuConfig zhipuConfig;
     private DeepSeekConfig deepSeekConfig;
     private MoonshotConfig moonshotConfig;

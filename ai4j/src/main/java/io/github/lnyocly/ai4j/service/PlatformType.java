@@ -12,6 +12,7 @@ import lombok.Getter;
 @Getter
 public enum PlatformType {
     OPENAI("openai"),
+    ANTHROPIC("anthropic"),
     ZHIPU("zhipu"),
     DEEPSEEK("deepseek"),
     MOONSHOT("moonshot"),

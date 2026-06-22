@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.service.factory;
 
 import io.github.lnyocly.ai4j.agentflow.AgentFlow;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicChatService;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
@@ -76,6 +77,8 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiChatService(configuration);
+            case ANTHROPIC:
+                return new AnthropicChatService(configuration);
             case ZHIPU:
                 return new ZhipuChatService(configuration);
             case DEEPSEEK:

@@ -20,14 +20,14 @@
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
 | CORE-01 | 维护核心 SDK 行为合同 | planned | none | none |
-| CORE-02 | 同步上游 provider / protocol 变化 | planned | none | CORE-01 |
+| CORE-02 | 同步上游 provider / protocol 变化 | in_progress | `tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/task_plan.md` | CORE-01 |
 | CORE-03 | 下游模块影响评估 | planned | none | CORE-01 |
 
 ## 活跃任务
 
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
-| none | planned | coordinator | none | 有模块任务后替换此行。 |
+| `2026-06-22-add-anthropic-messages-adapter-3876ee40` | review | coordinator | `tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/progress.md` | 新增手写 Anthropic Messages 适配器（已实现+单测+live 烟测通过）；CORE-02 |
 
 ## 验证
 
