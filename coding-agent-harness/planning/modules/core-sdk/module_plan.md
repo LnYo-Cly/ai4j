@@ -28,6 +28,7 @@
 | 任务 | 状态 | 负责人 | 证据 | 备注 |
 | --- | --- | --- | --- | --- |
 | `2026-06-22-add-anthropic-messages-adapter-3876ee40` | review | coordinator | `tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/progress.md` | 新增手写 Anthropic Messages 适配器（已实现+单测+live 烟测通过）；CORE-02 |
+| `2026-06-23-anthropic-native-messages-surface-5914b973` | review | coordinator | `tasks/2026-06-23-anthropic-native-messages-surface-5914b973/progress.md` | 抽 IMessagesService 一等公民 + thinking + 类型化异常；CORE-02；worktree feature/anthropic-native-surface |
 
 ## 验证
 

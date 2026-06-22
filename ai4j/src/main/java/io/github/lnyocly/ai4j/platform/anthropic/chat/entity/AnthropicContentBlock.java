@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
  * 常见 type：
  * <ul>
  *   <li>{@code text} —— 文本，使用 {@link #text}</li>
+ *   <li>{@code thinking} —— 思考内容（开 thinking 时），使用 {@link #thinking}</li>
  *   <li>{@code tool_use} —— 模型发起的工具调用，使用 {@link #id}/{@link #name}/{@link #input}</li>
  *   <li>{@code tool_result} —— 工具结果回传，使用 {@link #toolUseId}/{@link #content}</li>
  * </ul>
@@ -27,6 +28,9 @@ public class AnthropicContentBlock {
 
     /** text block 的文本内容 */
     private String text;
+
+    /** thinking block 的思考内容 */
+    private String thinking;
 
     /** tool_use block 的调用 id */
     private String id;

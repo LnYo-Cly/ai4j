@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.service.factory;
 import io.github.lnyocly.ai4j.agentflow.AgentFlow;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicChatService;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
 import io.github.lnyocly.ai4j.platform.dashscope.DashScopeChatService;
 import io.github.lnyocly.ai4j.platform.deepseek.chat.DeepSeekChatService;
@@ -101,6 +102,19 @@ public class AiService {
                 return new DoubaoChatService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public IMessagesService getMessagesService(PlatformType platform) {
+        return createMessagesService(platform);
+    }
+
+    private IMessagesService createMessagesService(PlatformType platform) {
+        switch (platform) {
+            case ANTHROPIC:
+                return new AnthropicMessagesService(configuration);
+            default:
+                throw new IllegalArgumentException("No native Messages service for platform: " + platform);
         }
     }
 

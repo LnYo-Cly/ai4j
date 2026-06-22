@@ -183,6 +183,27 @@ public class AnthropicChatServiceTest {
     }
 
     @Test
+    public void shouldMapThinkingBlockToReasoningContent() {
+        AnthropicChatService service = newService();
+        AnthropicChatCompletionResponse response = new AnthropicChatCompletionResponse();
+        response.setStopReason("end_turn");
+        List<AnthropicContentBlock> blocks = new ArrayList<AnthropicContentBlock>();
+        AnthropicContentBlock thinking = new AnthropicContentBlock();
+        thinking.setType("thinking");
+        thinking.setThinking("analyzing the question");
+        blocks.add(thinking);
+        AnthropicContentBlock text = new AnthropicContentBlock();
+        text.setType("text");
+        text.setText("answer");
+        blocks.add(text);
+        response.setContent(blocks);
+
+        ChatCompletionResponse result = service.convertChatCompletionResponse(response);
+        Assert.assertEquals("analyzing the question", result.getChoices().get(0).getMessage().getReasoningContent());
+        Assert.assertEquals("answer", result.getChoices().get(0).getMessage().getContent().getText());
+    }
+
+    @Test
     public void shouldMapToolUseResponseToToolCalls() {
         AnthropicChatService service = newService();
         AnthropicChatCompletionResponse response = new AnthropicChatCompletionResponse();
