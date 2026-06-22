@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B | Agent observability enhancement | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-22-agent-observability-enhancement-57c03f6b/task_plan.md | none |
+| T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B | Agent observability enhancement | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-22-agent-observability-enhancement-57c03f6b/task_plan.md | none |
 | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B |
 | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- |
 | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 | P0-B Memory Compact Context Projector - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57/task_plan.md | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 |
