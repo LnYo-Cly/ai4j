@@ -39,6 +39,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/model-access/chat',
             'core-sdk/model-access/responses',
             'core-sdk/model-access/chat-vs-responses',
+            'core-sdk/model-access/messages',
             'core-sdk/model-access/streaming',
             'core-sdk/model-access/multimodal',
             'core-sdk/model-access/request-and-response-conventions',
