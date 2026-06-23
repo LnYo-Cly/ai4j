@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.agent;
 
 import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
+import io.github.lnyocly.ai4j.agent.model.MessagesModelClient;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
@@ -28,11 +29,16 @@ import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.config.AnthropicConfig;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IMessagesService;
 import io.github.lnyocly.ai4j.agent.trace.AgentTraceListener;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
+import okhttp3.OkHttpClient;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -40,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class AgentBuilder {
@@ -85,6 +92,68 @@ public class AgentBuilder {
     public AgentBuilder modelClient(AgentModelClient modelClient) {
         this.modelClient = modelClient;
         return this;
+    }
+
+    /**
+     * Convenience: wire the agent to the Anthropic Messages native surface ({@link IMessagesService}).
+     * Builds an {@link AnthropicMessagesService} + {@link MessagesModelClient} and injects it as the
+     * model client, so the agent runs on the Anthropic wire protocol (zero OpenAI conversion).
+     *
+     * @param apiKey Anthropic / coding-plan API key ({@code x-api-key})
+     * @return this builder
+     */
+    public AgentBuilder anthropicMessages(String apiKey) {
+        return anthropicMessages(apiKey, null, null);
+    }
+
+    /**
+     * Convenience: wire the agent to the Anthropic Messages native surface with a custom base URL.
+     * <p>Pass {@code baseUrl} to target a partner Anthropic-compatible endpoint, e.g.:
+     * <ul>
+     *   <li>zhipu coding plan: {@code https://open.bigmodel.cn/api/anthropic/}</li>
+     *   <li>minimax coding plan: {@code https://api.minimaxi.com/anthropic/}</li>
+     * </ul>
+     *
+     * @param apiKey  API key
+     * @param baseUrl Anthropic-compatible base URL (null/blank = default api.anthropic.com)
+     * @return this builder
+     */
+    public AgentBuilder anthropicMessages(String apiKey, String baseUrl) {
+        return anthropicMessages(apiKey, baseUrl, null);
+    }
+
+    /**
+     * Convenience: wire the agent to the Anthropic Messages native surface with base URL + api version.
+     *
+     * @param apiKey     API key
+     * @param baseUrl    Anthropic-compatible base URL (null/blank = default)
+     * @param apiVersion {@code anthropic-version} header (null/blank = default 2023-06-01)
+     * @return this builder
+     */
+    public AgentBuilder anthropicMessages(String apiKey, String baseUrl, String apiVersion) {
+        AnthropicConfig config = new AnthropicConfig();
+        config.setApiKey(apiKey);
+        if (baseUrl != null && !baseUrl.trim().isEmpty()) {
+            config.setApiHost(baseUrl);
+        }
+        if (apiVersion != null && !apiVersion.trim().isEmpty()) {
+            config.setApiVersion(apiVersion);
+        }
+        Configuration configuration = new Configuration();
+        configuration.setAnthropicConfig(config);
+        configuration.setOkHttpClient(new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build());
+        IMessagesService service = new AnthropicMessagesService(configuration);
+        this.modelClient = new MessagesModelClient(service);
+        return this;
+    }
+
+    /** Test/inspection seam: the resolved model client. */
+    AgentModelClient peekModelClient() {
+        return modelClient;
     }
 
     public AgentBuilder toolRegistry(AgentToolRegistry toolRegistry) {
