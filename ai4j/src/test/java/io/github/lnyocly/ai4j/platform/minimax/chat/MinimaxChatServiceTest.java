@@ -97,7 +97,7 @@ public class MinimaxChatServiceTest {
         Assert.assertEquals("read_file", response.getChoices().get(0).getMessage().getToolCalls().get(0).getFunction().getName());
         Assert.assertEquals("{\"path\":\"README.md\"}", response.getChoices().get(0).getMessage().getToolCalls().get(0).getFunction().getArguments());
         Assert.assertEquals("Bearer config-api-key", recordedRequest.get().header("Authorization"));
-        Assert.assertEquals("https://unit.test/v1/text/chatcompletion_v2", recordedRequest.get().url().toString());
+        Assert.assertEquals("https://unit.test/v1/chat/completions", recordedRequest.get().url().toString());
         Assert.assertEquals(18L, response.getUsage().getTotalTokens());
     }
 
