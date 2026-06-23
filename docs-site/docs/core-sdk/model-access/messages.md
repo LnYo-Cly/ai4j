@@ -137,6 +137,7 @@ ai:
     api-host: https://open.bigmodel.cn/api/anthropic/   # 默认 api.anthropic.com；coding-plan 改这里
     chat-completion-url: v1/messages                      # 默认
     api-version: "2023-06-01"                             # 默认
+    stream-timeout-millis: 600000                         # 流式安全网超时(毫秒)，默认 10 分钟；长思考流可调高
 ```
 
 配置后即可 `aiService.getMessagesService(PlatformType.ANTHROPIC)` 拿到原生服务；agent 侧用 `.anthropicMessages(apiKey, baseUrl)`（见第 5 节）。
