@@ -93,6 +93,11 @@ public class AgentTraceListener implements AgentListener {
             case MEMORY_COMPRESS:
                 onMemoryCompress(event);
                 break;
+            case SANDBOX_BOUND:
+            case SANDBOX_UPDATED:
+            case SANDBOX_CLEARED:
+                onSandboxEvent(event);
+                break;
             case FINAL_OUTPUT:
                 onFinalOutput(event);
                 break;
@@ -106,14 +111,14 @@ public class AgentTraceListener implements AgentListener {
 
     private void onStepStart(AgentEvent event) {
         if (traceId == null) {
-            traceId = UUID.randomUUID().toString();
-            rootSpan = startSpan("agent.run", TraceSpanType.RUN, null, null);
+            traceId = firstNonBlank(event == null ? null : event.getRunId(), UUID.randomUUID().toString());
+            rootSpan = startSpan("agent.run", TraceSpanType.RUN, null, attributesFromEvent(event));
         }
         Integer step = event.getStep();
         if (step == null) {
             return;
         }
-        TraceSpan stepSpan = startSpan("step:" + step, TraceSpanType.STEP, rootSpan == null ? null : rootSpan.getSpanId(), null);
+        TraceSpan stepSpan = startSpan("step:" + step, TraceSpanType.STEP, rootSpan == null ? null : rootSpan.getSpanId(), attributesFromEvent(event));
         stepSpans.put(step, stepSpan);
     }
 
@@ -279,10 +284,12 @@ public class AgentTraceListener implements AgentListener {
         if (config.isRecordModelOutput()) {
             putAttribute(rootSpan, "finalOutput", safeValue(event.getMessage()));
         }
+        mergeAttributes(rootSpan, attributesFromEvent(event));
         finishSpan(rootSpan, TraceSpanStatus.OK, null);
     }
 
     private void onError(AgentEvent event) {
+        mergeAttributes(rootSpan, attributesFromEvent(event));
         finishSpan(rootSpan, TraceSpanStatus.ERROR, event.getMessage());
         reset();
     }
@@ -360,6 +367,23 @@ public class AgentTraceListener implements AgentListener {
         TraceSpan parent = event.getStep() == null ? rootSpan : stepSpans.get(event.getStep());
         TraceSpan span = startSpan("memory.compress", TraceSpanType.MEMORY, parent == null ? null : parent.getSpanId(), attributesFromEvent(event));
         finishSpan(span, TraceSpanStatus.OK, null);
+    }
+
+    private void onSandboxEvent(AgentEvent event) {
+        Map<String, Object> attributes = attributesFromEvent(event);
+        TraceSpan parent = event == null || event.getStep() == null ? rootSpan : stepSpans.get(event.getStep());
+        String previousTraceId = traceId;
+        boolean temporaryTrace = traceId == null;
+        if (temporaryTrace) {
+            traceId = firstNonBlank(event == null ? null : event.getRunId(), UUID.randomUUID().toString());
+        }
+        TraceSpan span = startSpan(sandboxSpanName(event), TraceSpanType.SANDBOX,
+                parent == null ? null : parent.getSpanId(),
+                attributes);
+        finishSpan(span, TraceSpanStatus.OK, null);
+        if (temporaryTrace) {
+            traceId = previousTraceId;
+        }
     }
 
     private TraceSpan startSpan(String name, TraceSpanType type, String parentId, Map<String, Object> attributes) {
@@ -625,6 +649,20 @@ public class AgentTraceListener implements AgentListener {
 
     private Map<String, Object> attributesFromEvent(AgentEvent event) {
         Map<String, Object> attributes = safeAttributes(payloadMap(event == null ? null : event.getPayload()));
+        if (event != null) {
+            if (event.getEventId() != null) {
+                attributes.put("eventId", event.getEventId());
+            }
+            if (event.getRunId() != null) {
+                attributes.put("runId", event.getRunId());
+            }
+            if (event.getSessionId() != null) {
+                attributes.put("sessionId", event.getSessionId());
+            }
+            if (event.getTurnId() != null) {
+                attributes.put("turnId", event.getTurnId());
+            }
+        }
         if (event != null && event.getMessage() != null && !event.getMessage().isEmpty()) {
             attributes.put("message", safeValue(event.getMessage()));
         }
@@ -783,6 +821,20 @@ public class AgentTraceListener implements AgentListener {
             return toolName == null ? "tool" : toolName;
         }
         return step + ":" + (toolName == null ? "tool" : toolName);
+    }
+
+    private String sandboxSpanName(AgentEvent event) {
+        AgentEventType type = event == null ? null : event.getType();
+        if (type == AgentEventType.SANDBOX_BOUND) {
+            return "sandbox.bound";
+        }
+        if (type == AgentEventType.SANDBOX_UPDATED) {
+            return "sandbox.updated";
+        }
+        if (type == AgentEventType.SANDBOX_CLEARED) {
+            return "sandbox.cleared";
+        }
+        return "sandbox.event";
     }
 
     private void reset() {

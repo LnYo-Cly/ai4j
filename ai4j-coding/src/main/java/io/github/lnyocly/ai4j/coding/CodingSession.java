@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.coding.loop.CodingAgentLoopController;
 import io.github.lnyocly.ai4j.coding.loop.CodingLoopDecision;
 import io.github.lnyocly.ai4j.coding.compact.CodingSessionCompactor;
@@ -169,6 +170,7 @@ public class CodingSession implements AutoCloseable {
         List<StoredProcessSnapshot> processSnapshots = exportProcessSnapshots();
         return CodingSessionState.builder()
                 .sessionId(sessionId)
+                .runId(getRunId())
                 .workspaceRoot(workspaceContext == null ? null : workspaceContext.getRootPath())
                 .memorySnapshot(snapshot)
                 .processCount(processSnapshots.size())
@@ -565,12 +567,16 @@ public class CodingSession implements AutoCloseable {
     }
 
     public CodingAgentResult runSingleTurn(CodingAgentRequest request, String hiddenInstructions) throws Exception {
+        final String turnId = resolveTurnId(request);
         AgentResult result = CodingSessionScope.runWithSession(this, new CodingSessionScope.SessionCallable<AgentResult>() {
             @Override
             public AgentResult call() throws Exception {
                 AgentSession executionSession = resolveExecutionSession(hiddenInstructions);
                 Object input = request == null ? null : request.getInput();
-                return executionSession.run(AgentRequest.builder().input(input).build());
+                return executionSession.run(AgentRequest.builder()
+                        .input(input)
+                        .metadata(enrichAgentMetadata(request, turnId, executionSession))
+                        .build());
             }
         });
         maybeAutoCompactAfterTurn();
@@ -580,12 +586,16 @@ public class CodingSession implements AutoCloseable {
     public CodingAgentResult runSingleTurnStream(CodingAgentRequest request,
                                                  AgentListener listener,
                                                  String hiddenInstructions) throws Exception {
+        final String turnId = resolveTurnId(request);
         AgentResult result = CodingSessionScope.runWithSession(this, new CodingSessionScope.SessionCallable<AgentResult>() {
             @Override
             public AgentResult call() throws Exception {
                 AgentSession executionSession = resolveExecutionSession(hiddenInstructions);
                 Object input = request == null ? null : request.getInput();
-                return executionSession.runStreamResult(AgentRequest.builder().input(input).build(), listener);
+                return executionSession.runStreamResult(AgentRequest.builder()
+                        .input(input)
+                        .metadata(enrichAgentMetadata(request, turnId, executionSession))
+                        .build(), listener);
             }
         });
         maybeAutoCompactAfterTurn();
@@ -600,8 +610,43 @@ public class CodingSession implements AutoCloseable {
                 delegate.getRuntime(),
                 delegate.getContext().toBuilder()
                         .instructions(mergeText(delegate.getContext().getInstructions(), hiddenInstructions))
-                        .build()
+                        .build(),
+                delegate.getMetadata(),
+                delegate.getEventLog(),
+                delegate.getStore(),
+                delegate.getRunId()
         );
+    }
+
+    private java.util.Map<String, Object> enrichAgentMetadata(CodingAgentRequest request, String turnId, AgentSession executionSession) {
+        java.util.Map<String, Object> metadata = request == null || request.getMetadata() == null
+                ? new java.util.LinkedHashMap<String, Object>()
+                : new java.util.LinkedHashMap<String, Object>(request.getMetadata());
+        metadata.put(AgentRequest.METADATA_KEY_SESSION_ID, sessionId);
+        if (executionSession != null && executionSession.getRunId() != null) {
+            metadata.put(AgentRequest.METADATA_KEY_RUN_ID, executionSession.getRunId());
+        }
+        if (turnId != null) {
+            metadata.put(AgentRequest.METADATA_KEY_TURN_ID, turnId);
+        }
+        return metadata;
+    }
+
+    public void updateSandboxStatus(SandboxStatus status) {
+        if (delegate != null) {
+            delegate.updateSandboxStatus(status);
+        }
+    }
+
+    public void clearSandbox() {
+        if (delegate != null) {
+            delegate.clearSandbox();
+        }
+    }
+
+    private String resolveTurnId(CodingAgentRequest request) {
+        String turnId = request == null ? null : trimToNull(request.getMetadataString(CodingAgentRequest.METADATA_KEY_TURN_ID));
+        return turnId == null ? newTurnId() : turnId;
     }
 
     private String mergeText(String base, String extra) {
@@ -616,5 +661,21 @@ public class CodingSession implements AutoCloseable {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    public String getRunId() {
+        return delegate == null ? null : delegate.getRunId();
+    }
+
+    private String newTurnId() {
+        return UUID.randomUUID().toString();
     }
 }

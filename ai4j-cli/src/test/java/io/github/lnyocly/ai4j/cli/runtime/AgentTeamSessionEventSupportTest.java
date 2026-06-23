@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.cli.runtime;
 
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
+import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.session.SessionEventType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -72,5 +73,35 @@ public class AgentTeamSessionEventSupportTest {
         Assert.assertEquals(Integer.valueOf(100), updatedSessionPayload.get("percent"));
         Assert.assertEquals(Integer.valueOf(2), updatedSessionPayload.get("heartbeatCount"));
         Assert.assertEquals(Arrays.asList("Collected requirement list", "Captured risks"), updatedSessionPayload.get("previewLines"));
+    }
+
+    @Test
+    public void toSessionEventShouldPreserveCorrelationFields() {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("taskId", "team-task:collect");
+        payload.put("title", "Team task collect");
+        payload.put("status", "planned");
+
+        AgentEvent event = AgentEvent.builder()
+                .eventId("agent-event-2")
+                .runId("run-2")
+                .turnId("turn-2")
+                .type(AgentEventType.TEAM_TASK_CREATED)
+                .step(1)
+                .message("Team task collect")
+                .payload(payload)
+                .build();
+
+        SessionEvent sessionEvent = AgentTeamSessionEventSupport.toSessionEvent("session-2", "fallback-turn", event);
+
+        Assert.assertNotNull(sessionEvent);
+        Assert.assertEquals(SessionEventType.TASK_CREATED, sessionEvent.getType());
+        Assert.assertEquals("run-2", sessionEvent.getRunId());
+        Assert.assertEquals("run-2", sessionEvent.getTraceId());
+        Assert.assertEquals("session-2", sessionEvent.getSessionId());
+        Assert.assertEquals("turn-2", sessionEvent.getTurnId());
+        Assert.assertEquals("agent-event-2", sessionEvent.getTurnEventId());
+        Assert.assertNotNull(sessionEvent.getEventId());
+        Assert.assertNull(AgentTeamSessionEventSupport.toSessionEvent(null, "turn-2", event));
     }
 }

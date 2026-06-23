@@ -15,6 +15,8 @@ public class SessionEvent {
 
     private String eventId;
 
+    private String runId;
+
     private String sessionId;
 
     private SessionEventType type;
@@ -22,6 +24,10 @@ public class SessionEvent {
     private long timestamp;
 
     private String turnId;
+
+    private String traceId;
+
+    private String turnEventId;
 
     private Integer step;
 

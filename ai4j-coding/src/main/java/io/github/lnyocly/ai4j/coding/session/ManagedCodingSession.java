@@ -17,6 +17,7 @@ public class ManagedCodingSession implements AutoCloseable {
     private final String parentSessionId;
     private final long createdAtEpochMs;
     private long updatedAtEpochMs;
+    private final String runId;
 
     public ManagedCodingSession(CodingSession session,
                                 String provider,
@@ -30,6 +31,23 @@ public class ManagedCodingSession implements AutoCloseable {
                                 String parentSessionId,
                                 long createdAtEpochMs,
                                 long updatedAtEpochMs) {
+        this(session, provider, protocol, model, workspace, workspaceDescription, systemPrompt, instructions,
+                rootSessionId, parentSessionId, createdAtEpochMs, updatedAtEpochMs, null);
+    }
+
+    public ManagedCodingSession(CodingSession session,
+                                String provider,
+                                String protocol,
+                                String model,
+                                String workspace,
+                                String workspaceDescription,
+                                String systemPrompt,
+                                String instructions,
+                                String rootSessionId,
+                                String parentSessionId,
+                                long createdAtEpochMs,
+                                long updatedAtEpochMs,
+                                String runId) {
         this.session = session;
         this.provider = provider;
         this.protocol = protocol;
@@ -42,6 +60,7 @@ public class ManagedCodingSession implements AutoCloseable {
         this.parentSessionId = parentSessionId;
         this.createdAtEpochMs = createdAtEpochMs;
         this.updatedAtEpochMs = updatedAtEpochMs;
+        this.runId = runId;
     }
 
     public CodingSession getSession() {
@@ -94,6 +113,13 @@ public class ManagedCodingSession implements AutoCloseable {
 
     public long getUpdatedAtEpochMs() {
         return updatedAtEpochMs;
+    }
+
+    public String getRunId() {
+        if (runId != null && !runId.trim().isEmpty()) {
+            return runId;
+        }
+        return session == null ? null : session.getRunId();
     }
 
     public void touch(long updatedAtEpochMs) {

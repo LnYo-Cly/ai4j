@@ -41,6 +41,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class HeadlessCodingSessionRuntimeTest {
@@ -101,6 +102,32 @@ public class HeadlessCodingSessionRuntimeTest {
             assertTrue(hasEvent(events, SessionEventType.AUTO_STOP));
             assertTrue(hasEvent(observer.sessionEvents, SessionEventType.AUTO_CONTINUE));
             assertTrue(hasEvent(observer.sessionEvents, SessionEventType.AUTO_STOP));
+        }
+    }
+
+    @Test
+    public void shouldPropagateCorrelationFieldsOnSessionEvents() throws Exception {
+        DefaultCodingSessionManager sessionManager = new DefaultCodingSessionManager(
+                new InMemoryCodingSessionStore(Paths.get("(memory-sessions)")),
+                new InMemorySessionEventStore()
+        );
+        CodeCommandOptions options = testOptions();
+        HeadlessCodingSessionRuntime runtime = new HeadlessCodingSessionRuntime(options, sessionManager);
+
+        InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
+        modelClient.enqueue(assistantResult("Completed the requested change."));
+
+        try (ManagedCodingSession session = managedSession(newAgent(modelClient, okToolExecutor()), options)) {
+            assertNotNull(session.getRunId());
+            runtime.runPrompt(session, "Implement the requested change.", null, new CollectingObserver());
+            List<SessionEvent> events = sessionManager.listEvents(session.getSessionId(), null, null);
+
+            assertFalse(events.isEmpty());
+            for (SessionEvent event : events) {
+                assertNotNull("eventId must be propagated", event.getEventId());
+                assertNotNull("runId must be propagated", event.getRunId());
+                assertEquals(session.getSessionId(), event.getSessionId());
+            }
         }
     }
 

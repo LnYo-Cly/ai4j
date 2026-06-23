@@ -24,6 +24,7 @@ import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class CodeActRuntime extends BaseAgentRuntime {
 
@@ -49,6 +50,18 @@ public class CodeActRuntime extends BaseAgentRuntime {
         int maxSteps = options == null ? 0 : options.getMaxSteps();
         CodeActOptions codeActOptions = context.getCodeActOptions();
         boolean reAct = codeActOptions != null && codeActOptions.isReAct();
+        String sessionId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_SESSION_ID));
+        if (sessionId == null) {
+            sessionId = context == null ? null : trimToNull(context.getSessionId());
+        }
+        String runId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_RUN_ID));
+        if (runId == null) {
+            runId = UUID.randomUUID().toString();
+        }
+        String turnId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_TURN_ID));
+        if (turnId == null) {
+            turnId = "turn_" + UUID.randomUUID().toString().replace("-", "");
+        }
 
         AgentMemory memory = context.getMemory();
         if (memory == null) {
@@ -71,11 +84,11 @@ public class CodeActRuntime extends BaseAgentRuntime {
         int step = 0;
         boolean stepLimited = maxSteps > 0;
         while (!stepLimited || step < maxSteps) {
-            publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null);
+            publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null, runId, sessionId, turnId);
             dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TURN, step, runtimeName(), null);
 
-            AgentPrompt prompt = buildPrompt(context, memory, false, step, listener);
-            AgentModelResult modelResult = executeModel(context, prompt, listener, step, false);
+            AgentPrompt prompt = buildPrompt(context, memory, false, step, listener, runId, sessionId, turnId);
+            AgentModelResult modelResult = executeModel(context, prompt, listener, step, false, runId, sessionId, turnId);
             lastResult = modelResult;
 
             if (modelResult != null && modelResult.getMemoryItems() != null) {
@@ -89,16 +102,19 @@ public class CodeActRuntime extends BaseAgentRuntime {
                         AgentInputItem.systemMessage("FINALIZE_MODE: Do not output code. Use the latest CODE_RESULT to respond with {\"type\":\"final\",\"output\":\"...\"}.")
                 ));
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
-                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
+                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 step += 1;
                 continue;
             }
             if (message == null || "final".equals(message.type)) {
                 String answer = message == null ? output : message.output;
-                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, answer, modelResult == null ? null : modelResult.getRawResponse());
+                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, answer, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
-                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
+                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 return AgentResult.builder()
+                        .runId(runId)
+                        .sessionId(sessionId)
+                        .turnId(turnId)
                         .outputText(answer == null ? "" : answer)
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
@@ -108,10 +124,13 @@ public class CodeActRuntime extends BaseAgentRuntime {
             }
 
             if (!"code".equals(message.type) || message.code == null) {
-                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, output, modelResult == null ? null : modelResult.getRawResponse());
+                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, output, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
-                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
+                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 return AgentResult.builder()
+                        .runId(runId)
+                        .sessionId(sessionId)
+                        .turnId(turnId)
                         .outputText(output == null ? "" : output)
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
@@ -126,7 +145,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                     .callId(CODE_CALL_ID + "_" + step)
                     .build();
             toolCalls.add(toolCall);
-            publish(context, listener, AgentEventType.TOOL_CALL, step, toolCall.getName(), toolCall);
+            publish(context, listener, AgentEventType.TOOL_CALL, step, toolCall.getName(), toolCall, runId, sessionId, turnId);
             dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step, toolCall.getName(), toolCall);
 
             CodeExecutionResult execResult;
@@ -152,7 +171,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                     ? "CODE_RESULT: " + toolOutput
                     : "CODE_ERROR: " + toolOutput;
             memory.addOutputItems(java.util.Collections.singletonList(AgentInputItem.systemMessage(toolMessage)));
-            publish(context, listener, AgentEventType.TOOL_RESULT, step, toolOutput, execResult);
+            publish(context, listener, AgentEventType.TOOL_RESULT, step, toolOutput, execResult, runId, sessionId, turnId);
             if (reAct) {
                 finalizeRequested = execResult != null && execResult.isSuccess();
             }
@@ -161,10 +180,13 @@ public class CodeActRuntime extends BaseAgentRuntime {
             String fallbackOutput = resolveFallbackOutput(execResult, toolOutput);
             String finalOutput = directOutput == null ? fallbackOutput : directOutput;
             if (!reAct && finalOutput != null) {
-                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, finalOutput, modelResult == null ? null : modelResult.getRawResponse());
+                publish(context, listener, AgentEventType.FINAL_OUTPUT, step, finalOutput, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
-                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
+                publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 return AgentResult.builder()
+                        .runId(runId)
+                        .sessionId(sessionId)
+                        .turnId(turnId)
                         .outputText(finalOutput)
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
@@ -174,12 +196,15 @@ public class CodeActRuntime extends BaseAgentRuntime {
             }
 
             dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
-            publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null);
+            publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
             step += 1;
         }
 
         String outputText = lastResult == null ? "" : lastResult.getOutputText();
         return AgentResult.builder()
+                .runId(runId)
+                .sessionId(sessionId)
+                .turnId(turnId)
                 .outputText(outputText == null ? "" : outputText)
                 .rawResponse(lastResult == null ? null : lastResult.getRawResponse())
                 .toolCalls(toolCalls)
@@ -190,7 +215,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
     @Override
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
-        return buildPrompt(context, memory, stream, 0, null);
+        return buildPrompt(context, memory, stream, 0, null, null, context == null ? null : context.getSessionId(), null);
     }
 
     @Override
@@ -199,10 +224,22 @@ public class CodeActRuntime extends BaseAgentRuntime {
                                       boolean stream,
                                       int step,
                                       AgentListener listener) {
+        return buildPrompt(context, memory, stream, step, listener, null, context == null ? null : context.getSessionId(), null);
+    }
+
+    @Override
+    protected AgentPrompt buildPrompt(AgentContext context,
+                                      AgentMemory memory,
+                                      boolean stream,
+                                      int step,
+                                      AgentListener listener,
+                                      String runId,
+                                      String sessionId,
+                                      String turnId) {
         String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions(context));
         AgentPrompt.AgentPromptBuilder builder = AgentPrompt.builder()
                 .model(context.getModel())
-                .items(projectItems(context, memory.getItems(), step, listener))
+                .items(projectItems(context, memory.getItems(), step, listener, runId, sessionId, turnId))
                 .systemPrompt(systemPrompt)
                 .instructions(context.getInstructions())
                 .temperature(context.getTemperature())

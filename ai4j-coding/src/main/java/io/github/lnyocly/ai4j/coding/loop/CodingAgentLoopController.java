@@ -101,10 +101,7 @@ public class CodingAgentLoopController {
     }
 
     private CodingAgentRequest turnRequest(CodingAgentRequest request, String continuationPrompt) {
-        if (continuationPrompt == null || continuationPrompt.trim().isEmpty()) {
-            return request;
-        }
-        return CodingAgentRequest.builder().build();
+        return request;
     }
 
     private CodingLoopDecision decide(CodingLoopPolicy policy,
@@ -240,7 +237,9 @@ public class CodingAgentLoopController {
                                         int autoFollowUps,
                                         CodingLoopDecision decision) {
         return CodingAgentResult.builder()
+                .runId(lastResult == null ? (session == null ? null : session.getRunId()) : lastResult.getRunId())
                 .sessionId(session == null ? null : session.getSessionId())
+                .turnId(lastResult == null ? null : lastResult.getTurnId())
                 .outputText(lastResult == null ? null : lastResult.getOutputText())
                 .rawResponse(lastResult == null ? null : lastResult.getRawResponse())
                 .toolCalls(aggregatedCalls.isEmpty() ? Collections.<io.github.lnyocly.ai4j.agent.tool.AgentToolCall>emptyList() : aggregatedCalls)
@@ -330,6 +329,10 @@ public class CodingAgentLoopController {
             Integer originalStep = event.getStep();
             int adjustedStep = originalStep == null ? stepOffset : originalStep + stepOffset;
             delegate.onEvent(AgentEvent.builder()
+                    .eventId(event.getEventId())
+                    .runId(event.getRunId())
+                    .sessionId(event.getSessionId())
+                    .turnId(event.getTurnId())
                     .type(event.getType())
                     .step(adjustedStep)
                     .message(event.getMessage())

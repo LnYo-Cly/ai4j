@@ -60,6 +60,10 @@ public class AgentSessionRuntimeContainerTest {
         List<AgentSessionEvent> events = session.getEventLog().getEvents();
         Assert.assertTrue(events.size() >= 5);
         Assert.assertEquals(1L, events.get(0).getSequence());
+        Assert.assertNotNull(events.get(0).getEvent().getEventId());
+        Assert.assertNotNull(events.get(0).getEvent().getRunId());
+        Assert.assertEquals(session.getSessionId(), events.get(0).getEvent().getSessionId());
+        Assert.assertNotNull(events.get(0).getEvent().getTurnId());
         Assert.assertTrue(hasType(events, AgentEventType.STEP_START));
         Assert.assertTrue(hasType(events, AgentEventType.MODEL_REQUEST));
         Assert.assertTrue(hasType(events, AgentEventType.MODEL_RESPONSE));
@@ -80,10 +84,20 @@ public class AgentSessionRuntimeContainerTest {
         io.github.lnyocly.ai4j.agent.AgentSession restored = agent.newSession(snapshot);
 
         Assert.assertEquals(session.getSessionId(), restored.getSessionId());
+        Assert.assertEquals(session.getRunId(), restored.getRunId());
         Assert.assertEquals("runtime", restored.getMetadata("owner"));
         Assert.assertEquals(updatedAt, restored.getMetadata().getUpdatedAtEpochMs());
         Assert.assertEquals(snapshot.getEvents().size(), restored.getEventLog().getEvents().size());
+        Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getEventId(), restored.getEventLog().getEvents().get(0).getEvent().getEventId());
+        Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getRunId(), restored.getEventLog().getEvents().get(0).getEvent().getRunId());
+        Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getTurnId(), restored.getEventLog().getEvents().get(0).getEvent().getTurnId());
         Assert.assertEquals(snapshot.getMemory().getItems().size(), restored.snapshot().getMemory().getItems().size());
+
+        restored.run("after restore");
+        List<AgentSessionEvent> restoredEvents = restored.getEventLog().getEvents();
+        AgentSessionEvent lastEvent = restoredEvents.get(restoredEvents.size() - 1);
+        Assert.assertEquals(session.getSessionId(), lastEvent.getEvent().getSessionId());
+        Assert.assertEquals(session.getRunId(), lastEvent.getEvent().getRunId());
     }
 
     @Test
@@ -99,6 +113,7 @@ public class AgentSessionRuntimeContainerTest {
         Assert.assertEquals(Arrays.asList(session.getSessionId()), store.listSessionIds());
         io.github.lnyocly.ai4j.agent.AgentSession resumed = agent.resumeSession(session.getSessionId());
         Assert.assertEquals(session.getSessionId(), resumed.getSessionId());
+        Assert.assertEquals(session.getRunId(), resumed.getRunId());
         Assert.assertEquals("P0-A", resumed.getMetadata("ticket"));
         Assert.assertEquals(session.getEventLog().getEvents().size(), resumed.getEventLog().getEvents().size());
         Assert.assertEquals(session.snapshot().getMemory().getItems().size(), resumed.snapshot().getMemory().getItems().size());
@@ -112,6 +127,9 @@ public class AgentSessionRuntimeContainerTest {
         session.run("copy");
 
         AgentSessionSnapshot snapshot = session.snapshot();
+        Assert.assertNotNull(snapshot.getEvents().get(0).getEvent().getEventId());
+        Assert.assertNotNull(snapshot.getEvents().get(0).getEvent().getRunId());
+        Assert.assertNotNull(snapshot.getEvents().get(0).getEvent().getTurnId());
         snapshot.getMetadata().putAttribute("safe", "no");
         List<AgentSessionEvent> copiedEvents = snapshot.getEvents();
         copiedEvents.get(0).getEvent().setMessage("mutated");

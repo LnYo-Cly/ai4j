@@ -2,12 +2,14 @@ package io.github.lnyocly.ai4j.coding;
 
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
+import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionMetadata;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
@@ -110,6 +112,7 @@ public class CodingAgent {
     }
 
     public CodingSession newSession(String sessionId, CodingSessionState state) {
+        String effectiveSessionId = isBlank(sessionId) ? UUID.randomUUID().toString() : sessionId;
         AgentSession rawSession = delegate.newSession();
         SessionProcessRegistry processRegistry = new SessionProcessRegistry(workspaceContext, options);
         CodingAgentDefinitionRegistry definitionRegistry = getDefinitionRegistry();
@@ -142,16 +145,25 @@ public class CodingAgent {
                 handoffPolicy
         );
         mergedExecutor = CodingAgentBuilder.applyExtensionGuardrails(mergedExecutor, extensionTools);
+        String effectiveRunId = shouldRestoreRunId(effectiveSessionId, state) ? state.getRunId() : rawSession.getRunId();
+        AgentSessionMetadata metadata = rawSession.getMetadata();
+        metadata.setSessionId(effectiveSessionId);
+        AgentContext sessionContext = rawSession.getContext().toBuilder()
+                .sessionId(effectiveSessionId)
+                .toolRegistry(mergedRegistry)
+                .toolExecutor(mergedExecutor)
+                .build();
         AgentSession session = new AgentSession(
                 rawSession.getRuntime(),
-                rawSession.getContext().toBuilder()
-                        .toolRegistry(mergedRegistry)
-                        .toolExecutor(mergedExecutor)
-                        .build()
+                sessionContext,
+                metadata,
+                rawSession.getEventLog(),
+                rawSession.getStore(),
+                effectiveRunId
         );
         bindSandbox(session);
         CodingSession codingSession = new CodingSession(
-                isBlank(sessionId) ? UUID.randomUUID().toString() : sessionId,
+                effectiveSessionId,
                 session,
                 workspaceContext,
                 options,
@@ -226,5 +238,13 @@ public class CodingAgent {
         if (sandboxSession != null) {
             session.bindSandbox(sandboxSession);
         }
+    }
+
+    private boolean shouldRestoreRunId(String effectiveSessionId, CodingSessionState state) {
+        if (state == null || isBlank(state.getRunId())) {
+            return false;
+        }
+        String stateSessionId = state.getSessionId();
+        return isBlank(stateSessionId) || stateSessionId.equals(effectiveSessionId);
     }
 }

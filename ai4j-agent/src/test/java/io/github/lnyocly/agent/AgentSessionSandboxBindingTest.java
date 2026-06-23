@@ -113,6 +113,28 @@ public class AgentSessionSandboxBindingTest {
         Assert.assertFalse(session.snapshot().getSandboxBinding().getLabels().containsKey("password"));
     }
 
+    @Test
+    public void clearSandboxShouldBeIdempotentAndNoopWithoutBinding() {
+        io.github.lnyocly.ai4j.agent.AgentSession session = testAgent().newSession();
+
+        // No sandbox bound: clearSandbox is a no-op and emits no SANDBOX_CLEARED event.
+        session.clearSandbox();
+        Assert.assertEquals(0, countType(session.getEventLog().getEvents(), AgentEventType.SANDBOX_CLEARED));
+        Assert.assertNull(session.getSandboxBinding());
+
+        // Bind a sandbox, then clear twice: only one SANDBOX_CLEARED event is emitted.
+        session.bindSandbox(new FakeSandboxSession());
+        Assert.assertEquals(0, countType(session.getEventLog().getEvents(), AgentEventType.SANDBOX_CLEARED));
+
+        session.clearSandbox();
+        Assert.assertEquals(1, countType(session.getEventLog().getEvents(), AgentEventType.SANDBOX_CLEARED));
+        Assert.assertNull(session.getSandboxBinding());
+
+        // Second clear is a no-op: no duplicate SANDBOX_CLEARED event.
+        session.clearSandbox();
+        Assert.assertEquals(1, countType(session.getEventLog().getEvents(), AgentEventType.SANDBOX_CLEARED));
+    }
+
     private static boolean hasType(List<AgentSessionEvent> events, AgentEventType type) {
         for (AgentSessionEvent event : events) {
             if (event != null && event.getEvent() != null && event.getEvent().getType() == type) {
@@ -120,6 +142,16 @@ public class AgentSessionSandboxBindingTest {
             }
         }
         return false;
+    }
+
+    private static int countType(List<AgentSessionEvent> events, AgentEventType type) {
+        int count = 0;
+        for (AgentSessionEvent event : events) {
+            if (event != null && event.getEvent() != null && event.getEvent().getType() == type) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static Agent testAgent() {

@@ -1278,9 +1278,12 @@ public class AcpJsonRpcServer implements Closeable {
             }
             try {
                 sessionManager.appendEvent(session.getSessionId(), SessionEvent.builder()
+                        .eventId(UUID.randomUUID().toString())
+                        .runId(session.getRunId())
                         .sessionId(session.getSessionId())
                         .type(type)
                         .turnId(turnId)
+                        .traceId(session.getRunId())
                         .summary(summary)
                         .payload(payload)
                         .build());
@@ -1987,7 +1990,8 @@ public class AcpJsonRpcServer implements Closeable {
                         firstNonBlank(previousSession.getRootSessionId(), previousSession.getSessionId()),
                         previousSession.getParentSessionId(),
                         previousSession.getCreatedAtEpochMs(),
-                        previousSession.getUpdatedAtEpochMs()
+                        previousSession.getUpdatedAtEpochMs(),
+                        previousSession.getRunId()
                 );
             }
 

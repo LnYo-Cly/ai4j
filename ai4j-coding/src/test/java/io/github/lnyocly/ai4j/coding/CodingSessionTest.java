@@ -1,5 +1,8 @@
 package io.github.lnyocly.ai4j.coding;
 
+import io.github.lnyocly.ai4j.agent.AgentSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
+import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -13,6 +16,7 @@ import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.coding.process.BashProcessLogChunk;
 import io.github.lnyocly.ai4j.coding.process.BashProcessStatus;
 import io.github.lnyocly.ai4j.coding.process.StoredProcessSnapshot;
+import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import org.junit.Rule;
@@ -23,6 +27,8 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Map;
+import com.alibaba.fastjson2.JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -95,9 +101,12 @@ public class CodingSessionTest {
         CodingSession first = agent.newSession("resume-session", null);
         CodingSessionState state;
         try {
-            first.run("Inspect the repository layout.");
+            CodingAgentResult firstResult = first.run("Inspect the repository layout.");
+            assertEquals("resume-session", firstResult.getSessionId());
             first.run("Now summarize the current progress.");
             state = first.exportState();
+            assertNotNull(state.getRunId());
+            assertEquals(first.getRunId(), state.getRunId());
         } finally {
             first.close();
         }
@@ -106,9 +115,12 @@ public class CodingSessionTest {
         try {
             CodingSessionSnapshot snapshot = resumed.snapshot();
             assertEquals("resume-session", resumed.getSessionId());
+            assertEquals(state.getRunId(), resumed.getRunId());
             assertEquals(workspaceRoot.toString(), snapshot.getWorkspaceRoot());
             assertTrue(snapshot.getMemoryItemCount() >= 2);
-            resumed.run("Continue from previous context.");
+            CodingAgentResult resumedResult = resumed.run("Continue from previous context.");
+            assertEquals("resume-session", resumedResult.getSessionId());
+            assertEquals(state.getRunId(), resumedResult.getRunId());
             assertTrue(resumed.snapshot().getMemoryItemCount() > snapshot.getMemoryItemCount());
         } finally {
             resumed.close();
@@ -590,6 +602,28 @@ public class CodingSessionTest {
     }
 
     @Test
+    public void shouldPreserveSessionEventCorrelationFields() {
+        SessionEvent event = SessionEvent.builder()
+                .eventId("event-1")
+                .runId("run-1")
+                .sessionId("session-1")
+                .turnId("turn-1")
+                .traceId("trace-1")
+                .type(io.github.lnyocly.ai4j.coding.session.SessionEventType.USER_MESSAGE)
+                .summary("hello")
+                .payload(Collections.<String, Object>singletonMap("input", "hello"))
+                .build();
+
+        String json = JSON.toJSONString(event);
+        Map<?, ?> parsed = JSON.parseObject(json, Map.class);
+        assertEquals("event-1", parsed.get("eventId"));
+        assertEquals("run-1", parsed.get("runId"));
+        assertEquals("session-1", parsed.get("sessionId"));
+        assertEquals("turn-1", parsed.get("turnId"));
+        assertEquals("trace-1", parsed.get("traceId"));
+    }
+
+    @Test
     public void shouldClearPendingLoopArtifactsAfterManualCompact() throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("workspace-session-manual-compact-cleanup").toPath();
         WorkspaceContext workspaceContext = WorkspaceContext.builder()
@@ -616,6 +650,48 @@ public class CodingSessionTest {
             assertTrue(session.drainLoopDecisions().isEmpty());
             assertTrue(session.drainAutoCompactResults().isEmpty());
             assertTrue(session.drainAutoCompactErrors().isEmpty());
+        }
+    }
+
+    @Test
+    public void sandboxFacadeShouldDelegateToUnderlyingSessionAndStayIdempotent() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-session-sandbox-facade").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit coding session sandbox facade workspace")
+                .build();
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(new CompactionAwareModelClient())
+                .model("glm-4.5-flash")
+                .workspaceContext(workspaceContext)
+                .build();
+
+        try (CodingSession session = agent.newSession()) {
+            AgentSession delegate = session.getDelegate();
+            assertNotNull(delegate.getRunId());
+            assertEquals(delegate.getRunId(), session.getRunId());
+
+            // No sandbox bound: facade methods are no-ops.
+            session.updateSandboxStatus(SandboxStatus.CLOSED);
+            session.clearSandbox();
+            assertNull(delegate.getSandboxBinding());
+
+            // Bind directly on the delegate, then exercise the facade.
+            delegate.bindSandbox(AgentSessionSandboxBinding.builder()
+                    .providerId("fake")
+                    .sandboxSessionId("sbx-1")
+                    .status(SandboxStatus.RUNNING)
+                    .build());
+            session.updateSandboxStatus(SandboxStatus.CLOSED);
+            assertEquals(SandboxStatus.CLOSED, delegate.getSandboxBinding().getStatus());
+
+            session.clearSandbox();
+            assertNull(delegate.getSandboxBinding());
+
+            // Idempotent second clear: still null, no exception.
+            session.clearSandbox();
+            assertNull(delegate.getSandboxBinding());
         }
     }
 

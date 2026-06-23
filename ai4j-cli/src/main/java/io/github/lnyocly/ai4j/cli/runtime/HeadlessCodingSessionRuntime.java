@@ -56,7 +56,10 @@ public class HeadlessCodingSessionRuntime {
         HeadlessAgentListener listener = new HeadlessAgentListener(session, turnId, activeControl, effectiveObserver);
         try {
             activeControl.attach(Thread.currentThread());
-            CodingAgentResult result = session.getSession().runStream(CodingAgentRequest.builder().input(input).build(), listener);
+            CodingAgentResult result = session.getSession().runStream(CodingAgentRequest.builder()
+                    .input(input)
+                    .metadata(payloadOf(CodingAgentRequest.METADATA_KEY_TURN_ID, turnId))
+                    .build(), listener);
             if (activeControl.isCancelled()) {
                 appendCancelledEvent(session, turnId);
                 persistSession(session);
@@ -181,14 +184,30 @@ public class HeadlessCodingSessionRuntime {
                              Integer step,
                              String summary,
                              Map<String, Object> payload) {
+        appendEvent(session, type, turnId, step, summary, payload, null);
+    }
+
+    private void appendEvent(ManagedCodingSession session,
+                             SessionEventType type,
+                             String turnId,
+                             Integer step,
+                             String summary,
+                             Map<String, Object> payload,
+                             AgentEvent sourceEvent) {
         if (session == null || type == null || sessionManager == null) {
             return;
         }
+        String runId = firstNonBlank(sourceEvent == null ? null : sourceEvent.getRunId(), session.getRunId());
+        String resolvedTurnId = firstNonBlank(sourceEvent == null ? null : sourceEvent.getTurnId(), turnId);
         try {
             sessionManager.appendEvent(session.getSessionId(), SessionEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .runId(runId)
                     .sessionId(session.getSessionId())
                     .type(type)
-                    .turnId(turnId)
+                    .turnId(resolvedTurnId)
+                    .traceId(runId)
+                    .turnEventId(sourceEvent == null ? null : sourceEvent.getEventId())
                     .step(step)
                     .summary(summary)
                     .payload(payload)
@@ -201,7 +220,20 @@ public class HeadlessCodingSessionRuntime {
         if (event == null) {
             return;
         }
-        appendEvent(session, event.getType(), event.getTurnId(), event.getStep(), event.getSummary(), event.getPayload());
+        if (session == null || sessionManager == null) {
+            return;
+        }
+        try {
+            String runId = firstNonBlank(event.getRunId(), session.getRunId());
+            sessionManager.appendEvent(session.getSessionId(), event.toBuilder()
+                    .eventId(firstNonBlank(event.getEventId(), UUID.randomUUID().toString()))
+                    .runId(runId)
+                    .sessionId(firstNonBlank(event.getSessionId(), session.getSessionId()))
+                    .traceId(firstNonBlank(event.getTraceId(), runId))
+                    .turnEventId(event.getTurnEventId())
+                    .build());
+        } catch (IOException ignored) {
+        }
     }
 
     private String newTurnId() {
@@ -401,6 +433,9 @@ public class HeadlessCodingSessionRuntime {
             }
             if (type == AgentEventType.ERROR) {
                 flushPendingAssistantText(event.getStep());
+                appendEvent(session, SessionEventType.ERROR, turnId, event.getStep(), clip(event.getMessage(), 320), payloadOf(
+                        "error", clipPreserveNewlines(event.getMessage(), options != null && options.isVerbose() ? 4000 : 1200)
+                ), event);
                 observer.onTurnError(session, turnId, event.getStep(), event.getMessage());
             }
         }
@@ -442,7 +477,7 @@ public class HeadlessCodingSessionRuntime {
                             "tool", call.getName(),
                             "callId", call.getCallId(),
                             "arguments", clipPreserveNewlines(call.getArguments(), options != null && options.isVerbose() ? 4000 : 1200)
-                    ));
+                    ), event);
             observer.onToolCall(session, turnId, event.getStep(), call);
         }
 
@@ -460,7 +495,7 @@ public class HeadlessCodingSessionRuntime {
                             "callId", result.getCallId(),
                             "arguments", call == null ? null : clipPreserveNewlines(call.getArguments(), options != null && options.isVerbose() ? 4000 : 1200),
                             "output", clipPreserveNewlines(result.getOutput(), options != null && options.isVerbose() ? 4000 : 1200)
-                    ));
+                    ), event);
             observer.onToolResult(session, turnId, event.getStep(), call, result, failed);
         }
 
