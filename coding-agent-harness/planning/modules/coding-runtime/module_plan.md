@@ -19,7 +19,7 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-P3-CODING-SANDBOX-TOOL-ROUTING-6C82C346 | P3 Coding sandbox tool routing - Brief | handoff | coding-agent-harness/planning/modules/coding-runtime/tasks/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346/task_plan.md | none |
+| T-P3-CODING-SANDBOX-TOOL-ROUTING-6C82C346 | P3 Coding sandbox tool routing - Brief | merged | coding-agent-harness/planning/modules/coding-runtime/tasks/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346/task_plan.md | none |
 
 ## 活跃任务
 

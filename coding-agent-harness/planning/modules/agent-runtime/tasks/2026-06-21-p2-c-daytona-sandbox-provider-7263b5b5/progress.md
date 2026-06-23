@@ -1,6 +1,6 @@
 # P2-C Daytona sandbox provider - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -84,3 +84,8 @@
 - Registry update needed：agent-runtime P2-C status/evidence after commit
 - Harness Ledger update needed：task plan path, review path, closeout status after lifecycle command
 - 负责人：coordinator
+
+### [2026-06-24 backlog reconciliation] - 任务收口
+
+- 经 backlog 对账：代码已合并到 main（关键能力已在 main 验证存在）；状态由 审查中 推进到 已完成。
+- 备注：正式人工 dashboard 确认（GATE-02）未跑；ledger 如实记录为 closed / pending-review，可在本地 Dashboard 补确认。

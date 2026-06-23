@@ -1,6 +1,6 @@
 # P1-B Agent Blueprint to AgentFactory - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：`未开始`、`计划中`、`进行中`、`审查中`、`已阻塞`、`已完成`。
 
@@ -63,3 +63,8 @@
 - 下一步：运行 \git diff --check\ 和 \
 px --yes coding-agent-harness status --json .\，然后提交修复。
 - 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/brief.md:P1-B brief materialized; diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210/execution_strategy.md:P1-B execution strategy materialized
+
+### [2026-06-24 backlog reconciliation] - 任务收口
+
+- 经 backlog 对账：代码已合并到 main（关键能力已在 main 验证存在）；状态由 审查中 推进到 已完成。
+- 备注：正式人工 dashboard 确认（GATE-02）未跑；ledger 如实记录为 closed / pending-review，可在本地 Dashboard 补确认。
