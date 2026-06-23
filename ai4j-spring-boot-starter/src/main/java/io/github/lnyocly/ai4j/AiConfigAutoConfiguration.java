@@ -63,6 +63,7 @@ import java.util.Map;
         MilvusConfigProperties.class,
         PgVectorConfigProperties.class,
         ZhipuConfigProperties.class,
+        AnthropicConfigProperties.class,
         DeepSeekConfigProperties.class,
         MoonshotConfigProperties.class,
         HunyuanConfigProperties.class,
@@ -96,6 +97,7 @@ public class AiConfigAutoConfiguration {
     private final AiConfigProperties aiConfigProperties;
     private final OpenAiConfigProperties openAiConfigProperties;
     private final ZhipuConfigProperties zhipuConfigProperties;
+    private final AnthropicConfigProperties anthropicConfigProperties;
     private final DeepSeekConfigProperties deepSeekConfigProperties;
     private final MoonshotConfigProperties moonshotConfigProperties;
     private final HunyuanConfigProperties hunyuanConfigProperties;
@@ -110,7 +112,7 @@ public class AiConfigAutoConfiguration {
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -120,6 +122,7 @@ public class AiConfigAutoConfiguration {
         this.searXNGConfigProperties = searXNGConfigProperties;
         this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
+        this.anthropicConfigProperties = anthropicConfigProperties;
         this.deepSeekConfigProperties = deepSeekConfigProperties;
         this.moonshotConfigProperties = moonshotConfigProperties;
         this.hunyuanConfigProperties = hunyuanConfigProperties;
@@ -270,6 +273,7 @@ public class AiConfigAutoConfiguration {
 
         initOpenAiConfig();
         initZhipuConfig();
+        initAnthropicConfig();
         initDeepSeekConfig();
         initMoonshotConfig();
         initHunyuanConfig();
@@ -361,6 +365,19 @@ public class AiConfigAutoConfiguration {
         zhipuConfig.setEmbeddingUrl(zhipuConfigProperties.getEmbeddingUrl());
 
         configuration.setZhipuConfig(zhipuConfig);
+    }
+
+    /**
+     * 初始化 Anthropic 配置信息
+     */
+    private void initAnthropicConfig() {
+        AnthropicConfig anthropicConfig = new AnthropicConfig();
+        anthropicConfig.setApiHost(anthropicConfigProperties.getApiHost());
+        anthropicConfig.setApiKey(anthropicConfigProperties.getApiKey());
+        anthropicConfig.setChatCompletionUrl(anthropicConfigProperties.getChatCompletionUrl());
+        anthropicConfig.setApiVersion(anthropicConfigProperties.getApiVersion());
+
+        configuration.setAnthropicConfig(anthropicConfig);
     }
 
     /**

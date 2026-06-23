@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agent;
 
+import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.model.MessagesModelClient;
 import org.junit.Test;
 
@@ -23,5 +24,13 @@ public class AgentBuilderAnthropicConvenienceTest {
         // build() throws "modelClient is required" if null; the convenience must set it.
         Agent agent = Agents.builder().anthropicMessages("key").model("test-model").build();
         assertNotNull(agent);
+    }
+
+    @Test
+    public void openAiChatShouldWireChatModelClient() {
+        assertTrue("openAiChat(apiKey) must wire ChatModelClient",
+                Agents.builder().openAiChat("key").peekModelClient() instanceof ChatModelClient);
+        assertTrue("openAiChat(apiKey, baseUrl) must wire ChatModelClient",
+                Agents.builder().openAiChat("key", "https://my-openai-compatible/").peekModelClient() instanceof ChatModelClient);
     }
 }
