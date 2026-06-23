@@ -1,6 +1,6 @@
 # P0-B Memory Compact Context Projector - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -73,3 +73,8 @@
 - 验证结果：准备复跑 Harness status。
 - 下一步：Harness status 通过后提交材料修复，再推送 PR。
 - 证据：diff:TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57:lesson/progress material repair
+
+### [2026-06-24 backlog reconciliation] - 任务收口
+
+- 经 backlog 对账：代码已合并到 main（关键能力已在 main 验证存在）；状态由 审查中 推进到 已完成。
+- 备注：正式人工 dashboard 确认（GATE-02）未跑；ledger 如实记录为 closed / pending-review，可在本地 Dashboard 补确认。
