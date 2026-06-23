@@ -16,6 +16,7 @@ sidebar_position: 2
 当前平台枚举定义在 `PlatformType`：
 
 - `OPENAI`
+- `ANTHROPIC`
 - `ZHIPU`
 - `DEEPSEEK`
 - `MOONSHOT`
@@ -33,20 +34,21 @@ sidebar_position: 2
 
 ## 2. 当前 service 支持矩阵
 
-| 平台 | Chat | Responses | Embedding | Rerank | Audio | Realtime | Image |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OPENAI | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| DOUBAO | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| DASHSCOPE | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| OLLAMA | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| JINA | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ZHIPU | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| DEEPSEEK | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| MOONSHOT | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| HUNYUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| LINGYI | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| MINIMAX | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| BAICHUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| 平台 | Chat | Responses | Messages | Embedding | Rerank | Audio | Realtime | Image |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OPENAI | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| ANTHROPIC | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| DOUBAO | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ |
+| DASHSCOPE | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| OLLAMA | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| JINA | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| ZHIPU | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| DEEPSEEK | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MOONSHOT | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| HUNYUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| LINGYI | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MINIMAX | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| BAICHUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ## 3. 这张矩阵真正说明了什么
 
@@ -63,6 +65,10 @@ sidebar_position: 2
 - DashScope
 
 这意味着 `Responses` 在 AI4J 里不是“每个平台都应当自动拥有”的替代接口，而是一条更聚焦的结构化访问主线。
+
+### `Messages` 是 Anthropic 协议第三主线
+
+当前只支持 `ANTHROPIC`（原生 `IMessagesService`）。它让本就说 Anthropic 方言的系统**原生 in / 原生 out** 接入（零 OpenAI 转换），并复用同一条 `IMessagesService` 打到 Claude 及合作厂家的 Anthropic 兼容入口（智谱 / MiniMax coding-plan）。`ANTHROPIC` 平台同时保留 `Chat` 入口（统一 `IChatService` 适配器，翻译 OpenAI 格式）。详见 [Messages（Anthropic 原生）](/docs/core-sdk/model-access/messages)。
 
 ### `Embedding` / `Audio` / `Realtime` 更窄
 
@@ -91,6 +97,7 @@ AiService aiService = new AiService(configuration);
 
 IChatService chat = aiService.getChatService(PlatformType.OPENAI);
 IResponsesService responses = aiService.getResponsesService(PlatformType.DOUBAO);
+IMessagesService messages = aiService.getMessagesService(PlatformType.ANTHROPIC);
 IEmbeddingService embedding = aiService.getEmbeddingService(PlatformType.OLLAMA);
 IRerankService rerank = aiService.getRerankService(PlatformType.JINA);
 IImageService image = aiService.getImageService(PlatformType.DOUBAO);
