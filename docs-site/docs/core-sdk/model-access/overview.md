@@ -6,10 +6,14 @@
 
 - `platform/openai/chat/entity/ChatCompletion.java`
 - `platform/openai/response/entity/ResponseRequest.java`
+- `platform/anthropic/chat/entity/AnthropicChatCompletion.java`
 - `platform/openai/chat/OpenAiChatService.java`
 - `platform/openai/response/OpenAiResponsesService.java`
+- `platform/anthropic/chat/AnthropicMessagesService.java`
+- `platform/anthropic/chat/AnthropicChatService.java`
 - `listener/SseListener.java`
 - `listener/ResponseSseListener.java`
+- `service/IMessagesService.java`
 - `service/factory/AiService.java`
 
 ## 1. 这一章在 Core SDK 里的位置
@@ -44,7 +48,7 @@
 
 ## 3. 这章最先要分清的边界
 
-第一次进入这一章，最重要的不是先看某个 provider，而是先分清 AI4J 内部有两条不同的模型访问主线：
+第一次进入这一章，最重要的不是先看某个 provider，而是先分清 AI4J 内部有三条不同的模型访问主线，分别对应三族原生协议：
 
 ### `Chat`
 
@@ -59,6 +63,13 @@
 - 更贴近结构化 response item / event 心智
 - provider 覆盖更聚焦
 - 更适合 runtime 侧状态消费
+
+### `Messages`
+
+- 以 Anthropic Messages 协议为中心（顶层 `system`、`content blocks`、`tool_use` / `tool_result`、`thinking`）
+- `IMessagesService` 是原生一等公民：Anthropic 格式进、Anthropic 格式出，零 OpenAI 转换
+- 同时有一个统一适配器 `AnthropicChatService`（实现 `IChatService`），把 OpenAI Chat 请求翻译成 Anthropic Messages，让只想用 `IChatService` 的上层无感接入
+- 适合需要原生 Anthropic 语义（thinking、content blocks）或使用 coding-plan key（智谱 / Minimax 的 Anthropic 端点）的场景
 
 很多后续差异，包括 streaming、多模态、工具解析方式，本质上都从这里分叉。
 
@@ -88,6 +99,7 @@
 
 - `Chat` 是更广覆盖的默认主线
 - `Responses` 是更结构化、但 provider 覆盖更聚焦的主线
+- `Messages`（Anthropic 格式）原生覆盖 Anthropic 端点；智谱、Minimax 的 **coding-plan key** 也走 Anthropic 格式端点，因此通过 `Messages` 或其统一适配器 `AnthropicChatService` 接入
 
 这不是文档叙述偏好，而是当前工厂实现给出的事实。
 
@@ -109,7 +121,7 @@ AI4J 的请求对象策略不是简单追求字段最少，而是把主语义固
 
 所以读这一章时，要把“本地注册字段”和“最终 provider 字段”分开理解。
 
-## 6. 两条主线都不是单纯文本接口
+## 6. 三条主线都不是单纯文本接口
 
 `Chat` 不是“只会返回一条字符串”：
 
@@ -121,7 +133,9 @@ AI4J 的请求对象策略不是简单追求字段最少，而是把主语义固
 - 非流式会返回完整 `Response`
 - 流式时 `ResponseSseListener` 会同时聚合 `events`、`outputText`、`reasoningSummary`、`functionArguments` 和最终 `response`
 
-这意味着两条主线都已经足以支撑中等复杂度运行时，只是适合的消费方式不同。
+`Messages` 同样不只是文本：content blocks 里会带 `thinking`（映射成统一 `reasoningContent` / agent `reasoningText` / 流式 `onReasoningDelta`）、`tool_use` / `tool_result`，统一适配器还能自动跑 tool loop 并把结果回传成 `tool_result`。
+
+这意味着三条主线都已经足以支撑中等复杂度运行时，只是适合的消费方式不同。
 
 ## 7. 多模态也属于这一层，而不是 Tool 或 MCP
 
@@ -144,9 +158,10 @@ AI4J 把图文输入纳入了统一会话抽象：
 
 1. [Chat](/docs/core-sdk/model-access/chat)
 2. [Responses](/docs/core-sdk/model-access/responses)
-3. [Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
-4. [Streaming](/docs/core-sdk/model-access/streaming)
-5. [Multimodal](/docs/core-sdk/model-access/multimodal)
+3. [Messages](/docs/core-sdk/model-access/messages)
+4. [Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
+5. [Streaming](/docs/core-sdk/model-access/streaming)
+6. [Multimodal](/docs/core-sdk/model-access/multimodal)
 6. [Request and Response Conventions](/docs/core-sdk/model-access/request-and-response-conventions)
 
 ## 9. 这一页的结论

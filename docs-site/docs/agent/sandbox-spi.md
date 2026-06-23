@@ -8,7 +8,7 @@ sidebar_position: 9
 
 > Agent 已经决定要执行 shell、文件、浏览器或项目命令时，宿主如何把这次执行交给一个真实的隔离环境，并拿回 stdout、stderr、artifact 和事件？
 
-P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；P2-C 已提供首个真实 provider：Daytona。你仍然可以把同一套 SPI 接到 CubeSandbox、Docker/K8s、E2B、公司内部 VM/microVM 或自己的远端执行平台。
+P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；P2-C 已提供首个真实 provider：Daytona；P2-D 已提供第二个真实 provider：E2B。你仍然可以把同一套 SPI 接到 CubeSandbox、Docker/K8s、公司内部 VM/microVM 或自己的远端执行平台。
 
 ## 1. 它不是什么
 
@@ -219,7 +219,7 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 ### AI4J 会官方内置很多 provider 吗？
 
-不会内置一堆 provider。更稳的路径是：AI4J 提供小而稳定的 SPI，并保留少量官方验证过的真实 provider。Daytona 是首个官方真实 provider；E2B、CubeSandbox、Docker/K8s、内部平台等可以继续由插件、业务方或后续独立任务接入。
+不会内置一堆 provider。更稳的路径是：AI4J 提供小而稳定的 SPI，并保留少量官方验证过的真实 provider。Daytona 与 E2B 是当前两个官方真实 provider；CubeSandbox、Docker/K8s、内部平台等可以继续由插件、业务方或后续独立任务接入。
 
 ### 每个用户应该一个 sandbox，还是共享一个？
 
@@ -322,11 +322,104 @@ mvn -pl ai4j-agent -am "-Dtest=DaytonaSandboxProviderTest" -DskipTests=false -Df
 mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=DaytonaSandboxLiveSmokeTest" -DskipTests=false -DfailIfNoTests=false test
 ```
 
-## 12. 下一步
+## 12. P2-D：E2B provider
+
+P2-D 在通用 SPI 之上新增了第二个真实可用的 E2B 接入：
+
+```text
+io.github.lnyocly.ai4j.agent.sandbox.e2b
+```
+
+E2B 的执行模型与 Daytona 不同：它通过 E2B 控制 API（`X-API-Key`）创建/销毁沙箱，再通过每个沙箱的执行 host（`Authorization: Bearer`）用 Connect server-streaming `process.Process/Start` 协议执行命令。这些协议细节都被 provider 封装，使用者只需要 `SandboxSession.execute(...)`。
+
+核心类：
+
+| 类型 | 作用 |
+| --- | --- |
+| `E2BSandboxProvider` | `SandboxProvider` 实现，`providerId=e2b`。 |
+| `E2BSandboxConfig` | 从环境变量和 `SandboxSpec.config` 读取 E2B 连接、模板、超时和清理配置。 |
+| `E2BSandboxClient` | Java 8 `HttpURLConnection` 客户端：control API（create/delete）+ Connect 帧编解码（`buildProcessFrame` / `parseConnectStream`）。 |
+| `E2BSandboxSession` | 把 `SandboxCommand` 映射为 `sh -c` 执行（可选 stdin 管道），返回 `SandboxResult`。 |
+
+### 最小使用
+
+推荐把密钥放在环境变量里，不要写进代码、YAML 或日志：
+
+```bash
+export E2B_API_KEY="e2b_..."
+# 可选；不传时使用 SDK 默认值（域名 e2b.app / 模板 base / 执行端口 49983）
+```
+
+Java 侧只声明 provider、模板和非敏感策略：
+
+```java
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.e2b.E2BSandboxProvider;
+
+SandboxSession session = new E2BSandboxProvider().createSession(
+        SandboxSpec.builder()
+                .providerId("e2b")
+                .config("templateID", "base")
+                .config("timeoutSeconds", Integer.valueOf(300))
+                .build());
+
+try {
+    SandboxResult result = session.execute(SandboxCommand.builder()
+            .command("printf ai4j-e2b-ok")
+            .timeoutMillis(30000L)
+            .build());
+    System.out.println(result.getExitCode());   // 0
+    System.out.println(result.getStdout());     // ai4j-e2b-ok
+} finally {
+    session.close();   // 默认销毁沙箱
+}
+```
+
+### 配置来源
+
+| 配置 | 来源 | 说明 |
+| --- | --- | --- |
+| `E2B_API_KEY` / `apiKey` | env / `SandboxSpec.config` | E2B API key；生产用法优先 env。 |
+| `E2B_DOMAIN` / `apiDomain` | env / config | E2B 域名，默认 `e2b.app`。 |
+| `E2B_API_URL` / `apiUrl` | env / config | 控制 API 地址；不传时派生为 `https://api.<domain>`。 |
+| `E2B_TEMPLATE_ID` / `templateId` / `templateID` / `image` | env / config / spec | 模板，默认 `base`。 |
+| `E2B_ENVD_PORT` / `envdPort` | env / config | 执行 host 端口，默认 `49983`。 |
+| `E2B_TIMEOUT` / `timeoutSeconds` | env / config | 沙箱存活秒数，默认 `300`。 |
+| `E2B_SANDBOX_URL` / `sandboxUrl` | env / config | 可选；覆盖派生的执行 host（例如走自建代理）。 |
+| `E2B_ACCESS_TOKEN` / `envdAccessToken` | env / config | 可选；secure 流程的 envd 访问令牌（走 `X-Access-Token`）。不传时用 API key 作 Bearer。 |
+| `useShellWrap` | config | 是否用 `sh -c` 包装命令，默认 `true`。 |
+| `deleteOnClose` | config | `close()` 时是否删除沙箱，默认 `true`。 |
+| `env` | config | 注入的非敏感环境变量。 |
+| `connectTimeoutMillis`、`readTimeoutMillis` | config | HTTP 超时。 |
+
+### 执行模型与边界
+
+- 命令默认包成 `sh -c <command>`，支持管道、重定向、多语句（与 Daytona 的 shell 语义对齐）。
+- `SandboxCommand.stdin` 非空时，通过 `printf '%s' '<stdin>' | ( <command> )` 管道喂入并保留退出码。`useShellWrap=false` 时改为按空白拆分直接 exec（不支持 stdin）。
+- stdout / stderr 是 base64 流式输出；exit code 取自 Connect `end.exitCode`，退出码为 0 时从 `"exit status N"` 状态字符串解析。
+- `cancel(...)` 暂时返回 `false`（process `SendSignal` 未接）；`listArtifacts()` 暂时为空（filesystem API 未接）。
+- Live smoke 属于 `live-provider-opt-in`，通过 `-P live-provider-tests` 显式运行，并且只从环境变量读取密钥。
+
+本地确定性回归：
+
+```bash
+mvn -pl ai4j-agent -am "-Dtest=E2BSandboxClientTest,E2BSandboxProviderTest,E2BSandboxConfigTest" -DskipTests=false -DfailIfNoTests=false test
+```
+
+真实 E2B 冒烟（需要环境变量）：
+
+```bash
+mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=E2BSandboxLiveSmokeTest" -DskipTests=false -DfailIfNoTests=false test
+```
+
+## 13. 下一步
 
 推荐后续顺序：
 
 1. P2-B：已把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
-2. P2-C：已落地 Daytona 官方真实 provider，并保留 provider registry / 插件贡献 provider 的后续扩展空间。
+2. P2-C / P2-D：已落地 Daytona 与 E2B 两个官方真实 provider，并保留 provider registry / 插件贡献 provider 的后续扩展空间。
 3. P3：已让 `ai4j-coding` 的 `bash exec` 根据 sandbox binding 路由执行；file/git/browser/project runner 仍应按边界继续拆小切片。
 4. P4：在 CLI/TUI 中显示 `/sandbox status`、provider、workspace、最近执行位置和 artifact。
