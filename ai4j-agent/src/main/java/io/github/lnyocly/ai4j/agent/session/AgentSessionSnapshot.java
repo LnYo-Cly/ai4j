@@ -16,17 +16,18 @@ public class AgentSessionSnapshot {
     private List<AgentSessionEvent> events;
     private CompactResult compactResult;
     private AgentSessionSandboxBinding sandboxBinding;
+    private String runId;
 
     public AgentSessionSnapshot() {
-        this(null, null, null, null, null);
+        this(null, null, null, null, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events) {
-        this(metadata, memory, events, null, null);
+        this(metadata, memory, events, null, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata, MemorySnapshot memory, List<AgentSessionEvent> events, CompactResult compactResult) {
-        this(metadata, memory, events, compactResult, null);
+        this(metadata, memory, events, compactResult, null, null);
     }
 
     public AgentSessionSnapshot(AgentSessionMetadata metadata,
@@ -34,11 +35,21 @@ public class AgentSessionSnapshot {
                                 List<AgentSessionEvent> events,
                                 CompactResult compactResult,
                                 AgentSessionSandboxBinding sandboxBinding) {
+        this(metadata, memory, events, compactResult, sandboxBinding, null);
+    }
+
+    public AgentSessionSnapshot(AgentSessionMetadata metadata,
+                                MemorySnapshot memory,
+                                List<AgentSessionEvent> events,
+                                CompactResult compactResult,
+                                AgentSessionSandboxBinding sandboxBinding,
+                                String runId) {
         this.metadata = metadata == null ? AgentSessionMetadata.create() : metadata.copy();
         this.memory = copyMemory(memory);
         this.events = copyEvents(events);
         this.compactResult = compactResult == null ? null : compactResult.copy();
         this.sandboxBinding = sandboxBinding == null ? null : sandboxBinding.copy();
+        this.runId = trimToNull(runId);
     }
 
     public String getSessionId() {
@@ -85,6 +96,14 @@ public class AgentSessionSnapshot {
         this.sandboxBinding = sandboxBinding == null ? null : sandboxBinding.copy();
     }
 
+    public String getRunId() {
+        return runId;
+    }
+
+    public void setRunId(String runId) {
+        this.runId = trimToNull(runId);
+    }
+
     private static MemorySnapshot copyMemory(MemorySnapshot source) {
         return source == null ? MemorySnapshot.from(new ArrayList<Object>(), null) : MemorySnapshot.from(source.getItems(), source.getSummary());
     }
@@ -99,5 +118,13 @@ public class AgentSessionSnapshot {
             }
         }
         return copy;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

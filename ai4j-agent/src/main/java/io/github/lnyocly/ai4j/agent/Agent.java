@@ -44,19 +44,26 @@ public class Agent {
     }
 
     public AgentSession newSession() {
+        return newSession(AgentSessionMetadata.create(), null);
+    }
+
+    private AgentSession newSession(AgentSessionMetadata metadata, String runId) {
         AgentMemory memory = memorySupplier == null ? baseContext.getMemory() : memorySupplier.get();
-        AgentSessionMetadata metadata = AgentSessionMetadata.create();
+        AgentSessionMetadata sessionMetadata = metadata == null ? AgentSessionMetadata.create() : metadata.copy();
         AgentSessionEventLog eventLog = new InMemoryAgentSessionEventLog();
         AgentContext sessionContext = baseContext.toBuilder()
                 .memory(memory)
-                .sessionId(metadata.getSessionId())
+                .sessionId(sessionMetadata.getSessionId())
                 .eventPublisher(sessionEventPublisher(eventLog))
                 .build();
-        return new AgentSession(runtime, sessionContext, metadata, eventLog, sessionStore);
+        return new AgentSession(runtime, sessionContext, sessionMetadata, eventLog, sessionStore, runId);
     }
 
     public AgentSession newSession(AgentSessionSnapshot snapshot) {
-        AgentSession session = newSession();
+        AgentSession session = newSession(
+                snapshot == null ? null : snapshot.getMetadata(),
+                snapshot == null ? null : snapshot.getRunId()
+        );
         session.restore(snapshot);
         return session;
     }

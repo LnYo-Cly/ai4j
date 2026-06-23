@@ -48,7 +48,8 @@ public class InMemoryAgentSessionStore implements AgentSessionStore {
                 snapshot.getMemory(),
                 snapshot.getEvents(),
                 snapshot.getCompactResult(),
-                snapshot.getSandboxBinding()
+                snapshot.getSandboxBinding(),
+                snapshot.getRunId()
         );
     }
 }

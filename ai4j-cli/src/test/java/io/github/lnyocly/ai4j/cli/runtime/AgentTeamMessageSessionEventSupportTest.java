@@ -43,4 +43,36 @@ public class AgentTeamMessageSessionEventSupportTest {
         Assert.assertEquals(Arrays.asList("Patch looks good.", "No blocking issue found."),
                 sessionEvent.getPayload().get("previewLines"));
     }
+
+    @Test
+    public void toSessionEventShouldPreserveCorrelationFields() {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("messageId", "msg-2");
+        payload.put("fromMemberId", "reviewer");
+        payload.put("toMemberId", "lead");
+        payload.put("type", "task.result");
+        payload.put("content", "Patch looks good.");
+
+        AgentEvent event = AgentEvent.builder()
+                .eventId("agent-event-3")
+                .runId("run-3")
+                .turnId("turn-3")
+                .type(AgentEventType.TEAM_MESSAGE)
+                .step(2)
+                .message("Patch looks good.")
+                .payload(payload)
+                .build();
+
+        SessionEvent sessionEvent = AgentTeamMessageSessionEventSupport.toSessionEvent("session-3", "fallback-turn", event);
+
+        Assert.assertNotNull(sessionEvent);
+        Assert.assertEquals(SessionEventType.TEAM_MESSAGE, sessionEvent.getType());
+        Assert.assertEquals("run-3", sessionEvent.getRunId());
+        Assert.assertEquals("run-3", sessionEvent.getTraceId());
+        Assert.assertEquals("session-3", sessionEvent.getSessionId());
+        Assert.assertEquals("turn-3", sessionEvent.getTurnId());
+        Assert.assertEquals("agent-event-3", sessionEvent.getTurnEventId());
+        Assert.assertNotNull(sessionEvent.getEventId());
+        Assert.assertNull(AgentTeamMessageSessionEventSupport.toSessionEvent(null, "turn-3", event));
+    }
 }

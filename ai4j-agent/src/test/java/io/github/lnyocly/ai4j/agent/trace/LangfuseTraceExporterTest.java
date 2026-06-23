@@ -52,4 +52,32 @@ public class LangfuseTraceExporterTest {
         Assert.assertTrue(String.valueOf(projected.get("langfuse.observation.usage_details")).contains("prompt_tokens"));
         Assert.assertTrue(String.valueOf(projected.get("langfuse.observation.cost_details")).contains("\"total\""));
     }
+
+    @Test
+    public void should_keep_correlation_attributes_in_projection() {
+        Map<String, Object> attributes = new LinkedHashMap<String, Object>();
+        attributes.put("runId", "run_123");
+        attributes.put("sessionId", "session_123");
+        attributes.put("turnId", "turn_123");
+        attributes.put("eventId", "event_123");
+        attributes.put("model", "glm-4.7");
+
+        TraceSpan span = TraceSpan.builder()
+                .traceId("trace_1")
+                .spanId("span_1")
+                .name("agent.run")
+                .type(TraceSpanType.RUN)
+                .status(TraceSpanStatus.OK)
+                .startTime(System.currentTimeMillis())
+                .endTime(System.currentTimeMillis() + 10L)
+                .attributes(attributes)
+                .build();
+
+        Map<String, Object> projected = LangfuseTraceExporter.LangfuseSpanAttributes.project(span, "prod", "1.0.0");
+
+        Assert.assertEquals("run_123", projected.get("runId"));
+        Assert.assertEquals("session_123", projected.get("sessionId"));
+        Assert.assertEquals("turn_123", projected.get("turnId"));
+        Assert.assertEquals("event_123", projected.get("eventId"));
+    }
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DefaultCodingSessionManagerTest {
@@ -84,6 +85,8 @@ public class DefaultCodingSessionManagerTest {
 
         ManagedCodingSession managed = manager.create(agent, CliProtocol.CHAT, options);
         CodingAgentResult firstResult = managed.getSession().run("remember alpha");
+        assertEquals("session-alpha", firstResult.getSessionId());
+        assertEquals(managed.getRunId(), firstResult.getRunId());
         manager.appendEvent(managed.getSessionId(), SessionEvent.builder()
                 .sessionId(managed.getSessionId())
                 .type(SessionEventType.USER_MESSAGE)
@@ -102,13 +105,23 @@ public class DefaultCodingSessionManagerTest {
         assertFalse(events.isEmpty());
         assertEquals(SessionEventType.SESSION_CREATED, events.get(0).getType());
         assertEquals(SessionEventType.SESSION_SAVED, events.get(events.size() - 1).getType());
+        for (SessionEvent event : events) {
+            assertEquals(managed.getRunId(), event.getRunId());
+            assertEquals(managed.getRunId(), event.getTraceId());
+        }
 
         ManagedCodingSession resumed = manager.resume(agent, CliProtocol.CHAT, options, managed.getSessionId());
         CodingAgentResult resumedResult = resumed.getSession().run("what do you remember");
         List<SessionEvent> resumedEvents = manager.listEvents(resumed.getSessionId(), 20, null);
 
         assertTrue(resumedResult.getOutputText().contains("remember alpha"));
+        assertEquals(managed.getRunId(), resumed.getRunId());
+        assertEquals(resumed.getSessionId(), resumedResult.getSessionId());
+        assertEquals(resumed.getRunId(), resumedResult.getRunId());
         assertEquals(SessionEventType.SESSION_RESUMED, resumedEvents.get(resumedEvents.size() - 1).getType());
+        assertNotNull(resumed.getRunId());
+        assertEquals(resumed.getRunId(), resumedEvents.get(resumedEvents.size() - 1).getRunId());
+        assertEquals(resumed.getRunId(), resumedEvents.get(resumedEvents.size() - 1).getTraceId());
 
         ManagedCodingSession forked = manager.fork(agent, CliProtocol.CHAT, options, managed.getSessionId(), "session-beta");
         manager.save(forked);
@@ -123,6 +136,10 @@ public class DefaultCodingSessionManagerTest {
         assertEquals("session-beta", forked.getSessionId());
         assertEquals("session-alpha", forked.getRootSessionId());
         assertEquals("session-alpha", forked.getParentSessionId());
+        assertNotEquals(managed.getRunId(), forked.getRunId());
+        assertEquals("session-beta", forkedResult.getSessionId());
+        assertEquals(forked.getRunId(), forkedResult.getRunId());
+        assertEquals(forked.getRunId(), storedFork.getState().getRunId());
         assertEquals(2, afterFork.size());
     }
 

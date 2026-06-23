@@ -15,6 +15,12 @@ import java.util.List;
 @AllArgsConstructor
 public class AgentResult {
 
+    private String runId;
+
+    private String sessionId;
+
+    private String turnId;
+
     private String outputText;
 
     private Object rawResponse;

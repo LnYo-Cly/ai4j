@@ -104,6 +104,37 @@ public class AgentTraceListenerTest {
     }
 
     @Test
+    public void test_trace_listener_captures_sandbox_session_events() {
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        AgentTraceListener listener = new AgentTraceListener(exporter);
+
+        listener.onEvent(correlatedEvent(AgentEventType.SANDBOX_BOUND, null, "sandbox bound", sandboxPayload("running"),
+                "event-1", "run-1", "session-1", "session"));
+        listener.onEvent(correlatedEvent(AgentEventType.STEP_START, 0, null, null,
+                "event-2", "run-1", "session-1", "turn-1"));
+        listener.onEvent(correlatedEvent(AgentEventType.SANDBOX_UPDATED, 0, "sandbox updated", sandboxPayload("closed"),
+                "event-3", "run-1", "session-1", "turn-1"));
+        listener.onEvent(event(AgentEventType.FINAL_OUTPUT, 0, "done", null));
+        listener.onEvent(event(AgentEventType.STEP_END, 0, null, null));
+
+        TraceSpan sandboxSpan = findSpan(exporter.getSpans(), TraceSpanType.SANDBOX);
+        TraceSpan runSpan = findSpan(exporter.getSpans(), TraceSpanType.RUN);
+
+        Assert.assertNotNull(sandboxSpan);
+        Assert.assertEquals("sandbox.bound", sandboxSpan.getName());
+        Assert.assertEquals("run-1", sandboxSpan.getTraceId());
+        Assert.assertEquals("run-1", sandboxSpan.getAttributes().get("runId"));
+        Assert.assertEquals("session-1", sandboxSpan.getAttributes().get("sessionId"));
+        Assert.assertNotNull(runSpan);
+        Assert.assertEquals("run-1", runSpan.getTraceId());
+        Assert.assertTrue(exporter.getSpans().stream().anyMatch(span ->
+                span.getType() == TraceSpanType.SANDBOX
+                        && "sandbox.updated".equals(span.getName())
+                        && "run-1".equals(span.getTraceId())
+                        && "closed".equals(span.getAttributes().get("status"))));
+    }
+
+    @Test
     public void test_trace_listener_captures_model_usage_cost_and_duration_metrics() {
         InMemoryTraceExporter exporter = new InMemoryTraceExporter();
         TraceConfig config = TraceConfig.builder()
@@ -199,6 +230,14 @@ public class AgentTraceListenerTest {
         return payload;
     }
 
+    private Map<String, Object> sandboxPayload(String status) {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("providerId", "daytona");
+        payload.put("sandboxSessionId", "sandbox-1");
+        payload.put("status", status);
+        return payload;
+    }
+
     private Map<String, Object> modelResponsePayload() {
         Map<String, Object> usage = new LinkedHashMap<String, Object>();
         usage.put("prompt_tokens", 120L);
@@ -215,7 +254,22 @@ public class AgentTraceListenerTest {
     }
 
     private AgentEvent event(AgentEventType type, Integer step, String message, Object payload) {
+        return correlatedEvent(type, step, message, payload, null, null, null, null);
+    }
+
+    private AgentEvent correlatedEvent(AgentEventType type,
+                                       Integer step,
+                                       String message,
+                                       Object payload,
+                                       String eventId,
+                                       String runId,
+                                       String sessionId,
+                                       String turnId) {
         return AgentEvent.builder()
+                .eventId(eventId)
+                .runId(runId)
+                .sessionId(sessionId)
+                .turnId(turnId)
                 .type(type)
                 .step(step)
                 .message(message)

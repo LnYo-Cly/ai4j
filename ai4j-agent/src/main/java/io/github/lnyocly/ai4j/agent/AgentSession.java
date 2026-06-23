@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
+import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
@@ -17,6 +18,7 @@ import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.session.InMemoryAgentSessionEventLog;
 
 import java.util.Map;
+import java.util.UUID;
 
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
@@ -27,6 +29,7 @@ public class AgentSession {
     private final AgentSessionMetadata metadata;
     private final AgentSessionEventLog eventLog;
     private final AgentSessionStore store;
+    private final String runId;
     private CompactResult lastCompactResult;
     private AgentSessionSandboxBinding sandboxBinding;
 
@@ -39,11 +42,23 @@ public class AgentSession {
                         AgentSessionMetadata metadata,
                         AgentSessionEventLog eventLog,
                         AgentSessionStore store) {
+        this(runtime, context, metadata, eventLog, store, null);
+    }
+
+    public AgentSession(AgentRuntime runtime,
+                        AgentContext context,
+                        AgentSessionMetadata metadata,
+                        AgentSessionEventLog eventLog,
+                        AgentSessionStore store,
+                        String runId) {
         this.runtime = runtime;
         this.context = context;
         this.metadata = metadata == null ? AgentSessionMetadata.create() : metadata;
         this.eventLog = eventLog == null ? new InMemoryAgentSessionEventLog() : eventLog;
         this.store = store;
+        this.runId = trimToNull(runId) == null
+                ? "run_" + UUID.randomUUID().toString().replace("-", "")
+                : runId;
     }
 
     public AgentResult run(String input) throws Exception {
@@ -52,7 +67,7 @@ public class AgentSession {
 
     public AgentResult run(AgentRequest request) throws Exception {
         try {
-            return runtime.run(context, request);
+            return runtime.run(context, enrichRequest(request, null));
         } finally {
             metadata.touch();
         }
@@ -60,7 +75,7 @@ public class AgentSession {
 
     public void runStream(AgentRequest request, AgentListener listener) throws Exception {
         try {
-            runtime.runStream(context, request, listener);
+            runtime.runStream(context, enrichRequest(request, null), listener);
         } finally {
             metadata.touch();
         }
@@ -68,7 +83,7 @@ public class AgentSession {
 
     public AgentResult runStreamResult(AgentRequest request, AgentListener listener) throws Exception {
         try {
-            return runtime.runStreamResult(context, request, listener);
+            return runtime.runStreamResult(context, enrichRequest(request, null), listener);
         } finally {
             metadata.touch();
         }
@@ -114,7 +129,8 @@ public class AgentSession {
                 memory == null ? null : memory.snapshot(),
                 eventLog.getEvents(),
                 lastCompactResult,
-                sandboxBinding
+                sandboxBinding,
+                runId
         );
     }
 
@@ -186,6 +202,9 @@ public class AgentSession {
     }
 
     public AgentSession clearSandbox() {
+        if (sandboxBinding == null) {
+            return this;
+        }
         AgentSessionSandboxBinding previous = sandboxBinding;
         sandboxBinding = null;
         metadata.touch();
@@ -208,15 +227,56 @@ public class AgentSession {
         return store;
     }
 
+    public String getRunId() {
+        return runId;
+    }
+
     private void appendSessionEvent(AgentEventType type, String message, Object payload) {
-        if (eventLog == null || type == null) {
+        if (type == null) {
             return;
         }
-        eventLog.append(AgentEvent.builder()
+        AgentEvent event = AgentEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .runId(runId)
+                .sessionId(metadata == null ? null : metadata.getSessionId())
                 .type(type)
                 .step(0)
+                .turnId("session")
                 .message(message)
                 .payload(payload)
-                .build());
+                .build();
+        AgentEventPublisher publisher = context == null ? null : context.getEventPublisher();
+        if (publisher != null) {
+            publisher.publish(event);
+        } else if (eventLog != null) {
+            eventLog.append(event);
+        }
+    }
+
+    private AgentRequest enrichRequest(AgentRequest request, String turnId) {
+        AgentRequest.AgentRequestBuilder builder = request == null ? AgentRequest.builder() : request.toBuilder();
+        Map<String, Object> metadataMap = request == null ? null : request.getMetadata();
+        if (metadataMap == null) {
+            metadataMap = new java.util.LinkedHashMap<String, Object>();
+        } else {
+            metadataMap = new java.util.LinkedHashMap<String, Object>(metadataMap);
+        }
+        if (metadata != null && metadata.getSessionId() != null) {
+            metadataMap.put(AgentRequest.METADATA_KEY_SESSION_ID, metadata.getSessionId());
+        }
+        metadataMap.put(AgentRequest.METADATA_KEY_RUN_ID, runId);
+        if (turnId != null) {
+            metadataMap.put(AgentRequest.METADATA_KEY_TURN_ID, turnId);
+        }
+        builder.metadata(metadataMap);
+        return builder.build();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

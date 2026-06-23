@@ -16,12 +16,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultCodingSessionManager implements CodingSessionManager {
 
     private final CodingSessionStore sessionStore;
     private final SessionEventStore eventStore;
+    private final Map<String, String> sessionRunIds = new ConcurrentHashMap<String, String>();
 
     public DefaultCodingSessionManager(CodingSessionStore sessionStore, SessionEventStore eventStore) {
         this.sessionStore = sessionStore;
@@ -49,7 +52,8 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
                 now,
                 now
         );
-        appendEvent(managed.getSessionId(), baseEvent(managed.getSessionId(), SessionEventType.SESSION_CREATED, "session created", null));
+        rememberRunId(managed);
+        appendEvent(managed.getSessionId(), baseEvent(managed, SessionEventType.SESSION_CREATED, "session created", null));
         return managed;
     }
 
@@ -79,7 +83,8 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
                 storedSession.getCreatedAtEpochMs(),
                 storedSession.getUpdatedAtEpochMs()
         );
-        appendEvent(managed.getSessionId(), baseEvent(managed.getSessionId(), SessionEventType.SESSION_RESUMED, "session resumed", null));
+        rememberRunId(managed);
+        appendEvent(managed.getSessionId(), baseEvent(managed, SessionEventType.SESSION_RESUMED, "session resumed", null));
         return managed;
     }
 
@@ -113,8 +118,9 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
                 now,
                 now
         );
+        rememberRunId(managed);
         appendEvent(managed.getSessionId(), baseEvent(
-                managed.getSessionId(),
+                managed,
                 SessionEventType.SESSION_FORKED,
                 "session forked from " + source.getSessionId(),
                 java.util.Collections.<String, Object>singletonMap("sourceSessionId", source.getSessionId())
@@ -149,7 +155,8 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
                 .state(managedSession.getSession().exportState())
                 .build());
         managedSession.touch(stored.getUpdatedAtEpochMs());
-        appendEvent(managedSession.getSessionId(), baseEvent(managedSession.getSessionId(), SessionEventType.SESSION_SAVED, "session saved", null));
+        rememberRunId(managedSession);
+        appendEvent(managedSession.getSessionId(), baseEvent(managedSession, SessionEventType.SESSION_SAVED, "session saved", null));
         return stored;
     }
 
@@ -207,9 +214,15 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
         if (eventStore == null) {
             return event;
         }
+        String normalizedSessionId = event == null || isBlank(event.getSessionId()) ? sessionId : event.getSessionId();
+        String normalizedRunId = event == null ? null : firstNonBlank(event.getRunId(), sessionRunIds.get(normalizedSessionId));
+        String normalizedEventId = event == null ? null : firstNonBlank(event.getEventId(), UUID.randomUUID().toString());
         SessionEvent normalized = event == null ? null : event.toBuilder()
-                .eventId(isBlank(event.getEventId()) ? UUID.randomUUID().toString() : event.getEventId())
-                .sessionId(isBlank(event.getSessionId()) ? sessionId : event.getSessionId())
+                .eventId(normalizedEventId)
+                .sessionId(normalizedSessionId)
+                .runId(normalizedRunId)
+                .traceId(firstNonBlank(event.getTraceId(), normalizedRunId))
+                .turnEventId(firstNonBlank(event.getTurnEventId(), normalizedEventId))
                 .timestamp(event.getTimestamp() <= 0 ? System.currentTimeMillis() : event.getTimestamp())
                 .build();
         return eventStore.append(normalized);
@@ -232,13 +245,30 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
         return session == null ? null : session.toDescriptor();
     }
 
-    private SessionEvent baseEvent(String sessionId, SessionEventType type, String summary, java.util.Map<String, Object> payload) {
+    private SessionEvent baseEvent(ManagedCodingSession session, SessionEventType type, String summary, java.util.Map<String, Object> payload) {
+        String sessionId = session == null ? null : session.getSessionId();
+        String runId = session == null ? null : session.getRunId();
         return SessionEvent.builder()
+                .eventId(UUID.randomUUID().toString())
                 .sessionId(sessionId)
+                .runId(runId)
                 .type(type)
+                .turnId("session")
+                .traceId(runId)
                 .summary(summary)
                 .payload(payload)
                 .build();
+    }
+
+    private void rememberRunId(ManagedCodingSession session) {
+        if (session == null || isBlank(session.getSessionId()) || isBlank(session.getRunId())) {
+            return;
+        }
+        sessionRunIds.put(session.getSessionId(), session.getRunId());
+    }
+
+    private String firstNonBlank(String first, String second) {
+        return isBlank(first) ? second : first;
     }
 
     private String normalizeRootSessionId(StoredCodingSession session) {

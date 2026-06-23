@@ -29,6 +29,10 @@ public class AgentSessionEvent {
             return null;
         }
         return AgentEvent.builder()
+                .eventId(source.getEventId())
+                .runId(source.getRunId())
+                .sessionId(source.getSessionId())
+                .turnId(source.getTurnId())
                 .type(source.getType())
                 .step(source.getStep())
                 .message(source.getMessage())

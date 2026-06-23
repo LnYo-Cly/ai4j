@@ -48,6 +48,7 @@ import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.model.ResponsesModelClient;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxException;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.coding.CodingAgentResult;
@@ -373,6 +374,7 @@ public class CodingCliSessionRunner {
             return runCliLoop(session);
         } finally {
             detachCodingTaskEventBridge();
+            markSandboxClosed(activeSession);
             closeQuietly(activeSession);
             closeMcpRuntimeQuietly(mcpRuntimeManager);
             closeSandboxQuietly(activeSandboxSession);
@@ -914,7 +916,10 @@ public class CodingCliSessionRunner {
 
         CliAgentListener listener = new CliAgentListener(session, turnId, activeTurn);
         try {
-            CodingAgentResult result = session.getSession().runStream(CodingAgentRequest.builder().input(input).build(), listener);
+            CodingAgentResult result = session.getSession().runStream(CodingAgentRequest.builder()
+                    .input(input)
+                    .metadata(payloadOf(CodingAgentRequest.METADATA_KEY_TURN_ID, turnId))
+                    .build(), listener);
             if (activeTurn != null && activeTurn.isInterrupted()) {
                 return;
             }
@@ -1979,7 +1984,8 @@ public class CodingCliSessionRunner {
                 firstNonBlank(session.getRootSessionId(), session.getSessionId()),
                 session.getParentSessionId(),
                 session.getCreatedAtEpochMs(),
-                session.getUpdatedAtEpochMs()
+                session.getUpdatedAtEpochMs(),
+                session.getRunId()
         );
         closeQuietly(session);
         closeMcpRuntimeQuietly(mcpRuntimeManager);
@@ -4629,6 +4635,14 @@ public class CodingCliSessionRunner {
         }
     }
 
+    private void markSandboxClosed(ManagedCodingSession session) {
+        if (session == null || session.getSession() == null) {
+            return;
+        }
+        session.getSession().updateSandboxStatus(SandboxStatus.CLOSED);
+        session.getSession().clearSandbox();
+    }
+
     private void refreshSessionContext(ManagedCodingSession session) {
         if (!(terminal instanceof JlineShellTerminalIO)) {
             return;
@@ -4728,17 +4742,54 @@ public class CodingCliSessionRunner {
                              Integer step,
                              String summary,
                              Map<String, Object> payload) {
+        appendEvent(session, type, turnId, step, summary, payload, null);
+    }
+
+    private void appendEvent(ManagedCodingSession session,
+                             SessionEventType type,
+                             String turnId,
+                             Integer step,
+                             String summary,
+                             Map<String, Object> payload,
+                             AgentEvent sourceEvent) {
         if (session == null || type == null) {
             return;
         }
+        String runId = firstNonBlank(sourceEvent == null ? null : sourceEvent.getRunId(), session.getRunId());
+        String resolvedTurnId = firstNonBlank(sourceEvent == null ? null : sourceEvent.getTurnId(), turnId);
         try {
             sessionManager.appendEvent(session.getSessionId(), SessionEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .runId(runId)
                     .sessionId(session.getSessionId())
                     .type(type)
-                    .turnId(turnId)
+                    .turnId(resolvedTurnId)
+                    .traceId(runId)
+                    .turnEventId(sourceEvent == null ? null : sourceEvent.getEventId())
                     .step(step)
                     .summary(summary)
                     .payload(payload)
+                    .build());
+            refreshTuiEvents(session);
+        } catch (IOException ex) {
+            if (options.isVerbose()) {
+                terminal.errorln("Failed to append session event: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void appendEvent(ManagedCodingSession session, SessionEvent event) {
+        if (session == null || event == null) {
+            return;
+        }
+        try {
+            String runId = firstNonBlank(event.getRunId(), session.getRunId());
+            sessionManager.appendEvent(session.getSessionId(), event.toBuilder()
+                    .eventId(firstNonBlank(event.getEventId(), UUID.randomUUID().toString()))
+                    .runId(runId)
+                    .sessionId(firstNonBlank(event.getSessionId(), session.getSessionId()))
+                    .traceId(firstNonBlank(event.getTraceId(), runId))
+                    .turnEventId(event.getTurnEventId())
                     .build());
             refreshTuiEvents(session);
         } catch (IOException ex) {
@@ -5271,6 +5322,7 @@ public class CodingCliSessionRunner {
         activeSandboxSession = null;
         sandboxBinding = null;
         try {
+            markSandboxClosed(session);
             ManagedCodingSession rebound = switchSessionRuntime(session, options);
             String closeWarning = closeSandboxQuietly(previousSession);
             emitOutput("sandbox disabled:\n"
@@ -7173,7 +7225,7 @@ public class CodingCliSessionRunner {
                 renderTuiIfEnabled(session);
                 appendEvent(session, SessionEventType.ERROR, turnId, event.getStep(), clip(event.getMessage(), 320), payloadOf(
                         "error", clip(event.getMessage(), options.isVerbose() ? 4000 : 1200)
-                ));
+                ), event);
                 if (useMainBufferInteractiveShell()) {
                     emitMainBufferError(event.getMessage());
                 }
@@ -7248,7 +7300,7 @@ public class CodingCliSessionRunner {
                             "title", toolView.getTitle(),
                             "detail", toolView.getDetail(),
                             "previewLines", toolView.getPreviewLines()
-                    ));
+                    ), event);
             tuiLiveTurnState.onToolCall(event.getStep(), toolView);
             if (useMainBufferInteractiveShell()) {
                 mainBufferTurnPrinter.showStatus(buildMainBufferRunningStatus(toolView));
@@ -7276,7 +7328,7 @@ public class CodingCliSessionRunner {
                             "title", toolView.getTitle(),
                             "detail", toolView.getDetail(),
                             "previewLines", toolView.getPreviewLines()
-                    ));
+                    ), event);
             tuiLiveTurnState.onToolResult(event.getStep(), toolView);
             if (useMainBufferInteractiveShell()) {
                 if (!isApprovalRejectedToolResult(result)) {
@@ -7292,7 +7344,7 @@ public class CodingCliSessionRunner {
             if (sessionEvent == null) {
                 return;
             }
-            appendEvent(session, sessionEvent.getType(), turnId, sessionEvent.getStep(), sessionEvent.getSummary(), sessionEvent.getPayload());
+            appendEvent(session, sessionEvent);
             if (useMainBufferInteractiveShell() && sessionEvent.getType() == SessionEventType.TASK_UPDATED) {
                 mainBufferTurnPrinter.printBlock(codexStyleBlockFormatter.formatInfoBlock(
                         "Subagent task",
@@ -7307,7 +7359,7 @@ public class CodingCliSessionRunner {
             if (sessionEvent == null) {
                 return;
             }
-            appendEvent(session, sessionEvent.getType(), turnId, sessionEvent.getStep(), sessionEvent.getSummary(), sessionEvent.getPayload());
+            appendEvent(session, sessionEvent);
             if (useMainBufferInteractiveShell() && sessionEvent.getType() == SessionEventType.TASK_UPDATED) {
                 mainBufferTurnPrinter.printBlock(codexStyleBlockFormatter.formatInfoBlock(
                         "Team task",
@@ -7322,7 +7374,7 @@ public class CodingCliSessionRunner {
             if (sessionEvent == null) {
                 return;
             }
-            appendEvent(session, sessionEvent.getType(), turnId, sessionEvent.getStep(), sessionEvent.getSummary(), sessionEvent.getPayload());
+            appendEvent(session, sessionEvent);
             if (useMainBufferInteractiveShell()) {
                 mainBufferTurnPrinter.printBlock(codexStyleBlockFormatter.formatInfoBlock(
                         "Team message",

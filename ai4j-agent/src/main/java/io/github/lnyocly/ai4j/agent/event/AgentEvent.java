@@ -11,6 +11,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AgentEvent {
 
+    private String eventId;
+
+    private String runId;
+
+    private String sessionId;
+
+    private String turnId;
+
     private AgentEventType type;
 
     private Integer step;

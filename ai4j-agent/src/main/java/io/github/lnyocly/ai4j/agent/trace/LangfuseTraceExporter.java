@@ -71,6 +71,7 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
             } else {
                 applyGenericObservation(projected, traceSpan);
             }
+            preserveCorrelationAttributes(projected, traceSpan);
             return projected;
         }
 
@@ -158,6 +159,17 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                     projected.put("langfuse.trace.metadata", JSON.toJSONString(attributes));
                 }
             }
+        }
+
+        private static void preserveCorrelationAttributes(Map<String, Object> projected, TraceSpan traceSpan) {
+            Map<String, Object> attributes = traceSpan.getAttributes();
+            if (attributes == null || attributes.isEmpty()) {
+                return;
+            }
+            putIfPresent(projected, "runId", attributes.get("runId"));
+            putIfPresent(projected, "sessionId", attributes.get("sessionId"));
+            putIfPresent(projected, "turnId", attributes.get("turnId"));
+            putIfPresent(projected, "eventId", attributes.get("eventId"));
         }
 
         private static Map<String, Object> metadataAttributes(Map<String, Object> attributes, String... excludedKeys) {

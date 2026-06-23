@@ -17,7 +17,11 @@ import java.util.List;
 @AllArgsConstructor
 public class CodingAgentResult {
 
+    private String runId;
+
     private String sessionId;
+
+    private String turnId;
 
     private String outputText;
 
@@ -42,10 +46,16 @@ public class CodingAgentResult {
 
     public static CodingAgentResult from(String sessionId, AgentResult result) {
         if (result == null) {
-            return CodingAgentResult.builder().sessionId(sessionId).build();
+            return CodingAgentResult.builder()
+                    .sessionId(sessionId)
+                    .runId(null)
+                    .turnId(null)
+                    .build();
         }
         return CodingAgentResult.builder()
+                .runId(result.getRunId())
                 .sessionId(sessionId)
+                .turnId(result.getTurnId())
                 .outputText(result.getOutputText())
                 .rawResponse(result.getRawResponse())
                 .toolCalls(result.getToolCalls())

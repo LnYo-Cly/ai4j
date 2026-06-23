@@ -18,6 +18,8 @@ public class CodingSessionState {
 
     private String sessionId;
 
+    private String runId;
+
     private String workspaceRoot;
 
     private MemorySnapshot memorySnapshot;

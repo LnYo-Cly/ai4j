@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.cli.runtime;
 
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
+import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.session.SessionEventType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,5 +65,35 @@ public class AgentHandoffSessionEventSupportTest {
         Assert.assertEquals("completed", updatedPayload.get("status"));
         Assert.assertEquals("review line 1\nreview line 2", updatedPayload.get("output"));
         Assert.assertEquals(Arrays.asList("review line 1", "review line 2"), updatedPayload.get("previewLines"));
+    }
+
+    @Test
+    public void toSessionEventShouldPreserveCorrelationFields() {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("handoffId", "handoff:call-1");
+        payload.put("title", "Subagent review");
+        payload.put("status", "starting");
+
+        AgentEvent event = AgentEvent.builder()
+                .eventId("agent-event-1")
+                .runId("run-1")
+                .turnId("turn-1")
+                .type(AgentEventType.HANDOFF_START)
+                .step(1)
+                .message("Subagent review")
+                .payload(payload)
+                .build();
+
+        SessionEvent sessionEvent = AgentHandoffSessionEventSupport.toSessionEvent("session-1", "fallback-turn", event);
+
+        Assert.assertNotNull(sessionEvent);
+        Assert.assertEquals(SessionEventType.TASK_CREATED, sessionEvent.getType());
+        Assert.assertEquals("run-1", sessionEvent.getRunId());
+        Assert.assertEquals("run-1", sessionEvent.getTraceId());
+        Assert.assertEquals("session-1", sessionEvent.getSessionId());
+        Assert.assertEquals("turn-1", sessionEvent.getTurnId());
+        Assert.assertEquals("agent-event-1", sessionEvent.getTurnEventId());
+        Assert.assertNotNull(sessionEvent.getEventId());
+        Assert.assertNull(AgentHandoffSessionEventSupport.toSessionEvent(null, "turn-1", event));
     }
 }
