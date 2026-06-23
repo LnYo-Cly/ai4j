@@ -19,9 +19,8 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| CORE-01 | 维护核心 SDK 行为合同 | planned | none | none |
-| CORE-02 | 同步上游 provider / protocol 变化 | in_progress | `tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/task_plan.md` | CORE-01 |
-| CORE-03 | 下游模块影响评估 | planned | none | CORE-01 |
+| T-ADD-ANTHROPIC-MESSAGES-ADAPTER-3876EE40 | Add Anthropic Messages adapter | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/task_plan.md | none |
+| T-ANTHROPIC-NATIVE-MESSAGES-SURFACE-5914B973 | Anthropic native Messages surface | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-06-23-anthropic-native-messages-surface-5914b973/task_plan.md | T-ADD-ANTHROPIC-MESSAGES-ADAPTER-3876EE40 |
 
 ## 活跃任务
 
