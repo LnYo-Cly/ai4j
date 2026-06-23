@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -47,6 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AnthropicMessagesService implements IMessagesService {
 
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+    /** Safety-net upper bound for a single streaming call (10 min). Fine-grained stall detection
+     *  still relies on the caller's OkHttpClient read timeout; this only prevents indefinite block. */
+    private static final long STREAM_TIMEOUT_MS = 600_000L;
 
     private final AnthropicConfig anthropicConfig;
     private final OkHttpClient okHttpClient;
@@ -82,8 +86,12 @@ public class AnthropicMessagesService implements IMessagesService {
                 latch.countDown();
             }
         }, errorRef);
-        factory.newEventSource(httpRequest, listener);
-        latch.await();
+        EventSource eventSource = factory.newEventSource(httpRequest, listener);
+        if (!latch.await(STREAM_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+            eventSource.cancel();
+            throw new AnthropicApiException(0, "stream_timeout",
+                    "anthropic stream timed out after " + STREAM_TIMEOUT_MS + "ms", null);
+        }
         Throwable err = errorRef.get();
         if (err != null) {
             if (err instanceof Exception) {
