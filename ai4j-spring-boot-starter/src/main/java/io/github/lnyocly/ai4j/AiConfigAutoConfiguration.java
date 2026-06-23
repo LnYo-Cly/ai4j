@@ -376,6 +376,7 @@ public class AiConfigAutoConfiguration {
         anthropicConfig.setApiKey(anthropicConfigProperties.getApiKey());
         anthropicConfig.setChatCompletionUrl(anthropicConfigProperties.getChatCompletionUrl());
         anthropicConfig.setApiVersion(anthropicConfigProperties.getApiVersion());
+        anthropicConfig.setStreamTimeoutMillis(anthropicConfigProperties.getStreamTimeoutMillis());
 
         configuration.setAnthropicConfig(anthropicConfig);
     }
