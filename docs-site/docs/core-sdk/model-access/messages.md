@@ -126,7 +126,22 @@ AgentResult result = agent.newSession().run("Introduce yourself in one sentence.
 - 鉴权头：`x-api-key: <key>` + `anthropic-version: 2023-06-01`（非 `Authorization: Bearer`）。
 - 原生路径错误抛类型化 `AnthropicApiException`（子类 `AnthropicRateLimitException` / `AnthropicOverloadedException` / `AnthropicAuthenticationException` / `AnthropicInvalidRequestException`），可精确 catch；统一 `IChatService` 路径仍映射为 `CommonException`。
 
-## 9. 什么时候选 Messages
+## 9. Spring Boot starter 配置
+
+`ai4j-spring-boot-starter` 通过 `@ConfigurationProperties(prefix = "ai.anthropic")` 暴露 Anthropic 配置，auto-config 把 `ai.anthropic.*` 灌进 `AnthropicConfig`：
+
+```yaml
+ai:
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY}
+    api-host: https://open.bigmodel.cn/api/anthropic/   # 默认 api.anthropic.com；coding-plan 改这里
+    chat-completion-url: v1/messages                      # 默认
+    api-version: "2023-06-01"                             # 默认
+```
+
+配置后即可 `aiService.getMessagesService(PlatformType.ANTHROPIC)` 拿到原生服务；agent 侧用 `.anthropicMessages(apiKey, baseUrl)`（见第 5 节）。
+
+## 10. 什么时候选 Messages
 
 适合 `Messages` 原生路径：
 
@@ -139,7 +154,7 @@ AgentResult result = agent.newSession().run("Introduce yourself in one sentence.
 - 你想跨 provider 一套 OpenAI 格式调用，Anthropic 只是其中一家
 - 你已有成熟 OpenAI 兼容链路
 
-## 10. 继续阅读
+## 11. 继续阅读
 
 1. [Chat](/docs/core-sdk/model-access/chat)
 2. [Responses](/docs/core-sdk/model-access/responses)
