@@ -19,7 +19,8 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | none |
+| T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B | Agent observability enhancement | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-22-agent-observability-enhancement-57c03f6b/task_plan.md | none |
+| T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B |
 | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 | P0-A AgentSession runtime container - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-a-agentsession-runtime-container-389dbf12/task_plan.md | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- |
 | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 | P0-B Memory Compact Context Projector - Brief | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-b-memory-compact-context-projector-47effd57/task_plan.md | T-P0-A-AGENTSESSION-RUNTIME-CONTAINER-389DBF12 |
 | T-P0-C-AGENT-PLUGIN-LIFECYCLE-HOOKS-10DF8009 | P0-C Agent plugin lifecycle hooks | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009/task_plan.md | T-P0-B-MEMORY-COMPACT-CONTEXT-PROJECTOR-47EFFD57 |
@@ -29,6 +30,8 @@
 | T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 | P1-C CLI run Agent Blueprint YAML | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25/task_plan.md | T-P1-B-AGENT-BLUEPRINT-TO-AGENTFACTORY-8B418210 |
 | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 | P2-A Sandbox SPI model | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-a-sandbox-spi-model-c9c66766/task_plan.md | T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 |
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
+| T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
+| T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
 
 ## 活跃任务
 
@@ -42,6 +45,7 @@
 | `2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210` | implementation-verified | coordinator | `mvn -pl ai4j-agent -am "-Dtest=AgentBlueprintFactoryTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-agent -am -DskipTests=false test`; `npm run build` in `docs-site` | P1-B adds host-supplied `AgentFactory` / `AgentFactoryContext`, deterministic mapping tests, and docs-site Agent Blueprint update; task-review/PR pending. |
 | `2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | implementation-verified | coordinator | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-cli -am -DskipTests=false test`; `npm --prefix docs-site run build` | P1-C adds top-level `ai4j-cli run <agent.yaml>` and host-side provider/profile resolution with no-token/no-real-sandbox boundaries; task-review/PR pending. |
 | `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
+| `2026-06-23-messages-model-client-0f5bad51` | review | coordinator | `tasks/2026-06-23-messages-model-client-0f5bad51/progress.md` | agent 层 MessagesModelClient 委托 IMessagesService（原生 Anthropic 线协议）；worktree feature/anthropic-native-surface |
 
 ## 验证
 

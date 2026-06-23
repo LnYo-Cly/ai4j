@@ -74,3 +74,10 @@
 - 验证结果：PR #110 已合并到 `origin/main`，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`；当前规划任务保持 planning-only。
 - 下一步：清理 P1-C worktree 后，创建 P2-A Sandbox SPI model worktree/task，继续 implementation + docs-site + regression。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md:current-state plan updated after P1-C merge for P2 Sandbox SPI next step
+
+### [2026-06-20 13:30] - final roadmap and task plan recorded
+
+- 做了什么：按用户要求使用 Coding Agent Harness skill 将上方关于 `ai4j-agent` 改进完善增强方向的全部讨论记录为最终总规划，并校正当前 root `main` / `dev` 分支实际状态。
+- 验证结果：新增 `references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md`；同步更新 `references/INDEX.md`、`task_plan.md`、`findings.md`、`review.md`、`visual_map.md`。`git diff --check` 已通过；`npx --yes coding-agent-harness status --json .` 返回 failures=0，当前仅因本次规划文件未提交而存在 dirty warning。
+- 下一步：后续实施从 R0 调研、backlog reconciliation、Remote Runner SPI、one-command install、CLI/TUI polish 或 docs-site completeness 中选一个独立小任务。
+- 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md:final roadmap and current repository state correction

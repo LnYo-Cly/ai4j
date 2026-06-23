@@ -140,3 +140,11 @@
 | E-006 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md | 最终集成实施规划固定模块边界、P0-P5 顺序、R0 调研门禁、P1-C 合并状态、P2 下一步和不要做事项。 |
 
 补充审查结论：本次补充没有改变 planning-only 边界；P1-C 已合并，下一步收敛到 P2-A Sandbox SPI model；无新增 blocking material finding。
+
+## 最终总规划审查补充（2026-06-20 13:30）
+
+| Evidence ID | Type | Path | Summary |
+| --- | --- | --- | --- |
+| E-007 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md | 最终总规划与当前状态校正：固定 ai4j-agent 主入口、插件生态、Blueprint、Sandbox/Runner、CLI/TUI、docs-site 和 Harness 边界；校正 root `main` 与 `dev` 的 P2/P3/P4 实际状态。 |
+
+补充审查结论：本次更新仍是 planning-only；未修改生产 Java 代码、未新增 Maven 模块、未接真实 sandbox provider。新增的 material risk 是“后续 agent 误读早期下一步”，已通过 R-005/F-018 校正为先检查集成分支，再选择 R0/backlog/Runner/Install/CLI/docs 小切片。

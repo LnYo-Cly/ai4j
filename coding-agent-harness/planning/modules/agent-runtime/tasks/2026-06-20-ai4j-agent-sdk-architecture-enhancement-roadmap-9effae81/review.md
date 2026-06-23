@@ -75,6 +75,8 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 | E-002 | diff | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81 | Task package 已替换模板占位内容。 |
 | E-003 | command | TARGET:. | `git diff --check` passed. |
 | E-004 | command | TARGET:. | `npx --yes coding-agent-harness status --json .` reported failures=0; current task materialsReady=true and lessonCandidateDecisionComplete=true; dirty warning expected before commit. |
+| E-005 | report | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md | 完整任务规划覆盖产品定位、模块边界、Session/Memory/Compact、YAML Blueprint、插件生态、Sandbox/Remote Runner、CLI/TUI、docs-site 和实施队列。 |
+| E-006 | report | TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/references/agent-sdk-cloud-runner-cli-product-plan-2026-06-21.md | 补充规划覆盖云端 Agent Runner、Sandbox 运行形态、插件生态、Coding Agent CLI/TUI、安装分发和 docs-site 产品化任务队列。 |
 
 ## 无重要发现声明
 

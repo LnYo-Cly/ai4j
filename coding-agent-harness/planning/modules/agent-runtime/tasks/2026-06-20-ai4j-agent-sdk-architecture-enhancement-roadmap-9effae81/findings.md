@@ -59,3 +59,16 @@
 | 是否需要官方 sandbox provider 模块 | 先提供 SPI 和 fake/test provider；真实 provider 由插件或后续官方示例承载 | coordinator | Sandbox provider 任务开始前 |
 | 是否开放 TUI render plugin | 先开放 CLI Command Plugin；TUI 渲染扩展等体验稳定后再开放 | coordinator | CLI/TUI 插件任务前 |
 | P0/P1/P2 已有任务哪些需要 supersede | 先完成 P2-B，再用 Harness status 和 PR 状态逐项核对 | coordinator | 下一轮 backlog reconciliation |
+### 完整任务规划应成为后续实现任务的首读材料
+
+- 背景：用户要求把 `ai4j-agent` 改进完善增强方向、Memory/Compact、YAML Agent、插件生态、Sandbox/Remote Runner、CLI/TUI、docs-site 质量要求整体总结并记录下来。
+- 发现：已有 master plan 分散记录了 R0/P0-P7 队列，但后续 agent 仍需要一份单文件入口，避免从长对话中提取结论或遗漏“不要新增 Host Kernel / 不拆核心 Maven / 不写伪 API / sandbox 非默认”等关键边界。
+- 影响：新增 `references/agent-sdk-complete-enhancement-task-plan-2026-06-20.md` 作为后续实现任务首读材料；实现前仍必须以最新 `origin/dev`、PR 状态和 `harness status --json` 校准。
+- 后续：每个实现切片继续单独建 task/worktree/PR，不能把本规划当成代码已完成的证明。
+
+### 云端 Agent Runner 与 Coding Agent CLI 产品化规划已补充
+
+- 背景：用户继续追问 ai4j-agent 的完整增强方向，包括 sandbox/远端运行环境、memory/compact、YAML Agent、插件生态、CLI/TUI、安装入口和 docs-site 质量。
+- 发现：AI4J 应提供 Sandbox / Remote Agent Runner 抽象和 fake/test provider，帮助开发者构建云端 Agent 产品；但不应首版内置重型云控制平台，也不应把 Harness 内化为 SDK 核心能力。
+- 影响：新增 `references/agent-sdk-cloud-runner-cli-product-plan-2026-06-21.md`，作为后续实现任务读取的产品化补充规划；推荐先做 backlog reconciliation 和 source-backed research digest，再推进 session/memory/compact、sandbox routing、CLI/TUI、one-command install 和 docs-site completeness。
+- 后续：实现任务必须从最新 `origin/dev` 校准，单独创建 Harness task、worktree 和 PR；不能把本规划视为代码已实现证明。

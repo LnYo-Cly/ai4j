@@ -42,3 +42,12 @@
 | F-015 | P1 | 当前不应继续扩散总规划；真实下一步是 P2-A Sandbox SPI model。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 14 节；PR #110 已合并 | 创建 P2-A worktree/branch/task package，先做 Sandbox SPI model + fake provider tests。 | open-follow-up |
 | F-016 | P2 | P2/P3/P4/P5 依赖关系必须保持顺序，否则会把 Sandbox、Coding tools、CLI 和 Runner 过早耦合。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 5-8 节 | Sandbox 先 fake provider + SPI，再 coding routing，再 CLI UX，最后 Runner 决策。 | open-follow-up |
 | F-017 | P2 | CLI/TUI 增强应继续 Java + JLine + renderer abstraction，不应为了视觉效果过早引入 Ink/React 双栈。 | `references/ai4j-agent-sdk-integrated-implementation-plan-2026-06-20.md` 第 7 节 | P4 任务先做布局、slash command、reply rendering 和 Harness bridge 的 Java 侧抽象。 | open-follow-up |
+
+## 2026-06-20 最终总规划与当前仓库状态校正新增发现
+
+| ID | Severity | Finding | Evidence | Required Action | Status |
+| --- | --- | --- | --- | --- | --- |
+| F-018 | P1 | 早期“当前下一步 P2-A Sandbox SPI model”结论已随仓库推进过期；root `main` 已包含 P2/P3 基础，`dev` 已包含 P4 `/sandbox` CLI 命令。 | `git log main..dev`; `git log dev..main`; `references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md` 第 9 节 | 后续 agent 必须先确认当前集成分支，再从 R0/backlog/Runner/Install/CLI polish/docs-site 队列选切片。 | open-follow-up |
+| F-019 | P2 | Remote Agent Runner 可以成为 AI4J 的产品化差异点，但必须先做 contract/fake runner，不能直接承诺云平台或新增大模块。 | 最终总规划第 6、10、12 节 | 新建 `Remote Agent Runner SPI contract` 独立任务，使用 fake runner tests 和 event stream fixture。 | open-follow-up |
+| F-020 | P2 | CLI/TUI 改进必须基于 source-backed research 和当前 Java/JLine 基座，不应凭印象照搬 Pi/Codex/Claude Code。 | 最终总规划第 7、10 节 | 先开 R0-PI / R0-CODING-CLI 调研任务，再进入渲染层和交互实现。 | open-follow-up |
+| F-021 | P2 | docs-site 仍需要从 roadmap 升级为可用教程体系；每个能力页必须包含最小示例、API/YAML、限制、FAQ 和下一步。 | 最终总规划第 8 节 | 开 docs-site completeness pass，所有示例与真实 API 对齐并跑 docs build。 | open-follow-up |

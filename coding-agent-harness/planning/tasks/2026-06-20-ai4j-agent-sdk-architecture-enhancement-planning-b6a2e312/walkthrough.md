@@ -80,3 +80,9 @@ Closeout Status: pending-human-confirmation
 - CLI/TUI 保持 Java + JLine + renderer abstraction，不完整内化 Coding Agent Harness。
 - 后续对标 Pi / Codex / Claude Code / OpenCode / Spring AI / LangChain4j / AgentScope Java / Sandbox provider 必须先做 R0 source-backed research。
 - 当前真实下一步是启动 P2-A Sandbox SPI model；P1-C merge commit 为 `384edd11424884e308c047f7e2a4b20997e95e49`。
+
+## 2026-06-20 最终总规划补充
+
+- 新增最终入口：`references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md`。
+- 关键校正：早期 “下一步 P2-A” 在当前 root `main` 已过期；`main` 已有 P2/P3 基础，`dev` 已有 P4 `/sandbox` metadata-only CLI 命令。
+- 后续建议：不要继续开总规划任务；应从 R0 调研、backlog reconciliation、Remote Runner SPI、one-command install、CLI/TUI polish、docs-site completeness 中选择单一切片，按 Harness 新任务执行。

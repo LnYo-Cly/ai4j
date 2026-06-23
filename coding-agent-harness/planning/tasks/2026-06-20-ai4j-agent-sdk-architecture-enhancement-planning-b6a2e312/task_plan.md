@@ -132,3 +132,17 @@ Task Package Index: required
 - [ ] 规划明确 R0 调研门禁，后续对标 Pi / Codex / Claude Code / OpenCode / Java SDK / Sandbox provider 必须 source-backed。
 
 当前实际下一步：启动 P2-A Sandbox SPI model 任务；P1-C 已通过 PR #110 合并，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`。
+
+## 2026-06-20 最终总规划与当前状态校正补充
+
+| ID | 类型 | 路径 | 为什么需要 | 使用者 |
+| --- | --- | --- | --- | --- |
+| C-009 | report | TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md | 当前最终入口；把本轮讨论完整沉淀为任务级规划，并校正 root `main` / `dev` 的真实状态与后续优先级。 | coordinator / reviewer / future worker |
+
+新增验收补充：
+
+- [ ] 后续实施者能从 `references/INDEX.md` 第一时间找到最终总规划。
+- [ ] 规划明确早期“下一步 P2-A”在当前 root `main` 上已过期：P2 Sandbox SPI、P2-B binding、P3 coding sandbox routing 已有基础提交。
+- [ ] 规划明确 `dev` worktree 已包含 P4 `/sandbox status/attach/disable` metadata-only 命令，且 metadata-only attach 不会静默回退本地执行。
+- [ ] 规划明确下一批可执行切片：R0 source-backed research、Agent Runtime backlog reconciliation、Remote Agent Runner SPI contract、one-command install、CLI/TUI polish、docs-site completeness。
+- [ ] 规划继续保持 planning-only，不修改 Java 生产代码、不新增 Maven 模块、不提交 token。

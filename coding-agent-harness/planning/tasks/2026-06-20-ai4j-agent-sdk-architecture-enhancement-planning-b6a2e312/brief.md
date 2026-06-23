@@ -80,3 +80,7 @@
 - docs-site 同步要求与“不要做的事”。
 
 当前实际下一步：P1-C 已合并到 `origin/main`（PR #110，merge commit `384edd11424884e308c047f7e2a4b20997e95e49`）；不要重复开总规划任务，下一步进入 P2 Sandbox SPI。
+
+## 2026-06-20 最终总规划补充
+
+最新最终入口为 `references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md`。该文件记录本轮全部讨论，并校正当前仓库状态：root `main` 已包含 P2/P3 基础，`dev` 已包含 P4 `/sandbox` CLI 命令；后续不应重复总规划，应选择 R0 调研、backlog reconciliation、Remote Runner SPI、one-command install、CLI/TUI polish 或 docs-site completeness 的独立 Harness 任务。
