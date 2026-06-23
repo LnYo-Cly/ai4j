@@ -14,7 +14,7 @@
 | Closeout token | pending |
 | Source task | 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 |
 | Owner | coordinator |
-| Last updated | 2026-06-21 |
+| Last updated | 2026-06-23 |
 
 ## Schema
 
@@ -46,10 +46,11 @@
 
 | ID | Row Status | Title | Scope | Module Key | Detail Artifact | Boundary Reason | Why It Might Matter | Review Decision | Promotion Target | Conflict Check | Required Standard Update | Follow-up Task |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| LC-20260623-001 | ready-for-review | 外部协议实现必须 live 实测，预研笔记会过时/有误 | task | agent-runtime | n/a | 本任务预研笔记错 3 处（envd 端口、envdAccessToken、exitCode） | 新 provider 接外部协议时，逐字节实测比照搬文档/笔记可靠；预研结论要标记可证伪 | pending-human-review | n/a | 无 | 无 | n/a |
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+有候选 LC-20260623-001 待人工判定。
 
 ## Promotion Notes
 
