@@ -1,6 +1,6 @@
 # Anthropic native Messages surface - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -28,3 +28,8 @@
 
 - P1.5（agent MessagesModelClient 接入）在 agent-runtime 任务。
 - 多 tool 并行流式按单 tool 链路（content_block_stop 聚合）。
+
+### [2026-06-23 closeout] - 任务收口
+
+- 代码已合并到 main（经 PR + CI 全绿）；状态推进到 已完成。
+- 残余：见 walkthrough/residual。

@@ -1,6 +1,6 @@
 # Anthropic MessagesModelClient for agent - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -13,3 +13,8 @@
 ## 残余
 
 - agent 构建器便捷方法（如 `.platform(ANTHROPIC)` 自动注入 MessagesModelClient）未加；当前通过 `modelClient(new MessagesModelClient(svc))` 注入即可。
+
+### [2026-06-23 closeout] - 任务收口
+
+- 代码已合并到 main（经 PR + CI 全绿）；状态推进到 已完成。
+- 残余：见 walkthrough/residual。

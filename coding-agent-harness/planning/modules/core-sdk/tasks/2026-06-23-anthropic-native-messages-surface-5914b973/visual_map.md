@@ -27,6 +27,6 @@ graph TD
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务包就位 | task_plan 等 | coordinator | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | IMessagesService + AnthropicMessagesService + StreamHandler + 异常 | diff | coordinator | missing | 抽取回归 | coordinator |
-| EXEC-02 | execution | EXEC-01 | planned | 0 | thinking 映射 + AnthropicChatService 委托 + getMessagesService | 单测 | coordinator | missing | thinking 失真 | coordinator |
-| GATE-01 | gate | EXEC-02 | planned | 0 | 回归 + live 烟测 + harness check | progress | coordinator | missing | n/a | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | IMessagesService + AnthropicMessagesService + StreamHandler + 异常 | diff | coordinator | missing | 抽取回归 | coordinator |
+| EXEC-02 | execution | EXEC-01 | done | 100 | thinking 映射 + AnthropicChatService 委托 + getMessagesService | 单测 | coordinator | missing | thinking 失真 | coordinator |
+| GATE-01 | gate | EXEC-02 | done | 100 | 回归 + live 烟测 + harness check | progress | coordinator | missing | n/a | coordinator |
