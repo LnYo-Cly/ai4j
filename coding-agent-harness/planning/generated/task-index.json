@@ -5,9 +5,9 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-23T12:25:45.569Z",
+  "generatedAt": "2026-06-23T14:16:15.110Z",
   "sourceFileHashes": {
-    "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "cdd89f1ecaea09710473181d8c32968ea12d9911a0999a319669942707ad81ab",
+    "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "7359b9b234e2756a23c9124e01cb2646405d0d62694f67354a15bb33ea5b3640",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "2f6b6a978cb622352c15f5bcd38d37103307a348a13bc1c86760855371273185",
     "MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57": "cb2fcc1defaceb50d04b167cfc68a1ff991c06c9982dfdc91f62c7de2c77c92d",
     "MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009": "8b39bc47be8b07ebf0e086522724bad484199be438760cf6e162fcdd649dfb0e",
@@ -17,15 +17,15 @@
     "MODULES/agent-runtime/2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25": "2d245c07e2b21217f8923f4ee9505bb41b2c2a98148bc43b1ec947fac9f79673",
     "MODULES/agent-runtime/2026-06-20-p2-a-sandbox-spi-model-c9c66766": "26b8aa5fe9339873ae9a9540e8237144d40cc563844efd5179483a6effe8ed76",
     "MODULES/agent-runtime/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553": "871053b3e0fda4ff5542dadde4ab1b55d847f9fc61e2bf37dab647976b9abf5e",
-    "MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5": "7fe5f8a49e561741bc635956091fc5a2fd1adf5d9d40e1bb09698f1d03618a38",
-    "MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6": "04b493e63d65bc42530ac42f48f962a50253c4d3a58fabf142c6695fd1543dde",
-    "MODULES/agent-runtime/2026-06-22-agent-observability-enhancement-57c03f6b": "7751a3f71d1377b85d2543d83926a801fe9e07100e842ebeeac8a5bd6ba4f3d3",
-    "MODULES/agent-runtime/2026-06-23-messages-model-client-0f5bad51": "4b4efe59d71f714f4c052ce47410d00a616efdc94325e1c08ba6c34693e8af1c",
-    "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "65cf1eee330e63a5c53857d575cf0bee82441244dc39143c735b9c6918a1e7d4",
-    "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "9d54e6efe3cdb1b8487615f1775b4a723cf88181391acdd095cba19b32c0dd4c",
+    "MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5": "bb0b0a2e1d8733613d10907ce6e3aea3e04bbff71a52d110488eee8715cfbbeb",
+    "MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6": "90108a60d2304f3709835c74129aaa28624702b0578f59559b7a75df3c458d67",
+    "MODULES/agent-runtime/2026-06-22-agent-observability-enhancement-57c03f6b": "d89e8ac9b6066c27734436eb47970a2373e91c68e0ea5887dc09a16ebc98fa92",
+    "MODULES/agent-runtime/2026-06-23-messages-model-client-0f5bad51": "5fb0ff8b29532314668065ea2c025285a2aebe1cebe4acb516f77c44cbb0d3e1",
+    "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
+    "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "d7a172bf3a37f001b4f82f36c83ad135a6d436199048e91b8b19f0e1bac62fe5",
     "MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346": "f19720047f92cd34f1555ff201cd3b9f7f5496685d0bc9d9ad8fa6af6ac3c0d1",
-    "MODULES/core-sdk/2026-06-22-add-anthropic-messages-adapter-3876ee40": "0dc300b275452c6df913290d4e7cb5318d7dc19c0411e172a9d5a2cb48fe7bea",
-    "MODULES/core-sdk/2026-06-23-anthropic-native-messages-surface-5914b973": "38624de172048dfbfbf133622aa269a4dfaa2828f7546801d4c1b0453292f7f1",
+    "MODULES/core-sdk/2026-06-22-add-anthropic-messages-adapter-3876ee40": "be46a9b484d0426942a586b5a8d2390ee43481a113b10c25dda0c064d4a6ec95",
+    "MODULES/core-sdk/2026-06-23-anthropic-native-messages-surface-5914b973": "fee992d91a4845b01087cb9ecbfe67f0b9065d8ef865508262ad2c060f02c6d9",
     "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
     "TASKS/2026-06-04-docs-site-wave-1-entrance-redesign-54198b78": "cb9694293d67a60e7a2d2dd59242223b4ede59d3ffba2a1741305bbb914532a0",
     "TASKS/2026-06-04-first-wave-project-upgrades-93da333c": "158309f36642782b1bea0898f4b7a238834b9696d3ef8ddbada42d26ddd5a0f6",
@@ -70,7 +70,7 @@
     "TASKS/2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b": "45e49cfb885e6339b1e499d7b3881ab9a88c51913bb6a3c79c0806e377792919",
     "TASKS/2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9": "de5c368618b26daa8fded047a6679c18da1bed23434070f9026f4597f5af5fee",
     "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18": "dfc24d322493e8349de90a8b2eb9f5513c3be4663a5f53d358e6cf3e9509e37d",
-    "TASKS/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312": "47f7b68a5a6a4d4e100d6823f5f95ef413ac4748dfcfb716a126edfd11b6b822",
+    "TASKS/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312": "9c8f6156fda17fc079ecaea6222a8b57fb10b6894215bb5cf3c772ec47c86594",
     "TASKS/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add": "74fabd79c8d586c1371754c89ae692feac8bb3b4daa9ef5c5b24448b4b8bf8ad"
   },
   "scope": "all",
@@ -1219,14 +1219,14 @@
       "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "not_started",
-      "lifecycleState": "ready",
+      "state": "done",
+      "lifecycleState": "closing",
       "kind": "module-task",
       "preset": "module",
       "presetVersion": "1",
       "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/artifacts/preset/2026-06-21T11-52-41-488Z",
       "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "not-in-queue",
+      "reviewQueueState": "needs-material",
       "reviewSubmitted": false,
       "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/review.md",
       "closeoutStatus": "pending",
@@ -1237,23 +1237,132 @@
       "packageRole": "local",
       "inferredModule": "agent-runtime",
       "shortId": "2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6",
-      "completion": 0,
+      "completion": 100,
       "lessonCandidateStatus": "pending-review",
       "lessonCandidateReviewDecision": "pending-human-review",
       "lessonCandidatePromotionState": "not-promoted",
-      "lessonCandidateRows": [],
+      "lessonCandidateRows": [
+        {
+          "id": "LC-20260623-001",
+          "status": "ready-for-review",
+          "title": "外部协议实现必须 live 实测，预研笔记会过时/有误",
+          "scope": "task",
+          "moduleKey": "agent-runtime",
+          "detailArtifact": "n/a",
+          "boundaryReason": "本任务预研笔记错 3 处（envd 端口、envdAccessToken、exitCode）",
+          "whyItMightMatter": "新 provider 接外部协议时，逐字节实测比照搬文档/笔记可靠；预研结论要标记可证伪",
+          "reviewDecision": "pending-human-review",
+          "promotionTarget": "n/a",
+          "conflictCheck": "无",
+          "requiredStandardUpdate": "无",
+          "followUpTask": "n/a",
+          "originalRow": "LC-20260623-001 | ready-for-review | 外部协议实现必须 live 实测，预研笔记会过时/有误 | task | agent-runtime | n/a | 本任务预研笔记错 3 处（envd 端口、envdAccessToken、exitCode） | 新 provider 接外部协议时，逐字节实测比照搬文档/笔记可靠；预研结论要标记可证伪 | pending-human-review | n/a | 无 | 无 | n/a"
+        }
+      ],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": false,
+      "materialIssues": [
+        {
+          "code": "missing-review-submission",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Agent has not submitted a strict Agent Review Submission packet.",
+          "allowedWritePaths": [
+            "2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "missing-lesson-decision",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Lesson candidate decision is not complete: pending-review.",
+          "allowedWritePaths": [
+            "2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        }
+      ],
       "taskQueues": [
-        "planned"
+        "missing-materials",
+        "lessons"
       ],
       "queues": [
-        "planned"
+        "missing-materials",
+        "lessons"
       ],
-      "queueReasons": [],
+      "queueReasons": [
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-review-submission",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-lesson-decision",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        }
+      ],
       "supersedes": [],
       "supersededBy": "",
       "deletionState": "active",
@@ -1266,8 +1375,33 @@
       "deleteReason": "",
       "archiveMetadata": {},
       "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
+      "repairPrompt": "Please repair task MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6: P2-D E2B sandbox provider.\n\nTask path: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6\n\nDetected issues:\n- [missing-materials/missing-review-submission] Agent has not submitted a strict Agent Review Submission packet.\n- [missing-materials/missing-lesson-decision] Lesson candidate decision is not complete: pending-review.\n\nAllowed writes:\n- 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/**\n\nForbidden actions:\n- Do not write Human Review Confirmation; only a human can confirm.\n- Do not edit unrelated tasks.\n- Do not fabricate evidence or mark work complete without running checks.\n\nExpected output:\n- Fix the listed task-local materials or blockers.\n- Update progress.md with evidence.\n- Re-run the validation commands below.\n\nValidation commands:\n- node dist/harness.mjs check --profile target-project <target>",
+      "repairActions": [
+        {
+          "kind": "material",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "material",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        }
+      ],
       "documentRefs": [
         {
           "kind": "index",
