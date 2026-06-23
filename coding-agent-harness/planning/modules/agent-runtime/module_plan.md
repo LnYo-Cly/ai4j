@@ -32,7 +32,7 @@
 | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 | P2-A Sandbox SPI model | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-a-sandbox-spi-model-c9c66766/task_plan.md | T-P1-C-CLI-RUN-AGENT-BLUEPRINT-YAML-377E1F25 |
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
 | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | handoff | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
-| T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | review | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
+| T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
 
 ## 活跃任务
 
@@ -47,7 +47,7 @@
 | `2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25` | implementation-verified | coordinator | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test`; `mvn -pl ai4j-cli -am -DskipTests=false test`; `npm --prefix docs-site run build` | P1-C adds top-level `ai4j-cli run <agent.yaml>` and host-side provider/profile resolution with no-token/no-real-sandbox boundaries; task-review/PR pending. |
 | `2026-06-09-ai4j-extension-runtime-adapter-wave-3-e94c61c5` | review-pending | coordinator | `mvn -pl ai4j-agent -am -Dtest=ExtensionAgentToolsTest -DfailIfNoTests=false -DskipTests=false test` | Historical active item; no changes in this P0-A branch. |
 | `2026-06-23-messages-model-client-0f5bad51` | review | coordinator | `tasks/2026-06-23-messages-model-client-0f5bad51/progress.md` | agent 层 MessagesModelClient 委托 IMessagesService（原生 Anthropic 线协议）；worktree feature/anthropic-native-surface |
-| `2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6` | review | coordinator | `tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/progress.md` | E2B sandbox provider：Connect server-streaming 执行 + X-API-Key/Bearer 双鉴权；15 离线 + live 烟测全绿；branch feat/e2b-sandbox-provider |
+| `2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6` | done | coordinator | `tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/progress.md` | E2B sandbox provider：Connect server-streaming 执行 + X-API-Key/Bearer 双鉴权；PR #142 merged 7dcd445；15 离线 + live 烟测全绿 |
 
 ## 验证
 

@@ -26,7 +26,7 @@ flowchart LR
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | E2B provider 7 源文件 + 5 测试文件 + live 验证 | diff、test commands、progress.md | `harness task-phase 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 EXEC-01 --state done --completion 100 --evidence present` | agent | present | 范围外能力 deferred | coordinator |
 | GATE-01 | gate | EXEC-01 | review | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 --message "<summary>"` | agent | present | 待 PR reviewer | coordinator |
-| GATE-02 | gate | GATE-01 | planned | 0 | Human/PR Review Confirmation | review packet 和 PR 确认 | `harness review-confirm 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 --confirm 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6` | human | missing | PR 评审未完成 | human |
+| GATE-02 | gate | GATE-01 | done | 100 | Human/PR Review Confirmation | review packet 和 PR 确认 | `harness review-confirm 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6 --confirm 2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6` | human | present | PR #142 merged 7dcd445 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 

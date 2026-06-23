@@ -1,6 +1,6 @@
 # P2-D E2B sandbox provider - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 ## 进度记录
 
@@ -43,6 +43,12 @@
 - 证据：
   - command:G:\My_Project\java\ai4j-sdk:15 offline + 1 live E2B tests pass, ai4j-agent 148 tests pass
   - command:G:\My_Project\java\ai4j-sdk:E2B_API_KEY=... mvn -pl ai4j-agent -am -Plive-provider-tests -Dtest=E2BSandboxLiveSmokeTest test -> BUILD SUCCESS
+
+### [2026-06-23 22:12] - closeout
+
+- 做了什么：PR #142 squash 合并到 main（merge commit 7dcd445），CI 全绿；任务状态推进到 已完成。
+- 验证结果：mergeCommit 7dcd445，state MERGED，分支已删除。
+- 证据：command:G:\My_Project\java\ai4j-sdk:PR #142 MERGED, main=7dcd445
 
 ## 残余
 
