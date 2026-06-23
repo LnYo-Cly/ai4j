@@ -1,6 +1,6 @@
 # Agent observability enhancement - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -63,3 +63,8 @@
 - Registry update needed：n/a
 - Harness Ledger update needed：closeout pending after review confirmation
 - 负责人：coordinator
+
+### [2026-06-23 closeout] - 任务收口
+
+- 代码已合并到 main（经 PR + CI 全绿）；状态推进到 已完成。
+- 残余：见 walkthrough/residual。
