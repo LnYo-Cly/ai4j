@@ -9,12 +9,12 @@ Task Package Index: required
 
 ## 目标
 
-[用一句话说明本任务完成后应达到的状态。]
+为 agent 事件流增加 durable I/O 捕获 sink 与节点级重放器：真实 agent turn 的每个 MODEL/TOOL 节点 I/O 落盘可回放，重放 MODEL 节点真实再调 LLM。
 
 ## 范围
 
-- 做什么：[本轮允许修改或交付的内容]
-- 不做什么：[明确排除的内容，避免执行中扩大范围]
+- 做什么：在 ai4j-agent 新增 NodeIoRecord + IoCaptureSink(InMemory/Jsonl) + NodeReplayer；复用已有事件流，不改 runtime；真实 LLM 自测。
+- 不做什么：不动 runtime 事件发射；不做幂等/副作用日志/防篡改/JDBC store（Phase 2-4）；不改 core/CLI。
 - 主要风险：[当前已知的技术、产品、协作或验证风险]
 
 ## 预算选择
