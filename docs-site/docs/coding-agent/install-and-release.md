@@ -72,22 +72,28 @@ manifest 主类当前是：
 
 这一点同样重要。
 
-根据当前 `ai4j-cli` 模块内容，仓库里还没有现成的：
+根据当前 `ai4j-cli` 模块内容，仓库里**已经提供**的：
 
-- Windows `.cmd` / `.bat` launcher
-- Unix `ai4j` shell launcher
-- 多平台压缩包生成脚本
+- Unix `ai4j` shell launcher（`ai4j-cli/src/main/distribution/bin/ai4j`）
+- Windows `ai4j.bat` launcher（`ai4j-cli/src/main/distribution/bin/ai4j.bat`）
+
+这两个 launcher 遵守第 8 节的职责边界：只定位 `java`、定位 fat jar、转发参数、保持稳定命令名 `ai4j`，不写死 provider/model/secrets，也不在脚本层解析配置。
+
+仍然**没有现成**的：
+
+- 自动产出 `bin/` + `lib/` 多平台压缩包的 assembly（launcher 目前是源码形态，需手动按下面的 bin/lib 布局放置，或用 `AI4J_JAR` 直接指）
 - checksums 资产生成逻辑
-- repo 内建 installer
+- repo 内建 installer（`curl|sh` 一键安装等）
 
-也就是说，当前“可分发”主要还是：
+也就是说，当前“可分发”现在已经是：
 
 - Maven artifact
 - 可直接 `java -jar` 的 fat jar
+- 两个平台 launcher（源码）
 
-而不是：
+而还**不是**：
 
-- 开箱即装的多平台 CLI 套件
+- 开箱即装、自带更新机制的多平台 CLI 套件
 
 ## 4. 当前最稳的构建命令
 
@@ -142,27 +148,58 @@ mvn -pl ai4j-cli -am -DskipTests package
 
 基于现有源码，最稳的安装方式仍然是：
 
-1. 用户机器上先有可用的 Java 运行时
+1. 用户机器上先有可用的 Java 运行时（JDK 8+）
 2. 拿到 `ai4j-cli-<version>-jar-with-dependencies.jar`
-3. 用 `java -jar ...` 直接运行
 
-例如：
+下面两种方式都真实可用。
+
+### 6.1 用 launcher（推荐）
+
+构建 fat jar 后，按 `bin/` + `lib/` 布局放置 launcher 和 jar：
+
+```text
+ai4j-cli-<version>/
+  bin/
+    ai4j          # 来自 ai4j-cli/src/main/distribution/bin/ai4j
+    ai4j.bat      # 来自 ai4j-cli/src/main/distribution/bin/ai4j.bat
+  lib/
+    ai4j-cli-<version>-jar-with-dependencies.jar
+```
+
+launcher 会自动找到 `../lib/` 下的 fat jar，于是可以直接：
+
+```bash
+./ai4j code --model gpt-5-mini
+```
+
+Windows 下用 `ai4j.bat`。也可以不按布局放，直接用环境变量指 jar：
+
+```bash
+export AI4J_JAR=/path/to/ai4j-cli-2.3.0-jar-with-dependencies.jar
+ai4j --help
+```
+
+launcher 支持的可选覆盖：`AI4J_JAR`（显式指 jar）、`JAVA_HOME`（指定 JRE）、`AI4J_JAVA_OPTS` / `JAVA_OPTS`（JVM 参数）。它不会写死 provider/model/secrets，也不解析配置——那些都交给 `Ai4jCli`。
+
+### 6.2 直接 `java -jar`（最简，无 launcher）
+
+不想用 launcher 时，直接跑 fat jar 也完全可行：
 
 ```powershell
 java -jar .\ai4j-cli-2.3.0-jar-with-dependencies.jar code --model gpt-5-mini
 ```
 
-这不是最优雅的终端安装体验，但它是当前源码已经真实支持、且最不依赖额外包装的方式。
+两种方式都是当前源码真实支持的；launcher 只是省掉每次敲长 jar 名，并在升级版本时不用改命令。
 
 ## 7. 如果你要做正式 release，最少还缺什么
 
-如果你的目标是“给外部用户稳定安装”，在现有 fat jar 之外，至少还建议补齐：
+如果你的目标是“给外部用户稳定安装”，在现有 fat jar + launcher 之外，至少还建议补齐：
 
-- 平台 launcher
+- ~~平台 launcher~~（已提供：`ai4j-cli/src/main/distribution/bin/ai4j(.bat)`）
 - release checksum
 - 最小示例配置
 - 版本化 release notes
-- 平台压缩包
+- 自动产出 `bin/` + `lib/` 平台压缩包的 assembly
 
 一个更像产品的 release 结构通常至少会是：
 

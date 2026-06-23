@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# ai4j — launcher for the ai4j CLI fat jar.
+#
+# Responsibilities (and only these — see docs-site coding-agent/install-and-release
+# section 8): locate java, locate the fat jar, forward all arguments, keep the
+# stable command name `ai4j`. It deliberately does NOT hardcode provider/model/
+# secrets or parse configuration — that is Ai4jCli's job.
+#
+# Optional overrides:
+#   AI4J_JAR        explicit path to ai4j-cli-*-jar-with-dependencies.jar
+#   JAVA_HOME       JRE/JDK home (otherwise `java` from PATH)
+#   AI4J_JAVA_OPTS  extra JVM flags (heap, system properties, ...)
+#
+set -e
+
+# Resolve this script's real directory, following symlinks.
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=$(ls -ld "$PRG")
+  link=$(expr "$ls" : '.*-> \(.*\)$')
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="$(dirname "$PRG")/$link"
+  fi
+done
+BIN_DIR=$(cd "$(dirname "$PRG")" > /dev/null 2>&1 && pwd)
+
+# Locate the fat jar: explicit override, then ../lib/, then alongside the launcher.
+if [ -n "$AI4J_JAR" ]; then
+  JAR="$AI4J_JAR"
+else
+  JAR=""
+  for d in "$BIN_DIR/../lib" "$BIN_DIR"; do
+    match=$(ls "$d"/ai4j-cli-*-jar-with-dependencies.jar 2>/dev/null | head -n 1)
+    if [ -n "$match" ]; then
+      JAR="$match"
+      break
+    fi
+  done
+fi
+if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
+  echo "ai4j: cannot find ai4j-cli fat jar. Set AI4J_JAR or place" \
+       "ai4j-cli-*-jar-with-dependencies.jar next to this launcher or in ../lib/." >&2
+  exit 1
+fi
+
+# Locate java.
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+  JAVACMD="$JAVA_HOME/bin/java"
+else
+  JAVACMD="java"
+fi
+
+exec "$JAVACMD" $AI4J_JAVA_OPTS $JAVA_OPTS -jar "$JAR" "$@"
