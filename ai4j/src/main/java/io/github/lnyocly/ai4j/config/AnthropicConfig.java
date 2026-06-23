@@ -20,4 +20,7 @@ public class AnthropicConfig {
     private String apiKey = "";
     private String chatCompletionUrl = "v1/messages";
     private String apiVersion = "2023-06-01";
+
+    /** 单次流式调用的安全网超时上限（毫秒），防止挂起的流永久阻塞 messagesStream。默认 10 分钟。 */
+    private long streamTimeoutMillis = 600_000L;
 }

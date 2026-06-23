@@ -87,10 +87,12 @@ public class AnthropicMessagesService implements IMessagesService {
             }
         }, errorRef);
         EventSource eventSource = factory.newEventSource(httpRequest, listener);
-        if (!latch.await(STREAM_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        long timeoutMs = anthropicConfig.getStreamTimeoutMillis() > 0
+                ? anthropicConfig.getStreamTimeoutMillis() : STREAM_TIMEOUT_MS;
+        if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
             eventSource.cancel();
             throw new AnthropicApiException(0, "stream_timeout",
-                    "anthropic stream timed out after " + STREAM_TIMEOUT_MS + "ms", null);
+                    "anthropic stream timed out after " + timeoutMs + "ms", null);
         }
         Throwable err = errorRef.get();
         if (err != null) {

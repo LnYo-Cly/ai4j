@@ -16,4 +16,5 @@ public class AnthropicConfigProperties {
     private String apiKey = "";
     private String chatCompletionUrl = "v1/messages";
     private String apiVersion = "2023-06-01";
+    private long streamTimeoutMillis = 600_000L;
 }
