@@ -355,10 +355,6 @@ public class MessagesModelClient implements AgentModelClient {
             }
         }
 
-        AgentModelResult toResult(AnthropicChatCompletionResponse response) {
-            return toResult(response == null ? null : response.getModel());
-        }
-
         AgentModelResult toResult(String modelName) {
             String outputText = text.toString();
             String reasoningText = thinking.toString();

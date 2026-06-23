@@ -71,7 +71,7 @@ public class MinimaxTest {
     @Test
     public void test_chatCompletions_common() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("abab6.5s-chat")
+                .model("MiniMax-M3")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 
@@ -107,7 +107,7 @@ public class MinimaxTest {
     @Test
     public void test_chatCompletions_stream() throws Exception {
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model("abab6.5s-chat")
+                .model("MiniMax-M3")
                 .message(ChatMessage.withUser("鲁迅为什么打周树人"))
                 .build();
 

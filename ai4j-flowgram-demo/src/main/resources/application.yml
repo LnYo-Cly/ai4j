@@ -6,8 +6,8 @@ ai:
     - id: minimax-coding
       platform: minimax
       api-key: ${MINIMAX_API_KEY:}
-      api-host: https://api.minimax.chat/
-      chat-completion-url: v1/text/chatcompletion_v2
+      api-host: https://api.minimaxi.com/
+      chat-completion-url: v1/chat/completions
     - id: glm-coding
       platform: zhipu
       api-key: ${ZHIPU_API_KEY:}

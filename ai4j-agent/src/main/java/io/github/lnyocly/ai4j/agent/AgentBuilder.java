@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.agent;
 
 import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
+import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.model.MessagesModelClient;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
@@ -30,8 +31,11 @@ import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
+import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IMessagesService;
 import io.github.lnyocly.ai4j.agent.trace.AgentTraceListener;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
@@ -148,6 +152,43 @@ public class AgentBuilder {
                 .build());
         IMessagesService service = new AnthropicMessagesService(configuration);
         this.modelClient = new MessagesModelClient(service);
+        return this;
+    }
+
+    /**
+     * Convenience: wire the agent to the OpenAI Chat Completions surface ({@link IChatService}).
+     * Symmetric counterpart to {@link #anthropicMessages(String, String)}.
+     *
+     * @param apiKey OpenAI API key
+     * @return this builder
+     */
+    public AgentBuilder openAiChat(String apiKey) {
+        return openAiChat(apiKey, null);
+    }
+
+    /**
+     * Convenience: wire the agent to the OpenAI Chat Completions surface with a custom base URL
+     * (e.g. an OpenAI-compatible partner endpoint).
+     *
+     * @param apiKey  API key
+     * @param baseUrl OpenAI-compatible base URL (null/blank = default api.openai.com)
+     * @return this builder
+     */
+    public AgentBuilder openAiChat(String apiKey, String baseUrl) {
+        OpenAiConfig config = new OpenAiConfig();
+        config.setApiKey(apiKey);
+        if (baseUrl != null && !baseUrl.trim().isEmpty()) {
+            config.setApiHost(baseUrl);
+        }
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(config);
+        configuration.setOkHttpClient(new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build());
+        IChatService chatService = new OpenAiChatService(configuration);
+        this.modelClient = new ChatModelClient(chatService);
         return this;
     }
 
