@@ -5,25 +5,26 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-23T16:14:45.805Z",
+  "generatedAt": "2026-06-23T19:15:32.811Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "7359b9b234e2756a23c9124e01cb2646405d0d62694f67354a15bb33ea5b3640",
-    "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "d12ea6f08f931f43e2b05f50ac3b16e10cc11e48c6ab22e9bb3cc039f57b513a",
-    "MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57": "dfafbc93717d2549ddbcc38217fa58e3baa35a4e19c4d1072bd7d27feb563811",
-    "MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009": "ea56e1fc87e355e01d6965da1bdc54bd3ba0993d7e21035b6104e34740c66098",
-    "MODULES/agent-runtime/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5": "6c8943994e5a88d2fcfe84dd7b987500601ae63aebca5edcf0aeb9a7c31f2470",
-    "MODULES/agent-runtime/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0": "e5c498c932877bb4e9cc9726be806fac0c4dcee187709e9a0ecde6402ec34fb0",
-    "MODULES/agent-runtime/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210": "8843995dff7d5dd9771dc26a48c8e55c1683e4e43d81514a6eb527fd3dc74d87",
-    "MODULES/agent-runtime/2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25": "14a2ad44e42d2981bd1b357ff64b23dc98a6857a98e4b56b8994b98b8a8e5e5c",
-    "MODULES/agent-runtime/2026-06-20-p2-a-sandbox-spi-model-c9c66766": "b1b8d7065dbccc887d48302e6b45f12653e04287880d797b97983239e6f373f3",
-    "MODULES/agent-runtime/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553": "b91e7e72632e7bbefb67dd76d4cf13330e97e25de764b1c728ac48727869084f",
-    "MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5": "551833762af34dc4faea517692972bebc4a21d7f9987601eaef136843e40611c",
+    "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
+    "MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57": "bea5a497ee191f7051ce712b3ff5c5c560089d455828919b1d793b8aae336682",
+    "MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009": "d374f89d51d316e2ec648cbc149e389b0b53320a13aab5b2152ec5887c89acf6",
+    "MODULES/agent-runtime/2026-06-20-p0-d-agent-approval-and-permission-policy-95b57bb5": "aeb274bea230bb121841083c5408d98a2b27b534f3facf1c2e2f6681d0446fed",
+    "MODULES/agent-runtime/2026-06-20-p1-a-agent-blueprint-schema-model-loader-validat-b05250a0": "8716bbacd223256cf73e231b6351cbea138d5345ad731296f13166c4cbc82dbc",
+    "MODULES/agent-runtime/2026-06-20-p1-b-agent-blueprint-to-agentfactory-8b418210": "f5d7ddab247ace5031a5ec24d58d3a95c25254eb82b530cfe1143f4098660784",
+    "MODULES/agent-runtime/2026-06-20-p1-c-cli-run-agent-blueprint-yaml-377e1f25": "3fbe91b1b22dab8608af8cfda72d6d209cfb3cb8d8f6534600cb8f8cdba21940",
+    "MODULES/agent-runtime/2026-06-20-p2-a-sandbox-spi-model-c9c66766": "29c6a64761ddf6f75464acb4fe81a559969180f1b858126bf8ff15cce0eef8a4",
+    "MODULES/agent-runtime/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553": "c0e8d6753b0dc3a2d6662f18ba92f1cd1e349951c52f488512e148fce6ff521b",
+    "MODULES/agent-runtime/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5": "9db8a1c6768261b6b70aac664d6395ac479c7511401c5e000b148c272b8d4f69",
     "MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6": "90108a60d2304f3709835c74129aaa28624702b0578f59559b7a75df3c458d67",
     "MODULES/agent-runtime/2026-06-22-agent-observability-enhancement-57c03f6b": "d89e8ac9b6066c27734436eb47970a2373e91c68e0ea5887dc09a16ebc98fa92",
     "MODULES/agent-runtime/2026-06-23-messages-model-client-0f5bad51": "5fb0ff8b29532314668065ea2c025285a2aebe1cebe4acb516f77c44cbb0d3e1",
+    "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820": "a2976b7449904251d2d4b61ea4ba5ffd7fe86907710fac7d6600c589f3995c27",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
-    "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "3cfbcdc135ef982577c8c201d646afa0bf00f5a3db5caa45fbd0eb402d40df09",
-    "MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346": "887b7188fc3977c476299db8e3f70968b24d80a4ffda8c9adb6a2d907dc989f4",
+    "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
+    "MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346": "d0a8dcb3b3fd066ae481dd38ca1fba4b2443e01f0709b51f60a2fd3898937fdb",
     "MODULES/core-sdk/2026-06-22-add-anthropic-messages-adapter-3876ee40": "be46a9b484d0426942a586b5a8d2390ee43481a113b10c25dda0c064d4a6ec95",
     "MODULES/core-sdk/2026-06-23-anthropic-native-messages-surface-5914b973": "fee992d91a4845b01087cb9ecbfe67f0b9065d8ef865508262ad2c060f02c6d9",
     "TASKS/2026-06-04-docs-site-information-architecture-redesign-6c91ba27": "2a9bb8f6c0f90d20a7e6593a743779bdf620b7c03a9ff467827bceea8c5b88d8",
@@ -75,12 +76,12 @@
   },
   "scope": "all",
   "taskScopes": {
-    "all": 65,
-    "activeCycle": 65,
-    "reviewWorkbench": 65,
+    "all": 66,
+    "activeCycle": 66,
+    "reviewWorkbench": 66,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 65
+    "taskIndexDefault": 66
   },
   "tasks": [
     {
@@ -1872,6 +1873,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-23-messages-model-client-0f5bad51/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
+      "id": "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
+      "title": "Agent node IO capture + node-level replay",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "in_progress",
+      "lifecycleState": "active",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/artifacts/preset/2026-06-23T18-45-29-638Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "active"
+      ],
+      "queues": [
+        "active"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/walkthrough.md"
         }
       ]
     },
