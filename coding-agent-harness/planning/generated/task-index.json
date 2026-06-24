@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-23T19:15:32.811Z",
+  "generatedAt": "2026-06-24T02:25:18.550Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "7359b9b234e2756a23c9124e01cb2646405d0d62694f67354a15bb33ea5b3640",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
@@ -21,6 +21,7 @@
     "MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6": "90108a60d2304f3709835c74129aaa28624702b0578f59559b7a75df3c458d67",
     "MODULES/agent-runtime/2026-06-22-agent-observability-enhancement-57c03f6b": "d89e8ac9b6066c27734436eb47970a2373e91c68e0ea5887dc09a16ebc98fa92",
     "MODULES/agent-runtime/2026-06-23-messages-model-client-0f5bad51": "5fb0ff8b29532314668065ea2c025285a2aebe1cebe4acb516f77c44cbb0d3e1",
+    "MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7": "705d9a5558914f36edc12bfc09e2172a1fd8ef8fa332625ade93a595a17c7d26",
     "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820": "a2976b7449904251d2d4b61ea4ba5ffd7fe86907710fac7d6600c589f3995c27",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
@@ -76,12 +77,12 @@
   },
   "scope": "all",
   "taskScopes": {
-    "all": 66,
-    "activeCycle": 66,
-    "reviewWorkbench": 66,
+    "all": 67,
+    "activeCycle": 67,
+    "reviewWorkbench": 67,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 66
+    "taskIndexDefault": 67
   },
   "tasks": [
     {
@@ -1873,6 +1874,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-23-messages-model-client-0f5bad51/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
+      "id": "MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
+      "title": "Agent failure recovery via resumable model/tool decorators",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "in_progress",
+      "lifecycleState": "active",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/artifacts/preset/2026-06-24T02-12-08-270Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "active"
+      ],
+      "queues": [
+        "active"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/walkthrough.md"
         }
       ]
     },
