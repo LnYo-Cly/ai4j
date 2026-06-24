@@ -1,41 +1,24 @@
 # Agent durable session store (JDBC) + resume cache persistence - 进度
 
-## 状态：未开始
-
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
+## 状态：进行中
 
 ## 进度记录
 
-证据使用 `type:path:summary` 格式。
+### [2026-06-24] - Phase 3 实现（PR #148 merged）
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 做了什么（包 io.github.lnyocly.ai4j.agent.session / replay）：
+  - FileAgentSessionStore：每个 snapshot 一个 JSON 文件，零外部依赖（文件系统）——轻量默认。填补 core 只有 InMemory 的真实缺口。
+  - JdbcAgentSessionStore + Config：每个 snapshot 一行 JSON（按 session_id），只用 JDK javax.sql/java.sql（驱动用户自带，H2 仅 test-scope）——给共享/生产 DB。
+  - ResumeCache.saveToJson/loadFromJson：resume 缓存落盘，失败恢复可跨真重启。
+- 设计决策：用户明确问"必须依赖 JDBC 吗"→ 答不必须；SPI 中立，File（轻量默认）+ JDBC（生产 DB）都给。JDBC 不强加依赖。
+- 验证：File/JDBC/缓存 共 8 测试（新 store 实例=重启 round-trip）；ai4j-agent 全模块 166 测试 0 失败；diff 干净。
+- 证据：command:G:\My_Project\java\ai4j-sdk:8 durable-store tests pass; ai4j-agent 166 tests; PR #148 MERGED
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无（Phase 3 范围内）。跨重启的端到端 resume 集成（save→真重启→load→resume）已由各组件测试覆盖。
 
-## 协调者交接（Coordinator，启用模块并行时填写）
+## 协调者交接
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：pending-coordinator-pass
+- 负责人：coordinator

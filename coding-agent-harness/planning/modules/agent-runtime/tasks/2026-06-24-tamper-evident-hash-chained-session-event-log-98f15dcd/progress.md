@@ -1,41 +1,24 @@
 # Tamper-evident hash-chained session event log - 进度
 
-## 状态：未开始
-
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
+## 状态：进行中
 
 ## 进度记录
 
-证据使用 `type:path:summary` 格式。
+### [2026-06-24] - Phase 4 实现（PR #149 merged）
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 做了什么（包 io.github.lnyocly.ai4j.agent.session）：
+  - HashChainedEventLog：实现 AgentSessionEventLog + AgentListener，每个事件封进 SHA-256 链（hash = sha256(prevHash || "|" || canonical(event))）。与 InMemoryAgentSessionEventLog 同接口，可替换。
+  - ChainVerification {valid, firstBrokenIndex}：verifyChain() 从 genesis 重算，报告首个 hash 不匹配的链节——任何事后篡改/删除/重排都能检出。
+  - restore() 确定性重封（同事件→同链）；tamperEvent(index) 测试辅助（不重封模拟篡改）。
+- 设计依据：纯密码学，零外部依赖，零 runtime 改动。已记录的工具/模型/沙箱事件成为可辩护的防篡改审计 trail。
+- 验证：5 测试（完整链、篡改检出在对应 index、确定性 restore、listener 接口、clear）；ai4j-agent 全模块 171 测试 0 失败；diff 干净。
+- 证据：command:G:\My_Project\java\ai4j-sdk:5 hash-chain tests pass; ai4j-agent 171 tests; PR #149 MERGED
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 权限流程目前抛 AgentApprovalRequiredException，未发专门审批事件；加显式审批事件是独立 runtime 改动。当前已记录的所有事件（含工具决策）均已防篡改。
 
-## 协调者交接（Coordinator，启用模块并行时填写）
+## 协调者交接
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：pending-coordinator-pass
+- 负责人：coordinator
