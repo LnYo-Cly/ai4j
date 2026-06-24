@@ -1,9 +1,15 @@
 package io.github.lnyocly.ai4j.agent.replay;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,6 +81,54 @@ public class ResumeCache {
     public long getModelMisses() { return modelMisses.get(); }
     public long getToolHits() { return toolHits.get(); }
     public long getToolMisses() { return toolMisses.get(); }
+
+    /**
+     * Persists the cache to a JSON file so failure recovery can resume across a real process
+     * restart (run 1 captures + saves; after restart, run 2 loads + resumes).
+     */
+    public void saveToJson(Path path) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path must not be null");
+        }
+        JSONObject obj = new JSONObject();
+        obj.put("modelResults", modelResults);
+        obj.put("toolOutputs", toolOutputs);
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        Files.write(path, JSON.toJSONString(obj).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Loads a cache previously written by {@link #saveToJson(Path)}; empty cache if the file is absent. */
+    public static ResumeCache loadFromJson(Path path) throws IOException {
+        ResumeCache cache = new ResumeCache();
+        if (path == null || !Files.isRegularFile(path)) {
+            return cache;
+        }
+        JSONObject obj = JSON.parseObject(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+        if (obj == null) {
+            return cache;
+        }
+        JSONObject models = obj.getJSONObject("modelResults");
+        if (models != null) {
+            for (String key : models.keySet()) {
+                AgentModelResult r = models.getObject(key, AgentModelResult.class);
+                if (r != null) {
+                    cache.modelResults.put(key, r);
+                }
+            }
+        }
+        JSONObject tools = obj.getJSONObject("toolOutputs");
+        if (tools != null) {
+            for (String key : tools.keySet()) {
+                String out = tools.getString(key);
+                if (out != null) {
+                    cache.toolOutputs.put(key, out);
+                }
+            }
+        }
+        return cache;
+    }
 
     /** Deterministic key for a MODEL node: the serialized prompt. */
     public static String promptKey(AgentPrompt prompt) {
