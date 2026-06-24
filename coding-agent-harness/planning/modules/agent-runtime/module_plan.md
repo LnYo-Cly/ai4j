@@ -36,6 +36,7 @@
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
 | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
 | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
+| T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 | Tamper-evident hash-chained session event log | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 |
 
 ## 活跃任务
 
