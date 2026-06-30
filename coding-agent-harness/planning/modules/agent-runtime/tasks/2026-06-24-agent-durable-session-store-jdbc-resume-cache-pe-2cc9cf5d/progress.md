@@ -1,6 +1,6 @@
 # Agent durable session store (JDBC) + resume cache persistence - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 ## 进度记录
 
