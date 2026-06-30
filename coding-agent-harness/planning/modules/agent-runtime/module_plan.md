@@ -41,7 +41,8 @@
 | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 | Tamper-evident hash-chained session event log | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 |
 | T-TOOL-INTERCEPTOR-HOOKS-PI-ALIGNED-OBSERVE-BLOCK- | Tool interceptor hooks (pi-aligned: observe/block/modify/route-to-sandbox) | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/task_plan.md | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 |
 | T-USERPROMPTSUBMIT-INTERCEPTION-HOOK-BLOCK-MODIFY- | UserPromptSubmit interception hook (block/modify user prompt) | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-userpromptsubmit-interception-hook-block-modify-bcd16d20/task_plan.md | T-TOOL-INTERCEPTOR-HOOKS-PI-ALIGNED-OBSERVE-BLOCK- |
-| T-WIRE-TOOL-INTERCEPTOR-ROUTETO-TO-SANDBOX-EXECUTI | Wire tool interceptor routeTo to sandbox execution | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/task_plan.md | T-USERPROMPTSUBMIT-INTERCEPTION-HOOK-BLOCK-MODIFY- |
+| T-WIRE-COMPACTION-INTO-RUNTIME-LOOP-AUTO-TRIGGER-B | Wire compaction into runtime loop (auto-trigger + before-compact hook) | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/task_plan.md | T-USERPROMPTSUBMIT-INTERCEPTION-HOOK-BLOCK-MODIFY- |
+| T-WIRE-TOOL-INTERCEPTOR-ROUTETO-TO-SANDBOX-EXECUTI | Wire tool interceptor routeTo to sandbox execution | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/task_plan.md | T-WIRE-COMPACTION-INTO-RUNTIME-LOOP-AUTO-TRIGGER-B |
 
 ## 活跃任务
 

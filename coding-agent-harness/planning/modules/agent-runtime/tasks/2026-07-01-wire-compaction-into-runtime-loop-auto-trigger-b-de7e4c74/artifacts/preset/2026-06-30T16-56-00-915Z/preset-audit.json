@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-30T16:56:00.916Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/artifacts/preset/2026-06-30T16-56-00-915Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}
