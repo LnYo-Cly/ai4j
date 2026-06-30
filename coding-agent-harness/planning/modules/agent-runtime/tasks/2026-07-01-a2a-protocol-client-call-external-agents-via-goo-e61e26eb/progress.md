@@ -39,3 +39,5 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+---
+  2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb
