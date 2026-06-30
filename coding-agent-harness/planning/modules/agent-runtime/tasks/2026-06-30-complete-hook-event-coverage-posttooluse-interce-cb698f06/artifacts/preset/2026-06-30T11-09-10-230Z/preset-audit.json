@@ -1,0 +1,50 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-30T11:09:10.231Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/references/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/artifacts/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-complete-hook-event-coverage-posttooluse-interce-cb698f06/artifacts/preset/2026-06-30T11-09-10-230Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}
