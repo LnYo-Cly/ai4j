@@ -33,6 +33,7 @@ import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.AgentHooks;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
@@ -261,6 +262,21 @@ public class AgentBuilder {
 
     public AgentBuilder promptInterceptor(PromptInterceptor promptInterceptor) {
         this.promptInterceptor = promptInterceptor;
+        return this;
+    }
+
+    /**
+     * Convenience facade over the typed interceptors — pi-like "one place, all events". Configure
+     * preToolUse / postToolUse / userPromptSubmit / stop / preCompact / sessionStart / sessionEnd
+     * with typed lambdas; they compose into the runtime's interceptor slots. Pure sugar over
+     * {@link #toolInterceptor}/{@link #promptInterceptor}/{@link #lifecycleHook}.
+     */
+    public AgentBuilder hooks(java.util.function.Consumer<AgentHooks> config) {
+        if (config != null) {
+            AgentHooks hooks = new AgentHooks();
+            config.accept(hooks);
+            hooks.applyTo(this);
+        }
         return this;
     }
 
