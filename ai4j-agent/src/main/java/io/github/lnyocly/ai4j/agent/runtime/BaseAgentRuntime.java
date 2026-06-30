@@ -28,6 +28,9 @@ import io.github.lnyocly.ai4j.agent.interceptor.PromptDecision;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
+import io.github.lnyocly.ai4j.agent.compact.CompactResult;
+import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
@@ -127,6 +130,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
         while (!stepLimited || step < maxSteps) {
             throwIfInterrupted();
+            // auto-compaction: if the policy says the context is too large, compact before building
+            // the prompt for this step (same trigger point as pi: before the model call).
+            autoCompactIfNecessary(context, listener, step, runId, sessionId, turnId);
             publish(context, listener, AgentEventType.STEP_START, step, runtimeName(), null, runId, sessionId, turnId);
             dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TURN, step, runtimeName(), null);
 
@@ -213,6 +219,39 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .toolResults(toolResults)
                 .steps(step)
                 .build();
+    }
+
+    /**
+     * Checks if the CompactPolicy says the context is too large; if so, fires BEFORE_COMPACT,
+     * runs the compaction, restores the memory, and fires ON_COMPACT. Called at the top of each
+     * step (before the prompt is built) — the same trigger point pi uses.
+     */
+    private void autoCompactIfNecessary(AgentContext context, AgentListener listener,
+                                        int step, String runId, String sessionId, String turnId) {
+        CompactPolicy policy = context == null ? null : context.getCompactPolicy();
+        if (policy == null) {
+            return;
+        }
+        AgentMemory memory = context.getMemory();
+        if (memory == null) {
+            return;
+        }
+        MemorySnapshot snapshot = memory.snapshot();
+        if (snapshot == null || !policy.shouldCompact(snapshot)) {
+            return;
+        }
+        dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_COMPACT, step, runtimeName(), snapshot);
+        try {
+            CompactResult result = policy.compact(snapshot);
+            if (result != null && result.getMemory() != null) {
+                memory.restore(result.getMemory());
+            }
+            publish(context, listener, AgentEventType.MEMORY_COMPRESS, step, "compacted",
+                    result, runId, sessionId, turnId);
+            dispatchLifecycle(context, AgentLifecycleEventType.ON_COMPACT, step, runtimeName(), result);
+        } catch (Exception e) {
+            // compaction failure must not break the run — log and continue with un-compacted memory
+        }
     }
 
     private void throwIfInterrupted() throws InterruptedException {
