@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.cli.config;
 
+import io.github.lnyocly.ai4j.cli.hook.CliHooksConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +14,7 @@ public class CliWorkspaceConfig {
     private List<String> enabledMcpServers;
     private List<String> skillDirectories;
     private List<String> agentDirectories;
+    private CliHooksConfig hooks;
 
     public CliWorkspaceConfig() {
     }
@@ -85,6 +88,14 @@ public class CliWorkspaceConfig {
 
     public void setEnabledMcpServers(List<String> enabledMcpServers) {
         this.enabledMcpServers = copy(enabledMcpServers);
+    }
+
+    public CliHooksConfig getHooks() {
+        return hooks;
+    }
+
+    public void setHooks(CliHooksConfig hooks) {
+        this.hooks = hooks;
     }
 
     public List<String> getSkillDirectories() {
