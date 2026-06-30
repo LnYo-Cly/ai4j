@@ -1,41 +1,17 @@
-# UserPromptSubmit interception hook (block/modify user prompt) - 进度
+# UserPromptSubmit interception hook - 进度
 
-## 状态：未开始
+## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
+### [2026-06-30] - UserPromptSubmit 拦截实现（PR #155 merged）
 
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
-## 进度记录
-
-证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
+- 库（io.github.lnyocly.ai4j.agent.interceptor）：PromptInterceptor.beforePrompt→PromptDecision(allow/block/modify)；接进 runInternal 在 input 入 memory 前——block 直接返回 PROMPT_BLOCKED 不调模型，modify 替换 input，非 String（多模态）跳过。
+- CLI（io.github.lnyocly.ai4j.cli.hook）：CliPromptInterceptor 把 PromptInterceptor 桥到外部命令（userPromptSubmit 配置，同 CliHookInterceptor 语义）；CliHooksConfig.userPromptSubmit；CodingAgentBuilder.promptInterceptor；factory 同时接 tool+prompt hook。
+- 文档：tool-interceptor.md 改名 "Interception Hooks (tool + prompt)" + UserPromptSubmit 段。
+- 验证：4 库测试（block 不调模型、modify 改写、allow、none）+ 5 CLI 桥测试；agent+coding+cli 315 测试 0 失败。
+- 证据：PR #155 MERGED
 
 ## 残余
+- 其它事件（PostToolUse=observe 已被 lifecycle hook 覆盖；Stop/SubagentStop/PreCompact=niche）未做，ROI 低。
 
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+## 协调者交接
+- pending-coordinator-pass
