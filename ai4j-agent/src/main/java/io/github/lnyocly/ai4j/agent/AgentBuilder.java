@@ -30,6 +30,7 @@ import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
@@ -63,6 +64,7 @@ public class AgentBuilder {
     private HandoffPolicy handoffPolicy;
     private final List<SubAgentDefinition> subAgentDefinitions = new ArrayList<>();
     private ToolExecutor toolExecutor;
+    private ToolInterceptor toolInterceptor;
     private CodeExecutor codeExecutor;
     private Supplier<AgentMemory> memorySupplier;
     private AgentOptions options;
@@ -246,6 +248,11 @@ public class AgentBuilder {
         return this;
     }
 
+    public AgentBuilder toolInterceptor(ToolInterceptor toolInterceptor) {
+        this.toolInterceptor = toolInterceptor;
+        return this;
+    }
+
     public AgentBuilder codeExecutor(CodeExecutor codeExecutor) {
         this.codeExecutor = codeExecutor;
         return this;
@@ -417,6 +424,7 @@ public class AgentBuilder {
                 .modelClient(modelClient)
                 .toolRegistry(resolvedToolRegistry)
                 .toolExecutor(resolvedToolExecutor)
+                .toolInterceptor(toolInterceptor)
                 .codeExecutor(resolvedCodeExecutor)
                 .memory(memory)
                 .options(resolvedOptions)
