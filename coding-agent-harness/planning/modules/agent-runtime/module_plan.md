@@ -19,9 +19,9 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE | Agent durable session store (JDBC) + resume cache persistence | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md | none |
-| T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- | Agent failure recovery via resumable model/tool decorators | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md | T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE |
-| T-AGENT-NODE-IO-CAPTURE-NODE-LEVEL-REPLAY-4A61B820 | Agent node IO capture + node-level replay | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/task_plan.md | T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- |
+| T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE | Agent durable session store (JDBC) + resume cache persistence | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md | none |
+| T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- | Agent failure recovery via resumable model/tool decorators | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md | T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE |
+| T-AGENT-NODE-IO-CAPTURE-NODE-LEVEL-REPLAY-4A61B820 | Agent node IO capture + node-level replay | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/task_plan.md | T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- |
 | T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B | Agent observability enhancement | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-22-agent-observability-enhancement-57c03f6b/task_plan.md | T-AGENT-NODE-IO-CAPTURE-NODE-LEVEL-REPLAY-4A61B820 |
 | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- | AI4J Agent SDK architecture enhancement roadmap | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81/task_plan.md | T-AGENT-OBSERVABILITY-ENHANCEMENT-57C03F6B |
 | T-MESSAGES-MODEL-CLIENT-0F5BAD51 | Anthropic MessagesModelClient for agent | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-23-messages-model-client-0f5bad51/task_plan.md | T-AI4J-AGENT-SDK-ARCHITECTURE-ENHANCEMENT-ROADMAP- |
@@ -36,7 +36,8 @@
 | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 | P2-B AgentSession sandbox binding | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-20-p2-b-agentsession-sandbox-binding-e8175553/task_plan.md | T-P2-A-SANDBOX-SPI-MODEL-C9C66766 |
 | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
 | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
-| T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 | Tamper-evident hash-chained session event log | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 |
+| T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 | Tamper-evident hash-chained session event log | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 |
+| T-TOOL-INTERCEPTOR-HOOKS-PI-ALIGNED-OBSERVE-BLOCK- | Tool interceptor hooks (pi-aligned: observe/block/modify/route-to-sandbox) | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/task_plan.md | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 |
 
 ## 活跃任务
 
