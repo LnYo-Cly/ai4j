@@ -2,15 +2,15 @@
 sidebar_position: 11
 ---
 
-# Interception Hooks (tool + prompt: block / modify / route-to-sandbox)
+# Interception Hooks (block / modify / route-to-sandbox + observe events)
 
-ai4j has two control-flow hook interfaces — the Claude-Code / pi interception capability, in-process.
-They run before the relevant action and the runtime honors the decision. This is distinct from the
-observe-only [lifecycle hooks](/docs/agent/plugin-lifecycle-hooks) (which only notify); an interceptor
-can veto, rewrite, or redirect.
+ai4j covers every Claude-Code-equivalent hook event: **interception** (can veto/rewrite) for tool
+calls and prompts, plus **observe** side-effect hooks for turn/compact/session boundaries. Two
+control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/agent/plugin-lifecycle-hooks).
 
-- **`ToolInterceptor`** — before a tool executes (Claude Code "PreToolUse"). Can block / modify / route to sandbox.
-- **`PromptInterceptor`** — before the user's input reaches the model (Claude Code "UserPromptSubmit"). Can block / modify the prompt (guardrails, injection defense, PII redaction, prefix injection).
+- **`ToolInterceptor`** — `beforeToolCall` (Claude Code "PreToolUse": block / modify / route to sandbox) and `afterToolCall` ("PostToolUse": block the result).
+- **`PromptInterceptor`** — before the user's input reaches the model ("UserPromptSubmit": block / modify the prompt).
+- **`AgentLifecycleHook`** — observe-only side-effects for Stop / PreCompact / SessionStart / SessionEnd (now directly registerable via `AgentBuilder.lifecycleHook(...)`).
 
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
 systems. It aligns ai4j with pi and Claude Code, and one decision — `routeTo` — surpasses them.
@@ -87,6 +87,29 @@ The runtime creates a sandbox session from the spec, runs the command, and feeds
 `SANDBOX_RESULT: {"exitCode":0,"stdout":"..."}` back to the model. The interceptor owns the
 tool→command mapping (it knows its tools); the runtime owns session creation/execution.
 
+## PostToolUse (afterToolCall)
+
+`ToolInterceptor` has a second, default method that runs **after** a tool executes, with its output.
+Return `block(reason)` to replace the result fed back to the model — e.g. the output leaked a secret,
+or a post-edit lint failed. The default is `allow()` (no-op), so `beforeToolCall` lambdas still work.
+
+```java
+.toolInterceptor(new ToolInterceptor() {
+    @Override
+    public ToolCallDecision beforeToolCall(AgentToolCall c, AgentContext ctx) {
+        return ToolCallDecision.allow();
+    }
+    @Override
+    public ToolCallDecision afterToolCall(AgentToolCall c, String output, AgentContext ctx) {
+        return containsSecret(output) ? ToolCallDecision.block("output redacted: secret detected")
+                                      : ToolCallDecision.allow();
+    }
+})
+```
+
+The tool still ran (block is post-execution); the model receives `TOOL_BLOCKED: <reason>` instead of
+the raw output.
+
 ## Prompt interception (UserPromptSubmit)
 
 `PromptInterceptor` runs before the user's input is committed to the conversation — block a harmful
@@ -106,6 +129,57 @@ Agent agent = Agents.react()
 
 `PromptDecision` mirrors `ToolCallDecision`: `allow()` / `block(reason)` / `modify(newInput)`. On
 `block`, the agent returns immediately with `PROMPT_BLOCKED: <reason>` and the model is never called.
+
+## Observe events (Stop / PreCompact / SessionStart / SessionEnd)
+
+The remaining Claude-Code events are **side-effects**, not decisions (lint after edit, audit log on
+turn end, snapshot on compact). These ride on the existing observe-only `AgentLifecycleHook`, now
+directly registerable without the extension SPI:
+
+```java
+Agent agent = Agents.react()
+        .modelClient(modelClient).model("m")
+        .lifecycleHook(new AgentLifecycleHook() {
+            @Override public String name() { return "audit"; }
+            @Override public void onEvent(AgentLifecycleEvent e) {
+                if (e.getType() == AgentLifecycleEventType.AFTER_TURN) {
+                    metrics.turnEnded(e.getStep());
+                }
+            }
+        })
+        .build();
+```
+
+Event mapping: `AFTER_TURN`→Stop, `ON_COMPACT`→PreCompact, `SESSION_START`/`SESSION_END`→SessionStart/End.
+
+## Supported events
+
+| Claude Code event | Type | ai4j mechanism |
+| --- | --- | --- |
+| PreToolUse | interception (block/modify/routeTo) | `ToolInterceptor.beforeToolCall` |
+| PostToolUse | interception (block result) | `ToolInterceptor.afterToolCall` |
+| UserPromptSubmit | interception (block/modify prompt) | `PromptInterceptor.beforePrompt` |
+| Stop | observe | `AgentLifecycleHook` → `AFTER_TURN` |
+| PreCompact | observe | `AgentLifecycleHook` → `ON_COMPACT` |
+| SessionStart / SessionEnd | observe | `AgentLifecycleHook` → `SESSION_START/END` |
+
+## File-configured hooks (CLI)
+
+End users configure all of the above via the workspace config JSON — no Java. The CLI bridges each
+event to external shell commands (any language): exit `2` blocks, `{"decision":"modify",...}` JSON
+rewrites, anything else continues.
+
+```json
+"hooks": {
+  "preToolUse":     [{ "command": "python guard.py",   "match": "bash" }],
+  "postToolUse":    [{ "command": "python scan.py",    "match": "bash" }],
+  "userPromptSubmit":[{ "command": "python pii.py" }],
+  "stop":           [{ "command": "python audit.py" }],
+  "preCompact":     [{ "command": "python snapshot.py" }],
+  "sessionStart":   [{ "command": "python on_start.py" }],
+  "sessionEnd":     [{ "command": "python on_end.py" }]
+}
+```
 
 ## Interceptor vs observe-only lifecycle hooks
 
