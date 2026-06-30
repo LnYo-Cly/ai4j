@@ -186,6 +186,7 @@ const sidebars: SidebarsConfig = {
           label: 'Observability',
           items: [
             'agent/trace-observability',
+            'agent/replay-recovery-audit',
           ],
         },
         'agent/reference-core-classes',
