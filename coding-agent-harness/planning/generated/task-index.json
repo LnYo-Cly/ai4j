@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-30T11:31:09.213Z",
+  "generatedAt": "2026-06-30T16:46:40.944Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bd06857b93a89e92eacc30c0f99e9fbae4ca9a484c92350b88ec21a977d5f532",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
@@ -29,6 +29,7 @@
     "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd": "237a0bc32c39d9c2e75167ef74749c4282c78e06899cc5e39b2973c86dadad21",
     "MODULES/agent-runtime/2026-06-30-userpromptsubmit-interception-hook-block-modify-bcd16d20": "9676ed00278bbede16d894024ac731f37c31c4f1c260b5a6a45d7c26d4127fa3",
     "MODULES/agent-runtime/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626": "a1b9df029591584da20f1b8d54a6d4b97507e0ffd9abf7ba38c8816e6ec9a84f",
+    "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80": "f1f3be68d61a965b6f2babe5e4dd2cf6efa4ddc5ae7900eaaa4cddf6f27b3ef4",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
     "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8": "496c6d5ea7b5abd05101ce5082d39614e58f299e18b3d63a4d8df426c82bf3ca",
@@ -84,12 +85,12 @@
   },
   "scope": "all",
   "taskScopes": {
-    "all": 74,
-    "activeCycle": 74,
-    "reviewWorkbench": 74,
+    "all": 75,
+    "activeCycle": 75,
+    "reviewWorkbench": 75,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 74
+    "taskIndexDefault": 75
   },
   "tasks": [
     {
@@ -4467,6 +4468,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
+      "id": "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
+      "title": "AgentHooks facade — named per-event sugar over interceptors",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "in_progress",
+      "lifecycleState": "active",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/artifacts/preset/2026-06-30T16-34-25-059Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "active"
+      ],
+      "queues": [
+        "active"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/walkthrough.md"
         }
       ]
     },
