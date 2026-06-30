@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.cli.hook.CliHookInterceptor;
 import io.github.lnyocly.ai4j.cli.hook.CliPromptInterceptor;
+import io.github.lnyocly.ai4j.cli.hook.CliLifecycleHookBridge;
 import io.github.lnyocly.ai4j.cli.hook.CliHooksConfig;
 import io.github.lnyocly.ai4j.cli.hook.ProcessHookCommandRunner;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
@@ -310,11 +311,14 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
             return;
         }
         CliHooksConfig hooks = workspaceConfig.getHooks();
-        if (!hooks.getPreToolUse().isEmpty()) {
+        if (!hooks.getPreToolUse().isEmpty() || !hooks.getPostToolUse().isEmpty()) {
             builder.toolInterceptor(new CliHookInterceptor(hooks, new ProcessHookCommandRunner()));
         }
         if (hooks.hasPromptHooks()) {
             builder.promptInterceptor(new CliPromptInterceptor(hooks, new ProcessHookCommandRunner()));
+        }
+        if (hooks.hasObserveHooks()) {
+            builder.lifecycleHook(new CliLifecycleHookBridge(hooks, new ProcessHookCommandRunner()));
         }
     }
 

@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.agent.interceptor;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -156,5 +157,40 @@ public class ToolInterceptorTest {
         agent.newSession().run("do the thing");
 
         assertEquals("no interceptor => original call runs", 1, exec.executed.size());
+    }
+
+    @Test
+    public void afterToolCallBlockReplacesTheResultFedBackToModel() throws Exception {
+        AgentToolCall requested = call("{\"x\":1}");
+        ScriptedModelClient model = new ScriptedModelClient(Arrays.asList(
+                AgentModelResult.builder().toolCalls(Collections.singletonList(requested)).build(),
+                AgentModelResult.builder().outputText("done").build()));
+        RecordingExecutor exec = new RecordingExecutor();
+
+        // allow before, block after (e.g. output leaked a secret). Anonymous class overrides the
+        // default afterToolCall in addition to the abstract beforeToolCall.
+        Agent agent = Agents.react()
+                .modelClient(model)
+                .model("test-model")
+                .toolExecutor(exec)
+                .toolRegistry(registry())
+                .toolInterceptor(new ToolInterceptor() {
+                    @Override
+                    public ToolCallDecision beforeToolCall(AgentToolCall c, AgentContext ctx) {
+                        return ToolCallDecision.allow();
+                    }
+                    @Override
+                    public ToolCallDecision afterToolCall(AgentToolCall c, String output, AgentContext ctx) {
+                        return ToolCallDecision.block("output leaked a secret");
+                    }
+                })
+                .build();
+        agent.newSession().run("do the thing");
+
+        assertEquals("tool must still run (block is post-execution)", 1, exec.executed.size());
+        assertTrue("model must be invoked again after the post-block", model.prompts.size() >= 2);
+        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        assertTrue("blocked result must be fed back: " + fedBack,
+                fedBack.contains("TOOL_BLOCKED") && fedBack.contains("leaked a secret"));
     }
 }

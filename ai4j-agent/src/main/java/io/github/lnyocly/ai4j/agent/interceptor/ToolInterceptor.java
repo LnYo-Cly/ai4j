@@ -29,4 +29,15 @@ public interface ToolInterceptor {
      * (same as an executor failure).
      */
     ToolCallDecision beforeToolCall(AgentToolCall call, AgentContext context);
+
+    /**
+     * Called after the tool ran, with its output. PostToolUse interception (Claude Code
+     * "PostToolUse"): return {@link ToolCallDecision#block(String)} to replace the result with a
+     * blocked message fed back to the model (e.g. output leaked a secret), or
+     * {@link ToolCallDecision#allow()} to use the result as-is. Default is allow (no-op), so this
+     * stays a functional interface for {@code beforeToolCall} lambdas.
+     */
+    default ToolCallDecision afterToolCall(AgentToolCall call, String output, AgentContext context) {
+        return ToolCallDecision.allow();
+    }
 }

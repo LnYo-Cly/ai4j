@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -69,6 +70,7 @@ public class AgentBuilder {
     private ToolInterceptor toolInterceptor;
     private PromptInterceptor promptInterceptor;
     private SandboxProvider sandboxProvider;
+    private final List<AgentLifecycleHook> additionalLifecycleHooks = new ArrayList<AgentLifecycleHook>();
     private CodeExecutor codeExecutor;
     private Supplier<AgentMemory> memorySupplier;
     private AgentOptions options;
@@ -262,6 +264,17 @@ public class AgentBuilder {
         return this;
     }
 
+    /**
+     * Registers an additional observe-only lifecycle hook without going through the extension SPI.
+     * Fixes the long-standing "hooks need an extension package" ergonomics gap for simple cases.
+     */
+    public AgentBuilder lifecycleHook(AgentLifecycleHook hook) {
+        if (hook != null) {
+            additionalLifecycleHooks.add(hook);
+        }
+        return this;
+    }
+
     public AgentBuilder sandboxProvider(SandboxProvider sandboxProvider) {
         this.sandboxProvider = sandboxProvider;
         return this;
@@ -430,9 +443,14 @@ public class AgentBuilder {
         if (modelClient == null) {
             throw new IllegalStateException("modelClient is required");
         }
-        AgentLifecycleHookDispatcher lifecycleHooks = extensionTools == null
+        List<AgentLifecycleHook> mergedHooks = new ArrayList<AgentLifecycleHook>();
+        if (extensionTools != null && extensionTools.getLifecycleHooks() != null) {
+            mergedHooks.addAll(extensionTools.getLifecycleHooks());
+        }
+        mergedHooks.addAll(additionalLifecycleHooks);
+        AgentLifecycleHookDispatcher lifecycleHooks = mergedHooks.isEmpty()
                 ? AgentLifecycleHookDispatcher.empty()
-                : new AgentLifecycleHookDispatcher(extensionTools.getLifecycleHooks());
+                : new AgentLifecycleHookDispatcher(mergedHooks);
 
         AgentContext context = AgentContext.builder()
                 .modelClient(modelClient)
