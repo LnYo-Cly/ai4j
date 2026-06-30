@@ -23,6 +23,9 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
@@ -404,10 +407,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                     effectiveCall = decision.getModifiedCall();
                     break;
                 case ROUTE_TO:
-                    // ponytail: sandbox routing needs a bound sandbox session on the runtime;
-                    // until that wiring lands, surface as a blocked result so the model learns the
-                    // command was not run locally. routeTo(...) carries the SandboxSpec for that follow-on.
-                    return buildBlockedOutput(call, "route-to-sandbox requested but no sandbox session is bound");
+                    return routeToSandbox(context, call, decision);
                 case ALLOW:
                 default:
                     break;
@@ -450,6 +450,53 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
         }
         return "TOOL_BLOCKED: " + JSON.toJSONString(payload);
+    }
+
+    /**
+     * Honors a {@link ToolCallDecision.Type#ROUTE_TO}: create a sandbox session from the decision's
+     * spec (via the configured {@link SandboxProvider}), run the decision's command there, and feed
+     * the output back as the tool result. The beyond-pi capability — pi/Claude Code lack a sandbox
+     * SPI; ai4j routes to Daytona/E2B.
+     */
+    protected String routeToSandbox(AgentContext context, AgentToolCall call, ToolCallDecision decision) {
+        SandboxProvider provider = context == null ? null : context.getSandboxProvider();
+        if (provider == null) {
+            return buildBlockedOutput(call, "route-to-sandbox requested but no sandbox provider is configured");
+        }
+        SandboxSession session = null;
+        try {
+            session = provider.createSession(decision.getSandboxSpec());
+            SandboxResult result = session.execute(decision.getSandboxCommand());
+            return buildSandboxOutput(call, result);
+        } catch (Exception e) {
+            return buildToolErrorOutput(call, e);
+        } finally {
+            if (session != null) {
+                try {
+                    session.close();
+                } catch (Exception ignored) {
+                    // best-effort close
+                }
+            }
+        }
+    }
+
+    protected String buildSandboxOutput(AgentToolCall call, SandboxResult result) {
+        JSONObject payload = new JSONObject();
+        payload.put("routed", true);
+        if (result != null) {
+            payload.put("exitCode", result.getExitCode());
+            if (result.getStdout() != null) {
+                payload.put("stdout", result.getStdout());
+            }
+            if (result.getStderr() != null) {
+                payload.put("stderr", result.getStderr());
+            }
+        }
+        if (call != null) {
+            payload.put("tool", call.getName());
+        }
+        return "SANDBOX_RESULT: " + JSON.toJSONString(payload);
     }
 
     protected String buildToolErrorOutput(AgentToolCall call, Exception error) {
