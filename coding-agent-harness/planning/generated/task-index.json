@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-30T05:37:16.290Z",
+  "generatedAt": "2026-06-30T10:03:01.784Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bd06857b93a89e92eacc30c0f99e9fbae4ca9a484c92350b88ec21a977d5f532",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
@@ -26,8 +26,10 @@
     "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820": "b0fd5dba6d2ff0935d4ce9147fc3335cc1e60182754248a65328b26cbb83ceff",
     "MODULES/agent-runtime/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd": "f096ef8405898a1b9f957518ac01f56848b18c18b558faed37dac9217a11c89e",
     "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd": "237a0bc32c39d9c2e75167ef74749c4282c78e06899cc5e39b2973c86dadad21",
+    "MODULES/agent-runtime/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626": "a1b9df029591584da20f1b8d54a6d4b97507e0ffd9abf7ba38c8816e6ec9a84f",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
+    "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8": "496c6d5ea7b5abd05101ce5082d39614e58f299e18b3d63a4d8df426c82bf3ca",
     "MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346": "d0a8dcb3b3fd066ae481dd38ca1fba4b2443e01f0709b51f60a2fd3898937fdb",
     "MODULES/core-sdk/2026-06-22-add-anthropic-messages-adapter-3876ee40": "be46a9b484d0426942a586b5a8d2390ee43481a113b10c25dda0c064d4a6ec95",
     "MODULES/core-sdk/2026-06-23-anthropic-native-messages-surface-5914b973": "fee992d91a4845b01087cb9ecbfe67f0b9065d8ef865508262ad2c060f02c6d9",
@@ -80,12 +82,12 @@
   },
   "scope": "all",
   "taskScopes": {
-    "all": 70,
-    "activeCycle": 70,
-    "reviewWorkbench": 70,
+    "all": 72,
+    "activeCycle": 72,
+    "reviewWorkbench": 72,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 70
+    "taskIndexDefault": 72
   },
   "tasks": [
     {
@@ -4167,6 +4169,106 @@
       ]
     },
     {
+      "taskKey": "MODULES/agent-runtime/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626",
+      "id": "MODULES/agent-runtime/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626",
+      "title": "Wire tool interceptor routeTo to sandbox execution",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "not_started",
+      "lifecycleState": "ready",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/artifacts/preset/2026-06-30T05-47-12-101Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "planned"
+      ],
+      "queues": [
+        "planned"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626/walkthrough.md"
+        }
+      ]
+    },
+    {
       "taskKey": "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd",
       "id": "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd",
       "title": "CLI memory compact command UX",
@@ -4363,6 +4465,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8",
+      "id": "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8",
+      "title": "CLI external-command tool hooks (Claude-Code-style PreToolUse)",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "in_progress",
+      "lifecycleState": "active",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/artifacts/preset/2026-06-30T06-22-19-678Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/walkthrough.md",
+      "module": "cli-host",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "cli-host",
+      "shortId": "2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "active"
+      ],
+      "queues": [
+        "active"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/cli-host/tasks/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8/walkthrough.md"
         }
       ]
     },
