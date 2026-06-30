@@ -1,6 +1,6 @@
 # AI4J CLI TUI extension projection - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -68,3 +68,8 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：`review.md`、`walkthrough.md`
 - 负责人：coordinator
+
+### [2026-06-24 dashboard cleanup] - 收口
+
+- 交付物已在 main 验证存在；状态由 审查中 推进到 已完成（dashboard 清账）。
+- 备注：正式人工 dashboard 确认（GATE-02）未跑；ledger 如实记录为 closed / pending-review。

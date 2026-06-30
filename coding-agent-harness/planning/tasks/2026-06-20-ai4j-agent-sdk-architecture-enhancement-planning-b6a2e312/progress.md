@@ -1,6 +1,6 @@
 # AI4J Agent SDK architecture enhancement planning - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 ## 进度记录
 
@@ -81,3 +81,8 @@
 - 验证结果：新增 `references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md`；同步更新 `references/INDEX.md`、`task_plan.md`、`findings.md`、`review.md`、`visual_map.md`。`git diff --check` 已通过；`npx --yes coding-agent-harness status --json .` 返回 failures=0，当前仅因本次规划文件未提交而存在 dirty warning。
 - 下一步：后续实施从 R0 调研、backlog reconciliation、Remote Runner SPI、one-command install、CLI/TUI polish 或 docs-site completeness 中选一个独立小任务。
 - 证据：report:TARGET:coding-agent-harness/planning/tasks/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312/references/ai4j-agent-sdk-final-roadmap-and-task-plan-2026-06-20.md:final roadmap and current repository state correction
+
+### [2026-06-24 dashboard cleanup] - 收口
+
+- 交付物已在 main 验证存在；状态由 审查中 推进到 已完成（dashboard 清账）。
+- 备注：正式人工 dashboard 确认（GATE-02）未跑；ledger 如实记录为 closed / pending-review。
