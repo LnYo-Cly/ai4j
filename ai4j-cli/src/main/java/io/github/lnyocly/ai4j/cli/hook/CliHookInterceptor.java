@@ -46,12 +46,33 @@ public class CliHookInterceptor implements ToolInterceptor {
     @Override
     public ToolCallDecision beforeToolCall(AgentToolCall call, AgentContext context) {
         String toolName = call == null ? null : call.getName();
+        String stdinJson = call == null ? "{}" : JSON.toJSONString(call);
         List<CliHookEntry> hooks = config.getPreToolUse();
         for (CliHookEntry hook : hooks) {
             if (hook == null || !hook.matches(toolName)) {
                 continue;
             }
-            ToolCallDecision decision = runOne(hook, call);
+            ToolCallDecision decision = runOne(hook, stdinJson, call);
+            if (decision != null) {
+                return decision;
+            }
+        }
+        return ToolCallDecision.allow();
+    }
+
+    @Override
+    public ToolCallDecision afterToolCall(AgentToolCall call, String output, AgentContext context) {
+        String toolName = call == null ? null : call.getName();
+        java.util.Map<String, Object> payload = new java.util.LinkedHashMap<String, Object>();
+        payload.put("call", call);
+        payload.put("output", output == null ? "" : output);
+        String stdinJson = JSON.toJSONString(payload);
+        List<CliHookEntry> hooks = config.getPostToolUse();
+        for (CliHookEntry hook : hooks) {
+            if (hook == null || !hook.matches(toolName)) {
+                continue;
+            }
+            ToolCallDecision decision = runOne(hook, stdinJson, call);
             if (decision != null) {
                 return decision;
             }
@@ -60,8 +81,7 @@ public class CliHookInterceptor implements ToolInterceptor {
     }
 
     /** Runs one hook; returns a non-null decision to short-circuit, or null to continue. */
-    private ToolCallDecision runOne(CliHookEntry hook, AgentToolCall call) {
-        String stdinJson = call == null ? "{}" : JSON.toJSONString(call);
+    private ToolCallDecision runOne(CliHookEntry hook, String stdinJson, AgentToolCall call) {
         HookCommandRunner.HookCommandResult result;
         try {
             result = runner.run(hook.getCommand(), stdinJson);

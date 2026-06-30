@@ -445,7 +445,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         final AgentToolCall callToRun = effectiveCall;
         try {
             dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step == null ? 0 : step, callToRun == null ? null : callToRun.getName(), callToRun);
-            return AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
+            String output = AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
                 @Override
                 public void emit(AgentEventType type, String message, Object payload) {
                     publish(context, listener, type, step == null ? 0 : step, message, payload, runId, sessionId, turnId);
@@ -456,6 +456,14 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                     return executor.execute(callToRun);
                 }
             });
+            // PostToolUse interception: a hook may veto the result (e.g. output leaked a secret).
+            if (interceptor != null) {
+                ToolCallDecision after = interceptor.afterToolCall(callToRun, output, context);
+                if (after != null && after.getType() == ToolCallDecision.Type.BLOCK) {
+                    return buildBlockedOutput(callToRun, after.getReason());
+                }
+            }
+            return output;
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             throw interruptedException;

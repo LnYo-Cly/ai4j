@@ -19,6 +19,7 @@ import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
+import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.coding.definition.BuiltInCodingAgentDefinitions;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
 import io.github.lnyocly.ai4j.coding.delegate.CodingDelegateToolExecutor;
@@ -69,6 +70,7 @@ public class CodingAgentBuilder {
     private ToolExecutor toolExecutor;
     private ToolInterceptor toolInterceptor;
     private PromptInterceptor promptInterceptor;
+    private final List<AgentLifecycleHook> additionalLifecycleHooks = new ArrayList<AgentLifecycleHook>();
     private ExtensionRegistry extensionRegistry;
     private ExtensionAgentTools extensionTools;
     private CodingAgentDefinitionRegistry definitionRegistry;
@@ -135,6 +137,13 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder promptInterceptor(PromptInterceptor promptInterceptor) {
         this.promptInterceptor = promptInterceptor;
+        return this;
+    }
+
+    public CodingAgentBuilder lifecycleHook(AgentLifecycleHook hook) {
+        if (hook != null) {
+            additionalLifecycleHooks.add(hook);
+        }
         return this;
     }
 
@@ -333,6 +342,9 @@ public class CodingAgentBuilder {
         AgentBuilder delegate = new AgentBuilder();
         if (runtime != null) {
             delegate.runtime(runtime);
+        }
+        for (AgentLifecycleHook hook : additionalLifecycleHooks) {
+            delegate.lifecycleHook(hook);
         }
         Agent agent = delegate
                 .modelClient(modelClient)
