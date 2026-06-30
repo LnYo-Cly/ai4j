@@ -15,6 +15,35 @@ control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/a
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
 systems. It aligns ai4j with pi and Claude Code, and one decision — `routeTo` — surpasses them.
 
+## Quick start: the `hooks` facade (recommended)
+
+One entry point, every event, IDE-discoverable, compile-time typed. `AgentHooks` composes your
+lambdas into the runtime's interceptor slots — no need to remember which interface goes where:
+
+```java
+Agent agent = Agents.react()
+        .anthropicMessages(key, baseUrl).model("glm-5.1")
+        .toolExecutor(executor)
+        .hooks(h -> h
+                .preToolUse((call, ctx)   -> isDangerous(call) ? ToolCallDecision.block("no") : ToolCallDecision.allow())
+                .postToolUse((call, out, ctx) -> leaksSecret(out) ? ToolCallDecision.block("secret") : ToolCallDecision.allow())
+                .userPromptSubmit((input, ctx) -> looksLikeInjection(input) ? PromptDecision.block("injection") : PromptDecision.allow())
+                .stop(ev -> metrics.turnEnd())
+                .sessionStart(ev -> log.info("session start")))
+        .build();
+```
+
+| facade method | event | decision power |
+| --- | --- | --- |
+| `preToolUse` | PreToolUse | allow / block / modify / routeTo |
+| `postToolUse` | PostToolUse | allow / block (the result) |
+| `userPromptSubmit` | UserPromptSubmit | allow / block / modify (the prompt) |
+| `stop` / `preCompact` / `sessionStart` / `sessionEnd` | observe | side-effect only |
+
+Semantics: first non-allow decision wins (pre/post/prompt); observe handlers all run. Pre and Post
+compose into one `ToolInterceptor` so you can register both. The sections below cover the underlying
+interfaces and decisions in depth — use them directly if you prefer.
+
 ## The four decisions
 
 ```java

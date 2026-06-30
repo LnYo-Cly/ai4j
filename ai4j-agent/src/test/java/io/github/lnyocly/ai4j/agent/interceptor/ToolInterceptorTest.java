@@ -37,7 +37,7 @@ public class ToolInterceptorTest {
         return AgentToolCall.builder().name("do_thing").callId("c1").arguments(args).build();
     }
 
-    private static AgentToolRegistry registry() {
+    static AgentToolRegistry registry() {
         Tool.Function fn = new Tool.Function();
         fn.setName("do_thing");
         fn.setDescription("does a thing");
