@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
+import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 
@@ -15,17 +16,20 @@ public final class ToolCallDecision {
     private final String reason;
     private final AgentToolCall modifiedCall;
     private final SandboxSpec sandboxSpec;
+    private final SandboxCommand sandboxCommand;
 
-    private ToolCallDecision(Type type, String reason, AgentToolCall modifiedCall, SandboxSpec sandboxSpec) {
+    private ToolCallDecision(Type type, String reason, AgentToolCall modifiedCall,
+                             SandboxSpec sandboxSpec, SandboxCommand sandboxCommand) {
         this.type = type;
         this.reason = reason;
         this.modifiedCall = modifiedCall;
         this.sandboxSpec = sandboxSpec;
+        this.sandboxCommand = sandboxCommand;
     }
 
     /** Proceed with the original call. */
     public static ToolCallDecision allow() {
-        return new ToolCallDecision(Type.ALLOW, null, null, null);
+        return new ToolCallDecision(Type.ALLOW, null, null, null, null);
     }
 
     /**
@@ -33,7 +37,7 @@ public final class ToolCallDecision {
      * like Claude Code's PreToolUse exit-code-2 deny.
      */
     public static ToolCallDecision block(String reason) {
-        return new ToolCallDecision(Type.BLOCK, reason, null, null);
+        return new ToolCallDecision(Type.BLOCK, reason, null, null, null);
     }
 
     /** Replace the call with {@code modifiedCall} (rewritten name/arguments) and execute that. */
@@ -41,24 +45,29 @@ public final class ToolCallDecision {
         if (modifiedCall == null) {
             throw new IllegalArgumentException("modifiedCall must not be null");
         }
-        return new ToolCallDecision(Type.MODIFY, null, modifiedCall, null);
+        return new ToolCallDecision(Type.MODIFY, null, modifiedCall, null, null);
     }
 
     /**
-     * Redirect execution to a sandbox described by {@code spec}. This is the beyond-pi capability
-     * (pi/Claude Code lack a first-class sandbox SPI). v1: the decision is honored as a signal;
-     * actual sandbox execution requires a bound sandbox session on the runtime and is wired in a
-     * follow-on — until then a ROUTE_TO with no bound sandbox surfaces as a blocked result.
+     * Redirect execution to a sandbox: the runtime creates a session from {@code spec} (via the
+     * configured {@code SandboxProvider}) and runs {@code command} there, feeding the output back
+     * as the tool result. This is the beyond-pi capability — pi and Claude Code lack a first-class
+     * sandbox SPI; ai4j has Daytona/E2B. The interceptor owns the tool&rarr;command mapping (it knows
+     * its tools); the runtime owns session creation/execution.
      */
-    public static ToolCallDecision routeTo(SandboxSpec spec) {
+    public static ToolCallDecision routeTo(SandboxSpec spec, SandboxCommand command) {
         if (spec == null) {
             throw new IllegalArgumentException("sandboxSpec must not be null");
         }
-        return new ToolCallDecision(Type.ROUTE_TO, null, null, spec);
+        if (command == null) {
+            throw new IllegalArgumentException("sandboxCommand must not be null");
+        }
+        return new ToolCallDecision(Type.ROUTE_TO, null, null, spec, command);
     }
 
     public Type getType() { return type; }
     public String getReason() { return reason; }
     public AgentToolCall getModifiedCall() { return modifiedCall; }
     public SandboxSpec getSandboxSpec() { return sandboxSpec; }
+    public SandboxCommand getSandboxCommand() { return sandboxCommand; }
 }

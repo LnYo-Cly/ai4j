@@ -49,7 +49,7 @@ public class ToolInterceptorTest {
     }
 
     /** model emits toolCall on first call, final text on the second. */
-    private static final class ScriptedModelClient implements AgentModelClient {
+    static final class ScriptedModelClient implements AgentModelClient {
         final List<AgentModelResult> scripted;
         final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
         int idx = 0;
@@ -62,7 +62,7 @@ public class ToolInterceptorTest {
     }
 
     /** records every call it actually executed */
-    private static final class RecordingExecutor implements ToolExecutor {
+    static final class RecordingExecutor implements ToolExecutor {
         final List<AgentToolCall> executed = new ArrayList<AgentToolCall>();
         public String execute(AgentToolCall c) {
             executed.add(c);
