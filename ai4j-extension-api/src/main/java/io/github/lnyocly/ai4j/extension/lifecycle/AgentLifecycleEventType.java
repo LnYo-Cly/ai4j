@@ -9,5 +9,6 @@ public enum AgentLifecycleEventType {
     AFTER_MODEL_RESPONSE,
     BEFORE_TOOL_CALL,
     AFTER_TOOL_CALL,
+    BEFORE_COMPACT,
     ON_COMPACT
 }
