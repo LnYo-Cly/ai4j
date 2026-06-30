@@ -13,6 +13,7 @@ import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +31,8 @@ public class AgentContext {
     private ToolExecutor toolExecutor;
 
     private ToolInterceptor toolInterceptor;
+
+    private PromptInterceptor promptInterceptor;
 
     private SandboxProvider sandboxProvider;
 
