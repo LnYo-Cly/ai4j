@@ -4,6 +4,8 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.agent.CliCodingAgentRegistry;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
+import io.github.lnyocly.ai4j.cli.hook.CliHookInterceptor;
+import io.github.lnyocly.ai4j.cli.hook.ProcessHookCommandRunner;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
 import io.github.lnyocly.ai4j.cli.render.CliAnsi;
@@ -201,6 +203,7 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
             builder.sandbox(sandboxSession);
         }
         attachMcpRuntime(builder, mcpRuntimeManager);
+        attachToolHooks(builder, workspaceConfig);
         attachExperimentalAgents(builder, options, workspaceConfig, modelClient, workspaceContext, codingOptions, agentOptions);
         return builder.build();
     }
@@ -289,6 +292,21 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
         }
         builder.toolRegistry(mcpRuntimeManager.getToolRegistry());
         builder.toolExecutor(mcpRuntimeManager.getToolExecutor());
+    }
+
+    /**
+     * If the user declared external tool hooks in the workspace config, attach the in-process
+     * {@link CliHookInterceptor} (which spawns the configured commands Claude-Code-style). No-op
+     * when no hooks are configured — existing behavior is unchanged.
+     */
+    private void attachToolHooks(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,
+                                 CliWorkspaceConfig workspaceConfig) {
+        if (workspaceConfig == null
+                || workspaceConfig.getHooks() == null
+                || workspaceConfig.getHooks().isEmpty()) {
+            return;
+        }
+        builder.toolInterceptor(new CliHookInterceptor(workspaceConfig.getHooks(), new ProcessHookCommandRunner()));
     }
 
     private void attachExperimentalAgents(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,

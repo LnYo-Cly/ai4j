@@ -17,6 +17,7 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.coding.definition.BuiltInCodingAgentDefinitions;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
 import io.github.lnyocly.ai4j.coding.delegate.CodingDelegateToolExecutor;
@@ -65,6 +66,7 @@ public class CodingAgentBuilder {
     private CodingAgentOptions codingOptions;
     private AgentToolRegistry toolRegistry;
     private ToolExecutor toolExecutor;
+    private ToolInterceptor toolInterceptor;
     private ExtensionRegistry extensionRegistry;
     private ExtensionAgentTools extensionTools;
     private CodingAgentDefinitionRegistry definitionRegistry;
@@ -121,6 +123,11 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder toolExecutor(ToolExecutor toolExecutor) {
         this.toolExecutor = toolExecutor;
+        return this;
+    }
+
+    public CodingAgentBuilder toolInterceptor(ToolInterceptor toolInterceptor) {
+        this.toolInterceptor = toolInterceptor;
         return this;
     }
 
@@ -328,6 +335,7 @@ public class CodingAgentBuilder {
                 .options(resolvedAgentOptions)
                 .toolRegistry(resolvedToolRegistry)
                 .toolExecutor(resolvedToolExecutor)
+                .toolInterceptor(toolInterceptor)
                 .temperature(temperature)
                 .topP(topP)
                 .maxOutputTokens(maxOutputTokens)
