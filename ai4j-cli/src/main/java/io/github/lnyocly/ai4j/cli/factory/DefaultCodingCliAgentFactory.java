@@ -5,6 +5,8 @@ import io.github.lnyocly.ai4j.cli.agent.CliCodingAgentRegistry;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.cli.hook.CliHookInterceptor;
+import io.github.lnyocly.ai4j.cli.hook.CliPromptInterceptor;
+import io.github.lnyocly.ai4j.cli.hook.CliHooksConfig;
 import io.github.lnyocly.ai4j.cli.hook.ProcessHookCommandRunner;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
@@ -295,9 +297,10 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
     }
 
     /**
-     * If the user declared external tool hooks in the workspace config, attach the in-process
-     * {@link CliHookInterceptor} (which spawns the configured commands Claude-Code-style). No-op
-     * when no hooks are configured — existing behavior is unchanged.
+     * If the user declared external hooks in the workspace config, attach the in-process
+     * interceptors ({@link CliHookInterceptor} for preToolUse, {@link CliPromptInterceptor} for
+     * userPromptSubmit) — Claude-Code-style external command hooks. No-op when no hooks are
+     * configured — existing behavior is unchanged.
      */
     private void attachToolHooks(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,
                                  CliWorkspaceConfig workspaceConfig) {
@@ -306,7 +309,13 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
                 || workspaceConfig.getHooks().isEmpty()) {
             return;
         }
-        builder.toolInterceptor(new CliHookInterceptor(workspaceConfig.getHooks(), new ProcessHookCommandRunner()));
+        CliHooksConfig hooks = workspaceConfig.getHooks();
+        if (!hooks.getPreToolUse().isEmpty()) {
+            builder.toolInterceptor(new CliHookInterceptor(hooks, new ProcessHookCommandRunner()));
+        }
+        if (hooks.hasPromptHooks()) {
+            builder.promptInterceptor(new CliPromptInterceptor(hooks, new ProcessHookCommandRunner()));
+        }
     }
 
     private void attachExperimentalAgents(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,

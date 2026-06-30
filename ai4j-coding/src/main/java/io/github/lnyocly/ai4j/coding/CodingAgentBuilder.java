@@ -18,6 +18,7 @@ import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.coding.definition.BuiltInCodingAgentDefinitions;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
 import io.github.lnyocly.ai4j.coding.delegate.CodingDelegateToolExecutor;
@@ -67,6 +68,7 @@ public class CodingAgentBuilder {
     private AgentToolRegistry toolRegistry;
     private ToolExecutor toolExecutor;
     private ToolInterceptor toolInterceptor;
+    private PromptInterceptor promptInterceptor;
     private ExtensionRegistry extensionRegistry;
     private ExtensionAgentTools extensionTools;
     private CodingAgentDefinitionRegistry definitionRegistry;
@@ -128,6 +130,11 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder toolInterceptor(ToolInterceptor toolInterceptor) {
         this.toolInterceptor = toolInterceptor;
+        return this;
+    }
+
+    public CodingAgentBuilder promptInterceptor(PromptInterceptor promptInterceptor) {
+        this.promptInterceptor = promptInterceptor;
         return this;
     }
 
@@ -336,6 +343,7 @@ public class CodingAgentBuilder {
                 .toolRegistry(resolvedToolRegistry)
                 .toolExecutor(resolvedToolExecutor)
                 .toolInterceptor(toolInterceptor)
+                .promptInterceptor(promptInterceptor)
                 .temperature(temperature)
                 .topP(topP)
                 .maxOutputTokens(maxOutputTokens)

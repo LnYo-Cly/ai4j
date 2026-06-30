@@ -2,12 +2,15 @@
 sidebar_position: 11
 ---
 
-# Tool Interceptor (block / modify / route-to-sandbox)
+# Interception Hooks (tool + prompt: block / modify / route-to-sandbox)
 
-`ToolInterceptor` is the **control-flow** hook — the Claude-Code / pi "PreToolUse" interception
-capability, in-process. It runs before a tool executes and the runtime honors its decision. This is
-distinct from the observe-only [lifecycle hooks](/docs/agent/plugin-lifecycle-hooks) (which only
-notify); an interceptor can veto, rewrite, or redirect a tool call.
+ai4j has two control-flow hook interfaces — the Claude-Code / pi interception capability, in-process.
+They run before the relevant action and the runtime honors the decision. This is distinct from the
+observe-only [lifecycle hooks](/docs/agent/plugin-lifecycle-hooks) (which only notify); an interceptor
+can veto, rewrite, or redirect.
+
+- **`ToolInterceptor`** — before a tool executes (Claude Code "PreToolUse"). Can block / modify / route to sandbox.
+- **`PromptInterceptor`** — before the user's input reaches the model (Claude Code "UserPromptSubmit"). Can block / modify the prompt (guardrails, injection defense, PII redaction, prefix injection).
 
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
 systems. It aligns ai4j with pi and Claude Code, and one decision — `routeTo` — surpasses them.
@@ -83,6 +86,26 @@ Agent agent = Agents.react()
 The runtime creates a sandbox session from the spec, runs the command, and feeds
 `SANDBOX_RESULT: {"exitCode":0,"stdout":"..."}` back to the model. The interceptor owns the
 tool→command mapping (it knows its tools); the runtime owns session creation/execution.
+
+## Prompt interception (UserPromptSubmit)
+
+`PromptInterceptor` runs before the user's input is committed to the conversation — block a harmful
+prompt or rewrite it before the model sees it.
+
+```java
+Agent agent = Agents.react()
+        .anthropicMessages(key, baseUrl).model("glm-5.1")
+        .promptInterceptor((input, ctx) -> {
+            if (looksLikeInjection(input)) {
+                return PromptDecision.block("possible prompt injection");
+            }
+            return PromptDecision.allow();
+        })
+        .build();
+```
+
+`PromptDecision` mirrors `ToolCallDecision`: `allow()` / `block(reason)` / `modify(newInput)`. On
+`block`, the agent returns immediately with `PROMPT_BLOCKED: <reason>` and the model is never called.
 
 ## Interceptor vs observe-only lifecycle hooks
 

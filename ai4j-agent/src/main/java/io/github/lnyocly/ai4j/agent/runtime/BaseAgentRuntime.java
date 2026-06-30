@@ -23,6 +23,8 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
+import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.PromptDecision;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
@@ -87,7 +89,34 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         }
 
         if (request != null && request.getInput() != null) {
-            memory.addUserInput(request.getInput());
+            Object rawInput = request.getInput();
+            Object effectiveInput = rawInput;
+            PromptInterceptor promptInterceptor = context == null ? null : context.getPromptInterceptor();
+            if (promptInterceptor != null && rawInput instanceof String) {
+                PromptDecision decision = promptInterceptor.beforePrompt((String) rawInput, context);
+                if (decision == null) {
+                    decision = PromptDecision.allow();
+                }
+                switch (decision.getType()) {
+                    case BLOCK:
+                        String reason = decision.getReason() == null ? "blocked by prompt interceptor" : decision.getReason();
+                        publish(context, listener, AgentEventType.FINAL_OUTPUT, 0, "PROMPT_BLOCKED: " + reason, null, runId, sessionId, turnId);
+                        return AgentResult.builder()
+                                .runId(runId)
+                                .sessionId(sessionId)
+                                .turnId(turnId)
+                                .outputText("PROMPT_BLOCKED: " + reason)
+                                .steps(0)
+                                .build();
+                    case MODIFY:
+                        effectiveInput = decision.getModifiedInput();
+                        break;
+                    case ALLOW:
+                    default:
+                        break;
+                }
+            }
+            memory.addUserInput(effectiveInput);
         }
 
         List<AgentToolCall> toolCalls = new ArrayList<>();

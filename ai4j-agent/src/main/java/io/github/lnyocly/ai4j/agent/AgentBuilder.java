@@ -31,6 +31,7 @@ import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
@@ -66,6 +67,7 @@ public class AgentBuilder {
     private final List<SubAgentDefinition> subAgentDefinitions = new ArrayList<>();
     private ToolExecutor toolExecutor;
     private ToolInterceptor toolInterceptor;
+    private PromptInterceptor promptInterceptor;
     private SandboxProvider sandboxProvider;
     private CodeExecutor codeExecutor;
     private Supplier<AgentMemory> memorySupplier;
@@ -255,6 +257,11 @@ public class AgentBuilder {
         return this;
     }
 
+    public AgentBuilder promptInterceptor(PromptInterceptor promptInterceptor) {
+        this.promptInterceptor = promptInterceptor;
+        return this;
+    }
+
     public AgentBuilder sandboxProvider(SandboxProvider sandboxProvider) {
         this.sandboxProvider = sandboxProvider;
         return this;
@@ -432,6 +439,7 @@ public class AgentBuilder {
                 .toolRegistry(resolvedToolRegistry)
                 .toolExecutor(resolvedToolExecutor)
                 .toolInterceptor(toolInterceptor)
+                .promptInterceptor(promptInterceptor)
                 .sandboxProvider(sandboxProvider)
                 .codeExecutor(resolvedCodeExecutor)
                 .memory(memory)
