@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-30T16:46:40.944Z",
+  "generatedAt": "2026-06-30T17:27:51.129Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bd06857b93a89e92eacc30c0f99e9fbae4ca9a484c92350b88ec21a977d5f532",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
@@ -29,7 +29,9 @@
     "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd": "237a0bc32c39d9c2e75167ef74749c4282c78e06899cc5e39b2973c86dadad21",
     "MODULES/agent-runtime/2026-06-30-userpromptsubmit-interception-hook-block-modify-bcd16d20": "9676ed00278bbede16d894024ac731f37c31c4f1c260b5a6a45d7c26d4127fa3",
     "MODULES/agent-runtime/2026-06-30-wire-tool-interceptor-routeto-to-sandbox-executi-06aa4626": "a1b9df029591584da20f1b8d54a6d4b97507e0ffd9abf7ba38c8816e6ec9a84f",
+    "MODULES/agent-runtime/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb": "7dcf1ea4f21c4aaf589646a4bc2573ec229cca7e62c94725d591d264a0857273",
     "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80": "f1f3be68d61a965b6f2babe5e4dd2cf6efa4ddc5ae7900eaaa4cddf6f27b3ef4",
+    "MODULES/agent-runtime/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74": "16fecb90a339583df3c4f981beeef7838d6cad1f6945ba00b15b1aed2b34d597",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
     "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8": "496c6d5ea7b5abd05101ce5082d39614e58f299e18b3d63a4d8df426c82bf3ca",
@@ -85,12 +87,12 @@
   },
   "scope": "all",
   "taskScopes": {
-    "all": 75,
-    "activeCycle": 75,
-    "reviewWorkbench": 75,
+    "all": 77,
+    "activeCycle": 77,
+    "reviewWorkbench": 77,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 75
+    "taskIndexDefault": 77
   },
   "tasks": [
     {
@@ -4472,6 +4474,106 @@
       ]
     },
     {
+      "taskKey": "MODULES/agent-runtime/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb",
+      "id": "MODULES/agent-runtime/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb",
+      "title": "A2A protocol client (call external agents via Google A2A)",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "not_started",
+      "lifecycleState": "ready",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/artifacts/preset/2026-06-30T17-19-15-971Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "planned"
+      ],
+      "queues": [
+        "planned"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/walkthrough.md"
+        }
+      ]
+    },
+    {
       "taskKey": "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
       "id": "MODULES/agent-runtime/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80",
       "title": "AgentHooks facade — named per-event sugar over interceptors",
@@ -4568,6 +4670,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-agenthooks-facade-named-per-event-sugar-over-int-fb856d80/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/agent-runtime/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+      "id": "MODULES/agent-runtime/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+      "title": "Wire compaction into runtime loop (auto-trigger + before-compact hook)",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "not_started",
+      "lifecycleState": "ready",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/artifacts/preset/2026-06-30T16-56-00-915Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "planned"
+      ],
+      "queues": [
+        "planned"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74/walkthrough.md"
         }
       ]
     },
