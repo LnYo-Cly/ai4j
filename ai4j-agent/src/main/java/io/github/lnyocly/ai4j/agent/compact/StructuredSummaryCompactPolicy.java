@@ -23,6 +23,15 @@ public class StructuredSummaryCompactPolicy implements CompactPolicy {
     }
 
     @Override
+    public boolean shouldCompact(MemorySnapshot snapshot) {
+        if (snapshot == null || snapshot.getItems() == null) {
+            return false;
+        }
+        int maxItems = budget == null || budget.getMaxItems() == null ? Integer.MAX_VALUE : budget.getMaxItems();
+        return snapshot.getItems().size() > maxItems;
+    }
+
+    @Override
     public CompactResult compact(MemorySnapshot snapshot) {
         MemorySnapshot source = snapshot == null ? MemorySnapshot.from(new ArrayList<Object>(), null) : MemorySnapshot.from(snapshot.getItems(), snapshot.getSummary());
         ContextProjection projection = projector.project(source.getItems(), budget);
