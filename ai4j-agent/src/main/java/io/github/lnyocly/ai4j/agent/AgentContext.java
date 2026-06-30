@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,6 +27,8 @@ public class AgentContext {
     private AgentToolRegistry toolRegistry;
 
     private ToolExecutor toolExecutor;
+
+    private ToolInterceptor toolInterceptor;
 
     private CodeExecutor codeExecutor;
 

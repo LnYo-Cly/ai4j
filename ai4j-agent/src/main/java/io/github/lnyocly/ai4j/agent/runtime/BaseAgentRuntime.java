@@ -21,6 +21,8 @@ import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicyException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
@@ -388,8 +390,32 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         if (executor == null) {
             throw new IllegalStateException("toolExecutor is required");
         }
+        AgentToolCall effectiveCall = call;
+        ToolInterceptor interceptor = context == null ? null : context.getToolInterceptor();
+        if (interceptor != null) {
+            ToolCallDecision decision = interceptor.beforeToolCall(call, context);
+            if (decision == null) {
+                decision = ToolCallDecision.allow();
+            }
+            switch (decision.getType()) {
+                case BLOCK:
+                    return buildBlockedOutput(call, decision.getReason());
+                case MODIFY:
+                    effectiveCall = decision.getModifiedCall();
+                    break;
+                case ROUTE_TO:
+                    // ponytail: sandbox routing needs a bound sandbox session on the runtime;
+                    // until that wiring lands, surface as a blocked result so the model learns the
+                    // command was not run locally. routeTo(...) carries the SandboxSpec for that follow-on.
+                    return buildBlockedOutput(call, "route-to-sandbox requested but no sandbox session is bound");
+                case ALLOW:
+                default:
+                    break;
+            }
+        }
+        final AgentToolCall callToRun = effectiveCall;
         try {
-            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step == null ? 0 : step, call == null ? null : call.getName(), call);
+            dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step == null ? 0 : step, callToRun == null ? null : callToRun.getName(), callToRun);
             return AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
                 @Override
                 public void emit(AgentEventType type, String message, Object payload) {
@@ -398,7 +424,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }, new AgentToolExecutionScope.ScopeCallable<String>() {
                 @Override
                 public String call() throws Exception {
-                    return executor.execute(call);
+                    return executor.execute(callToRun);
                 }
             });
         } catch (InterruptedException interruptedException) {
@@ -407,10 +433,23 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         } catch (HandoffPolicyException handoffPolicyException) {
             throw handoffPolicyException;
         } catch (Exception ex) {
-            return buildToolErrorOutput(call, ex);
+            return buildToolErrorOutput(callToRun, ex);
         } finally {
-            dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TOOL_CALL, step == null ? 0 : step, call == null ? null : call.getName(), call);
+            dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TOOL_CALL, step == null ? 0 : step, callToRun == null ? null : callToRun.getName(), callToRun);
         }
+    }
+
+    protected String buildBlockedOutput(AgentToolCall call, String reason) {
+        JSONObject payload = new JSONObject();
+        payload.put("blocked", true);
+        payload.put("reason", reason == null ? "blocked by tool interceptor" : reason);
+        if (call != null) {
+            payload.put("tool", call.getName());
+            if (call.getCallId() != null) {
+                payload.put("callId", call.getCallId());
+            }
+        }
+        return "TOOL_BLOCKED: " + JSON.toJSONString(payload);
     }
 
     protected String buildToolErrorOutput(AgentToolCall call, Exception error) {
