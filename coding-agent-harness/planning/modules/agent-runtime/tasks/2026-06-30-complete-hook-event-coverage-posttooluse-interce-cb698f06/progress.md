@@ -1,41 +1,20 @@
-# Complete hook event coverage (PostToolUse interception + observe bridge for Stop/PreCompact/Session) - 进度
+# Complete hook event coverage - 进度
 
-## 状态：未开始
+## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
+### [2026-06-30] - 全事件覆盖（PR #156 merged）
 
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
+- PostToolUse 拦截：ToolInterceptor.afterToolCall 默认方法——工具跑完后 hook 可 block 结果（替换成 TOOL_BLOCKED 回喂模型，如泄密拦截）。
+- AgentBuilder.lifecycleHook(AgentLifecycleHook)——直接注册 observe hook，不用 extension SPI（修了 ergonomics 老缺口）。
+- CliLifecycleHookBridge——一个通用 AgentLifecycleHook，把 AFTER_TURN/ON_COMPACT/SESSION_START/SESSION_END 路由到 stop/preCompact/sessionStart/sessionEnd 命令。副作用型，错误吞掉。
+- CliHookInterceptor.afterToolCall——postToolUse 配置 → 外部命令（exit 2 block 结果）。
+- CliHooksConfig：postToolUse/stop/preCompact/sessionStart/sessionEnd。
+- CodingAgentBuilder.lifecycleHook；factory 接 tool+prompt+observe 三桥。
+- 验证：+1 库测试（afterToolCall block）+ 4 observe-bridge 测试；agent+coding+cli 319 测试 0 失败。
+- PR #156 MERGED
 
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
+## 事件覆盖全表（全部文件配置可用）
+PreToolUse(拦截 block/modify/routeTo) | PostToolUse(拦截 block 结果) | UserPromptSubmit(拦截 block/modify) | Stop/PreCompact/SessionStart/SessionEnd(observe)
 
-## 进度记录
-
-证据使用 `type:path:summary` 格式。
-
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+## 协调者交接
+- pending-coordinator-pass
