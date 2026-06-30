@@ -37,7 +37,7 @@
 | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 | P2-C Daytona sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-c-daytona-sandbox-provider-7263b5b5/task_plan.md | T-P2-B-AGENTSESSION-SANDBOX-BINDING-E8175553 |
 | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 | P2-D E2B sandbox provider | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6/task_plan.md | T-P2-C-DAYTONA-SANDBOX-PROVIDER-7263B5B5 |
 | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 | Tamper-evident hash-chained session event log | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md | T-P2-D-E2B-SANDBOX-PROVIDER-7DFDB7C6 |
-| T-TOOL-INTERCEPTOR-HOOKS-PI-ALIGNED-OBSERVE-BLOCK- | Tool interceptor hooks (pi-aligned: observe/block/modify/route-to-sandbox) | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/task_plan.md | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 |
+| T-TOOL-INTERCEPTOR-HOOKS-PI-ALIGNED-OBSERVE-BLOCK- | Tool interceptor hooks (pi-aligned: observe/block/modify/route-to-sandbox) | active | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/task_plan.md | T-TAMPER-EVIDENT-HASH-CHAINED-SESSION-EVENT-LOG-98 |
 
 ## 活跃任务
 

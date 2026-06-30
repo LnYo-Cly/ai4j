@@ -5,9 +5,9 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-06-30T04:42:01.094Z",
+  "generatedAt": "2026-06-30T05:37:16.290Z",
   "sourceFileHashes": {
-    "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bc16476ad84b828ebf072beb51769e0dbc235921fd987feb358086d1a665b6c2",
+    "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bd06857b93a89e92eacc30c0f99e9fbae4ca9a484c92350b88ec21a977d5f532",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
     "MODULES/agent-runtime/2026-06-20-p0-b-memory-compact-context-projector-47effd57": "bea5a497ee191f7051ce712b3ff5c5c560089d455828919b1d793b8aae336682",
     "MODULES/agent-runtime/2026-06-20-p0-c-agent-plugin-lifecycle-hooks-10df8009": "d374f89d51d316e2ec648cbc149e389b0b53320a13aab5b2152ec5887c89acf6",
@@ -21,10 +21,11 @@
     "MODULES/agent-runtime/2026-06-21-p2-d-e2b-sandbox-provider-7dfdb7c6": "90108a60d2304f3709835c74129aaa28624702b0578f59559b7a75df3c458d67",
     "MODULES/agent-runtime/2026-06-22-agent-observability-enhancement-57c03f6b": "d89e8ac9b6066c27734436eb47970a2373e91c68e0ea5887dc09a16ebc98fa92",
     "MODULES/agent-runtime/2026-06-23-messages-model-client-0f5bad51": "5fb0ff8b29532314668065ea2c025285a2aebe1cebe4acb516f77c44cbb0d3e1",
-    "MODULES/agent-runtime/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d": "d4b02999bcdb2885d8293b45a10126a1bb2ae70116aa023a96f9cf3c1d286bda",
-    "MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7": "705d9a5558914f36edc12bfc09e2172a1fd8ef8fa332625ade93a595a17c7d26",
-    "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820": "a2976b7449904251d2d4b61ea4ba5ffd7fe86907710fac7d6600c589f3995c27",
-    "MODULES/agent-runtime/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd": "90112405d9c8205c8cbcac006ec76285e5d7d26e818845f82a315e99fb1509ab",
+    "MODULES/agent-runtime/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d": "23984444b99f9c27286b999d5eab9cb491044ba983bb1af2ea77cf289c164ce7",
+    "MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7": "b212e29b77579596b052490055ffea4489d059ba85677e26bb467eee95134d04",
+    "MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820": "b0fd5dba6d2ff0935d4ce9147fc3335cc1e60182754248a65328b26cbb83ceff",
+    "MODULES/agent-runtime/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd": "f096ef8405898a1b9f957518ac01f56848b18c18b558faed37dac9217a11c89e",
+    "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd": "237a0bc32c39d9c2e75167ef74749c4282c78e06899cc5e39b2973c86dadad21",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
     "MODULES/coding-runtime/2026-06-20-p3-coding-sandbox-tool-routing-6c82c346": "d0a8dcb3b3fd066ae481dd38ca1fba4b2443e01f0709b51f60a2fd3898937fdb",
@@ -72,19 +73,19 @@
     "TASKS/2026-06-10-extension-plugin-contract-hardening-272a10c4": "34930e07c9d31a7a8c2b2f184a5a5c09f6210664673eeb4e33182527719398b1",
     "TASKS/2026-06-10-feature-ssot-review-queue-status-alignment-4c6620f5": "3049810dfe2d1eeda258d7f2071effb66c599bc64ccf76e6584f4be8b9a7fdf3",
     "TASKS/2026-06-11-ai4j-cli-chat-first-tui-experience-wave-2-62e7ff0b": "45e49cfb885e6339b1e499d7b3881ab9a88c51913bb6a3c79c0806e377792919",
-    "TASKS/2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9": "f6ffa240559a124b5c5249ef254ddac33629c9f8e986e78561d14087fccae2a2",
+    "TASKS/2026-06-11-ai4j-cli-tui-extension-projection-e9fa99d9": "40f830c50b2351f68ea6bc023c6b46bb5406c99a02fb5e888cd14c5f67ee26a1",
     "TASKS/2026-06-11-ai4j-extension-check-gate-d3f91b18": "dfc24d322493e8349de90a8b2eb9f5513c3be4663a5f53d358e6cf3e9509e37d",
-    "TASKS/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312": "89a4c0c1649b8663361755a198113db40d6967b6392a364331dbade3b852abc6",
-    "TASKS/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add": "2c9991fb295c882583b3883ca331397dd49c32133d9cea0d7d688e2b86b0bc59"
+    "TASKS/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312": "fa1fd977fd063c2914e3370a6a4b402e8519e56ba86e1190e3a66666fac5eedc",
+    "TASKS/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add": "b96f369f9249b5ec1b5370d322bf91e1f117d41fd04d1f0c64595da44a976195"
   },
   "scope": "all",
   "taskScopes": {
-    "all": 69,
-    "activeCycle": 69,
-    "reviewWorkbench": 69,
+    "all": 70,
+    "activeCycle": 70,
+    "reviewWorkbench": 70,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 69
+    "taskIndexDefault": 70
   },
   "tasks": [
     {
@@ -1887,14 +1888,14 @@
       "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "in_progress",
-      "lifecycleState": "active",
+      "state": "done",
+      "lifecycleState": "closing",
       "kind": "module-task",
       "preset": "module",
       "presetVersion": "1",
       "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/artifacts/preset/2026-06-24T02-31-22-954Z",
       "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "not-in-queue",
+      "reviewQueueState": "needs-material",
       "reviewSubmitted": false,
       "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/review.md",
       "closeoutStatus": "pending",
@@ -1912,16 +1913,380 @@
       "lessonCandidateRows": [],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": false,
+      "materialIssues": [
+        {
+          "code": "missing-review-submission",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Agent has not submitted a strict Agent Review Submission packet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "missing-lesson-decision",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Lesson candidate decision is not complete: pending-review.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "phase-incomplete",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Visual Map has no execution phase progress or evidence yet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        }
+      ],
       "taskQueues": [
-        "active"
+        "missing-materials"
       ],
       "queues": [
-        "active"
+        "missing-materials"
       ],
-      "queueReasons": [],
+      "queueReasons": [
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-review-submission",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-lesson-decision",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "phase-incomplete",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "enforceFailure": false
+        }
+      ],
       "supersedes": [],
       "supersededBy": "",
       "deletionState": "active",
@@ -1934,8 +2299,105 @@
       "deleteReason": "",
       "archiveMetadata": {},
       "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
+      "repairPrompt": "Please repair task MODULES/agent-runtime/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d: Agent durable session store (JDBC) + resume cache persistence.\n\nTask path: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d\n\nDetected issues:\n- [missing-materials/missing-review-submission] Agent has not submitted a strict Agent Review Submission packet.\n- [missing-materials/missing-lesson-decision] Lesson candidate decision is not complete: pending-review.\n- [missing-materials/phase-incomplete] Visual Map has no execution phase progress or evidence yet.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.\n\nAllowed writes:\n- 2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**\n- coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/**\n\nForbidden actions:\n- Do not write Human Review Confirmation; only a human can confirm.\n- Do not edit unrelated tasks.\n- Do not fabricate evidence or mark work complete without running checks.\n\nExpected output:\n- Fix the listed task-local materials or blockers.\n- Update progress.md with evidence.\n- Re-run the validation commands below.\n\nValidation commands:\n- node dist/harness.mjs check --profile target-project <target>",
+      "repairActions": [
+        {
+          "kind": "material",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "material",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "material",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "queue",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        }
+      ],
       "documentRefs": [
         {
           "kind": "index",
@@ -1987,14 +2449,14 @@
       "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "in_progress",
-      "lifecycleState": "active",
+      "state": "done",
+      "lifecycleState": "closing",
       "kind": "module-task",
       "preset": "module",
       "presetVersion": "1",
       "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/artifacts/preset/2026-06-24T02-12-08-270Z",
       "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "not-in-queue",
+      "reviewQueueState": "needs-material",
       "reviewSubmitted": false,
       "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
       "closeoutStatus": "pending",
@@ -2012,16 +2474,380 @@
       "lessonCandidateRows": [],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": false,
+      "materialIssues": [
+        {
+          "code": "missing-review-submission",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Agent has not submitted a strict Agent Review Submission packet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "missing-lesson-decision",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Lesson candidate decision is not complete: pending-review.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "phase-incomplete",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Visual Map has no execution phase progress or evidence yet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        }
+      ],
       "taskQueues": [
-        "active"
+        "missing-materials"
       ],
       "queues": [
-        "active"
+        "missing-materials"
       ],
-      "queueReasons": [],
+      "queueReasons": [
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-review-submission",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-lesson-decision",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "phase-incomplete",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "enforceFailure": false
+        }
+      ],
       "supersedes": [],
       "supersededBy": "",
       "deletionState": "active",
@@ -2034,8 +2860,105 @@
       "deleteReason": "",
       "archiveMetadata": {},
       "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
+      "repairPrompt": "Please repair task MODULES/agent-runtime/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7: Agent failure recovery via resumable model/tool decorators.\n\nTask path: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7\n\nDetected issues:\n- [missing-materials/missing-review-submission] Agent has not submitted a strict Agent Review Submission packet.\n- [missing-materials/missing-lesson-decision] Lesson candidate decision is not complete: pending-review.\n- [missing-materials/phase-incomplete] Visual Map has no execution phase progress or evidence yet.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.\n\nAllowed writes:\n- 2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**\n- coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/**\n\nForbidden actions:\n- Do not write Human Review Confirmation; only a human can confirm.\n- Do not edit unrelated tasks.\n- Do not fabricate evidence or mark work complete without running checks.\n\nExpected output:\n- Fix the listed task-local materials or blockers.\n- Update progress.md with evidence.\n- Re-run the validation commands below.\n\nValidation commands:\n- node dist/harness.mjs check --profile target-project <target>",
+      "repairActions": [
+        {
+          "kind": "material",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "material",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "material",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "queue",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        }
+      ],
       "documentRefs": [
         {
           "kind": "index",
@@ -2087,14 +3010,14 @@
       "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "in_progress",
-      "lifecycleState": "active",
+      "state": "done",
+      "lifecycleState": "closing",
       "kind": "module-task",
       "preset": "module",
       "presetVersion": "1",
       "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/artifacts/preset/2026-06-23T18-45-29-638Z",
       "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "not-in-queue",
+      "reviewQueueState": "needs-material",
       "reviewSubmitted": false,
       "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
       "closeoutStatus": "pending",
@@ -2112,16 +3035,334 @@
       "lessonCandidateRows": [],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": false,
+      "materialIssues": [
+        {
+          "code": "missing-review-submission",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Agent has not submitted a strict Agent Review Submission packet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "missing-lesson-decision",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Lesson candidate decision is not complete: pending-review.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "phase-incomplete",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Visual Map has no execution phase progress or evidence yet.",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        }
+      ],
       "taskQueues": [
-        "active"
+        "missing-materials"
       ],
       "queues": [
-        "active"
+        "missing-materials"
       ],
-      "queueReasons": [],
+      "queueReasons": [
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-review-submission",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-lesson-decision",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "phase-incomplete",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "enforceFailure": false
+        }
+      ],
       "supersedes": [],
       "supersededBy": "",
       "deletionState": "active",
@@ -2134,8 +3375,93 @@
       "deleteReason": "",
       "archiveMetadata": {},
       "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
+      "repairPrompt": "Please repair task MODULES/agent-runtime/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820: Agent node IO capture + node-level replay.\n\nTask path: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820\n\nDetected issues:\n- [missing-materials/missing-review-submission] Agent has not submitted a strict Agent Review Submission packet.\n- [missing-materials/missing-lesson-decision] Lesson candidate decision is not complete: pending-review.\n- [missing-materials/phase-incomplete] Visual Map has no execution phase progress or evidence yet.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.\n\nAllowed writes:\n- 2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**\n- coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/**\n\nForbidden actions:\n- Do not write Human Review Confirmation; only a human can confirm.\n- Do not edit unrelated tasks.\n- Do not fabricate evidence or mark work complete without running checks.\n\nExpected output:\n- Fix the listed task-local materials or blockers.\n- Update progress.md with evidence.\n- Re-run the validation commands below.\n\nValidation commands:\n- node dist/harness.mjs check --profile target-project <target>",
+      "repairActions": [
+        {
+          "kind": "material",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "material",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "material",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "queue",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        }
+      ],
       "documentRefs": [
         {
           "kind": "index",
@@ -2187,14 +3513,14 @@
       "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd",
       "aliases": [],
       "identitySource": "path-derived-legacy",
-      "state": "in_progress",
-      "lifecycleState": "active",
+      "state": "done",
+      "lifecycleState": "closing",
       "kind": "module-task",
       "preset": "module",
       "presetVersion": "1",
       "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/artifacts/preset/2026-06-24T02-51-13-553Z",
       "reviewStatus": "agent-reviewed",
-      "reviewQueueState": "not-in-queue",
+      "reviewQueueState": "needs-material",
       "reviewSubmitted": false,
       "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/review.md",
       "closeoutStatus": "pending",
@@ -2212,16 +3538,380 @@
       "lessonCandidateRows": [],
       "lessonCandidateIssues": [],
       "risks": [],
-      "residual": "none",
-      "materialsReady": true,
-      "materialIssues": [],
+      "residual": "state-conflicts:1",
+      "materialsReady": false,
+      "materialIssues": [
+        {
+          "code": "missing-review-submission",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Agent has not submitted a strict Agent Review Submission packet.",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "missing-lesson-decision",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Lesson candidate decision is not complete: pending-review.",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "phase-incomplete",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "Visual Map has no execution phase progress or evidence yet.",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        },
+        {
+          "code": "unedited-template-material",
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "enforceFailure": false
+        }
+      ],
       "taskQueues": [
-        "active"
+        "missing-materials"
       ],
       "queues": [
-        "active"
+        "missing-materials"
       ],
-      "queueReasons": [],
+      "queueReasons": [
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-review-submission",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "missing-lesson-decision",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "exact",
+          "repairable": true,
+          "code": "phase-incomplete",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/brief.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/execution_strategy.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/visual_map.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.",
+          "enforceFailure": false
+        },
+        {
+          "severity": "P2",
+          "queue": "missing-materials",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/review.md",
+          "sourceLine": 0,
+          "owner": "agent",
+          "allowedWritePaths": [
+            "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**"
+          ],
+          "forbiddenActions": [
+            "human-confirm",
+            "edit-unrelated-task",
+            "fabricate-evidence"
+          ],
+          "validationCommands": [
+            "node dist/harness.mjs check --profile target-project <target>"
+          ],
+          "confidence": "high",
+          "repairable": true,
+          "code": "unedited-template-material",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.",
+          "enforceFailure": false
+        }
+      ],
       "supersedes": [],
       "supersededBy": "",
       "deletionState": "active",
@@ -2234,8 +3924,105 @@
       "deleteReason": "",
       "archiveMetadata": {},
       "hiddenByDefault": false,
-      "repairPrompt": "",
-      "repairActions": [],
+      "repairPrompt": "Please repair task MODULES/agent-runtime/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd: Tamper-evident hash-chained session event log.\n\nTask path: coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd\n\nDetected issues:\n- [missing-materials/missing-review-submission] Agent has not submitted a strict Agent Review Submission packet.\n- [missing-materials/missing-lesson-decision] Lesson candidate decision is not complete: pending-review.\n- [missing-materials/phase-incomplete] Visual Map has no execution phase progress or evidence yet.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase.\n- [missing-materials/unedited-template-material] [unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence.\n\nAllowed writes:\n- 2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**\n- coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/**\n\nForbidden actions:\n- Do not write Human Review Confirmation; only a human can confirm.\n- Do not edit unrelated tasks.\n- Do not fabricate evidence or mark work complete without running checks.\n\nExpected output:\n- Fix the listed task-local materials or blockers.\n- Update progress.md with evidence.\n- Re-run the validation commands below.\n\nValidation commands:\n- node dist/harness.mjs check --profile target-project <target>",
+      "repairActions": [
+        {
+          "kind": "material",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "material",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "material",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "material",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-review-submission",
+          "sourcePath": "TARGET:review.md",
+          "message": "Agent has not submitted a strict Agent Review Submission packet."
+        },
+        {
+          "kind": "queue",
+          "code": "missing-lesson-decision",
+          "sourcePath": "TARGET:lesson_candidates.md",
+          "message": "Lesson candidate decision is not complete: pending-review."
+        },
+        {
+          "kind": "queue",
+          "code": "phase-incomplete",
+          "sourcePath": "TARGET:visual_map.md",
+          "message": "Visual Map has no execution phase progress or evidence yet."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/brief.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in brief.md: brief-outcome."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/task_plan.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in task_plan.md: task-plan-goal."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/execution_strategy.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in execution_strategy.md: execution-strategy-core-plan."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/visual_map.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in visual_map.md: visual-map-execution-phase."
+        },
+        {
+          "kind": "queue",
+          "code": "unedited-template-material",
+          "sourcePath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/review.md",
+          "message": "[unedited-template-material] Reviewable task material still contains default core content in review.md: review-evidence."
+        }
+      ],
       "documentRefs": [
         {
           "kind": "index",
@@ -2276,6 +4063,106 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-tamper-evident-hash-chained-session-event-log-98f15dcd/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd",
+      "id": "MODULES/agent-runtime/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd",
+      "title": "Tool interceptor hooks (pi-aligned: observe/block/modify/route-to-sandbox)",
+      "currentPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd",
+      "originalPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "in_progress",
+      "lifecycleState": "active",
+      "kind": "module-task",
+      "preset": "module",
+      "presetVersion": "1",
+      "evidenceBundle": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/artifacts/preset/2026-06-30T05-20-09-854Z",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/walkthrough.md",
+      "module": "agent-runtime",
+      "namespace": "main",
+      "taskRootKind": "module-task",
+      "packageRole": "local",
+      "inferredModule": "agent-runtime",
+      "shortId": "2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd",
+      "completion": 0,
+      "lessonCandidateStatus": "pending-review",
+      "lessonCandidateReviewDecision": "pending-human-review",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "active"
+      ],
+      "queues": [
+        "active"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-30-tool-interceptor-hooks-pi-aligned-observe-block-d042a8cd/walkthrough.md"
         }
       ]
     },
