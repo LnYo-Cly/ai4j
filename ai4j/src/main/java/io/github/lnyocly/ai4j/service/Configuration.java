@@ -42,6 +42,8 @@ public class Configuration {
 
     private PgVectorConfig pgVectorConfig;
 
+    private RedisVectorConfig redisVectorConfig;
+
     private SearXNGConfig searXNGConfig;
 
     private McpConfig mcpConfig;

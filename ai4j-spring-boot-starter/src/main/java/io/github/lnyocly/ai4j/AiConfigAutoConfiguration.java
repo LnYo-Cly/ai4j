@@ -29,6 +29,7 @@ import io.github.lnyocly.ai4j.vector.store.milvus.MilvusVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
 import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
+import io.github.lnyocly.ai4j.vector.store.redis.RedisVectorStore;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -62,6 +63,7 @@ import java.util.Map;
         QdrantConfigProperties.class,
         MilvusConfigProperties.class,
         PgVectorConfigProperties.class,
+        RedisVectorConfigProperties.class,
         ZhipuConfigProperties.class,
         AnthropicConfigProperties.class,
         DeepSeekConfigProperties.class,
@@ -89,6 +91,7 @@ public class AiConfigAutoConfiguration {
     private final QdrantConfigProperties qdrantConfigProperties;
     private final MilvusConfigProperties milvusConfigProperties;
     private final PgVectorConfigProperties pgVectorConfigProperties;
+    private final RedisVectorConfigProperties redisVectorConfigProperties;
 
     // searxng閰嶇疆
     private final SearXNGConfigProperties searXNGConfigProperties;
@@ -112,13 +115,14 @@ public class AiConfigAutoConfiguration {
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
         this.qdrantConfigProperties = qdrantConfigProperties;
         this.milvusConfigProperties = milvusConfigProperties;
         this.pgVectorConfigProperties = pgVectorConfigProperties;
+        this.redisVectorConfigProperties = redisVectorConfigProperties;
         this.searXNGConfigProperties = searXNGConfigProperties;
         this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
@@ -249,6 +253,13 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.redis", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(RedisVectorStore.class)
+    public RedisVectorStore redisVectorStore() {
+        return new RedisVectorStore(configuration);
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public RagContextAssembler ragContextAssembler() {
         return new DefaultRagContextAssembler();
@@ -268,6 +279,7 @@ public class AiConfigAutoConfiguration {
         initQdrantConfig();
         initMilvusConfig();
         initPgVectorConfig();
+        initRedisConfig();
 
         initSearXNGConfig();
 
@@ -441,6 +453,30 @@ public class AiConfigAutoConfiguration {
         pgVectorConfig.setDistanceOperator(pgVectorConfigProperties.getDistanceOperator());
 
         configuration.setPgVectorConfig(pgVectorConfig);
+    }
+
+    private void initRedisConfig() {
+        RedisVectorConfig redisVectorConfig = new RedisVectorConfig();
+        redisVectorConfig.setEnabled(redisVectorConfigProperties.isEnabled());
+        redisVectorConfig.setHost(redisVectorConfigProperties.getHost());
+        redisVectorConfig.setPort(redisVectorConfigProperties.getPort());
+        redisVectorConfig.setPassword(redisVectorConfigProperties.getPassword());
+        redisVectorConfig.setDatabase(redisVectorConfigProperties.getDatabase());
+        redisVectorConfig.setKeyPrefix(redisVectorConfigProperties.getKeyPrefix());
+        redisVectorConfig.setIndexName(redisVectorConfigProperties.getIndexName());
+        redisVectorConfig.setVectorDim(redisVectorConfigProperties.getVectorDim());
+        redisVectorConfig.setDistanceMetric(redisVectorConfigProperties.getDistanceMetric());
+        redisVectorConfig.setAlgorithm(redisVectorConfigProperties.getAlgorithm());
+        redisVectorConfig.setM(redisVectorConfigProperties.getM());
+        redisVectorConfig.setEfConstruction(redisVectorConfigProperties.getEfConstruction());
+        redisVectorConfig.setVectorField(redisVectorConfigProperties.getVectorField());
+        redisVectorConfig.setContentField(redisVectorConfigProperties.getContentField());
+        redisVectorConfig.setTagFields(redisVectorConfigProperties.getTagFields());
+        redisVectorConfig.setNumericFields(redisVectorConfigProperties.getNumericFields());
+        redisVectorConfig.setConnectTimeoutMillis(redisVectorConfigProperties.getConnectTimeoutMillis());
+        redisVectorConfig.setReadTimeoutMillis(redisVectorConfigProperties.getReadTimeoutMillis());
+
+        configuration.setRedisVectorConfig(redisVectorConfig);
     }
 
     /**

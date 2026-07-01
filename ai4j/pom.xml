@@ -192,6 +192,15 @@
             <artifactId>graal-sdk</artifactId>
             <version>${graalsdk.version}</version>
         </dependency>
+        <!-- Redis Stack (RediSearch) vector store. Optional: users who enable the
+             Redis vector store must add jedis 4.x themselves, mirroring how
+             PgVectorStore expects a user-supplied postgres JDBC driver. -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>4.4.8</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
