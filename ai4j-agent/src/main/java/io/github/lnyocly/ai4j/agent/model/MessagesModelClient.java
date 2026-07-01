@@ -408,12 +408,20 @@ public class MessagesModelClient implements AgentModelClient {
             String outputText = text.toString();
             String reasoningText = thinking.toString();
             List<Object> memoryItems = buildAssistantMemoryItems(outputText, toolCalls);
+            Long inputTokens = null;
+            Long outputTokens = null;
+            if (response != null && response.getUsage() != null) {
+                inputTokens = response.getUsage().getInputTokens();
+                outputTokens = response.getUsage().getOutputTokens();
+            }
             return AgentModelResult.builder()
                     .reasoningText(reasoningText)
                     .outputText(outputText)
                     .toolCalls(toolCalls)
                     .memoryItems(memoryItems)
                     .rawResponse(response)
+                    .inputTokens(inputTokens)
+                    .outputTokens(outputTokens)
                     .build();
         }
     }

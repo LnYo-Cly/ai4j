@@ -339,12 +339,21 @@ public class ChatModelClient implements AgentModelClient {
 
         List<Object> memoryItems = buildAssistantMemoryItems(outputText, toolCalls);
 
+        Long inputTokens = null;
+        Long outputTokens = null;
+        if (response.getUsage() != null) {
+            inputTokens = response.getUsage().getPromptTokens();
+            outputTokens = response.getUsage().getCompletionTokens();
+        }
+
         return AgentModelResult.builder()
                 .reasoningText(reasoningText == null ? "" : reasoningText)
                 .outputText(outputText == null ? "" : outputText)
                 .toolCalls(toolCalls)
                 .memoryItems(memoryItems)
                 .rawResponse(response)
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
                 .build();
     }
 

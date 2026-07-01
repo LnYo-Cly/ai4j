@@ -23,4 +23,8 @@ public class AgentModelResult {
     private List<Object> memoryItems;
 
     private Object rawResponse;
+
+    private Long inputTokens;
+
+    private Long outputTokens;
 }

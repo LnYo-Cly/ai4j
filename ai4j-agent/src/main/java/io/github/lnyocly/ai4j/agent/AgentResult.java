@@ -30,4 +30,8 @@ public class AgentResult {
     private List<AgentToolResult> toolResults;
 
     private Integer steps;
+
+    private Long inputTokens;
+
+    private Long outputTokens;
 }

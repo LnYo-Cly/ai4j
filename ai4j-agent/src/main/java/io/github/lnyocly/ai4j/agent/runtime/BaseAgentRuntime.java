@@ -161,6 +161,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
                         .steps(step + 1)
+                        .inputTokens(modelResult == null ? null : modelResult.getInputTokens())
+                        .outputTokens(modelResult == null ? null : modelResult.getOutputTokens())
                         .build();
             }
 
@@ -219,6 +221,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .toolCalls(toolCalls)
                 .toolResults(toolResults)
                 .steps(step)
+                .inputTokens(lastResult == null ? null : lastResult.getInputTokens())
+                .outputTokens(lastResult == null ? null : lastResult.getOutputTokens())
                 .build();
     }
 
