@@ -1,0 +1,48 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-07-01T00:58:25.442Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643/artifacts/preset/2026-07-01T00-58-25-441Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}

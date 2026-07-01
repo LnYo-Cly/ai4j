@@ -51,9 +51,10 @@ public final class ToolCallDecision {
     /**
      * Redirect execution to a sandbox: the runtime creates a session from {@code spec} (via the
      * configured {@code SandboxProvider}) and runs {@code command} there, feeding the output back
-     * as the tool result. This is the beyond-pi capability — pi and Claude Code lack a first-class
-     * sandbox SPI; ai4j has Daytona/E2B. The interceptor owns the tool&rarr;command mapping (it knows
-     * its tools); the runtime owns session creation/execution.
+     * as the tool result. ai4j has a first-class Sandbox SPI (Daytona/E2B), so the interceptor
+     * can route dangerous commands to an isolated environment instead of blocking them outright.
+     * The interceptor owns the tool&rarr;command mapping (it knows its tools); the runtime owns
+     * session creation/execution.
      */
     public static ToolCallDecision routeTo(SandboxSpec spec, SandboxCommand command) {
         if (spec == null) {

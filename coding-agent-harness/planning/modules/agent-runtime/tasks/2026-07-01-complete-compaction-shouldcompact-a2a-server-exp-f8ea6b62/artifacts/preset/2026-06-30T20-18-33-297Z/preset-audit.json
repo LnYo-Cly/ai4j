@@ -1,0 +1,48 @@
+{
+  "preset": "module",
+  "version": 1,
+  "manifestPath": "G:/My_Project/java/ai4j-sdk/.coding-agent-harness/presets/module/preset.yaml",
+  "manifestSha256": "f64d665bf9dcfdfe402ee805e8cf4250ca278bac2e7d835737312fef786c60f8",
+  "scriptSha256s": {},
+  "entrypoints": {
+    "newTask": {
+      "type": "template",
+      "command": "",
+      "templates": {
+        "taskPlanAppend": "templates/task_plan.append.md",
+        "executionStrategyAppend": "templates/execution_strategy.append.md"
+      },
+      "writes": [
+        "{{paths.planningRoot}}/**"
+      ],
+      "reads": [],
+      "audit": true
+    }
+  },
+  "writeScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "resolvedInputs": {},
+  "taskId": "2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62",
+  "targetRoot": "G:\\My_Project\\java\\ai4j-sdk",
+  "generatedAt": "2026-06-30T20:18:33.298Z",
+  "presetWriteScopes": [
+    "coding-agent-harness/planning/**"
+  ],
+  "commandWriteScopes": [
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/INDEX.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/brief.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/task_plan.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/execution_strategy.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/visual_map.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/findings.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/lesson_candidates.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/progress.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/review.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/walkthrough.md",
+    "coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62/artifacts/preset/2026-06-30T20-18-33-297Z/preset-audit.json",
+    "coding-agent-harness/governance/generated/Harness-Ledger.md",
+    "coding-agent-harness/planning/modules/Module-Registry.md",
+    "coding-agent-harness/planning/modules/agent-runtime/module_plan.md"
+  ]
+}

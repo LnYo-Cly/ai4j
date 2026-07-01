@@ -540,8 +540,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     /**
      * Honors a {@link ToolCallDecision.Type#ROUTE_TO}: create a sandbox session from the decision's
      * spec (via the configured {@link SandboxProvider}), run the decision's command there, and feed
-     * the output back as the tool result. The beyond-pi capability — pi/Claude Code lack a sandbox
-     * SPI; ai4j routes to Daytona/E2B.
+     * the output back as the tool result. Uses the ai4j Sandbox SPI (Daytona/E2B).
      */
     protected String routeToSandbox(AgentContext context, AgentToolCall call, ToolCallDecision decision) {
         SandboxProvider provider = context == null ? null : context.getSandboxProvider();
