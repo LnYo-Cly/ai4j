@@ -19,7 +19,8 @@
 
 | 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |
 | --- | --- | --- | --- | --- |
-| T-A2A-PROTOCOL-CLIENT-CALL-EXTERNAL-AGENTS-VIA-GOO | A2A protocol client (call external agents via Google A2A) | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/task_plan.md | none |
+| T-A2A-BASIC-AUTH-BEFOREMODELREQUEST-INTERCEPTION-H | A2A basic auth + beforeModelRequest interception hook | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-basic-auth-beforemodelrequest-interception-h-db5a0e7d/task_plan.md | none |
+| T-A2A-PROTOCOL-CLIENT-CALL-EXTERNAL-AGENTS-VIA-GOO | A2A protocol client (call external agents via Google A2A) | reserved | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-07-01-a2a-protocol-client-call-external-agents-via-goo-e61e26eb/task_plan.md | T-A2A-BASIC-AUTH-BEFOREMODELREQUEST-INTERCEPTION-H |
 | T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE | Agent durable session store (JDBC) + resume cache persistence | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-durable-session-store-jdbc-resume-cache-pe-2cc9cf5d/task_plan.md | T-A2A-PROTOCOL-CLIENT-CALL-EXTERNAL-AGENTS-VIA-GOO |
 | T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- | Agent failure recovery via resumable model/tool decorators | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-failure-recovery-via-resumable-model-tool-bf9ec3b7/task_plan.md | T-AGENT-DURABLE-SESSION-STORE-JDBC-RESUME-CACHE-PE |
 | T-AGENT-NODE-IO-CAPTURE-NODE-LEVEL-REPLAY-4A61B820 | Agent node IO capture + node-level replay | merged | coding-agent-harness/planning/modules/agent-runtime/tasks/2026-06-24-agent-node-io-capture-node-level-replay-4a61b820/task_plan.md | T-AGENT-FAILURE-RECOVERY-VIA-RESUMABLE-MODEL-TOOL- |
