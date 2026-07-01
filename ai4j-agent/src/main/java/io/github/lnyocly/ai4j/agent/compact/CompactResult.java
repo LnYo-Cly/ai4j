@@ -38,6 +38,10 @@ public class CompactResult {
 
     private List<String> openQuestions;
 
+    private List<String> readFiles;
+
+    private List<String> modifiedFiles;
+
     private ContextReport contextReport;
 
     public List<String> getCompleted() {
@@ -76,6 +80,14 @@ public class CompactResult {
         return copy(openQuestions);
     }
 
+    public List<String> getReadFiles() {
+        return copy(readFiles);
+    }
+
+    public List<String> getModifiedFiles() {
+        return copy(modifiedFiles);
+    }
+
     public MemorySnapshot getMemory() {
         return memory == null ? null : MemorySnapshot.from(memory.getItems(), memory.getSummary());
     }
@@ -105,6 +117,8 @@ public class CompactResult {
                 .userConfirmations(getUserConfirmations())
                 .sandboxState(getSandboxState())
                 .openQuestions(getOpenQuestions())
+                .readFiles(getReadFiles())
+                .modifiedFiles(getModifiedFiles())
                 .contextReport(getContextReport())
                 .build();
     }
