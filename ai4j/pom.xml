@@ -110,6 +110,13 @@
             <version>2.2.224</version>
             <scope>test</scope>
         </dependency>
+        <!-- PostgreSQL + pgvector live test driver (test scope: not transitive) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
