@@ -127,6 +127,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         List<AgentToolResult> toolResults = new ArrayList<>();
         int step = 0;
         AgentModelResult lastResult = null;
+        long totalInputTokens = 0L;
+        long totalOutputTokens = 0L;
+        boolean hasUsage = false;
         boolean stepLimited = maxSteps > 0;
 
         while (!stepLimited || step < maxSteps) {
@@ -141,6 +144,16 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, stream, runId, sessionId, turnId);
             throwIfInterrupted();
             lastResult = modelResult;
+            if (modelResult != null) {
+                if (modelResult.getInputTokens() != null) {
+                    totalInputTokens += modelResult.getInputTokens();
+                    hasUsage = true;
+                }
+                if (modelResult.getOutputTokens() != null) {
+                    totalOutputTokens += modelResult.getOutputTokens();
+                    hasUsage = true;
+                }
+            }
 
             if (modelResult != null && modelResult.getMemoryItems() != null) {
                 memory.addOutputItems(modelResult.getMemoryItems());
@@ -161,8 +174,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
                         .steps(step + 1)
-                        .inputTokens(modelResult == null ? null : modelResult.getInputTokens())
-                        .outputTokens(modelResult == null ? null : modelResult.getOutputTokens())
+                        .inputTokens(hasUsage ? totalInputTokens : null)
+                        .outputTokens(hasUsage ? totalOutputTokens : null)
                         .build();
             }
 
@@ -221,8 +234,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .toolCalls(toolCalls)
                 .toolResults(toolResults)
                 .steps(step)
-                .inputTokens(lastResult == null ? null : lastResult.getInputTokens())
-                .outputTokens(lastResult == null ? null : lastResult.getOutputTokens())
+                .inputTokens(hasUsage ? totalInputTokens : null)
+                .outputTokens(hasUsage ? totalOutputTokens : null)
                 .build();
     }
 
