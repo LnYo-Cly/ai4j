@@ -38,11 +38,23 @@ Agent agent = Agents.react()
 | `preToolUse` | PreToolUse | allow / block / modify / routeTo |
 | `postToolUse` | PostToolUse | allow / block (the result) |
 | `userPromptSubmit` | UserPromptSubmit | allow / block / modify (the prompt) |
+| `beforeModelRequest` | before model call | modify the full `AgentPrompt` (system, items, temperature, tools) |
 | `stop` / `preCompact` / `sessionStart` / `sessionEnd` | observe | side-effect only |
 
 Semantics: first non-allow decision wins (pre/post/prompt); observe handlers all run. Pre and Post
 compose into one `ToolInterceptor` so you can register both. The sections below cover the underlying
 interfaces and decisions in depth — use them directly if you prefer.
+
+### beforeModelRequest
+
+Modify the full `AgentPrompt` right before the model call — change system prompt, inject context,
+override temperature, swap tools. This is the deepest interception point (pi's `context` +
+`before_provider_request` combined).
+
+```java
+.hooks(h -> h.beforeModelRequest((prompt, ctx) ->
+        prompt.toBuilder().temperature(0.0).build()))  // force deterministic
+```
 
 ## The four decisions
 
