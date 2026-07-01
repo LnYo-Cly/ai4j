@@ -244,3 +244,24 @@ P0-B 是基础层，不包含：
 - [Memory and State](/docs/agent/memory-and-state)
 - [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)
 - [Coding Agent Compact and Checkpoint](/docs/coding-agent/compact-and-checkpoint)
+
+## Auto-compaction (runtime-triggered)
+
+The runtime auto-compacts at the top of each step when the configured `CompactPolicy.shouldCompact`
+returns true. Configure via `AgentBuilder.compactPolicy(...)`:
+
+```java
+// LLM-powered: uses the model to generate a structured summary of old items
+LlmCompactPolicy policy = new LlmCompactPolicy(modelClient, "glm-5.1", 10);
+Agent agent = Agents.react()
+        .modelClient(modelClient).model("glm-5.1")
+        .compactPolicy(policy)   // auto-compact when items > 10
+        .build();
+```
+
+`LlmCompactPolicy` keeps the most recent N items and asks the LLM to summarize everything older
+into a structured summary (Goal/Progress/Key Decisions/Critical Context). For a mechanical
+(non-LLM) option, use `StructuredSummaryCompactPolicy` with a `ContextBudget`.
+
+The `BEFORE_COMPACT` lifecycle hook fires before compaction (interception/customize);
+`ON_COMPACT` fires after (observe).
