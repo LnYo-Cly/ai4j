@@ -1,6 +1,6 @@
 # Vector Store and Backends
 
-AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector”，信息密度其实很低。  
+AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / Redis”，信息密度其实很低。
 真正重要的是：**它怎样用统一 `VectorStore` 契约把不同后端收口，同时又不假装这些后端完全等价。**
 
 ## 1. 统一契约到底有多大
@@ -41,6 +41,7 @@ VectorStoreCapabilities capabilities();
 - Qdrant：`requiredDataset(...)`
 - Milvus：`requiredDataset(...)`
 - PgVector：`requiredDataset(...)`
+- Redis：`requiredDataset(...)`
 
 也就是说，在 AI4J 当前实现里，`dataset` 不是“如果你想分库再填”，而是：
 
@@ -76,12 +77,23 @@ VectorStoreCapabilities capabilities();
 
 - 表中的筛选字段 / 查询条件
 
+### Redis
+
+`dataset` 被用作：
+
+- Hash key 分段（`<keyPrefix><dataset>:<id>`）+ RediSearch 的 `dataset` TAG 字段过滤
+
+它落到一栈多用的 Redis 实例里，按 dataset 隔离的 key 空间 + 索引过滤。
+
+> Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Jedis 是 optional 依赖，用户需自行在 pom 引入 `redis.clients:jedis:4.x`——4.x 是最后支持 JDK 8 的大版本，5.x 需 JDK 17，与 ai4j 的 JDK 8 字节码不兼容。**若你的项目已绑定 Jedis 5.x 且不可降级，请改用其他向量后端**（Milvus/Qdrant/Pinecone/PgVector），它们走同一套 `VectorStore` 契约。
+
 所以从业务角度看大家都叫 `dataset`，但从存储现实看，它在不同后端对应的是：
 
 - namespace
 - collection
 - URL scope
 - relational filter column
+- redis key 前缀分段 + TAG 过滤
 
 这也是为什么你不能把“切换后端”理解成“换个连接串”。
 
@@ -125,6 +137,7 @@ VectorStoreCapabilities capabilities();
 - Qdrant：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=true`
 - Milvus：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
 - PgVector：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
+- Redis：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
 
 这里最值得注意的是：
 
