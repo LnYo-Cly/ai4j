@@ -14,8 +14,8 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
  *   <li>{@link ToolCallDecision#block(String)} — veto; the reason is fed back to the model as the
  *       tool result (so the model can adjust), like Claude Code's PreToolUse exit-code-2.</li>
  *   <li>{@link ToolCallDecision#modify(AgentToolCall)} — rewrite the call (name/arguments) then execute.</li>
- *   <li>{@link ToolCallDecision#routeTo} — redirect execution to a sandbox (the beyond-pi capability;
- *       see {@link ToolCallDecision#routeTo} for v1 status).</li>
+ *   <li>{@link ToolCallDecision#routeTo} — redirect execution to a sandbox (Daytona/E2B via the
+ *       Sandbox SPI); see {@link ToolCallDecision#routeTo} for details.</li>
  * </ul>
  *
  * <p>This is the layer library users need to build policy/safety/prompt-shaping into their own

@@ -13,7 +13,7 @@ control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/a
 - **`AgentLifecycleHook`** — observe-only side-effects for Stop / PreCompact / SessionStart / SessionEnd (now directly registerable via `AgentBuilder.lifecycleHook(...)`).
 
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
-systems. It aligns ai4j with pi and Claude Code, and one decision — `routeTo` — surpasses them.
+systems. The `routeTo` decision leverages ai4j's first-class Sandbox SPI (Daytona/E2B).
 
 ## Quick start: the `hooks` facade (recommended)
 
@@ -89,7 +89,7 @@ Agent agent = Agents.react()
 On `block`, the runtime skips execution and returns `TOOL_BLOCKED: {"reason": "..."}` to the model as
 the tool result — the model sees the reason and adjusts, exactly like Claude Code's exit-2 deny.
 
-## Example: route a dangerous command to a sandbox (beyond pi)
+## Example: route a dangerous command to a sandbox
 
 pi can "redirect to sandbox" but has no sandbox SPI — ai4j routes to Daytona/E2B. Configure a
 `SandboxProvider`, then route:
