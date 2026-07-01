@@ -30,6 +30,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
+import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
@@ -358,6 +359,14 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentModelResult executeModel(AgentContext context, AgentPrompt prompt, AgentListener listener, int step, boolean stream, String runId, String sessionId, String turnId) throws Exception {
+        // beforeModelRequest interception: allow modifying the full prompt (system, items, temperature, etc.)
+        ModelRequestHook modelHook = context == null ? null : context.getModelRequestHook();
+        if (modelHook != null) {
+            AgentPrompt modified = modelHook.beforeModelRequest(prompt, context);
+            if (modified != null) {
+                prompt = modified;
+            }
+        }
         dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_MODEL_REQUEST, step, runtimeName(), prompt);
         publish(context, listener, AgentEventType.MODEL_REQUEST, step, null, prompt, runId, sessionId, turnId);
         AgentModelResult result;

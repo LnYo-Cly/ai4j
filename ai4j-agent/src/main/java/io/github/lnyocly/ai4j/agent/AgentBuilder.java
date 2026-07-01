@@ -36,6 +36,7 @@ import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.AgentHooks;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
+import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
@@ -73,6 +74,7 @@ public class AgentBuilder {
     private PromptInterceptor promptInterceptor;
     private SandboxProvider sandboxProvider;
     private CompactPolicy compactPolicy;
+    private ModelRequestHook modelRequestHook;
     private final List<AgentLifecycleHook> additionalLifecycleHooks = new ArrayList<AgentLifecycleHook>();
     private CodeExecutor codeExecutor;
     private Supplier<AgentMemory> memorySupplier;
@@ -303,6 +305,11 @@ public class AgentBuilder {
         return this;
     }
 
+    public AgentBuilder modelRequestHook(ModelRequestHook modelRequestHook) {
+        this.modelRequestHook = modelRequestHook;
+        return this;
+    }
+
     public AgentBuilder codeExecutor(CodeExecutor codeExecutor) {
         this.codeExecutor = codeExecutor;
         return this;
@@ -483,6 +490,7 @@ public class AgentBuilder {
                 .promptInterceptor(promptInterceptor)
                 .sandboxProvider(sandboxProvider)
                 .compactPolicy(compactPolicy)
+                .modelRequestHook(modelRequestHook)
                 .codeExecutor(resolvedCodeExecutor)
                 .memory(memory)
                 .options(resolvedOptions)

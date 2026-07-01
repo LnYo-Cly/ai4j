@@ -42,9 +42,15 @@ public class A2AServer implements AutoCloseable {
     private final HttpServer server;
     private final Agent agent;
     private final AgentCard card;
+    private final String apiKey;
 
     public A2AServer(Agent agent, int port, String name, String description) throws IOException {
+        this(agent, port, name, description, null);
+    }
+
+    public A2AServer(Agent agent, int port, String name, String description, String apiKey) throws IOException {
         this.agent = agent;
+        this.apiKey = apiKey;
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         int actualPort = server.getAddress().getPort();
 
@@ -74,6 +80,26 @@ public class A2AServer implements AutoCloseable {
         server.stop(0);
     }
 
+    private boolean checkAuth(HttpExchange exchange) {
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            return true; // no auth configured
+        }
+        String provided = exchange.getRequestHeaders().getFirst("X-API-Key");
+        return apiKey.equals(provided);
+    }
+
+    private static void respond(HttpExchange exchange, int status, String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(status, bytes.length);
+        OutputStream os = exchange.getResponseBody();
+        try {
+            os.write(bytes);
+        } finally {
+            os.close();
+        }
+    }
+
     private final class CardHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -92,6 +118,10 @@ public class A2AServer implements AutoCloseable {
     private final class TaskHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) {
+                respond(exchange, 401, "{\"error\":\"unauthorized\"}");
+                return;
+            }
             String request = readBody(exchange.getRequestBody());
             String message = extractMessage(request);
             String responseText;

@@ -29,14 +29,24 @@ public class A2AClient {
 
     private final int connectTimeoutMillis;
     private final int readTimeoutMillis;
+    private final String apiKey;
 
     public A2AClient() {
-        this(10000, 120000);
+        this(null);
+    }
+
+    public A2AClient(String apiKey) {
+        this(apiKey, 10000, 120000);
+    }
+
+    public A2AClient(String apiKey, int connectTimeoutMillis, int readTimeoutMillis) {
+        this.apiKey = apiKey;
+        this.connectTimeoutMillis = connectTimeoutMillis;
+        this.readTimeoutMillis = readTimeoutMillis;
     }
 
     public A2AClient(int connectTimeoutMillis, int readTimeoutMillis) {
-        this.connectTimeoutMillis = connectTimeoutMillis;
-        this.readTimeoutMillis = readTimeoutMillis;
+        this(null, connectTimeoutMillis, readTimeoutMillis);
     }
 
     /** Fetches the AgentCard from {@code baseUrl/.well-known/agent.json}. */
@@ -120,6 +130,7 @@ public class A2AClient {
             conn.setConnectTimeout(connectTimeoutMillis);
             conn.setReadTimeout(readTimeoutMillis);
             conn.setRequestProperty("Accept", "application/json");
+            setAuth(conn);
             return readBody(conn.getInputStream());
         } finally {
             if (conn != null) {
@@ -137,6 +148,7 @@ public class A2AClient {
             conn.setReadTimeout(readTimeoutMillis);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
+            setAuth(conn);
             conn.setDoOutput(true);
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             conn.setRequestProperty("Content-Length", String.valueOf(bytes.length));
@@ -174,6 +186,12 @@ public class A2AClient {
             input.close();
         }
         return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private void setAuth(HttpURLConnection conn) {
+        if (apiKey != null && !apiKey.trim().isEmpty()) {
+            conn.setRequestProperty("X-API-Key", apiKey);
+        }
     }
 
     private static String trimSlash(String url) {

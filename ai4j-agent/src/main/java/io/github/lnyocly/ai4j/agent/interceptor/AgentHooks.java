@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.agent.interceptor;
 
 import io.github.lnyocly.ai4j.agent.AgentBuilder;
 import io.github.lnyocly.ai4j.agent.AgentContext;
+import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEvent;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
@@ -39,6 +40,7 @@ public final class AgentHooks {
     private final List<ToolInterceptor> preToolUse = new ArrayList<ToolInterceptor>();
     private final List<PostToolUseHook> postToolUse = new ArrayList<PostToolUseHook>();
     private final List<PromptInterceptor> userPromptSubmit = new ArrayList<PromptInterceptor>();
+    private final List<ModelRequestHook> modelRequestHooks = new ArrayList<ModelRequestHook>();
     private final Map<AgentLifecycleEventType, List<ObserveHook>> observe = new LinkedHashMap<AgentLifecycleEventType, List<ObserveHook>>();
 
     public AgentHooks preToolUse(ToolInterceptor hook) {
@@ -58,6 +60,13 @@ public final class AgentHooks {
     public AgentHooks userPromptSubmit(PromptInterceptor hook) {
         if (hook != null) {
             userPromptSubmit.add(hook);
+        }
+        return this;
+    }
+
+    public AgentHooks beforeModelRequest(ModelRequestHook hook) {
+        if (hook != null) {
+            modelRequestHooks.add(hook);
         }
         return this;
     }
@@ -101,13 +110,17 @@ public final class AgentHooks {
         if (!userPromptSubmit.isEmpty()) {
             builder.promptInterceptor(composePromptInterceptor());
         }
+        if (!modelRequestHooks.isEmpty()) {
+            builder.modelRequestHook(composeModelRequestHook());
+        }
         if (!observe.isEmpty()) {
             builder.lifecycleHook(composeLifecycleHook());
         }
     }
 
     boolean isEmpty() {
-        return preToolUse.isEmpty() && postToolUse.isEmpty() && userPromptSubmit.isEmpty() && observe.isEmpty();
+        return preToolUse.isEmpty() && postToolUse.isEmpty() && userPromptSubmit.isEmpty()
+                && modelRequestHooks.isEmpty() && observe.isEmpty();
     }
 
     private ToolInterceptor composeToolInterceptor() {
@@ -150,6 +163,23 @@ public final class AgentHooks {
                     }
                 }
                 return PromptDecision.allow();
+            }
+        };
+    }
+
+    private ModelRequestHook composeModelRequestHook() {
+        final List<ModelRequestHook> hooks = new ArrayList<ModelRequestHook>(modelRequestHooks);
+        return new ModelRequestHook() {
+            @Override
+            public AgentPrompt beforeModelRequest(AgentPrompt prompt, AgentContext context) {
+                AgentPrompt current = prompt;
+                for (ModelRequestHook h : hooks) {
+                    AgentPrompt modified = h.beforeModelRequest(current, context);
+                    if (modified != null) {
+                        current = modified;
+                    }
+                }
+                return current;
             }
         };
     }
