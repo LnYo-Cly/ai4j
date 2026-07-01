@@ -10,6 +10,7 @@ import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link CompactPolicy} that uses an LLM to generate a structured summary of old conversation
@@ -64,9 +65,11 @@ public class LlmCompactPolicy implements CompactPolicy {
             return CompactResult.builder().memory(snapshot).build();
         }
 
-        int keepCount = Math.min(maxItems, items.size());
-        List<Object> toSummarize = new ArrayList<Object>(items.subList(0, items.size() - keepCount));
-        List<Object> toKeep = new ArrayList<Object>(items.subList(items.size() - keepCount, items.size()));
+        int naiveCut = items.size() - Math.min(maxItems, items.size());
+        int safeCut = findTurnBoundaryCut(items, naiveCut);
+
+        List<Object> toSummarize = new ArrayList<Object>(items.subList(0, safeCut));
+        List<Object> toKeep = new ArrayList<Object>(items.subList(safeCut, items.size()));
 
         String summary = generateSummary(toSummarize, snapshot.getSummary());
 
@@ -75,6 +78,34 @@ public class LlmCompactPolicy implements CompactPolicy {
                 .memory(compacted)
                 .summary(summary)
                 .build();
+    }
+
+    /**
+     * Walks backwards from the naive cut point to find a safe turn boundary (a user-role message).
+     * This prevents cutting mid-turn — never leaves assistant messages or tool results orphaned
+     * without their preceding context. If no user-role boundary is found, returns the naive cut
+     * (graceful fallback).
+     */
+    static int findTurnBoundaryCut(List<Object> items, int naiveCut) {
+        if (naiveCut <= 0 || naiveCut >= items.size()) {
+            return naiveCut;
+        }
+        for (int i = naiveCut; i > 0; i--) {
+            if (isTurnBoundary(items.get(i))) {
+                return i;
+            }
+        }
+        // can't find a user-role boundary — check if item 0 is a turn start
+        return isTurnBoundary(items.get(0)) ? 0 : naiveCut;
+    }
+
+    /** A turn boundary is a user-role message (the start of a new user turn). */
+    private static boolean isTurnBoundary(Object item) {
+        if (!(item instanceof Map)) {
+            return false;
+        }
+        Object role = ((Map<?, ?>) item).get("role");
+        return "user".equals(role);
     }
 
     private String generateSummary(List<Object> itemsToSummarize, String previousSummary) {
