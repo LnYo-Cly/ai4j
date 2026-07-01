@@ -265,3 +265,16 @@ into a structured summary (Goal/Progress/Key Decisions/Critical Context). For a 
 
 The `BEFORE_COMPACT` lifecycle hook fires before compaction (interception/customize);
 `ON_COMPACT` fires after (observe).
+
+### Turn-boundary safe cut
+
+When deciding what to summarize vs keep, `LlmCompactPolicy` respects turn boundaries: the cut
+point walks backwards from the naive position to the nearest user-role message. This prevents
+leaving assistant messages or tool results orphaned without their preceding context.
+
+### Cumulative file tracking
+
+`LlmCompactPolicy` scans the items being summarized for tool calls referencing files
+(`read`/`grep`/`find` → readFiles; `write`/`edit`/`create`/`delete` → modifiedFiles), deduplicates,
+includes them in the summary prompt so the LLM knows what was touched, and carries them forward
+in `CompactResult.readFiles` / `CompactResult.modifiedFiles` for the next compaction to accumulate.

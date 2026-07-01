@@ -188,6 +188,7 @@ const sidebars: SidebarsConfig = {
             'agent/trace-observability',
             'agent/replay-recovery-audit',
             'agent/tool-interceptor',
+            'agent/a2a',
           ],
         },
         'agent/reference-core-classes',
