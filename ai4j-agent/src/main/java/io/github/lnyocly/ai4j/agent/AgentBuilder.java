@@ -87,6 +87,7 @@ public class AgentBuilder {
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
     private AgentEventPublisher eventPublisher;
+    private io.github.lnyocly.ai4j.agent.replay.IoCaptureSink captureSink;
     private AgentSessionStore sessionStore;
     private String model;
     private String instructions;
@@ -365,6 +366,18 @@ public class AgentBuilder {
         return this;
     }
 
+    /**
+     * Attach an {@link io.github.lnyocly.ai4j.agent.replay.IoCaptureSink} to capture every
+     * MODEL and TOOL node's full input/output into replayable {@code NodeIoRecord}s. Convenience
+     * over manually wiring {@code eventPublisher(...)} + {@code IoCaptureAgentListener}. When the
+     * agent uses a RAG tool (see {@code RagTool}), the retrieval is captured here automatically —
+     * unifying RAG into the agent's observability/replay/recovery chain.
+     */
+    public AgentBuilder capture(io.github.lnyocly.ai4j.agent.replay.IoCaptureSink captureSink) {
+        this.captureSink = captureSink;
+        return this;
+    }
+
     public AgentBuilder sessionStore(AgentSessionStore sessionStore) {
         this.sessionStore = sessionStore;
         return this;
@@ -469,6 +482,10 @@ public class AgentBuilder {
         AgentEventPublisher resolvedEventPublisher = eventPublisher == null ? new AgentEventPublisher() : eventPublisher;
         if (traceExporter != null) {
             resolvedEventPublisher.addListener(new AgentTraceListener(traceExporter, traceConfig));
+        }
+        if (captureSink != null) {
+            resolvedEventPublisher.addListener(
+                    new io.github.lnyocly.ai4j.agent.replay.IoCaptureAgentListener(captureSink));
         }
         if (modelClient == null) {
             throw new IllegalStateException("modelClient is required");
