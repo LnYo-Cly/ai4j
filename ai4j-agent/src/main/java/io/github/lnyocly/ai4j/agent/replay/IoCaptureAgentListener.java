@@ -76,7 +76,8 @@ public class IoCaptureAgentListener implements AgentListener {
                 .turnId(event.getTurnId())
                 .step(event.getStep())
                 .nodeId("model@" + key)
-                .inputs(event.getPayload());
+                .inputs(event.getPayload())
+                .startedAtEpochMs(System.currentTimeMillis());
         if (event.getPayload() instanceof AgentPrompt) {
             b.modelId(((AgentPrompt) event.getPayload()).getModel());
         }
@@ -115,7 +116,8 @@ public class IoCaptureAgentListener implements AgentListener {
                 .turnId(event.getTurnId())
                 .step(event.getStep())
                 .nodeId("tool@" + key)
-                .inputs(event.getPayload());
+                .inputs(event.getPayload())
+                .startedAtEpochMs(System.currentTimeMillis());
         pendingTools.put(key, b);
     }
 
