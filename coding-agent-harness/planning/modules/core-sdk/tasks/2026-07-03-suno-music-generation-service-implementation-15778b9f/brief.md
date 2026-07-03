@@ -46,7 +46,7 @@
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：审查中
+- 生命周期状态：进行中
 - 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`、`walkthrough.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
