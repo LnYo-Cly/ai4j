@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -165,6 +166,8 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
         } catch (IOException e) {
             throw new RuntimeException("failed to read capture file " + path, e);
         }
+        // causal order by node start time, matching InMemoryIoCaptureSink (see note there)
+        out.sort(Comparator.comparingLong(NodeIoRecord::getStartedAtEpochMs));
         return out;
     }
 }

@@ -211,6 +211,24 @@ public class NodeIoCaptureReplayTest {
     }
 
     @Test
+    public void recordsShouldReturnCauseOrderByStartedAtNotCaptureFlushOrder() {
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        // reproduce the flush-timing skew: TOOL_RESULT flushes the tool record BEFORE
+        // STEP_END flushes the model record, yet the model (which decided the call) started first.
+        NodeIoRecord tool = NodeIoRecord.builder(NodeIoRecord.NodeType.TOOL)
+                .nodeId("tool@step0").startedAtEpochMs(200L).capturedAtEpochMs(210L).build();
+        NodeIoRecord model = NodeIoRecord.builder(NodeIoRecord.NodeType.MODEL)
+                .nodeId("model@step0").startedAtEpochMs(100L).capturedAtEpochMs(220L).build();
+        sink.capture(tool);
+        sink.capture(model);
+
+        List<NodeIoRecord> ordered = sink.records();
+        assertEquals("cause order: model (startedAt=100) before tool (startedAt=200)",
+                "model@step0", ordered.get(0).getNodeId());
+        assertEquals("tool@step0", ordered.get(1).getNodeId());
+    }
+
+    @Test
     public void listenerMustNeverPropagateExceptions() {
         IoCaptureSink throwing = new IoCaptureSink() {
             @Override public void capture(NodeIoRecord record) { throw new RuntimeException("boom"); }

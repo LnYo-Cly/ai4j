@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.agent.replay;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -22,18 +23,21 @@ public class InMemoryIoCaptureSink implements IoCaptureSink {
     @Override
     public List<NodeIoRecord> records() {
         synchronized (records) {
-            return new ArrayList<NodeIoRecord>(records);
+            List<NodeIoRecord> sorted = new ArrayList<NodeIoRecord>(records);
+            // ponytail: causal order by node start time, not capture-flush order.
+            // TOOL_RESULT flushes before STEP_END, so otherwise a MODEL node that decided the
+            // tool call would appear *after* the tool in the list (wrong causality).
+            sorted.sort(Comparator.comparingLong(NodeIoRecord::getStartedAtEpochMs));
+            return sorted;
         }
     }
 
     @Override
     public List<NodeIoRecord> records(NodeIoRecord.NodeType type) {
         List<NodeIoRecord> out = new ArrayList<NodeIoRecord>();
-        synchronized (records) {
-            for (NodeIoRecord r : records) {
-                if (r.getNodeType() == type) {
-                    out.add(r);
-                }
+        for (NodeIoRecord r : records()) {
+            if (r.getNodeType() == type) {
+                out.add(r);
             }
         }
         return out;
