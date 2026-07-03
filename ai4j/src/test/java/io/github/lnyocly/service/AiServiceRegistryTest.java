@@ -3,9 +3,11 @@ package io.github.lnyocly.service;
 import io.github.lnyocly.ai4j.config.AiPlatform;
 import io.github.lnyocly.ai4j.config.JinaConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.config.SunoConfig;
 import io.github.lnyocly.ai4j.platform.jina.rerank.JinaRerankService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
+import io.github.lnyocly.ai4j.platform.suno.music.SunoMusicService;
 import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
 import io.github.lnyocly.ai4j.service.AiConfig;
@@ -87,6 +89,43 @@ public class AiServiceRegistryTest {
         Assert.assertTrue(FreeAiService.getChatService("tenant-a-openai") instanceof OpenAiChatService);
         Assert.assertTrue(FreeAiService.getVideoService("tenant-a-openai") instanceof OpenAiVideoService);
         Assert.assertNull(FreeAiService.getChatService("missing"));
+    }
+
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void shouldExposeSunoMusicServiceFromRegistryAndCompatibilityShell() {
+        Configuration configuration = new Configuration();
+        configuration.setOkHttpClient(new OkHttpClient());
+
+        AiPlatform aiPlatform = new AiPlatform();
+        aiPlatform.setId("tenant-suno");
+        aiPlatform.setPlatform("suno");
+        aiPlatform.setApiHost("https://api.chatfire.cn/");
+        aiPlatform.setApiKey("suno-key");
+        aiPlatform.setMusicUrl("suno/submit/music");
+        aiPlatform.setLyricsUrl("suno/submit/lyrics");
+        aiPlatform.setFetchUrl("suno/fetch/{task_id}");
+
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
+
+        AiServiceRegistry registry = DefaultAiServiceRegistry.from(configuration, aiConfig);
+        AiServiceRegistration registration = registry.get("tenant-suno");
+        AiService aiService = registration.getAiService();
+
+        Assert.assertEquals(PlatformType.SUNO, registration.getPlatformType());
+        Assert.assertTrue(registry.getMusicService("tenant-suno") instanceof SunoMusicService);
+
+        SunoConfig scopedSunoConfig = aiService.getConfiguration().getSunoConfig();
+        Assert.assertEquals("https://api.chatfire.cn/", scopedSunoConfig.getApiHost());
+        Assert.assertEquals("suno-key", scopedSunoConfig.getApiKey());
+        Assert.assertEquals("suno/submit/music", scopedSunoConfig.getMusicUrl());
+        Assert.assertEquals("suno/submit/lyrics", scopedSunoConfig.getLyricsUrl());
+        Assert.assertEquals("suno/fetch/{task_id}", scopedSunoConfig.getFetchUrl());
+
+        new FreeAiService(registry);
+        Assert.assertTrue(FreeAiService.getMusicService("tenant-suno") instanceof SunoMusicService);
     }
 
     @Test

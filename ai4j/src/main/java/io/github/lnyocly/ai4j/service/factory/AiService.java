@@ -24,6 +24,7 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.image.OpenAiImageService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
+import io.github.lnyocly.ai4j.platform.suno.music.SunoMusicService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
 import io.github.lnyocly.ai4j.rag.DefaultRagService;
@@ -200,6 +201,19 @@ public class AiService {
 
     public IVideoService getVideoService(PlatformType platform) {
         return createVideoService(platform);
+    }
+
+    public IMusicService getMusicService(PlatformType platform) {
+        return createMusicService(platform);
+    }
+
+    private IMusicService createMusicService(PlatformType platform) {
+        switch (platform) {
+            case SUNO:
+                return new SunoMusicService(configuration);
+            default:
+                throw new IllegalArgumentException("No music service for platform: " + platform);
+        }
     }
 
     private IVideoService createVideoService(PlatformType platform) {

@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.service.IAudioService;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.IImageService;
+import io.github.lnyocly.ai4j.service.IMusicService;
 import io.github.lnyocly.ai4j.service.IRerankService;
 import io.github.lnyocly.ai4j.service.IRealtimeService;
 import io.github.lnyocly.ai4j.service.IResponsesService;
@@ -68,6 +69,11 @@ public interface AiServiceRegistry {
     default IVideoService getVideoService(String id) {
         AiServiceRegistration registration = get(id);
         return registration.getAiService().getVideoService(registration.getPlatformType());
+    }
+
+    default IMusicService getMusicService(String id) {
+        AiServiceRegistration registration = get(id);
+        return registration.getAiService().getMusicService(registration.getPlatformType());
     }
 
     default IResponsesService getResponsesService(String id) {
