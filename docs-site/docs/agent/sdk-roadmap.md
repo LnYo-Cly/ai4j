@@ -280,7 +280,7 @@ P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 s
 - file / shell / git / browser / project run 等执行型工具自动感知 sandbox。
 - 无 sandbox 时保持本地执行。
 - 有 sandbox 时进入 sandbox 执行。
-- 具体 CubeSandbox / Docker / E2B / K8s / 公司内部沙箱由插件或业务方实现。
+- CubeSandbox Provider 已有首个官方 adapter；Docker / E2B / K8s / 公司内部沙箱仍由插件或业务方实现。
 
 ## 6. P3：`ai4j-coding` 接入 sandbox
 
@@ -320,14 +320,14 @@ P4 首切片已经落地 CLI/TUI 可见命令：
 /sandbox disable
 ```
 
-当前 `attach` 是 metadata-only：它记录非敏感 provider/session/workspace 摘要并重建 runtime；如果没有真实 provider bridge，`bash action=exec` 会明确失败，不能静默回退到宿主机。命令细节见 [命令参考](/docs/coding-agent/command-reference) 和 [Coding Agent Sandbox Routing](/docs/coding-agent/sandbox-routing)。
+当前 `attach` 已分层：`cubesandbox` / `cube` 会通过 `CubeSandboxProvider.connect(...)` 连接已有 live session；其它 provider 仍是 metadata-only，记录非敏感 provider/session/workspace 摘要并重建 runtime。如果没有真实 provider bridge，`bash action=exec` 会明确失败，不能静默回退到宿主机。命令细节见 [命令参考](/docs/coding-agent/command-reference) 和 [Coding Agent Sandbox Routing](/docs/coding-agent/sandbox-routing)。
 
 TUI 上至少要让用户知道：
 
 - 当前是 `direct-host` 还是 `attached`
 - provider 是什么
 - workspace 在哪里
-- 当前是否是 metadata-only attach
+- 当前是 `attached-live` 还是 `attached-metadata-only`
 - 没有真实 provider bridge 时不会伪装 sandbox 执行成功
 
 如果后续需要测试交互体验，可以使用 tmux 驱动 CLI，验证输入命令和输出渲染。
@@ -378,7 +378,7 @@ P5 首切片已经新增 io.github.lnyocly.ai4j.agent.runner SPI contract：Agen
 | 6 | P1-C CLI `run <agent.yaml>` | `mvn -pl ai4j-cli -am "-Dtest=AgentBlueprintRunCommandTest,Ai4jCliTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-cli -am -DskipTests=false test` |
 | 7 | P2-A/P2-B Sandbox SPI + AgentSession binding | `mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest,AgentSessionSandboxBindingTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-agent -am -DskipTests=false test` |
 | 8 | P3 Coding Sandbox Routing | `mvn -pl ai4j-coding -am "-Dtest=BashToolExecutorTest,CodingAgentBuilderTest" -DskipTests=false -DfailIfNoTests=false test` + `mvn -pl ai4j-coding -am -DskipTests=false test` |
-| 9 | P4 CLI Sandbox Commands | `mvn -pl ai4j-cli -am -DskipTests=false -DfailIfNoTests=false test` |
+| 9 | P4 CLI Sandbox Commands + CubeSandbox live attach | `mvn -pl ai4j-cli -am "-Dtest=*Sandbox*Test,DefaultCodingCliAgentFactoryTest,CodingCliSessionRunnerArgumentParsingTest" -DskipTests=false -DfailIfNoTests=false test` |
 | 10 | P5 Runner Decision | contract tests after module decision |
 
 ## 10. 哪些事现在不要做
