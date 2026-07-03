@@ -100,3 +100,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自本地 MockWebServer 合约测试、core SDK 全量本地测试、Spring starter 全量本地测试、monorepo package smoke，以及 Regression SSoT/Cadence 同步。live provider smoke 明确标为 opt-in residual，不作为本轮 release blocker。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202607031133 |
+| Submitted At | 2026-07-03 11:33 |
+| Submitted By | agent |
+| Task Key | MODULES/core-sdk/2026-07-03-chatfire-openai-videos-service-implementation-b2ffc35a |
+| Materials Checklist Hash | c3d2305cd0a905b1 |
+| Evidence Summary | ChatFire OpenAI videos service implementation ready for review: video service, config binding, tests, package smoke, and regression records complete. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-openai-videos-service-implementation-b2ffc35a |
