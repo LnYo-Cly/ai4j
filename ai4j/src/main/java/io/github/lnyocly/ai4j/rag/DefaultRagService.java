@@ -25,15 +25,20 @@ public class DefaultRagService implements RagService {
 
     @Override
     public RagResult search(RagQuery query) throws Exception {
+        long t0 = System.nanoTime();
         List<RagHit> hits = RagHitSupport.prepareRetrievedHits(retriever.retrieve(query), retriever.retrieverSource());
         List<RagHit> rerankInput = RagHitSupport.copyList(hits);
-        List<RagHit> reranked = RagHitSupport.prepareRerankedHits(
-                hits,
-                reranker.rerank(query == null ? null : query.getQuery(), rerankInput),
-                !(reranker instanceof NoopReranker)
-        );
+        long t1 = System.nanoTime();
+        List<RagHit> rerankOutput = reranker.rerank(query == null ? null : query.getQuery(), rerankInput);
+        long t2 = System.nanoTime();
+        List<RagHit> reranked = RagHitSupport.prepareRerankedHits(hits, rerankOutput, !(reranker instanceof NoopReranker));
         List<RagHit> finalHits = trim(reranked, query == null ? null : query.getFinalTopK());
         RagContext context = contextAssembler.assemble(query, finalHits);
+        long t3 = System.nanoTime();
+        long retrieveMs = Math.max(0L, (t1 - t0) / 1_000_000L);
+        long rerankMs = Math.max(0L, (t2 - t1) / 1_000_000L);
+        long assembleMs = Math.max(0L, (t3 - t2) / 1_000_000L);
+        long totalMs = Math.max(0L, (t3 - t0) / 1_000_000L);
         return RagResult.builder()
                 .query(query == null ? null : query.getQuery())
                 .hits(finalHits)
@@ -41,7 +46,14 @@ public class DefaultRagService implements RagService {
                 .citations(context == null ? Collections.<RagCitation>emptyList() : context.getCitations())
                 .sources(context == null ? Collections.<RagCitation>emptyList() : context.getCitations())
                 .trace(query != null && query.isIncludeTrace()
-                        ? RagTrace.builder().retrievedHits(hits).rerankedHits(reranked).build()
+                        ? RagTrace.builder()
+                                .retrievedHits(hits)
+                                .rerankedHits(reranked)
+                                .retrieveDurationMs(retrieveMs)
+                                .rerankDurationMs(rerankMs)
+                                .assembleDurationMs(assembleMs)
+                                .totalDurationMs(totalMs)
+                                .build()
                         : null)
                 .build();
     }
