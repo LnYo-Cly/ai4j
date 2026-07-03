@@ -77,5 +77,5 @@
 | Cadence row | `docs/05-TEST-QA/Cadence-Ledger.md` SRB-060 |
 | Worktree | `G:\My_Project\java\ai4j-sdk\.worktrees\feature\chatfire-openai-videos` |
 | Branch | `feature/chatfire-openai-videos` |
-| Implementation commit | `364fe0624946` |
-| Harness review commit | `2f39ab6bf8f5` |
+| Implementation commit | `b1564908` |
+| Harness review commit | `9e4ceec3` |
