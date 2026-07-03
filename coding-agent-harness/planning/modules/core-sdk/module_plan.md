@@ -22,7 +22,7 @@
 | T-ADD-ANTHROPIC-MESSAGES-ADAPTER-3876EE40 | Add Anthropic Messages adapter | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-06-22-add-anthropic-messages-adapter-3876ee40/task_plan.md | none |
 | T-ANTHROPIC-NATIVE-MESSAGES-SURFACE-5914B973 | Anthropic native Messages surface | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-06-23-anthropic-native-messages-surface-5914b973/task_plan.md | T-ADD-ANTHROPIC-MESSAGES-ADAPTER-3876EE40 |
 | T-CHATFIRE-MEDIA-GENERATION-INTEGRATION-ANALYSIS-3 | ChatFire media generation integration analysis | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-media-generation-integration-analysis-3697f321/task_plan.md | T-ANTHROPIC-NATIVE-MESSAGES-SURFACE-5914B973 |
-| T-CHATFIRE-OPENAI-VIDEOS-SERVICE-IMPLEMENTATION-B2 | ChatFire OpenAI videos service implementation | reserved | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-openai-videos-service-implementation-b2ffc35a/task_plan.md | T-CHATFIRE-MEDIA-GENERATION-INTEGRATION-ANALYSIS-3 |
+| T-CHATFIRE-OPENAI-VIDEOS-SERVICE-IMPLEMENTATION-B2 | ChatFire OpenAI videos service implementation | active | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-openai-videos-service-implementation-b2ffc35a/task_plan.md | T-CHATFIRE-MEDIA-GENERATION-INTEGRATION-ANALYSIS-3 |
 
 ## 活跃任务
 
