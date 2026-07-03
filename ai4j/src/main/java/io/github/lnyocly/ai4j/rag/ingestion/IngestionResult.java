@@ -32,4 +32,7 @@ public class IngestionResult {
     private List<VectorRecord> records = Collections.emptyList();
 
     private int upsertedCount;
+
+    /** 摄入各步耗时统计（可选，便于排障：定位是解析/切块/embed/upsert 哪步慢）。 */
+    private IngestionTrace trace;
 }
