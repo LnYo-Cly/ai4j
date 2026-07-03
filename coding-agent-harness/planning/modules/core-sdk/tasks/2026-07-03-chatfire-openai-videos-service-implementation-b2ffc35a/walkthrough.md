@@ -48,7 +48,7 @@
 
 | Source | Material findings | Handling | Evidence |
 | --- | --- | --- | --- |
-| Self-review | 0 open material findings | Ready for PR after diff hygiene and lifecycle submission | `review.md` |
+| Self-review | 0 open material findings | Submitted by `harness task-review`; ready for PR/merge | `review.md` |
 
 ## Residual risks
 
@@ -77,4 +77,5 @@
 | Cadence row | `docs/05-TEST-QA/Cadence-Ledger.md` SRB-060 |
 | Worktree | `G:\My_Project\java\ai4j-sdk\.worktrees\feature\chatfire-openai-videos` |
 | Branch | `feature/chatfire-openai-videos` |
-| Implementation commit | Will be recorded after the commit is created. |
+| Implementation commit | `364fe0624946` |
+| Harness review commit | `2f39ab6bf8f5` |
