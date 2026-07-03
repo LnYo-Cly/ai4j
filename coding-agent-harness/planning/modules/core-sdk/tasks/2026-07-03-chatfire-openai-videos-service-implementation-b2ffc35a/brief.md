@@ -10,42 +10,43 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+为 core SDK 增加 OpenAI-compatible `/v1/videos` 视频生成服务，并让 ChatFire 网关可通过现有 OpenAI 平台配置使用。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+用户可以通过 `AiService.getVideoService(PlatformType.OPENAI)` 或多实例 `FreeAiService.getVideoService("chatfire")` 调用 ChatFire/OpenAI-compatible 视频接口，支持创建视频任务、查询任务、下载内容流和 remix。Spring 配置新增 `video-url`，多实例配置也补齐 `imageGenerationUrl`、`responsesUrl`、`videoUrl`，避免媒体/Responses URL 只能在单实例配置里生效。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`IVideoService`、`OpenAiVideoService`、`VideoCreateRequest`、`VideoResponse`、本地 MockWebServer 测试。
+- 修改位置：`ai4j/**`、`ai4j-spring-boot-starter/**`、`docs/05-TEST-QA/**`、task-local harness files。
+- 验证证据：`progress.md` 中记录的 Maven 类级、core 全量和 starter 全量测试。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+先看 `ai4j/src/main/java/io/github/lnyocly/ai4j/platform/openai/video/OpenAiVideoService.java`，再看 `ai4j/src/test/java/io/github/lnyocly/ai4j/platform/openai/video/OpenAiVideoServiceTest.java`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：OpenAI-compatible `/v1/videos` create/retrieve/content/remix；ChatFire 通过 `apiHost` 使用；配置和多实例入口；本地回归。
+- 范围外：Suno 音乐、ElevenLabs native、Fal/Doubao/Kling/MiniMax 原生 endpoint、live provider 付费验证。
+- 停止条件：需要真实 `CHATFIRE_API_KEY` 或付费接口验证时停止并转为 opt-in live gate。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- 新增 Video 服务 public API 并接入 `AiService`、`AiServiceRegistry`、`FreeAiService`。
+- `OpenAiVideoServiceTest` 覆盖 create/retrieve/content/remix。
+- `AiServiceRegistryTest` 覆盖多实例 `videoUrl` 和 video service 入口。
+- RG-001、RG-005、RG-007 本地回归通过。
+- Regression SSoT 与 Cadence Ledger 已同步新增 video surface 证据。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`、`walkthrough.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交实现分支，推送并创建 PR；PR 合并后清理 worktree/临时分支。

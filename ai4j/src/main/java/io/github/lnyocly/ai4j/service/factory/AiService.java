@@ -23,6 +23,7 @@ import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.image.OpenAiImageService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
+import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
 import io.github.lnyocly.ai4j.rag.DefaultRagService;
@@ -194,6 +195,19 @@ public class AiService {
                 return new DoubaoImageService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public IVideoService getVideoService(PlatformType platform) {
+        return createVideoService(platform);
+    }
+
+    private IVideoService createVideoService(PlatformType platform) {
+        switch (platform) {
+            case OPENAI:
+                return new OpenAiVideoService(configuration);
+            default:
+                throw new IllegalArgumentException("No video service for platform: " + platform);
         }
     }
 
