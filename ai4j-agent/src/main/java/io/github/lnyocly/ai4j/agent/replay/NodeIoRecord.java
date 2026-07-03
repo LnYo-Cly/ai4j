@@ -12,6 +12,14 @@ import java.util.UUID;
  * {@link #capturedAtEpochMs} at response/result (node complete). {@link #getDurationMs()} gives
  * the per-node execution latency.
  *
+ * <p>MODEL-only enrichment (TOOL nodes leave these null/zero): {@link #getReasoningText()} is
+ * accumulated from {@code MODEL_REASONING} events (the model's chain-of-thought, when the provider
+ * returns one); {@link #getRetryCount()} counts {@code MODEL_RETRY} events for the step;
+ * {@link #getInputTokens()} / {@link #getOutputTokens()} are best-effort parsed from the raw
+ * response's {@code usage} block (provider-agnostic: prompt_tokens / promptTokens / input are all
+ * accepted). These make a capture self-describing for cost accounting and reasoning audit without
+ * re-parsing {@link #getOutputs()}.</p>
+ *
  * <p>The {@code inputs}/{@code outputs} fields hold the original objects for in-memory live
  * replay (re-invoke the model/tool with the real captured input). The serialized form written by
  * {@link JsonlIoCaptureSink} is the durable audit/replay artifact.</p>
@@ -32,6 +40,10 @@ public final class NodeIoRecord {
     private final Object outputs;
     private final long startedAtEpochMs;
     private final long capturedAtEpochMs;
+    private final String reasoningText;
+    private final int retryCount;
+    private final Long inputTokens;
+    private final Long outputTokens;
 
     NodeIoRecord(Builder builder) {
         this.recordId = builder.recordId == null ? UUID.randomUUID().toString() : builder.recordId;
@@ -47,6 +59,10 @@ public final class NodeIoRecord {
         this.startedAtEpochMs = builder.startedAtEpochMs;
         this.capturedAtEpochMs = builder.capturedAtEpochMs == null
                 ? System.currentTimeMillis() : builder.capturedAtEpochMs.longValue();
+        this.reasoningText = builder.reasoningText;
+        this.retryCount = builder.retryCount;
+        this.inputTokens = builder.inputTokens;
+        this.outputTokens = builder.outputTokens;
     }
 
     public String getRecordId() { return recordId; }
@@ -61,6 +77,14 @@ public final class NodeIoRecord {
     public Object getOutputs() { return outputs; }
     public long getStartedAtEpochMs() { return startedAtEpochMs; }
     public long getCapturedAtEpochMs() { return capturedAtEpochMs; }
+    /** 模型思维链（仅 MODEL 节点，且 provider 返回 reasoning 时非空；流式时多段拼接）。 */
+    public String getReasoningText() { return reasoningText; }
+    /** 该 MODEL 节点触发的重试次数（MODEL_RETRY 事件计数）。 */
+    public int getRetryCount() { return retryCount; }
+    /** 输入 token（从 raw response usage 块尽力解析，可能为 null）。 */
+    public Long getInputTokens() { return inputTokens; }
+    /** 输出 token（从 raw response usage 块尽力解析，可能为 null）。 */
+    public Long getOutputTokens() { return outputTokens; }
 
     /** 该节点执行耗时 = 完成时刻 - 开始时刻。 */
     public long getDurationMs() {
@@ -84,6 +108,10 @@ public final class NodeIoRecord {
         private Object outputs;
         private long startedAtEpochMs;
         private Long capturedAtEpochMs;
+        private String reasoningText;
+        private int retryCount;
+        private Long inputTokens;
+        private Long outputTokens;
 
         private Builder(NodeType nodeType) { this.nodeType = nodeType; }
 
@@ -98,6 +126,18 @@ public final class NodeIoRecord {
         Builder outputs(Object v) { this.outputs = v; return this; }
         Builder startedAtEpochMs(long v) { this.startedAtEpochMs = v; return this; }
         Builder capturedAtEpochMs(long v) { this.capturedAtEpochMs = v; return this; }
+        Builder reasoningText(String v) { this.reasoningText = v; return this; }
+        /** 追加一段 reasoning（流式时多次 MODEL_REASONING 拼接，换行分隔）。 */
+        Builder appendReasoning(String v) {
+            if (v == null || v.isEmpty()) { return this; }
+            this.reasoningText = this.reasoningText == null || this.reasoningText.isEmpty()
+                    ? v : this.reasoningText + "\n" + v;
+            return this;
+        }
+        Builder incrementRetry() { this.retryCount++; return this; }
+        Builder retryCount(int v) { this.retryCount = v; return this; }
+        Builder inputTokens(Long v) { this.inputTokens = v; return this; }
+        Builder outputTokens(Long v) { this.outputTokens = v; return this; }
 
         NodeIoRecord build() { return new NodeIoRecord(this); }
     }

@@ -133,9 +133,29 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
                             .modelId(obj.getString("modelId"))
                             .inputs(obj.get("inputs"))
                             .outputs(obj.get("outputs"));
+                    Integer startedAt = obj.getInteger("startedAtEpochMs");
+                    if (startedAt != null) {
+                        b.startedAtEpochMs(startedAt.longValue());
+                    }
                     Integer capturedAt = obj.getInteger("capturedAtEpochMs");
                     if (capturedAt != null) {
                         b.capturedAtEpochMs(capturedAt.longValue());
+                    }
+                    String reasoning = obj.getString("reasoningText");
+                    if (reasoning != null) {
+                        b.reasoningText(reasoning);
+                    }
+                    Integer retries = obj.getInteger("retryCount");
+                    if (retries != null) {
+                        b.retryCount(retries);
+                    }
+                    Long inTok = obj.getLong("inputTokens");
+                    if (inTok != null) {
+                        b.inputTokens(inTok);
+                    }
+                    Long outTok = obj.getLong("outputTokens");
+                    if (outTok != null) {
+                        b.outputTokens(outTok);
                     }
                     out.add(b.build());
                 } catch (Exception ignored) {

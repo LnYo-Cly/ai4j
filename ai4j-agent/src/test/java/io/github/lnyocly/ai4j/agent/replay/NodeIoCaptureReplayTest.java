@@ -13,7 +13,9 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -145,6 +147,67 @@ public class NodeIoCaptureReplayTest {
         assertEquals(NodeIoRecord.NodeType.MODEL, reloaded.get(0).getNodeType());
         assertEquals("model@run-1|turn-1|1", reloaded.get(0).getNodeId());
         assertEquals("jsonl-model", reloaded.get(0).getModelId());
+    }
+
+    @Test
+    public void reasoningRetryAndTokensShouldBeCapturedFromEvents() {
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+
+        AgentPrompt prompt = AgentPrompt.builder().model("glm-4").build();
+        // simulate a provider raw response carrying a usage block (Map form, provider-agnostic)
+        Map<String, Object> usage = new HashMap<String, Object>();
+        usage.put("prompt_tokens", 50L);
+        usage.put("completion_tokens", 30L);
+        Map<String, Object> rawResponse = new HashMap<String, Object>();
+        rawResponse.put("id", "chatcmpl-1");
+        rawResponse.put("usage", usage);
+
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt, null));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "think-A"));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "think-B"));
+        listener.onEvent(ev(AgentEventType.MODEL_RETRY, 1, null, "rate limit"));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, rawResponse, null));
+        listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
+
+        List<NodeIoRecord> models = sink.records(NodeIoRecord.NodeType.MODEL);
+        assertEquals("one model node", 1, models.size());
+        NodeIoRecord m = models.get(0);
+        assertEquals("reasoning deltas concatenate with newline", "think-A\nthink-B", m.getReasoningText());
+        assertEquals("one retry event counted", 1, m.getRetryCount());
+        assertEquals("input tokens parsed from usage", Long.valueOf(50L), m.getInputTokens());
+        assertEquals("output tokens parsed from usage", Long.valueOf(30L), m.getOutputTokens());
+        assertTrue("startedAt recorded for latency", m.getStartedAtEpochMs() > 0L);
+    }
+
+    @Test
+    public void jsonlSinkShouldRoundTripReasoningTokensAndLatency() throws Exception {
+        Path tmp = Files.createTempFile("ai4j-capture-", ".jsonl");
+        tmp.toFile().deleteOnExit();
+        JsonlIoCaptureSink sink = new JsonlIoCaptureSink(tmp);
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+        AgentPrompt prompt = AgentPrompt.builder().model("m").build();
+        // camelCase usage keys to exercise the alternate-name path
+        Map<String, Object> usage = new HashMap<String, Object>();
+        usage.put("promptTokens", 7L);
+        usage.put("completionTokens", 9L);
+        Map<String, Object> rawResponse = new HashMap<String, Object>();
+        rawResponse.put("usage", usage);
+
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt, null));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "chain-of-thought"));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, rawResponse, null));
+        listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
+        sink.close();
+
+        List<NodeIoRecord> reloaded = JsonlIoCaptureSink.load(tmp);
+        assertEquals(1, reloaded.size());
+        NodeIoRecord r = reloaded.get(0);
+        assertEquals("reasoning survives JSON round-trip", "chain-of-thought", r.getReasoningText());
+        assertEquals("input tokens survive round-trip", Long.valueOf(7L), r.getInputTokens());
+        assertEquals("output tokens survive round-trip", Long.valueOf(9L), r.getOutputTokens());
+        assertTrue("startedAtEpochMs must survive round-trip (regression: was dropped pre-fix)",
+                r.getStartedAtEpochMs() > 0L);
     }
 
     @Test

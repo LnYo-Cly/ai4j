@@ -7,6 +7,9 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +21,11 @@ import java.util.Map;
  * input, the final {@code MODEL_RESPONSE} carries the raw response as output (streaming deltas
  * overwrite until the step ends). TOOL nodes are paired by call id: {@code TOOL_CALL} carries the
  * {@link AgentToolCall} input, {@code TOOL_RESULT} carries the {@link AgentToolResult} output.
- * Records are flushed to the sink on {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).</p>
+ * Records are flushed to the sink on {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).
+ * For MODEL nodes, {@code MODEL_REASONING} events populate {@link NodeIoRecord#getReasoningText()},
+ * {@code MODEL_RETRY} events populate {@link NodeIoRecord#getRetryCount()}, and tokens are
+ * best-effort parsed from the raw response usage into
+ * {@link NodeIoRecord#getInputTokens()} / {@link NodeIoRecord#getOutputTokens()}.</p>
  */
 public class IoCaptureAgentListener implements AgentListener {
 
@@ -49,6 +56,12 @@ public class IoCaptureAgentListener implements AgentListener {
                     break;
                 case MODEL_RESPONSE:
                     onModelResponse(event);
+                    break;
+                case MODEL_REASONING:
+                    onModelReasoning(event);
+                    break;
+                case MODEL_RETRY:
+                    onModelRetry(event);
                     break;
                 case TOOL_CALL:
                     onToolCall(event);
@@ -87,10 +100,74 @@ public class IoCaptureAgentListener implements AgentListener {
     private void onModelResponse(AgentEvent event) {
         String key = stepKey(event);
         NodeIoRecord.Builder b = pendingModels.get(key);
-        if (b != null) {
-            // last response wins (handles streaming deltas); keep the richest payload available
-            b.outputs(event.getPayload());
+        if (b == null) {
+            return;
         }
+        // last response wins (handles streaming deltas); keep the richest payload available
+        b.outputs(event.getPayload());
+        // best-effort token extraction from the raw response usage block (provider-agnostic)
+        if (event.getPayload() != null) {
+            long[] usage = extractUsage(event.getPayload());
+            if (usage != null) {
+                if (usage[0] >= 0) { b.inputTokens(usage[0]); }
+                if (usage[1] >= 0) { b.outputTokens(usage[1]); }
+            }
+        }
+    }
+
+    private void onModelReasoning(AgentEvent event) {
+        NodeIoRecord.Builder b = pendingModels.get(stepKey(event));
+        if (b == null) {
+            return;
+        }
+        // reasoning text arrives as message (non-stream / final) or as payload (stream delta)
+        String text = event.getMessage();
+        if ((text == null || text.isEmpty()) && event.getPayload() instanceof String) {
+            text = (String) event.getPayload();
+        }
+        b.appendReasoning(text);
+    }
+
+    private void onModelRetry(AgentEvent event) {
+        NodeIoRecord.Builder b = pendingModels.get(stepKey(event));
+        if (b != null) {
+            b.incrementRetry();
+        }
+    }
+
+    /**
+     * Best-effort parse of the raw response usage block into {@code [inputTokens, outputTokens]}.
+     * Returns {@code null} if no usage block is found. Provider-agnostic: accepts
+     * {@code prompt_tokens / promptTokens / input} for input and
+     * {@code completion_tokens / completionTokens / output} for output. A {@code -1} slot means
+     * "key absent" so a real 0 stays distinguishable.
+     */
+    private static long[] extractUsage(Object payload) {
+        try {
+            JSONObject obj = JSON.parseObject(JSON.toJSONString(payload));
+            if (obj == null) {
+                return null;
+            }
+            JSONObject usage = obj.getJSONObject("usage");
+            if (usage == null) {
+                return null;
+            }
+            long in = firstUsageLong(usage, "prompt_tokens", "promptTokens", "input", "input_tokens");
+            long out = firstUsageLong(usage, "completion_tokens", "completionTokens", "output", "output_tokens");
+            return new long[]{in, out};
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static long firstUsageLong(JSONObject usage, String... keys) {
+        for (String k : keys) {
+            Long v = usage.getLong(k);
+            if (v != null) {
+                return v.longValue();
+            }
+        }
+        return -1L;
     }
 
     private void flushModel(AgentEvent event) {
