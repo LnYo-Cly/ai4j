@@ -53,4 +53,6 @@ public class Configuration {
     private DoubaoConfig doubaoConfig;
 
     private JinaConfig jinaConfig;
+
+    private SunoConfig sunoConfig;
 }

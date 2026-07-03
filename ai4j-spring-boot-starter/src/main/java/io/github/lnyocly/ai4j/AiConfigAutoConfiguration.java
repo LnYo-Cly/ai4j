@@ -77,6 +77,7 @@ import java.util.Map;
         DashScopeConfigProperties.class,
         DoubaoConfigProperties.class,
         JinaConfigProperties.class,
+        SunoConfigProperties.class,
         AgentFlowProperties.class,
         AiExtensionProperties.class
 })
@@ -111,11 +112,12 @@ public class AiConfigAutoConfiguration {
     private final DashScopeConfigProperties dashScopeConfigProperties;
     private final DoubaoConfigProperties doubaoConfigProperties;
     private final JinaConfigProperties jinaConfigProperties;
+    private final SunoConfigProperties sunoConfigProperties;
     private final AgentFlowProperties agentFlowProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, AgentFlowProperties agentFlowProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, AgentFlowProperties agentFlowProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -137,6 +139,7 @@ public class AiConfigAutoConfiguration {
         this.dashScopeConfigProperties = dashScopeConfigProperties;
         this.doubaoConfigProperties = doubaoConfigProperties;
         this.jinaConfigProperties = jinaConfigProperties;
+        this.sunoConfigProperties = sunoConfigProperties;
         this.agentFlowProperties = agentFlowProperties;
     }
 
@@ -296,6 +299,7 @@ public class AiConfigAutoConfiguration {
         initDashScopeConfig();
         initDoubaoConfig();
         initJinaConfig();
+        initSunoConfig();
     }
 
 
@@ -612,6 +616,17 @@ public class AiConfigAutoConfiguration {
         jinaConfig.setRerankUrl(jinaConfigProperties.getRerankUrl());
 
         configuration.setJinaConfig(jinaConfig);
+    }
+
+    private void initSunoConfig() {
+        SunoConfig sunoConfig = new SunoConfig();
+        sunoConfig.setApiHost(sunoConfigProperties.getApiHost());
+        sunoConfig.setApiKey(sunoConfigProperties.getApiKey());
+        sunoConfig.setMusicUrl(sunoConfigProperties.getMusicUrl());
+        sunoConfig.setLyricsUrl(sunoConfigProperties.getLyricsUrl());
+        sunoConfig.setFetchUrl(sunoConfigProperties.getFetchUrl());
+
+        configuration.setSunoConfig(sunoConfig);
     }
 
     private AgentFlowConfig toAgentFlowConfig(AgentFlowProperties.EndpointProperties properties) {

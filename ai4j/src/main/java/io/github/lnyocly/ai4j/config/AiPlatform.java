@@ -19,4 +19,7 @@ public class AiPlatform {
     private String videoUrl;
     private String rerankApiHost;
     private String rerankUrl;
+    private String musicUrl;
+    private String lyricsUrl;
+    private String fetchUrl;
 }
