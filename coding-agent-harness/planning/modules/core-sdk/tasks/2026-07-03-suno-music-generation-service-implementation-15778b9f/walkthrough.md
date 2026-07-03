@@ -48,7 +48,7 @@
 
 | Source | Material findings | Handling | Evidence |
 | --- | --- | --- | --- |
-| Self-review | 0 open material findings | Ready for `harness task-review`, PR, and merge | `review.md` |
+| Self-review | 0 open material findings | Submitted by `harness task-review`; ready for PR/merge | `review.md` |
 
 ## Residual risks
 
@@ -78,4 +78,4 @@
 | Worktree | `G:\My_Project\java\ai4j-sdk\.worktrees\feature\suno-music-service` |
 | Branch | `feature/suno-music-service` |
 | Implementation commit | `dc7e61df` |
-| Harness review commit | pending |
+| Harness review commit | `5202bc20` |

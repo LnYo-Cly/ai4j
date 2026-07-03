@@ -52,4 +52,4 @@
 
 ## 当前下一步
 
-提交实现、运行 `harness task-review`、创建 PR 并合并后清理 worktree。
+创建 PR、合并到 `feat/per-node-latency`，合并后清理 worktree / feature branch。
