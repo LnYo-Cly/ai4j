@@ -1,7 +1,9 @@
 package io.github.lnyocly.ai4j.agent.rag;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.TraceableToolExecutor;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.rag.RagQuery;
 import io.github.lnyocly.ai4j.rag.RagResult;
@@ -92,15 +94,29 @@ public class RagTool {
 
     /**
      * ToolExecutor：从 arguments 取 query → {@code RagService.search} → 返回组装好的上下文。
-     * 检索过程作为 TOOL 节点被 IoCaptureAgentListener 捕获。
+     * 检索过程（hits/citations/trace）通过 {@link TraceableToolExecutor#lastTrace()} 暴露给
+     * IoCapture，TOOL 节点不再只是 context 字符串黑盒。
      */
     public ToolExecutor executor() {
-        return call -> {
+        return new RagToolExecutor();
+    }
+
+    /**
+     * 具名 executor：执行检索并把 {@link RagResult}（含 hits/citations/RagTrace）作为 sub-trace
+     * 暴露给 IoCapture，使「RAG 检索内部步骤」在 agent trace 里可见。ThreadLocal 保证并行 tool
+     * 调用时每线程的 lastTrace 独立（{@link TraceableToolExecutor} 文档要求）。
+     */
+    private class RagToolExecutor implements TraceableToolExecutor {
+        private final ThreadLocal<RagResult> lastResult = new ThreadLocal<RagResult>();
+
+        @Override
+        public String execute(AgentToolCall call) throws Exception {
             String arguments = call.getArguments();
             String query = arguments == null || arguments.trim().isEmpty()
                     ? null
                     : JSON.parseObject(arguments).getString("query");
             if (query == null || query.trim().isEmpty()) {
+                lastResult.remove();
                 return "";
             }
             RagResult result = ragService.search(RagQuery.builder()
@@ -109,8 +125,14 @@ public class RagTool {
                     .embeddingModel(embeddingModel)
                     .topK(topK)
                     .build());
+            lastResult.set(result);
             return result == null || result.getContext() == null ? "" : result.getContext();
-        };
+        }
+
+        @Override
+        public Object lastTrace() {
+            return lastResult.get();
+        }
     }
 
     public static Builder builder(RagService ragService) {

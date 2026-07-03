@@ -33,6 +33,7 @@ import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.TraceableToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
 import java.util.ArrayList;
@@ -200,23 +201,17 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
 
             boolean parallelExecution = Boolean.TRUE.equals(context.getParallelToolCalls()) && validatedCalls.size() > 1;
-            List<String> outputs = parallelExecution
+            List<AgentToolResult> executed = parallelExecution
                     ? executeToolCallsInParallel(context, validatedCalls, step, listener, runId, sessionId, turnId)
                     : executeToolCallsSequential(context, validatedCalls, step, listener, runId, sessionId, turnId);
             throwIfInterrupted();
 
             for (int i = 0; i < validatedCalls.size(); i++) {
                 AgentToolCall call = validatedCalls.get(i);
-                String output = outputs.get(i);
-
-                AgentToolResult toolResult = AgentToolResult.builder()
-                        .name(call.getName())
-                        .callId(call.getCallId())
-                        .output(output)
-                        .build();
+                AgentToolResult toolResult = executed.get(i);  // 已含 output + 可选 trace（RagTool 暴露的 RagResult）
                 toolResults.add(toolResult);
-                memory.addToolOutput(call.getCallId(), output);
-                publish(context, listener, AgentEventType.TOOL_RESULT, step, output, toolResult, runId, sessionId, turnId);
+                memory.addToolOutput(call.getCallId(), toolResult.getOutput());
+                publish(context, listener, AgentEventType.TOOL_RESULT, step, toolResult.getOutput(), toolResult, runId, sessionId, turnId);
             }
 
             dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
@@ -631,44 +626,68 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private List<String> executeToolCallsSequential(AgentContext context,
-                                                    List<AgentToolCall> calls,
-                                                    Integer step,
-                                                    AgentListener listener,
-                                                    String runId,
-                                                    String sessionId,
-                                                    String turnId) throws Exception {
-        List<String> outputs = new ArrayList<>();
+    private List<AgentToolResult> executeToolCallsSequential(AgentContext context,
+                                                             List<AgentToolCall> calls,
+                                                             Integer step,
+                                                             AgentListener listener,
+                                                             String runId,
+                                                             String sessionId,
+                                                             String turnId) throws Exception {
+        List<AgentToolResult> results = new ArrayList<>();
         for (AgentToolCall call : calls) {
-            outputs.add(executeTool(context, call, step, listener, runId, sessionId, turnId));
+            results.add(runToolAndCaptureTrace(context, call, step, listener, runId, sessionId, turnId));
         }
-        return outputs;
+        return results;
     }
 
-    private List<String> executeToolCallsInParallel(AgentContext context,
-                                                    List<AgentToolCall> calls,
-                                                    Integer step,
-                                                    AgentListener listener,
-                                                    String runId,
-                                                    String sessionId,
-                                                    String turnId) throws Exception {
+    private List<AgentToolResult> executeToolCallsInParallel(AgentContext context,
+                                                             List<AgentToolCall> calls,
+                                                             Integer step,
+                                                             AgentListener listener,
+                                                             String runId,
+                                                             String sessionId,
+                                                             String turnId) throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(calls.size());
         try {
-            List<Future<String>> futures = new ArrayList<>();
+            List<Future<AgentToolResult>> futures = new ArrayList<>();
             for (AgentToolCall call : calls) {
-                futures.add(executor.submit(() -> executeTool(context, call, step, listener, runId, sessionId, turnId)));
+                futures.add(executor.submit(() -> runToolAndCaptureTrace(context, call, step, listener, runId, sessionId, turnId)));
             }
-            List<String> outputs = new ArrayList<>();
-            for (Future<String> future : futures) {
-                outputs.add(waitForFuture(future));
+            List<AgentToolResult> results = new ArrayList<>();
+            for (Future<AgentToolResult> future : futures) {
+                results.add(waitForFuture(future));
             }
-            return outputs;
+            return results;
         } finally {
             executor.shutdownNow();
         }
     }
 
-    private String waitForFuture(Future<String> future) throws Exception {
+    /** Runs one tool call and, if the executor is traceable, attaches its sub-trace to the result. */
+    private AgentToolResult runToolAndCaptureTrace(AgentContext context,
+                                                   AgentToolCall call,
+                                                   Integer step,
+                                                   AgentListener listener,
+                                                   String runId,
+                                                   String sessionId,
+                                                   String turnId) throws Exception {
+        String output = executeTool(context, call, step, listener, runId, sessionId, turnId);
+        Object trace = toolTrace(context);
+        return AgentToolResult.builder()
+                .name(call.getName())
+                .callId(call.getCallId())
+                .output(output)
+                .trace(trace)
+                .build();
+    }
+
+    /** Returns the executor's last sub-trace (if it is a TraceableToolExecutor), else null. */
+    private static Object toolTrace(AgentContext context) {
+        ToolExecutor executor = context == null ? null : context.getToolExecutor();
+        return executor instanceof TraceableToolExecutor ? ((TraceableToolExecutor) executor).lastTrace() : null;
+    }
+
+    private <T> T waitForFuture(Future<T> future) throws Exception {
         try {
             return future.get();
         } catch (InterruptedException e) {

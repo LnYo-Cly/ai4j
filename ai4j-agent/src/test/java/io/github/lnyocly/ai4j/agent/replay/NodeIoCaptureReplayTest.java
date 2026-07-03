@@ -229,6 +229,29 @@ public class NodeIoCaptureReplayTest {
     }
 
     @Test
+    public void toolResultTraceShouldFlowIntoCaptureOutputs() {
+        // PR A: a TraceableToolExecutor's sub-trace flows via AgentToolResult.trace into the
+        // captured TOOL node, so the tool's internal steps (e.g. RAG retrievedHits) are visible.
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+        AgentToolCall call = AgentToolCall.builder().name("knowledge_search").callId("c1").arguments("{\"query\":\"x\"}").build();
+        AgentToolResult result = AgentToolResult.builder()
+                .name("knowledge_search").callId("c1").output("ctx")
+                .trace(java.util.Collections.singletonMap("retrievedHits", 3))
+                .build();
+        listener.onEvent(ev(AgentEventType.TOOL_CALL, 1, call, "knowledge_search"));
+        listener.onEvent(ev(AgentEventType.TOOL_RESULT, 1, result, "ctx"));
+
+        List<NodeIoRecord> tools = sink.records(NodeIoRecord.NodeType.TOOL);
+        assertEquals(1, tools.size());
+        Object captured = tools.get(0).getOutputs();
+        assertTrue("captured output is the AgentToolResult", captured instanceof AgentToolResult);
+        assertEquals("sub-trace flows through to capture",
+                java.util.Collections.singletonMap("retrievedHits", 3),
+                ((AgentToolResult) captured).getTrace());
+    }
+
+    @Test
     public void listenerMustNeverPropagateExceptions() {
         IoCaptureSink throwing = new IoCaptureSink() {
             @Override public void capture(NodeIoRecord record) { throw new RuntimeException("boom"); }
