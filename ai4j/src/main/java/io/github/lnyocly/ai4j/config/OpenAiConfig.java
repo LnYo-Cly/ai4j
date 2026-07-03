@@ -23,6 +23,7 @@ public class OpenAiConfig {
     private String realtimeUrl = "v1/realtime";
     private String imageGenerationUrl = "v1/images/generations";
     private String responsesUrl = "v1/responses";
+    private String videoUrl = "v1/videos";
 
 }
 

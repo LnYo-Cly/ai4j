@@ -362,6 +362,7 @@ public class AiConfigAutoConfiguration {
         openAiConfig.setRealtimeUrl(openAiConfigProperties.getRealtimeUrl());
         openAiConfig.setImageGenerationUrl(openAiConfigProperties.getImageGenerationUrl());
         openAiConfig.setResponsesUrl(openAiConfigProperties.getResponsesUrl());
+        openAiConfig.setVideoUrl(openAiConfigProperties.getVideoUrl());
 
         configuration.setOpenAiConfig(openAiConfig);
     }

@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.config.JinaConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.jina.rerank.JinaRerankService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
+import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
 import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
 import io.github.lnyocly.ai4j.service.AiConfig;
@@ -38,6 +39,9 @@ public class AiServiceRegistryTest {
         aiPlatform.setPlatform("openai");
         aiPlatform.setApiHost("https://example-openai.local/");
         aiPlatform.setApiKey("sk-test");
+        aiPlatform.setImageGenerationUrl("v1/images/generations");
+        aiPlatform.setResponsesUrl("v1/responses");
+        aiPlatform.setVideoUrl("v1/videos");
 
         AiConfig aiConfig = new AiConfig();
         aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
@@ -49,6 +53,7 @@ public class AiServiceRegistryTest {
         Assert.assertTrue(registry.contains("tenant-a-openai"));
         Assert.assertEquals(PlatformType.OPENAI, registration.getPlatformType());
         Assert.assertTrue(registry.getChatService("tenant-a-openai") instanceof OpenAiChatService);
+        Assert.assertTrue(registry.getVideoService("tenant-a-openai") instanceof OpenAiVideoService);
         Assert.assertNotNull(aiService);
         Assert.assertNotNull(aiService.getConfiguration());
         Assert.assertNotSame(configuration, aiService.getConfiguration());
@@ -56,6 +61,9 @@ public class AiServiceRegistryTest {
         OpenAiConfig scopedOpenAiConfig = aiService.getConfiguration().getOpenAiConfig();
         Assert.assertEquals("https://example-openai.local/", scopedOpenAiConfig.getApiHost());
         Assert.assertEquals("sk-test", scopedOpenAiConfig.getApiKey());
+        Assert.assertEquals("v1/images/generations", scopedOpenAiConfig.getImageGenerationUrl());
+        Assert.assertEquals("v1/responses", scopedOpenAiConfig.getResponsesUrl());
+        Assert.assertEquals("v1/videos", scopedOpenAiConfig.getVideoUrl());
     }
 
     @Test
@@ -77,6 +85,7 @@ public class AiServiceRegistryTest {
 
         Assert.assertTrue(FreeAiService.contains("tenant-a-openai"));
         Assert.assertTrue(FreeAiService.getChatService("tenant-a-openai") instanceof OpenAiChatService);
+        Assert.assertTrue(FreeAiService.getVideoService("tenant-a-openai") instanceof OpenAiVideoService);
         Assert.assertNull(FreeAiService.getChatService("missing"));
     }
 
