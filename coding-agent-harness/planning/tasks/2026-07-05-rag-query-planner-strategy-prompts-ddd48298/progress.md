@@ -1,6 +1,6 @@
 # rag query planner strategy prompts - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 ## 进度记录
 
@@ -65,3 +65,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：已由 lifecycle CLI 同步
 - 负责人：coordinator
+
+### [2026-07-04 18:19] - task-complete
+
+- 做了什么：Completed per-strategy RAG query planner prompt fix with core/docs/package validation
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
