@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j -Dtest=DefaultRagServiceTest,HybridRetrieverTest -DskipTests=false test -> BUILD SUCCESS, 8 tests
+
+### [2026-07-04 06:16] - task-log
+
+- 做了什么：Final local gates passed for RAG query planner and docs-site.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j -Dtest=DefaultRagServiceTest,ModelRagQueryPlannerTest,HybridRetrieverTest -DskipTests=false test -> BUILD SUCCESS, 11 tests; mvn -pl ai4j -am -DskipTests=false test -> BUILD SUCCESS, 149 tests; docs-site npm run typecheck/build -> PASS; mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
