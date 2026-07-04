@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-04 18:07] - task-log
+
+- 做了什么：Implemented ModelRagQueryPlanner default rewrite-only behavior, per-strategy model prompts for explicit strategies, and docs-site updates
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：diff:TARGET:ai4j/src/main/java/io/github/lnyocly/ai4j/rag/ModelRagQueryPlanner.java:default REWRITE plus per-strategy chatCompletion calls
