@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-04 05:36] - task-log
+
+- 做了什么：Implemented RAG query planner core API and DefaultRagService pre-retrieval execution/fusion; targeted RAG tests pass.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j -Dtest=DefaultRagServiceTest,HybridRetrieverTest -DskipTests=false test -> BUILD SUCCESS, 8 tests
