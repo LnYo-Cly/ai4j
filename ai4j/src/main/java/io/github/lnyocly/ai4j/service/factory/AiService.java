@@ -29,8 +29,10 @@ import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
 import io.github.lnyocly.ai4j.rag.DefaultRagService;
 import io.github.lnyocly.ai4j.rag.DenseRetriever;
+import io.github.lnyocly.ai4j.rag.ModelRagQueryPlanner;
 import io.github.lnyocly.ai4j.rag.ModelReranker;
 import io.github.lnyocly.ai4j.rag.NoopReranker;
+import io.github.lnyocly.ai4j.rag.RagQueryPlanner;
 import io.github.lnyocly.ai4j.rag.RagService;
 import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
@@ -42,6 +44,8 @@ import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
 import io.github.lnyocly.ai4j.vector.store.VectorStore;
 import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
 import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
+
+import java.util.List;
 
 /**
  * @Author cly
@@ -261,10 +265,15 @@ public class AiService {
     }
 
     public RagService getRagService(PlatformType platform, VectorStore vectorStore) {
+        return getRagService(platform, vectorStore, null);
+    }
+
+    public RagService getRagService(PlatformType platform, VectorStore vectorStore, RagQueryPlanner queryPlanner) {
         return new DefaultRagService(
                 new DenseRetriever(getEmbeddingService(platform), vectorStore),
                 new NoopReranker(),
-                new DefaultRagContextAssembler()
+                new DefaultRagContextAssembler(),
+                queryPlanner
         );
     }
 
@@ -301,6 +310,22 @@ public class AiService {
 
     public RagService getPineconeRagService(PlatformType platform) {
         return getRagService(platform, getPineconeVectorStore());
+    }
+
+    public RagService getPineconeRagService(PlatformType platform, RagQueryPlanner queryPlanner) {
+        return getRagService(platform, getPineconeVectorStore(), queryPlanner);
+    }
+
+    public RagQueryPlanner getModelRagQueryPlanner(PlatformType platform, String model) {
+        return new ModelRagQueryPlanner(getChatService(platform), model);
+    }
+
+    public RagQueryPlanner getModelRagQueryPlanner(PlatformType platform,
+                                                   String model,
+                                                   List<io.github.lnyocly.ai4j.rag.RagQueryVariantType> strategies,
+                                                   Integer maxVariants,
+                                                   Boolean includeOriginal) {
+        return new ModelRagQueryPlanner(getChatService(platform), model, strategies, maxVariants, includeOriginal);
     }
 
     public IngestionPipeline getPineconeIngestionPipeline(PlatformType platform) {
