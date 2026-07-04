@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：diff:TARGET:ai4j/src/main/java/io/github/lnyocly/ai4j/rag/ModelRagQueryPlanner.java:default REWRITE plus per-strategy chatCompletion calls
+
+### [2026-07-04 18:08] - task-log
+
+- 做了什么：Ran core RAG targeted tests
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=ModelRagQueryPlannerTest,DefaultRagServiceTest,HybridRetrieverTest" -DskipTests=false test -> BUILD SUCCESS, 12 tests
