@@ -63,5 +63,7 @@
 | --- | --- |
 | Branch | `feature/rag-query-planner-rag-only` |
 | Base | `feat/per-node-latency` |
-| Implementation commit | pending |
+| Implementation commit | `c1efc706` |
+| Harness review commit | `b74013dd` |
+| Materials repair commit | `d16c6dd3` |
 | PR | pending |
