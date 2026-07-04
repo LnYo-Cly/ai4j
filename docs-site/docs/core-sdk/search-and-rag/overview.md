@@ -65,7 +65,7 @@ getModelRagQueryPlanner(platform, model)
 - 默认检索器是 `DenseRetriever`
 - 默认不做模型重排，走 `NoopReranker`
 - 默认引用与上下文拼装走 `DefaultRagContextAssembler`
-- 默认不做 query planning；只有显式传入 `RagQueryPlanner` 才会启用 rewrite / multi-query / HyDE / step-back 这类检索前处理
+- 默认不做 query planning；显式传入 `RagQueryPlanner` 才会启用检索前处理，内置模型 planner 默认只做 rewrite，多策略需要显式指定
 
 所以如果你没有显式接入 hybrid 或 model rerank，AI4J 默认给你的并不是“全功能 RAG 套餐”，而是：
 

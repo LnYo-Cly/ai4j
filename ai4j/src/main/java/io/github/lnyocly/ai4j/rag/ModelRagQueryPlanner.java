@@ -9,7 +9,6 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.service.IChatService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -64,25 +63,30 @@ public class ModelRagQueryPlanner implements RagQueryPlanner {
             variants.add(RagQueryVariant.original(originalQuery));
         }
 
-        ChatCompletionResponse response = chatService.chatCompletion(ChatCompletion.builder()
-                .model(model)
-                .message(ChatMessage.withSystem(systemPrompt()))
-                .message(ChatMessage.withUser(userPrompt(query)))
-                .temperature(0f)
-                .maxCompletionTokens(800)
-                .responseFormat(jsonObjectResponseFormat())
-                .build());
-
-        List<RagQueryVariant> modelVariants = parseVariants(originalQuery, extractContent(response));
         boolean hasModelVariant = false;
-        for (RagQueryVariant variant : modelVariants) {
-            if (variant == null || isBlank(variant.getQuery()) || contains(variants, variant.getQuery())) {
-                continue;
-            }
-            variants.add(variant);
-            hasModelVariant = true;
+        for (RagQueryVariantType strategy : strategies) {
             if (variants.size() >= maxVariants) {
                 break;
+            }
+            ChatCompletionResponse response = chatService.chatCompletion(ChatCompletion.builder()
+                    .model(model)
+                    .message(ChatMessage.withSystem(systemPrompt(strategy)))
+                    .message(ChatMessage.withUser(userPrompt(query, strategy, maxVariants - variants.size())))
+                    .temperature(0f)
+                    .maxCompletionTokens(800)
+                    .responseFormat(jsonObjectResponseFormat())
+                    .build());
+
+            List<RagQueryVariant> modelVariants = parseVariants(originalQuery, extractContent(response));
+            for (RagQueryVariant variant : modelVariants) {
+                if (variant == null || variant.getType() != strategy || isBlank(variant.getQuery()) || contains(variants, variant.getQuery())) {
+                    continue;
+                }
+                variants.add(variant);
+                hasModelVariant = true;
+                if (variants.size() >= maxVariants) {
+                    break;
+                }
             }
         }
         if (!hasModelVariant) {
@@ -92,16 +96,11 @@ public class ModelRagQueryPlanner implements RagQueryPlanner {
     }
 
     private List<RagQueryVariantType> normalizeStrategies(List<RagQueryVariantType> requested) {
-        List<RagQueryVariantType> defaults = Arrays.asList(
-                RagQueryVariantType.REWRITE,
-                RagQueryVariantType.MULTI_QUERY,
-                RagQueryVariantType.HYDE,
-                RagQueryVariantType.STEP_BACK
-        );
+        List<RagQueryVariantType> defaults = Collections.singletonList(RagQueryVariantType.REWRITE);
         List<RagQueryVariantType> source = requested == null || requested.isEmpty() ? defaults : requested;
         List<RagQueryVariantType> result = new ArrayList<RagQueryVariantType>();
         for (RagQueryVariantType type : source) {
-            if (type == null || type == RagQueryVariantType.ORIGINAL || result.contains(type)) {
+            if (type == null || type == RagQueryVariantType.ORIGINAL || type == RagQueryVariantType.CUSTOM || result.contains(type)) {
                 continue;
             }
             result.add(type);
@@ -109,33 +108,36 @@ public class ModelRagQueryPlanner implements RagQueryPlanner {
         return result.isEmpty() ? defaults : result;
     }
 
-    private String systemPrompt() {
+    private String systemPrompt(RagQueryVariantType strategy) {
         return "You are a RAG retrieval query planner. Return JSON only. "
-                + "Create concise retrieval queries, not final answers. "
+                + "Run only the " + strategy.name() + " strategy. "
+                + "Create retrieval text, not final user-facing answers. "
                 + "Do not explain. Do not use markdown fences.";
     }
 
-    private String userPrompt(RagQuery query) {
+    private String userPrompt(RagQuery query, RagQueryVariantType strategy, int limit) {
         StringBuilder builder = new StringBuilder();
         builder.append("Original query:\n").append(query.getQuery()).append("\n\n");
         if (!isBlank(query.getDataset())) {
             builder.append("Dataset: ").append(query.getDataset()).append("\n");
         }
-        builder.append("Enabled strategies: ");
-        for (int i = 0; i < strategies.size(); i++) {
-            if (i > 0) {
-                builder.append(", ");
-            }
-            builder.append(strategies.get(i).name());
+        builder.append("Max returned variants: ").append(Math.max(1, limit)).append("\n\n");
+        if (strategy == RagQueryVariantType.REWRITE) {
+            builder.append("Rewrite strategy: convert the original query into one standalone retrieval query.\n");
+            builder.append("Return JSON: {\"rewrite\":\"standalone retrieval query\"}");
+        } else if (strategy == RagQueryVariantType.MULTI_QUERY) {
+            builder.append("Multi-query expansion strategy: create alternative retrieval queries for the same need.\n");
+            builder.append("Return JSON: {\"multiQueries\":[\"alternative query 1\",\"alternative query 2\"]}");
+        } else if (strategy == RagQueryVariantType.HYDE) {
+            builder.append("HyDE strategy: write one short hypothetical answer/document paragraph for retrieval.\n");
+            builder.append("Return JSON: {\"hyde\":\"short hypothetical document paragraph\"}");
+        } else if (strategy == RagQueryVariantType.STEP_BACK) {
+            builder.append("Step-back strategy: create one broader background retrieval query.\n");
+            builder.append("Return JSON: {\"stepBack\":\"broader background retrieval query\"}");
+        } else {
+            builder.append("Return JSON: {\"variants\":[{\"type\":\"").append(strategy.name()).append("\",\"query\":\"retrieval query\"}]}");
         }
-        builder.append("\n\nReturn JSON in this shape:\n");
-        builder.append("{\n");
-        builder.append("  \"rewrite\": \"standalone retrieval query\",\n");
-        builder.append("  \"multiQueries\": [\"alternative query 1\", \"alternative query 2\"],\n");
-        builder.append("  \"hyde\": \"short hypothetical answer/document paragraph for retrieval\",\n");
-        builder.append("  \"stepBack\": \"broader background retrieval query\"\n");
-        builder.append("}\n");
-        builder.append("Only include fields for enabled strategies. Keep each query short.");
+        builder.append("\nKeep it concise.");
         return builder.toString();
     }
 
