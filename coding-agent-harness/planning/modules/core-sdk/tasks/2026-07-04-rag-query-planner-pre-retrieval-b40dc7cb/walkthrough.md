@@ -66,4 +66,4 @@
 | Implementation commit | `c1efc706` |
 | Harness review commit | `b74013dd` |
 | Materials repair commit | `d16c6dd3` |
-| PR | pending |
+| PR | https://github.com/LnYo-Cly/ai4j/pull/176 |
