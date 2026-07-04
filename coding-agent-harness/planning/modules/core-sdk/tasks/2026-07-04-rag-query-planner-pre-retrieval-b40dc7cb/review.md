@@ -108,3 +108,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自本地 deterministic RAG tests、core SDK 全量测试、docs-site typecheck/build、monorepo package smoke、docs/governance 同步，以及 grill-me 式边界自审。live retrieval-quality evaluation 明确作为 opt-in residual，不作为本轮 release blocker。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202607040649 |
+| Submitted At | 2026-07-04 06:49 |
+| Submitted By | agent |
+| Task Key | MODULES/core-sdk/2026-07-04-rag-query-planner-pre-retrieval-b40dc7cb |
+| Materials Checklist Hash | ebb847468f927d62 |
+| Evidence Summary | RAG query planner ready for review: RAG/core/docs-site/package gates passed. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-04-rag-query-planner-pre-retrieval-b40dc7cb |

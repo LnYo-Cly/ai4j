@@ -23,7 +23,7 @@
 | T-ANTHROPIC-NATIVE-MESSAGES-SURFACE-5914B973 | Anthropic native Messages surface | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-06-23-anthropic-native-messages-surface-5914b973/task_plan.md | T-ADD-ANTHROPIC-MESSAGES-ADAPTER-3876EE40 |
 | T-CHATFIRE-MEDIA-GENERATION-INTEGRATION-ANALYSIS-3 | ChatFire media generation integration analysis | merged | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-media-generation-integration-analysis-3697f321/task_plan.md | T-ANTHROPIC-NATIVE-MESSAGES-SURFACE-5914B973 |
 | T-CHATFIRE-OPENAI-VIDEOS-SERVICE-IMPLEMENTATION-B2 | ChatFire OpenAI videos service implementation | handoff | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-chatfire-openai-videos-service-implementation-b2ffc35a/task_plan.md | T-CHATFIRE-MEDIA-GENERATION-INTEGRATION-ANALYSIS-3 |
-| T-RAG-QUERY-PLANNER-PRE-RETRIEVAL-B40DC7CB | RAG query planner pre retrieval | active | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-04-rag-query-planner-pre-retrieval-b40dc7cb/task_plan.md | T-CHATFIRE-OPENAI-VIDEOS-SERVICE-IMPLEMENTATION-B2 |
+| T-RAG-QUERY-PLANNER-PRE-RETRIEVAL-B40DC7CB | RAG query planner pre retrieval | handoff | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-04-rag-query-planner-pre-retrieval-b40dc7cb/task_plan.md | T-CHATFIRE-OPENAI-VIDEOS-SERVICE-IMPLEMENTATION-B2 |
 | T-SUNO-MUSIC-GENERATION-SERVICE-IMPLEMENTATION-157 | Suno music generation service implementation | handoff | coding-agent-harness/planning/modules/core-sdk/tasks/2026-07-03-suno-music-generation-service-implementation-15778b9f/task_plan.md | T-RAG-QUERY-PLANNER-PRE-RETRIEVAL-B40DC7CB |
 
 ## 活跃任务

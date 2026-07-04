@@ -1,6 +1,6 @@
 # RAG query planner pre retrieval - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -66,3 +66,10 @@
 - 验证结果：RAG 定向 11 tests、RG-001 core 149 tests、RG-008 docs-site typecheck/build、RG-007 package smoke 均通过；`git diff --check` 通过，仅有 CRLF 工作区提示。
 - 下一步：运行 harness task-phase/task-review，提交、推送、PR、合并清理。
 - 证据：command:TARGET:.:git diff --check -> PASS; command:TARGET:.:mvn -pl ai4j "-Dtest=DefaultRagServiceTest,ModelRagQueryPlannerTest,HybridRetrieverTest" -DskipTests=false test -> BUILD SUCCESS, 11 tests; command:TARGET:.:mvn -pl ai4j -am -DskipTests=false test -> BUILD SUCCESS, 149 tests; command:TARGET:docs-site:npm run typecheck -> PASS; command:TARGET:docs-site:npm run build -> PASS; command:TARGET:.:mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
+
+### [2026-07-04 06:49] - task-review
+
+- 做了什么：RAG query planner ready for review: RAG/core/docs-site/package gates passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
