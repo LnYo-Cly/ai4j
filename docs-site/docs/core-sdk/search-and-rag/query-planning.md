@@ -62,7 +62,7 @@ RagResult result = rag.search(RagQuery.builder()
 
 ## 3. 最小使用方式
 
-如果你想开箱即用地用模型生成 rewrite / multi-query / HyDE / step-back，可以先创建 `ModelRagQueryPlanner`：
+如果你想开箱即用地用模型做检索前改写，可以先创建 `ModelRagQueryPlanner`：
 
 ```java
 RagQueryPlanner planner = aiService.getModelRagQueryPlanner(
@@ -76,6 +76,8 @@ RagService rag = aiService.getRagService(
         planner
 );
 ```
+
+这个默认只做 `REWRITE`。它会多一次模型调用，把追问、省略、口语化 query 改成一条独立检索 query。
 
 如果你想完全控制策略，也可以自己实现 `RagQueryPlanner`，然后配进 `DefaultRagService`：
 
@@ -110,7 +112,7 @@ RagService rag = aiService.getRagService(
 );
 ```
 
-更细粒度的模型 planner 可以限制策略和返回条数：
+如果确实需要 multi-query / HyDE / step-back，可以显式指定策略：
 
 ```java
 RagQueryPlanner planner = aiService.getModelRagQueryPlanner(
@@ -121,6 +123,17 @@ RagQueryPlanner planner = aiService.getModelRagQueryPlanner(
         true
 );
 ```
+
+`ModelRagQueryPlanner` 不会用一个大 prompt 一次生成所有策略。显式传多种策略时，它会按策略分别调用模型：
+
+```text
+REWRITE     -> 一条独立检索 query
+MULTI_QUERY -> 多条替代表达 query
+HYDE        -> 一段假想答案/文档文本
+STEP_BACK   -> 一条更高层背景 query
+```
+
+这样 prompt 目标更清楚；代价是多策略会带来多次模型调用。
 
 ## 4. 四种常见策略怎么表达
 

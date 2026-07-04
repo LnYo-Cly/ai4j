@@ -9,20 +9,61 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class ModelRagQueryPlannerTest {
 
     @Test
-    public void shouldParseCommonPlannerStrategiesFromJson() throws Exception {
+    public void defaultPlannerShouldOnlyCallRewriteStrategy() throws Exception {
         FakeChatService chatService = new FakeChatService("{"
-                + "\"rewrite\":\"AI4J RAG query planning\","
-                + "\"multiQueries\":[\"AI4J retrieval query rewrite\",\"AI4J HyDE step back\"],"
-                + "\"hyde\":\"AI4J RAG query planning creates retrieval variants before dense retrieval.\","
-                + "\"stepBack\":\"RAG retrieval pipeline architecture\""
+                + "\"rewrite\":\"AI4J RAG query planning\""
                 + "}");
         ModelRagQueryPlanner planner = new ModelRagQueryPlanner(chatService, "planner-model");
+
+        RagQueryPlan plan = planner.plan(RagQuery.builder()
+                .query("那怎么接？")
+                .dataset("docs")
+                .build());
+
+        Assert.assertEquals("那怎么接？", plan.getOriginalQuery());
+        Assert.assertFalse(plan.isFallback());
+        Assert.assertEquals(2, plan.getVariants().size());
+        Assert.assertEquals(RagQueryVariantType.ORIGINAL, plan.getVariants().get(0).getType());
+        Assert.assertEquals(RagQueryVariantType.REWRITE, plan.getVariants().get(1).getType());
+        Assert.assertEquals(1, chatService.requests.size());
+        Assert.assertEquals("planner-model", chatService.requests.get(0).getModel());
+        Assert.assertNotNull(chatService.requests.get(0).getResponseFormat());
+        Assert.assertTrue(chatService.userPrompt(0).contains("Dataset: docs"));
+        Assert.assertTrue(chatService.userPrompt(0).contains("Rewrite strategy"));
+        Assert.assertFalse(chatService.userPrompt(0).contains("HyDE strategy"));
+        Assert.assertFalse(chatService.userPrompt(0).contains("Multi-query expansion strategy"));
+    }
+
+    @Test
+    public void shouldCallEachEnabledStrategyWithDedicatedPrompt() throws Exception {
+        FakeChatService chatService = new FakeChatService(
+                "{"
+                + "\"rewrite\":\"AI4J RAG query planning\","
+                + "\"multiQueries\":[\"ignored multi query\"],"
+                + "\"hyde\":\"ignored hyde\","
+                + "\"stepBack\":\"ignored step back\""
+                + "}",
+                "{\"multiQueries\":[\"AI4J retrieval query rewrite\",\"AI4J HyDE step back\"]}",
+                "{\"hyde\":\"AI4J RAG query planning creates retrieval variants before dense retrieval.\"}",
+                "{\"stepBack\":\"RAG retrieval pipeline architecture\"}");
+        ModelRagQueryPlanner planner = new ModelRagQueryPlanner(
+                chatService,
+                "planner-model",
+                Arrays.asList(
+                        RagQueryVariantType.REWRITE,
+                        RagQueryVariantType.MULTI_QUERY,
+                        RagQueryVariantType.HYDE,
+                        RagQueryVariantType.STEP_BACK),
+                6,
+                true);
 
         RagQueryPlan plan = planner.plan(RagQuery.builder()
                 .query("那怎么接？")
@@ -38,11 +79,11 @@ public class ModelRagQueryPlannerTest {
         Assert.assertEquals(RagQueryVariantType.MULTI_QUERY, plan.getVariants().get(3).getType());
         Assert.assertEquals(RagQueryVariantType.HYDE, plan.getVariants().get(4).getType());
         Assert.assertEquals(RagQueryVariantType.STEP_BACK, plan.getVariants().get(5).getType());
-        Assert.assertEquals("planner-model", chatService.request.getModel());
-        Assert.assertNotNull(chatService.request.getResponseFormat());
-        Assert.assertTrue(chatService.userPrompt().contains("Dataset: docs"));
-        Assert.assertTrue(chatService.userPrompt().contains("REWRITE"));
-        Assert.assertTrue(chatService.userPrompt().contains("HYDE"));
+        Assert.assertEquals(4, chatService.requests.size());
+        Assert.assertTrue(chatService.userPrompt(0).contains("Rewrite strategy"));
+        Assert.assertTrue(chatService.userPrompt(1).contains("Multi-query expansion strategy"));
+        Assert.assertTrue(chatService.userPrompt(2).contains("HyDE strategy"));
+        Assert.assertTrue(chatService.userPrompt(3).contains("Step-back strategy"));
     }
 
     @Test
@@ -65,7 +106,8 @@ public class ModelRagQueryPlannerTest {
         Assert.assertEquals(1, plan.getVariants().size());
         Assert.assertEquals(RagQueryVariantType.REWRITE, plan.getVariants().get(0).getType());
         Assert.assertEquals("AI4J RAG query planning", plan.getVariants().get(0).getQuery());
-        Assert.assertFalse(chatService.userPrompt().contains("HYDE"));
+        Assert.assertFalse(chatService.userPrompt(0).contains("HyDE"));
+        Assert.assertEquals(1, chatService.requests.size());
     }
 
     @Test
@@ -83,11 +125,14 @@ public class ModelRagQueryPlannerTest {
     }
 
     private static class FakeChatService implements IChatService {
-        private final String content;
-        private ChatCompletion request;
+        private final List<String> contents;
+        private final List<ChatCompletion> requests = new ArrayList<ChatCompletion>();
+        private int index;
 
-        private FakeChatService(String content) {
-            this.content = content;
+        private FakeChatService(String... contents) {
+            this.contents = contents == null || contents.length == 0
+                    ? Collections.singletonList("{}")
+                    : Arrays.asList(contents);
         }
 
         @Override
@@ -97,7 +142,9 @@ public class ModelRagQueryPlannerTest {
 
         @Override
         public ChatCompletionResponse chatCompletion(ChatCompletion chatCompletion) {
-            this.request = chatCompletion;
+            this.requests.add(chatCompletion);
+            String content = contents.get(Math.min(index, contents.size() - 1));
+            index++;
             Choice choice = new Choice();
             choice.setMessage(ChatMessage.withAssistant(content));
             ChatCompletionResponse response = new ChatCompletionResponse();
@@ -115,8 +162,8 @@ public class ModelRagQueryPlannerTest {
             throw new UnsupportedOperationException();
         }
 
-        private String userPrompt() {
-            return request.getMessages().get(1).getContent().getText();
+        private String userPrompt(int index) {
+            return requests.get(index).getMessages().get(1).getContent().getText();
         }
     }
 }
