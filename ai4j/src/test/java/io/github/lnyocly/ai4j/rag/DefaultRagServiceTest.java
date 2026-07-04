@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class DefaultRagServiceTest {
@@ -45,6 +46,7 @@ public class DefaultRagServiceTest {
         Assert.assertTrue(result.getContext().contains("handbook.pdf"));
         Assert.assertTrue(result.getContext().contains("policy one"));
         Assert.assertNotNull(result.getTrace());
+        Assert.assertNull(result.getTrace().getQueryPlan());
         Assert.assertEquals(2, result.getTrace().getRetrievedHits().size());
         Assert.assertEquals(2, result.getTrace().getRerankedHits().size());
         Assert.assertEquals(Integer.valueOf(1), result.getHits().get(0).getRank());
@@ -89,5 +91,86 @@ public class DefaultRagServiceTest {
         Assert.assertNotNull(result.getTrace());
         Assert.assertEquals("1", result.getTrace().getRetrievedHits().get(0).getId());
         Assert.assertEquals("2", result.getTrace().getRerankedHits().get(0).getId());
+    }
+
+    @Test
+    public void shouldRetrievePlannedVariantsBeforeRerankAndPreserveOriginalQuery() throws Exception {
+        final List<String> retrievedQueries = new ArrayList<String>();
+        final String[] rerankQuery = new String[1];
+        Retriever retriever = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) {
+                retrievedQueries.add(query.getQuery());
+                if ("rewrite benefits policy".equals(query.getQuery())) {
+                    return Collections.singletonList(RagHit.builder().id("rewrite").content("rewrite hit").score(0.7f).build());
+                }
+                if ("step back employee benefits".equals(query.getQuery())) {
+                    return Collections.singletonList(RagHit.builder().id("step-back").content("step back hit").score(0.6f).build());
+                }
+                return Collections.emptyList();
+            }
+        };
+        Reranker reranker = new Reranker() {
+            @Override
+            public List<RagHit> rerank(String query, List<RagHit> hits) {
+                rerankQuery[0] = query;
+                return hits;
+            }
+        };
+        RagQueryPlanner planner = new RagQueryPlanner() {
+            @Override
+            public RagQueryPlan plan(RagQuery query) {
+                return RagQueryPlan.of(query.getQuery(), Arrays.asList(
+                        RagQueryVariant.rewrite("rewrite benefits policy"),
+                        RagQueryVariant.stepBack("step back employee benefits")
+                ));
+            }
+        };
+
+        DefaultRagService ragService = new DefaultRagService(retriever, reranker, new DefaultRagContextAssembler(), planner);
+        RagResult result = ragService.search(RagQuery.builder()
+                .query("benefits")
+                .topK(5)
+                .build());
+
+        Assert.assertEquals(Arrays.asList("rewrite benefits policy", "step back employee benefits"), retrievedQueries);
+        Assert.assertEquals("benefits", result.getQuery());
+        Assert.assertEquals("benefits", rerankQuery[0]);
+        Assert.assertEquals(2, result.getHits().size());
+        Assert.assertNotNull(result.getTrace());
+        Assert.assertNotNull(result.getTrace().getQueryPlan());
+        Assert.assertEquals(2, result.getTrace().getQueryPlan().getVariants().size());
+        Assert.assertEquals(RagQueryVariantType.REWRITE, result.getTrace().getQueryPlan().getVariants().get(0).getType());
+        Assert.assertEquals(RagQueryVariantType.STEP_BACK, result.getTrace().getQueryPlan().getVariants().get(1).getType());
+        Assert.assertEquals(2, result.getTrace().getRetrievedHits().size());
+        Assert.assertEquals("query-plan:rewrite", result.getTrace().getRetrievedHits().get(0).getScoreDetails().get(0).getSource());
+    }
+
+    @Test
+    public void shouldFallbackToOriginalQueryWhenPlannerFails() throws Exception {
+        final List<String> retrievedQueries = new ArrayList<String>();
+        Retriever retriever = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) {
+                retrievedQueries.add(query.getQuery());
+                return Collections.singletonList(RagHit.builder().id("original").content("original hit").score(0.5f).build());
+            }
+        };
+        RagQueryPlanner planner = new RagQueryPlanner() {
+            @Override
+            public RagQueryPlan plan(RagQuery query) {
+                throw new IllegalStateException("planner unavailable");
+            }
+        };
+
+        DefaultRagService ragService = new DefaultRagService(retriever, new NoopReranker(), new DefaultRagContextAssembler(), planner);
+        RagResult result = ragService.search(RagQuery.builder().query("benefits").build());
+
+        Assert.assertEquals(Collections.singletonList("benefits"), retrievedQueries);
+        Assert.assertEquals("benefits", result.getQuery());
+        Assert.assertNotNull(result.getTrace());
+        Assert.assertTrue(result.getTrace().getQueryPlan().isFallback());
+        Assert.assertEquals("planner unavailable", result.getTrace().getQueryPlan().getFallbackReason());
+        Assert.assertEquals(RagQueryVariantType.ORIGINAL, result.getTrace().getQueryPlan().getVariants().get(0).getType());
     }
 }

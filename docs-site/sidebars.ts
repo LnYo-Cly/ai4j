@@ -102,6 +102,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/search-and-rag/overview',
             'core-sdk/search-and-rag/online-search',
             'core-sdk/search-and-rag/embedding',
+            'core-sdk/search-and-rag/query-planning',
             'core-sdk/search-and-rag/rerank',
             'core-sdk/search-and-rag/vector-store-and-backends',
             'core-sdk/search-and-rag/ingestion-pipeline',
