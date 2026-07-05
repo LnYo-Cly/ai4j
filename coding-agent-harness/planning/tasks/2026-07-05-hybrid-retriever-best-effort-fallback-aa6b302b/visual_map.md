@@ -8,7 +8,7 @@ Visual Map Contract: v1.0
 
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
-| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md`; `progress.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
@@ -23,8 +23,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务边界已清楚到可以执行 | `task_plan.md` | `harness task-start 2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 简单实现或文档变更已完成 | diff、command 或 artifact path | `harness task-phase 2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | 直接完成任务 | progress update 和最终证据说明 | `harness task-complete 2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | `HybridRetriever` fallback、测试、docs-site 和 regression 记录已完成 | code diff、docs diff、`progress.md` commands | `harness task-phase 2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | 任务已达到本地 closeout 条件，等待提交/PR/合并清理 | `walkthrough.md`、RG-001/RG-007/RG-008 证据 | `harness task-complete 2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b --message "HybridRetriever best-effort fallback complete"` | agent | present | none | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 

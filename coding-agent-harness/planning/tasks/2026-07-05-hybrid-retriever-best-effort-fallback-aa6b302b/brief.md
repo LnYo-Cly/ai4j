@@ -10,42 +10,46 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+`HybridRetriever` 支持最小生产级 best-effort 降级：单路子检索失败不再拖垮整次 hybrid 检索。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+RAG Dense + BM25 等多路召回场景下，如果某一路子 `Retriever` 抛异常，`HybridRetriever` 会跳过失败路并返回其他成功路的融合结果；只有所有非空子检索器都失败时才抛出第一个异常。用户侧仍然使用原来的 `rag.search(...)` / `new HybridRetriever(...)` 形态，不新增 public API、不引入策略对象或配置负担。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：HybridRetriever best-effort fallback 行为、单测覆盖、docs-site hybrid retrieval 说明。
+- 修改位置：`ai4j/src/main/java/io/github/lnyocly/ai4j/rag/HybridRetriever.java`、`ai4j/src/test/java/io/github/lnyocly/ai4j/rag/HybridRetrieverTest.java`、`docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md`。
+- 验证证据：`progress.md` 记录 targeted/core/docs/package/diff hygiene gate。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `HybridRetriever.java` 的 per-child try/catch 和 all-failed throw 逻辑。
+2. `HybridRetrieverTest` 的 3 个新增 fallback 回归。
+3. docs-site `hybrid-retrieval.md` 的 “子检索器失败时怎么降级” 小节。
+4. `walkthrough.md` 的验证表。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：`HybridRetriever` 单路失败降级、对应单测、docs-site 行为说明、RG-001/RG-007/RG-008 证据更新。
+- 范围外：`FallbackRetriever`、`RetrievalFailurePolicy`、timeout/retry/circuit breaker、metrics、并行检索、新 public API。
+- 停止条件：如果需要暴露新配置或改变 `RagService` public API，停止并回到设计讨论。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- `HybridRetriever` 至少一路子检索成功时返回成功结果。
+- 所有非空子检索器失败时抛出第一个异常。
+- 成功但返回空结果的子检索器被视为成功，不误抛异常。
+- docs-site 明确说明 best-effort 边界和未做 retry/timeout/circuit breaker。
+- RG-001、RG-007、RG-008 本地 gate 通过并记录。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
-- 完成条件：验证证据必须记录到 `progress.md`
+- 生命周期状态：已完成
+- 必需文件：`INDEX.md`、`task_plan.md`、`visual_map.md`、`progress.md`、`walkthrough.md`
+- 完成条件：验证证据已记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交实现与任务材料，创建 PR 到 `feat/per-node-latency`，等待 CI 后合并并清理 worktree。
