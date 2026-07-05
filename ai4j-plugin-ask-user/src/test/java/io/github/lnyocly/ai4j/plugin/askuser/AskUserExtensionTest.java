@@ -25,6 +25,7 @@ public class AskUserExtensionTest {
 
         Assert.assertEquals("ask-user", manifest.getId());
         Assert.assertEquals("Ask User", manifest.getName());
+        Assert.assertEquals("2.4.0", manifest.getVersion());
         Assert.assertEquals("ai4j", manifest.getVendor());
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.TOOL));
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.COMMAND));
@@ -92,6 +93,19 @@ public class AskUserExtensionTest {
     }
 
     @Test
+    public void toolCapsOversizedArgumentsRaw() throws Exception {
+        ExtensionRegistry registry = ExtensionRegistry.of(new AskUserExtension())
+                .enable("ask-user")
+                .exposeTool("ask_user");
+        ExtensionToolExecutor executor = registry.snapshot().getToolExecutors().get("ask_user");
+
+        String result = executor.execute(new ExtensionToolCall("ask_user", repeat('x', 20000)));
+
+        Assert.assertTrue(result.contains("\"argumentsTruncated\":true"));
+        Assert.assertTrue(result.length() < 17000);
+    }
+
+    @Test
     public void serviceLoaderDiscoversAskUserExtension() {
         ServiceLoaderExtensionLoader loader = new ServiceLoaderExtensionLoader(AskUserExtension.class.getClassLoader());
 
@@ -104,5 +118,13 @@ public class AskUserExtensionTest {
             }
         }
         Assert.assertTrue("ask-user extension should be discoverable by ServiceLoader", found);
+    }
+
+    private static String repeat(char value, int count) {
+        StringBuilder builder = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 }

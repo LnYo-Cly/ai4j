@@ -207,6 +207,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("skills=cli-skill@skills/cli/SKILL.md"));
         Assert.assertTrue(output.contains("prompts=cli-prompt@prompts/cli.md"));
         Assert.assertTrue(output.contains("guardrails=cli-guardrail"));
+        Assert.assertTrue(output.contains("lifecycleHooks=cli-lifecycle"));
         Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
     }
 
@@ -769,10 +770,12 @@ public class Ai4jCliTest {
         Assert.assertTrue(Files.exists(plugin.resolve("src/main/resources/prompts/weather-pack-summary.md")));
         Assert.assertTrue(Files.exists(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java")));
 
+        String pom = read(plugin.resolve("pom.xml"));
         String extensionSource = read(plugin.resolve("src/main/java/com/example/ai4j/weather/WeatherPackExtension.java"));
         String testSource = read(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java"));
         String readme = read(plugin.resolve("README.md"));
         String service = read(plugin.resolve("src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension"));
+        Assert.assertTrue(pom.contains("<version>2.4.0</version>"));
         Assert.assertTrue(extensionSource.contains("implements Ai4jExtension"));
         Assert.assertTrue(extensionSource.contains(".id(\"weather-pack\")"));
         Assert.assertTrue(extensionSource.contains(".capability(ExtensionCapability.TOOL)"));

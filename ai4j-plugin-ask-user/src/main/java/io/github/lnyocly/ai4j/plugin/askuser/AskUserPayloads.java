@@ -2,10 +2,13 @@ package io.github.lnyocly.ai4j.plugin.askuser;
 
 final class AskUserPayloads {
 
+    private static final int MAX_ARGUMENTS_RAW_CHARS = 16 * 1024;
+
     private AskUserPayloads() {
     }
 
     static String toolRequest(String arguments) {
+        JsonValue raw = cap(emptyToDefault(arguments, "{}"));
         return "{"
                 + "\"type\":\"ai4j.ask_user.request\","
                 + "\"source\":\"tool\","
@@ -13,12 +16,13 @@ final class AskUserPayloads {
                 + "\"status\":\"pending_user_input\","
                 + "\"hostAction\":\"render_question_to_user\","
                 + "\"blocking\":\"host_decides\","
-                + "\"argumentsRaw\":\"" + escapeJson(emptyToDefault(arguments, "{}")) + "\""
+                + "\"argumentsRaw\":\"" + escapeJson(raw.value) + "\""
+                + truncatedField(raw)
                 + "}";
     }
 
     static String commandRequest(String arguments) {
-        String question = emptyToDefault(arguments, "Ask the user for clarification.");
+        JsonValue question = cap(emptyToDefault(arguments, "Ask the user for clarification."));
         return "{"
                 + "\"type\":\"ai4j.ask_user.request\","
                 + "\"source\":\"command\","
@@ -26,8 +30,9 @@ final class AskUserPayloads {
                 + "\"status\":\"pending_user_input\","
                 + "\"hostAction\":\"render_question_to_user\","
                 + "\"blocking\":\"host_decides\","
-                + "\"arguments\":{\"question\":\"" + escapeJson(question) + "\"},"
-                + "\"argumentsRaw\":\"" + escapeJson(question) + "\""
+                + "\"arguments\":{\"question\":\"" + escapeJson(question.value) + "\"},"
+                + "\"argumentsRaw\":\"" + escapeJson(question.value) + "\""
+                + truncatedField(question)
                 + "}";
     }
 
@@ -42,6 +47,17 @@ final class AskUserPayloads {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static JsonValue cap(String value) {
+        if (value == null || value.length() <= MAX_ARGUMENTS_RAW_CHARS) {
+            return new JsonValue(value, false);
+        }
+        return new JsonValue(value.substring(0, MAX_ARGUMENTS_RAW_CHARS), true);
+    }
+
+    private static String truncatedField(JsonValue value) {
+        return value.truncated ? ",\"argumentsTruncated\":true" : "";
     }
 
     private static String escapeJson(String value) {
@@ -85,5 +101,15 @@ final class AskUserPayloads {
             }
         }
         return builder.toString();
+    }
+
+    private static final class JsonValue {
+        private final String value;
+        private final boolean truncated;
+
+        private JsonValue(String value, boolean truncated) {
+            this.value = value == null ? "" : value;
+            this.truncated = truncated;
+        }
     }
 }

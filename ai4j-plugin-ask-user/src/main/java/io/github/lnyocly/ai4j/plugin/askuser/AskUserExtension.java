@@ -23,7 +23,7 @@ public final class AskUserExtension implements Ai4jExtension {
     public static final String SKILL_NAME = "ask-user-collaboration";
     public static final String PROMPT_NAME = "ask-user-question";
 
-    private static final String VERSION = "2.3.0";
+    private static final String VERSION = "2.4.0";
 
     public ExtensionManifest manifest() {
         return ExtensionManifest.builder()

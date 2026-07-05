@@ -163,7 +163,7 @@ public final class ExtensionValidator {
                                                   String target,
                                                   ExtensionValidationReport.Builder report) {
         try {
-            if (!ExtensionResourceResolver.exists(resourcePath, classLoader)) {
+            if (!ExtensionResourceResolver.existsStrict(resourcePath, classLoader)) {
                 report.issue(error(code, "classpath resource not found: " + resourcePath, target));
             }
         } catch (RuntimeException ex) {

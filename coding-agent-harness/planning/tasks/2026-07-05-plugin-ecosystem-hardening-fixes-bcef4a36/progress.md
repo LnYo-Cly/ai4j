@@ -31,14 +31,14 @@
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无本轮阻塞残余。docs-site `npm ci` 报告的 npm audit advisories 属于既有依赖健康信号，本任务未变更依赖版本；不阻塞本轮插件 hardening。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：lifecycle CLI 已同步 generated ledger；closeout 后再次同步
+- 负责人：coordinator
 
 ### [2026-07-05 15:00] - task-start
 

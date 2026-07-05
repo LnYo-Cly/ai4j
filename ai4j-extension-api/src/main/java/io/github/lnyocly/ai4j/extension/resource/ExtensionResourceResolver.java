@@ -16,8 +16,18 @@ public final class ExtensionResourceResolver {
     }
 
     public static String readText(String resourcePath, ClassLoader preferredClassLoader) {
+        return readText(resourcePath, preferredClassLoader, true);
+    }
+
+    public static String readTextStrict(String resourcePath, ClassLoader preferredClassLoader) {
+        return readText(resourcePath, preferredClassLoader, false);
+    }
+
+    private static String readText(String resourcePath, ClassLoader preferredClassLoader, boolean allowFallback) {
         String normalizedPath = normalizeResourcePath(resourcePath);
-        InputStream stream = open(normalizedPath, preferredClassLoader);
+        InputStream stream = allowFallback
+                ? open(normalizedPath, preferredClassLoader)
+                : openWith(preferredClassLoader, normalizedPath);
         if (stream == null) {
             throw new ExtensionException("extension resource not found: " + normalizedPath);
         }
@@ -34,8 +44,18 @@ public final class ExtensionResourceResolver {
     }
 
     public static boolean exists(String resourcePath, ClassLoader preferredClassLoader) {
+        return exists(resourcePath, preferredClassLoader, true);
+    }
+
+    public static boolean existsStrict(String resourcePath, ClassLoader preferredClassLoader) {
+        return exists(resourcePath, preferredClassLoader, false);
+    }
+
+    private static boolean exists(String resourcePath, ClassLoader preferredClassLoader, boolean allowFallback) {
         String normalizedPath = normalizeResourcePath(resourcePath);
-        InputStream stream = open(normalizedPath, preferredClassLoader);
+        InputStream stream = allowFallback
+                ? open(normalizedPath, preferredClassLoader)
+                : openWith(preferredClassLoader, normalizedPath);
         if (stream == null) {
             return false;
         }
