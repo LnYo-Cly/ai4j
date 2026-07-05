@@ -60,3 +60,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:docs-site:npm run typecheck && npm run build -> PASS after npm ci restored ignored node_modules
+
+### [2026-07-05 11:08] - task-log
+
+- 做了什么：Ran diff hygiene
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:git diff --check -> PASS, CRLF warnings only
