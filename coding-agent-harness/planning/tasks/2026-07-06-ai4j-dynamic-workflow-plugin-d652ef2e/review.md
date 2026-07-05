@@ -4,14 +4,14 @@
 
 | Reviewer | Type | Scope |
 | --- | --- | --- |
-| [name] | self / subagent / external / human | [审查范围] |
+| Codex coordinator | self | 独立插件仓库实现、docs-site 文档口径、CI dependency boundary、验证证据 |
 
 ## 审查范围
 
-- 审查类型：adversarial / security / regression / architecture / release / other
-- 范围内：[文件、模块、行为、运行目标]
-- 范围外：[明确不审查的内容；如无写“无”]
-- 来源材料：[task plan、diff、commit、PR、测试输出、运行证据]
+- 审查类型：architecture / regression / release
+- 范围内：`G:\My_Project\java\ai4j-plugin-dynamic-workflow` 独立仓库；ai4j-sdk docs-site extension 文档；harness task closeout material。
+- 范围外：真实 host runtime workflow executor、subagent scheduler、worktree isolation、model tier routing、远程 GitHub branch protection。
+- 来源材料：task plan、独立插件源码、docs diff、Maven / docs-site 验证输出、clean Maven dependency probe。
 
 ## Agent Review Submission（Agent 提交审查）
 
@@ -19,91 +19,87 @@
 
 | Field | Value |
 | --- | --- |
-| Submission ID | [由 task-review 生成] |
-| Submitted At | [timestamp] |
-| Submitted By | [agent 或 coordinator 身份] |
+| Submission ID | ARS-202607060110 |
+| Submitted At | 2026-07-06 01:10 |
+| Submitted By | Codex coordinator |
 | Task Key | 2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e |
-| Materials Checklist Hash | [由 task-review 生成；只作信息记录，不作为手工门禁] |
-| Evidence Summary | [测试、diff、运行和审查材料证据] |
-| Open Findings Count | [数字] |
-| Scanner Version | [生成时的 scanner 版本] |
+| Materials Checklist Hash | manual-202607060110 |
+| Evidence Summary | 独立插件 Maven 测试通过；clean Maven probe 暴露并修复 parent POM / extension-api 安装问题；docs-site typecheck/build 通过；diff check 通过。 |
+| Open Findings Count | 0 |
+| Scanner Version | manual-review-2026-07-06 |
 
 ### Material Checklist（材料清单）
 
 | Material | Required? | Status | Evidence |
 | --- | --- | --- | --- |
-| Brief | yes / no | present / missing / incomplete | [路径或原因] |
-| Task plan | yes / no | present / missing / incomplete | [路径或原因] |
-| Progress and evidence | yes / no | present / missing / incomplete | [路径或原因] |
-| Visual map | yes / no | present / missing / incomplete | [路径或原因] |
-| Lesson candidate decision | yes / no | present / missing / incomplete | [路径或原因] |
-| Walkthrough or closeout link | yes / no | present / missing / incomplete | [路径或原因] |
-
-Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `materialsReady`。如果材料未齐，任务应进入缺材料队列，而不是人工审查确认队列。
-如果存在开放的 P0/P1/P2 阻塞发现，任务应进入阻塞队列，而不是人工审查确认队列。
+| Brief | yes | present | `brief.md` |
+| Task plan | yes | present | `task_plan.md` |
+| Progress and evidence | yes | present | `progress.md` |
+| Visual map | yes | present | `visual_map.md` |
+| Lesson candidate decision | yes | present | `lesson_candidates.md` |
+| Walkthrough or closeout link | yes | present | `walkthrough.md` |
 
 ## 信心挑战（Confidence Challenge）
 
 直接回答：你是否对当前计划、实现和策略有 100% 信心？
 
-- Verdict：yes / no
-- 如果不是 100%，剩余漏洞或证据缺口：
-  - [风险 / 漏洞 / 未验证假设；如无写“无”]
-- Fix loop count：[已经执行几轮 review -> fix -> evidence -> review]
-- 当前结论：[为什么现在可以继续、暂停或收口]
+- Verdict：yes for current scoped deliverable; no for future host executor features because they are intentionally out of scope.
+- 如果不是 100%，剩余漏洞或证据缺口：远程 GitHub repo 创建 / push 需要本机 auth 与远程可用性；插件发布到 Maven Central 前仍依赖 README / CI 的本地安装前置步骤。
+- Fix loop count：2
+- 当前结论：当前 scope 可提交；发现的 clean Maven dependency 问题已通过 `-Droot.publish.skip=false` 安装 parent POM 与 extension-api 修复并重验。
 
 ## 重要发现（Material Findings，表头供 checker 解析）
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-不要保留示例 finding。若没有重要发现，只保留表头，并补全下面的无重要发现声明。
-
-允许的 `Severity`：`P0`, `P1`, `P2`, `P3`。
-允许的 `Open`：`yes`, `no`。
-允许的 `Disposition`：`open`, `mitigated`, `closed`, `deferred`, `accepted-risk`, `not-reproducible`, `out-of-scope`。
-允许的 `Blocks Release`：`yes`, `no`。
-
 ## 非阻塞备注（Non-Material Notes）
 
-- [不阻塞本轮目标但值得记录的问题；如无写“无”]
+- `npm ci` 报告 docs-site 既有 npm audit 漏洞数量；本任务未改 dependency graph，未作为本轮阻塞项处理。
+- Docusaurus build 提示 browserslist 数据陈旧；本任务未改该维护面。
 
 ## 已检查证据（Evidence Checked）
 
 | Evidence ID | Type | Path | Summary |
 | --- | --- | --- | --- |
-| E-001 | command / diff / fixture / screenshot / review / report | PUBLIC:path 或 PRIVATE:path 或 TARGET:path 或 EXTERNAL:path 或 URL:https://example.com | [检查了什么，结论是什么] |
+| E-001 | command | TARGET:G:/My_Project/java/ai4j-plugin-dynamic-workflow | `mvn -DskipTests=false test` 通过，7 tests / 0 failures / 0 errors。 |
+| E-002 | command | TARGET:G:/My_Project/java/ai4j-plugin-dynamic-workflow | clean Maven repo 直接解析 `ai4j-extension-api:2.4.0` 失败，确认独立仓库 CI 需要前置安装。 |
+| E-003 | command | TARGET:G:/My_Project/java/ai4j-plugin-dynamic-workflow | 使用 clean Maven repo，先安装 ai4j parent POM + extension-api 后，插件 `mvn -DskipTests=false test` 通过。 |
+| E-004 | command | TARGET:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-plugin/docs-site | `npm ci`、`npm run typecheck`、`npm run build` 通过。 |
+| E-005 | command | TARGET:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-plugin | `git diff --check` 通过，无 whitespace error。 |
+| E-006 | command | TARGET:G:/My_Project/java/ai4j-plugin-dynamic-workflow | `git diff --check` 通过，无 whitespace error。 |
 
 ## 无重要发现声明
 
-[如果没有重要发现，明确写：本轮已检查上述证据，未发现阻塞目标的重要发现。]
+本轮已检查上述证据，未发现阻塞目标的重要发现。
 
 ## 残余风险
 
 | Risk | Owner | Accepted? | Follow-up |
 | --- | --- | --- | --- |
-| [风险] | [负责人] | yes / no | [后续路径或“无”] |
+| 远程 GitHub repo 创建 / push 依赖本机 `gh` auth 和远程命名可用性 | coordinator | yes | 若本轮创建失败，保留本地 repo commit 后手动创建远程 |
+| `ai4j-extension-api:2.4.0` 未发布前，外部用户需要先安装 ai4j parent POM + extension-api | coordinator | yes | 独立仓库 README / CI 已记录；发布 API artifact 后可简化 |
 
 ## Lifecycle Queue Routing（生命周期队列路由）
 
 | Queue | Applies? | Reason | Exit condition |
 | --- | --- | --- | --- |
-| Review | yes / no | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
-| Missing Materials | yes / no | 必需文件、章节、证据或 review submission 缺失 / 不完整。 | Agent 补齐材料并重新提交审查。 |
-| Blocked | yes / no | 存在 open blocking finding、非法状态转换、审计失败或需要人工 waiver。 | blocker 被修复、关闭或明确豁免。 |
-| Lessons | yes / no | Lesson candidate 需要拒绝、留在任务内、dry-run promotion 或创建沉淀任务。 | 人工决定候选路由；除非明确批准，promotion 仍是单独维护任务。 |
-| Confirmed / Finalized | yes / no | 已有人工确认；可能仍待结项或治理收口。 | Closeout、ledger 和 lesson routing 都完成。 |
-| Soft-deleted / Superseded | yes / no | 任务有 tombstone、superseded-by 或 archive 状态；duplicate / abandoned 等语义写在 `Reason`。 | reopen 或作为只读审计历史保留。 |
+| Review | yes | 已提交审查材料包，且可等待人工确认。 | 人工确认或退回。 |
+| Missing Materials | no | 必需文件、章节、证据和 review submission 已补齐。 | 不适用。 |
+| Blocked | no | 无 open blocking finding。 | 不适用。 |
+| Lessons | no | 本轮无需要提升为共享治理 lesson 的候选。 | 不适用。 |
+| Confirmed / Finalized | no | 尚未人工确认。 | Closeout、ledger 和 lesson routing 都完成。 |
+| Soft-deleted / Superseded | no | 任务仍为 active。 | 不适用。 |
 
 ## 后续路由（Follow-Up Routing）
 
-- 任务计划：[是否需要更新，路径或“无”]
-- Progress：[对应 `progress.md` 条目]
-- 发现记录：[是否需要写入 `findings.md`]
-- Regression SSoT：[新增 / 调整 / 无]
-- Lessons：[checked-created: L-YYYY-MM-DD-NNN / checked-candidate: LC-YYYYMMDD-NNN / queued-promotion: LC-YYYYMMDD-NNN / checked-none: 一句话原因]
-- 收口记录：[收口时引用路径]
+- 任务计划：已更新，`task_plan.md`
+- Progress：已更新，`progress.md`
+- 发现记录：无新增阻塞发现
+- Regression SSoT：无，本轮未改变 ai4j-sdk 固定 regression surface
+- Lessons：checked-none: task-local-ci-note
+- 收口记录：`walkthrough.md`
 
 ## 最终信心依据（Final Confidence Basis）
 
-[说明最终信心来自哪些证据、审查层级和已关闭发现。发布前最终审查不能只依赖 self-only。]
+最终信心来自插件单元测试、干净 Maven repo 依赖解析重验、docs-site typecheck/build、diff check，以及确认插件首版不执行 workflow script、只产生 host-mediated envelope 的架构边界。
