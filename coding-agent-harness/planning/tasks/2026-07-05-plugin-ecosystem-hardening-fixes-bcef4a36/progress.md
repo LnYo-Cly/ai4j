@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：diff:TARGET:.:plugin ecosystem hardening diff across extension-api, ask-user plugin, CLI, coding resources, and docs-site
+
+### [2026-07-05 15:19] - task-log
+
+- 做了什么：Targeted regression passed for extension API, ask-user plugin, CLI runtime inspect, coding resource support, monorepo packaging, and docs-site.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j-extension-api -DskipTests=false test => pass 26 tests; mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test => pass AskUser 7 plus extension API 26; mvn -pl ai4j-cli -am -Dtest=Ai4jCliTest -DfailIfNoTests=false -DskipTests=false test => pass 30; mvn -pl ai4j-coding -am -Dtest=CodingSkillSupportTest -DfailIfNoTests=false -DskipTests=false test => pass 3; mvn -DskipTests package => pass 11 reactor projects; npm ci then npm run build/typecheck in docs-site => pass
