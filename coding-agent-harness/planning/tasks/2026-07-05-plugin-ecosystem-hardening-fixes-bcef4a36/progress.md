@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-05 15:18] - task-log
+
+- 做了什么：Implemented plugin ecosystem fixes: version 2.4.0 alignment, lifecycleHooks CLI runtime output, strict extension resource reads, ask_user argument cap, and permission-boundary docs.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：diff:TARGET:.:plugin ecosystem hardening diff across extension-api, ask-user plugin, CLI, coding resources, and docs-site
