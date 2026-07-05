@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-05 11:07] - task-log
+
+- 做了什么：Updated RAG retrieval usage docs
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：diff:TARGET:docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md:added dense/BM25/hybrid usage snippets and query-planner cost note
