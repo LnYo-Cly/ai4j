@@ -1,6 +1,6 @@
 # ai4j dynamic workflow plugin - 进度
 
-## 状态：未开始
+## 状态：进行中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -39,3 +39,10 @@
 - Registry update needed：[module key, step, status, branch, updated / 不适用]
 - Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
 - 负责人：coordinator / 不适用
+
+### [2026-07-05 16:20] - task-start
+
+- 做了什么：Compare Michaelliv and QuintinShaw Pi dynamic workflow plugins, then implement the minimal ai4j equivalent with docs and regression.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
