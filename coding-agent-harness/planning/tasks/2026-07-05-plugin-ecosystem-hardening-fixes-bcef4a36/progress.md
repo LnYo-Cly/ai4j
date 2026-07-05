@@ -22,13 +22,6 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
 - 无本轮阻塞残余。docs-site `npm ci` 报告的 npm audit advisories 属于既有依赖健康信号，本任务未变更依赖版本；不阻塞本轮插件 hardening。
