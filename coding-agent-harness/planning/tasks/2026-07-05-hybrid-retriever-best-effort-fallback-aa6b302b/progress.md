@@ -96,3 +96,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：task lifecycle closeout pending
 - 负责人：coordinator
+
+### [2026-07-05 14:03] - task-complete
+
+- 做了什么：HybridRetriever best-effort fallback complete
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a

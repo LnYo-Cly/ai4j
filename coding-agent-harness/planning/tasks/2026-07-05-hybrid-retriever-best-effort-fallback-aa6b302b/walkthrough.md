@@ -54,3 +54,5 @@
 | 代码实现 | `ai4j/src/main/java/io/github/lnyocly/ai4j/rag/HybridRetriever.java` |
 | 行为测试 | `ai4j/src/test/java/io/github/lnyocly/ai4j/rag/HybridRetrieverTest.java` |
 | 用户文档 | `docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md` |
+
+Closeout Status: closed
