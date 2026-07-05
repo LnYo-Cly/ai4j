@@ -10,42 +10,43 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+补清 RAG 中 Dense、BM25、HybridRetriever 的最短使用方式和与 Query Planning 的成本关系。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+用户不看源码也能知道：`AiService.getRagService(platform, vectorStore)` 默认是 dense embedding 检索；BM25 要显式提供内存 corpus；Dense + BM25 要自己组合 `HybridRetriever`；如果再叠加 `RagQueryPlanner`，成本会变成 `query variants × retrievers`。本任务只补 docs-site，不新增 API。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`Hybrid Retrieval` 页面新增最短用法、决策表和 Query Planning 成本说明；overview 新增入口提示。
+- 修改位置：`docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md`、`overview.md`、RG/SRB 记录。
+- 验证证据：`progress.md` E-001 至 E-003。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md` 的 `3.1 最短怎么用`。
+2. `docs-site/docs/core-sdk/search-and-rag/overview.md` 默认 RAG 段落。
+3. `docs/05-TEST-QA/Cadence-Ledger.md` SRB-064。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：docs-site RAG retrieval 用法说明、RG-008/SRB-064 证据。
+- 范围外：新增 `getHybridRagService(...)`、新增 `RetrievalStrategy`、改 Java 生产代码。
+- 停止条件：需要新增 API 或修改 RAG 行为时停止确认。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- 文档清楚展示默认 dense、BM25、Dense + BM25 hybrid 三种写法。
+- 文档说明 Query Planning 与 Hybrid 叠加的乘法成本。
+- docs-site typecheck/build 和 diff check 通过。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`visual_map.md`、`progress.md`、`walkthrough.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交 docs 分支并创建 PR。

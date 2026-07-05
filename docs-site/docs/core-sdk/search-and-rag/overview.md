@@ -71,6 +71,15 @@ getModelRagQueryPlanner(platform, model)
 
 **dense retrieval + no-op rerank + default citation-aware assembly**
 
+如果你需要 BM25 或 Dense + BM25 混合召回，不是换另一个 `RagService` 工厂，而是换底层 `Retriever`：
+
+```java
+Retriever hybrid = new HybridRetriever(Arrays.asList(denseRetriever, bm25Retriever));
+RagService rag = new DefaultRagService(hybrid);
+```
+
+详见 [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)。
+
 ## 4. 入库主线默认怎么跑
 
 如果走 `AiService.getIngestionPipeline(platform, vectorStore)`，默认装配则是：

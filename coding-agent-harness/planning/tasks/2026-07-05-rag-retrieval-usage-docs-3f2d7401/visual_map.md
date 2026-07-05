@@ -23,8 +23,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务边界已清楚到可以执行 | `task_plan.md` | `harness task-start 2026-07-05-rag-retrieval-usage-docs-3f2d7401` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 简单实现或文档变更已完成 | diff、command 或 artifact path | `harness task-phase 2026-07-05-rag-retrieval-usage-docs-3f2d7401 EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | 直接完成任务 | progress update 和最终证据说明 | `harness task-complete 2026-07-05-rag-retrieval-usage-docs-3f2d7401 --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | planned | 0 | docs-site 用法补充和验证已完成 | diff、command、progress evidence | `harness task-phase 2026-07-05-rag-retrieval-usage-docs-3f2d7401 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | 提交、PR、清理前最终确认 | progress update 和最终证据说明 | `harness task-complete 2026-07-05-rag-retrieval-usage-docs-3f2d7401 --message "<summary>"` | agent | present | none | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 

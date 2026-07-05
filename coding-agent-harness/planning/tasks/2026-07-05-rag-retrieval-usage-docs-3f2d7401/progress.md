@@ -2,68 +2,18 @@
 
 ## 状态：进行中
 
-`## 状态` 是受控机器字段，只能使用以下值之一：
-
-- `未开始`
-- `计划中`
-- `进行中`
-- `审查中`
-- `已阻塞`
-- `已完成`
-
-不要把 `计划审阅中`、`等待 coordinator pass`、`本地审查就绪` 等细粒度协作状态写入本字段。
-这些状态应记录到进度记录、残余或协调者交接中。
-
 ## 进度记录
 
 证据使用 `type:path:summary` 格式。
 
-允许的 `type`：`command`, `diff`, `fixture`, `screenshot`, `review`, `report`。
-
-证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
-
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
 
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无阻塞残余。docs-site `npm ci` 报既有 npm audit vulnerabilities，未在本任务处理。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
-### [2026-07-05 10:58] - task-start
-
-- 做了什么：Start docs-only RAG retrieval usage clarification
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：n/a
-
-### [2026-07-05 11:07] - task-log
-
-- 做了什么：Updated RAG retrieval usage docs
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：diff:TARGET:docs-site/docs/core-sdk/search-and-rag/hybrid-retrieval.md:added dense/BM25/hybrid usage snippets and query-planner cost note
-
-### [2026-07-05 11:08] - task-log
-
-- 做了什么：Ran docs-site gates
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：command:TARGET:docs-site:npm run typecheck && npm run build -> PASS after npm ci restored ignored node_modules
-
-### [2026-07-05 11:08] - task-log
-
-- 做了什么：Ran diff hygiene
-- 验证结果：已记录
-- 下一步：继续执行
-- 证据：command:TARGET:.:git diff --check -> PASS, CRLF warnings only
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：已由 lifecycle CLI 同步
+- 负责人：coordinator
