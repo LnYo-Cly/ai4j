@@ -241,7 +241,7 @@ public class CliExtensionCommand {
             printRuntime(snapshot, terminal);
         } else {
             terminal.println("runtime=not-inspected");
-            terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, and guardrails");
+            terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, guardrails, and lifecycle hooks");
         }
         return 0;
     }
