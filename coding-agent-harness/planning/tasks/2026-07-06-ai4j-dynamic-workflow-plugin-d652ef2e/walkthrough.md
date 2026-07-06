@@ -35,7 +35,6 @@
 
 | 风险 | Owner | 是否接受 | 跟进 |
 | --- | --- | --- | --- |
-| 远程 GitHub repo 创建 / push 依赖 auth 和远程命名可用性 | coordinator | yes | 本地 commit 完成后尝试创建 / push；失败则报告本地路径和后续命令 |
 | `ai4j-extension-api:2.4.0` 未发布到 Maven Central 前，插件用户需先本地安装 extension API | coordinator | yes | README / CI 已记录；发布后可移除前置安装步骤 |
 | live smoke 依赖 MiniMax 环境变量和外部服务可用性 | coordinator | yes | 测试默认 skip，CI 如需运行必须显式注入 `MINIMAX_API_KEY` |
 

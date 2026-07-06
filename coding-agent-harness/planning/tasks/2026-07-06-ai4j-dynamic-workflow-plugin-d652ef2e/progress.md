@@ -64,12 +64,12 @@
 - 下一步：提交两个仓库。
 - 证据：command:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-plugin:git diff --check => no whitespace errors; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git diff --check => no whitespace errors
 
-### [2026-07-06 14:03] - final live smoke and commit
+### [2026-07-06 14:03] - final live smoke, commit, and push
 
 - 做了什么：在独立插件 worktree 里补了 Anthropic-compatible MiniMax live smoke coverage，并用官方 base URL + model 配置完成端到端验证。
-- 验证结果：`mvn -DskipTests=false test` 通过（9 tests / 0 failures / 0 errors）；`MinimaxAnthropicSmokeTest` 与 `MinimaxAnthropicWorkflowSynthesisSmokeTest` 通过；worktree 已提交到 `8d7b3b8`。
-- 下一步：若需要发布/推送，可基于 `feature/minimax-live-smokes` 分支继续。
-- 证据：command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn -DskipTests=false test => BUILD SUCCESS, Tests run: 9; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn "-DskipTests=false" "-Dtest=MinimaxAnthropicSmokeTest,MinimaxAnthropicWorkflowSynthesisSmokeTest" "-Dtest.excludedGroups=" test => BUILD SUCCESS, Tests run: 2; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:git commit => 8d7b3b8
+- 验证结果：`mvn -DskipTests=false test` 通过（9 tests / 0 failures / 0 errors）；`MinimaxAnthropicSmokeTest` 与 `MinimaxAnthropicWorkflowSynthesisSmokeTest` 通过；最终提交为 `cf39bd9`，并已推送到 `origin/main`。
+- 下一步：无。
+- 证据：command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn -DskipTests=false test => BUILD SUCCESS, Tests run: 9; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn "-DskipTests=false" "-Dtest=MinimaxAnthropicSmokeTest,MinimaxAnthropicWorkflowSynthesisSmokeTest" "-Dtest.excludedGroups=" test => BUILD SUCCESS, Tests run: 2; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git commit => cf39bd9; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git push origin main => origin/main updated
 
 ## 残余
 
