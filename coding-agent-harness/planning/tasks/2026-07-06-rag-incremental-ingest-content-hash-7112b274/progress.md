@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j -Dtest=IngestionPipelineTest,QdrantVectorStoreTest,MilvusVectorStoreTest -DskipTests=false test -> BUILD SUCCESS, 8 tests
+
+### [2026-07-06 12:59] - task-log
+
+- 做了什么：Reran targeted core and starter binding tests after fail-open and Redis default tag refinements
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j -Dtest=IngestionPipelineTest,QdrantVectorStoreTest,MilvusVectorStoreTest -DskipTests=false test -> BUILD SUCCESS, 8 tests; command:TARGET:.:mvn -pl ai4j-spring-boot-starter -am -Dtest=AiServiceFirstChatAutoConfigurationTest -DfailIfNoTests=false -DskipTests=false test -> BUILD SUCCESS, 2 tests
