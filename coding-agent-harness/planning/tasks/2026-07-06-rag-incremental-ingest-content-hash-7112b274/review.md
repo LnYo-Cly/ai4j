@@ -4,14 +4,15 @@
 
 | Field | Value |
 | --- | --- |
-| Task Key | TASKS/2026-07-06-rag-incremental-ingest-content-hash-7112b274 |
-| Submission ID | ARS-202607062133 |
-| Submitted At | 2026-07-06 21:33 |
+| Submission ID | ARS-202607061342 |
+| Submitted At | 2026-07-06 13:42 |
 | Submitted By | agent |
-| Materials Checklist Hash | local-self-review |
-| Evidence Summary | Content-hash incremental ingest implemented; core/starter/docs/package gates passed; regression governance updated. |
+| Task Key | TASKS/2026-07-06-rag-incremental-ingest-content-hash-7112b274 |
+| Materials Checklist Hash | 7a7a5519797d8311 |
+| Evidence Summary | RAG incremental ingest content hash implementation ready for review |
 | Open Findings Count | 0 |
-| Scanner Version | self-review/2026-07-06 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-incremental-ingest-content-hash-7112b274 |
 
 ## Review Scope
 

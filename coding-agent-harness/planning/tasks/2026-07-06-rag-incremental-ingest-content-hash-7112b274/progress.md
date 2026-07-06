@@ -1,6 +1,6 @@
 # rag incremental ingest content hash - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -107,3 +107,10 @@
 - 验证结果：`git diff --check` 通过（仅 CRLF warning）；starter 定向 2 tests PASS；`mvn -DskipTests package` 11 reactor projects PASS。
 - 下一步：推进 harness lifecycle、提交并创建 PR。
 - 证据：command:TARGET:.:git diff --check -> PASS, no whitespace errors; command:TARGET:.:mvn -pl ai4j-spring-boot-starter -am "-Dtest=AiServiceFirstChatAutoConfigurationTest" -DfailIfNoTests=false -DskipTests=false test -> BUILD SUCCESS, 2 tests; command:TARGET:.:mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
+
+### [2026-07-06 13:42] - task-review
+
+- 做了什么：RAG incremental ingest content hash implementation ready for review
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a

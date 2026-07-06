@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Review Decision | accepted-no-candidate |
-| Closeout Token | checked-none:rag-incremental-ingest-minimal-scope |
+| Closeout Token | checked-none:auto-no-candidate |
 | Promotion State | not-promoted |
 
 ## Reflection
