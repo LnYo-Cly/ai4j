@@ -1,6 +1,6 @@
 # ai4j dynamic workflow plugin - 进度
 
-## 状态：审查中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -64,10 +64,18 @@
 - 下一步：提交两个仓库。
 - 证据：command:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-plugin:git diff --check => no whitespace errors; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git diff --check => no whitespace errors
 
+### [2026-07-06 14:03] - final live smoke, commit, and push
+
+- 做了什么：在独立插件 worktree 里补了 Anthropic-compatible MiniMax live smoke coverage，并用官方 base URL + model 配置完成端到端验证。
+- 验证结果：`mvn -DskipTests=false test` 通过（9 tests / 0 failures / 0 errors）；`MinimaxAnthropicSmokeTest` 与 `MinimaxAnthropicWorkflowSynthesisSmokeTest` 通过；最终提交为 `cf39bd9`，并已推送到 `origin/main`。
+- 下一步：无。
+- 证据：command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn -DskipTests=false test => BUILD SUCCESS, Tests run: 9; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow/.worktrees/feature/minimax-live-smokes:mvn "-DskipTests=false" "-Dtest=MinimaxAnthropicSmokeTest,MinimaxAnthropicWorkflowSynthesisSmokeTest" "-Dtest.excludedGroups=" test => BUILD SUCCESS, Tests run: 2; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git commit => cf39bd9; command:G:/My_Project/java/ai4j-plugin-dynamic-workflow:git push origin main => origin/main updated
+
 ## 残余
 
 - 独立插件远程 GitHub repo 是否已创建 / 可 push 取决于本机 `gh` 登录和仓库可用性；若创建失败，本地仓库仍保留完整 commit，可后续手动创建远程并 push。
 - `ai4j-extension-api:2.4.0` 发布到 Maven Central 前，独立插件 README / CI 必须保留本地安装 parent POM + extension-api 的前置步骤。
+- live smoke 默认通过 `MINIMAX_API_KEY` / `MINIMAX_BASE_URL=https://api.minimaxi.com/anthropic` / `MINIMAX_MODEL=MiniMax-M3` 运行；若这些环境变量不可用，测试会自动跳过。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
