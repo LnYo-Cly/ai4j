@@ -15,10 +15,11 @@ import java.util.Map;
  *
  * <p>It reuses the events the runtime already publishes — no runtime change. MODEL nodes are
  * paired by (runId, turnId, step): {@code MODEL_REQUEST} carries the full {@link AgentPrompt} as
- * input, the final {@code MODEL_RESPONSE} carries the raw response as output (streaming deltas
- * overwrite until the step ends). TOOL nodes are paired by call id: {@code TOOL_CALL} carries the
- * {@link AgentToolCall} input, {@code TOOL_RESULT} carries the {@link AgentToolResult} output.
- * Records are flushed to the sink on {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).</p>
+ * input, streamed {@code MODEL_RESPONSE} messages accumulate into {@code outputText}, and the
+ * final raw {@code MODEL_RESPONSE} payload is kept in {@code outputs}. TOOL nodes are paired by
+ * call id: {@code TOOL_CALL} carries the {@link AgentToolCall} input, {@code TOOL_RESULT}
+ * carries the {@link AgentToolResult} output. Records are flushed to the sink on
+ * {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).</p>
  */
 public class IoCaptureAgentListener implements AgentListener {
 
@@ -87,8 +88,15 @@ public class IoCaptureAgentListener implements AgentListener {
         String key = stepKey(event);
         NodeIoRecord.Builder b = pendingModels.get(key);
         if (b != null) {
-            // last response wins (handles streaming deltas); keep the richest payload available
-            b.outputs(event.getPayload());
+            Object payload = event.getPayload();
+            String message = event.getMessage();
+            if (message != null && !message.isEmpty()) {
+                b.outputText(appendText(b.getOutputText(), message));
+            }
+            if (payload != null) {
+                // keep the final raw response payload; streamed deltas may still be non-null events
+                b.outputs(payload);
+            }
         }
     }
 
@@ -156,5 +164,15 @@ public class IoCaptureAgentListener implements AgentListener {
 
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String appendText(String existing, String delta) {
+        if (delta == null || delta.isEmpty()) {
+            return existing;
+        }
+        if (existing == null || existing.isEmpty()) {
+            return delta;
+        }
+        return existing + delta;
     }
 }

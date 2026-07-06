@@ -185,9 +185,10 @@ toolExecutor.execute(call)
 
 工具异常不会默认把整个 Agent 打崩。`BaseAgentRuntime.executeTool(...)` 会把异常包成：
 
-- `TOOL_ERROR: { ... }`
+- `TOOL_ERROR: {"errorType":"...","error":"...","tool":"...","callId":"..."}`
 
-然后继续把这个错误结果回灌给 memory 和后续轮次。这是典型的“模型可恢复失败语义”。
+默认不带 stack trace。然后继续把这个错误结果回灌给 memory 和后续轮次。这是典型的
+“模型可恢复失败语义”。
 
 ### 5.5 最后重新进入 memory
 
@@ -366,7 +367,9 @@ Agent agent = Agents.builder()
 
 ### 10.4 工具失败默认不终止 Agent
 
-这通常是正确的，因为模型还能根据 `TOOL_ERROR` 决定重试、改参或换路线。但如果你的业务要求“某些工具失败必须立即中止”，那就应该在执行器里显式实现，而不是假设 runtime 会替你做。
+这通常是正确的，因为模型还能根据 `TOOL_ERROR` 决定重试、改参或换路线。但如果你的
+业务要求“某些工具失败必须立即中止”，那就应该在执行器里显式实现，而不是假设 runtime
+会替你做。默认错误 payload 只有 `errorType`、`error`、`tool`、`callId`，没有 stack trace。
 
 ## 11. 调试优先看这些入口
 

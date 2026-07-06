@@ -9,7 +9,9 @@ import java.util.UUID;
  * with its {@code TOOL_RESULT}.
  *
  * <p>The {@code inputs}/{@code outputs} fields hold the original objects for in-memory live
- * replay (re-invoke the model/tool with the real captured input). The serialized form written by
+ * replay (re-invoke the model/tool with the real captured input). For MODEL nodes, {@code outputText}
+ * keeps the accumulated assistant text that may arrive in multiple streaming deltas, while
+ * {@code outputs} keeps the final raw response payload. The serialized form written by
  * {@link JsonlIoCaptureSink} is the durable audit/replay artifact.</p>
  */
 public final class NodeIoRecord {
@@ -25,6 +27,7 @@ public final class NodeIoRecord {
     private final String nodeId;
     private final String modelId;
     private final Object inputs;
+    private final String outputText;
     private final Object outputs;
     private final long capturedAtEpochMs;
 
@@ -38,6 +41,7 @@ public final class NodeIoRecord {
         this.nodeId = builder.nodeId;
         this.modelId = builder.modelId;
         this.inputs = builder.inputs;
+        this.outputText = builder.outputText;
         this.outputs = builder.outputs;
         this.capturedAtEpochMs = builder.capturedAtEpochMs == null
                 ? System.currentTimeMillis() : builder.capturedAtEpochMs.longValue();
@@ -52,6 +56,7 @@ public final class NodeIoRecord {
     public String getNodeId() { return nodeId; }
     public String getModelId() { return modelId; }
     public Object getInputs() { return inputs; }
+    public String getOutputText() { return outputText; }
     public Object getOutputs() { return outputs; }
     public long getCapturedAtEpochMs() { return capturedAtEpochMs; }
 
@@ -69,6 +74,7 @@ public final class NodeIoRecord {
         private String nodeId;
         private String modelId;
         private Object inputs;
+        private String outputText;
         private Object outputs;
         private Long capturedAtEpochMs;
 
@@ -82,8 +88,11 @@ public final class NodeIoRecord {
         Builder nodeId(String v) { this.nodeId = v; return this; }
         Builder modelId(String v) { this.modelId = v; return this; }
         Builder inputs(Object v) { this.inputs = v; return this; }
+        Builder outputText(String v) { this.outputText = v; return this; }
         Builder outputs(Object v) { this.outputs = v; return this; }
         Builder capturedAtEpochMs(long v) { this.capturedAtEpochMs = v; return this; }
+
+        String getOutputText() { return outputText; }
 
         NodeIoRecord build() { return new NodeIoRecord(this); }
     }
