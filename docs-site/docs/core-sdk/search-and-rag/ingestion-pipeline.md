@@ -40,6 +40,7 @@
 - `metadataEnrichers`
 - `batchSize`
 - `upsert`
+- `skipExistingContentHash`
 
 这组字段很说明问题：
 
@@ -59,9 +60,11 @@
 3. 通过 `LoadedDocumentProcessor` 做文本清洗
 4. 构造或补齐 `RagDocument`
 5. 用 `Chunker` 切出 `RagChunk`
-6. 把 chunk 批量送去 embedding
-7. 组装 `VectorRecord`
-8. 写入 `VectorStore`
+6. 为每个 chunk 写入稳定 `contentHash`
+7. 如果开启 `skipExistingContentHash`，先用支持 metadata lookup 的 `VectorStore.exists(...)` 跳过已存在 chunk
+8. 把剩余 chunk 批量送去 embedding
+9. 组装 `VectorRecord`
+10. 写入 `VectorStore`
 
 这个顺序非常重要，因为它说明：
 
@@ -103,7 +106,37 @@
 
 这说明 AI4J 不是把 ingest 当成“用户自己随便写一条 for 循环”的外围能力，而是直接把一套常见知识工程默认值做到了基座层。
 
-## 6. 你可以在哪些位置扩展
+
+## 6. 增量入库：`contentHash` 与 `skipExistingContentHash`
+
+AI4J 现在会为每个标准化后的 chunk 写入：
+
+- `contentHash`：chunk content 的 SHA-256，用来判断同一份内容是否已经入过库
+
+默认行为不变：即使已有相同内容，也会继续 embedding 和 upsert。
+如果你希望重复 ingest 同一批资料时少做无效 embedding，可以显式开启：
+
+```java
+IngestionResult result = ingestionPipeline.ingest(IngestionRequest.builder()
+        .dataset("kb_docs")
+        .embeddingModel("text-embedding-3-small")
+        .source(IngestionSource.text("员工手册内容"))
+        .skipExistingContentHash(Boolean.TRUE)
+        .build());
+
+int skipped = result.getSkippedCount();
+```
+
+这不是新的索引框架，也不会替你做版本发布、删除旧文档或权限治理。它只做一件事：
+
+1. 先算 chunk `contentHash`
+2. 后端支持 metadata-only lookup 时，用 `VectorStore.exists(...)` 查这个 hash 是否存在
+3. 已存在则跳过 embedding / upsert，并计入 `skippedCount`
+4. 后端不支持或 lookup 出错时 fail-open，按普通 ingest 继续写入
+
+当前内置后端中，Qdrant / Milvus / PgVector / Redis 提供 metadata lookup；Pinecone 的现有封装仍保持默认不跳过。
+
+## 7. 你可以在哪些位置扩展
 
 这是这页最有工程价值的部分。
 
@@ -118,7 +151,7 @@
 
 这意味着 AI4J 的 ingest 不是封闭黑盒，而是一条**可插拔的知识工程流水线**。
 
-## 7. 它不负责什么
+## 8. 它不负责什么
 
 这条链只负责把知识规范地“送进库里”，不负责：
 
@@ -135,25 +168,25 @@
 
 如果把这些都压进 `IngestionPipeline`，反而会让边界失真。
 
-## 8. 常见坑
+## 9. 常见坑
 
-### 8.1 `dataset` 设计随意
+### 9.1 `dataset` 设计随意
 
 后面检索隔离、删除和回放都会很难治理。
 
-### 8.2 只关心 embedding，不关心 metadata
+### 9.2 只关心 embedding，不关心 metadata
 
 向量能召回，但证据链讲不清。
 
-### 8.3 把 chunking 当成次要细节
+### 9.3 把 chunking 当成次要细节
 
 实际很多 RAG 效果问题根源就在这里。
 
-## 9. 设计摘要
+## 10. 设计摘要
 
 > AI4J 的 `IngestionPipeline` 是一条显式的 RAG 入库编排层：source 加载、文本处理、chunk、metadata、embedding、vector upsert 都在这里被串成统一流水线。它的价值不是“帮你省胶水代码”，而是把文档 identity 和知识工程策略稳定下来。
 
-## 10. 继续阅读
+## 11. 继续阅读
 
 - [Search and RAG / Chunking Strategies](/docs/core-sdk/search-and-rag/chunking-strategies)
 - [Search and RAG / Vector Store and Backends](/docs/core-sdk/search-and-rag/vector-store-and-backends)

@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -130,6 +131,26 @@ public class QdrantVectorStore implements VectorStore {
     }
 
     @Override
+    public boolean exists(VectorExistsRequest request) throws Exception {
+        String dataset = requiredDataset(request == null ? null : request.getDataset());
+        JSONObject filter = toFilter(request == null ? null : request.getFilter());
+        if (filter == null) {
+            return false;
+        }
+
+        JSONObject body = new JSONObject();
+        body.put("filter", filter);
+        body.put("limit", 1);
+        body.put("with_payload", false);
+        body.put("with_vector", false);
+
+        JSONObject response = executePost(url(config.getScroll(), dataset), body);
+        JSONObject result = response == null ? null : response.getJSONObject("result");
+        JSONArray points = result == null ? null : result.getJSONArray("points");
+        return points != null && !points.isEmpty();
+    }
+
+    @Override
     public boolean delete(VectorDeleteRequest request) throws Exception {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
         if (request == null) {
@@ -158,6 +179,7 @@ public class QdrantVectorStore implements VectorStore {
         return VectorStoreCapabilities.builder()
                 .dataset(true)
                 .metadataFilter(true)
+                .metadataLookup(true)
                 .deleteByFilter(true)
                 .returnStoredVector(true)
                 .build();

@@ -20,6 +20,7 @@ sidebar_position: 3
 
 - 数据集 / namespace / collection 在不同后端里分别对应什么
 - 哪些后端支持 metadata filter
+- 哪些后端支持 metadata-only lookup
 - 哪些后端能把原始向量回传出来
 - Spring Boot 为什么有的向量库默认就能注入，有的必须 `enabled=true`
 
@@ -31,11 +32,12 @@ sidebar_position: 3
 
 - `ai4j/src/main/java/io/github/lnyocly/ai4j/vector/store/VectorStore.java`
 
-接口很小，只定义四件事：
+接口很小，只定义五件事：
 
 - `upsert(VectorUpsertRequest)`
 - `search(VectorSearchRequest)`
 - `delete(VectorDeleteRequest)`
+- `exists(VectorExistsRequest)`：可选的 metadata-only 存在检查
 - `capabilities()`
 
 这代表它只负责“存储与检索接口约定”，不负责：
@@ -88,6 +90,7 @@ sidebar_position: 3
 - `includeMetadata`
 - `includeVector`
 
+
 ### 2.3 删除
 
 - `VectorDeleteRequest`
@@ -98,14 +101,30 @@ sidebar_position: 3
 - `filter`
 - `deleteAll`
 
-### 2.4 能力自描述
+
+
+### 2.4 存在检查
+
+`VectorExistsRequest` 用于回答“这个 dataset 下是否已经存在某个 metadata filter 命中的记录”。
+它主要服务于 ingestion 的增量跳过，例如按 `contentHash` 跳过已经入库的 chunk。
+
+注意它不是检索接口：
+
+- 不需要 query vector
+- 不返回排序结果
+- 后端不支持时默认返回 `false`
+
+所以应用代码应该把它当作可选优化，而不是业务正确性的唯一依据。
+
+### 2.5 能力自描述
 
 - `VectorStoreCapabilities`
 
-这个对象当前暴露四个能力位：
+这个对象当前暴露五个能力位：
 
 - `dataset`
 - `metadataFilter`
+- `metadataLookup`
 - `deleteByFilter`
 - `returnStoredVector`
 
@@ -113,7 +132,7 @@ sidebar_position: 3
 
 ---
 
-## 3. 当前四个后端是怎么映射的
+## 3. 当前五个后端是怎么映射的
 
 ### 3.1 Pinecone
 
@@ -156,6 +175,7 @@ Qdrant 这条线还有一个源码级细节：
 特点：
 
 - 支持 metadata filter
+- 支持 metadata-only lookup
 - 支持 delete by filter
 - 支持返回已存向量
 - 支持 named vector
@@ -183,6 +203,7 @@ Qdrant 这条线还有一个源码级细节：
 特点：
 
 - 支持 metadata filter
+- 支持 metadata-only lookup
 - 支持 delete by filter
 - 默认不返回已存向量
 - 结果分数可能由 distance 推导得到
@@ -193,7 +214,7 @@ Qdrant 这条线还有一个源码级细节：
 
 - `vector.store.pgvector.PgVectorStore`
 
-这是四个后端里最不一样的一条，因为它不是远端 HTTP 向量库，而是直接走 JDBC。
+这是几个后端里最不一样的一条，因为它不是远端 HTTP 向量库，而是直接走 JDBC。
 
 `dataset` 在这里对应：
 
@@ -204,9 +225,31 @@ Qdrant 这条线还有一个源码级细节：
 特点：
 
 - 支持 metadata filter
+- 支持 metadata-only lookup
 - 支持 delete by filter
 - 默认不返回已存向量
 - 过滤逻辑通过 `jsonb ->> key` 生成 SQL 条件
+
+
+### 3.5 Redis
+
+源码入口：
+
+- `vector.store.redis.RedisVectorStore`
+
+`dataset` 在这里对应：
+
+- Redis key 前缀中的 dataset 片段
+- RediSearch 的 `dataset` TAG 过滤
+
+特点：
+
+- 需要 Redis Stack / RediSearch，Jedis 是 optional 依赖
+- 支持 metadata filter
+- 支持 metadata-only lookup
+- 支持 delete by filter
+- 默认不返回已存向量
+- 默认把 `contentHash` 建成 TAG 字段，便于增量 ingest 跳过重复 chunk
 
 ---
 
@@ -214,23 +257,25 @@ Qdrant 这条线还有一个源码级细节：
 
 以下矩阵直接对应各实现的 `capabilities()` 返回值。
 
-| 后端 | `dataset` | `metadataFilter` | `deleteByFilter` | `returnStoredVector` |
-| --- | --- | --- | --- | --- |
-| `PineconeVectorStore` | ✅ | ✅ | ✅ | ✅ |
-| `QdrantVectorStore` | ✅ | ✅ | ✅ | ✅ |
-| `MilvusVectorStore` | ✅ | ✅ | ✅ | ❌ |
-| `PgVectorStore` | ✅ | ✅ | ✅ | ❌ |
+| 后端 | `dataset` | `metadataFilter` | `metadataLookup` | `deleteByFilter` | `returnStoredVector` |
+| --- | --- | --- | --- | --- | --- |
+| `PineconeVectorStore` | ✅ | ✅ | ❌ | ✅ | ✅ |
+| `QdrantVectorStore` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `MilvusVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `PgVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `RedisVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
 
 这一点对上层很重要：
 
 - 如果你的前端或调试链路需要把原始向量也取回来，优先选 Pinecone / Qdrant
-- 如果你只需要检索结果和 metadata，Milvus / pgvector 也完全够用
+- 如果你需要 ingestion 前按 `contentHash` 做存在检查，优先选 Qdrant / Milvus / pgvector / Redis
+- 如果你只需要检索结果和 metadata，Milvus / pgvector / Redis 也完全够用
 
 ---
 
 ## 5. `dataset` 这个字段为什么必须讲清楚
 
-表面上四个后端都要求 `dataset`，但语义并不完全一样：
+表面上五个后端都要求 `dataset`，但语义并不完全一样：
 
 | 后端 | `dataset` 实际含义 |
 | --- | --- |
@@ -251,7 +296,7 @@ Qdrant 这条线还有一个源码级细节：
 
 ## 6. Metadata 过滤在不同后端里怎么落地
 
-虽然四个实现都支持 `metadataFilter`，但底层表达方式不同：
+虽然五个实现都支持 `metadataFilter`，但底层表达方式不同：
 
 - Pinecone：直接走 filter payload
 - Qdrant：转成 `must/match` 结构
@@ -294,6 +339,7 @@ Starter 的当前行为是：
 - `QdrantVectorStore`：`ai.vector.qdrant.enabled=true` 时自动创建
 - `MilvusVectorStore`：`ai.vector.milvus.enabled=true` 时自动创建
 - `PgVectorStore`：`ai.vector.pgvector.enabled=true` 时自动创建
+- `RedisVectorStore`：`ai.vector.redis.enabled=true` 时自动创建
 
 这说明 starter 并没有“强推一种向量库”。
 

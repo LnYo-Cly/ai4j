@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.config.RedisVectorConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -170,6 +171,20 @@ public class RedisVectorStore implements VectorStore {
     }
 
     @Override
+    public boolean exists(VectorExistsRequest request) throws Exception {
+        String dataset = requiredDataset(request == null ? null : request.getDataset());
+        if (request == null || request.getFilter() == null || request.getFilter().isEmpty()) {
+            return false;
+        }
+        try (UnifiedJedis jedis = connect()) {
+            ensureIndex(jedis);
+            SearchResult result = jedis.ftSearch(config.getIndexName(), buildFilter(dataset, request.getFilter()),
+                    new FTSearchParams().limit(0, 1).dialect(2));
+            return result.getTotalResults() > 0 || !result.getDocuments().isEmpty();
+        }
+    }
+
+    @Override
     public boolean delete(VectorDeleteRequest request) throws Exception {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
         if (request == null) {
@@ -198,6 +213,7 @@ public class RedisVectorStore implements VectorStore {
         return VectorStoreCapabilities.builder()
                 .dataset(true)
                 .metadataFilter(true)
+                .metadataLookup(true)
                 .deleteByFilter(true)
                 .returnStoredVector(false)
                 .build();

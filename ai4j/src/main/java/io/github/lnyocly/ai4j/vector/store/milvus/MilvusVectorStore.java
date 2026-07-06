@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -140,6 +141,25 @@ public class MilvusVectorStore implements VectorStore {
     }
 
     @Override
+    public boolean exists(VectorExistsRequest request) throws Exception {
+        String dataset = requiredDataset(request == null ? null : request.getDataset());
+        String filter = toFilterExpression(request == null ? null : request.getFilter());
+        if (filter == null) {
+            return false;
+        }
+
+        JSONObject body = new JSONObject();
+        applyCollectionScope(body, dataset);
+        body.put("filter", filter);
+        body.put("limit", 1);
+        body.put("outputFields", Collections.singletonList(config.getIdField()));
+
+        JSONObject response = executePost(config.getQuery(), body);
+        JSONArray results = response == null ? null : response.getJSONArray("data");
+        return results != null && !results.isEmpty();
+    }
+
+    @Override
     public boolean delete(VectorDeleteRequest request) throws Exception {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
         if (request == null) {
@@ -167,6 +187,7 @@ public class MilvusVectorStore implements VectorStore {
         return VectorStoreCapabilities.builder()
                 .dataset(true)
                 .metadataFilter(true)
+                .metadataLookup(true)
                 .deleteByFilter(true)
                 .returnStoredVector(false)
                 .build();

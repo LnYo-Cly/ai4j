@@ -147,6 +147,7 @@ IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder
 - `tenant`
 - `biz`
 - `version`
+- `contentHash`
 
 这意味着后面的：
 
@@ -157,6 +158,35 @@ IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder
 - 版本隔离
 
 都可以直接复用这套元数据约定。
+
+
+---
+
+## 5.1 增量入库：跳过已存在的 chunk
+
+重复跑入库任务时，最常见的浪费是：同一个 chunk 已经在向量库里了，但仍然再次 embedding。
+
+AI4J 的轻量做法是给每个 chunk 自动写入稳定的 `contentHash`，然后在请求里显式打开跳过：
+
+```java
+IngestionResult ingestResult = ingestionPipeline.ingest(IngestionRequest.builder()
+        .dataset("kb_docs")
+        .embeddingModel("text-embedding-3-small")
+        .source(IngestionSource.file(new File("docs/employee-handbook.pdf")))
+        .skipExistingContentHash(Boolean.TRUE)
+        .build());
+
+System.out.println("skipped chunks = " + ingestResult.getSkippedCount());
+```
+
+几个边界要说清楚：
+
+- 默认不开启，避免改变已有 ingest 行为。
+- 只跳过已存在 `contentHash` 的 chunk，不负责删除旧版本。
+- lookup 失败会降级为普通 ingest，不会因为去重检查失败而中断入库。
+- 只有支持 metadata-only lookup 的 `VectorStore` 才会真正跳过；否则 `skippedCount` 仍为 0。
+
+这适合“同一批文档反复执行入库”的增量场景；更复杂的发布、回滚、版本淘汰仍应放在业务层或后续索引治理任务里。
 
 ---
 
@@ -415,6 +445,7 @@ ai:
 - 最终 `RagChunk` 列表
 - 即将入库的 `VectorRecord` 列表
 - 实际 upsert 数量
+- `skippedCount`：开启 `skipExistingContentHash` 后被跳过的已存在 chunk 数量
 
 这对两类场景很有用：
 

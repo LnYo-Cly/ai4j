@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.github.lnyocly.ai4j.config.MilvusConfig;
 import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -31,12 +32,16 @@ public class MilvusVectorStoreTest {
     public void shouldUpsertAndSearchAgainstMilvusHttpApi() throws Exception {
         AtomicReference<String> upsertBody = new AtomicReference<String>();
         AtomicReference<String> searchBody = new AtomicReference<String>();
+        AtomicReference<String> queryBody = new AtomicReference<String>();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/v2/vectordb/entities/upsert", jsonHandler("{\"code\":0}", upsertBody));
         server.createContext("/v2/vectordb/entities/search", jsonHandler(
                 "{\"data\":[{\"id\":\"1\",\"distance\":0.08,\"entity\":{\"content\":\"snippet\",\"sourceName\":\"handbook.pdf\",\"pageNumber\":3}}]}",
                 searchBody));
+        server.createContext("/v2/vectordb/entities/query", jsonHandler(
+                "{\"data\":[{\"id\":\"1\"}]}",
+                queryBody));
         server.start();
         try {
             Configuration configuration = new Configuration();
@@ -62,12 +67,19 @@ public class MilvusVectorStoreTest {
                     .topK(2)
                     .filter(mapOf("tenant", "acme"))
                     .build());
+            boolean exists = store.exists(VectorExistsRequest.builder()
+                    .dataset("demo_collection")
+                    .filter(mapOf("contentHash", "hash-1"))
+                    .build());
 
             Assert.assertEquals(1, inserted);
             Assert.assertTrue(upsertBody.get().contains("\"collectionName\":\"demo_collection\""));
             Assert.assertTrue(upsertBody.get().contains("\"sourceName\":\"handbook.pdf\""));
             Assert.assertTrue(searchBody.get().contains("\"annsField\":\"vector\""));
             Assert.assertTrue(searchBody.get().contains("\"tenant == \\\"acme\\\"\""));
+            Assert.assertTrue(queryBody.get().contains("\"limit\":1"));
+            Assert.assertTrue(queryBody.get().contains("\"contentHash == \\\"hash-1\\\"\""));
+            Assert.assertTrue(exists);
             Assert.assertEquals(1, results.size());
             Assert.assertEquals("1", results.get(0).getId());
             Assert.assertEquals("snippet", results.get(0).getContent());

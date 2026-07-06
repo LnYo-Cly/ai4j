@@ -32,4 +32,17 @@ public class IngestionResult {
     private List<VectorRecord> records = Collections.emptyList();
 
     private int upsertedCount;
+
+    @Builder.Default
+    private int skippedCount = 0;
+
+    public IngestionResult(String dataset,
+                           String embeddingModel,
+                           IngestionSource source,
+                           RagDocument document,
+                           List<RagChunk> chunks,
+                           List<VectorRecord> records,
+                           int upsertedCount) {
+        this(dataset, embeddingModel, source, document, chunks, records, upsertedCount, 0);
+    }
 }
