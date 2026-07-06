@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 
 /**
@@ -25,7 +25,7 @@ public class TikTokensUtil {
     /**
      * 模型名称对应Encoding
      */
-    private static final Map<String, Encoding> modelMap = new HashMap<>();
+    private static final Map<String, Encoding> modelMap = new ConcurrentHashMap<>();
     /**
      * registry实例
      */
@@ -53,14 +53,30 @@ public class TikTokensUtil {
         if (StringUtils.isEmpty(content)) {
             return 0;
         }
-        Encoding encoding = modelMap.get(modelName);
+        Encoding encoding = encodingForModel(modelName);
         return encoding.countTokens(content);
     }
-    public static int tokens(String modelName, List<ChatMessage> messages) {
+
+    private static Encoding encodingForModel(String modelName) {
+        if (StringUtils.isEmpty(modelName)) {
+            throw new IllegalArgumentException("不支持计算Token的模型: " + modelName);
+        }
         Encoding encoding = modelMap.get(modelName);
+        if (ObjectUtils.isEmpty(encoding)) {
+            Optional<Encoding> encodingForModel = registry.getEncodingForModel(modelName);
+            if (encodingForModel.isPresent()) {
+                encoding = encodingForModel.get();
+                modelMap.put(modelName, encoding);
+            }
+        }
         if (ObjectUtils.isEmpty(encoding)) {
             throw new IllegalArgumentException("不支持计算Token的模型: " + modelName);
         }
+        return encoding;
+    }
+
+    public static int tokens(String modelName, List<ChatMessage> messages) {
+        Encoding encoding = encodingForModel(modelName);
 
         int tokensPerMessage = 0;
         int tokensPerName = 0;

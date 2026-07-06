@@ -125,6 +125,22 @@ RagService ragService = new DefaultRagService(
 );
 ```
 
+`TokenAwareRagContextAssembler` 的 token 计数是 context budget guard，不是精确计费器。
+推荐优先传你实际使用的模型名；如果底层 tokenizer 还不认识这个模型名，会自动退回到默认
+`cl100k_base` 估算，保证 RAG 不因为新模型名无法解析而失败。
+
+如果你明确知道模型使用的 tokenizer，也可以显式覆盖 encoding：
+
+```java
+RagContextAssembler assembler = TokenAwareRagContextAssembler.withEncoding(
+        EncodingType.O200K_BASE,
+        3000
+);
+```
+
+如果模型名和 encoding 都不确定，使用 `new TokenAwareRagContextAssembler(3000)` 即可，
+并把 budget 设置得保守一点。
+
 它只做三件事：
 
 - 按现有 hit 顺序加入上下文，直到达到 token budget；
