@@ -22,27 +22,27 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
-## 残余
-
-- [遗留问题；如无写“无”]
-
-## 协调者交接（Coordinator，启用模块并行时填写）
-
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
-
 ### [2026-07-06 05:38] - task-start
 
 - 做了什么：Start planning AI4J dynamic workflow host runtime scope, contract, and worktree.
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 05:49] - plan bootstrap
+
+- 做了什么：创建独立 worktree `G:\My_Project\java\ai4j-sdk\.worktrees\feature\dynamic-workflow-host-runtime`，并在该 worktree 中用 `harness new-task` / `task-start` 注册 `agent-runtime` 模块任务。
+- 验证结果：新 task 已进入 `in_progress`，worktree clean，branch `feature/dynamic-workflow-host-runtime` 已跟踪 `origin/main` 且当前 ahead 1 个 harness commit。
+- 下一步：按 `task_plan.md` 先固化 envelope -> workflow 的 host contract，再开始 ai4j-agent 的实现切片。
+- 证据：command:G:\My_Project\java\ai4j-sdk\.worktrees\feature\dynamic-workflow-host-runtime:npx --yes coding-agent-harness new-task / task-start succeeded; command:G:\My_Project\java\ai4j-sdk\.worktrees\feature\dynamic-workflow-host-runtime:git status clean on feature/dynamic-workflow-host-runtime
+
+## 残余
+
+- 需要在实现前最终确认：首版是否保持 Java-native workflow 编译层，还是补一个受控脚本执行适配层。
+
+## 协调者交接（Coordinator，启用模块并行时填写）
+
+- Global sync status：pending-coordinator-pass
+- Registry update needed：agent-runtime / T-AI4J-DYNAMIC-WORKFLOW-HOST-RUNTIME-74E36FFB / reserved / feature/dynamic-workflow-host-runtime / 2026-07-06
+- Harness Ledger update needed：`task_plan.md`, `review.md`, closeout pending
+- 负责人：coordinator

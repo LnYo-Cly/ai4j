@@ -11,15 +11,10 @@
 
 ## Subagent Delegation Decision
 
-任务开始时，coordinator 必须根据用户目标主动做这个判断，即使用户完全没有提到 subagent。
-不要假设用户知道 subagent 或 worker 是什么。如果分工有帮助，用白话说明收益，并向用户申请一次授权。
-可以直接对用户说 subagent 或 worker subagent；关键规则是 agent 不能等用户主动提出 subagent。
-如果任务已经明显拆成互不重叠的独立切片，implementation 前就应判断为 `ask-user`。如果还不知道精确文件路径，先确认路径，然后立刻申请独立执行助手授权。
-
 | Question | Decision | Reason | Next Action |
 | --- | --- | --- | --- |
-| Should a reviewer subagent be used? | yes / no | [为什么需要或不需要 reviewer] | 如果 yes，直接调用只读 reviewer，不需要额外申请。 |
-| Would a worker subagent materially help? | no / ask-user / already-authorized | [并行切片、独立实现、专项调查，或说明为什么不需要] | 如果 ask-user，直接问：“这个任务适合拆给 worker subagent 并行处理。是否授权我派一个 worker subagent，只修改 [scope]，只在 [worktree/branch] 内执行，我负责协调和最终审查？” |
+| Should a reviewer subagent be used? | yes | 这个任务最终要落到 runtime contract，review 可以提前抓住 scope drift、JS-runtime 泄漏和 shared-file 越界 | 在 `review.md` 成熟后直接调用只读 reviewer |
+| Would a worker subagent materially help? | no | 当前变更主要集中在单一 module 的 host runtime 和少量 docs，先由 coordinator 单线把最小方案钉死，避免 shared table 冲突 | 不启用 worker |
 
 ## User Authorization Decision
 
@@ -28,18 +23,18 @@
 
 | Gate | State | Decided By | Decided At | Scope | Worktree / Branch | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| worker subagent | pending | pending | pending | pending | pending | 只有直接问过用户后才能填写。 |
+| worker subagent | not-needed | coordinator | 2026-07-06 | n/a | n/a | 先单线收敛 host runtime contract，再决定是否要 worker 并行 |
 
 ## 决策表
 
 | 决策 | 选择 | 说明 |
 | --- | --- | --- |
-| 主执行者 | coordinator | coordinator 负责编排顺序、冲突判断和最终收口。 |
-| Subagent 模式 | none / reviewer-only / worker-worktree | 选择能满足任务的最小协作模式。 |
-| 审查模型 | self-check / predefined verifier / adversarial review | 说明为什么该审查层级足够。 |
-| Worktree 策略 | same checkout / dedicated worktree | 会改代码的 subagent 必须使用独立 worktree，并提交 handoff commit。 |
-| 冲突控制 | coordinator owns shared files | subagent 不得直接编辑 coordinator 管理的全局表或共享文件，除非获得明确锁。 |
-| 证据深度 | L0 / L1 / L2 / L3 | 按变更风险匹配证据深度。 |
+| 主执行者 | coordinator | coordinator 负责顺序、冲突判断和最终收口。 |
+| Subagent 模式 | reviewer-only | 先保留 reviewer，worker 暂不启用。 |
+| 审查模型 | self-check + reviewer | 先由 coordinator 做 contract 自检，再在实现后做 reviewer 复核。 |
+| Worktree 策略 | dedicated worktree | 会改代码的实现必须在独立 worktree 内完成。 |
+| 冲突控制 | coordinator owns shared files | shared files 只在 coordinator pass 中更新。 |
+| 证据深度 | L1 → L2 | 先本地单测和定向验证，再看是否需要最小 smoke。 |
 
 ## 子代理 / Worker 合同
 
@@ -47,22 +42,23 @@
 
 | 角色 | 输入包 | 写入范围 | 交接要求 | 负责人 |
 | --- | --- | --- | --- | --- |
-| reviewer / worker / n/a | C-001 | read-only / path list / n/a | report / commit SHA / n/a | coordinator |
+| reviewer | C-001, C-002, C-003, C-004, C-005, C-006, C-007, C-008, C-009 | read-only | review report / findings | coordinator |
+| worker | n/a | n/a | n/a | coordinator |
 
 ## 证据计划
 
 | 证据层级 | 计划命令或检查 | 记录位置 | 完成条件 |
 | --- | --- | --- | --- |
-| L0 | [静态检查 / 小范围自检] | `progress.md` | [通过标准] |
-| L1 | [单元测试 / targeted check] | `progress.md` 或 `artifacts/INDEX.md` | [通过标准] |
-| L2 | [集成 / 浏览器 / 真实数据冒烟] | `artifacts/INDEX.md` | [通过标准] |
-| L3 | [发布前 / 生产等价验证 / 外部审查] | `review.md` 与 walkthrough | [通过标准] |
+| L0 | 现状审计：workflow / sandbox / codeact / extension API 复用点梳理 | `findings.md` | 明确可复用面与 contract gap |
+| L1 | `mvn -pl ai4j-agent -am -DskipTests=false test` + 定向 JUnit | `progress.md` 或 `artifacts/INDEX.md` | envelope 解析和 workflow 组装通过 |
+| L2 | 最小端到端 smoke：用固定 envelope 驱动 host runtime，验证执行/拒绝路径 | `artifacts/INDEX.md` | 至少一条真实路径可重复 |
+| L3 | 仅在后续需要真实 provider / review gate 时启用 | `review.md` 与 walkthrough | 当前任务不默认要求 |
 
 ## 暂停 / 升级条件
 
-- 所需工作超出已批准写入范围。
-- 共享表需要更新，但没有 coordinator lock。
-- 实际风险高于原计划，证据深度需要升级。
+- 需要把方案扩到 `ai4j-plugin-dynamic-workflow` 仓库。
+- 需要大范围改 `ai4j-extension-api`、`ai4j-cli` 或 core SDK。
+- 证明不了 Java-native workflow 编排路径，必须引入脚本执行层。
 - reviewer 发现会改变范围或方案的 P0/P1/P2 问题。
 - 环境无法提供关键证据，继续执行会变成猜测。
 

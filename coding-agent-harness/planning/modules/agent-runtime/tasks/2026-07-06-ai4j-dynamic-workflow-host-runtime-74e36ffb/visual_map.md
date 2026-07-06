@@ -9,6 +9,7 @@ Visual Map Contract: v1.0
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-02 | architecture | 展示 plugin envelope 到 host runtime 的数据流 | yes | `task_plan.md`, `findings.md` | no |
 
 ## 阶段关系图（Phase Graph）
 
@@ -40,11 +41,25 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
+### 架构图（Architecture Map）
 
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+```mermaid
+flowchart LR
+  P["ai4j-plugin-dynamic-workflow"] -->|returns envelope| E["ai4j.dynamic_workflow.request"]
+  E --> R["AI4J host runtime in ai4j-agent"]
+  R --> C["workflow compiler / dispatcher"]
+  C --> W["AgentWorkflow / SequentialWorkflow / StateGraphWorkflow"]
+  W --> S["SandboxProvider / SandboxSession (when needed)"]
+  W --> T["ToolCallDecision / BaseAgentRuntime routing"]
+  W --> O["workflow result / persist / cancel / reject"]
+```
+
+### 方案选择
+
+- 选中：Java-native workflow compiler / dispatcher first
+- 备选：JS executor 仅在后续证明 envelope 语义无法稳定表达时再考虑
+
+## 支持性说明
+
+- plugin 只负责产出 envelope；host 侧负责执行策略、审批和隔离。
+- workflow globals（`agent` / `parallel` / `pipeline` / `phase` / `log`）应该先映射到 host 侧可控能力，再决定是否需要脚本执行层。
