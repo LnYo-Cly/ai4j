@@ -60,3 +60,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j -am -DskipTests=false test -> BUILD SUCCESS, 145 tests
+
+### [2026-07-06 15:18] - task-log
+
+- 做了什么：docs-site 验证通过
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:docs-site:npm ci; npm run typecheck; npm run build -> PASS, static build generated
