@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 07:11] - task-log
+
+- 做了什么：Implemented ai4j-agent dynamic workflow host runtime: request parser, Nashorn executor primitives, host tool wrapper, AgentBuilder opt-in, tests, docs/regression governance updates. Targeted runtime regression passed with 9 tests.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-executor:mvn -pl ai4j-agent -am -Dtest=DynamicWorkflow*Test -DfailIfNoTests=false -DskipTests=false test => BUILD SUCCESS, Tests run: 9
