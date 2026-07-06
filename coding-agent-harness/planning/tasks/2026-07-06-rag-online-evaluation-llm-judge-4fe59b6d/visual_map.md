@@ -9,13 +9,17 @@ Visual Map Contract: v1.0
 | ID | Type | Purpose | Required For Understanding | Source Evidence | Promotion Candidate |
 | --- | --- | --- | --- | --- | --- |
 | MAP-01 | phase | 展示执行阶段和依赖关系 | yes | `task_plan.md` | no |
+| MAP-02 | sequence | 展示 online judge 不在 `search(...)` 内自动执行 | yes | `RagOnlineEvaluator.java` | no |
 
 ## 阶段关系图（Phase Graph）
 
 ```mermaid
 flowchart LR
-  INIT01["INIT-01 范围与上下文\nkind=init"] --> EXEC01["EXEC-01 实现切片\nkind=execution"]
-  EXEC01 --> GATE01["GATE-01 直接完成\nkind=gate"]
+  INIT01["INIT-01 范围与上下文
+kind=init"] --> EXEC01["EXEC-01 实现切片
+kind=execution"]
+  EXEC01 --> GATE01["GATE-01 验证与收口
+kind=gate"]
 ```
 
 ## 阶段表（Phase Table，表头供 checker 解析）
@@ -23,8 +27,8 @@ flowchart LR
 | Phase ID | Kind | Depends On | State | Completion | Output | Required Evidence | Exit Command | Actor | Evidence Status | Blocking Risk | Owner / Handoff |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务边界已清楚到可以执行 | `task_plan.md` | `harness task-start 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d` | agent | present | none | coordinator |
-| EXEC-01 | execution | INIT-01 | planned | 0 | 简单实现或文档变更已完成 | diff、command 或 artifact path | `harness task-phase 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d EXEC-01 --state done --completion 100 --evidence present` | agent | missing | [risk] | [owner] |
-| GATE-01 | gate | EXEC-01 | planned | 0 | 直接完成任务 | progress update 和最终证据说明 | `harness task-complete 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d --message "<summary>"` | agent | missing | [risk] | coordinator |
+| EXEC-01 | execution | INIT-01 | done | 100 | Online judge API、trace 字段、AiService 入口、测试和 docs-site 已完成 | diff、`progress.md` commands | `harness task-phase 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | planned | 0 | PR 合并后完成任务 closeout | progress update、walkthrough、PR merge evidence | `harness task-complete 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d --message "<summary>" .` | agent | present | waiting PR/CI | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
@@ -38,11 +42,22 @@ flowchart LR
 
 ## 支持性图表（Supporting Maps）
 
-按需添加，不要求每类都存在：
+### MAP-02：RAG online judge 调用时序
 
-- architecture：模块、组件、服务结构。
-- sequence：前端、后端、服务、数据库、agent 时序。
-- data-flow：数据流转和所有权。
-- state：状态机或生命周期。
-- topology：repo、服务、worker、worktree 拓扑。
-- decision：方案分叉和决策树。
+```mermaid
+sequenceDiagram
+  participant App as App code
+  participant Rag as RagService
+  participant Chat as Chat/Responses answer generation
+  participant Eval as RagOnlineEvaluator
+  participant Judge as RagJudge
+
+  App->>Rag: search(RagQuery)
+  Rag-->>App: RagResult(query, hits, context, trace)
+  App->>Chat: generate answer with rag.context
+  Chat-->>App: answer
+  App->>Eval: evaluate(ragResult, answer)
+  Eval->>Judge: judge(RagJudgeRequest)
+  Judge-->>Eval: RagJudgeEvaluation
+  Eval-->>App: evaluation and trace.judgeEvaluation
+```

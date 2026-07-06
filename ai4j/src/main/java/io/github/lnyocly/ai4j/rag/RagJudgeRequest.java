@@ -12,13 +12,14 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RagTrace {
+public class RagJudgeRequest {
+
+    private String query;
+
+    private String answer;
+
+    private String context;
 
     @Builder.Default
-    private List<RagHit> retrievedHits = Collections.emptyList();
-
-    @Builder.Default
-    private List<RagHit> rerankedHits = Collections.emptyList();
-
-    private RagJudgeEvaluation judgeEvaluation;
+    private List<RagHit> hits = Collections.emptyList();
 }

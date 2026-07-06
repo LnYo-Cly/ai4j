@@ -30,6 +30,8 @@ import io.github.lnyocly.ai4j.rag.DenseRetriever;
 import io.github.lnyocly.ai4j.rag.ModelReranker;
 import io.github.lnyocly.ai4j.rag.NoopReranker;
 import io.github.lnyocly.ai4j.rag.RagService;
+import io.github.lnyocly.ai4j.rag.ChatRagJudge;
+import io.github.lnyocly.ai4j.rag.RagOnlineEvaluator;
 import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
 import io.github.lnyocly.ai4j.service.*;
@@ -269,6 +271,10 @@ public class AiService {
                 returnDocuments,
                 appendRemainingHits
         );
+    }
+
+    public RagOnlineEvaluator getRagOnlineEvaluator(PlatformType platform, String model) {
+        return new RagOnlineEvaluator(new ChatRagJudge(getChatService(platform), model));
     }
 
     public RagService getPineconeRagService(PlatformType platform) {
