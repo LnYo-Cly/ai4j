@@ -43,6 +43,15 @@ starter 默认给出的基础 Bean，通常可以按需接管：
 - `RagContextAssembler`
 - `Reranker`
 
+如果只想给 RAG context 加 token budget，不需要改 starter 或 provider，覆盖这个 Bean 就行：
+
+```java
+@Bean
+public RagContextAssembler ragContextAssembler() {
+    return new TokenAwareRagContextAssembler("gpt-4o-mini", 3000);
+}
+```
+
 ## 5. 工程原则
 
 - 优先替换统一抽象后的 Bean，而不是修改底层 provider 私有实现
@@ -51,5 +60,5 @@ starter 默认给出的基础 Bean，通常可以按需接管：
 
 ## 6. 这一页的结论
 
-Bean extension 的核心不是“能不能重写一个 Bean”，而是 **你是否还留在 AI4J 的容器和抽象边界里**。  
+Bean extension 的核心不是“能不能重写一个 Bean”，而是 **你是否还留在 AI4J 的容器和抽象边界里**。
 只要覆盖动作仍然发生在 Spring 层，通常就还能保持 starter 的统一模型；一旦开始绕开这些抽象，后续治理成本会迅速上升。

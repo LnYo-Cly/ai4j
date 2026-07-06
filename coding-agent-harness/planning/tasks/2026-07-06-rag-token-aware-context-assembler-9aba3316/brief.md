@@ -10,42 +10,44 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+为 RAG 增加可选 `TokenAwareRagContextAssembler`，在不改变默认行为的前提下控制注入模型的 context token budget。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+调用方可以继续使用默认 `DefaultRagContextAssembler`，也可以在企业 RAG 场景显式替换为 `TokenAwareRagContextAssembler("gpt-4o-mini", 3000)`。新 assembler 会按最终命中顺序拼上下文，超过预算时停止追加；第一个命中自身过长时才截断内容，并且 citations 只返回真正进入 context 的来源。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`TokenAwareRagContextAssembler`、单元测试、RAG/docs-site 使用说明、Regression/Cadence 记录。
+- 修改位置：`ai4j/src/main/java/io/github/lnyocly/ai4j/rag/`、`ai4j/src/test/java/io/github/lnyocly/ai4j/rag/`、`docs-site/docs/core-sdk/search-and-rag/`、`docs-site/docs/spring-boot/`、`docs/05-TEST-QA/`。
+- 验证证据：见 `progress.md` E-001 到 E-004。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+1. `ai4j/src/main/java/io/github/lnyocly/ai4j/rag/TokenAwareRagContextAssembler.java`
+2. `ai4j/src/test/java/io/github/lnyocly/ai4j/rag/TokenAwareRagContextAssemblerTest.java`
+3. `docs-site/docs/core-sdk/search-and-rag/citations-and-trace.md`
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：可选 token-aware assembler、deterministic tests、RAG/docs-site 说明、回归记录。
+- 范围外：修改默认 assembler 行为、给 `RagQuery` 增加策略字段、Spring Boot 新配置项、复杂 context policy 框架。
+- 停止条件：如果需要 per-query 动态预算或 provider-specific tokenizer registry，另开任务。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- 新 assembler 能把 context 控制在 token budget 内。
+- 第一个超长 hit 会被截断；后续超预算 hit 不进入 context/citations。
+- 默认 `DefaultRagContextAssembler` 不变。
+- RG-001、RG-007、RG-008 通过并记录。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：进行中
+- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、`progress.md`、`findings.md`、`review.md`、`walkthrough.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+提交 PR，等待 CI 后合并并清理 worktree。
