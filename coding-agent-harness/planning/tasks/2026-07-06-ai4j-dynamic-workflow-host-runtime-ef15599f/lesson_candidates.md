@@ -7,11 +7,11 @@
 | Field | Value |
 | --- | --- |
 | Schema version | lesson-candidate-v1 |
-| Task-level status | pending-review |
+| Task-level status | no-candidate-accepted |
 | Review gate | candidate-file-present |
-| Review decision | pending-human-review |
+| Review decision | accepted-no-candidate |
 | Promotion state | not-promoted |
-| Closeout token | pending |
+| Closeout token | checked-none:runtime-safety-captured-in-tests-docs |
 | Source task | 2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f |
 | Owner | coordinator |
 | Last updated | 2026-07-06 |
@@ -49,22 +49,17 @@
 
 ## No-Candidate Reason
 
-尚未判定。只有人工审查接受本任务没有可复用候选时，才填写这里。
+本轮没有需要进入共享治理层的 lesson candidate。关键经验是“host-mediated script runtime 必须默认禁止 arbitrary host interop，并把宿主 bridge 缩成最小 primitive 面”，已经直接落在代码默认值、`DynamicWorkflowNashornExecutorTest` 安全回归和 docs-site runtime 边界说明里；相比新增一条共享 lesson，这些可执行门禁更能防止回归。
 
 ## Promotion Notes
 
-- 如果人工审查认为候选值得沉淀，把对应行标记为 `needs-promotion`，并记录目标治理位置。
-- 候选标记为 `needs-promotion` 时，必须趁源任务上下文还新鲜写出完整 task-local detail artifact，并在 `Detail Artifact` 中链接。
-- `Scope` 使用 `task`、`module` 或 `global`；module 级候选必须填写 `Module Key`。
-- 如果人工审查拒绝候选，把对应行标记为 `rejected`，并在 review decision 中保留理由。
-- `needs-promotion` 不阻止任务 closeout，但必须继续出现在维护队列和收口记录里。
-- 默认 promotion 行为是先 dry-run 或创建后续沉淀任务。不要写共享 Lessons 表；被接受的候选应成为 promoted lesson 详情文档。
-- 沉淀任务必须先分类 scope、检查既有 lessons 和 standards 冲突、提出目标改动，并在 apply 前报告验证证据。
+- 本任务不发起 promotion。
+- 若未来新增 Node/GraalJS/custom executor，应从本任务测试中复制同类安全断言，而不是依赖聊天记忆。
 
 ## Queue Routing
 
 | Queue | When this task enters it | Exit condition |
 | --- | --- | --- |
-| Lessons | 任意候选是 `ready-for-review` 或 `needs-promotion`。 | 人工拒绝、保留在任务内、创建沉淀任务或批准 promotion。 |
-| Missing Materials | 文件缺失、状态非法，或缺少必需的 no-candidate reason。 | Agent 修复候选文件。 |
-| Confirmed / Finalized | 已人工确认，但候选仍有延后的治理事项。 | 记录后续任务或 dry-run 决策。 |
+| Lessons | 不适用；没有 open candidate。 | n/a |
+| Missing Materials | 不适用；no-candidate reason 已填写。 | n/a |
+| Confirmed / Finalized | 若后续人工确认任务，lesson 维持 checked-none。 | n/a |
