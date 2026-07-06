@@ -74,3 +74,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 07:54] - task-log
+
+- 做了什么：Post-rebase verification completed on top of origin/main: targeted runtime tests, docs-site typecheck/build, and committed diff whitespace check all passed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:.:mvn -pl ai4j-agent -am -Dtest=DynamicWorkflow*Test -DfailIfNoTests=false -DskipTests=false test => BUILD SUCCESS, Tests run: 11; docs-site npm run typecheck/build => passed; git diff --check origin/main...HEAD => passed
