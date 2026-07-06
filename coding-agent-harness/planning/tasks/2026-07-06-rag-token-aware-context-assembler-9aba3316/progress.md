@@ -67,3 +67,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:docs-site:npm ci; npm run typecheck; npm run build -> PASS, static build generated
+
+### [2026-07-06 15:18] - task-log
+
+- 做了什么：monorepo package smoke 通过
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
