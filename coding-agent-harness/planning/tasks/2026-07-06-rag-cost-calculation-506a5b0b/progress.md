@@ -1,6 +1,6 @@
 # rag cost calculation - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 ## 进度记录
 
@@ -74,3 +74,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：task lifecycle CLI closeout pending
 - 负责人：coordinator
+
+### [2026-07-06 08:45] - task-complete
+
+- 做了什么：Trace cost pricing resolver documented and verified
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
