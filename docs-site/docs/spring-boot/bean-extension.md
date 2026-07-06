@@ -52,6 +52,17 @@ public RagContextAssembler ragContextAssembler() {
 }
 ```
 
+如果模型名暂时无法映射到 tokenizer，但你明确知道 encoding，可以用显式覆盖：
+
+```java
+@Bean
+public RagContextAssembler ragContextAssembler() {
+    return TokenAwareRagContextAssembler.withEncoding(EncodingType.O200K_BASE, 3000);
+}
+```
+
+不确定 encoding 时，不需要硬猜；保留模型名或只传 budget，让 SDK 使用默认估算并设置更保守的 budget。
+
 ## 5. 工程原则
 
 - 优先替换统一抽象后的 Bean，而不是修改底层 provider 私有实现

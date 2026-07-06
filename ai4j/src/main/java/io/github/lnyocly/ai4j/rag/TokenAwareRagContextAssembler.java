@@ -12,22 +12,44 @@ public class TokenAwareRagContextAssembler implements RagContextAssembler {
     private static final String DEFAULT_DELIMITER = "\n\n";
 
     private final String modelName;
+    private final EncodingType encodingType;
     private final int maxContextTokens;
     private final boolean truncateOversizedHit;
 
     public TokenAwareRagContextAssembler(int maxContextTokens) {
-        this(null, maxContextTokens, true);
+        this(null, null, maxContextTokens, true);
     }
 
     public TokenAwareRagContextAssembler(String modelName, int maxContextTokens) {
-        this(modelName, maxContextTokens, true);
+        this(modelName, null, maxContextTokens, true);
     }
 
     public TokenAwareRagContextAssembler(String modelName, int maxContextTokens, boolean truncateOversizedHit) {
+        this(modelName, null, maxContextTokens, truncateOversizedHit);
+    }
+
+    public static TokenAwareRagContextAssembler withEncoding(EncodingType encodingType, int maxContextTokens) {
+        return withEncoding(encodingType, maxContextTokens, true);
+    }
+
+    public static TokenAwareRagContextAssembler withEncoding(EncodingType encodingType,
+                                                              int maxContextTokens,
+                                                              boolean truncateOversizedHit) {
+        if (encodingType == null) {
+            throw new IllegalArgumentException("encodingType must not be null");
+        }
+        return new TokenAwareRagContextAssembler(null, encodingType, maxContextTokens, truncateOversizedHit);
+    }
+
+    private TokenAwareRagContextAssembler(String modelName,
+                                          EncodingType encodingType,
+                                          int maxContextTokens,
+                                          boolean truncateOversizedHit) {
         if (maxContextTokens <= 0) {
             throw new IllegalArgumentException("maxContextTokens must be positive");
         }
         this.modelName = trimToNull(modelName);
+        this.encodingType = encodingType;
         this.maxContextTokens = maxContextTokens;
         this.truncateOversizedHit = truncateOversizedHit;
     }
@@ -159,10 +181,11 @@ public class TokenAwareRagContextAssembler implements RagContextAssembler {
             try {
                 return TikTokensUtil.tokens(modelName, text);
             } catch (RuntimeException ignored) {
-                // ponytail: unknown model names fall back to cl100k_base instead of adding a tokenizer registry API.
+                // Unknown or newer model names fall through to the explicit/default encoding estimate.
             }
         }
-        return TikTokensUtil.tokens(EncodingType.CL100K_BASE, text);
+        EncodingType effectiveEncodingType = encodingType == null ? EncodingType.CL100K_BASE : encodingType;
+        return TikTokensUtil.tokens(effectiveEncodingType, text);
     }
 
     private String trimToNull(String value) {

@@ -29,16 +29,23 @@
 - 下一步：[下一步动作]
 - 证据：[type:path:summary]
 
+### [2026-07-07 00:45] - final-validation
+
+- 做了什么：在增强 `TikTokensUtil` cache-miss lookup 后重新运行核心回归和 package smoke；docs-site 变更在 Java 改动前已完成 typecheck/build，内容未再变更。
+- 验证结果：core 149 tests PASS；docs-site typecheck/build PASS；package smoke 11 reactor projects PASS。
+- 下一步：同步 Regression/Cadence、diff hygiene、提交 PR。
+- 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=TokenAwareRagContextAssemblerTest,TikTokensUtilTest,DefaultRagServiceTest" -DskipTests=false test -> BUILD SUCCESS, 9 tests; command:TARGET:.:mvn -pl ai4j -am -DskipTests=false test -> BUILD SUCCESS, 149 tests; command:TARGET:docs-site:npm run typecheck -> PASS; command:TARGET:docs-site:npm run build -> PASS; command:TARGET:.:mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
+
 ## 残余
 
-- [遗留问题；如无写“无”]
+- 无；token 计数仍按文档声明为 context budget guard，不承诺 provider billing 精确一致。
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：synced
+- Registry update needed：不适用
+- Harness Ledger update needed：task lifecycle CLI 已同步；closeout 前再执行完成态同步
+- 负责人：coordinator
 
 ### [2026-07-06 16:23] - task-start
 
@@ -49,7 +56,7 @@
 
 ### [2026-07-06 16:39] - task-log
 
-- 做了什么：Implemented explicit EncodingType override, unknown-model fallback docs, and local validation
-- 验证结果：已记录
+- 做了什么：Implemented explicit EncodingType override, unknown-model fallback docs, and initial local validation
+- 验证结果：初始 targeted gate 通过；最终证据见 `final-validation`。
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=TokenAwareRagContextAssemblerTest,DefaultRagServiceTest" -DskipTests=false test -> BUILD SUCCESS, 7 tests
