@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 16:39] - task-log
+
+- 做了什么：Implemented explicit EncodingType override, unknown-model fallback docs, and local validation
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=TokenAwareRagContextAssemblerTest,DefaultRagServiceTest" -DskipTests=false test -> BUILD SUCCESS, 7 tests
