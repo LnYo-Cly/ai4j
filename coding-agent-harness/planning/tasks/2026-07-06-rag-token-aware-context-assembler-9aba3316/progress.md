@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 15:08] - task-log
+
+- 做了什么：新增 TokenAwareRagContextAssembler 和定向测试，默认 assembler 行为不变
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=TokenAwareRagContextAssemblerTest,DefaultRagServiceTest" -DskipTests=false test -> BUILD SUCCESS, 5 tests
