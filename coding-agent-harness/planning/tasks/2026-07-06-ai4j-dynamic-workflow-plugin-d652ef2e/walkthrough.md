@@ -22,6 +22,7 @@
 | docs typecheck | `npm run typecheck` in docs-site | 通过 | `progress.md` E-004 |
 | docs build | `npm run build` in docs-site | 通过，生成 static files | `progress.md` E-004 |
 | whitespace | `git diff --check` in ai4j-sdk worktree and standalone plugin repo | 通过，无 whitespace error | `progress.md` E-005 / E-006 |
+| live smoke | `mvn "-DskipTests=false" "-Dtest=MinimaxAnthropicSmokeTest,MinimaxAnthropicWorkflowSynthesisSmokeTest" "-Dtest.excludedGroups=" test` in `G:\My_Project\java\ai4j-plugin-dynamic-workflow\.worktrees\feature\minimax-live-smokes` | 通过，2 tests / 0 failures / 0 errors；`MINIMAX_API_KEY` + Anthropic-compatible base URL 验证有效 | `progress.md` final live smoke entry |
 
 ## 审查结论
 
@@ -36,6 +37,7 @@
 | --- | --- | --- | --- |
 | 远程 GitHub repo 创建 / push 依赖 auth 和远程命名可用性 | coordinator | yes | 本地 commit 完成后尝试创建 / push；失败则报告本地路径和后续命令 |
 | `ai4j-extension-api:2.4.0` 未发布到 Maven Central 前，插件用户需先本地安装 extension API | coordinator | yes | README / CI 已记录；发布后可移除前置安装步骤 |
+| live smoke 依赖 MiniMax 环境变量和外部服务可用性 | coordinator | yes | 测试默认 skip，CI 如需运行必须显式注入 `MINIMAX_API_KEY` |
 
 ## 经验沉淀反思
 
