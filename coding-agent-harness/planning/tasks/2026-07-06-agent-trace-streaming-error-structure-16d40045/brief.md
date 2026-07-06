@@ -10,42 +10,52 @@
 
 ## 一句话结果
 
-用一句话说明这个任务完成后会产生什么具体结果。
+让流式模型文本在 replay capture 里可回放，并让工具错误默认带上 `errorType`。
 
 ## 完成后能得到什么
 
-用 100-300 字说明这个任务完成后，用户、项目或下一轮 agent 能直接拿到什么结果。
-说明这个结果能用于什么决策、交付、验证或继续开发。聚焦可用结果，不要展开实现过程，
-除非实现方式本身就是交付物。
+`ai4j-agent` 的 Node I/O capture 会把流式模型消息累积到 `NodeIoRecord.outputText`，同时保留
+最终 raw response 在 `outputs` 里；`NodeReplayer` 的 mock replay 能优先使用 raw response，
+缺失时回退到 `outputText`。`BaseAgentRuntime` 产出的 `TOOL_ERROR` 会带上
+`errorType/error/tool/callId`，方便模型和排障消费，而不是依赖堆栈文本。对应的单测与
+docs-site 说明已经同步，下一轮 agent 可以直接据此恢复、重放或排查。
 
 ## 交付物
 
-- 可见产物：
-- 修改位置：
-- 验证证据：
+- 可见产物：`ai4j-agent` replay / runtime 代码与 `docs-site` 说明页。
+- 修改位置：`NodeIoRecord`、`IoCaptureAgentListener`、`NodeReplayer`、`JsonlIoCaptureSink`、
+  `BaseAgentRuntime`、`NodeIoCaptureReplayTest`、`ExtensionAgentToolsTest`、`docs-site/docs/agent/*`。
+- 验证证据：`mvn -pl ai4j-agent -am "-Dtest=NodeIoCaptureReplayTest,ExtensionAgentToolsTest" -DfailIfNoTests=false -DskipTests=false test`；
+  `mvn -pl ai4j-agent -am -DskipTests=false test`；
+  `npm run build` in `docs-site/`；
+  `mvn -DskipTests package`。
 
 ## 第一眼应该看什么
 
-写明人或下一轮 agent 打开任务后，应该先读哪些文件、证据或生成产物。
+`progress.md`、`walkthrough.md`、`NodeIoCaptureReplayTest`、`ExtensionAgentToolsTest`、
+`docs-site/docs/agent/replay-recovery-audit.md`、`docs-site/docs/agent/tools-and-registry.md`。
 
 ## 边界
 
-- 范围内：本任务允许修改的文件、行为、文档或验证内容。
-- 范围外：不能顺手塞进来的工作。
-- 停止条件：遇到不确定性、风险或缺少权限时，必须回到 coordinator 或用户确认。
+- 范围内：replay capture / replay / JSONL 读写 / tool error payload / docs-site 说明 / 本地验证。
+- 范围外：live provider smoke、新的抽象层、其它 agent runtime 行为、RAG/检索改造。
+- 停止条件：若 streaming / raw response 语义与现有 capture contract 冲突，必须回到 coordinator
+  确认。
 
 ## 完成判断
 
-列出 3-5 条能证明目标结果已经达成的具体条件。完整执行计划保留在 `task_plan.md`。
+- streaming text 已累积到 `NodeIoRecord.outputText`，JSONL 可 round-trip。
+- `NodeReplayer.replayModelMock(...)` 能优先 raw response，缺失时回退到 `outputText`。
+- `TOOL_ERROR` 默认暴露 `errorType`，且没有 stack trace 字段。
+- ai4j-agent 全量测试、docs-site build、monorepo package smoke 均通过。
 
 ## 执行合同
 
 - Owner：coordinator
-- 生命周期状态：未开始
-- 必需文件：`INDEX.md`、`task_plan.md`、`execution_strategy.md`、`visual_map.md`、
-  `progress.md`、`findings.md`、`review.md`
+- 生命周期状态：已完成
+- 必需文件：`INDEX.md`、`task_plan.md`、`visual_map.md`、`progress.md`、`walkthrough.md`
 - 完成条件：验证证据必须记录到 `progress.md`
 
 ## 当前下一步
 
-写明开始实现前的第一个具体动作。
+收口 task 包并同步 Regression / Cadence 记录。

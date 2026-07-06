@@ -33,9 +33,9 @@ Task Contract: harness-task/v1
 | Evidence Checked | n/a |
 | Review Commit SHA | n/a |
 | Audit Source | native-index |
-| Audit Status | created |
+| Audit Status | committed |
 | Exception Reason | n/a |
-| Message | n/a |
+| Message | task completed via self-check |
 | Migration Status | native |
 | Migrated From | n/a |
 | Legacy Extra Fields | {} |
