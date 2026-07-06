@@ -1,6 +1,6 @@
 # rag online evaluation llm judge - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -96,3 +96,10 @@
 - Registry update needed：不适用
 - Harness Ledger update needed：PR 合并后 lifecycle closeout / governance rebuild
 - 负责人：coordinator
+
+### [2026-07-06 07:31] - task-complete
+
+- 做了什么：RAG online evaluator, docs, and local regression gates complete
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a

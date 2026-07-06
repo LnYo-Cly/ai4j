@@ -28,7 +28,7 @@ kind=gate"]
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务边界已清楚到可以执行 | `task_plan.md` | `harness task-start 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | Online judge API、trace 字段、AiService 入口、测试和 docs-site 已完成 | diff、`progress.md` commands | `harness task-phase 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | PR 合并后完成任务 closeout | progress update、walkthrough、PR merge evidence | `harness task-complete 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d --message "<summary>" .` | agent | present | waiting PR/CI | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | PR 合并后完成任务 closeout | progress update、walkthrough、PR merge evidence | `harness task-complete 2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d --message "<summary>" .` | agent | present | waiting PR/CI | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
