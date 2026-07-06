@@ -52,7 +52,7 @@
 
 | ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| F-001 | P3 | 初始任务名容易让人误以为要新增 cost runtime；实际 `origin/main` 已有 trace pricing resolver 和 metrics cost 字段。 | `TracePricing`, `TracePricingResolver`, `AgentTraceListener.metricsFromUsage`, `AgentTraceListenerTest`, `LangfuseTraceExporterTest` | 不新增重复 abstraction；补 docs usage 并验证既有路径。 | no | accepted | no | 如用户明确要 `AgentResult` 直接拿 cost，另开 API 设计任务。 |
+| F-001 | P3 | 初始任务名容易让人误以为要新增 cost runtime；实际 `origin/main` 已有 trace pricing resolver 和 metrics cost 字段。 | `TracePricing`, `TracePricingResolver`, `AgentTraceListener.metricsFromUsage`, `AgentTraceListenerTest`, `LangfuseTraceExporterTest` | 不新增重复 abstraction；补 docs usage 并验证既有路径。 | no | mitigated | no | 如用户明确要 `AgentResult` 直接拿 cost，另开 API 设计任务。 |
 
 ## 非阻塞备注（Non-Material Notes）
 
