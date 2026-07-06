@@ -97,3 +97,17 @@
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自新增单元测试、core 全量测试、docs-site typecheck/build、monorepo package smoke，以及默认行为不变的最小公共面。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202607061525 |
+| Submitted At | 2026-07-06 15:25 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-07-06-rag-token-aware-context-assembler-9aba3316 |
+| Materials Checklist Hash | 648006d73695a7f0 |
+| Evidence Summary | Token-aware RAG context assembler ready: targeted/core/docs/package gates passed |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-token-aware-context-assembler-9aba3316 |

@@ -25,7 +25,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务计划和执行策略已确认 | `task_plan.md`; `execution_strategy.md` | `harness task-start 2026-07-06-rag-token-aware-context-assembler-9aba3316` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | Token-aware assembler、测试、docs-site、regression 记录完成 | diff、`progress.md` E-001..E-004 | `harness task-phase 2026-07-06-rag-token-aware-context-assembler-9aba3316 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-07-06-rag-token-aware-context-assembler-9aba3316 --message "<summary>"` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | Agent Review Submission | `review.md`、progress update、lesson routing | `harness task-review 2026-07-06-rag-token-aware-context-assembler-9aba3316 --message "<summary>"` | agent | present | none | coordinator |
 | GATE-02 | gate | GATE-01 | planned | 0 | Human Review Confirmation | review packet 和人工确认 | `harness review-confirm 2026-07-06-rag-token-aware-context-assembler-9aba3316 --confirm 2026-07-06-rag-token-aware-context-assembler-9aba3316` | human | missing | Agent 不能代办人工确认 | human |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。

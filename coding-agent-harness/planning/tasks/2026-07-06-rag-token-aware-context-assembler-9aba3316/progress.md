@@ -1,6 +1,6 @@
 # RAG token-aware context assembler - 进度
 
-## 状态：进行中
+## 状态：审查中
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -81,3 +81,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:git diff --check -> PASS
+
+### [2026-07-06 15:25] - task-review
+
+- 做了什么：Token-aware RAG context assembler ready: targeted/core/docs/package gates passed
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：n/a
