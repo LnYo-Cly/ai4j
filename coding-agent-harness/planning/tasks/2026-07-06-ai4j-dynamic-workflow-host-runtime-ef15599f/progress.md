@@ -67,3 +67,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:docs-site:npm run typecheck && npm run build => both passed; Docusaurus generated static files in build
+
+### [2026-07-06 07:39] - task-log
+
+- 做了什么：Whitespace diff check completed.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:.:git diff --check => exit 0; only CRLF working-copy warnings
