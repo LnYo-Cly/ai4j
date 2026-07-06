@@ -22,13 +22,6 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ### [2026-07-07 00:45] - final-validation
 
 - 做了什么：在增强 `TikTokensUtil` cache-miss lookup 后重新运行核心回归和 package smoke；docs-site 变更在 Java 改动前已完成 typecheck/build，内容未再变更。
