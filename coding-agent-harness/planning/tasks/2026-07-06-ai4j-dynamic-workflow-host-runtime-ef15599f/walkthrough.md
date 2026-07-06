@@ -53,4 +53,3 @@
 | 进度记录 | `progress.md` |
 | 发现记录 | `findings.md` |
 | Lesson 判定 | `lesson_candidates.md` |
-

@@ -121,4 +121,3 @@
 - [x] Lessons 反思与检查：`lesson_candidates.md` 已进入 `no-candidate-accepted`
 - [x] PR / commit / 发布说明（提交/推送在最终交付步骤完成）
 - [x] 残余风险摘要
-

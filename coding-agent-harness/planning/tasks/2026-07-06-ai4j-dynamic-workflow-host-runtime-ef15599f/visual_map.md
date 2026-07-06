@@ -48,4 +48,3 @@ flowchart LR
 - state：状态机或生命周期。
 - topology：repo、服务、worker、worktree 拓扑。
 - decision：方案分叉和决策树。
-
