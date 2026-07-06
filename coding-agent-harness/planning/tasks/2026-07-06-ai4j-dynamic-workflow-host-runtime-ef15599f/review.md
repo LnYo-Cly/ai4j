@@ -107,3 +107,17 @@ Scanner 会根据必需文件、章节、证据和这个严格提交块派生 `m
 ## 最终信心依据（Final Confidence Basis）
 
 信心来自窄边界实现、deterministic JUnit 覆盖、docs-site type/build 验证、自审发现已闭环、以及 Regression SSoT/Cadence Ledger 中的固定门禁记录。发布前若要声明真实 provider E2E 或后台工作流能力，需要单独任务和 live-provider opt-in 证据。
+
+## Agent Review Submission
+
+| Field | Value |
+| --- | --- |
+| Submission ID | ARS-202607060743 |
+| Submitted At | 2026-07-06 07:43 |
+| Submitted By | agent |
+| Task Key | TASKS/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f |
+| Materials Checklist Hash | 45c112da149b76eb |
+| Evidence Summary | Agent review complete: dynamic workflow host runtime implemented and verified; no open P0/P1/P2 findings after Nashorn safety fix. |
+| Open Findings Count | 0 |
+| Scanner Version | task-scanner/2026-05-25-phase-kind |
+| Target | TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f |
