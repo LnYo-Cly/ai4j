@@ -1,6 +1,6 @@
 # RAG token aware encoding fallback - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 `## 状态` 是受控机器字段，只能使用以下值之一：
 
@@ -60,3 +60,10 @@
 - 验证结果：初始 targeted gate 通过；最终证据见 `final-validation`。
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j "-Dtest=TokenAwareRagContextAssemblerTest,DefaultRagServiceTest" -DskipTests=false test -> BUILD SUCCESS, 7 tests
+
+### [2026-07-06 16:59] - task-complete
+
+- 做了什么：Complete RAG token encoding fallback with explicit EncodingType override and validation
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a

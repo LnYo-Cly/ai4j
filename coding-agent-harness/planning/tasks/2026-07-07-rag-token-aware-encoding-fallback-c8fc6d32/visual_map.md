@@ -24,7 +24,7 @@ flowchart LR
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
 | INIT-01 | init | none | done | 100 | 任务边界已清楚到可以执行 | `task_plan.md` | `harness task-start 2026-07-07-rag-token-aware-encoding-fallback-c8fc6d32` | agent | present | none | coordinator |
 | EXEC-01 | execution | INIT-01 | done | 100 | Encoding fallback/override、docs-site、回归记录和本地验证已完成 | diff、`progress.md` final-validation | `harness task-phase 2026-07-07-rag-token-aware-encoding-fallback-c8fc6d32 EXEC-01 --state done --completion 100 --evidence present` | agent | present | none | coordinator |
-| GATE-01 | gate | EXEC-01 | planned | 0 | 直接完成任务 | progress update 和最终证据说明 | `harness task-complete 2026-07-07-rag-token-aware-encoding-fallback-c8fc6d32 --message "<summary>"` | agent | present | none | coordinator |
+| GATE-01 | gate | EXEC-01 | done | 100 | 直接完成任务 | progress update 和最终证据说明 | `harness task-complete 2026-07-07-rag-token-aware-encoding-fallback-c8fc6d32 --message "<summary>"` | agent | present | none | coordinator |
 
 允许的 `State`：`planned`, `in_progress`, `review`, `blocked`, `done`, `skipped`。
 
