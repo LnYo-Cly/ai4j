@@ -19,5 +19,7 @@ public class QdrantConfigProperties {
 
     private String query = "/collections/%s/points/query";
 
+    private String scroll = "/collections/%s/points/scroll";
+
     private String delete = "/collections/%s/points/delete";
 }

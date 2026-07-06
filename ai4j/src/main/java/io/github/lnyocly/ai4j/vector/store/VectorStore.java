@@ -13,5 +13,13 @@ public interface VectorStore {
 
     boolean delete(VectorDeleteRequest request) throws Exception;
 
+    /**
+     * Metadata-only existence lookup. Stores that cannot perform filter lookup without
+     * a query vector should keep the default false implementation.
+     */
+    default boolean exists(VectorExistsRequest request) throws Exception {
+        return false;
+    }
+
     VectorStoreCapabilities capabilities();
 }

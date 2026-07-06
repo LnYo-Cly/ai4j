@@ -21,5 +21,18 @@ public class QdrantConfig {
 
     private String query = "/collections/%s/points/query";
 
+    private String scroll = "/collections/%s/points/scroll";
+
     private String delete = "/collections/%s/points/delete";
+
+    public QdrantConfig(boolean enabled,
+                        String host,
+                        String apiKey,
+                        String vectorName,
+                        String upsert,
+                        String query,
+                        String delete) {
+        this(enabled, host, apiKey, vectorName, upsert, query, "/collections/%s/points/scroll", delete);
+    }
+
 }

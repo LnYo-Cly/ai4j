@@ -36,4 +36,20 @@ public class IngestionRequest {
 
     @Builder.Default
     private Boolean upsert = Boolean.TRUE;
+
+    @Builder.Default
+    private Boolean skipExistingContentHash = Boolean.FALSE;
+
+    public IngestionRequest(String dataset,
+                            String embeddingModel,
+                            RagDocument document,
+                            IngestionSource source,
+                            Chunker chunker,
+                            List<LoadedDocumentProcessor> documentProcessors,
+                            List<MetadataEnricher> metadataEnrichers,
+                            Integer batchSize,
+                            Boolean upsert) {
+        this(dataset, embeddingModel, document, source, chunker, documentProcessors, metadataEnrichers,
+                batchSize, upsert, Boolean.FALSE);
+    }
 }
