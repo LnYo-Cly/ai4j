@@ -5,7 +5,7 @@
   "harnessRoot": "TARGET:coding-agent-harness",
   "planningRoot": "TARGET:coding-agent-harness/planning",
   "generatedRoot": "TARGET:coding-agent-harness/governance/generated",
-  "generatedAt": "2026-07-06T06:46:53.109Z",
+  "generatedAt": "2026-07-06T07:50:44.807Z",
   "sourceFileHashes": {
     "MODULES/agent-runtime/2026-06-20-ai4j-agent-sdk-architecture-enhancement-roadmap-9effae81": "bd06857b93a89e92eacc30c0f99e9fbae4ca9a484c92350b88ec21a977d5f532",
     "MODULES/agent-runtime/2026-06-20-p0-a-agentsession-runtime-container-389dbf12": "9ff4abe39b02ebfdee7ab938ceca0b0d845fa422db3aae49391d391d2bdc3985",
@@ -37,7 +37,7 @@
     "MODULES/agent-runtime/2026-07-01-complete-compaction-shouldcompact-a2a-server-exp-f8ea6b62": "849b147033221657cc86064c2c46cc287c9b06e1b232a637d36b90e4767f1571",
     "MODULES/agent-runtime/2026-07-01-llmcompactpolicy-llm-powered-summaries-docs-for-9ee48643": "979d7552da63a09a97bbb466aae0299f32310d5f002a1c2c748f0a98275b2db3",
     "MODULES/agent-runtime/2026-07-01-wire-compaction-into-runtime-loop-auto-trigger-b-de7e4c74": "53f3b9869b49ce15a7dea1ebd69d5bfee2f1f1357a8027d22f4b3fd3ab002ff1",
-    "MODULES/agent-runtime/2026-07-06-ai4j-dynamic-workflow-host-runtime-74e36ffb": "100ae256c821b454a78563955a8e28c581c2f2447b61dbfca189de20249b40c8",
+    "MODULES/agent-runtime/2026-07-06-ai4j-dynamic-workflow-host-runtime-74e36ffb": "dc8d9aa0263c021105f1006af0eaa3b98800d2b361210cf4f8fe7a8356d07153",
     "MODULES/cli-host/2026-06-20-cli-memory-compact-command-ux-d56c15fd": "4385c15d46d89b59c4611f138fc5f7ca8475b585423524a4ba29bd327b61014b",
     "MODULES/cli-host/2026-06-21-p4-cli-sandbox-commands-and-status-ux-4e7e51c6": "a185eae4ed700ba400a96c0d92d8603e8bc499b5abb62a67ebec31b318cabc5d",
     "MODULES/cli-host/2026-06-30-cli-external-command-tool-hooks-claude-code-styl-d5fcaba8": "90aaa4afd25c4baf36a35dd888fe9d86f6f3a766e8e023c2d64aecfde470b93a",
@@ -91,17 +91,19 @@
     "TASKS/2026-06-20-ai4j-agent-sdk-architecture-enhancement-planning-b6a2e312": "42c785bc4b7b9646fab2556b0b2011827d21d7195f2a90507580cd666a8e86f6",
     "TASKS/2026-06-20-ai4j-agent-sdk-implementation-decomposition-and-26846add": "b96f369f9249b5ec1b5370d322bf91e1f117d41fd04d1f0c64595da44a976195",
     "TASKS/2026-07-05-plugin-ecosystem-hardening-fixes-bcef4a36": "b977c3e4648a6723fc4af09b1da4d06564e5a45b9bd2290d9625515a3e466e3d",
-    "TASKS/2026-07-06-agent-trace-streaming-error-structure-16d40045": "1f9fd6350232d37352c2605c36b27bcd761e25fb6ded0b7a3b325f0b11930e31",
-    "TASKS/2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e": "40b8f03012d287b18399a30bdd31c64762b2fdb34a79b445ac0a959912376fb8"
+    "TASKS/2026-07-06-agent-trace-streaming-error-structure-16d40045": "0f55cf4c7b977b99054556cd95ed600cff1dac56ad8f668c19aeb18e822c4fdf",
+    "TASKS/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f": "c8488223d13acda6a931168acd3e8e8fb846357e6063e57649a7b9d9d0828782",
+    "TASKS/2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e": "8f6c1b7ff23999934687b196c3fe62a11b3736a13d72314515c73ebd78bf841d",
+    "TASKS/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d": "b8e23340f0a4f071fa34205cee42853c237162a3a71a5ed544dba6a30cc19552"
   },
   "scope": "all",
   "taskScopes": {
-    "all": 86,
-    "activeCycle": 86,
-    "reviewWorkbench": 86,
+    "all": 88,
+    "activeCycle": 88,
+    "reviewWorkbench": 88,
     "archiveHistory": 0,
     "tombstoneHistory": 0,
-    "taskIndexDefault": 86
+    "taskIndexDefault": 88
   },
   "tasks": [
     {
@@ -11036,6 +11038,116 @@
       ]
     },
     {
+      "taskKey": "TASKS/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f",
+      "id": "TASKS/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f",
+      "title": "ai4j dynamic workflow host runtime",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "review",
+      "lifecycleState": "in_review",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "agent-reviewed",
+      "reviewQueueState": "ready-to-confirm",
+      "reviewSubmitted": true,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/review.md",
+      "closeoutStatus": "pending",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f",
+      "completion": 100,
+      "lessonCandidateStatus": "no-candidate-accepted",
+      "lessonCandidateReviewDecision": "accepted-no-candidate",
+      "lessonCandidatePromotionState": "not-promoted",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [],
+      "risks": [
+        {
+          "id": "F-001",
+          "severity": "P1",
+          "open": false,
+          "blocksRelease": false,
+          "disposition": "mitigated",
+          "waiverBy": "",
+          "summary": "初版 Nashorn runtime 直接暴露 Java interop 和 raw Java bridge binding，模型生成脚本理论上可尝试访问宿主 Java 对象或全局加载入口。"
+        }
+      ],
+      "residual": "none",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "review"
+      ],
+      "queues": [
+        "review"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/review.md"
+        },
+        {
+          "kind": "lesson-candidates",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/lesson_candidates.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-host-runtime-ef15599f/walkthrough.md"
+        }
+      ]
+    },
+    {
       "taskKey": "TASKS/2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e",
       "id": "TASKS/2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e",
       "title": "ai4j dynamic workflow plugin",
@@ -11421,6 +11533,104 @@
         {
           "kind": "walkthrough",
           "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-ai4j-dynamic-workflow-plugin-d652ef2e/walkthrough.md"
+        }
+      ]
+    },
+    {
+      "taskKey": "TASKS/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d",
+      "id": "TASKS/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d",
+      "title": "rag online evaluation llm judge",
+      "currentPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d",
+      "originalPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d",
+      "aliases": [],
+      "identitySource": "path-derived-legacy",
+      "state": "done",
+      "lifecycleState": "closed",
+      "kind": "general",
+      "preset": "none",
+      "presetVersion": "",
+      "evidenceBundle": "",
+      "reviewStatus": "missing",
+      "reviewQueueState": "not-in-queue",
+      "reviewSubmitted": false,
+      "reviewPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/review.md",
+      "closeoutStatus": "closed",
+      "walkthroughPath": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/walkthrough.md",
+      "module": "",
+      "namespace": "main",
+      "taskRootKind": "project-task",
+      "packageRole": "local",
+      "inferredModule": "base",
+      "shortId": "2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d",
+      "completion": 100,
+      "lessonCandidateStatus": "missing",
+      "lessonCandidateReviewDecision": "",
+      "lessonCandidatePromotionState": "",
+      "lessonCandidateRows": [],
+      "lessonCandidateIssues": [
+        "missing-candidate-file"
+      ],
+      "risks": [],
+      "residual": "lesson-issues:1",
+      "materialsReady": true,
+      "materialIssues": [],
+      "taskQueues": [
+        "done"
+      ],
+      "queues": [
+        "done"
+      ],
+      "queueReasons": [],
+      "supersedes": [],
+      "supersededBy": "",
+      "deletionState": "active",
+      "visibilityScopes": [
+        "all",
+        "active-cycle",
+        "review-workbench",
+        "task-index-default"
+      ],
+      "deleteReason": "",
+      "archiveMetadata": {},
+      "hiddenByDefault": false,
+      "repairPrompt": "",
+      "repairActions": [],
+      "documentRefs": [
+        {
+          "kind": "index",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/INDEX.md"
+        },
+        {
+          "kind": "brief",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/brief.md"
+        },
+        {
+          "kind": "task-plan",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/task_plan.md"
+        },
+        {
+          "kind": "execution-strategy",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/execution_strategy.md"
+        },
+        {
+          "kind": "visual-map",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/visual_map.md"
+        },
+        {
+          "kind": "progress",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/progress.md"
+        },
+        {
+          "kind": "findings",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/findings.md"
+        },
+        {
+          "kind": "review",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/review.md"
+        },
+        {
+          "kind": "walkthrough",
+          "path": "TARGET:coding-agent-harness/planning/tasks/2026-07-06-rag-online-evaluation-llm-judge-4fe59b6d/walkthrough.md"
         }
       ]
     }
