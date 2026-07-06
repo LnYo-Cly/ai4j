@@ -22,23 +22,16 @@
 
 证据较长或数量较多时，不要粘贴全文；放入 `artifacts/INDEX.md` 并在这里引用 ID。
 
-### [YYYY-MM-DD HH:MM] - [阶段名称]
-
-- 做了什么：[具体操作]
-- 验证结果：[运行了什么检查，结果如何]
-- 下一步：[下一步动作]
-- 证据：[type:path:summary]
-
 ## 残余
 
 - 无
 
 ## 协调者交接（Coordinator，启用模块并行时填写）
 
-- Global sync status：pending-coordinator-pass / synced / n/a
-- Registry update needed：[module key, step, status, branch, updated / 不适用]
-- Harness Ledger update needed：[task plan path, review path, closeout status / 不适用]
-- 负责人：coordinator / 不适用
+- Global sync status：n/a
+- Registry update needed：不适用
+- Harness Ledger update needed：task lifecycle CLI 已同步
+- 负责人：coordinator
 
 ### [2026-07-06 12:19] - task-start
 
@@ -60,6 +53,7 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:TARGET:.:mvn -pl ai4j -Dtest=IngestionPipelineTest,QdrantVectorStoreTest,MilvusVectorStoreTest -DskipTests=false test -> BUILD SUCCESS, 8 tests; command:TARGET:.:mvn -pl ai4j-spring-boot-starter -am -Dtest=AiServiceFirstChatAutoConfigurationTest -DfailIfNoTests=false -DskipTests=false test -> BUILD SUCCESS, 2 tests
+
 ### [2026-07-06 21:14] - targeted-rerun
 
 - 做了什么：补充 metadataLookup=false 不查 exists、全量跳过不 upsert 两个保底测试后，重跑 core 定向测试。
@@ -101,11 +95,12 @@
 - 验证结果：`mvn -pl ai4j-spring-boot-starter -am "-Dtest=AiServiceFirstChatAutoConfigurationTest" -DfailIfNoTests=false -DskipTests=false test` 通过，2 tests / 0 failures / 0 errors。
 - 下一步：最终 rerun touched gates、diff hygiene、提交。
 - 证据：command:TARGET:.:mvn -pl ai4j-spring-boot-starter -am "-Dtest=AiServiceFirstChatAutoConfigurationTest" -DfailIfNoTests=false -DskipTests=false test -> BUILD SUCCESS, 2 tests
+
 ### [2026-07-06 21:38] - final-hygiene-and-rerun
 
 - 做了什么：修复 whitespace 后运行 `git diff --check`，并重跑 starter 定向与 monorepo package smoke。
 - 验证结果：`git diff --check` 通过（仅 CRLF warning）；starter 定向 2 tests PASS；`mvn -DskipTests package` 11 reactor projects PASS。
-- 下一步：推进 harness lifecycle、提交并创建 PR。
+- 下一步：提交 lifecycle 修复、创建 PR。
 - 证据：command:TARGET:.:git diff --check -> PASS, no whitespace errors; command:TARGET:.:mvn -pl ai4j-spring-boot-starter -am "-Dtest=AiServiceFirstChatAutoConfigurationTest" -DfailIfNoTests=false -DskipTests=false test -> BUILD SUCCESS, 2 tests; command:TARGET:.:mvn -DskipTests package -> BUILD SUCCESS, 11 reactor projects
 
 ### [2026-07-06 13:42] - task-review
