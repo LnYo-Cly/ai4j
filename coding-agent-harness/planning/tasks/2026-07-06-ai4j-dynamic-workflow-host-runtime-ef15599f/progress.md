@@ -53,3 +53,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：command:G:/My_Project/java/ai4j-sdk/.worktrees/feature/dynamic-workflow-executor:mvn -pl ai4j-agent -am -Dtest=DynamicWorkflow*Test -DfailIfNoTests=false -DskipTests=false test => BUILD SUCCESS, Tests run: 9
+
+### [2026-07-06 07:38] - task-log
+
+- 做了什么：Hardened Nashorn host runtime default sandbox (no Java interop, hidden raw bridge), added security regressions, completed docs-site typecheck/build, and git diff whitespace check.
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:.:mvn -pl ai4j-agent -am -Dtest=DynamicWorkflow*Test -DfailIfNoTests=false -DskipTests=false test => BUILD SUCCESS, Tests run: 11
