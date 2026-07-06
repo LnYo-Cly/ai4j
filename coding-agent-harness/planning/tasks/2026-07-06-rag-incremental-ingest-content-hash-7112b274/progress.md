@@ -46,3 +46,10 @@
 - 验证结果：已记录
 - 下一步：继续执行
 - 证据：n/a
+
+### [2026-07-06 12:52] - task-log
+
+- 做了什么：Implemented contentHash metadata, optional skipExistingContentHash, metadata-only VectorStore.exists for supported backends, and targeted tests
+- 验证结果：已记录
+- 下一步：继续执行
+- 证据：command:TARGET:.:mvn -pl ai4j -Dtest=IngestionPipelineTest,QdrantVectorStoreTest,MilvusVectorStoreTest -DskipTests=false test -> BUILD SUCCESS, 8 tests
