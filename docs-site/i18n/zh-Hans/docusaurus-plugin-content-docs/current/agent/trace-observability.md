@@ -350,6 +350,32 @@ Agent agent = Agents.react()
 - `metrics.totalCost`
 - `metrics.currency`
 
+一个最小配置例子：
+
+```java
+TraceConfig traceConfig = TraceConfig.builder()
+        .pricingResolver(model -> {
+            if ("gpt-4.1".equals(model)) {
+                return TracePricing.builder()
+                        .inputCostPerMillionTokens(2.0D)
+                        .outputCostPerMillionTokens(8.0D)
+                        .currency("USD")
+                        .build();
+            }
+            return null;
+        })
+        .build();
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .traceExporter(new JsonlTraceExporter("logs/agent-trace.jsonl"))
+        .traceConfig(traceConfig)
+        .build();
+```
+
+这里的价格单位是“每百万 token”。SDK 不内置默认价格表，因为模型价格经常变化；如果 resolver 返回 `null`，对应模型只记录 token，不估算 cost。
+
 同时，`RUN` 和 `STEP` span 会聚合同一轮里的 token / cost，总结视角不需要你自己再扫一遍全部 `MODEL` span。
 
 ### 8.4 工具调用
