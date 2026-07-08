@@ -101,7 +101,7 @@ Repo Governance / CI-CD changes remain routed through their reference standards 
 | HL-2026-07-05-rag-query-planner-strategy-prompts-ddd48298 | task | none | rag query planner strategy prompts | closed | none | coding-agent-harness/planning/tasks/2026-07-05-rag-query-planner-strategy-prompts-ddd48298/task_plan.md | pending | pending | pending | Completed per-strategy RAG query planner prompt fix with core/docs/package validation | 2026-07-05 |
 | HL-2026-07-05-rag-retrieval-usage-docs-3f2d7401 | task | none | rag retrieval usage docs | closed | none | coding-agent-harness/planning/tasks/2026-07-05-rag-retrieval-usage-docs-3f2d7401/task_plan.md | pending | pending | pending | Completed RAG retrieval usage docs with docs-site validation | 2026-07-05 |
 | HL-2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b | task | none | hybrid retriever best effort fallback | closed | none | coding-agent-harness/planning/tasks/2026-07-05-hybrid-retriever-best-effort-fallback-aa6b302b/task_plan.md | pending | pending | pending | HybridRetriever best-effort fallback complete | 2026-07-05 |
-| HL-2026-07-08-rag-conversational-query-history-cee9ddba | task | none | rag conversational query history | planned | none | coding-agent-harness/planning/tasks/2026-07-08-rag-conversational-query-history-cee9ddba/task_plan.md | pending | pending | pending | task registered by CLI | 2026-07-08 |
+| HL-2026-07-08-rag-conversational-query-history-cee9ddba | task | none | rag conversational query history | active | none | coding-agent-harness/planning/tasks/2026-07-08-rag-conversational-query-history-cee9ddba/task_plan.md | pending | pending | pending | 开始实现 RAG history-aware query planning | 2026-07-08 |
 
 ## Field Rules
 
