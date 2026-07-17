@@ -1,6 +1,6 @@
 # rag conversational query history - 进度
 
-## 状态：进行中
+## 状态：已完成
 
 ## 进度记录
 
@@ -73,3 +73,10 @@
 - 验证结果：`git diff --check` 通过；仅 CRLF 工作区提示，无 whitespace error。
 - 下一步：提交实现并完成 task lifecycle。
 - 证据：command:TARGET:.:git diff --check -> PASS, no whitespace errors
+
+### [2026-07-17 06:17] - task-complete
+
+- 做了什么：完成 RAG history-aware query planning
+- 验证结果：已记录
+- 下一步：完成
+- 证据：n/a
