@@ -205,6 +205,7 @@ public class DefaultRagService implements RagService {
                 .topK(source.getTopK())
                 .finalTopK(source.getFinalTopK())
                 .filter(source.getFilter())
+                .history(source.getHistory())
                 .delimiter(source.getDelimiter())
                 .includeCitations(source.isIncludeCitations())
                 .includeTrace(source.isIncludeTrace())

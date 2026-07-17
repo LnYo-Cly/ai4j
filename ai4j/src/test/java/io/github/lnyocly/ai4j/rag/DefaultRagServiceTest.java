@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.rag;
 
+import io.github.lnyocly.ai4j.memory.ChatMemoryItem;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -96,11 +98,13 @@ public class DefaultRagServiceTest {
     @Test
     public void shouldRetrievePlannedVariantsBeforeRerankAndPreserveOriginalQuery() throws Exception {
         final List<String> retrievedQueries = new ArrayList<String>();
+        final List<List<ChatMemoryItem>> retrievedHistory = new ArrayList<List<ChatMemoryItem>>();
         final String[] rerankQuery = new String[1];
         Retriever retriever = new Retriever() {
             @Override
             public List<RagHit> retrieve(RagQuery query) {
                 retrievedQueries.add(query.getQuery());
+                retrievedHistory.add(query.getHistory());
                 if ("rewrite benefits policy".equals(query.getQuery())) {
                     return Collections.singletonList(RagHit.builder().id("rewrite").content("rewrite hit").score(0.7f).build());
                 }
@@ -128,12 +132,19 @@ public class DefaultRagServiceTest {
         };
 
         DefaultRagService ragService = new DefaultRagService(retriever, reranker, new DefaultRagContextAssembler(), planner);
+        List<ChatMemoryItem> history = Arrays.asList(
+                ChatMemoryItem.user("Tell me about HR docs"),
+                ChatMemoryItem.assistant("Benefits are in the handbook")
+        );
         RagResult result = ragService.search(RagQuery.builder()
                 .query("benefits")
+                .history(history)
                 .topK(5)
                 .build());
 
         Assert.assertEquals(Arrays.asList("rewrite benefits policy", "step back employee benefits"), retrievedQueries);
+        Assert.assertEquals(history, retrievedHistory.get(0));
+        Assert.assertEquals(history, retrievedHistory.get(1));
         Assert.assertEquals("benefits", result.getQuery());
         Assert.assertEquals("benefits", rerankQuery[0]);
         Assert.assertEquals(2, result.getHits().size());
