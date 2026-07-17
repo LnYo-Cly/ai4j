@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.rag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.memory.ChatMemoryItem;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -117,6 +118,7 @@ public class ModelRagQueryPlanner implements RagQueryPlanner {
 
     private String userPrompt(RagQuery query, RagQueryVariantType strategy, int limit) {
         StringBuilder builder = new StringBuilder();
+        appendHistory(builder, query);
         builder.append("Original query:\n").append(query.getQuery()).append("\n\n");
         if (!isBlank(query.getDataset())) {
             builder.append("Dataset: ").append(query.getDataset()).append("\n");
@@ -139,6 +141,24 @@ public class ModelRagQueryPlanner implements RagQueryPlanner {
         }
         builder.append("\nKeep it concise.");
         return builder.toString();
+    }
+
+    private void appendHistory(StringBuilder builder, RagQuery query) {
+        if (query == null || query.getHistory() == null || query.getHistory().isEmpty()) {
+            return;
+        }
+        builder.append("Conversation history:\n");
+        for (ChatMemoryItem item : query.getHistory()) {
+            if (item == null || isBlank(item.getText())) {
+                continue;
+            }
+            String role = isBlank(item.getRole()) ? "message" : item.getRole();
+            if (item.isSummary()) {
+                role = "summary";
+            }
+            builder.append(role).append(": ").append(item.getText()).append("\n");
+        }
+        builder.append("\n");
     }
 
     private Map<String, Object> jsonObjectResponseFormat() {

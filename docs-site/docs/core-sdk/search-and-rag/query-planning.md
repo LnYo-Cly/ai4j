@@ -7,7 +7,7 @@
 这一层不负责多路召回、不负责 rerank、不负责回答生成。它在 AI4J 里的位置是：
 
 ```text
-RagQuery(original)
+RagQuery(original + optional history)
   -> RagQueryPlanner(optional)
   -> Retriever
   -> Reranker
@@ -38,7 +38,7 @@ public interface RagQueryPlanner {
 
 当 `DefaultRagService` 配了 planner 后：
 
-1. 先把原始 `RagQuery` 交给 `RagQueryPlanner`。
+1. 先把原始 `RagQuery` 交给 `RagQueryPlanner`；如果 `RagQuery.history` 存在，内置 planner 会把它作为对话上下文。
 2. planner 返回一个 `RagQueryPlan`。
 3. 对每个 `RagQueryVariant`，SDK 复制原 `RagQuery`，只替换 `query` 字段，然后执行底层 `Retriever`。
 4. 多个 variant 的命中用 RRF 风格的 rank fusion 去重融合。
@@ -78,6 +78,22 @@ RagService rag = aiService.getRagService(
 ```
 
 这个默认只做 `REWRITE`。它会多一次模型调用，把追问、省略、口语化 query 改成一条独立检索 query。
+
+多轮对话场景不要再造 `RagMemory`，直接复用 core 的 `ChatMemory`：
+
+```java
+ChatMemory memory = new InMemoryChatMemory(new MessageWindowChatMemoryPolicy(6));
+memory.addUser("我想接入 ChatFire 视频生成");
+memory.addAssistant("可以先接 OpenAI-compatible videos");
+
+RagResult result = rag.search(RagQuery.builder()
+        .query("那 Suno 呢？")
+        .history(memory.getItems())
+        .dataset("ai4j-docs")
+        .build());
+```
+
+`history` 应该是不包含当前 query 的最近对话或摘要；如果历史很长，用 `MessageWindowChatMemoryPolicy` 或 `SummaryChatMemoryPolicy` 先收敛。
 
 如果你想完全控制策略，也可以自己实现 `RagQueryPlanner`，然后配进 `DefaultRagService`：
 
@@ -214,7 +230,7 @@ return RagQueryPlan.of(query.getQuery(), Arrays.asList(
 
 | 能力 | 输入 | 做什么 | 位置 |
 | --- | --- | --- | --- |
-| `RagQueryPlanner` | 一条原始 query | 产出一条或多条检索 query | `Retriever` 之前 |
+| `RagQueryPlanner` | 一条原始 query + 可选 `history` | 产出一条或多条检索 query | `Retriever` 之前 |
 | `HybridRetriever` | 一条 query | 调多个 retriever 并融合结果 | `Retriever` 层 |
 | `Reranker` | 原 query + 候选 hits | 对候选结果重新排序 | 检索之后 |
 
@@ -263,7 +279,7 @@ if (trace.getQueryPlan() != null && trace.getQueryPlan().isFallback()) {
 优先在这些场景启用：
 
 - 召回明显受 query 表达影响
-- 用户输入大量是追问、省略、短句
+- 用户输入大量是追问、省略、短句，且调用方能提供 `RagQuery.history`
 - 文档术语和用户术语经常不一致
 - 需要 multi-query / HyDE / step-back 改善召回
 
@@ -276,6 +292,7 @@ if (trace.getQueryPlan() != null && trace.getQueryPlan().isFallback()) {
 它的正确使用方式是：
 
 - 原 query 保留
+- 对话历史复用 `ChatMemoryItem`，不新增 RAG 专用 memory
 - planner 只产出 retrieval variants
 - SDK 内部执行并融合 variants
 - rerank 和最终上下文仍回到原 query

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.rag;
 
 import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.memory.ChatMemoryItem;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -40,6 +41,31 @@ public class ModelRagQueryPlannerTest {
         Assert.assertTrue(chatService.userPrompt(0).contains("Rewrite strategy"));
         Assert.assertFalse(chatService.userPrompt(0).contains("HyDE strategy"));
         Assert.assertFalse(chatService.userPrompt(0).contains("Multi-query expansion strategy"));
+    }
+
+    @Test
+    public void shouldIncludeHistoryInPromptWhenPresent() throws Exception {
+        FakeChatService chatService = new FakeChatService("{"
+                + "\"rewrite\":\"ChatFire Suno music generation integration\""
+                + "}");
+        ModelRagQueryPlanner planner = new ModelRagQueryPlanner(chatService, "planner-model");
+
+        planner.plan(RagQuery.builder()
+                .query("那 Suno 呢？")
+                .history(Arrays.asList(
+                        ChatMemoryItem.user("我想接入 ChatFire 视频生成"),
+                        ChatMemoryItem.assistant("可以先接 OpenAI-compatible videos"),
+                        ChatMemoryItem.summary("system", "用户在讨论 AI4J 的 ChatFire 媒体服务接入")
+                ))
+                .build());
+
+        String prompt = chatService.userPrompt(0);
+        Assert.assertTrue(prompt.contains("Conversation history:"));
+        Assert.assertTrue(prompt.contains("user: 我想接入 ChatFire 视频生成"));
+        Assert.assertTrue(prompt.contains("assistant: 可以先接 OpenAI-compatible videos"));
+        Assert.assertTrue(prompt.contains("summary: 用户在讨论 AI4J 的 ChatFire 媒体服务接入"));
+        Assert.assertTrue(prompt.contains("Original query:"));
+        Assert.assertTrue(prompt.contains("那 Suno 呢？"));
     }
 
     @Test
