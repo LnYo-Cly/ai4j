@@ -59,7 +59,7 @@ Spring Boot 项目可以这样调用：
 Use $ai4j-app-builder to add AI4J to my Spring Boot app, create a /ai/chat endpoint, and verify it without hardcoding secrets.
 ```
 
-如果要给 AI4J 仓库贡献代码或维护文档，请先阅读仓库根目录的 `AGENTS.md`，并按 `coding-agent-harness/` 的任务、验证和审查流程执行。
+如果要给 AI4J 仓库贡献代码或维护文档，请先阅读仓库根目录的 `AGENTS.md`，并使用 Harness Anything 的 `ha` 任务、证据、review 和 complete 流程执行。
 
 ## 文档目录结构
 

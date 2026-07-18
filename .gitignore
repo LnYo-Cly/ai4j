@@ -76,3 +76,5 @@ ai4j-release-package.log
 javadoc-ai4j.log
 
 !AGENTS.md
+.harness/
+harness/

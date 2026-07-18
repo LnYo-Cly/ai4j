@@ -27,16 +27,25 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 | `docs-site/` | Docusaurus documentation site |
 | `ai4j-flowgram-webapp-demo/` | Web demo frontend surface |
 
+## Harness Anything
+
+- Use `ha` (Harness Anything) for all new project-management work.
+- `harness/` is the active private HA ledger with its own nested Git repository. `.harness/` is generated projection/cache state. Neither belongs in code PRs; commit ledger changes inside `harness/` separately when they must be retained.
+- Before substantive work, run `ha doctor --json`, ensure the project has been initialized with `ha init --name ai4j-sdk`, and inspect `ha status --json` / `ha check --profile target-project --strict --json`.
+- HA writes require explicit actor attribution. Agents use `HARNESS_ACTOR=agent:<id>` or an explicit agent actor; humans use `ha --actor human:<id>`. Do not export a human actor for child processes. Configure `HARNESS_GIT_AUTHOR_NAME` and `HARNESS_GIT_AUTHOR_EMAIL` for local ledger commits.
+- The normal write path is the daemon-backed CLI. `HARNESS_DAEMON_MODE=direct` is only for bootstrap, recovery, or isolated tests, and must carry `HARNESS_DIRECT_WRITE_REASON=recovery|test`.
+- Complete work through the current HA lifecycle: claim an Execution, record progress/evidence, obtain a typed human review/consent when required, and run `ha task complete`. `ha task review` is legacy compatibility lint, not the approval gate.
+
 ## Hard Rules
 
 1. Treat repository guidance as monorepo guidance. Do not plan or review work as if this were only `ai4j/` plus one starter.
 2. Keep Java modules compatible with Java 8 unless a task explicitly upgrades the baseline.
 3. Never hardcode secrets, provider keys, or local machine paths intended only for one developer. Use env vars or local config.
-4. All non-trivial work must use the harness flow: task directory under `coding-agent-harness/planning/tasks/`, task-local SSoT/progress/review updates, targeted regression, and task-local walkthrough closeout.
+4. All non-trivial work must use the HA flow: a task under `harness/tasks/`, task-local progress/facts/evidence, targeted regression, typed review, and `ha task complete`.
 5. When a change adds or alters a fixed regression surface, update both `docs/05-TEST-QA/Regression-SSoT.md` and `docs/05-TEST-QA/Cadence-Ledger.md`.
-6. Do not add new planning, progress, review, or walkthrough files under repo root, legacy `docs/plans` / `docs/tasks`, `docs/09-PLANNING/`, or `docs/10-WALKTHROUGH/`. New task work belongs under `coding-agent-harness/planning/tasks/`.
+6. Do not add new planning, progress, review, or walkthrough files under repo root, legacy `docs/plans` / `docs/tasks`, `docs/09-PLANNING/`, or `docs/10-WALKTHROUGH/`. New task work belongs under the private `harness/tasks/` ledger; existing numbered docs remain tracked regression/history surfaces only.
 7. Preserve module boundaries. Core behavior belongs in SDK/runtime modules; starters wire configuration; demos and docs must not become the source of truth for production logic.
-8. A feature is not considered closed until verification is recorded and a task-local walkthrough exists in `coding-agent-harness/planning/tasks/<task>/walkthrough.md`.
+8. A feature is not considered closed until verification is recorded in the HA task and `ha task complete <id>` succeeds.
 
 ## Repository Structure
 
@@ -60,8 +69,8 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 
 ### Existing Documentation
 
-- Historical harness-standard docs remain under numbered `docs/` directories
-- The v2 CLI harness scaffold lives under `coding-agent-harness/`; use it as the default location for new task packages, dashboard/context/governance projections, review packets, and walkthrough closeouts
+- `docs/05-TEST-QA/Regression-SSoT.md` and `docs/05-TEST-QA/Cadence-Ledger.md` remain tracked regression governance and are updated when a fixed gate changes.
+- `docs/11-REFERENCE/harness-anything-standard.md` is the tracked maintainer reference for the active HA boundary.
 - Legacy historical docs remain under:
   - `docs/plans/`
   - `docs/tasks/`
@@ -123,48 +132,45 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 
 | Task type | Read first |
 |-----------|------------|
-| Extension API / plugin ecosystem contract changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |
-| Official plugin package changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |
-| Core SDK / provider / MCP / RAG / vector / agentflow connector changes | `docs/11-REFERENCE/engineering-standard.md` |
-| Agent runtime / workflow / trace / subagent changes | `AGENT.md` and `docs/11-REFERENCE/engineering-standard.md` |
-| Coding runtime / CLI / TUI / ACP changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |
-| Spring Boot / FlowGram starter / demo integration changes | `docs/11-REFERENCE/engineering-standard.md` and `docs/11-REFERENCE/testing-standard.md` |
+| Extension API / plugin ecosystem contract changes | `AGENTS.md`, `docs/11-REFERENCE/harness-anything-standard.md`, and `docs/11-REFERENCE/testing-standard.md` |
+| Official plugin package changes | `AGENTS.md`, `docs/11-REFERENCE/harness-anything-standard.md`, and `docs/11-REFERENCE/testing-standard.md` |
+| Core SDK / provider / MCP / RAG / vector / agentflow connector changes | `AGENTS.md` and `docs/11-REFERENCE/harness-anything-standard.md` |
+| Agent runtime / workflow / trace / subagent changes | `AGENTS.md` and `docs/11-REFERENCE/harness-anything-standard.md` |
+| Coding runtime / CLI / TUI / ACP changes | `AGENTS.md`, `docs/11-REFERENCE/harness-anything-standard.md`, and `docs/11-REFERENCE/testing-standard.md` |
+| Spring Boot / FlowGram starter / demo integration changes | `AGENTS.md`, `docs/11-REFERENCE/harness-anything-standard.md`, and `docs/11-REFERENCE/testing-standard.md` |
 | Regression / smoke / verification work | `docs/11-REFERENCE/testing-standard.md` and `docs/05-TEST-QA/Regression-SSoT.md` |
-| Planning / task tracking / SSoT maintenance | `docs/11-REFERENCE/docs-library-standard.md` and `docs/11-REFERENCE/execution-workflow-standard.md` |
-| Walkthrough closeout | `docs/11-REFERENCE/walkthrough-standard.md` |
-| Worktree setup / branch isolation / multi-agent coordination | `docs/11-REFERENCE/worktree-standard.md` |
+| Planning / task tracking / SSoT maintenance | `docs/11-REFERENCE/harness-anything-standard.md` and `AGENTS.md` |
+| Walkthrough closeout | `docs/11-REFERENCE/harness-anything-standard.md` and the HA task `closeout.md` |
+| Worktree setup / branch isolation / multi-agent coordination | `docs/11-REFERENCE/harness-anything-standard.md` and `ha worktree --help` |
 
 ## Harness Files
 
-- **Harness v2 config**: `coding-agent-harness/harness.yaml`
-- **Harness v2 context**: `coding-agent-harness/context/`
-- **Harness v2 regression projection**: `coding-agent-harness/governance/regression/`
-- **Harness v2 generated metadata**: `coding-agent-harness/governance/generated/`
-- **Feature SSoT**: `docs/09-PLANNING/Feature-SSoT.md` is historical/summary only; new task truth lives in `coding-agent-harness/planning/tasks/<task>/`
+- **HA config**: `harness/harness.yaml`
+- **HA task ledger**: `harness/tasks/<task-id>-<slug>/`
+- **HA decisions/facts/context**: `harness/decisions/`, `harness/tasks/*/facts.md`, and `harness/context/`
+- **HA local projection/cache**: `.harness/` (rebuildable; never the source of truth)
+- **Historical Feature SSoT**: `docs/09-PLANNING/Feature-SSoT.md` remains summary/history only
 - **Regression SSoT**: `docs/05-TEST-QA/Regression-SSoT.md`
 - **Cadence Ledger**: `docs/05-TEST-QA/Cadence-Ledger.md`
-- **Task package directory**: `coding-agent-harness/planning/tasks/`
-- **Walkthrough template**: task-local `walkthrough.md` generated by the harness task package
-- **Reference standards**: `docs/11-REFERENCE/`
+- **Maintainer reference**: `docs/11-REFERENCE/harness-anything-standard.md`
 
-### Harness v2 Transition Rule
+### Governance Rule
 
-- During the transition, numbered `docs/` files remain historical SSoT for already-existing planning records, regression history, and archived walkthroughs.
-- `coding-agent-harness/` is the default SSoT for new task packages, review state, closeout walkthroughs, dashboard context, and generated governance metadata.
-- Do not create new `docs/09-PLANNING/TASKS/` or `docs/10-WALKTHROUGH/` files unless an explicit migration task says to preserve or repair historical numbered-docs material.
-- Use `npx --yes coding-agent-harness <command> .` for v2 CLI operations unless a task explicitly allows another installed harness binary.
-- Do not hard-delete legacy task directories during migration; archive or supersede with explicit owner/action/status.
+- New tasks, facts, decisions, relations, reviews, and closeouts use HA under `harness/`.
+- Do not add new `docs/09-PLANNING/TASKS/` or `docs/10-WALKTHROUGH/` records as a substitute for HA.
+- Use `ha --help` and `ha capabilities --json` as the authoritative current command/schema reference; upstream README examples are orientation only.
+- Do not hard-delete legacy task directories during migration; archive or supersede them only in a dedicated migration decision/task.
 
 ## Execution Flow
 
-1. Diagnose the changed surface and module scope.
-2. For non-trivial work, create or update a task directory in `coding-agent-harness/planning/tasks/`.
-3. Update the matching task package and, only when needed for historical summary, the Feature SSoT entry before substantial implementation.
-4. Decide whether the task requires an isolated worktree.
-5. Implement in the narrowest correct module boundary.
-6. Run targeted regression based on `docs/05-TEST-QA/Cadence-Ledger.md`.
-7. Update Regression SSoT if gate status, scope, or evidence depth changes.
-8. Write or update the task-local `walkthrough.md` on closeout and capture residual items explicitly.
+1. Run `ha doctor --json`, inspect `ha status --json`, and initialize/register the active HA workspace when needed.
+2. Create and claim an HA task before substantive editing; use `ha worktree create --task <id>` when isolation is needed.
+3. Record scope and meaningful progress with `ha task progress append`; promote durable observations to Facts and architectural choices to Decisions.
+4. Implement in the narrowest correct module boundary.
+5. Run targeted regression based on `docs/05-TEST-QA/Cadence-Ledger.md` and record command evidence in the HA task.
+6. Update the tracked Regression SSoT/Cadence Ledger if a fixed gate or evidence scope changes.
+7. Move the task to review, obtain typed human review/consent where required, and run `ha task complete <id>`.
+8. Commit outer code/docs separately from the private `harness/` ledger; keep `.harness/` untracked and rebuildable.
 
 ## Review Focus
 

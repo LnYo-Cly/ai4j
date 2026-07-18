@@ -2,6 +2,7 @@
 
 > Last updated: 2026-07-04
 > Defines which regression gates should be revisited when each repository surface changes.
+> Historical rows may retain the exact pre-HA command used as evidence; new work must use HA.
 
 ## Cadence Terms
 

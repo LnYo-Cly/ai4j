@@ -45,8 +45,8 @@ No task-blocking residuals. Real provider success still depends on valid credent
 
 | Item | Path |
 | --- | --- |
-| Task plan | `coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/task_plan.md` |
-| Task review | `coding-agent-harness/planning/tasks/2026-06-06-item-885d365a/review.md` |
+| Task plan | pre-HA record; see Git history |
+| Task review | pre-HA record; see Git history |
 | Feature SSoT | `docs/09-PLANNING/Feature-SSoT.md` |
 | Regression SSoT | `docs/05-TEST-QA/Regression-SSoT.md` |
 | Cadence Ledger | `docs/05-TEST-QA/Cadence-Ledger.md` |
