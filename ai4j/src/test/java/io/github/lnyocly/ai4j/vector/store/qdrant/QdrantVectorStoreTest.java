@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.github.lnyocly.ai4j.config.QdrantConfig;
 import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -33,12 +34,16 @@ public class QdrantVectorStoreTest {
     public void shouldUpsertAndSearchAgainstQdrantHttpApi() throws Exception {
         AtomicReference<String> upsertBody = new AtomicReference<String>();
         AtomicReference<String> queryBody = new AtomicReference<String>();
+        AtomicReference<String> scrollBody = new AtomicReference<String>();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/collections/demo/points", jsonHandler("{\"status\":\"ok\"}", upsertBody));
         server.createContext("/collections/demo/points/query", jsonHandler(
                 "{\"result\":{\"points\":[{\"id\":\"pt-1\",\"score\":0.87,\"payload\":{\"content\":\"snippet\",\"sourceName\":\"manual.pdf\"}}]}}",
                 queryBody));
+        server.createContext("/collections/demo/points/scroll", jsonHandler(
+                "{\"result\":{\"points\":[{\"id\":\"pt-1\"}]}}",
+                scrollBody));
         server.start();
         try {
             Configuration configuration = new Configuration();
@@ -64,12 +69,19 @@ public class QdrantVectorStoreTest {
                     .topK(3)
                     .filter(mapOf("tenant", "acme"))
                     .build());
+            boolean exists = store.exists(VectorExistsRequest.builder()
+                    .dataset("demo")
+                    .filter(mapOf("contentHash", "hash-1"))
+                    .build());
 
             Assert.assertEquals(1, inserted);
             Assert.assertTrue(upsertBody.get().contains("\"points\""));
             Assert.assertTrue(upsertBody.get().contains("\"sourceName\":\"manual.pdf\""));
             Assert.assertTrue(queryBody.get().contains("\"limit\":3"));
             Assert.assertTrue(queryBody.get().contains("\"tenant\""));
+            Assert.assertTrue(scrollBody.get().contains("\"limit\":1"));
+            Assert.assertTrue(scrollBody.get().contains("\"contentHash\""));
+            Assert.assertTrue(exists);
             Assert.assertEquals(1, results.size());
             Assert.assertEquals("pt-1", results.get(0).getId());
             Assert.assertEquals("snippet", results.get(0).getContent());

@@ -8,6 +8,11 @@ import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import io.github.lnyocly.ai4j.agent.context.ContextBudget;
 import io.github.lnyocly.ai4j.agent.context.ContextProjector;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowAgentBridge;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowExecutor;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowHostToolExecutor;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowRuntimeOptions;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.NashornDynamicWorkflowExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
@@ -72,6 +77,9 @@ public class AgentBuilder {
     private ToolExecutor toolExecutor;
     private ToolInterceptor toolInterceptor;
     private PromptInterceptor promptInterceptor;
+    private DynamicWorkflowExecutor dynamicWorkflowExecutor;
+    private DynamicWorkflowAgentBridge dynamicWorkflowAgentBridge;
+    private DynamicWorkflowRuntimeOptions dynamicWorkflowRuntimeOptions;
     private SandboxProvider sandboxProvider;
     private CompactPolicy compactPolicy;
     private ModelRequestHook modelRequestHook;
@@ -267,6 +275,34 @@ public class AgentBuilder {
 
     public AgentBuilder promptInterceptor(PromptInterceptor promptInterceptor) {
         this.promptInterceptor = promptInterceptor;
+        return this;
+    }
+
+    /**
+     * Opt in to host-side execution of dynamic-workflow plugin envelopes.
+     * Without this, the workflow plugin remains host-mediated and its tool
+     * output is returned as a pending envelope.
+     */
+    public AgentBuilder dynamicWorkflow(DynamicWorkflowExecutor dynamicWorkflowExecutor) {
+        this.dynamicWorkflowExecutor = dynamicWorkflowExecutor;
+        this.dynamicWorkflowAgentBridge = null;
+        this.dynamicWorkflowRuntimeOptions = null;
+        return this;
+    }
+
+    /**
+     * Convenience overload that uses the built-in Nashorn host runtime and
+     * delegates {@code agent(...)} calls to the supplied bridge.
+     */
+    public AgentBuilder dynamicWorkflow(DynamicWorkflowAgentBridge bridge) {
+        return dynamicWorkflow(bridge, null);
+    }
+
+    public AgentBuilder dynamicWorkflow(DynamicWorkflowAgentBridge bridge,
+                                        DynamicWorkflowRuntimeOptions options) {
+        this.dynamicWorkflowAgentBridge = bridge;
+        this.dynamicWorkflowRuntimeOptions = options;
+        this.dynamicWorkflowExecutor = null;
         return this;
     }
 
@@ -475,6 +511,7 @@ public class AgentBuilder {
         }
         resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
         resolvedToolExecutor = applyPermissionPolicy(resolvedToolExecutor, permissionPolicy, executionEnvironment);
+        resolvedToolExecutor = applyDynamicWorkflowRuntime(resolvedToolExecutor);
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
         AgentOptions resolvedOptions = options == null ? AgentOptions.builder().build() : options;
@@ -610,6 +647,17 @@ public class AgentBuilder {
             return executor;
         }
         return new AgentPermissionToolExecutor(executor, permissionPolicy, executionEnvironment);
+    }
+
+    private ToolExecutor applyDynamicWorkflowRuntime(ToolExecutor executor) {
+        DynamicWorkflowExecutor resolved = dynamicWorkflowExecutor;
+        if (resolved == null && dynamicWorkflowAgentBridge != null) {
+            resolved = new NashornDynamicWorkflowExecutor(dynamicWorkflowAgentBridge, dynamicWorkflowRuntimeOptions);
+        }
+        if (executor == null || resolved == null) {
+            return executor;
+        }
+        return new DynamicWorkflowHostToolExecutor(executor, resolved);
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {

@@ -16,6 +16,7 @@ public final class RagMetadataKeys {
     public static final String TENANT = "tenant";
     public static final String BIZ = "biz";
     public static final String VERSION = "version";
+    public static final String CONTENT_HASH = "contentHash";
 
     private RagMetadataKeys() {
     }

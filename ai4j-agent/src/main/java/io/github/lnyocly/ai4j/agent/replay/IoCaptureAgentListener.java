@@ -18,8 +18,8 @@ import java.util.Map;
  *
  * <p>It reuses the events the runtime already publishes — no runtime change. MODEL nodes are
  * paired by (runId, turnId, step): {@code MODEL_REQUEST} carries the full {@link AgentPrompt} as
- * input, the final {@code MODEL_RESPONSE} carries the raw response as output (streaming deltas
- * overwrite until the step ends). TOOL nodes are paired by call id: {@code TOOL_CALL} carries the
+ * input, streamed {@code MODEL_RESPONSE} messages accumulate into {@code outputText}, and the
+ * final raw response payload is kept in {@code outputs}. TOOL nodes are paired by call id: {@code TOOL_CALL} carries the
  * {@link AgentToolCall} input, {@code TOOL_RESULT} carries the {@link AgentToolResult} output.
  * Records are flushed to the sink on {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).
  * For MODEL nodes, {@code MODEL_REASONING} events populate {@link NodeIoRecord#getReasoningText()},
@@ -103,7 +103,11 @@ public class IoCaptureAgentListener implements AgentListener {
         if (b == null) {
             return;
         }
-        // last response wins (handles streaming deltas); keep the richest payload available
+        String message = event.getMessage();
+        if (message != null && !message.isEmpty()) {
+            b.outputText(appendText(b.getOutputText(), message));
+        }
+        // Keep the latest raw response payload; streamed deltas may still carry one.
         b.outputs(event.getPayload());
         // best-effort token extraction from the raw response usage block (provider-agnostic)
         if (event.getPayload() != null) {
@@ -235,5 +239,15 @@ public class IoCaptureAgentListener implements AgentListener {
 
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String appendText(String existing, String delta) {
+        if (delta == null || delta.isEmpty()) {
+            return existing;
+        }
+        if (existing == null || existing.isEmpty()) {
+            return delta;
+        }
+        return existing + delta;
     }
 }

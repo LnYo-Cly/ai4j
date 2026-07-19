@@ -54,6 +54,8 @@ public final class AuditExtension implements Ai4jExtension {
 
 使用者侧仍然通过 `ExtensionRegistry` 启用插件：
 
+`ai4j-cli extension inspect <id> --runtime` now prints a `lifecycleHooks=` line, so plugin authors can verify that hooks were packaged and discovered before wiring them into an Agent.
+
 ```java
 ExtensionRegistry registry = ExtensionRegistry.discover()
         .enable("audit-pack");

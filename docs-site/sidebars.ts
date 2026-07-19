@@ -120,6 +120,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/extension/plugin-recipes',
             'core-sdk/extension/plugin-author-cookbook',
             'core-sdk/extension/ask-user-plugin',
+            'core-sdk/extension/dynamic-workflow-plugin',
             'core-sdk/extension/provider-extension',
             'core-sdk/extension/model-extension',
             'core-sdk/extension/service-extension',

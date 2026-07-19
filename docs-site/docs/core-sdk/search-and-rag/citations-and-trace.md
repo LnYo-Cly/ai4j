@@ -1,6 +1,6 @@
 # Citations and Trace
 
-AI4J 这一章里，`citation` 和 `trace` 很容易被一起写成“可解释性能力”。  
+AI4J 这一章里，`citation` 和 `trace` 很容易被一起写成“可解释性能力”。
 这个说法不算错，但太粗。源码里这两者其实解决的是两件不同的事：
 
 - `citation` 解决“最终上下文和回答能引用到哪里”
@@ -112,6 +112,43 @@ DefaultRagContextAssembler.assemble(query, hits)
 
 这个细节很容易被误解成“关掉后就没有 citations 了”，实际上不是。
 
+### 5.1 需要控制 context token budget 时怎么办
+
+默认 `DefaultRagContextAssembler` 不做 token 截断，它只按最终 hits 顺序拼上下文。
+如果你的 RAG 结果会直接进入模型 prompt，应该显式替换成 `TokenAwareRagContextAssembler`：
+
+```java
+RagService ragService = new DefaultRagService(
+        retriever,
+        reranker,
+        new TokenAwareRagContextAssembler("gpt-4o-mini", 3000)
+);
+```
+
+`TokenAwareRagContextAssembler` 的 token 计数是 context budget guard，不是精确计费器。
+推荐优先传你实际使用的模型名；如果底层 tokenizer 还不认识这个模型名，会自动退回到默认
+`cl100k_base` 估算，保证 RAG 不因为新模型名无法解析而失败。
+
+如果你明确知道模型使用的 tokenizer，也可以显式覆盖 encoding：
+
+```java
+RagContextAssembler assembler = TokenAwareRagContextAssembler.withEncoding(
+        EncodingType.O200K_BASE,
+        3000
+);
+```
+
+如果模型名和 encoding 都不确定，使用 `new TokenAwareRagContextAssembler(3000)` 即可，
+并把 budget 设置得保守一点。
+
+它只做三件事：
+
+- 按现有 hit 顺序加入上下文，直到达到 token budget；
+- 第一个 hit 自己就超长时，截断该 hit 的 content；
+- `RagCitation` 只返回真正进入 context 的来源。
+
+没有配置时仍然走 `DefaultRagContextAssembler`，不会改变默认行为。
+
 ## 6. trace 是怎么生成出来的
 
 `trace` 由 `DefaultRagService.search(...)` 生成。
@@ -145,9 +182,57 @@ RagTrace.builder()
 
 所以别把它误写成“全链路 trace”。
 
-## 7. 为什么 trace 不能只靠最终回答替代
+## 7. 在线 LLM judge 怎么接
 
-最终回答告诉你的只是模型输出。  
+`RagService.search(...)` 只做检索和 context 组装，不生成最终回答。
+所以在线评估不是自动跑在 `search(...)` 里，而是在你拿到最终回答后显式调用：
+
+```java
+RagResult rag = ragService.search(RagQuery.builder()
+        .query("PTO 是什么？")
+        .includeTrace(true)
+        .build());
+
+String answer = chatWithContext(rag.getContext());
+
+RagOnlineEvaluator evaluator = aiService.getRagOnlineEvaluator(
+        PlatformType.OPENAI,
+        "gpt-4o-mini"
+);
+
+RagJudgeEvaluation judge = evaluator.evaluate(rag, answer);
+
+Double faithfulness = judge.getFaithfulnessScore();
+Double contextRelevance = judge.getContextRelevanceScore();
+Double answerRelevance = judge.getAnswerRelevanceScore();
+```
+
+内置 `ChatRagJudge` 只做一件事：把 question / answer / retrieved context 发给一个
+chat model，要求返回 JSON 分数。返回结果会写回：
+
+```java
+rag.getTrace().getJudgeEvaluation()
+```
+
+如果你不想用内置 prompt 或 chat provider，直接实现：
+
+```java
+class MyJudge implements RagJudge {
+    public RagJudgeEvaluation judge(RagJudgeRequest request) {
+        // call your evaluator / policy / judge model
+    }
+}
+```
+
+这不是离线 Recall/MRR 的替代品。它更适合线上抽样、调试和质量回放，常看的三个分数是：
+
+- `faithfulnessScore`：回答是否忠于 retrieved context
+- `contextRelevanceScore`：召回上下文是否和问题相关
+- `answerRelevanceScore`：回答是否正面回答问题
+
+## 8. 为什么 trace 不能只靠最终回答替代
+
+最终回答告诉你的只是模型输出。
 但 RAG 排障真正常见的问题是：
 
 - 是没召回到？
@@ -168,7 +253,7 @@ RagTrace.builder()
 
 都非常重要。
 
-## 8. citation 和 trace 的数据来源为什么不同
+## 9. citation 和 trace 的数据来源为什么不同
 
 这两者的来源阶段并不相同。
 
@@ -190,9 +275,9 @@ RagTrace.builder()
 
 所以看到某条命中“trace 有，citation 没有”，不一定是 bug，很可能只是因为它没进最终上下文。
 
-## 9. citation 质量真正受什么影响
+## 10. citation 质量真正受什么影响
 
-从源码看，citation 的内容几乎直接取自 `RagHit`。  
+从源码看，citation 的内容几乎直接取自 `RagHit`。
 因此 citation 质量首先受前面几层影响：
 
 - chunking 是否合理
@@ -212,7 +297,7 @@ RagTrace.builder()
 
 如果 ingest 时这些字段没有入库，citation 再怎么写也只能很弱。
 
-## 10. 当前设计最真实的边界
+## 11. 当前设计最真实的边界
 
 AI4J 这层 citation/trace 很有用，但边界要说透。
 
@@ -224,6 +309,8 @@ AI4J 这层 citation/trace 很有用，但边界要说透。
 - 模型使用了哪条 citation 的因果证明
 - provider 级可追踪性
 
+LLM judge 能给线上质量一个可观察分数，但它本身仍然是模型判断，不是强证明。
+
 所以它更像是：
 
 - 一个可读引用机制
@@ -231,50 +318,56 @@ AI4J 这层 citation/trace 很有用，但边界要说透。
 
 而不是法务级、审计级、科研级引用系统。
 
-## 11. 最容易踩坑的 5 个点
+## 12. 最容易踩坑的 6 个点
 
-### 11.1 以为 citation 来自原始文档
+### 12.1 以为 citation 来自原始文档
 
 当前 citation 实际来自最终 `RagHit`，不是直接来自原始文档对象。
 
-### 11.2 以为关闭 `includeCitations` 就没有 citation 结构
+### 12.2 以为关闭 `includeCitations` 就没有 citation 结构
 
 关掉的只是上下文文本里的标签前缀，不是 `RagCitation` 列表本身。
 
-### 11.3 以为 trace 是完整调用链
+### 12.3 以为 trace 是完整调用链
 
-当前 trace 只覆盖 retrieval 和 rerank 两段，不覆盖最终生成。
+当前 trace 默认覆盖 retrieval 和 rerank；如果你显式调用 `RagOnlineEvaluator`，才会额外写入 judge 分数。
 
-### 11.4 忽略 metadata 质量
+### 12.4 忽略 metadata 质量
 
 没有 `sourceName`、`pageNumber`、`sectionTitle` 的 hit，citation 可读性会明显下降。
 
-### 11.5 把 citation 和 answer grounding 画等号
+### 12.5 把 citation 和 answer grounding 画等号
 
 AI4J 能提供引用材料，不等于模型最终一定严格按这些引用作答。
 
-## 12. 最稳的扩展位置在哪里
+### 12.6 把 LLM judge 分数当强事实
+
+LLM judge 是线上质量信号，不是审计证明。高风险场景仍应保留人工抽检或规则校验。
+
+## 13. 最稳的扩展位置在哪里
 
 如果你想增强 citation/trace，当前最稳的扩展位点是：
 
 - 自定义 `RagContextAssembler`
 - 改进 ingest metadata
 - 在上层 runtime 外挂更完整的 trace 记录
+- 在回答生成后调用 `RagOnlineEvaluator`
 
-不要把所有事情都压到 retriever 上。  
+不要把所有事情都压到 retriever 上。
 retriever 负责找回 chunk，不负责决定最终 citation 呈现格式。
 
-## 13. 这页最该记住的结论
+## 14. 这页最该记住的结论
 
 AI4J 当前的 citation 和 trace 不是同一件事：
 
 - citation 由 `DefaultRagContextAssembler` 基于最终 hits 生成
 - trace 由 `DefaultRagService` 记录 retrieval / rerank 两个阶段
+- judge evaluation 由 `RagOnlineEvaluator` 在最终回答之后显式写入 trace
 
-前者面向“最终引用与上下文呈现”，后者面向“中间过程排障”。  
+前者面向“最终引用与上下文呈现”，后者面向“中间过程排障”。
 把这两层分清，RAG 的可解释性分析才不会混。
 
-## 14. 继续阅读
+## 15. 继续阅读
 
 - [Chunking Strategies](/docs/core-sdk/search-and-rag/chunking-strategies)
 - [Hybrid Retrieval](/docs/core-sdk/search-and-rag/hybrid-retrieval)

@@ -33,6 +33,19 @@ public class IngestionResult {
 
     private int upsertedCount;
 
+    @Builder.Default
+    private int skippedCount = 0;
+
     /** 摄入各步耗时统计（可选，便于排障：定位是解析/切块/embed/upsert 哪步慢）。 */
     private IngestionTrace trace;
+
+    public IngestionResult(String dataset,
+                           String embeddingModel,
+                           IngestionSource source,
+                           RagDocument document,
+                           List<RagChunk> chunks,
+                           List<VectorRecord> records,
+                           int upsertedCount) {
+        this(dataset, embeddingModel, source, document, chunks, records, upsertedCount, 0, null);
+    }
 }

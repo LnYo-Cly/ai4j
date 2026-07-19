@@ -16,6 +16,7 @@ import io.github.lnyocly.ai4j.rag.ingestion.OcrTextExtractor;
 import io.github.lnyocly.ai4j.rag.ingestion.RecursiveTextChunker;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -27,6 +28,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,7 +86,101 @@ public class IngestionPipelineTest {
         Assert.assertEquals("员工手册", first.getMetadata().get(RagMetadataKeys.SOURCE_NAME));
         Assert.assertEquals("/docs/handbook.md", first.getMetadata().get(RagMetadataKeys.SOURCE_PATH));
         Assert.assertEquals(first.getContent(), first.getMetadata().get(RagMetadataKeys.CONTENT));
+        Assert.assertEquals(sha256Hex(first.getContent()), first.getMetadata().get(RagMetadataKeys.CONTENT_HASH));
+        Assert.assertEquals(first.getMetadata(), result.getChunks().get(0).getMetadata());
         Assert.assertEquals(Arrays.asList(1.0f, (float) first.getContent().length()), first.getVector());
+    }
+
+    @Test
+    public void shouldSkipExistingContentHashBeforeEmbedding() throws Exception {
+        String existing = "already indexed";
+        String fresh = "brand new";
+        ContentHashSkippingVectorStore vectorStore = new ContentHashSkippingVectorStore(
+                Collections.singletonList(sha256Hex(existing)));
+        CountingEmbeddingService embeddingService = new CountingEmbeddingService();
+        IngestionPipeline pipeline = new IngestionPipeline(embeddingService, vectorStore);
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_incremental")
+                .embeddingModel("text-embedding-3-small")
+                .source(IngestionSource.text(existing + "\n" + fresh))
+                .chunker(new FixedChunker(existing, fresh))
+                .skipExistingContentHash(Boolean.TRUE)
+                .build());
+
+        Assert.assertEquals(2, result.getChunks().size());
+        Assert.assertEquals(1, result.getSkippedCount());
+        Assert.assertEquals(1, result.getRecords().size());
+        Assert.assertEquals(fresh, result.getRecords().get(0).getContent());
+        Assert.assertEquals(1, result.getUpsertedCount());
+        Assert.assertEquals(1, embeddingService.embeddedInputs.size());
+        Assert.assertEquals(fresh, embeddingService.embeddedInputs.get(0));
+        Assert.assertEquals(2, vectorStore.existsRequests.size());
+        Assert.assertEquals(sha256Hex(existing), result.getChunks().get(0).getMetadata().get(RagMetadataKeys.CONTENT_HASH));
+        Assert.assertEquals(sha256Hex(fresh), result.getChunks().get(1).getMetadata().get(RagMetadataKeys.CONTENT_HASH));
+    }
+
+    @Test
+    public void shouldFailOpenWhenContentHashLookupFails() throws Exception {
+        FailingLookupVectorStore vectorStore = new FailingLookupVectorStore();
+        CountingEmbeddingService embeddingService = new CountingEmbeddingService();
+        IngestionPipeline pipeline = new IngestionPipeline(embeddingService, vectorStore);
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_incremental")
+                .embeddingModel("text-embedding-3-small")
+                .source(IngestionSource.text("doc"))
+                .skipExistingContentHash(Boolean.TRUE)
+                .build());
+
+        Assert.assertEquals(0, result.getSkippedCount());
+        Assert.assertEquals(1, result.getRecords().size());
+        Assert.assertEquals(1, result.getUpsertedCount());
+        Assert.assertEquals(1, embeddingService.embeddedInputs.size());
+    }
+
+    @Test
+    public void shouldNotLookupWhenMetadataLookupIsUnsupported() throws Exception {
+        UnsupportedLookupVectorStore vectorStore = new UnsupportedLookupVectorStore();
+        CountingEmbeddingService embeddingService = new CountingEmbeddingService();
+        IngestionPipeline pipeline = new IngestionPipeline(embeddingService, vectorStore);
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_incremental")
+                .embeddingModel("text-embedding-3-small")
+                .source(IngestionSource.text("doc"))
+                .skipExistingContentHash(Boolean.TRUE)
+                .build());
+
+        Assert.assertEquals(0, result.getSkippedCount());
+        Assert.assertEquals(1, result.getRecords().size());
+        Assert.assertEquals(1, result.getUpsertedCount());
+        Assert.assertEquals(0, vectorStore.existsCalls);
+        Assert.assertEquals(1, embeddingService.embeddedInputs.size());
+    }
+
+    @Test
+    public void shouldNotUpsertWhenAllChunksAreSkipped() throws Exception {
+        String existing = "already indexed";
+        ContentHashSkippingVectorStore vectorStore = new ContentHashSkippingVectorStore(
+                Collections.singletonList(sha256Hex(existing)));
+        CountingEmbeddingService embeddingService = new CountingEmbeddingService();
+        IngestionPipeline pipeline = new IngestionPipeline(embeddingService, vectorStore);
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_incremental")
+                .embeddingModel("text-embedding-3-small")
+                .source(IngestionSource.text(existing))
+                .chunker(new FixedChunker(existing))
+                .skipExistingContentHash(Boolean.TRUE)
+                .build());
+
+        Assert.assertEquals(1, result.getChunks().size());
+        Assert.assertEquals(1, result.getSkippedCount());
+        Assert.assertEquals(0, result.getRecords().size());
+        Assert.assertEquals(0, result.getUpsertedCount());
+        Assert.assertNull(((CapturingVectorStore) vectorStore).lastUpsertRequest);
+        Assert.assertTrue(embeddingService.embeddedInputs.isEmpty());
     }
 
     @Test
@@ -111,7 +208,7 @@ public class IngestionPipelineTest {
         Assert.assertEquals(tempFile.getAbsolutePath(), result.getDocument().getSourcePath());
         Assert.assertEquals(tempFile.toURI().toString(), result.getDocument().getSourceUri());
         Assert.assertEquals(0, result.getUpsertedCount());
-        Assert.assertNull(vectorStore.lastUpsertRequest);
+        Assert.assertNull(((CapturingVectorStore) vectorStore).lastUpsertRequest);
         Assert.assertFalse(result.getRecords().isEmpty());
         Assert.assertEquals("text/plain", String.valueOf(result.getRecords().get(0).getMetadata().get("mimeType")));
 
@@ -208,7 +305,7 @@ public class IngestionPipelineTest {
         }
 
         @SuppressWarnings("unchecked")
-        private List<String> extractInputs(Object input) {
+        protected List<String> extractInputs(Object input) {
             if (input == null) {
                 return Collections.emptyList();
             }
@@ -216,6 +313,16 @@ public class IngestionPipelineTest {
                 return (List<String>) input;
             }
             return Collections.singletonList(String.valueOf(input));
+        }
+    }
+
+    private static class CountingEmbeddingService extends FakeEmbeddingService {
+        private final List<String> embeddedInputs = new ArrayList<String>();
+
+        @Override
+        public EmbeddingResponse embedding(Embedding embeddingReq) {
+            embeddedInputs.addAll(extractInputs(embeddingReq.getInput()));
+            return super.embedding(embeddingReq);
         }
     }
 
@@ -249,6 +356,88 @@ public class IngestionPipelineTest {
         }
     }
 
+    private static class ContentHashSkippingVectorStore extends CapturingVectorStore {
+        private final List<String> existingHashes;
+        private final List<VectorExistsRequest> existsRequests = new ArrayList<VectorExistsRequest>();
+
+        private ContentHashSkippingVectorStore(List<String> existingHashes) {
+            this.existingHashes = existingHashes;
+        }
+
+        @Override
+        public boolean exists(VectorExistsRequest request) {
+            existsRequests.add(request);
+            Object hash = request == null || request.getFilter() == null
+                    ? null
+                    : request.getFilter().get(RagMetadataKeys.CONTENT_HASH);
+            return hash != null && existingHashes.contains(String.valueOf(hash));
+        }
+
+        @Override
+        public VectorStoreCapabilities capabilities() {
+            return VectorStoreCapabilities.builder()
+                    .dataset(true)
+                    .metadataFilter(true)
+                    .metadataLookup(true)
+                    .deleteByFilter(true)
+                    .returnStoredVector(true)
+                    .build();
+        }
+    }
+
+    private static class FailingLookupVectorStore extends ContentHashSkippingVectorStore {
+
+        private FailingLookupVectorStore() {
+            super(Collections.<String>emptyList());
+        }
+
+        @Override
+        public boolean exists(VectorExistsRequest request) {
+            throw new IllegalStateException("lookup down");
+        }
+    }
+
+    private static class UnsupportedLookupVectorStore extends CapturingVectorStore {
+        private int existsCalls = 0;
+
+        @Override
+        public boolean exists(VectorExistsRequest request) {
+            existsCalls++;
+            return true;
+        }
+
+        @Override
+        public VectorStoreCapabilities capabilities() {
+            return VectorStoreCapabilities.builder()
+                    .dataset(true)
+                    .metadataFilter(true)
+                    .metadataLookup(false)
+                    .deleteByFilter(true)
+                    .returnStoredVector(true)
+                    .build();
+        }
+    }
+
+    private static class FixedChunker implements io.github.lnyocly.ai4j.rag.ingestion.Chunker {
+        private final List<String> contents;
+
+        private FixedChunker(String... contents) {
+            this.contents = Arrays.asList(contents);
+        }
+
+        @Override
+        public List<RagChunk> chunk(RagDocument document, String content) {
+            List<RagChunk> chunks = new ArrayList<RagChunk>();
+            for (int i = 0; i < contents.size(); i++) {
+                chunks.add(RagChunk.builder()
+                        .content(contents.get(i))
+                        .chunkIndex(i)
+                        .build());
+            }
+            return chunks;
+        }
+    }
+
     private static class BlankDocumentLoader implements DocumentLoader {
 
         @Override
@@ -274,5 +463,19 @@ public class IngestionPipelineTest {
             map.put(String.valueOf(keyValues[i]), keyValues[i + 1]);
         }
         return map;
+    }
+
+    private static String sha256Hex(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder builder = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(b & 0xff);
+            if (hex.length() == 1) {
+                builder.append('0');
+            }
+            builder.append(hex);
+        }
+        return builder.toString();
     }
 }

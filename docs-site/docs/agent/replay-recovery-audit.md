@@ -40,7 +40,9 @@ AgentModelResult same = new NodeReplayer().replayModelMock(modelNodes.get(0));
 ```
 
 For a durable capture file (audit/replay artifact), use `JsonlIoCaptureSink` instead of
-`InMemoryIoCaptureSink` — one JSON line per node, append-only.
+`InMemoryIoCaptureSink` — one JSON line per node, append-only. For MODEL nodes, the listener
+accumulates streamed text into `outputText` and keeps the final raw response in `outputs`, so
+`NodeReplayer.replayModelMock(...)` can prefer the raw payload and fall back to the assembled text.
 
 ## 2. Failure recovery (resume)
 

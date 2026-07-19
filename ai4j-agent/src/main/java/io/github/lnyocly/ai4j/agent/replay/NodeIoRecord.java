@@ -21,7 +21,9 @@ import java.util.UUID;
  * re-parsing {@link #getOutputs()}.</p>
  *
  * <p>The {@code inputs}/{@code outputs} fields hold the original objects for in-memory live
- * replay (re-invoke the model/tool with the real captured input). The serialized form written by
+ * replay (re-invoke the model/tool with the real captured input). For MODEL nodes, {@code outputText}
+ * keeps the accumulated assistant text that may arrive in multiple streaming deltas, while
+ * {@code outputs} keeps the final raw response payload. The serialized form written by
  * {@link JsonlIoCaptureSink} is the durable audit/replay artifact.</p>
  */
 public final class NodeIoRecord {
@@ -37,6 +39,7 @@ public final class NodeIoRecord {
     private final String nodeId;
     private final String modelId;
     private final Object inputs;
+    private final String outputText;
     private final Object outputs;
     private final long startedAtEpochMs;
     private final long capturedAtEpochMs;
@@ -55,6 +58,7 @@ public final class NodeIoRecord {
         this.nodeId = builder.nodeId;
         this.modelId = builder.modelId;
         this.inputs = builder.inputs;
+        this.outputText = builder.outputText;
         this.outputs = builder.outputs;
         this.startedAtEpochMs = builder.startedAtEpochMs;
         this.capturedAtEpochMs = builder.capturedAtEpochMs == null
@@ -74,6 +78,7 @@ public final class NodeIoRecord {
     public String getNodeId() { return nodeId; }
     public String getModelId() { return modelId; }
     public Object getInputs() { return inputs; }
+    public String getOutputText() { return outputText; }
     public Object getOutputs() { return outputs; }
     public long getStartedAtEpochMs() { return startedAtEpochMs; }
     public long getCapturedAtEpochMs() { return capturedAtEpochMs; }
@@ -105,6 +110,7 @@ public final class NodeIoRecord {
         private String nodeId;
         private String modelId;
         private Object inputs;
+        private String outputText;
         private Object outputs;
         private long startedAtEpochMs;
         private Long capturedAtEpochMs;
@@ -123,6 +129,7 @@ public final class NodeIoRecord {
         Builder nodeId(String v) { this.nodeId = v; return this; }
         Builder modelId(String v) { this.modelId = v; return this; }
         Builder inputs(Object v) { this.inputs = v; return this; }
+        Builder outputText(String v) { this.outputText = v; return this; }
         Builder outputs(Object v) { this.outputs = v; return this; }
         Builder startedAtEpochMs(long v) { this.startedAtEpochMs = v; return this; }
         Builder capturedAtEpochMs(long v) { this.capturedAtEpochMs = v; return this; }
@@ -138,6 +145,8 @@ public final class NodeIoRecord {
         Builder retryCount(int v) { this.retryCount = v; return this; }
         Builder inputTokens(Long v) { this.inputTokens = v; return this; }
         Builder outputTokens(Long v) { this.outputTokens = v; return this; }
+
+        String getOutputText() { return outputText; }
 
         NodeIoRecord build() { return new NodeIoRecord(this); }
     }

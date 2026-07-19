@@ -36,4 +36,6 @@ public class RagTrace {
 
     /** 整个 search 总耗时（planning + retrieve + rerank + assemble），单位毫秒。 */
     private long totalDurationMs;
+
+    private RagJudgeEvaluation judgeEvaluation;
 }

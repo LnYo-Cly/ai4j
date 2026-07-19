@@ -112,6 +112,8 @@ permission: ui.prompt
 configPrefix: ai4j.extensions.ask-user
 ```
 
+> `permission: ui.prompt` is a host-policy hint. AI4J does not automatically enforce manifest permissions, open UI, read stdin, or grant network access from this field. Runtime exposure still depends on enable / expose / allowlist and host policy.
+
 `ui.prompt` 表示插件会产生需要宿主展示给用户的问题，但插件本身不会打开窗口、读控制台或访问网络。
 
 ## 5. Tool 输入

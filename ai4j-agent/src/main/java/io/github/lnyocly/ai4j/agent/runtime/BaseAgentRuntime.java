@@ -597,6 +597,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
     protected String buildToolErrorOutput(AgentToolCall call, Exception error) {
         JSONObject payload = new JSONObject();
+        if (error != null) {
+            payload.put("errorType", error.getClass().getName());
+        }
         payload.put("error", safeToolErrorMessage(error));
         if (call != null) {
             payload.put("tool", call.getName());
