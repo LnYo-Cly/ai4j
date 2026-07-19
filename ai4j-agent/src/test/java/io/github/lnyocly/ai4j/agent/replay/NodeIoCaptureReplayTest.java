@@ -59,7 +59,7 @@ public class NodeIoCaptureReplayTest {
         assertEquals(2, models.size());
         assertEquals(1, tools.size());
 
-        // MODEL step1: input is the prompt, output is the LAST model response payload (deltas overwritten)
+        // MODEL step1: streamed text is accumulated while the raw payload remains separate
         NodeIoRecord m1 = sink.find("model@run-1|turn-1|1");
         assertNotNull(m1);
         assertTrue("model input must be the AgentPrompt", m1.getInputs() instanceof AgentPrompt);

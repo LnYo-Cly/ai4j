@@ -20,6 +20,10 @@ import java.util.UUID;
  * accepted). These make a capture self-describing for cost accounting and reasoning audit without
  * re-parsing {@link #getOutputs()}.</p>
  *
+ * <p>For MODEL nodes, {@code outputText} keeps the accumulated assistant text that may arrive in
+ * multiple streaming deltas, while {@code outputs} keeps the latest raw response payload. This
+ * keeps human-readable replay output separate from provider-specific response objects.</p>
+ *
  * <p>The {@code inputs}/{@code outputs} fields hold the original objects for in-memory live
  * replay (re-invoke the model/tool with the real captured input). For MODEL nodes, {@code outputText}
  * keeps the accumulated assistant text that may arrive in multiple streaming deltas, while
