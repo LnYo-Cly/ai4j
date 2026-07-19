@@ -38,15 +38,17 @@ public class NodeIoCaptureReplayTest {
         AgentToolResult toolOut = AgentToolResult.builder().name("echo").callId("call-1").output("echo:hi").build();
         AgentPrompt prompt2 = AgentPrompt.builder().model("test-model").build();
 
-        // step 1: model request -> (tool call/result interleaved) -> model response -> step end
-        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt1, "raw-resp-step1-pre"));
+        // step 1: model request -> streamed deltas -> tool call/result interleaved -> final raw response -> step end
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt1, null));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, null, "hello "));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, null, "world"));
         listener.onEvent(ev(AgentEventType.TOOL_CALL, 1, call, "echo"));
         listener.onEvent(ev(AgentEventType.TOOL_RESULT, 1, toolOut, "echo:hi"));
         listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, "raw-resp-step1", null));
         listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
-        // step 2: final model
+        // step 2: non-streaming model text followed by final raw response
         listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 2, prompt2, null));
-        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 2, "raw-resp-step2", null));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 2, "raw-resp-step2", "step2 text"));
         listener.onEvent(ev(AgentEventType.STEP_END, 2, null, null));
 
         List<NodeIoRecord> all = sink.records();
@@ -57,13 +59,19 @@ public class NodeIoCaptureReplayTest {
         assertEquals(2, models.size());
         assertEquals(1, tools.size());
 
-        // MODEL step1: input is the prompt, output is the LAST model response payload (deltas overwritten)
+        // MODEL step1: streamed text is accumulated while the raw payload remains separate
         NodeIoRecord m1 = sink.find("model@run-1|turn-1|1");
         assertNotNull(m1);
         assertTrue("model input must be the AgentPrompt", m1.getInputs() instanceof AgentPrompt);
         assertEquals("test-model", ((AgentPrompt) m1.getInputs()).getModel());
         assertEquals("test-model", m1.getModelId());
+        assertEquals("hello world", m1.getOutputText());
         assertEquals("raw-resp-step1", m1.getOutputs());
+
+        NodeIoRecord m2 = sink.find("model@run-1|turn-1|2");
+        assertNotNull(m2);
+        assertEquals("step2 text", m2.getOutputText());
+        assertEquals("raw-resp-step2", m2.getOutputs());
 
         // TOOL: input is the call, output is the result
         NodeIoRecord t = tools.get(0);
@@ -78,12 +86,26 @@ public class NodeIoCaptureReplayTest {
         InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
         IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
         listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, AgentPrompt.builder().model("m").build(), null));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, null, "captured "));
         listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, "captured-raw", null));
         listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
 
         NodeIoRecord record = sink.records(NodeIoRecord.NodeType.MODEL).get(0);
         AgentModelResult mock = new NodeReplayer().replayModelMock(record);
         assertEquals("captured-raw", mock.getRawResponse());
+        assertEquals("captured ", mock.getOutputText());
+    }
+
+    @Test
+    public void replayerMockShouldFallBackToOutputTextWhenRawResponseMissing() {
+        NodeIoRecord record = NodeIoRecord.builder(NodeIoRecord.NodeType.MODEL)
+                .nodeId("model@fallback")
+                .outputText("streamed-only")
+                .build();
+
+        AgentModelResult mock = new NodeReplayer().replayModelMock(record);
+        assertEquals("streamed-only", mock.getRawResponse());
+        assertEquals("streamed-only", mock.getOutputText());
     }
 
     @Test
@@ -129,6 +151,7 @@ public class NodeIoCaptureReplayTest {
         AgentPrompt prompt = AgentPrompt.builder().model("jsonl-model").build();
         for (AgentEvent e : new AgentEvent[]{
                 ev(AgentEventType.MODEL_REQUEST, 1, prompt, null),
+                ev(AgentEventType.MODEL_RESPONSE, 1, null, "jsonl stream"),
                 ev(AgentEventType.MODEL_RESPONSE, 1, "raw-1", null),
                 ev(AgentEventType.STEP_END, 1, null, null)}) {
             listener.onEvent(e);
@@ -147,6 +170,7 @@ public class NodeIoCaptureReplayTest {
         assertEquals(NodeIoRecord.NodeType.MODEL, reloaded.get(0).getNodeType());
         assertEquals("model@run-1|turn-1|1", reloaded.get(0).getNodeId());
         assertEquals("jsonl-model", reloaded.get(0).getModelId());
+        assertEquals("jsonl stream", reloaded.get(0).getOutputText());
     }
 
     @Test

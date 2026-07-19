@@ -18,10 +18,11 @@ import java.util.Map;
  *
  * <p>It reuses the events the runtime already publishes — no runtime change. MODEL nodes are
  * paired by (runId, turnId, step): {@code MODEL_REQUEST} carries the full {@link AgentPrompt} as
- * input, the final {@code MODEL_RESPONSE} carries the raw response as output (streaming deltas
- * overwrite until the step ends). TOOL nodes are paired by call id: {@code TOOL_CALL} carries the
- * {@link AgentToolCall} input, {@code TOOL_RESULT} carries the {@link AgentToolResult} output.
- * Records are flushed to the sink on {@code STEP_END} (model) / {@code TOOL_RESULT} (tool).
+ * input, streamed {@code MODEL_RESPONSE} messages accumulate into {@code outputText}, and the
+ * latest raw {@code MODEL_RESPONSE} payload is kept in {@code outputs}. TOOL nodes are paired by
+ * call id: {@code TOOL_CALL} carries the {@link AgentToolCall} input, {@code TOOL_RESULT} carries
+ * the {@link AgentToolResult} output. Records are flushed to the sink on {@code STEP_END} (model)
+ * / {@code TOOL_RESULT} (tool).
  * For MODEL nodes, {@code MODEL_REASONING} events populate {@link NodeIoRecord#getReasoningText()},
  * {@code MODEL_RETRY} events populate {@link NodeIoRecord#getRetryCount()}, and tokens are
  * best-effort parsed from the raw response usage into
@@ -103,11 +104,18 @@ public class IoCaptureAgentListener implements AgentListener {
         if (b == null) {
             return;
         }
-        // last response wins (handles streaming deltas); keep the richest payload available
-        b.outputs(event.getPayload());
+        Object payload = event.getPayload();
+        String message = event.getMessage();
+        if (message != null && !message.isEmpty()) {
+            b.outputText(appendText(b.getOutputText(), message));
+        }
+        if (payload != null) {
+            // Keep the latest raw payload while streamed text is accumulated separately.
+            b.outputs(payload);
+        }
         // best-effort token extraction from the raw response usage block (provider-agnostic)
-        if (event.getPayload() != null) {
-            long[] usage = extractUsage(event.getPayload());
+        if (payload != null) {
+            long[] usage = extractUsage(payload);
             if (usage != null) {
                 if (usage[0] >= 0) { b.inputTokens(usage[0]); }
                 if (usage[1] >= 0) { b.outputTokens(usage[1]); }
@@ -235,5 +243,15 @@ public class IoCaptureAgentListener implements AgentListener {
 
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String appendText(String existing, String delta) {
+        if (delta == null || delta.isEmpty()) {
+            return existing;
+        }
+        if (existing == null || existing.isEmpty()) {
+            return delta;
+        }
+        return existing + delta;
     }
 }

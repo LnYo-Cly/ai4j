@@ -44,12 +44,19 @@ public class NodeReplayer {
 
     /**
      * Deterministic/mock replay of a MODEL node: builds a result from the captured output, with
-     * no model call. Useful for exact reproduction of a past turn.
+     * no model call. Useful for exact reproduction of a past turn. Prefers the captured raw
+     * response payload and falls back to accumulated text when only streamed text is available.
      */
     public AgentModelResult replayModelMock(NodeIoRecord record) {
         requireModel(record);
+        Object rawResponse = record.getOutputs();
+        String outputText = record.getOutputText();
+        if (outputText == null && rawResponse instanceof String) {
+            outputText = (String) rawResponse;
+        }
         return AgentModelResult.builder()
-                .rawResponse(record.getOutputs())
+                .rawResponse(rawResponse != null ? rawResponse : outputText)
+                .outputText(outputText)
                 .build();
     }
 

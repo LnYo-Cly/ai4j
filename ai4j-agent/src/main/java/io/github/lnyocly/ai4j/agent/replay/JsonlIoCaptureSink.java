@@ -133,6 +133,7 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
                             .nodeId(obj.getString("nodeId"))
                             .modelId(obj.getString("modelId"))
                             .inputs(obj.get("inputs"))
+                            .outputText(obj.getString("outputText"))
                             .outputs(obj.get("outputs"));
                     Integer startedAt = obj.getInteger("startedAtEpochMs");
                     if (startedAt != null) {
