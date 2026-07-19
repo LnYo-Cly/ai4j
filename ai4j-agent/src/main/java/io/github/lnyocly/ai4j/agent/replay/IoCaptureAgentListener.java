@@ -107,11 +107,12 @@ public class IoCaptureAgentListener implements AgentListener {
         if (message != null && !message.isEmpty()) {
             b.outputText(appendText(b.getOutputText(), message));
         }
-        // Keep the latest raw response payload; streamed deltas may still carry one.
-        b.outputs(event.getPayload());
-        // best-effort token extraction from the raw response usage block (provider-agnostic)
-        if (event.getPayload() != null) {
-            long[] usage = extractUsage(event.getPayload());
+        // Keep the latest non-null raw response payload; streamed text deltas may not carry one.
+        Object payload = event.getPayload();
+        if (payload != null) {
+            b.outputs(payload);
+            // best-effort token extraction from the raw response usage block (provider-agnostic)
+            long[] usage = extractUsage(payload);
             if (usage != null) {
                 if (usage[0] >= 0) { b.inputTokens(usage[0]); }
                 if (usage[1] >= 0) { b.outputTokens(usage[1]); }
