@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j;
 
+import io.github.lnyocly.ai4j.rag.RagMetadataKeys;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -38,7 +39,7 @@ public class RedisVectorConfigProperties {
 
     private String contentField = "content";
 
-    private List<String> tagFields = Arrays.asList("dataset");
+    private List<String> tagFields = Arrays.asList("dataset", RagMetadataKeys.CONTENT_HASH);
 
     private List<String> numericFields = Arrays.asList();
 

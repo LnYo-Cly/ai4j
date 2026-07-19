@@ -97,6 +97,22 @@ public class NodeIoCaptureReplayTest {
     }
 
     @Test
+    public void nullStreamPayloadMustNotEraseLastRawResponse() {
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1,
+                AgentPrompt.builder().model("m").build(), null));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, "raw-response", null));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, null, "streamed delta"));
+        listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
+
+        NodeIoRecord record = sink.records(NodeIoRecord.NodeType.MODEL).get(0);
+        assertEquals("raw-response", record.getOutputs());
+        assertEquals("streamed delta", record.getOutputText());
+    }
+
+    @Test
     public void replayerMockShouldFallBackToOutputTextWhenRawResponseMissing() {
         NodeIoRecord record = NodeIoRecord.builder(NodeIoRecord.NodeType.MODEL)
                 .nodeId("model@fallback")

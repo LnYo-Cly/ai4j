@@ -30,7 +30,7 @@ import java.util.List;
 
 public class CliExtensionCommand {
 
-    private static final String EXTENSION_API_VERSION = "2.3.0";
+    private static final String EXTENSION_API_VERSION = "2.4.0";
 
     private final Path currentDirectory;
 
@@ -186,7 +186,7 @@ public class CliExtensionCommand {
             if (skill == null) {
                 throw new ExtensionException("skill not registered by enabled extensions: " + options.resourceName);
             }
-            content = ExtensionResourceResolver.readText(
+            content = ExtensionResourceResolver.readTextStrict(
                     skill.getResourcePath(),
                     registry.getExtensionClassLoader(requireExtensionId(skill.getExtensionId(), "skill"))
             );
@@ -195,7 +195,7 @@ public class CliExtensionCommand {
             if (prompt == null) {
                 throw new ExtensionException("prompt not registered by enabled extensions: " + options.resourceName);
             }
-            content = ExtensionResourceResolver.readText(
+            content = ExtensionResourceResolver.readTextStrict(
                     prompt.getResourcePath(),
                     registry.getExtensionClassLoader(requireExtensionId(prompt.getExtensionId(), "prompt"))
             );
@@ -241,7 +241,7 @@ public class CliExtensionCommand {
             printRuntime(snapshot, terminal);
         } else {
             terminal.println("runtime=not-inspected");
-            terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, and guardrails");
+            terminal.println("tip=use --runtime to list contributed tools, commands, skills, prompts, guardrails, and lifecycle hooks");
         }
         return 0;
     }
@@ -564,6 +564,7 @@ public class CliExtensionCommand {
         terminal.println("skills=" + joinSkills(snapshot.getSkills()));
         terminal.println("prompts=" + joinPrompts(snapshot.getPrompts()));
         terminal.println("guardrails=" + joinValues(snapshot.getGuardrails()));
+        terminal.println("lifecycleHooks=" + joinValues(snapshot.getLifecycleHooks()));
     }
 
     private void printActivationPlan(ExtensionActivationPlan plan, TerminalIO terminal) {
@@ -813,7 +814,7 @@ public class CliExtensionCommand {
         terminal.println("Commands:");
         terminal.println("  list                 List discovered extension manifests");
         terminal.println("  inspect <id>         Show manifest, permissions, config prefix, and source class");
-        terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, and guardrails");
+        terminal.println("  inspect <id> --runtime  Also list contributed tools, commands, skills, prompts, guardrails, and lifecycle hooks");
         terminal.println("  plan <id>            Preview enable/expose/allow activation state before wiring the host");
         terminal.println("  check <id> --enable  Validate and fail if requested activation resources are inactive");
         terminal.println("  init <directory>     Generate a local Maven Java 8 plugin package scaffold");

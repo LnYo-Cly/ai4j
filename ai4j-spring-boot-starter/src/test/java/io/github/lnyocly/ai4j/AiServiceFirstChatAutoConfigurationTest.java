@@ -64,4 +64,21 @@ public class AiServiceFirstChatAutoConfigurationTest {
                     Assert.assertTrue(registry.getVideoService("chatfire") instanceof OpenAiVideoService);
                 });
     }
+
+    @Test
+    public void starterShouldBindVectorLookupEndpoints() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.vector.qdrant.scroll=/custom/%s/scroll",
+                        "ai.vector.milvus.query=/custom/milvus/query"
+                )
+                .run(context -> {
+                    AiService aiService = context.getBean(AiService.class);
+                    Assert.assertEquals("/custom/%s/scroll",
+                            aiService.getConfiguration().getQdrantConfig().getScroll());
+                    Assert.assertEquals("/custom/milvus/query",
+                            aiService.getConfiguration().getMilvusConfig().getQuery());
+                    Assert.assertTrue(aiService.getConfiguration().getRedisVectorConfig().getTagFields().contains("contentHash"));
+                });
+    }
 }

@@ -25,7 +25,9 @@ import java.util.UUID;
  * keeps human-readable replay output separate from provider-specific response objects.</p>
  *
  * <p>The {@code inputs}/{@code outputs} fields hold the original objects for in-memory live
- * replay (re-invoke the model/tool with the real captured input). The serialized form written by
+ * replay (re-invoke the model/tool with the real captured input). For MODEL nodes, {@code outputText}
+ * keeps the accumulated assistant text that may arrive in multiple streaming deltas, while
+ * {@code outputs} keeps the final raw response payload. The serialized form written by
  * {@link JsonlIoCaptureSink} is the durable audit/replay artifact.</p>
  */
 public final class NodeIoRecord {

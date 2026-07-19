@@ -19,10 +19,10 @@ import java.util.Map;
  * <p>It reuses the events the runtime already publishes — no runtime change. MODEL nodes are
  * paired by (runId, turnId, step): {@code MODEL_REQUEST} carries the full {@link AgentPrompt} as
  * input, streamed {@code MODEL_RESPONSE} messages accumulate into {@code outputText}, and the
- * latest raw {@code MODEL_RESPONSE} payload is kept in {@code outputs}. TOOL nodes are paired by
- * call id: {@code TOOL_CALL} carries the {@link AgentToolCall} input, {@code TOOL_RESULT} carries
- * the {@link AgentToolResult} output. Records are flushed to the sink on {@code STEP_END} (model)
- * / {@code TOOL_RESULT} (tool).
+ * latest non-null raw {@code MODEL_RESPONSE} payload is kept in {@code outputs}. TOOL nodes are
+ * paired by call id: {@code TOOL_CALL} carries the {@link AgentToolCall} input, {@code TOOL_RESULT}
+ * carries the {@link AgentToolResult} output. Records are flushed to the sink on {@code STEP_END}
+ * (model) / {@code TOOL_RESULT} (tool).
  * For MODEL nodes, {@code MODEL_REASONING} events populate {@link NodeIoRecord#getReasoningText()},
  * {@code MODEL_RETRY} events populate {@link NodeIoRecord#getRetryCount()}, and tokens are
  * best-effort parsed from the raw response usage into
@@ -109,12 +109,10 @@ public class IoCaptureAgentListener implements AgentListener {
         if (message != null && !message.isEmpty()) {
             b.outputText(appendText(b.getOutputText(), message));
         }
+        // Keep the latest non-null raw payload while streamed text is accumulated separately.
         if (payload != null) {
-            // Keep the latest raw payload while streamed text is accumulated separately.
             b.outputs(payload);
-        }
-        // best-effort token extraction from the raw response usage block (provider-agnostic)
-        if (payload != null) {
+            // best-effort token extraction from the raw response usage block (provider-agnostic)
             long[] usage = extractUsage(payload);
             if (usage != null) {
                 if (usage[0] >= 0) { b.inputTokens(usage[0]); }

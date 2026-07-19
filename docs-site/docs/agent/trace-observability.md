@@ -439,6 +439,32 @@ Agent agent = Agents.react()
 
 如果再配 `TracePricingResolver`，才会继续估算 cost。
 
+一个最小配置例子：
+
+```java
+TraceConfig traceConfig = TraceConfig.builder()
+        .pricingResolver(model -> {
+            if ("gpt-4.1".equals(model)) {
+                return TracePricing.builder()
+                        .inputCostPerMillionTokens(2.0D)
+                        .outputCostPerMillionTokens(8.0D)
+                        .currency("USD")
+                        .build();
+            }
+            return null;
+        })
+        .build();
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .traceExporter(new JsonlTraceExporter("logs/agent-trace.jsonl"))
+        .traceConfig(traceConfig)
+        .build();
+```
+
+这里的价格单位是“每百万 token”。SDK 不内置默认价格表，因为模型价格经常变化；如果 resolver 返回 `null`，对应模型只记录 token，不估算 cost。
+
 ## 8. 默认值和容易误判的语义
 
 ### 8.1 `pricingResolver = null` 时不会自动算钱

@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.config.PgVectorConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -141,6 +142,30 @@ public class PgVectorStore implements VectorStore {
     }
 
     @Override
+    public boolean exists(VectorExistsRequest request) throws Exception {
+        String dataset = requiredDataset(request == null ? null : request.getDataset());
+        if (request == null || request.getFilter() == null || request.getFilter().isEmpty()) {
+            return false;
+        }
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("select 1 from ").append(identifier(config.getTableName()))
+                .append(" where ").append(identifier(config.getDatasetColumn())).append(" = ?");
+        List<Object> parameters = new ArrayList<Object>();
+        parameters.add(dataset);
+        appendMetadataFilters(sql, parameters, request.getFilter());
+        sql.append(" limit 1");
+
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            bindParameters(statement, parameters);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
+    }
+
+    @Override
     public boolean delete(VectorDeleteRequest request) throws Exception {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
         if (request == null) {
@@ -180,6 +205,7 @@ public class PgVectorStore implements VectorStore {
         return VectorStoreCapabilities.builder()
                 .dataset(true)
                 .metadataFilter(true)
+                .metadataLookup(true)
                 .deleteByFilter(true)
                 .returnStoredVector(false)
                 .build();

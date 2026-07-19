@@ -420,6 +420,7 @@ public class AiConfigAutoConfiguration {
         qdrantConfig.setVectorName(qdrantConfigProperties.getVectorName());
         qdrantConfig.setUpsert(qdrantConfigProperties.getUpsert());
         qdrantConfig.setQuery(qdrantConfigProperties.getQuery());
+        qdrantConfig.setScroll(qdrantConfigProperties.getScroll());
         qdrantConfig.setDelete(qdrantConfigProperties.getDelete());
 
         configuration.setQdrantConfig(qdrantConfig);
@@ -438,6 +439,7 @@ public class AiConfigAutoConfiguration {
         milvusConfig.setOutputFields(milvusConfigProperties.getOutputFields());
         milvusConfig.setUpsert(milvusConfigProperties.getUpsert());
         milvusConfig.setSearch(milvusConfigProperties.getSearch());
+        milvusConfig.setQuery(milvusConfigProperties.getQuery());
         milvusConfig.setDelete(milvusConfigProperties.getDelete());
 
         configuration.setMilvusConfig(milvusConfig);

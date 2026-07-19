@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import io.github.lnyocly.ai4j.rag.RagMetadataKeys;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,7 +51,7 @@ public class RedisVectorConfig {
     private String contentField = "content";
 
     /** Fields indexed as TAG (equality / multi-value filtering). Always includes {@code dataset}. */
-    private List<String> tagFields = Arrays.asList("dataset");
+    private List<String> tagFields = Arrays.asList("dataset", RagMetadataKeys.CONTENT_HASH);
 
     /** Fields indexed as NUMERIC (range filtering), e.g. documentVersion. */
     private List<String> numericFields = Arrays.asList();

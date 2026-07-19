@@ -5,12 +5,13 @@ AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / R
 
 ## 1. 统一契约到底有多大
 
-`VectorStore` 接口本身只有 4 个方法：
+`VectorStore` 接口本身只有 5 个方法：
 
 ```java
 int upsert(VectorUpsertRequest request) throws Exception;
 List<VectorSearchResult> search(VectorSearchRequest request) throws Exception;
 boolean delete(VectorDeleteRequest request) throws Exception;
+boolean exists(VectorExistsRequest request) throws Exception; // default false
 VectorStoreCapabilities capabilities();
 ```
 
@@ -19,6 +20,7 @@ VectorStoreCapabilities capabilities();
 - 向量写入
 - 向量检索
 - 数据删除
+- metadata-only 存在检查（可选能力）
 
 以及一件非常关键的事：
 
@@ -35,7 +37,7 @@ VectorStoreCapabilities capabilities();
 
 都是主字段，不是可选标签。
 
-更关键的是，4 个当前内置后端都把 `dataset` 当作必填：
+更关键的是，5 个当前内置后端都把 `dataset` 当作必填：
 
 - Pinecone：`requiredDataset(...)`
 - Qdrant：`requiredDataset(...)`
@@ -128,32 +130,48 @@ VectorStoreCapabilities capabilities();
 
 ## 5. `capabilities()` 为什么是这层最有价值的设计
 
-4 个当前后端都会显式返回 `VectorStoreCapabilities`。  
+5 个当前内置后端都会显式返回 `VectorStoreCapabilities`。
 而且这不是装饰性信息，里面真的有差异。
 
 当前源码里：
 
-- Pinecone：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=true`
-- Qdrant：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=true`
-- Milvus：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
-- PgVector：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
-- Redis：`dataset=true` `metadataFilter=true` `deleteByFilter=true` `returnStoredVector=false`
+- Pinecone：`dataset=true` `metadataFilter=true` `metadataLookup=false` `deleteByFilter=true` `returnStoredVector=true`
+- Qdrant：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=true`
+- Milvus：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
+- PgVector：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
+- Redis：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
 
 这里最值得注意的是：
 
-**`returnStoredVector` 不是所有后端都支持。**
+- **`returnStoredVector` 不是所有后端都支持。**
+- **`metadataLookup` 也不是所有后端都支持。**
 
-也就是说，如果你的上层逻辑依赖“检索时顺便把已存向量取回来”，那么当前：
+`metadataLookup` 对应 `VectorStore.exists(...)`：它服务于按 metadata 判断某条记录是否存在，例如 ingestion 按 `contentHash` 跳过重复 chunk。
+Pinecone 当前封装没有 metadata-only lookup，因此保留默认 `false`，不会为了“看起来统一”伪造能力。
 
-- Pinecone / Qdrant 更自然
-- Milvus / PgVector 不是同样语义
+也就是说，如果你的上层逻辑依赖“检索时顺便把已存向量取回来”，那么当前 Pinecone / Qdrant 更自然；如果依赖“入库前按 hash 判断是否已存在”，则优先使用 Qdrant / Milvus / PgVector / Redis。
 
-这就是 `capabilities()` 的意义：  
+这就是 `capabilities()` 的意义：
 统一接口之上，仍然允许你看见真实差异。
+
+### 5.1 `exists(...)` 不是向量检索
+
+`VectorStore.exists(VectorExistsRequest)` 是给 ingestion 增量跳过用的 metadata-only lookup。
+它不接收 query vector，也不返回相似度结果，只回答“这个 dataset 下是否存在匹配 filter 的记录”。
+
+因此它是可选能力：
+
+- Qdrant：走 scroll/filter
+- Milvus：走 query/filter
+- PgVector：走 SQL metadata filter
+- Redis：走 RediSearch filter-only 查询
+- Pinecone：当前封装保持默认 `false`，不伪造 metadata-only lookup
+
+调用方必须看 `capabilities().isMetadataLookup()`，不能假设所有向量库都支持。
 
 ## 6. `VectorStore` 和 `DenseRetriever` 的关系是什么
 
-`DenseRetriever` 并不会直接关心你后面是哪种向量库。  
+`DenseRetriever` 并不会直接关心你后面是哪种向量库。
 它只做两件事：
 
 1. 用 `IEmbeddingService` 生成 query 向量
@@ -165,7 +183,7 @@ VectorStoreCapabilities capabilities();
 - 下接具体后端
 - 输出统一 `VectorSearchResult`
 
-这就是它真正的抽象价值。  
+这就是它真正的抽象价值。
 不是为了“把 4 个 SDK 名字收进一个列表”，而是为了把检索链的上下游断开。
 
 ## 7. 为什么这一层仍然不能替你隐藏所有后端现实
@@ -191,7 +209,7 @@ VectorStoreCapabilities capabilities();
 
 ### 8.2 忽略 `capabilities()` 差异
 
-尤其 `returnStoredVector`，并不是所有后端都支持。
+尤其 `returnStoredVector` / `metadataLookup`，并不是所有后端都支持。
 
 ### 8.3 只从产品名选后端
 
@@ -224,11 +242,11 @@ VectorStoreCapabilities capabilities();
 
 AI4J 当前的向量存储层，本质上是：
 
-- 用 `VectorStore` 统一 upsert / search / delete
+- 用 `VectorStore` 统一 upsert / search / delete / exists
 - 用 `dataset` 统一知识边界
 - 用 `VectorStoreCapabilities` 显式暴露后端差异
 
-它做的是“主链抽象统一”，不是“后端现实消失”。  
+它做的是“主链抽象统一”，不是“后端现实消失”。
 把这一层看清楚之后，再去看 ingest、dense retrieval、hybrid，就能知道哪些问题该在向量层解决，哪些不该。
 
 ## 11. 继续阅读

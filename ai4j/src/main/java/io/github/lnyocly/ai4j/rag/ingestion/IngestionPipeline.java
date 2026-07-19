@@ -7,10 +7,13 @@ import io.github.lnyocly.ai4j.rag.RagChunk;
 import io.github.lnyocly.ai4j.rag.RagDocument;
 import io.github.lnyocly.ai4j.rag.RagMetadataKeys;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorStore;
+import io.github.lnyocly.ai4j.vector.store.VectorStoreCapabilities;
 import io.github.lnyocly.ai4j.vector.store.VectorUpsertRequest;
 
+import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,6 +113,7 @@ public class IngestionPipeline {
                     .chunks(Collections.<RagChunk>emptyList())
                     .records(Collections.<VectorRecord>emptyList())
                     .upsertedCount(0)
+                    .skippedCount(0)
                     .trace(IngestionTrace.builder()
                             .loadDurationMs(ms(t1 - t0))
                             .chunkDurationMs(ms(t2 - t1))
@@ -122,15 +126,28 @@ public class IngestionPipeline {
         }
 
         List<MetadataEnricher> enrichers = mergeEnrichers(request.getMetadataEnrichers());
-        List<VectorRecord> records = buildRecords(request, document, chunks, enrichers);
+        List<RagChunk> ingestableChunks = new ArrayList<RagChunk>(chunks.size());
+        int skippedCount = 0;
+        for (RagChunk chunk : chunks) {
+            Map<String, Object> metadata = buildChunkMetadata(document, chunk, enrichers);
+            metadata.put(RagMetadataKeys.CONTENT_HASH, sha256Hex(chunk.getContent()));
+            chunk.setMetadata(metadata);
+            if (shouldSkipExistingContentHash(request, metadata)) {
+                skippedCount++;
+                continue;
+            }
+            ingestableChunks.add(chunk);
+        }
+        List<VectorRecord> records = buildRecords(request, ingestableChunks);
         long t3 = System.nanoTime();
-        int upsertedCount = Boolean.FALSE.equals(request.getUpsert())
+        int upsertedCount = Boolean.FALSE.equals(request.getUpsert()) || records.isEmpty()
                 ? 0
                 : vectorStore.upsert(VectorUpsertRequest.builder()
                         .dataset(request.getDataset())
                         .records(records)
                         .build());
         long t4 = System.nanoTime();
+
         return IngestionResult.builder()
                 .dataset(request.getDataset())
                 .embeddingModel(request.getEmbeddingModel())
@@ -139,6 +156,7 @@ public class IngestionPipeline {
                 .chunks(chunks)
                 .records(records)
                 .upsertedCount(upsertedCount)
+                .skippedCount(skippedCount)
                 .trace(IngestionTrace.builder()
                         .loadDurationMs(ms(t1 - t0))
                         .chunkDurationMs(ms(t2 - t1))
@@ -248,9 +266,10 @@ public class IngestionPipeline {
     }
 
     private List<VectorRecord> buildRecords(IngestionRequest request,
-                                            RagDocument document,
-                                            List<RagChunk> chunks,
-                                            List<MetadataEnricher> enrichers) throws Exception {
+                                            List<RagChunk> chunks) throws Exception {
+        if (chunks == null || chunks.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<String> contents = new ArrayList<String>(chunks.size());
         for (RagChunk chunk : chunks) {
             contents.add(chunk.getContent());
@@ -262,13 +281,11 @@ public class IngestionPipeline {
         List<VectorRecord> records = new ArrayList<VectorRecord>(chunks.size());
         for (int i = 0; i < chunks.size(); i++) {
             RagChunk chunk = chunks.get(i);
-            Map<String, Object> metadata = buildChunkMetadata(document, chunk, enrichers);
-            chunk.setMetadata(metadata);
             records.add(VectorRecord.builder()
                     .id(chunk.getChunkId())
                     .vector(vectors.get(i))
                     .content(chunk.getContent())
-                    .metadata(metadata)
+                    .metadata(chunk.getMetadata())
                     .build());
         }
         return records;
@@ -383,6 +400,51 @@ public class IngestionPipeline {
             return null;
         }
         return new LinkedHashMap<String, Object>(metadata);
+    }
+
+    private boolean shouldSkipExistingContentHash(IngestionRequest request, Map<String, Object> metadata) {
+        if (!Boolean.TRUE.equals(request.getSkipExistingContentHash())
+                || Boolean.FALSE.equals(request.getUpsert())
+                || metadata == null
+                || !supportsMetadataLookup()) {
+            return false;
+        }
+        Object contentHash = metadata.get(RagMetadataKeys.CONTENT_HASH);
+        if (contentHash == null || isBlank(String.valueOf(contentHash))) {
+            return false;
+        }
+        try {
+            return vectorStore.exists(VectorExistsRequest.builder()
+                    .dataset(request.getDataset())
+                    .filter(Collections.<String, Object>singletonMap(RagMetadataKeys.CONTENT_HASH, contentHash))
+                    .build());
+        } catch (Exception ignored) {
+            // Fail open: ingestion should not stop because a backend cannot do metadata lookup.
+            return false;
+        }
+    }
+
+    private boolean supportsMetadataLookup() {
+        try {
+            VectorStoreCapabilities capabilities = vectorStore.capabilities();
+            return capabilities != null && capabilities.isMetadataLookup();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private String sha256Hex(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] bytes = digest.digest((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
+        StringBuilder builder = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(b & 0xff);
+            if (hex.length() == 1) {
+                builder.append('0');
+            }
+            builder.append(hex);
+        }
+        return builder.toString();
     }
 
     private String stringValue(Object value) {

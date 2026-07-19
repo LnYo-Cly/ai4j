@@ -139,7 +139,7 @@ public interface AgentRuntime {
 `executeTool(...)` 会把异常压成：
 
 ```text
-TOOL_ERROR: {"error":"...","tool":"...","callId":"..."}
+TOOL_ERROR: {"errorType":"...","error":"...","tool":"...","callId":"..."}
 ```
 
 然后把这段错误文本写回 memory，让模型在下一轮看到它。

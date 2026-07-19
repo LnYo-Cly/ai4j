@@ -289,7 +289,7 @@ AgentResult result = agent.run(AgentRequest.builder()
 `executeTool(...)` 会捕获异常，并构造成：
 
 ```text
-TOOL_ERROR: {"error":"...","tool":"...","callId":"..."}
+TOOL_ERROR: {"errorType":"...","error":"...","tool":"...","callId":"..."}
 ```
 
 然后继续主循环。

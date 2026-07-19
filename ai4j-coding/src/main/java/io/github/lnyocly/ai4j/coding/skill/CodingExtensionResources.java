@@ -71,7 +71,7 @@ public final class CodingExtensionResources {
                                                                  ExtensionRegistry registry,
                                                                  Path resourceRoot) {
         String extensionId = requireExtensionId(resource == null ? null : resource.getExtensionId(), "skill");
-        String content = ExtensionResourceResolver.readText(
+        String content = ExtensionResourceResolver.readTextStrict(
                 resource.getResourcePath(),
                 registry.getExtensionClassLoader(extensionId)
         );
@@ -103,7 +103,7 @@ public final class CodingExtensionResources {
                 continue;
             }
             String extensionId = requireExtensionId(prompt.getExtensionId(), "prompt");
-            String content = ExtensionResourceResolver.readText(
+            String content = ExtensionResourceResolver.readTextStrict(
                     prompt.getResourcePath(),
                     registry.getExtensionClassLoader(extensionId)
             );

@@ -42,5 +42,7 @@ public class MilvusConfigProperties {
 
     private String search = "/v2/vectordb/entities/search";
 
+    private String query = "/v2/vectordb/entities/query";
+
     private String delete = "/v2/vectordb/entities/delete";
 }

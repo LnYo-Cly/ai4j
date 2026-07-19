@@ -44,5 +44,24 @@ public class MilvusConfig {
 
     private String search = "/v2/vectordb/entities/search";
 
+    private String query = "/v2/vectordb/entities/query";
+
     private String delete = "/v2/vectordb/entities/delete";
+
+    public MilvusConfig(boolean enabled,
+                        String host,
+                        String token,
+                        String dbName,
+                        String partitionName,
+                        String idField,
+                        String vectorField,
+                        String contentField,
+                        List<String> outputFields,
+                        String upsert,
+                        String search,
+                        String delete) {
+        this(enabled, host, token, dbName, partitionName, idField, vectorField, contentField, outputFields,
+                upsert, search, "/v2/vectordb/entities/query", delete);
+    }
+
 }

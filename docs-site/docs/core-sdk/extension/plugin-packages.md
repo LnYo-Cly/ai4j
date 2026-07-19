@@ -447,6 +447,8 @@ if (!report.isValid()) {
 
 ## 6. 安全门禁
 
+> `manifest.permissions` is declarative metadata for host review and policy code. It is not an automatic AI4J permission engine; execution is still bounded by enable / expose / allowlist, Guardrail, and host permission policy.
+
 插件生态的默认语义是三段式门禁：
 
 | 阶段 | 会发生什么 | 不会发生什么 |
@@ -493,13 +495,14 @@ check
 
 ## 8. 官方样板插件
 
-AI4J 当前提供一个官方样板插件：
+AI4J 当前提供一个随 SDK 发布的样板插件，并维护一个独立仓库样板插件：
 
-| Artifact | Extension id | 能力 | 文档 |
-| --- | --- | --- | --- |
-| `ai4j-plugin-ask-user` | `ask-user` | tool + command + Skill + Prompt | [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin) |
+| Artifact | 发布边界 | Extension id | 能力 | 文档 |
+| --- | --- | --- | --- | --- |
+| `ai4j-plugin-ask-user` | ai4j-sdk reactor / BOM | `ask-user` | tool + command + Skill + Prompt | [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin) |
+| `ai4j-plugin-dynamic-workflow` | 独立仓库，单独发布 | `dynamic-workflow` | tool + command + Skill + Prompt | [Dynamic Workflow Plugin](/docs/core-sdk/extension/dynamic-workflow-plugin) |
 
-它的作用不是替代第三方插件，而是给插件作者一个可编译、可测试、可通过 `ServiceLoader` 发现的参考模块。它展示的重点是：
+这些样板的作用不是替代第三方插件，而是给插件作者一个可编译、可测试、可通过 `ServiceLoader` 发现的参考实现。它们展示的重点是：
 
 - 官方插件也只是普通 Maven jar。
 - 插件启用后不自动把工具暴露给模型。
@@ -527,8 +530,10 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 
 - `ai4j-extension-api` 定义 manifest、discovery、enable、expose 和 runtime snapshot
 - `ai4j-extension-api` 提供 `ExtensionActivationPlan`，并支持 command、Skill、Prompt、Guardrail 的显式 allowlist
+- Extension-owned Skill / Prompt classpath resources are read through the owning plugin classloader in strict paths, so a missing plugin resource is not hidden by another jar with the same path.
 - `ai4j-extension-api` 会在公共 ID / name 构造时执行格式校验，并在 `ExtensionValidator` 中检查 tool schema 的基础 JSON 结构
-- `ai4j-plugin-ask-user` 提供官方样板插件，展示 host-mediated 用户提问 tool / command / Skill / Prompt
+- `ai4j-plugin-ask-user` 随 SDK 发布，展示 host-mediated 用户提问 tool / command / Skill / Prompt
+- `ai4j-plugin-dynamic-workflow` 作为独立插件仓库维护，展示 host-mediated 动态工作流 request envelope 与脚本 Prompt / Skill
 - `ai4j-extension-api` 提供 `ExtensionValidator`，插件作者可以复用同一套 validation report 做本地测试
 - CLI 可以 `extension list / inspect / plan / validate / check` 查看、预览、校验和门禁 classpath 上的插件，也可以 `extension run --enable <id> [--allow-command <name>] <command>` 显式执行插件 command
 - CLI 可以 `extension resource --enable <id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>` 显式读取插件 Skill / Prompt 资源
@@ -551,7 +556,8 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 2. 本页：Plugin Packages
 3. [Plugin Recipes](/docs/core-sdk/extension/plugin-recipes)
 4. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
-5. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
-6. [Tools](/docs/core-sdk/tools/overview)
-7. [Agent Tools and Registry](/docs/agent/tools-and-registry)
-8. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)
+5. [Dynamic Workflow Plugin](/docs/core-sdk/extension/dynamic-workflow-plugin)
+6. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
+7. [Tools](/docs/core-sdk/tools/overview)
+8. [Agent Tools and Registry](/docs/agent/tools-and-registry)
+9. [Coding Agent Tools and Approvals](/docs/coding-agent/tools-and-approvals)
