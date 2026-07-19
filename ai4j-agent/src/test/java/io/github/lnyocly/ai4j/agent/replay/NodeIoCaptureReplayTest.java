@@ -13,7 +13,9 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -169,6 +171,108 @@ public class NodeIoCaptureReplayTest {
         assertEquals("model@run-1|turn-1|1", reloaded.get(0).getNodeId());
         assertEquals("jsonl-model", reloaded.get(0).getModelId());
         assertEquals("jsonl stream", reloaded.get(0).getOutputText());
+    }
+
+    @Test
+    public void reasoningRetryAndTokensShouldBeCapturedFromEvents() {
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+
+        AgentPrompt prompt = AgentPrompt.builder().model("glm-4").build();
+        // simulate a provider raw response carrying a usage block (Map form, provider-agnostic)
+        Map<String, Object> usage = new HashMap<String, Object>();
+        usage.put("prompt_tokens", 50L);
+        usage.put("completion_tokens", 30L);
+        Map<String, Object> rawResponse = new HashMap<String, Object>();
+        rawResponse.put("id", "chatcmpl-1");
+        rawResponse.put("usage", usage);
+
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt, null));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "think-A"));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "think-B"));
+        listener.onEvent(ev(AgentEventType.MODEL_RETRY, 1, null, "rate limit"));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, rawResponse, null));
+        listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
+
+        List<NodeIoRecord> models = sink.records(NodeIoRecord.NodeType.MODEL);
+        assertEquals("one model node", 1, models.size());
+        NodeIoRecord m = models.get(0);
+        assertEquals("reasoning deltas concatenate with newline", "think-A\nthink-B", m.getReasoningText());
+        assertEquals("one retry event counted", 1, m.getRetryCount());
+        assertEquals("input tokens parsed from usage", Long.valueOf(50L), m.getInputTokens());
+        assertEquals("output tokens parsed from usage", Long.valueOf(30L), m.getOutputTokens());
+        assertTrue("startedAt recorded for latency", m.getStartedAtEpochMs() > 0L);
+    }
+
+    @Test
+    public void jsonlSinkShouldRoundTripReasoningTokensAndLatency() throws Exception {
+        Path tmp = Files.createTempFile("ai4j-capture-", ".jsonl");
+        tmp.toFile().deleteOnExit();
+        JsonlIoCaptureSink sink = new JsonlIoCaptureSink(tmp);
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+        AgentPrompt prompt = AgentPrompt.builder().model("m").build();
+        // camelCase usage keys to exercise the alternate-name path
+        Map<String, Object> usage = new HashMap<String, Object>();
+        usage.put("promptTokens", 7L);
+        usage.put("completionTokens", 9L);
+        Map<String, Object> rawResponse = new HashMap<String, Object>();
+        rawResponse.put("usage", usage);
+
+        listener.onEvent(ev(AgentEventType.MODEL_REQUEST, 1, prompt, null));
+        listener.onEvent(ev(AgentEventType.MODEL_REASONING, 1, null, "chain-of-thought"));
+        listener.onEvent(ev(AgentEventType.MODEL_RESPONSE, 1, rawResponse, null));
+        listener.onEvent(ev(AgentEventType.STEP_END, 1, null, null));
+        sink.close();
+
+        List<NodeIoRecord> reloaded = JsonlIoCaptureSink.load(tmp);
+        assertEquals(1, reloaded.size());
+        NodeIoRecord r = reloaded.get(0);
+        assertEquals("reasoning survives JSON round-trip", "chain-of-thought", r.getReasoningText());
+        assertEquals("input tokens survive round-trip", Long.valueOf(7L), r.getInputTokens());
+        assertEquals("output tokens survive round-trip", Long.valueOf(9L), r.getOutputTokens());
+        assertTrue("startedAtEpochMs must survive round-trip (regression: was dropped pre-fix)",
+                r.getStartedAtEpochMs() > 0L);
+    }
+
+    @Test
+    public void recordsShouldReturnCauseOrderByStartedAtNotCaptureFlushOrder() {
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        // reproduce the flush-timing skew: TOOL_RESULT flushes the tool record BEFORE
+        // STEP_END flushes the model record, yet the model (which decided the call) started first.
+        NodeIoRecord tool = NodeIoRecord.builder(NodeIoRecord.NodeType.TOOL)
+                .nodeId("tool@step0").startedAtEpochMs(200L).capturedAtEpochMs(210L).build();
+        NodeIoRecord model = NodeIoRecord.builder(NodeIoRecord.NodeType.MODEL)
+                .nodeId("model@step0").startedAtEpochMs(100L).capturedAtEpochMs(220L).build();
+        sink.capture(tool);
+        sink.capture(model);
+
+        List<NodeIoRecord> ordered = sink.records();
+        assertEquals("cause order: model (startedAt=100) before tool (startedAt=200)",
+                "model@step0", ordered.get(0).getNodeId());
+        assertEquals("tool@step0", ordered.get(1).getNodeId());
+    }
+
+    @Test
+    public void toolResultTraceShouldFlowIntoCaptureOutputs() {
+        // PR A: a TraceableToolExecutor's sub-trace flows via AgentToolResult.trace into the
+        // captured TOOL node, so the tool's internal steps (e.g. RAG retrievedHits) are visible.
+        InMemoryIoCaptureSink sink = new InMemoryIoCaptureSink();
+        IoCaptureAgentListener listener = new IoCaptureAgentListener(sink);
+        AgentToolCall call = AgentToolCall.builder().name("knowledge_search").callId("c1").arguments("{\"query\":\"x\"}").build();
+        AgentToolResult result = AgentToolResult.builder()
+                .name("knowledge_search").callId("c1").output("ctx")
+                .trace(java.util.Collections.singletonMap("retrievedHits", 3))
+                .build();
+        listener.onEvent(ev(AgentEventType.TOOL_CALL, 1, call, "knowledge_search"));
+        listener.onEvent(ev(AgentEventType.TOOL_RESULT, 1, result, "ctx"));
+
+        List<NodeIoRecord> tools = sink.records(NodeIoRecord.NodeType.TOOL);
+        assertEquals(1, tools.size());
+        Object captured = tools.get(0).getOutputs();
+        assertTrue("captured output is the AgentToolResult", captured instanceof AgentToolResult);
+        assertEquals("sub-trace flows through to capture",
+                java.util.Collections.singletonMap("retrievedHits", 3),
+                ((AgentToolResult) captured).getTrace());
     }
 
     @Test

@@ -6,7 +6,7 @@ import lombok.Data;
 public class AiPlatformProperties {
     // 唯一标识，用于获取对应的服务
     private String id;
-    // 平台类型，如：openai、zhipu、deepseek、moonshot、hunyuan、lingyi、ollama、minimax、baichuan、pinecone、searxng
+    // 平台类型，如：openai、zhipu、deepseek、moonshot、hunyuan、lingyi、ollama、minimax、baichuan、pinecone、searxng、suno
     private String platform;
     private String apiHost;
     private String apiKey;
@@ -16,6 +16,12 @@ public class AiPlatformProperties {
     private String transcriptionUrl;
     private String translationUrl;
     private String realtimeUrl;
+    private String imageGenerationUrl;
+    private String responsesUrl;
+    private String videoUrl;
     private String rerankApiHost;
     private String rerankUrl;
+    private String musicUrl;
+    private String lyricsUrl;
+    private String fetchUrl;
 }

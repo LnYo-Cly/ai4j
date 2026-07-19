@@ -31,11 +31,24 @@ public class HybridRetriever implements Retriever {
             return Collections.emptyList();
         }
         Map<String, RankedHit> merged = new LinkedHashMap<String, RankedHit>();
+        Exception firstFailure = null;
+        boolean anyRetrieverSucceeded = false;
         for (Retriever retriever : retrievers) {
             if (retriever == null) {
                 continue;
             }
-            List<RagHit> hits = RagHitSupport.prepareRetrievedHits(retriever.retrieve(query), retriever.retrieverSource());
+            String source;
+            List<RagHit> hits;
+            try {
+                source = retriever.retrieverSource();
+                hits = RagHitSupport.prepareRetrievedHits(retriever.retrieve(query), source);
+                anyRetrieverSucceeded = true;
+            } catch (Exception e) {
+                if (firstFailure == null) {
+                    firstFailure = e;
+                }
+                continue;
+            }
             if (hits == null) {
                 continue;
             }
@@ -53,11 +66,14 @@ public class HybridRetriever implements Retriever {
                 }
                 double contribution = contributionOf(contributions, i);
                 ranked.score += contribution;
-                ranked.addDetail(retriever.retrieverSource(), i + 1, retrievalScoreOf(hit), (float) contribution);
+                ranked.addDetail(source, i + 1, retrievalScoreOf(hit), (float) contribution);
                 if (ranked.hit.getScore() == null || (hit.getScore() != null && hit.getScore() > ranked.hit.getScore())) {
                     ranked.hit = RagHitSupport.copy(hit);
                 }
             }
+        }
+        if (!anyRetrieverSucceeded && firstFailure != null) {
+            throw firstFailure;
         }
         List<RagHit> result = new ArrayList<RagHit>();
         for (RankedHit ranked : merged.values()) {

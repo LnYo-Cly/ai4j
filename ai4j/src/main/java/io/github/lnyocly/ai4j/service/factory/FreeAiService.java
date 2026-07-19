@@ -9,9 +9,11 @@ import io.github.lnyocly.ai4j.service.IAudioService;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.service.IImageService;
+import io.github.lnyocly.ai4j.service.IMusicService;
 import io.github.lnyocly.ai4j.service.IRerankService;
 import io.github.lnyocly.ai4j.service.IRealtimeService;
 import io.github.lnyocly.ai4j.service.IResponsesService;
+import io.github.lnyocly.ai4j.service.IVideoService;
 import io.github.lnyocly.ai4j.vector.store.VectorStore;
 
 import java.util.Collections;
@@ -86,6 +88,16 @@ public class FreeAiService {
     public static IImageService getImageService(String id) {
         AiServiceRegistration registration = registry.find(id);
         return registration == null ? null : registry.getImageService(id);
+    }
+
+    public static IVideoService getVideoService(String id) {
+        AiServiceRegistration registration = registry.find(id);
+        return registration == null ? null : registry.getVideoService(id);
+    }
+
+    public static IMusicService getMusicService(String id) {
+        AiServiceRegistration registration = registry.find(id);
+        return registration == null ? null : registry.getMusicService(id);
     }
 
     public static IResponsesService getResponsesService(String id) {

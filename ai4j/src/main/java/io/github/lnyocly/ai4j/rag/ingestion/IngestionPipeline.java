@@ -91,16 +91,19 @@ public class IngestionPipeline {
         if (isBlank(request.getEmbeddingModel())) {
             throw new IllegalArgumentException("embeddingModel is required");
         }
+        long t0 = System.nanoTime();
         LoadedDocument loadedDocument = load(request.getSource());
         loadedDocument = processLoadedDocument(request.getSource(), loadedDocument, mergeDocumentProcessors(request.getDocumentProcessors()));
         if (loadedDocument == null || isBlank(loadedDocument.getContent())) {
             throw new IllegalStateException("Loaded document content is empty");
         }
         RagDocument document = resolveDocument(request.getDocument(), request.getSource(), loadedDocument);
+        long t1 = System.nanoTime();
         List<RagChunk> chunks = normalizeChunks(
                 document,
                 (request.getChunker() == null ? defaultChunker : request.getChunker()).chunk(document, loadedDocument.getContent())
         );
+        long t2 = System.nanoTime();
         if (chunks.isEmpty()) {
             return IngestionResult.builder()
                     .dataset(request.getDataset())
@@ -111,6 +114,14 @@ public class IngestionPipeline {
                     .records(Collections.<VectorRecord>emptyList())
                     .upsertedCount(0)
                     .skippedCount(0)
+                    .trace(IngestionTrace.builder()
+                            .loadDurationMs(ms(t1 - t0))
+                            .chunkDurationMs(ms(t2 - t1))
+                            .embedDurationMs(0L)
+                            .upsertDurationMs(0L)
+                            .totalDurationMs(ms(t2 - t0))
+                            .chunkCount(0)
+                            .build())
                     .build();
         }
 
@@ -128,12 +139,14 @@ public class IngestionPipeline {
             ingestableChunks.add(chunk);
         }
         List<VectorRecord> records = buildRecords(request, ingestableChunks);
+        long t3 = System.nanoTime();
         int upsertedCount = Boolean.FALSE.equals(request.getUpsert()) || records.isEmpty()
                 ? 0
                 : vectorStore.upsert(VectorUpsertRequest.builder()
                         .dataset(request.getDataset())
                         .records(records)
                         .build());
+        long t4 = System.nanoTime();
 
         return IngestionResult.builder()
                 .dataset(request.getDataset())
@@ -144,7 +157,19 @@ public class IngestionPipeline {
                 .records(records)
                 .upsertedCount(upsertedCount)
                 .skippedCount(skippedCount)
+                .trace(IngestionTrace.builder()
+                        .loadDurationMs(ms(t1 - t0))
+                        .chunkDurationMs(ms(t2 - t1))
+                        .embedDurationMs(ms(t3 - t2))
+                        .upsertDurationMs(ms(t4 - t3))
+                        .totalDurationMs(ms(t4 - t0))
+                        .chunkCount(chunks.size())
+                        .build())
                 .build();
+    }
+
+    private static long ms(long nanos) {
+        return Math.max(0L, nanos / 1_000_000L);
     }
 
     private LoadedDocument load(IngestionSource source) throws Exception {

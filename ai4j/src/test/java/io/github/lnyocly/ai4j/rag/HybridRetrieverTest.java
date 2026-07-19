@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class HybridRetrieverTest {
@@ -139,5 +140,82 @@ public class HybridRetrieverTest {
         Assert.assertEquals("a", hits.get(1).getId());
         Assert.assertEquals("d", hits.get(2).getId());
         Assert.assertEquals("c", hits.get(3).getId());
+    }
+
+    @Test
+    public void shouldReturnSuccessfulRetrieverHitsWhenOneRetrieverFails() throws Exception {
+        Retriever failing = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) throws Exception {
+                throw new IllegalStateException("dense unavailable");
+            }
+
+            @Override
+            public String retrieverSource() {
+                return "dense";
+            }
+        };
+        Retriever bm25 = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) {
+                return Collections.singletonList(
+                        RagHit.builder().id("policy").content("bm25 policy hit").score(7.0f).build()
+                );
+            }
+
+            @Override
+            public String retrieverSource() {
+                return "bm25";
+            }
+        };
+
+        HybridRetriever retriever = new HybridRetriever(Arrays.asList(failing, bm25));
+        List<RagHit> hits = retriever.retrieve(RagQuery.builder().query("policy").topK(5).build());
+
+        Assert.assertEquals(1, hits.size());
+        Assert.assertEquals("policy", hits.get(0).getId());
+        Assert.assertEquals("hybrid", hits.get(0).getRetrieverSource());
+        Assert.assertEquals("bm25", hits.get(0).getScoreDetails().get(0).getSource());
+    }
+
+    @Test
+    public void shouldThrowFirstFailureWhenAllRetrieversFail() throws Exception {
+        final IllegalStateException firstFailure = new IllegalStateException("dense unavailable");
+        Retriever dense = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) throws Exception {
+                throw firstFailure;
+            }
+        };
+        Retriever bm25 = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) throws Exception {
+                throw new IllegalArgumentException("bm25 unavailable");
+            }
+        };
+
+        HybridRetriever retriever = new HybridRetriever(Arrays.asList(dense, bm25));
+
+        try {
+            retriever.retrieve(RagQuery.builder().query("policy").topK(5).build());
+            Assert.fail("Expected the first child retriever failure");
+        } catch (Exception e) {
+            Assert.assertSame(firstFailure, e);
+        }
+    }
+
+    @Test
+    public void shouldReturnEmptyWhenRetrieverSucceedsWithEmptyResults() throws Exception {
+        Retriever empty = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) {
+                return Collections.emptyList();
+            }
+        };
+
+        HybridRetriever retriever = new HybridRetriever(Collections.singletonList(empty));
+        List<RagHit> hits = retriever.retrieve(RagQuery.builder().query("policy").topK(5).build());
+
+        Assert.assertTrue(hits.isEmpty());
     }
 }

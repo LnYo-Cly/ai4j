@@ -1,6 +1,6 @@
 ---
 name: ai4j-app-builder
-description: Use this skill when helping users build applications with AI4J in their own Java or Spring Boot projects, including first chat, streaming, tool/function calls, MCP, RAG, memory, Agent runtime, Coding Agent CLI embedding, FlowGram integration, provider configuration, dependency selection, and troubleshooting. It guides beginner-friendly app scaffolding, secure environment-variable configuration, smallest useful AI4J module selection, runnable examples, and verification steps. For AI4J repository maintenance, follow the repository AGENTS.md and coding-agent-harness files instead of this user-facing app builder skill.
+description: Use this skill when helping users build applications with AI4J in their own Java or Spring Boot projects, including first chat, streaming, tool/function calls, MCP, RAG, memory, Agent runtime, Coding Agent CLI embedding, FlowGram integration, provider configuration, dependency selection, and troubleshooting. It guides beginner-friendly app scaffolding, secure environment-variable configuration, smallest useful AI4J module selection, runnable examples, and verification steps. For AI4J repository maintenance, follow the repository AGENTS.md and Harness Anything task workflow instead of this user-facing app builder skill.
 ---
 
 # AI4J App Builder
@@ -10,6 +10,8 @@ description: Use this skill when helping users build applications with AI4J in t
 Use this Skill as the user-side AI4J app-building copilot. It is for people who want to use AI4J in their own Java or Spring Boot application, not for maintaining the AI4J SDK repository.
 
 The agent should reduce integration cost by choosing the smallest correct AI4J dependency, writing a minimal runnable vertical slice, keeping secrets out of code, and proving the result with a local verification step.
+
+Repository maintenance is outside this Skill's ownership. Read `AGENTS.md` and use the repository's Harness Anything (`ha`) task, evidence, review, and completion flow.
 
 ## Startup Workflow
 

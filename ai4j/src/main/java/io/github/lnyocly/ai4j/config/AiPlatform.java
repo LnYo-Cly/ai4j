@@ -14,6 +14,12 @@ public class AiPlatform {
     private String transcriptionUrl;
     private String translationUrl;
     private String realtimeUrl;
+    private String imageGenerationUrl;
+    private String responsesUrl;
+    private String videoUrl;
     private String rerankApiHost;
     private String rerankUrl;
+    private String musicUrl;
+    private String lyricsUrl;
+    private String fetchUrl;
 }

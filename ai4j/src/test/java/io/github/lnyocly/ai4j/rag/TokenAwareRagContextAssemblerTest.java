@@ -64,4 +64,3 @@ public class TokenAwareRagContextAssemblerTest {
         new TokenAwareRagContextAssembler(0);
     }
 }
-
