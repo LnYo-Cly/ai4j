@@ -48,7 +48,7 @@ This repository has evolved into a multi-module SDK. In addition to the core `ai
 Gradle:
 
 ```gradle
-implementation 'io.github.lnyo-cly:ai4j:0.8.8'
+implementation 'io.github.lnyo-cly:ai4j:2.4.0'
 ```
 
 Maven:
@@ -57,7 +57,7 @@ Maven:
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>0.8.8</version>
+  <version>2.4.0</version>
 </dependency>
 ```
 
