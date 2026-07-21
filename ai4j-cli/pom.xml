@@ -16,6 +16,10 @@
     <name>ai4j-cli</name>
     <description>ai4j CLI、TUI 与 ACP 宿主模块，用于 coding agent 与工作区自动化。 CLI, TUI, and ACP host for ai4j coding agents and workspace automation.</description>
 
+    <properties>
+        <ai4j.cli.assembly.skip>false</ai4j.cli.assembly.skip>
+    </properties>
+
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -127,6 +131,7 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <appendAssemblyId>true</appendAssemblyId>
+                    <skipAssembly>${ai4j.cli.assembly.skip}</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -144,6 +149,9 @@
     <profiles>
         <profile>
             <id>release</id>
+            <properties>
+                <ai4j.cli.assembly.skip>true</ai4j.cli.assembly.skip>
+            </properties>
             <build>
                 <plugins>
                     <plugin>

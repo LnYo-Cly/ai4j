@@ -135,13 +135,13 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
                             .inputs(obj.get("inputs"))
                             .outputText(obj.getString("outputText"))
                             .outputs(obj.get("outputs"));
-                    Integer startedAt = obj.getInteger("startedAtEpochMs");
+                    Long startedAt = obj.getLong("startedAtEpochMs");
                     if (startedAt != null) {
-                        b.startedAtEpochMs(startedAt.longValue());
+                        b.startedAtEpochMs(startedAt);
                     }
-                    Integer capturedAt = obj.getInteger("capturedAtEpochMs");
+                    Long capturedAt = obj.getLong("capturedAtEpochMs");
                     if (capturedAt != null) {
-                        b.capturedAtEpochMs(capturedAt.longValue());
+                        b.capturedAtEpochMs(capturedAt);
                     }
                     String reasoning = obj.getString("reasoningText");
                     if (reasoning != null) {
