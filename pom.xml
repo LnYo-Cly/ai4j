@@ -153,7 +153,6 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>LnYo-Cly</publishingServerId>
-                            <tokenAuth>true</tokenAuth>
                             <excludeArtifacts>
                                 <excludeArtifact>ai4j-sdk</excludeArtifact>
                                 <excludeArtifact>ai4j-flowgram-demo</excludeArtifact>
