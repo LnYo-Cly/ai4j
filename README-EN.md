@@ -23,13 +23,14 @@
 A Java AI Agentic development toolkit for JDK 8+, combining foundational AI capabilities with higher-level agent development capabilities.  
 It covers multi-provider model access, unified I/O, Tool Calling, MCP, RAG, unified `VectorStore`, ChatMemory, agent runtime, coding agent, CLI / TUI / ACP, FlowGram integration, and integration with published AgentFlow endpoints such as Dify, Coze, and n8n, helping Java applications grow from basic model integration to more complete agentic application development.
 
-This repository has evolved into a multi-module SDK. In addition to the core `ai4j` module, it now provides `ai4j-agent`, `ai4j-coding`, `ai4j-cli`, `ai4j-spring-boot-starter`, `ai4j-flowgram-spring-boot-starter`, and `ai4j-bom`. If you only need the basic LLM integration layer, start with `ai4j`. If you need agent runtime, coding agent, CLI / ACP, Spring Boot, or FlowGram integration, add the corresponding modules.
+This repository has evolved into a multi-module SDK. In addition to the core `ai4j` module, it now provides `ai4j-extension-api`, `ai4j-plugin-ask-user`, `ai4j-agent`, `ai4j-coding`, `ai4j-cli`, `ai4j-spring-boot-starter`, `ai4j-flowgram-spring-boot-starter`, and `ai4j-bom`. If you only need the basic LLM integration layer, start with `ai4j`. If you need plugin packages, agent runtime, coding agent, CLI / ACP, Spring Boot, or FlowGram integration, add the corresponding modules.
 
 ## README navigation
 
 - [Quick choice](#quick-choice)
 - [Install snippets](#install-snippets)
 - [Project overview](#positioning-compared-with-common-java-ai-options)
+- [Official docs site](#official-docs-site)
 - [Detailed docs](#detailed-docs)
 - [中文 README](README.md)
 
@@ -73,7 +74,10 @@ For module selection, Spring Boot configuration, and usage examples, see [Quick 
 | `LangChain4j` | `Java 17+` | Plain Java / Spring / Quarkus and more | General Java abstractions for LLM, agent, and RAG integration, plus AI Services |
 
 ## Supported platforms
-+ OpenAi
++ OpenAI / OpenAI-compatible
++ Anthropic / Anthropic-compatible Messages
++ DashScope
++ Doubao / Volcengine Ark
 + Jina (Rerank / Jina-compatible Rerank)
 + Zhipu
 + DeepSeek
@@ -83,15 +87,19 @@ For module selection, Spring Boot configuration, and usage examples, see [Quick 
 + Ollama
 + MiniMax
 + Baichuan
++ Suno
 
 ## Supported services
-+ Chat Completions（streaming and non-streaming）
++ Chat Completions (streaming and non-streaming)
 + Responses
++ Anthropic Messages
 + Embedding
 + Rerank
 + Audio
 + Image
++ Video
 + Realtime
++ Music (Suno task-based generation)
 
 ## Supported AgentFlow / hosted workflow platforms
 + Dify (chat / workflow)
@@ -106,6 +114,7 @@ For module selection, Spring Boot configuration, and usage examples, see [Quick 
 + Built-in Coding Agent CLI / TUI with interactive repository sessions, provider profiles, workspace model override, and session/process management.
 + Provides `ai4j-coding` as the coding agent runtime, with workspace-aware tools, outer loop, checkpoint compaction, subagent, and team collaboration support.
 + Provides `ai4j-flowgram-spring-boot-starter` for integrating FlowGram workflows and trace in Spring Boot applications.
++ Provides `ai4j-extension-api` and the official `ai4j-plugin-ask-user` sample plugin for extending Agent / Coding Agent tools, commands, Skills, and Prompts.
 + Provides `ai4j-bom` for version alignment across multiple ai4j modules.
 + Unified input and output.
 + Unified error handling.
@@ -113,9 +122,25 @@ For module selection, Spring Boot configuration, and usage examples, see [Quick 
 + Easily use Tool Calls.
 + Supports simultaneous calls of multiple functions (Zhipu does not support this).
 + Supports stream_options, and directly obtains statistical token usage through streaming output.
-+ Supports RAG. Built-in vector database support: Pinecone.
++ Built-in `ChatMemory` for basic multi-turn context across Chat / Responses.
++ Supports RAG with a unified `VectorStore` abstraction. Current vector stores include Pinecone, Qdrant, pgvector, and Milvus.
++ Built-in `IngestionPipeline` for `DocumentLoader -> Chunker -> MetadataEnricher -> Embedding -> VectorStore.upsert`.
++ Built-in `DenseRetriever`, `Bm25Retriever`, and `HybridRetriever` for semantic, keyword, and hybrid retrieval.
++ `HybridRetriever` supports RRF / RSF / DBSF fusion, keeping fusion ranking separate from semantic reranking.
++ Unified `IRerankService` with Jina / Jina-compatible, Ollama, and Doubao rerank support; `ModelReranker` plugs directly into RAG.
++ RAG trace exposes rank, retriever source, retrieval/fusion/rerank scores, score details, and evaluator metrics such as Precision@K, Recall@K, MRR, and NDCG.
 + Uses Tika to read files.
-+ Token statistics`TikTokensUtil.java`
++ Provides basic token estimation and usage utilities.
+
+## Official docs site
++ Online docs: `https://lnyo-cly.github.io/ai4j/`
++ Docs source: `docs-site/`
++ Start here: `docs-site/docs/start-here/five-minute-first-chat.md`
++ Java quickstart: `docs-site/docs/start-here/quickstart-java.md`
++ Spring Boot quickstart: `docs-site/docs/start-here/quickstart-spring-boot.md`
++ Feature map: `docs-site/docs/start-here/feature-map.md`
++ Plugin packages: `docs-site/docs/core-sdk/extension/plugin-packages.md`
++ Ask User plugin: `docs-site/docs/core-sdk/extension/ask-user-plugin.md`
 
 ## Detailed docs
 
