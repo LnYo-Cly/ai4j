@@ -298,6 +298,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'reference/version-compatibility',
         'reference/release-and-artifacts',
+        'reference/release-checklist',
       ],
     },
     {
