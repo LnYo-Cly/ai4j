@@ -375,7 +375,6 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>LnYo-Cly</publishingServerId>
-                            <tokenAuth>true</tokenAuth>
                         </configuration>
                     </plugin>
                 </plugins>
