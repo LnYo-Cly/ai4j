@@ -75,7 +75,7 @@ AI4J 当前发布坐标使用：
 
 父 POM 是多模块发布入口，但根 artifact 默认不应被业务项目当成 SDK 使用。项目接入时只引入需要的模块。
 
-发布 profile 会处理 source、javadoc、GPG 签名和 Sonatype Central 发布配置。维护者发布前应确认：
+发布 profile 会处理 source、javadoc、GPG 签名和 Sonatype Central 发布配置。完整发布步骤见 [Release Checklist](/docs/reference/release-checklist)。维护者发布前应确认：
 
 - 版本号已在根 POM 和模块 POM 中一致更新。
 - `ai4j-bom` 已包含需要对齐的发布模块。
