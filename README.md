@@ -29,7 +29,8 @@
 
 - [快速选择](#快速选择)
 - [安装片段](#安装片段)
-- [项目概览](#赞助商)
+- [项目定位与对比](#适用场景与常见方案对比)
+- [赞助商](#赞助商)
 - [官方文档站](#官方文档站)
 - [详细文档](#详细文档)
 - [English README](README-EN.md)
@@ -80,25 +81,32 @@ Maven：
 | `LangChain4j` | `Java 17+` | 普通 Java / Spring / Quarkus 等 | 通用 Java LLM / Agent / RAG 抽象、AI Services、多框架集成 |
 
 ## 支持的平台
-+ OpenAi(包含与OpenAi请求格式相同/兼容的平台)
++ OpenAI / OpenAI-compatible
++ Anthropic / Anthropic-compatible Messages
++ DashScope（阿里云百炼 / 通义）
++ Doubao（火山方舟 / 豆包）
 + Jina（Rerank / Jina-compatible Rerank）
-+ Zhipu(智谱)
-+ DeepSeek(深度求索)
-+ Moonshot(月之暗面)
-+ Hunyuan(腾讯混元)
-+ Lingyi(零一万物)
++ Zhipu（智谱）
++ DeepSeek（深度求索）
++ Moonshot（月之暗面）
++ Hunyuan（腾讯混元）
++ Lingyi（零一万物）
 + Ollama
 + MiniMax
 + Baichuan
++ Suno
 
 ## 支持的服务
 + Chat Completions（流式与非流式）
 + Responses
++ Anthropic Messages
 + Embedding
 + Rerank
 + Audio
 + Image
++ Video
 + Realtime
++ Music（Suno 任务式生成）
 
 ## 已适配的 AgentFlow / 工作流平台
 + Dify（Chat / Workflow）
@@ -133,7 +141,7 @@ Maven：
 + 支持统一 `IRerankService`，当前可接 Jina / Jina-compatible、Ollama、Doubao(方舟知识库重排)；可通过 `ModelReranker` 无缝接入 RAG 精排
 + RAG 运行时可直接拿到 `rank/retrieverSource/retrievalScore/fusionScore/rerankScore/scoreDetails/trace`，并可通过 `RagEvaluator` 计算 `Precision@K/Recall@K/F1@K/MRR/NDCG`
 + 使用Tika读取文件
-+ Token统计`TikTokensUtil.java`
++ 提供基础 token 估算与用量统计工具
 
 ## 官方文档站
 + 在线文档站：`https://lnyo-cly.github.io/ai4j/`
