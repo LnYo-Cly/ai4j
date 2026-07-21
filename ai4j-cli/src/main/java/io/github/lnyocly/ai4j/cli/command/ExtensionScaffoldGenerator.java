@@ -478,7 +478,7 @@ final class ExtensionScaffoldGenerator {
             this.version = defaultIfBlank(builder.version, "1.0.0");
             this.className = requireClassName(defaultIfBlank(builder.className, classNameFromId(this.extensionId)));
             this.vendor = defaultIfBlank(builder.vendor, "example");
-            this.extensionApiVersion = defaultIfBlank(builder.extensionApiVersion, "2.4.0");
+            this.extensionApiVersion = defaultIfBlank(builder.extensionApiVersion, "2.4.1");
             this.namespace = namespaceFromId(this.extensionId);
             this.resourceSegment = resourceSegmentFromId(this.extensionId);
             this.toolName = this.namespace + ".echo";

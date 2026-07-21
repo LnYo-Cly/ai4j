@@ -30,7 +30,7 @@ import java.util.List;
 
 public class CliExtensionCommand {
 
-    private static final String EXTENSION_API_VERSION = "2.4.0";
+    private static final String EXTENSION_API_VERSION = "2.4.1";
 
     private final Path currentDirectory;
 
