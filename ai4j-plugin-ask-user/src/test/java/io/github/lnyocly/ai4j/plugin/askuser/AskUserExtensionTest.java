@@ -25,7 +25,7 @@ public class AskUserExtensionTest {
 
         Assert.assertEquals("ask-user", manifest.getId());
         Assert.assertEquals("Ask User", manifest.getName());
-        Assert.assertEquals("2.4.0", manifest.getVersion());
+        Assert.assertEquals("2.4.1", manifest.getVersion());
         Assert.assertEquals("ai4j", manifest.getVendor());
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.TOOL));
         Assert.assertTrue(manifest.hasCapability(ExtensionCapability.COMMAND));

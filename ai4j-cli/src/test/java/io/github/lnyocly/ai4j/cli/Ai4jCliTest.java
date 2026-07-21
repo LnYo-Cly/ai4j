@@ -775,7 +775,7 @@ public class Ai4jCliTest {
         String testSource = read(plugin.resolve("src/test/java/com/example/ai4j/weather/WeatherPackExtensionTest.java"));
         String readme = read(plugin.resolve("README.md"));
         String service = read(plugin.resolve("src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension"));
-        Assert.assertTrue(pom.contains("<version>2.4.0</version>"));
+        Assert.assertTrue(pom.contains("<version>2.4.1</version>"));
         Assert.assertTrue(extensionSource.contains("implements Ai4jExtension"));
         Assert.assertTrue(extensionSource.contains(".id(\"weather-pack\")"));
         Assert.assertTrue(extensionSource.contains(".capability(ExtensionCapability.TOOL)"));
