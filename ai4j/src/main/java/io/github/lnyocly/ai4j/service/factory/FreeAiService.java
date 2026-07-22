@@ -150,6 +150,23 @@ public class FreeAiService {
                 : registry.getModelReranker(id, model, topN, instruction, returnDocuments, appendRemainingHits);
     }
 
+    public static Reranker getChatReranker(String id, String model) {
+        AiServiceRegistration registration = registry.find(id);
+        return registration == null ? null : registry.getChatReranker(id, model);
+    }
+
+    public static Reranker getChatReranker(String id,
+                                           String model,
+                                           Integer topN,
+                                           String instruction,
+                                           boolean appendRemainingHits,
+                                           Integer maxCandidates) {
+        AiServiceRegistration registration = registry.find(id);
+        return registration == null
+                ? null
+                : registry.getChatReranker(id, model, topN, instruction, appendRemainingHits, maxCandidates);
+    }
+
     public static boolean contains(String id) {
         return registry.contains(id);
     }

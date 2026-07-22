@@ -35,6 +35,7 @@ import io.github.lnyocly.ai4j.rag.NoopReranker;
 import io.github.lnyocly.ai4j.rag.RagQueryPlanner;
 import io.github.lnyocly.ai4j.rag.RagService;
 import io.github.lnyocly.ai4j.rag.ChatRagJudge;
+import io.github.lnyocly.ai4j.rag.ChatReranker;
 import io.github.lnyocly.ai4j.rag.RagOnlineEvaluator;
 import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
@@ -307,6 +308,26 @@ public class AiService {
                 instruction,
                 returnDocuments,
                 appendRemainingHits
+        );
+    }
+
+    public Reranker getChatReranker(PlatformType platform, String model) {
+        return new ChatReranker(getChatService(platform), model);
+    }
+
+    public Reranker getChatReranker(PlatformType platform,
+                                    String model,
+                                    Integer topN,
+                                    String instruction,
+                                    boolean appendRemainingHits,
+                                    Integer maxCandidates) {
+        return new ChatReranker(
+                getChatService(platform),
+                model,
+                topN,
+                instruction,
+                appendRemainingHits,
+                maxCandidates
         );
     }
 

@@ -140,5 +140,27 @@ public interface AiServiceRegistry {
                 appendRemainingHits
         );
     }
+
+    default Reranker getChatReranker(String id, String model) {
+        AiServiceRegistration registration = get(id);
+        return registration.getAiService().getChatReranker(registration.getPlatformType(), model);
+    }
+
+    default Reranker getChatReranker(String id,
+                                     String model,
+                                     Integer topN,
+                                     String instruction,
+                                     boolean appendRemainingHits,
+                                     Integer maxCandidates) {
+        AiServiceRegistration registration = get(id);
+        return registration.getAiService().getChatReranker(
+                registration.getPlatformType(),
+                model,
+                topN,
+                instruction,
+                appendRemainingHits,
+                maxCandidates
+        );
+    }
 }
 
