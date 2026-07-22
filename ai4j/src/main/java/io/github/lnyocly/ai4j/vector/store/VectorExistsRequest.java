@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -14,6 +15,8 @@ import java.util.Map;
 public class VectorExistsRequest {
 
     private String dataset;
+
+    private List<String> ids;
 
     private Map<String, Object> filter;
 }

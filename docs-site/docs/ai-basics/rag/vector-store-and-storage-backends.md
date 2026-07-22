@@ -107,6 +107,7 @@ sidebar_position: 3
 
 `VectorExistsRequest` 用于回答“这个 dataset 下是否已经存在某个 metadata filter 命中的记录”。
 它主要服务于 ingestion 的增量跳过，例如按 `contentHash` 跳过已经入库的 chunk。
+Pinecone 现在也支持按 `ids` 做 fetch-by-id 存在检查；这属于 id lookup，不是 metadata lookup。
 
 注意它不是检索接口：
 
@@ -125,6 +126,7 @@ sidebar_position: 3
 - `dataset`
 - `metadataFilter`
 - `metadataLookup`
+- `idLookup`
 - `deleteByFilter`
 - `returnStoredVector`
 
@@ -150,6 +152,7 @@ sidebar_position: 3
 
 - `upsert` 把 `VectorRecord` 转成 `PineconeVectors`
 - `search` 走 `PineconeQuery`
+- `exists` 在传入 `ids` 时走 fetch-by-id
 - `delete` 走 `PineconeDelete`
 
 特点：
@@ -257,13 +260,13 @@ Qdrant 这条线还有一个源码级细节：
 
 以下矩阵直接对应各实现的 `capabilities()` 返回值。
 
-| 后端 | `dataset` | `metadataFilter` | `metadataLookup` | `deleteByFilter` | `returnStoredVector` |
-| --- | --- | --- | --- | --- | --- |
-| `PineconeVectorStore` | ✅ | ✅ | ❌ | ✅ | ✅ |
-| `QdrantVectorStore` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `MilvusVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `PgVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `RedisVectorStore` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| 后端 | `dataset` | `metadataFilter` | `metadataLookup` | `idLookup` | `deleteByFilter` | `returnStoredVector` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PineconeVectorStore` | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| `QdrantVectorStore` | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| `MilvusVectorStore` | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `PgVectorStore` | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `RedisVectorStore` | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
 
 这一点对上层很重要：
 

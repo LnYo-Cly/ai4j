@@ -17,6 +17,8 @@ public class VectorStoreCapabilities {
 
     private boolean metadataLookup;
 
+    private boolean idLookup;
+
     private boolean deleteByFilter;
 
     private boolean returnStoredVector;
@@ -25,6 +27,14 @@ public class VectorStoreCapabilities {
                                    boolean metadataFilter,
                                    boolean deleteByFilter,
                                    boolean returnStoredVector) {
-        this(dataset, metadataFilter, false, deleteByFilter, returnStoredVector);
+        this(dataset, metadataFilter, false, false, deleteByFilter, returnStoredVector);
+    }
+
+    public VectorStoreCapabilities(boolean dataset,
+                                   boolean metadataFilter,
+                                   boolean metadataLookup,
+                                   boolean deleteByFilter,
+                                   boolean returnStoredVector) {
+        this(dataset, metadataFilter, metadataLookup, false, deleteByFilter, returnStoredVector);
     }
 }

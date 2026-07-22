@@ -2,12 +2,14 @@ package io.github.lnyocly.ai4j.vector.store.pinecone;
 
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
+import io.github.lnyocly.ai4j.vector.pinecone.PineconeFetchResponse;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQueryResponse;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -103,6 +105,16 @@ public class PineconeVectorStore implements VectorStore {
     }
 
     @Override
+    public boolean exists(VectorExistsRequest request) {
+        String dataset = requiredDataset(request == null ? null : request.getDataset());
+        if (request == null || request.getIds() == null || request.getIds().isEmpty()) {
+            return false;
+        }
+        PineconeFetchResponse response = pineconeService.fetch(request.getIds(), dataset);
+        return response != null && response.getVectors() != null && !response.getVectors().isEmpty();
+    }
+
+    @Override
     public boolean delete(VectorDeleteRequest request) {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
         if (request == null) {
@@ -121,6 +133,7 @@ public class PineconeVectorStore implements VectorStore {
         return VectorStoreCapabilities.builder()
                 .dataset(true)
                 .metadataFilter(true)
+                .idLookup(true)
                 .deleteByFilter(true)
                 .returnStoredVector(true)
                 .build();

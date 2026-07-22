@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,6 +112,45 @@ public class PineconeService {
         return queryResponse.getMatches().stream().map(match -> match.getMetadata().get(Constants.METADATA_KEY)).collect(Collectors.joining(delimiter));
     }
 
+    public PineconeFetchResponse fetch(List<String> ids, String namespace) {
+        StringBuilder query = new StringBuilder();
+        if (ids != null) {
+            for (String id : ids) {
+                if (id == null || "".equals(id)) {
+                    continue;
+                }
+                if (query.length() > 0) {
+                    query.append('&');
+                }
+                query.append("ids=").append(urlEncode(id));
+            }
+        }
+        if (namespace != null && !"".equals(namespace)) {
+            if (query.length() > 0) {
+                query.append('&');
+            }
+            query.append("namespace=").append(urlEncode(namespace));
+        }
+
+        Request request = new Request.Builder()
+                .url(UrlUtils.concatUrl(pineconeConfig.getHost(), pineconeConfig.getFetch(), "?" + query))
+                .get()
+                .header("accept", Constants.APPLICATION_JSON)
+                .header("Api-Key", pineconeConfig.getKey())
+                .build();
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                log.error("Error fetching from Pinecone vector store: {}", response.message());
+                throw new CommonException("Error fetching from Pinecone: " + response.message());
+            }
+            return JSON.parseObject(response.body().string(), PineconeFetchResponse.class);
+        } catch (IOException e) {
+            log.error("OkHttpClient exception! {}", e.getMessage(), e);
+            throw new CommonException("Failed to fetch from Pinecone due to network error." + e.getMessage());
+        }
+    }
+
     // 从Pinecone向量库中删除向量
     public Boolean delete(PineconeDelete pineconeDeleteReq){
         Request request = new Request.Builder()
@@ -156,6 +197,14 @@ public class PineconeService {
 
     private RequestBody jsonBody(Object payload) {
         return RequestBody.create(JSON.toJSONString(payload), JSON_MEDIA_TYPE);
+    }
+
+    private String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8").replace("+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            throw new CommonException("Failed to encode Pinecone fetch parameter." + e.getMessage());
+        }
     }
 
 }

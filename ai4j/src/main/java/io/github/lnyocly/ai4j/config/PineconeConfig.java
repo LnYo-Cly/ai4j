@@ -20,4 +20,5 @@ public class PineconeConfig {
     private String upsert = "/vectors/upsert";
     private String query = "/query";
     private String delete = "/vectors/delete";
+    private String fetch = "/vectors/fetch";
 }

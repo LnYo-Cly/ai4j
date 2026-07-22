@@ -2,12 +2,15 @@ package io.github.lnyocly.ai4j.vector.store.pinecone;
 
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeDelete;
+import io.github.lnyocly.ai4j.vector.pinecone.PineconeFetchResponse;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsert;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeInsertResponse;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQuery;
 import io.github.lnyocly.ai4j.vector.pinecone.PineconeQueryResponse;
+import io.github.lnyocly.ai4j.vector.pinecone.PineconeVectors;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
+import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchResult;
@@ -68,6 +71,23 @@ public class PineconeVectorStoreTest {
     }
 
     @Test
+    public void shouldFetchByIdsForExistsAndAdvertiseIdLookup() throws Exception {
+        CapturingPineconeService pineconeService = new CapturingPineconeService();
+        PineconeVectorStore store = new PineconeVectorStore(pineconeService);
+
+        boolean exists = store.exists(VectorExistsRequest.builder()
+                .dataset("tenant_lookup")
+                .ids(Arrays.asList("doc-1", "doc-2"))
+                .build());
+
+        Assert.assertTrue(exists);
+        Assert.assertTrue(store.capabilities().isIdLookup());
+        Assert.assertFalse(store.capabilities().isMetadataLookup());
+        Assert.assertEquals("tenant_lookup", pineconeService.lastFetchNamespace);
+        Assert.assertEquals("doc-1", pineconeService.lastFetchIds.get(0));
+    }
+
+    @Test
     public void shouldConvertDeleteRequestToPineconeDelete() throws Exception {
         CapturingPineconeService pineconeService = new CapturingPineconeService();
         PineconeVectorStore store = new PineconeVectorStore(pineconeService);
@@ -87,6 +107,8 @@ public class PineconeVectorStoreTest {
         private PineconeInsert lastInsert;
         private PineconeQuery lastQuery;
         private PineconeDelete lastDelete;
+        private List<String> lastFetchIds;
+        private String lastFetchNamespace;
 
         private CapturingPineconeService() {
             super(new Configuration());
@@ -110,6 +132,18 @@ public class PineconeVectorStoreTest {
 
             PineconeQueryResponse response = new PineconeQueryResponse();
             response.setMatches(Collections.singletonList(match));
+            return response;
+        }
+
+        @Override
+        public PineconeFetchResponse fetch(List<String> ids, String namespace) {
+            this.lastFetchIds = ids;
+            this.lastFetchNamespace = namespace;
+
+            PineconeFetchResponse response = new PineconeFetchResponse();
+            Map<String, PineconeVectors> vectors = new LinkedHashMap<String, PineconeVectors>();
+            vectors.put("doc-1", PineconeVectors.builder().id("doc-1").build());
+            response.setVectors(vectors);
             return response;
         }
 
