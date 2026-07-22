@@ -69,6 +69,44 @@ public class ChatRerankerTest {
     }
 
     @Test
+    public void shouldNotAppendRemainingHitsWhenDisabled() throws Exception {
+        FakeChatService chat = new FakeChatService(
+                "{\"results\":[{\"index\":1,\"score\":0.9},{\"index\":0,\"score\":0.2}]}"
+        );
+        ChatReranker reranker = new ChatReranker(chat, "glm-4-flash", 2, null, false, 20);
+
+        List<RagHit> hits = reranker.rerank("q", Arrays.asList(
+                RagHit.builder().id("a").content("doc-a").retrievalScore(0.55f).build(),
+                RagHit.builder().id("b").content("doc-b").retrievalScore(0.52f).build(),
+                RagHit.builder().id("c").content("doc-c").retrievalScore(0.40f).build()
+        ));
+
+        Assert.assertEquals(2, hits.size());
+        Assert.assertEquals("b", hits.get(0).getId());
+        Assert.assertEquals("a", hits.get(1).getId());
+    }
+
+    @Test
+    public void shouldKeepAllScoredHitsWhenTopNNull() throws Exception {
+        FakeChatService chat = new FakeChatService(
+                "{\"results\":[{\"index\":2,\"score\":0.95},{\"index\":0,\"score\":0.5},{\"index\":1,\"score\":0.1}]}"
+        );
+        ChatReranker reranker = new ChatReranker(chat, "glm-4-flash", null, null, false, 20);
+
+        List<RagHit> hits = reranker.rerank("q", Arrays.asList(
+                RagHit.builder().id("a").content("doc-a").build(),
+                RagHit.builder().id("b").content("doc-b").build(),
+                RagHit.builder().id("c").content("doc-c").build()
+        ));
+
+        Assert.assertEquals(3, hits.size());
+        Assert.assertEquals("c", hits.get(0).getId());
+        Assert.assertEquals(Float.valueOf(0.95f), hits.get(0).getRerankScore());
+        Assert.assertEquals("a", hits.get(1).getId());
+        Assert.assertEquals("b", hits.get(2).getId());
+    }
+
+    @Test
     public void aiServiceShouldCreateChatReranker() {
         AiService aiService = new AiService(new Configuration());
         Assert.assertTrue(aiService.getChatReranker(PlatformType.OPENAI, "glm-4-flash") instanceof ChatReranker);
