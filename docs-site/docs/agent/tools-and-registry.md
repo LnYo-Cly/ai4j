@@ -96,6 +96,37 @@ public interface ToolExecutor {
 - 不是 `AgentToolCallSanitizer`
 - 也不是某个通用 hook
 
+### 3.1 RAG-as-tool 的多租户 filter 必须固定在服务端
+
+如果把知识库检索暴露成 `RagTool`，模型可见的 tool schema 应只包含用户查询，例如：
+
+```json
+{"query": "用户问题"}
+```
+
+租户、部门、项目、权限范围这类 filter 不应该放进 tool input schema，让模型自己传：
+
+```json
+{"query": "用户问题", "filter": {"tenant": "tenant_a"}}
+```
+
+正确做法是在宿主侧构造 tool 时固定绑定：
+
+```java
+Map<String, Object> tenantFilter = new HashMap<String, Object>();
+tenantFilter.put("tenant", tenantIdFromSession);
+
+RagTool ragTool = RagTool.builder(ragService)
+        .dataset("shared-kb")
+        .embeddingModel("text-embedding")
+        .topK(5)
+        .filter(tenantFilter)
+        .build();
+```
+
+这样 LLM 只负责提出检索 query，真正的租户边界由服务端执行器写入 `RagQuery.filter`。
+这和普通工具权限一样，属于执行边界，不属于模型可协商的参数。
+
 ## 4. 默认 Builder 装配路径比看起来更具体
 
 `AgentBuilder.build()` 的默认逻辑不是“自动帮你把工具接好”，而是一条明确的决策链。
