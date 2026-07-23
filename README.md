@@ -52,7 +52,7 @@
 Gradle：
 
 ```gradle
-implementation 'io.github.lnyo-cly:ai4j:2.4.1'
+implementation 'io.github.lnyo-cly:ai4j:2.4.2'
 ```
 
 Maven：
@@ -61,7 +61,7 @@ Maven：
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.4.1</version>
+  <version>2.4.2</version>
 </dependency>
 ```
 
