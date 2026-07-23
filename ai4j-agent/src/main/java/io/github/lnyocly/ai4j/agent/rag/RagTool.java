@@ -36,8 +36,9 @@ import java.util.Map;
  *           .build();
  * }</pre>
  *
- * <p>filter（多租户权限过滤）可在 RagService 构造时通过 Retriever 注入，
- * 也可由调用方在 executor 里包一层（从 AgentContext 取租户）。
+ * <p>filter（多租户/权限过滤）应由服务端固定注入，而不是暴露成模型可写的
+ * tool 入参。可通过 {@link Builder#filter(Map)} 绑定到此 tool；模型侧 schema
+ * 仍只包含 {@code query}，避免由 LLM 决定租户或权限边界。
  */
 public class RagTool {
 
@@ -45,6 +46,7 @@ public class RagTool {
     private final String dataset;
     private final String embeddingModel;
     private final int topK;
+    private final Map<String, Object> filter;
     private final String name;
     private final String description;
 
@@ -56,7 +58,21 @@ public class RagTool {
     }
 
     public RagTool(RagService ragService, String dataset, String embeddingModel, int topK,
+                   Map<String, Object> filter) {
+        this(ragService, dataset, embeddingModel, topK,
+                "knowledge_search",
+                "Search the knowledge base for relevant context to answer the user's question. "
+                        + "Input: {\"query\": \"the question\"}. Returns assembled context with citations.",
+                filter);
+    }
+
+    public RagTool(RagService ragService, String dataset, String embeddingModel, int topK,
                    String name, String description) {
+        this(ragService, dataset, embeddingModel, topK, name, description, null);
+    }
+
+    public RagTool(RagService ragService, String dataset, String embeddingModel, int topK,
+                   String name, String description, Map<String, Object> filter) {
         if (ragService == null) {
             throw new IllegalArgumentException("ragService is required");
         }
@@ -70,11 +86,14 @@ public class RagTool {
         this.dataset = dataset;
         this.embeddingModel = embeddingModel;
         this.topK = topK <= 0 ? 5 : topK;
+        this.filter = filter == null || filter.isEmpty()
+                ? null
+                : Collections.unmodifiableMap(new HashMap<String, Object>(filter));
         this.name = name;
         this.description = description;
     }
 
-    /** OpenAI function schema（agent 调用契约）。 */
+    /** OpenAI function schema（agent 调用契约）。只暴露 query，不暴露服务端固定 filter。 */
     public Tool tool() {
         Tool.Function fn = new Tool.Function();
         fn.setName(name);
@@ -124,6 +143,7 @@ public class RagTool {
                     .dataset(dataset)
                     .embeddingModel(embeddingModel)
                     .topK(topK)
+                    .filter(filter == null ? null : new HashMap<String, Object>(filter))
                     .build());
             lastResult.set(result);
             return result == null || result.getContext() == null ? "" : result.getContext();
@@ -144,6 +164,7 @@ public class RagTool {
         private String dataset;
         private String embeddingModel;
         private int topK = 5;
+        private Map<String, Object> filter;
         private String name = "knowledge_search";
         private String description = "Search the knowledge base for relevant context.";
 
@@ -166,6 +187,15 @@ public class RagTool {
             return this;
         }
 
+        /**
+         * Bind a fixed server-side retrieval filter. This filter is not exposed in
+         * the tool input schema and cannot be changed by model-provided arguments.
+         */
+        public Builder filter(Map<String, Object> filter) {
+            this.filter = filter;
+            return this;
+        }
+
         public Builder name(String name) {
             this.name = name;
             return this;
@@ -177,7 +207,7 @@ public class RagTool {
         }
 
         public RagTool build() {
-            return new RagTool(ragService, dataset, embeddingModel, topK, name, description);
+            return new RagTool(ragService, dataset, embeddingModel, topK, name, description, filter);
         }
     }
 }
