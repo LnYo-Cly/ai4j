@@ -10,8 +10,8 @@ sidebar_position: 3
 
 AI4J 当前采用 **全模块同号发布**：
 
-- 发布版：所有发布模块使用同一个稳定版本，例如 `2.4.1`
-- 开发分支：所有 Maven POM 使用下一个 `SNAPSHOT`，例如 `2.4.2-SNAPSHOT`
+- 发布版：所有发布模块使用同一个稳定版本，例如 `2.4.2`
+- 开发分支：所有 Maven POM 使用下一个 `SNAPSHOT`，例如 `2.4.3-SNAPSHOT`
 - README / docs 示例：写最新已发布稳定版，不写 `SNAPSHOT`
 
 只改 README、docs-site 或 demo 时，不需要发布新的 Maven 版本。

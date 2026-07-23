@@ -10,7 +10,7 @@ sidebar_position: 1
 
 | 项 | 当前边界 |
 | --- | --- |
-| AI4J 版本 | `2.4.1` |
+| AI4J 版本 | `2.4.2` |
 | Maven groupId | `io.github.lnyo-cly` |
 | Java baseline | Java 8 source / target |
 | 构建工具 | Maven |
