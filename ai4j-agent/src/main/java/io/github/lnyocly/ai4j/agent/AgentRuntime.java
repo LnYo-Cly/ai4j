@@ -12,4 +12,13 @@ public interface AgentRuntime {
         runStream(context, request, listener);
         return null;
     }
+
+    /**
+     * Request cancellation of the currently running agent invocation.
+     * Sets a volatile flag and interrupts the running thread. The agent loop
+     * checks this flag between steps and throws InterruptedException.
+     * Default implementation is a no-op; BaseAgentRuntime overrides.
+     */
+    default void cancel() {
+    }
 }

@@ -10,6 +10,7 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.hunyuan.HunyuanConstant;
@@ -310,6 +311,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
 
                 }
 
+            } else {
+                throw HttpErrorDecoder.decode(execute);
             }
 
         }

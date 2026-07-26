@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
@@ -31,6 +32,9 @@ import java.util.List;
 
 @Slf4j
 public abstract class SseListener extends AbstractManagedStreamListener {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     /**
      * 异常回调
      */
@@ -119,10 +123,9 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return;
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
         ChatCompletionResponse chatCompletionResponse = null;
         try {
-            chatCompletionResponse = objectMapper.readValue(data, ChatCompletionResponse.class);
+            chatCompletionResponse = OBJECT_MAPPER.readValue(data, ChatCompletionResponse.class);
         } catch (JsonProcessingException e) {
             throw new CommonException("read data error");
         }
@@ -430,7 +433,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return false;
         }
         try {
-            JsonNode node = new ObjectMapper().readTree(arguments);
+            JsonNode node = OBJECT_MAPPER.readTree(arguments);
             return node != null && node.isObject();
         } catch (Exception ignored) {
             return false;
@@ -439,14 +442,14 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
     @Override
     protected Throwable resolveFailure(@Nullable Throwable t, @Nullable Response response) {
-        if (t != null && StringUtils.isNotBlank(t.getMessage())) {
+        if (response != null) {
+            String message = resolveFailureMessage(t, response);
+            return HttpErrorDecoder.decode(response.code(), message);
+        }
+        if (t != null) {
             return t;
         }
-        String message = resolveFailureMessage(t, response);
-        if (StringUtils.isBlank(message)) {
-            return t == null ? new CommonException("stream request failed") : t;
-        }
-        return new CommonException(message);
+        return new CommonException("stream request failed");
     }
 
     protected String resolveFailureMessage(@Nullable Throwable t, @Nullable Response response) {
@@ -491,7 +494,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return null;
         }
         try {
-            JsonNode root = new ObjectMapper().readTree(payload);
+            JsonNode root = OBJECT_MAPPER.readTree(payload);
             String message = firstJsonText(
                     root.path("error").path("message"),
                     root.path("error"),

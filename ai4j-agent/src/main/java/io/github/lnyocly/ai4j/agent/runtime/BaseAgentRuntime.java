@@ -45,8 +45,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.AgentRuntime {
+
+    private volatile boolean cancelled = false;
+    private volatile Thread runningThread = null;
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+        Thread t = runningThread;
+        if (t != null) {
+            t.interrupt();
+        }
+    }
 
     protected String runtimeName() {
         return "base";
@@ -58,22 +71,39 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
     @Override
     public AgentResult run(AgentContext context, AgentRequest request) throws Exception {
-        return runInternal(context, request, null);
+        try {
+            return runInternal(context, request, null);
+        } finally {
+            runningThread = null;
+        }
     }
 
     @Override
     public void runStream(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
-        runInternal(context, request, listener);
+        try {
+            runInternal(context, request, listener);
+        } finally {
+            runningThread = null;
+        }
     }
 
     @Override
     public AgentResult runStreamResult(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
-        return runInternal(context, request, listener);
+        try {
+            return runInternal(context, request, listener);
+        } finally {
+            runningThread = null;
+        }
     }
 
     protected AgentResult runInternal(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
         AgentOptions options = context.getOptions();
-        int maxSteps = options == null ? 0 : options.getMaxSteps();
+        int maxSteps = options == null ? AgentOptions.DEFAULT_MAX_STEPS : options.getMaxSteps();
+        long wallClockTimeoutMs = options == null ? AgentOptions.DEFAULT_WALL_CLOCK_TIMEOUT_MS : options.getWallClockTimeoutMillis();
+        long maxTokenBudget = options == null ? AgentOptions.UNLIMITED_TOKEN_BUDGET : options.getMaxTokenBudget();
+        cancelled = false;
+        runningThread = Thread.currentThread();
+        long startTime = System.currentTimeMillis();
         boolean stream = listener != null && options != null && options.isStream();
         String sessionId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_SESSION_ID));
         if (sessionId == null) {
@@ -135,6 +165,12 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
         while (!stepLimited || step < maxSteps) {
             throwIfInterrupted();
+            if (cancelled) {
+                throw new InterruptedException("Agent run cancelled");
+            }
+            if (wallClockTimeoutMs > 0 && System.currentTimeMillis() - startTime >= wallClockTimeoutMs) {
+                throw new TimeoutException("Agent run exceeded wall-clock timeout of " + wallClockTimeoutMs + " ms");
+            }
             // auto-compaction: if the policy says the context is too large, compact before building
             // the prompt for this step (same trigger point as pi: before the model call).
             autoCompactIfNecessary(context, listener, step, runId, sessionId, turnId);
@@ -153,6 +189,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 if (modelResult.getOutputTokens() != null) {
                     totalOutputTokens += modelResult.getOutputTokens();
                     hasUsage = true;
+                }
+                if (maxTokenBudget > 0 && hasUsage && (totalInputTokens + totalOutputTokens) >= maxTokenBudget) {
+                    throw new TimeoutException("Agent run exceeded token budget of " + maxTokenBudget + " tokens");
                 }
             }
 
