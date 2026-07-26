@@ -20,15 +20,22 @@ import java.util.Map;
 
 public class FlowGramHttpNodeExecutor implements FlowGramNodeExecutor {
 
+    /** System property read by the no-arg constructor to allow private-network targets. */
+    static final String ALLOW_PRIVATE_NETWORK_PROPERTY = "ai4j.flowgram.http-node.allow-private-network";
+
     private final FlowGramNodeValueResolver valueResolver = new FlowGramNodeValueResolver();
     private final HttpNodeSsrfGuard ssrfGuard;
 
     public FlowGramHttpNodeExecutor() {
-        this(new HttpNodeSsrfGuard());
+        this(new HttpNodeSsrfGuard(isAllowPrivateNetworkFromSystemProperty()));
     }
 
     public FlowGramHttpNodeExecutor(HttpNodeSsrfGuard ssrfGuard) {
         this.ssrfGuard = ssrfGuard == null ? new HttpNodeSsrfGuard() : ssrfGuard;
+    }
+
+    private static boolean isAllowPrivateNetworkFromSystemProperty() {
+        return "true".equalsIgnoreCase(System.getProperty(ALLOW_PRIVATE_NETWORK_PROPERTY));
     }
 
     @Override
