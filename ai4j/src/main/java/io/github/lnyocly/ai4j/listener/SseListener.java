@@ -31,6 +31,9 @@ import java.util.List;
 
 @Slf4j
 public abstract class SseListener extends AbstractManagedStreamListener {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     /**
      * 异常回调
      */
@@ -119,10 +122,9 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return;
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
         ChatCompletionResponse chatCompletionResponse = null;
         try {
-            chatCompletionResponse = objectMapper.readValue(data, ChatCompletionResponse.class);
+            chatCompletionResponse = OBJECT_MAPPER.readValue(data, ChatCompletionResponse.class);
         } catch (JsonProcessingException e) {
             throw new CommonException("read data error");
         }
@@ -430,7 +432,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return false;
         }
         try {
-            JsonNode node = new ObjectMapper().readTree(arguments);
+            JsonNode node = OBJECT_MAPPER.readTree(arguments);
             return node != null && node.isObject();
         } catch (Exception ignored) {
             return false;
@@ -491,7 +493,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return null;
         }
         try {
-            JsonNode root = new ObjectMapper().readTree(payload);
+            JsonNode root = OBJECT_MAPPER.readTree(payload);
             String message = firstJsonText(
                     root.path("error").path("message"),
                     root.path("error"),

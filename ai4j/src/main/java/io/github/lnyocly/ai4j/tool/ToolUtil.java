@@ -30,10 +30,21 @@ public class ToolUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ToolUtil.class);
 
-    // 反射扫描器，支持注解和方法扫描
-    private static final Reflections reflections = new Reflections(new ConfigurationBuilder()
-            .setUrls(ClasspathHelper.forPackage(""))
-            .setScanners(Scanners.TypesAnnotated, Scanners.MethodsAnnotated));
+    // 反射扫描器，支持注解和方法扫描（延迟初始化，限定扫描范围以加速冷启动）
+    private static volatile Reflections reflections;
+
+    private static Reflections getReflections() {
+        if (reflections == null) {
+            synchronized (ToolUtil.class) {
+                if (reflections == null) {
+                    reflections = new Reflections(new ConfigurationBuilder()
+                            .setUrls(ClasspathHelper.forPackage("io.github.lnyocly.ai4j"))
+                            .setScanners(Scanners.TypesAnnotated, Scanners.MethodsAnnotated));
+                }
+            }
+        }
+        return reflections;
+    }
 
     // === 传统Function工具缓存 ===
     public static final Map<String, Tool> toolEntityMap = new ConcurrentHashMap<>();
@@ -635,7 +646,7 @@ public class ToolUtil {
      */
     private static void scanFunctionTools() {
         try {
-            Set<Class<?>> functionSet = reflections.getTypesAnnotatedWith(FunctionCall.class);
+            Set<Class<?>> functionSet = getReflections().getTypesAnnotatedWith(FunctionCall.class);
 
             for (Class<?> functionClass : functionSet) {
                 try {
@@ -671,7 +682,7 @@ public class ToolUtil {
      */
     private static void scanMcpTools() {
         try {
-            Set<Class<?>> mcpServiceClasses = reflections.getTypesAnnotatedWith(McpService.class);
+            Set<Class<?>> mcpServiceClasses = getReflections().getTypesAnnotatedWith(McpService.class);
 
             for (Class<?> serviceClass : mcpServiceClasses) {
                 try {
@@ -781,7 +792,7 @@ public class ToolUtil {
         }
 
         try {
-            Set<Class<?>> functionSet = reflections.getTypesAnnotatedWith(FunctionCall.class);
+            Set<Class<?>> functionSet = getReflections().getTypesAnnotatedWith(FunctionCall.class);
 
             for (Class<?> functionClass : functionSet) {
                 try {
