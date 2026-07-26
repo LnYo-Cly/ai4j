@@ -582,7 +582,7 @@ public class CodeCommandTest {
         );
 
         int exitCode = command.run(
-                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--prompt", "run bash sample"),
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--approval", "auto", "--prompt", "run bash sample"),
                 new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
         );
 
@@ -608,7 +608,7 @@ public class CodeCommandTest {
         );
 
         int exitCode = command.run(
-                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--prompt", "run invalid patch"),
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--approval", "auto", "--prompt", "run invalid patch"),
                 new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
         );
 
@@ -634,7 +634,7 @@ public class CodeCommandTest {
         );
 
         int exitCode = command.run(
-                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--prompt", "run recoverable patch"),
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--approval", "auto", "--prompt", "run recoverable patch"),
                 new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
         );
 
@@ -659,7 +659,7 @@ public class CodeCommandTest {
         );
 
         int exitCode = command.run(
-                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--prompt", "run unified diff patch"),
+                Arrays.asList("--ui", "tui", "--model", "fake-model", "--workspace", workspace.toString(), "--approval", "auto", "--prompt", "run unified diff patch"),
                 new StreamsTerminalIO(new ByteArrayInputStream(new byte[0]), out, err)
         );
 
