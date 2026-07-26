@@ -66,7 +66,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/springboot-jdbc-agent-memory)
+- [旧路径案例页](/docs/solutions/springboot-jdbc-agent-memory)
 
 ## 7. 关键对象
 

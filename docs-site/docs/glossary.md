@@ -79,7 +79,7 @@ AI4J Agent 中的代码驱动运行时。
 
 对应文档：
 
-- [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
+- [CodeAct Runtime](/docs/agent/codeact-runtime)
 
 ### Coding Agent
 
@@ -238,7 +238,7 @@ AI4J Agent 的默认通用运行时，适合：
 
 对应文档：
 
-- [最小 ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
+- [最小 ReAct Agent](/docs/agent/minimal-react-agent)
 
 ### Responses
 
@@ -287,7 +287,7 @@ Agent Workflow 中的状态图编排能力，适合分支、循环、条件路�
 
 对应文档：
 
-- [Workflow StateGraph](/docs/agent/orchestration/stategraph)
+- [Workflow StateGraph](/docs/agent/workflow-stategraph)
 
 ### Stream
 
@@ -324,4 +324,4 @@ Agent Workflow 中的状态图编排能力，适合分支、循环、条件路�
 
 对应文档：
 
-- [Trace 与可观测性](/docs/agent/observability/trace)
+- [Trace 与可观测性](/docs/agent/trace-observability)

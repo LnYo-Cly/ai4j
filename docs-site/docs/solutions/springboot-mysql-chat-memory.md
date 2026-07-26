@@ -65,7 +65,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/springboot-mysql-chat-memory)
+- [旧路径案例页](/docs/solutions/springboot-mysql-chat-memory)
 
 ## 7. 关键对象
 
