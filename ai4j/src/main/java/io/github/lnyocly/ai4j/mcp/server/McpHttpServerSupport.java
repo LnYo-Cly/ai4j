@@ -16,13 +16,51 @@ import java.util.Map;
  */
 public final class McpHttpServerSupport {
 
+    /** No CORS header is emitted — same-origin only. */
+    public static final String CORS_SAME_ORIGIN = null;
+
     private McpHttpServerSupport() {
     }
 
+    /**
+     * Sets CORS headers with a wildcard origin ({@code Access-Control-Allow-Origin: *}).
+     * Kept for backward compatibility; new callers should prefer
+     * {@link #setCorsHeaders(HttpExchange, String, String, String)} with an explicit origin.
+     */
     public static void setCorsHeaders(HttpExchange exchange, String allowMethods, String allowHeaders) {
-        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        setCorsHeaders(exchange, allowMethods, allowHeaders, "*");
+    }
+
+    /**
+     * Sets CORS headers with an explicit allowed origin.
+     *
+     * @param allowedOrigin the value for {@code Access-Control-Allow-Origin}, or {@code null} to
+     *                      emit no CORS header (same-origin policy — the secure default)
+     */
+    public static void setCorsHeaders(HttpExchange exchange, String allowMethods, String allowHeaders, String allowedOrigin) {
+        if (allowedOrigin != null) {
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", allowedOrigin);
+        }
         exchange.getResponseHeaders().add("Access-Control-Allow-Methods", allowMethods);
         exchange.getResponseHeaders().add("Access-Control-Allow-Headers", allowHeaders);
+    }
+
+    /**
+     * Checks authentication via the given {@link McpAuthProvider}. When auth fails, sends a
+     * 401 JSON error response and returns {@code false}; the handler should return immediately.
+     *
+     * @return {@code true} if the request is authenticated, {@code false} if a 401 was sent
+     */
+    public static boolean requireAuth(HttpExchange exchange, McpAuthProvider authProvider) throws IOException {
+        if (authProvider == null) {
+            return true; // no auth configured — allow
+        }
+        if (authProvider.authenticate(exchange)) {
+            return true;
+        }
+        exchange.getResponseHeaders().add("WWW-Authenticate", "Bearer");
+        sendError(exchange, 401, "Unauthorized: valid Bearer token required");
+        return false;
     }
 
     public static String readRequestBody(HttpExchange exchange) throws IOException {
