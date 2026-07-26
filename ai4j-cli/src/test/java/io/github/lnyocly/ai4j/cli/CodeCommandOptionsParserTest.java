@@ -43,6 +43,46 @@ public class CodeCommandOptionsParserTest {
         Assert.assertEquals("workspace-from-env", options.getWorkspace());
         Assert.assertEquals(0, options.getMaxSteps());
         Assert.assertEquals(Boolean.FALSE, options.getParallelToolCalls());
+        Assert.assertEquals(ApprovalMode.SAFE, options.getApprovalMode());
+    }
+
+    @Test
+    public void test_default_approval_mode_is_safe() {
+        CodeCommandOptions options = parser.parse(
+                Arrays.asList("--model", "demo-model"),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                Paths.get(".")
+        );
+
+        Assert.assertEquals(ApprovalMode.SAFE, options.getApprovalMode());
+    }
+
+    @Test
+    public void test_approval_auto_opt_out_restores_auto() {
+        CodeCommandOptions options = parser.parse(
+                Arrays.asList("--model", "demo-model", "--approval", "auto"),
+                Collections.<String, String>emptyMap(),
+                new Properties(),
+                Paths.get(".")
+        );
+
+        Assert.assertEquals(ApprovalMode.AUTO, options.getApprovalMode());
+    }
+
+    @Test
+    public void test_approval_env_opt_out_restores_auto() {
+        Map<String, String> env = new HashMap<String, String>();
+        env.put("AI4J_APPROVAL", "auto");
+
+        CodeCommandOptions options = parser.parse(
+                Arrays.asList("--model", "demo-model"),
+                env,
+                new Properties(),
+                Paths.get(".")
+        );
+
+        Assert.assertEquals(ApprovalMode.AUTO, options.getApprovalMode());
     }
 
     @Test
