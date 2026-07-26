@@ -61,6 +61,7 @@
         <module>ai4j-extension-api</module>
         <module>ai4j-plugin-ask-user</module>
         <module>ai4j</module>
+        <module>ai4j-document-tika</module>
         <module>ai4j-agent</module>
         <module>ai4j-coding</module>
         <module>ai4j-cli</module>

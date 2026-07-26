@@ -66,6 +66,14 @@
             <artifactId>fastjson2</artifactId>
             <version>2.0.43</version>
         </dependency>
+        <!-- B4 连带修复：ai4j/ai4j-agent lombok 已 optional 不再传递，下游需显式声明 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
