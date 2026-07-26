@@ -36,25 +36,29 @@ public class StreamExecutionSupportTest {
         Assert.assertNull(listener.getFailure());
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void shouldNotRetryAfterFirstEventArrives() throws Exception {
         RecordingManagedStreamListener listener = new RecordingManagedStreamListener();
         listener.receivedEvent = true;
         AtomicInteger attempts = new AtomicInteger();
 
-        StreamExecutionSupport.execute(
-                listener,
-                StreamExecutionOptions.builder().maxRetries(3).retryBackoffMs(0L).build(),
-                () -> {
-                    attempts.incrementAndGet();
-                    listener.recordFailure(new RuntimeException("stream stalled"));
-                }
-        );
-
-        Assert.assertEquals(1, attempts.get());
-        Assert.assertEquals(0, listener.retries.size());
-        Assert.assertEquals(0, listener.prepareForRetryCalls);
-        Assert.assertNotNull(listener.getFailure());
+        try {
+            StreamExecutionSupport.execute(
+                    listener,
+                    StreamExecutionOptions.builder().maxRetries(3).retryBackoffMs(0L).build(),
+                    () -> {
+                        attempts.incrementAndGet();
+                        listener.recordFailure(new RuntimeException("stream stalled"));
+                    }
+            );
+        } finally {
+            // C1: failure after received event now propagates (no silent return);
+            // retry path still must not be entered.
+            Assert.assertEquals(1, attempts.get());
+            Assert.assertEquals(0, listener.retries.size());
+            Assert.assertEquals(0, listener.prepareForRetryCalls);
+            Assert.assertNotNull(listener.getFailure());
+        }
     }
 
     @Test

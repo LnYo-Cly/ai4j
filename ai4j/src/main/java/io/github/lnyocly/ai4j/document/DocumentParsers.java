@@ -37,6 +37,19 @@ public final class DocumentParsers {
     }
 
     /**
+     * 检测 classpath 上是否存在 DocumentParser 实现（用于测试跳过）。
+     *
+     * @return 有实现时 true，否则 false
+     */
+    public static boolean isAvailable() {
+        ServiceLoader<DocumentParser> loader = ServiceLoader.load(DocumentParser.class);
+        for (DocumentParser impl : loader) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * 解析输入流中的文档内容；无实现时抛友好错误。
      *
      * @param in       输入流
