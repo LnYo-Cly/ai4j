@@ -1,16 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.lnyo-cly</groupId>
-    <artifactId>ai4j-flowgram-spring-boot-starter</artifactId>
-    <packaging>jar</packaging>
-    <version>2.4.3-SNAPSHOT</version>
+    <parent>
+        <groupId>io.github.lnyo-cly</groupId>
+        <artifactId>ai4j-sdk</artifactId>
+        <version>2.4.3-SNAPSHOT</version>
+    </parent>
 
-    <name>ai4j-flowgram-spring-boot-starter</name>
-    <description>ai4j FlowGram 的 Spring Boot Starter，支持流程应用与 trace 集成。 Spring Boot starter for ai4j FlowGram workflow applications and trace integration.</description>
+    <artifactId>ai4j-document-tika</artifactId>
+    <packaging>jar</packaging>
+
+    <name>ai4j-document-tika</name>
+    <description>ai4j 可选文档解析 artifact：基于 Apache Tika 的富文档（PDF/Word/Excel/PPT）解析实现。
+        Optional document-parsing artifact powered by Apache Tika; required only when callers need
+        PDF/Word/Excel/PPT content extraction from the core ai4j document SPI.</description>
+
+    <properties>
+        <!-- 跳过 enforcer：tika-parsers-standard-package 是第三方胖包，
+             其内部传递依赖的版本冲突由 tika 自身保证，不属于本 SDK 的版本对齐范围 -->
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
 
     <licenses>
         <license>
@@ -41,39 +53,24 @@
         <developerConnection>scm:git:https://github.com/LnYo-Cly/ai4j.git</developerConnection>
     </scm>
 
-    <properties>
-        <java.version>1.8</java.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
-        <gpg.executable>gpg</gpg.executable>
-        <skipTests>true</skipTests>
-    </properties>
-
     <dependencies>
+        <!-- 核心 ai4j 提供 DocumentParser SPI 接口 -->
         <dependency>
             <groupId>io.github.lnyo-cly</groupId>
-            <artifactId>ai4j-agent</artifactId>
+            <artifactId>ai4j</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <!-- Apache Tika core + 富文档解析器全家桶（POI/PDFBox/BouncyCastle 等） -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.2</version>
         </dependency>
         <dependency>
-            <groupId>io.github.lnyo-cly</groupId>
-            <artifactId>ai4j-spring-boot-starter</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+            <version>2.8.0</version>
         </dependency>
-        <!-- B4 连带修复：ai4j lombok 已 optional 不再传递，下游需显式声明 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -82,20 +79,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <version>${spring-boot.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -103,31 +89,10 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.2.224</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <version>${spring-boot.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.name}-${project.version}</finalName>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.12.4</version>
-                <configuration>
-                    <skipTests>${skipTests}</skipTests>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -136,9 +101,6 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <encoding>UTF8</encoding>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
                     <parameters>true</parameters>
                     <annotationProcessorPaths>
                         <path>
@@ -157,6 +119,30 @@
             <id>release</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>flatten-maven-plugin</artifactId>
+                        <version>${flatten-maven-plugin.version}</version>
+                        <configuration>
+                            <flattenMode>ossrh</flattenMode>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>flatten</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>flatten</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>flatten-clean</id>
+                                <phase>clean</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
@@ -183,23 +169,6 @@
                                 <configuration>
                                     <doclint>none</doclint>
                                     <failOnError>false</failOnError>
-                                    <tags>
-                                        <tag>
-                                            <name>Author</name>
-                                            <placement>a</placement>
-                                            <head>Author:</head>
-                                        </tag>
-                                        <tag>
-                                            <name>Description</name>
-                                            <placement>a</placement>
-                                            <head>Description:</head>
-                                        </tag>
-                                        <tag>
-                                            <name>Date</name>
-                                            <placement>a</placement>
-                                            <head>Date:</head>
-                                        </tag>
-                                    </tags>
                                 </configuration>
                             </execution>
                         </executions>
@@ -236,4 +205,3 @@
         </profile>
     </profiles>
 </project>
-
