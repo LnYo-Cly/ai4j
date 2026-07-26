@@ -20,31 +20,12 @@
 </p>
 
 # ai4j
-A Java AI Agentic development toolkit for JDK 8+, combining foundational AI capabilities with higher-level agent development capabilities.  
-It covers multi-provider model access, unified I/O, Tool Calling, MCP, RAG, unified `VectorStore`, ChatMemory, agent runtime, coding agent, CLI / TUI / ACP, FlowGram integration, and integration with published AgentFlow endpoints such as Dify, Coze, and n8n, helping Java applications grow from basic model integration to more complete agentic application development.
 
-This repository has evolved into a multi-module SDK. In addition to the core `ai4j` module, it now provides `ai4j-extension-api`, `ai4j-plugin-ask-user`, `ai4j-agent`, `ai4j-coding`, `ai4j-cli`, `ai4j-spring-boot-starter`, `ai4j-flowgram-spring-boot-starter`, and `ai4j-bom`. If you only need the basic LLM integration layer, start with `ai4j`. If you need plugin packages, agent runtime, coding agent, CLI / ACP, Spring Boot, or FlowGram integration, add the corresponding modules.
+A **JDK 8+** Java AI Agentic SDK: unified LLM access, Tool Calling, MCP, RAG, an Agent Runtime, and a built-in Coding Agent CLI / TUI / ACP. One SDK covering the full path from basic model calls to complete agentic applications.
 
-## README navigation
+[中文 README](README.md)
 
-- [Quick choice](#quick-choice)
-- [Install snippets](#install-snippets)
-- [Project overview](#positioning-compared-with-common-java-ai-options)
-- [Official docs site](#official-docs-site)
-- [Detailed docs](#detailed-docs)
-- [中文 README](README.md)
-
-## Quick choice
-
-| Goal | Entry |
-| --- | --- |
-| Run the first request | [Quick start](docs/readme/en/quick-start.md) |
-| Use Chat / streaming / vision / function call / memory | [Chat service](docs/readme/en/chat.md) |
-| Use Embedding, RAG, and retrieval | [Embedding / RAG](docs/readme/en/rag-and-retrieval.md) |
-| Use Coding Agent CLI / TUI / ACP | [Coding Agent CLI / TUI](docs/readme/en/coding-agent-cli.md) |
-| Contribute or find support links | [Contributing and support](docs/readme/en/contributing-support.md) |
-
-## Install snippets
+## Install
 
 Gradle:
 
@@ -62,95 +43,67 @@ Maven:
 </dependency>
 ```
 
-For module selection, Spring Boot configuration, and usage examples, see [Quick start](docs/readme/en/quick-start.md).
+## Run your first request in 30 seconds
 
-## Positioning Compared with Common Java AI Options
+Set the environment variable, then run this code:
 
-| Option | Java baseline | Application style | Primary focus |
-| --- | --- | --- | --- |
-| `ai4j` | `JDK 8+` | Plain Java / Spring | Unified model access, Tool / MCP / RAG, agent runtime, coding agent, CLI / TUI / ACP |
-| `Spring AI` | `Java 17+` | `Spring Boot 3.x` | Spring-native AI integration, model access, Tool Calling, MCP, and RAG |
-| `Spring AI Alibaba` | `Java 17+` | `Spring Boot 3.x` | Spring and Alibaba Cloud AI ecosystem integration |
-| `LangChain4j` | `Java 17+` | Plain Java / Spring / Quarkus and more | General Java abstractions for LLM, agent, and RAG integration, plus AI Services |
+```bash
+export OPENAI_API_KEY=sk-...
+```
+
+```java
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.IChatService;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+
+public class Ai4jFirstChat {
+    public static void main(String[] args) {
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiKey(System.getenv("OPENAI_API_KEY"));
+
+        Configuration configuration = new Configuration();
+        configuration.setOpenAiConfig(openAiConfig);
+
+        AiService aiService = new AiService(configuration);
+        IChatService chatService = aiService.getChatService(PlatformType.OPENAI);
+
+        ChatCompletion request = ChatCompletion.builder()
+                .model("gpt-4o-mini")
+                .message(ChatMessage.withUser("Describe ai4j in one sentence"))
+                .build();
+
+        ChatCompletionResponse response = chatService.chatCompletion(request);
+        System.out.println(response.getChoices().get(0).getMessage().getContent().getText());
+    }
+}
+```
+
+Sample output:
+
+```
+ai4j is a JDK 8+ Java AI Agentic SDK covering unified model access, Tool Calling, MCP, and RAG.
+```
+
+> Want DashScope / DeepSeek / Ollama instead? Just swap the `PlatformType` and its Config — the rest of the code stays the same.
+
+## Links
+
+- Docs site: https://lnyo-cly.github.io/ai4j/
+- First request in five minutes: [five-minute-first-chat](docs-site/docs/start-here/five-minute-first-chat.md)
+- Feature map (full 28 capabilities): [feature-map](docs-site/docs/start-here/feature-map.md)
+- Coding Agent CLI / TUI / ACP: [coding-agent-cli](docs/readme/en/coding-agent-cli.md)
+- Changelog: [CHANGELOG](CHANGELOG.md)
+- Contributing: [CONTRIBUTING](CONTRIBUTING.md)
 
 ## Supported platforms
-+ OpenAI / OpenAI-compatible
-+ Anthropic / Anthropic-compatible Messages
-+ DashScope
-+ Doubao / Volcengine Ark
-+ Jina (Rerank / Jina-compatible Rerank)
-+ Zhipu
-+ DeepSeek
-+ Moonshot
-+ Tencent Hunyuan
-+ Lingyi AI
-+ Ollama
-+ MiniMax
-+ Baichuan
-+ Suno
 
-## Supported services
-+ Chat Completions (streaming and non-streaming)
-+ Responses
-+ Anthropic Messages
-+ Embedding
-+ Rerank
-+ Audio
-+ Image
-+ Video
-+ Realtime
-+ Music (Suno task-based generation)
+OpenAI / OpenAI-compatible, Anthropic, DashScope (Tongyi/Bailian), Doubao (Volcengine Ark/Doubao), DeepSeek, Moonshot, Zhipu, Tencent Hunyuan, Lingyi, Ollama, MiniMax, Baichuan, Suno; Rerank (Jina / Ollama / Doubao); AgentFlow (Dify / Coze / n8n); VectorStore (Pinecone / Qdrant / pgvector / Milvus / Redis). See the [feature-map](docs-site/docs/start-here/feature-map.md) for the full capability list.
 
-## Supported AgentFlow / hosted workflow platforms
-+ Dify (chat / workflow)
-+ Coze (chat / workflow)
-+ n8n (webhook workflow)
+## License
 
-## Features
-+ Supports Spring and ordinary Java applications. Supports applications above Java 8.
-+ Multi-platform and multi-service.
-+ Provides `AgentFlow` support for integrating published Agent / Workflow endpoints from Dify, Coze, and n8n.
-+ Provides `ai4j-agent` as the general agent runtime, with ReAct, subagents, agent teams, memory, tracing, and tool loop support.
-+ Built-in Coding Agent CLI / TUI with interactive repository sessions, provider profiles, workspace model override, and session/process management.
-+ Provides `ai4j-coding` as the coding agent runtime, with workspace-aware tools, outer loop, checkpoint compaction, subagent, and team collaboration support.
-+ Provides `ai4j-flowgram-spring-boot-starter` for integrating FlowGram workflows and trace in Spring Boot applications.
-+ Provides `ai4j-extension-api` and the official `ai4j-plugin-ask-user` sample plugin for extending Agent / Coding Agent tools, commands, Skills, and Prompts.
-+ Provides `ai4j-bom` for version alignment across multiple ai4j modules.
-+ Unified input and output.
-+ Unified error handling.
-+ Supports streaming output. Supports streaming output of function call parameters.
-+ Easily use Tool Calls.
-+ Supports simultaneous calls of multiple functions (Zhipu does not support this).
-+ Supports stream_options, and directly obtains statistical token usage through streaming output.
-+ Built-in `ChatMemory` for basic multi-turn context across Chat / Responses.
-+ Supports RAG with a unified `VectorStore` abstraction. Current vector stores include Pinecone, Qdrant, pgvector, and Milvus.
-+ Built-in `IngestionPipeline` for `DocumentLoader -> Chunker -> MetadataEnricher -> Embedding -> VectorStore.upsert`.
-+ Built-in `DenseRetriever`, `Bm25Retriever`, and `HybridRetriever` for semantic, keyword, and hybrid retrieval.
-+ `HybridRetriever` supports RRF / RSF / DBSF fusion, keeping fusion ranking separate from semantic reranking.
-+ Unified `IRerankService` with Jina / Jina-compatible, Ollama, and Doubao rerank support; `ModelReranker` plugs directly into RAG.
-+ RAG trace exposes rank, retriever source, retrieval/fusion/rerank scores, score details, and evaluator metrics such as Precision@K, Recall@K, MRR, and NDCG.
-+ Uses Tika to read files.
-+ Provides basic token estimation and usage utilities.
-
-## Official docs site
-+ Online docs: `https://lnyo-cly.github.io/ai4j/`
-+ Docs source: `docs-site/`
-+ Start here: `docs-site/docs/start-here/five-minute-first-chat.md`
-+ Java quickstart: `docs-site/docs/start-here/quickstart-java.md`
-+ Spring Boot quickstart: `docs-site/docs/start-here/quickstart-spring-boot.md`
-+ Feature map: `docs-site/docs/start-here/feature-map.md`
-+ Plugin packages: `docs-site/docs/core-sdk/extension/plugin-packages.md`
-+ Ask User plugin: `docs-site/docs/core-sdk/extension/ask-user-plugin.md`
-
-## Detailed docs
-
-- [Coding Agent CLI / TUI](docs/readme/en/coding-agent-cli.md)
-- [Quick start](docs/readme/en/quick-start.md)
-- [Chat service](docs/readme/en/chat.md)
-- [Embedding / RAG](docs/readme/en/rag-and-retrieval.md)
-- [Contributing and support](docs/readme/en/contributing-support.md)
-
-## Tutorial documents
-+ [Quick access to Spring Boot, access to streaming and non-streaming and function calls.](http://t.csdnimg.cn/iuIAW)
-+ [Quick access to open source large models such as qwen2.5 and llama3.1 on the Ollama platform in Java.](https://blog.csdn.net/qq_35650513/article/details/142408092?spm=1001.2014.3001.5501)
-+ [Build a legal AI assistant in Java and quickly implement RAG applications.](https://blog.csdn.net/qq_35650513/article/details/142568177?fromshare=blogdetail&sharetype=blogdetail&sharerId=142568177&sharerefer=PC&sharesource=qq_35650513&sharefrom=from_link)
+[Apache License 2.0](LICENSE)

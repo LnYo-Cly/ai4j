@@ -1,0 +1,73 @@
+name: Bug report
+description: Report something that is not working as expected in ai4j
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Fill in every field below;
+        reports missing a reproduction may be closed.
+  - type: input
+    id: ai4j-version
+    attributes:
+      label: ai4j version
+      description: The exact version of ai4j you are using (run `mvn dependency:tree | grep ai4j` if unsure).
+      placeholder: "2.4.2"
+    validations:
+      required: true
+  - type: input
+    id: jdk-version
+    attributes:
+      label: JDK version
+      description: Output of `java -version`.
+      placeholder: "OpenJDK 17.0.10"
+    validations:
+      required: true
+  - type: dropdown
+    id: spring-boot
+    attributes:
+      label: Are you using ai4j under Spring Boot?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider / platform
+      description: Which LLM provider or integration is involved? (OpenAI, Anthropic, DashScope, Ollama, MCP server, RAG vector store, etc.)
+      placeholder: "OpenAI"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the unexpected behavior. Include any stack trace (paste as text, not a screenshot).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: The behavior you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: |
+        The smallest self-contained snippet that reproduces the issue.
+        A complete Java/Kotlin snippet or a link to a failing repo is ideal.
+        Remove your API key before posting — replace it with `System.getenv("...")`.
+      render: java
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste any relevant log output. This is automatically formatted as code.
+      render: shell

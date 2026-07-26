@@ -1,0 +1,35 @@
+# GitHub Releases auto-generated release notes configuration.
+# Docs: https://docs.github.com/repositories/releasing-projects-on-github/automatically-generated-release-notes
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release-notes
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking-change
+    - title: New features
+      labels:
+        - feature
+        - enhancement
+    - title: Bug fixes
+      labels:
+        - bug
+        - fix
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+    - title: Infrastructure / chores
+      labels:
+        - chore
+        - build
+        - dependencies
+        - ci
+  template: |
+    ## What changed
+
+    $CHANGES
+
+    ---
+    **Full changelog:** https://github.com/LnYo-Cly/ai4j/blob/main/CHANGELOG.md
