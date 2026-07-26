@@ -345,7 +345,7 @@ AI4J 当前的 hybrid retrieval，本质上是一个 **`Retriever` 级结果融�
 
 ## 13. 继续阅读
 
-- [Hybrid Retrieval + Rerank workflow](/docs/ai-basics/rag/hybrid-retrieval-and-rerank-workflow)
+- [Hybrid Retrieval + Rerank workflow](/docs/core-sdk/search-and-rag/hybrid-retrieval)
 - [Query Planning](/docs/core-sdk/search-and-rag/query-planning)
 - [Rerank](/docs/core-sdk/search-and-rag/rerank)
 - [Citations and Trace](/docs/core-sdk/search-and-rag/citations-and-trace)

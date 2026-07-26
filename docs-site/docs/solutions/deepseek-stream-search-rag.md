@@ -54,7 +54,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/deepseek-stream-search-rag)
+- [旧路径案例页](/docs/solutions/deepseek-stream-search-rag)
 
 ## 7. 关键对象
 

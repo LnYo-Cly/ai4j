@@ -56,7 +56,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/flowgram-mysql-taskstore)
+- [旧路径案例页](/docs/solutions/flowgram-mysql-taskstore)
 
 ## 7. 关键对象
 
