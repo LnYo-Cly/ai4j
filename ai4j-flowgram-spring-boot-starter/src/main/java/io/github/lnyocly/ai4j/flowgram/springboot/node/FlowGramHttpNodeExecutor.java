@@ -21,6 +21,15 @@ import java.util.Map;
 public class FlowGramHttpNodeExecutor implements FlowGramNodeExecutor {
 
     private final FlowGramNodeValueResolver valueResolver = new FlowGramNodeValueResolver();
+    private final HttpNodeSsrfGuard ssrfGuard;
+
+    public FlowGramHttpNodeExecutor() {
+        this(new HttpNodeSsrfGuard());
+    }
+
+    public FlowGramHttpNodeExecutor(HttpNodeSsrfGuard ssrfGuard) {
+        this.ssrfGuard = ssrfGuard == null ? new HttpNodeSsrfGuard() : ssrfGuard;
+    }
 
     @Override
     public String getType() {
@@ -46,6 +55,9 @@ public class FlowGramHttpNodeExecutor implements FlowGramNodeExecutor {
         }
 
         String fullUrl = appendQueryParams(url, params);
+
+        ssrfGuard.validate(fullUrl);
+
         int timeoutMs = intValue(timeout.get("timeout"), 10000);
         int retryTimes = Math.max(1, intValue(timeout.get("retryTimes"), 1));
 

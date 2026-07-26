@@ -13,6 +13,7 @@ import io.github.lnyocly.ai4j.flowgram.springboot.controller.FlowGramTaskControl
 import io.github.lnyocly.ai4j.flowgram.springboot.exception.FlowGramExceptionHandler;
 import io.github.lnyocly.ai4j.flowgram.springboot.node.FlowGramCodeNodeExecutor;
 import io.github.lnyocly.ai4j.flowgram.springboot.node.FlowGramHttpNodeExecutor;
+import io.github.lnyocly.ai4j.flowgram.springboot.node.HttpNodeSsrfGuard;
 import io.github.lnyocly.ai4j.flowgram.springboot.node.FlowGramKnowledgeRetrieveNodeExecutor;
 import io.github.lnyocly.ai4j.flowgram.springboot.node.FlowGramToolNodeExecutor;
 import io.github.lnyocly.ai4j.flowgram.springboot.node.FlowGramVariableNodeExecutor;
@@ -51,7 +52,7 @@ import javax.sql.DataSource;
 @Configuration
 @ConditionalOnClass(DispatcherServlet.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnProperty(prefix = "ai4j.flowgram", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "ai4j.flowgram", name = "enabled", havingValue = "true", matchIfMissing = false)
 @AutoConfigureAfter(AiConfigAutoConfiguration.class)
 @EnableConfigurationProperties(FlowGramProperties.class)
 public class FlowGramAutoConfiguration {
@@ -129,8 +130,11 @@ public class FlowGramAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "flowGramHttpNodeExecutor")
-    public FlowGramNodeExecutor flowGramHttpNodeExecutor() {
-        return new FlowGramHttpNodeExecutor();
+    public FlowGramNodeExecutor flowGramHttpNodeExecutor(FlowGramProperties properties) {
+        boolean allowPrivateNetwork = properties != null
+                && properties.getHttpNode() != null
+                && properties.getHttpNode().isAllowPrivateNetwork();
+        return new FlowGramHttpNodeExecutor(new HttpNodeSsrfGuard(allowPrivateNetwork));
     }
 
     @Bean

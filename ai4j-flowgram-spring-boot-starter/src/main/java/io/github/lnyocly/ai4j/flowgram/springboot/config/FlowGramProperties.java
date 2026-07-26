@@ -11,7 +11,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "ai4j.flowgram")
 public class FlowGramProperties {
 
-    private boolean enabled = true;
+    private boolean enabled = false;
     private String defaultServiceId;
     private boolean streamProgress = false;
     private Duration taskRetention = Duration.ofHours(1);
@@ -21,6 +21,7 @@ public class FlowGramProperties {
     private final TaskStoreProperties taskStore = new TaskStoreProperties();
     private final CorsProperties cors = new CorsProperties();
     private final AuthProperties auth = new AuthProperties();
+    private final HttpNodeProperties httpNode = new HttpNodeProperties();
 
     @Data
     public static class ApiProperties {
@@ -43,5 +44,15 @@ public class FlowGramProperties {
     public static class AuthProperties {
         private boolean enabled = false;
         private String headerName = "Authorization";
+    }
+
+    @Data
+    public static class HttpNodeProperties {
+        /**
+         * Opt-out switch for the HTTP-node SSRF guard. When {@code true} the guard allows requests
+         * targeting private/loopback/link-local addresses (cloud metadata, internal services, etc.).
+         * Defaults to {@code false} — SSRF protection is on.
+         */
+        private boolean allowPrivateNetwork = false;
     }
 }
