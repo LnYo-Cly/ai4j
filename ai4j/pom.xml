@@ -18,9 +18,6 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>true</skipTests>
-        <graalvm.version>20.3.4</graalvm.version>
-        <graalsdk.version>${graalvm.version}</graalsdk.version>
-        <nashorn.version>15.6</nashorn.version>
         <gpg.executable>gpg</gpg.executable>
         <live.provider.test.category>io.github.lnyocly.ai4j.test.LiveProviderTest</live.provider.test.category>
         <test.groups></test.groups>
@@ -193,12 +190,8 @@
             <version>13.0</version>
         </dependency>
 
-        <!-- GraalVM Polyglot SDK for CodeAct Python runtime -->
-        <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
-            <version>${graalsdk.version}</version>
-        </dependency>
+        <!-- GraalVM Polyglot SDK 已从 ai4j 核心移除：核心代码零引用，
+             CodeAct 运行时由 ai4j-agent 模块自行声明 graal-sdk 依赖。 -->
         <!-- Redis Stack (RediSearch) vector store. Optional: users who enable the
              Redis vector store must add jedis 4.x themselves, mirroring how
              PgVectorStore expects a user-supplied postgres JDBC driver. -->
@@ -257,38 +250,6 @@
                 <test.groups>${live.provider.test.category}</test.groups>
                 <test.excludedGroups></test.excludedGroups>
             </properties>
-        </profile>
-        <profile>
-            <id>nashorn-runtime</id>
-            <activation>
-                <jdk>[15,)</jdk>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.openjdk.nashorn</groupId>
-                    <artifactId>nashorn-core</artifactId>
-                    <version>${nashorn.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>graalpy-runtime</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <properties>
-                <graalsdk.version>24.1.2</graalsdk.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.python</groupId>
-                    <artifactId>python-community</artifactId>
-                    <version>${graalsdk.version}</version>
-                    <type>pom</type>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
         </profile>
 
         <profile>
