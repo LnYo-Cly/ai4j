@@ -34,6 +34,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify no i18n docs shadow
+        run: |
+          test ! -d i18n/zh-Hans/docusaurus-plugin-content-docs \
+            && echo "OK: no i18n docs shadow" \
+            || { echo "FAIL: i18n docs shadow detected — remove i18n/zh-Hans/docusaurus-plugin-content-docs"; exit 1; }
+
       - name: Typecheck docs
         run: npm run typecheck
 
