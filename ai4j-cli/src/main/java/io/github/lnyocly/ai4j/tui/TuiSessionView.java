@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.coding.session.CodingSessionDescriptor;
 import io.github.lnyocly.ai4j.coding.session.ManagedCodingSession;
 import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 import io.github.lnyocly.ai4j.coding.session.SessionEventType;
+import io.github.lnyocly.ai4j.cli.render.SafeApprovalText;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,7 +98,8 @@ public class TuiSessionView implements TuiRenderer {
         TuiScreenModel model = screenModel == null ? TuiScreenModel.builder().build() : screenModel;
         applyModel(model);
         String header = renderHeader(model.getDescriptor(), model.getRenderContext());
-        String overlay = renderOverlay(model.getInteractionState());
+        String overlay = renderOverlay(model.getInteractionState(),
+                model.getRenderContext() == null ? 0 : model.getRenderContext().getTerminalColumns());
         String composer = renderComposer(model.getInteractionState());
         String composerAddon = renderComposerAddon(model.getInteractionState());
         int transcriptViewport = resolveTranscriptViewport(model.getRenderContext(), overlay, composerAddon);
@@ -1142,9 +1144,9 @@ public class TuiSessionView implements TuiRenderer {
         target.add(firstNonBlank(label, "meta") + "> " + clip(value, 92));
     }
 
-    private String renderOverlay(TuiInteractionState state) {
+    private String renderOverlay(TuiInteractionState state, int terminalWidth) {
         if (hasPendingApproval(state)) {
-            return renderModal("Approve command", buildApprovalLines(state));
+            return renderModal("Approve command", buildApprovalLines(state, terminalWidth));
         }
         if (state != null && state.isProcessInspectorOpen()) {
             return renderModal(buildProcessOverlayTitle(state), buildProcessInspectorLines(state));
@@ -1195,7 +1197,7 @@ public class TuiSessionView implements TuiRenderer {
         return out.toString();
     }
 
-    private List<String> buildApprovalLines(TuiInteractionState state) {
+    private List<String> buildApprovalLines(TuiInteractionState state, int terminalWidth) {
         TuiInteractionState.ApprovalSnapshot snapshot = state == null ? null : state.getApprovalSnapshot();
         if (snapshot == null) {
             return Collections.singletonList("(none)");
@@ -1203,9 +1205,9 @@ public class TuiSessionView implements TuiRenderer {
         List<String> lines = new ArrayList<String>();
         String command = extractApprovalCommand(snapshot.getSummary());
         if (!isBlank(command)) {
-            lines.add("`" + clip(command, 108) + "`");
+            lines.add("`" + SafeApprovalText.renderForApproval(command, terminalWidth) + "`");
         } else if (!isBlank(snapshot.getSummary())) {
-            lines.add(clip(snapshot.getSummary(), 108));
+            lines.add(SafeApprovalText.renderForApproval(snapshot.getSummary(), terminalWidth));
         }
         lines.add("Y approve  N reject  Esc close");
         return lines;
