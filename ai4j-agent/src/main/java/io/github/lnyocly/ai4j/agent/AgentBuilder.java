@@ -22,6 +22,7 @@ import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
@@ -58,7 +59,10 @@ import okhttp3.OkHttpClient;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,6 +70,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class AgentBuilder {
+
+    /** Tool names that require explicit approval under the default SAFE permission policy. */
+    static final Set<String> DEFAULT_APPROVAL_REQUIRED_TOOLS = Collections.unmodifiableSet(
+            new LinkedHashSet<String>(Arrays.asList("write_file", "apply_patch", "edit", "bash"))
+    );
 
     private AgentRuntime runtime;
     private AgentModelClient modelClient;
@@ -91,6 +100,7 @@ public class AgentBuilder {
     private ContextProjector contextProjector;
     private ContextBudget contextBudget;
     private AgentPermissionPolicy permissionPolicy;
+    private boolean permissionPolicyExplicitlySet = false;
     private AgentExecutionEnvironment executionEnvironment;
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
@@ -379,6 +389,7 @@ public class AgentBuilder {
 
     public AgentBuilder permissionPolicy(AgentPermissionPolicy permissionPolicy) {
         this.permissionPolicy = permissionPolicy;
+        this.permissionPolicyExplicitlySet = true;
         return this;
     }
 
@@ -510,7 +521,8 @@ public class AgentBuilder {
             resolvedToolExecutor = new SubAgentToolExecutor(resolvedSubAgentRegistry, resolvedToolExecutor, resolvedHandoffPolicy);
         }
         resolvedToolExecutor = applyExtensionGuardrails(resolvedToolExecutor, extensionTools);
-        resolvedToolExecutor = applyPermissionPolicy(resolvedToolExecutor, permissionPolicy, executionEnvironment);
+        AgentPermissionPolicy resolvedPermissionPolicy = resolvePermissionPolicy();
+        resolvedToolExecutor = applyPermissionPolicy(resolvedToolExecutor, resolvedPermissionPolicy, executionEnvironment);
         resolvedToolExecutor = applyDynamicWorkflowRuntime(resolvedToolExecutor);
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
@@ -553,7 +565,7 @@ public class AgentBuilder {
                 .contextBudget(contextBudget)
                 .eventPublisher(resolvedEventPublisher)
                 .lifecycleHooks(lifecycleHooks)
-                .permissionPolicy(permissionPolicy)
+                .permissionPolicy(resolvedPermissionPolicy)
                 .executionEnvironment(executionEnvironment == null ? AgentExecutionEnvironment.LOCAL : executionEnvironment)
                 .model(model)
                 .instructions(instructions)
@@ -647,6 +659,22 @@ public class AgentBuilder {
             return executor;
         }
         return new AgentPermissionToolExecutor(executor, permissionPolicy, executionEnvironment);
+    }
+
+    /**
+     * Resolve the effective permission policy. When the user has not explicitly set a policy,
+     * defaults to SAFE mode: {@code write_file}, {@code apply_patch}, {@code edit}, and {@code bash}
+     * require approval. Call {@code .permissionPolicy(AgentPermissionPolicies.allowAll())} to opt out
+     * and restore the previous permissive behaviour.
+     */
+    private AgentPermissionPolicy resolvePermissionPolicy() {
+        if (permissionPolicyExplicitlySet) {
+            return permissionPolicy;
+        }
+        return AgentPermissionPolicies.requireApprovalForTools(
+                DEFAULT_APPROVAL_REQUIRED_TOOLS,
+                "tool requires approval under the default SAFE policy; "
+                        + "set .permissionPolicy(AgentPermissionPolicies.allowAll()) to opt out");
     }
 
     private ToolExecutor applyDynamicWorkflowRuntime(ToolExecutor executor) {

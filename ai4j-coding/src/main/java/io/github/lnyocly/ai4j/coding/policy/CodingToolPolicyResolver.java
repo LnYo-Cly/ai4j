@@ -5,9 +5,11 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
+import io.github.lnyocly.ai4j.coding.definition.CodingIsolationMode;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,6 +17,11 @@ import java.util.Locale;
 import java.util.Set;
 
 public class CodingToolPolicyResolver {
+
+    /** Tools that are blocked when CodingIsolationMode is READ_ONLY. */
+    static final Set<String> READ_ONLY_BLOCKED_TOOLS = Collections.unmodifiableSet(
+            new LinkedHashSet<String>(Arrays.asList("bash", "write_file", "apply_patch", "edit"))
+    );
 
     public CodingToolContextPolicy resolve(AgentToolRegistry baseRegistry,
                                            ToolExecutor baseExecutor,
@@ -27,11 +34,34 @@ public class CodingToolPolicyResolver {
                     .allowedToolNames(Collections.<String>emptySet())
                     .build();
         }
+        allowedToolNames = applyIsolationMode(allowedToolNames, definition);
         return CodingToolContextPolicy.builder()
                 .toolRegistry(filterRegistry(baseRegistry, allowedToolNames))
                 .toolExecutor(wrapExecutor(baseExecutor, allowedToolNames))
                 .allowedToolNames(allowedToolNames)
                 .build();
+    }
+
+    /**
+     * When the definition declares {@link CodingIsolationMode#READ_ONLY}, strip every tool that can
+     * mutate state ({@code bash}, {@code write_file}, {@code apply_patch}, {@code edit}). This
+     * ensures a READ_ONLY sub-agent cannot escape its isolation via a tool whitelist that was
+     * assembled before isolation mode was evaluated.
+     */
+    private Set<String> applyIsolationMode(Set<String> allowedToolNames, CodingAgentDefinition definition) {
+        if (allowedToolNames == null || allowedToolNames.isEmpty()) {
+            return Collections.<String>emptySet();
+        }
+        if (definition == null || definition.getIsolationMode() != CodingIsolationMode.READ_ONLY) {
+            return allowedToolNames;
+        }
+        Set<String> filtered = new LinkedHashSet<String>();
+        for (String toolName : allowedToolNames) {
+            if (!READ_ONLY_BLOCKED_TOOLS.contains(toolName)) {
+                filtered.add(toolName);
+            }
+        }
+        return filtered.isEmpty() ? Collections.<String>emptySet() : Collections.unmodifiableSet(filtered);
     }
 
     private AgentToolRegistry filterRegistry(AgentToolRegistry baseRegistry, Set<String> allowedToolNames) {

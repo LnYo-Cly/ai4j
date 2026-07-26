@@ -19,6 +19,12 @@ import java.util.Map;
 
 public class BashToolExecutor implements ToolExecutor {
 
+    /** Default per-stream output cap: 10 MiB. Overridable via system property. */
+    static final long DEFAULT_OUTPUT_LIMIT_BYTES = resolveOutputLimitBytes();
+    private static final long MIN_OUTPUT_LIMIT_BYTES = 1024L;
+    private static final String TRUNCATION_MARKER_FORMAT =
+            "\n[... truncated %d bytes — output exceeded %d-byte limit ...]\n";
+
     private final WorkspaceContext workspaceContext;
     private final CodingAgentOptions options;
     private final SessionProcessRegistry processRegistry;
@@ -80,7 +86,48 @@ public class BashToolExecutor implements ToolExecutor {
                 .workingDirectory(arguments.getString("cwd"))
                 .timeoutMs(arguments.getLong("timeoutMs"))
                 .build());
+        result.setStdout(capOutput(result.getStdout()));
+        result.setStderr(capOutput(result.getStderr()));
         return JSON.toJSONString(result);
+    }
+
+    /**
+     * Truncate a stdout/stderr string to the configured byte limit, preserving the head and tail
+     * and inserting a visible marker in the middle. Returns the original string when it fits.
+     */
+    static String capOutput(String output) {
+        return capOutput(output, DEFAULT_OUTPUT_LIMIT_BYTES);
+    }
+
+    static String capOutput(String output, long limitBytes) {
+        if (output == null || output.isEmpty()) {
+            return output;
+        }
+        byte[] bytes = output.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (bytes.length <= limitBytes) {
+            return output;
+        }
+        long effectiveLimit = Math.max(MIN_OUTPUT_LIMIT_BYTES, limitBytes);
+        long half = effectiveLimit / 2;
+        String head = new String(bytes, 0, (int) half, java.nio.charset.StandardCharsets.UTF_8);
+        String tail = new String(bytes, (int) (bytes.length - half), (int) half, java.nio.charset.StandardCharsets.UTF_8);
+        long truncated = bytes.length - effectiveLimit;
+        String marker = String.format(java.util.Locale.ROOT, TRUNCATION_MARKER_FORMAT, truncated, effectiveLimit);
+        return head + marker + tail;
+    }
+
+    private static long resolveOutputLimitBytes() {
+        String raw = System.getProperty("ai4j.bash.output-limit-mb");
+        if (raw != null && !raw.trim().isEmpty()) {
+            try {
+                long mb = Long.parseLong(raw.trim());
+                if (mb > 0) {
+                    return mb * 1024L * 1024L;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 10L * 1024L * 1024L;
     }
 
     private String start(JSONObject arguments) throws Exception {

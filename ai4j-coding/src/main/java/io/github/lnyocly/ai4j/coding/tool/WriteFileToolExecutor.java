@@ -33,7 +33,7 @@ public class WriteFileToolExecutor implements ToolExecutor {
                 ? arguments.getString("content")
                 : "";
         String mode = firstNonBlank(safeTrim(arguments.getString("mode")), "overwrite").toLowerCase(Locale.ROOT);
-        Path file = resolvePath(path);
+        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (Files.exists(file) && Files.isDirectory(file)) {
             throw new IllegalArgumentException("Target is a directory: " + path);
         }

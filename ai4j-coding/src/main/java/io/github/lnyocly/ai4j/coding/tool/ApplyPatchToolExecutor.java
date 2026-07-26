@@ -103,7 +103,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
     }
 
     private PatchOperation applyAddFile(List<String> lines, int startIndex, String path) throws IOException {
-        Path file = workspaceContext.resolveWorkspacePath(path);
+        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (Files.exists(file)) {
             throw new IllegalArgumentException("File already exists: " + path);
         }
@@ -127,7 +127,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
     }
 
     private PatchOperation applyUpdateFile(List<String> lines, int startIndex, String path) throws IOException {
-        Path file = workspaceContext.resolveWorkspacePath(path);
+        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (!Files.exists(file) || Files.isDirectory(file)) {
             throw new IllegalArgumentException("File does not exist: " + path);
         }
@@ -152,7 +152,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
     }
 
     private PatchOperation applyDeleteFile(String path, int startIndex) throws IOException {
-        Path file = workspaceContext.resolveWorkspacePath(path);
+        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (!Files.exists(file) || Files.isDirectory(file)) {
             throw new IllegalArgumentException("File does not exist: " + path);
         }
