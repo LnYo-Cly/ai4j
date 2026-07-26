@@ -167,6 +167,37 @@ public class ApplyPatchToolExecutorTest {
         )));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectAddFileToGitHooks() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-patch-git-hooks").toPath();
+        ApplyPatchToolExecutor executor = new ApplyPatchToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        executor.execute(call(patch(
+                "*** Begin Patch",
+                "*** Add File: .git/hooks/post-commit",
+                "+#!/bin/sh",
+                "+evil",
+                "*** End Patch"
+        )));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectAddFileToSshDirectory() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-patch-ssh").toPath();
+        ApplyPatchToolExecutor executor = new ApplyPatchToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        executor.execute(call(patch(
+                "*** Begin Patch",
+                "*** Add File: .ssh/authorized_keys",
+                "+ssh-rsa ...",
+                "*** End Patch"
+        )));
+    }
+
     private AgentToolCall call(String patch) {
         JSONObject arguments = new JSONObject();
         arguments.put("patch", patch);

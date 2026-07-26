@@ -83,6 +83,72 @@ public class NashornCodeExecutorTest {
         Assert.assertTrue(result.getError().contains("only javascript is enabled"));
     }
 
+    @Test
+    public void test_nashorn_blocks_java_type_rce() throws Exception {
+        Assume.assumeTrue("Nashorn is not available", isNashornAvailable());
+
+        NashornCodeExecutor executor = new NashornCodeExecutor();
+        CodeExecutionResult result = executor.execute(CodeExecutionRequest.builder()
+                .language("js")
+                .code("Java.type('java.lang.Runtime').getRuntime().exec('touch /tmp/pwned')")
+                .build());
+
+        Assert.assertFalse("Java.type RCE must be blocked", result.isSuccess());
+    }
+
+    @Test
+    public void test_nashorn_blocks_java_class_for_name_rce() throws Exception {
+        Assume.assumeTrue("Nashorn is not available", isNashornAvailable());
+
+        NashornCodeExecutor executor = new NashornCodeExecutor();
+        CodeExecutionResult result = executor.execute(CodeExecutionRequest.builder()
+                .language("js")
+                .code("java.lang.Runtime.getRuntime().exec('id')")
+                .build());
+
+        Assert.assertFalse("java.lang.* RCE must be blocked", result.isSuccess());
+    }
+
+    @Test
+    public void test_nashorn_blocks_packages_access() throws Exception {
+        Assume.assumeTrue("Nashorn is not available", isNashornAvailable());
+
+        NashornCodeExecutor executor = new NashornCodeExecutor();
+        CodeExecutionResult result = executor.execute(CodeExecutionRequest.builder()
+                .language("js")
+                .code("Packages.java.lang.System.exit(0)")
+                .build());
+
+        Assert.assertFalse("Packages access must be blocked", result.isSuccess());
+    }
+
+    @Test
+    public void test_nashorn_blocks_load_function() throws Exception {
+        Assume.assumeTrue("Nashorn is not available", isNashornAvailable());
+
+        NashornCodeExecutor executor = new NashornCodeExecutor();
+        CodeExecutionResult result = executor.execute(CodeExecutionRequest.builder()
+                .language("js")
+                .code("load('classpath:evil.js')")
+                .build());
+
+        Assert.assertFalse("load() must be blocked", result.isSuccess());
+    }
+
+    @Test
+    public void test_nashorn_normal_javascript_still_works() throws Exception {
+        Assume.assumeTrue("Nashorn is not available", isNashornAvailable());
+
+        NashornCodeExecutor executor = new NashornCodeExecutor();
+        CodeExecutionResult result = executor.execute(CodeExecutionRequest.builder()
+                .language("js")
+                .code("var x = 1 + 2; __codeact_result = String(x);")
+                .build());
+
+        Assert.assertTrue("Normal JS must still work after hardening", result.isSuccess());
+        Assert.assertEquals("3", result.getResult());
+    }
+
     private boolean isNashornAvailable() {
         return new ScriptEngineManager().getEngineByName("nashorn") != null;
     }

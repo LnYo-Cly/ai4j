@@ -86,11 +86,18 @@ public class CodingRuntimeTest {
 
         CodingToolContextPolicy policy = new CodingToolPolicyResolver().resolve(registry, executor, definition);
 
-        assertEquals(2, policy.getToolRegistry().getTools().size());
+        // READ_ONLY isolation strips bash from the read-only built-in set, leaving only read_file.
+        assertEquals(1, policy.getToolRegistry().getTools().size());
         assertEquals(CodingToolNames.READ_FILE, policy.getToolExecutor().execute(AgentToolCall.builder().name(CodingToolNames.READ_FILE).build()));
         try {
             policy.getToolExecutor().execute(AgentToolCall.builder().name(CodingToolNames.WRITE_FILE).build());
             fail("Expected disallowed tool execution to fail");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("not allowed"));
+        }
+        try {
+            policy.getToolExecutor().execute(AgentToolCall.builder().name(CodingToolNames.BASH).build());
+            fail("Expected bash to be blocked in READ_ONLY mode");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("not allowed"));
         }

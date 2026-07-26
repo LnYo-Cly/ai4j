@@ -131,6 +131,91 @@ public class AgentApprovalPermissionPolicyTest {
         Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("local shell blocked"));
     }
 
+    @Test
+    public void agentBuilderShouldDefaultToSafeApprovalForWriteTools() throws Exception {
+        CountingToolExecutor delegate = new CountingToolExecutor();
+        Deque<AgentModelResult> queue = new ArrayDeque<AgentModelResult>();
+        queue.add(resultWithToolCall("call-1", "write_file", "{\"path\":\"a.txt\",\"content\":\"x\"}"));
+        queue.add(resultWithText("done"));
+
+        Agent agent = Agents.react()
+                .modelClient(new QueueModelClient(queue))
+                .model("test-model")
+                .toolExecutor(delegate)
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder().input("hi").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals("write_file must be blocked by default SAFE policy", 0, delegate.count);
+        Assert.assertEquals(1, result.getToolResults().size());
+        Assert.assertTrue("must mention approval requirement",
+                result.getToolResults().get(0).getOutput().contains("approval")
+                        || result.getToolResults().get(0).getOutput().contains("Approval"));
+    }
+
+    @Test
+    public void agentBuilderShouldDefaultToSafeApprovalForBash() throws Exception {
+        CountingToolExecutor delegate = new CountingToolExecutor();
+        Deque<AgentModelResult> queue = new ArrayDeque<AgentModelResult>();
+        queue.add(resultWithToolCall("call-1", "bash", "{\"command\":\"rm -rf /\"}"));
+        queue.add(resultWithText("done"));
+
+        Agent agent = Agents.react()
+                .modelClient(new QueueModelClient(queue))
+                .model("test-model")
+                .toolExecutor(delegate)
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder().input("hi").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals("bash must be blocked by default SAFE policy", 0, delegate.count);
+    }
+
+    @Test
+    public void agentBuilderShouldAllowOptOutOfDefaultSafePolicy() throws Exception {
+        CountingToolExecutor delegate = new CountingToolExecutor();
+        Deque<AgentModelResult> queue = new ArrayDeque<AgentModelResult>();
+        queue.add(resultWithToolCall("call-1", "write_file", "{\"path\":\"a.txt\",\"content\":\"x\"}"));
+        queue.add(resultWithText("done"));
+
+        Agent agent = Agents.react()
+                .modelClient(new QueueModelClient(queue))
+                .model("test-model")
+                .toolExecutor(delegate)
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder().input("hi").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals("write_file must run when policy is explicitly set to allowAll", 1, delegate.count);
+    }
+
+    @Test
+    public void agentBuilderShouldAllowReadToolsUnderDefaultSafePolicy() throws Exception {
+        CountingToolExecutor delegate = new CountingToolExecutor();
+        Deque<AgentModelResult> queue = new ArrayDeque<AgentModelResult>();
+        queue.add(resultWithToolCall("call-1", "read_file", "{\"path\":\"a.txt\"}"));
+        queue.add(resultWithText("done"));
+
+        Agent agent = Agents.react()
+                .modelClient(new QueueModelClient(queue))
+                .model("test-model")
+                .toolExecutor(delegate)
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder().input("hi").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals("read_file must be allowed under default SAFE policy", 1, delegate.count);
+    }
+
     private static AgentToolCall call(String name) {
         return AgentToolCall.builder()
                 .name(name)
