@@ -56,11 +56,13 @@
     </scm>
 
     <dependencies>
-        <!-- 日志实现，例如 slf4j-simple -->
+        <!-- slf4j-simple 仅用于测试：避免污染下游用户日志栈
+             （下游 Spring Boot/logback 用户期望自行决定绑定） -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.30</version>
+            <scope>test</scope>
         </dependency>
         <!-- Apache Tika core -->
         <dependency>
