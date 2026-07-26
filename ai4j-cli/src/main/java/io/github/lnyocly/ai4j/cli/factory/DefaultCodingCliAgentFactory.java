@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.cli.hook.CliPromptInterceptor;
 import io.github.lnyocly.ai4j.cli.hook.CliLifecycleHookBridge;
 import io.github.lnyocly.ai4j.cli.hook.CliHooksConfig;
 import io.github.lnyocly.ai4j.cli.hook.ProcessHookCommandRunner;
+import io.github.lnyocly.ai4j.cli.hook.WorkspaceTrustGate;
 import io.github.lnyocly.ai4j.cli.mcp.CliMcpRuntimeManager;
 import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
 import io.github.lnyocly.ai4j.cli.render.CliAnsi;
@@ -62,6 +63,8 @@ import io.github.lnyocly.ai4j.tui.TuiInteractionState;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,6 +76,8 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
+
+    WorkspaceTrustGate trustGate = new WorkspaceTrustGate();
 
     static final long CLI_STREAM_FIRST_TOKEN_TIMEOUT_MS = 30000L;
     static final int CLI_STREAM_MAX_RETRIES = 2;
@@ -206,7 +211,7 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
             builder.sandbox(sandboxSession);
         }
         attachMcpRuntime(builder, mcpRuntimeManager);
-        attachToolHooks(builder, workspaceConfig);
+        attachToolHooks(builder, workspaceConfig, Paths.get(workspace), System.in, System.out);
         attachExperimentalAgents(builder, options, workspaceConfig, modelClient, workspaceContext, codingOptions, agentOptions);
         return builder.build();
     }
@@ -300,17 +305,23 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
     /**
      * If the user declared external hooks in the workspace config, attach the in-process
      * interceptors ({@link CliHookInterceptor} for preToolUse, {@link CliPromptInterceptor} for
-     * userPromptSubmit) — Claude-Code-style external command hooks. No-op when no hooks are
-     * configured — existing behavior is unchanged.
+     * userPromptSubmit) — Claude-Code-style external command hooks. Hooks are loaded only after
+     * the {@link WorkspaceTrustGate} confirms the workspace is trusted; untrusted workspaces
+     * fail-closed (hooks skipped). No-op when no hooks are configured.
      */
     private void attachToolHooks(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,
-                                 CliWorkspaceConfig workspaceConfig) {
-        if (workspaceConfig == null
-                || workspaceConfig.getHooks() == null
-                || workspaceConfig.getHooks().isEmpty()) {
+                                 CliWorkspaceConfig workspaceConfig,
+                                 Path workspaceDir,
+                                 InputStream in,
+                                 PrintStream out) {
+        if (workspaceConfig == null) {
             return;
         }
         CliHooksConfig hooks = workspaceConfig.getHooks();
+        WorkspaceTrustGate.TrustResult trust = evaluateHookTrust(workspaceDir, hooks, in, out);
+        if (trust != WorkspaceTrustGate.TrustResult.TRUSTED) {
+            return;
+        }
         if (!hooks.getPreToolUse().isEmpty() || !hooks.getPostToolUse().isEmpty()) {
             builder.toolInterceptor(new CliHookInterceptor(hooks, new ProcessHookCommandRunner()));
         }
@@ -320,6 +331,19 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
         if (hooks.hasObserveHooks()) {
             builder.lifecycleHook(new CliLifecycleHookBridge(hooks, new ProcessHookCommandRunner()));
         }
+    }
+
+    /**
+     * Decides whether workspace hooks should be loaded, delegating to {@link WorkspaceTrustGate}.
+     * Extracted as package-private so the trust decision can be unit-tested independently of the
+     * agent builder.
+     */
+    WorkspaceTrustGate.TrustResult evaluateHookTrust(Path workspaceDir, CliHooksConfig hooks,
+                                                     InputStream in, PrintStream out) {
+        if (hooks == null || hooks.isEmpty()) {
+            return WorkspaceTrustGate.TrustResult.NO_HOOKS;
+        }
+        return trustGate.checkTrust(workspaceDir, hooks, in, out);
     }
 
     private void attachExperimentalAgents(io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder,
