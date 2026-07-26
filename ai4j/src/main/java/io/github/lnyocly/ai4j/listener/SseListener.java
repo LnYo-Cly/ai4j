@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
@@ -441,14 +442,14 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
     @Override
     protected Throwable resolveFailure(@Nullable Throwable t, @Nullable Response response) {
-        if (t != null && StringUtils.isNotBlank(t.getMessage())) {
+        if (response != null) {
+            String message = resolveFailureMessage(t, response);
+            return HttpErrorDecoder.decode(response.code(), message);
+        }
+        if (t != null) {
             return t;
         }
-        String message = resolveFailureMessage(t, response);
-        if (StringUtils.isBlank(message)) {
-            return t == null ? new CommonException("stream request failed") : t;
-        }
-        return new CommonException(message);
+        return new CommonException("stream request failed");
     }
 
     protected String resolveFailureMessage(@Nullable Throwable t, @Nullable Response response) {
