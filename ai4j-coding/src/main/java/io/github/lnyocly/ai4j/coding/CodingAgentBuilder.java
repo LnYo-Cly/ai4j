@@ -40,6 +40,9 @@ import io.github.lnyocly.ai4j.coding.tool.ApplyPatchToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.BashToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolRegistryFactory;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
+import io.github.lnyocly.ai4j.coding.tool.EditToolExecutor;
+import io.github.lnyocly.ai4j.coding.tool.GlobToolExecutor;
+import io.github.lnyocly.ai4j.coding.tool.GrepToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.ReadFileToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.ToolExecutorDecorator;
@@ -434,6 +437,12 @@ public class CodingAgentBuilder {
                 decorate(CodingToolNames.APPLY_PATCH, new ApplyPatchToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.BASH),
                 decorate(CodingToolNames.BASH, new BashToolExecutor(workspaceContext, resolvedOptions, processRegistry, shellCommandExecutor), decorator)));
+        routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.GLOB),
+                decorate(CodingToolNames.GLOB, new GlobToolExecutor(workspaceContext), decorator)));
+        routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.GREP),
+                decorate(CodingToolNames.GREP, new GrepToolExecutor(workspaceContext), decorator)));
+        routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.EDIT),
+                decorate(CodingToolNames.EDIT, new EditToolExecutor(workspaceContext), decorator)));
         if (codingRuntime != null && definitionRegistry != null) {
             ToolExecutor delegateExecutor = new CodingDelegateToolExecutor(codingRuntime, definitionRegistry);
             routes.add(RoutingToolExecutor.route(resolveToolNames(new CodingDelegateToolRegistry(definitionRegistry)), delegateExecutor));

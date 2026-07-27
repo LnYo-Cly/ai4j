@@ -17,20 +17,26 @@ public final class BuiltInTools {
     public static final String READ_FILE = "read_file";
     public static final String WRITE_FILE = "write_file";
     public static final String APPLY_PATCH = "apply_patch";
+    public static final String GLOB = "glob";
+    public static final String GREP = "grep";
+    public static final String EDIT = "edit";
 
     private static final Set<String> CODING_TOOL_NAMES = Collections.unmodifiableSet(
-            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH))
+            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH, GLOB, GREP, EDIT))
     );
 
     private static final Set<String> READ_ONLY_CODING_TOOL_NAMES = Collections.unmodifiableSet(
-            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE))
+            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, GLOB, GREP))
     );
 
     private static final List<Tool> CODING_TOOLS = Collections.unmodifiableList(Arrays.asList(
             bashTool(),
             readFileTool(),
             writeFileTool(),
-            applyPatchTool()
+            applyPatchTool(),
+            globTool(),
+            grepTool(),
+            editTool()
     ));
 
     private BuiltInTools() {
@@ -92,6 +98,48 @@ public final class BuiltInTools {
         );
     }
 
+    public static Tool globTool() {
+        Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
+        properties.put("pattern", property("string", "Glob pattern to match file paths, e.g. **/*.java or src/**/test_*.py."));
+        properties.put("path", property("string", "Base directory to search from. Relative to workspace root. Defaults to workspace root."));
+        properties.put("maxResults", property("integer", "Maximum number of matching file paths to return."));
+        return tool(
+                GLOB,
+                "Fast file pattern matching using glob syntax (e.g. **/*.java). Returns a list of matching file paths relative to the workspace root.",
+                properties,
+                Collections.singletonList("pattern")
+        );
+    }
+
+    public static Tool grepTool() {
+        Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
+        properties.put("pattern", property("string", "Regular expression to search for in file contents."));
+        properties.put("path", property("string", "Base directory or file to search. Relative to workspace root. Defaults to workspace root."));
+        properties.put("include", property("string", "Glob pattern to filter which files to search (e.g. *.java)."));
+        properties.put("caseInsensitive", property("boolean", "Perform case-insensitive matching. Defaults to false."));
+        properties.put("maxResults", property("integer", "Maximum number of matching lines to return."));
+        return tool(
+                GREP,
+                "Search file contents using a regular expression and return matching files with line numbers and matching lines (ripgrep-style output).",
+                properties,
+                Collections.singletonList("pattern")
+        );
+    }
+
+    public static Tool editTool() {
+        Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
+        properties.put("path", property("string", "File path to edit. Relative to workspace root."));
+        properties.put("old_string", property("string", "Exact text to find in the file. Must match exactly including whitespace and indentation."));
+        properties.put("new_string", property("string", "Replacement text."));
+        properties.put("replaceAll", property("boolean", "Replace all occurrences. By default only a single unique match is allowed."));
+        return tool(
+                EDIT,
+                "Perform exact string replacements in a file. The old_string must match uniquely unless replaceAll is true.",
+                properties,
+                Arrays.asList("path", "old_string", "new_string")
+        );
+    }
+
     public static List<Tool> codingTools() {
         return new ArrayList<Tool>(CODING_TOOLS);
     }
@@ -147,6 +195,15 @@ public final class BuiltInTools {
         }
         if (BASH.equals(name)) {
             return bashTool();
+        }
+        if (GLOB.equals(name)) {
+            return globTool();
+        }
+        if (GREP.equals(name)) {
+            return grepTool();
+        }
+        if (EDIT.equals(name)) {
+            return editTool();
         }
         return null;
     }
