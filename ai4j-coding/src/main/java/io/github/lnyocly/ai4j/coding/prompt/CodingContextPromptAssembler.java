@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.coding.prompt;
 
 import io.github.lnyocly.ai4j.coding.skill.CodingSkillDescriptor;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandSupport;
+import io.github.lnyocly.ai4j.coding.workspace.AgentsMdStore;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.skill.SkillDescriptor;
 import io.github.lnyocly.ai4j.skill.Skills;
@@ -35,8 +36,8 @@ public final class CodingContextPromptAssembler {
         if (!isBlank(workspaceContext.getDescription())) {
             builder.append("Workspace description: ").append(workspaceContext.getDescription()).append("\n");
         }
-        builder.append("Available built-in tools: bash, read_file, write_file, apply_patch.\n");
-        builder.append("Use bash for search, git, build, test, and process management. Use read_file before making changes. Use write_file for full-file create/overwrite/append operations, especially for new files. Use apply_patch for structured diffs.\n");
+        builder.append("Available built-in tools: bash, read_file, write_file, apply_patch, glob, grep, edit, update_agents_md.\n");
+        builder.append("Use bash for search, git, build, test, and process management. Use read_file before making changes. Use write_file for full-file create/overwrite/append operations, especially for new files. Use apply_patch for structured diffs. Use glob to find files by name pattern (**/*.java). Use grep to search file contents by regex. Use edit for precise string replacements in existing files. Use update_agents_md to persist project conventions and decisions.\n");
         builder.append("Tool-call rules: only call a tool when you have a complete payload. ")
                 .append("For bash, always send a JSON object like {\"action\":\"exec\",\"command\":\"...\"} and never omit command for exec/start. ")
                 .append("Use bash action=exec only for non-interactive commands that will exit by themselves. If a command may wait for stdin, open a REPL, start a server, tail logs, or keep running, use bash action=start and then bash action=logs/status/write/stop. ")
@@ -48,6 +49,7 @@ public final class CodingContextPromptAssembler {
         }
         appendSkillGuidance(builder, workspaceContext.getAvailableSkills());
         appendPromptGuidance(builder, workspaceContext.getAvailablePrompts());
+        appendAgentsMd(builder, workspaceContext);
         return builder.toString().trim();
     }
 
@@ -57,6 +59,23 @@ public final class CodingContextPromptAssembler {
             return;
         }
         builder.append(skillPrompt).append("\n");
+    }
+
+    private static void appendAgentsMd(StringBuilder builder, WorkspaceContext workspaceContext) {
+        if (workspaceContext == null) {
+            return;
+        }
+        try {
+            AgentsMdStore store = new AgentsMdStore(workspaceContext);
+            String content = store.read();
+            if (!isBlank(content)) {
+                builder.append("<agents_md>\n");
+                builder.append(content.trim()).append("\n");
+                builder.append("</agents_md>\n");
+            }
+        } catch (Exception ignored) {
+            // AGENTS.md is optional; ignore read errors
+        }
     }
 
     private static void appendPromptGuidance(StringBuilder builder, List<CodingPromptDescriptor> availablePrompts) {
