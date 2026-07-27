@@ -20,9 +20,10 @@ public final class BuiltInTools {
     public static final String GLOB = "glob";
     public static final String GREP = "grep";
     public static final String EDIT = "edit";
+    public static final String UPDATE_AGENTS_MD = "update_agents_md";
 
     private static final Set<String> CODING_TOOL_NAMES = Collections.unmodifiableSet(
-            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH, GLOB, GREP, EDIT))
+            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH, GLOB, GREP, EDIT, UPDATE_AGENTS_MD))
     );
 
     private static final Set<String> READ_ONLY_CODING_TOOL_NAMES = Collections.unmodifiableSet(
@@ -36,7 +37,8 @@ public final class BuiltInTools {
             applyPatchTool(),
             globTool(),
             grepTool(),
-            editTool()
+            editTool(),
+            updateAgentsMdTool()
     ));
 
     private BuiltInTools() {
@@ -140,6 +142,19 @@ public final class BuiltInTools {
         );
     }
 
+    public static Tool updateAgentsMdTool() {
+        Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
+        properties.put("action", property("string", "Action to perform.", Arrays.asList("read", "write", "append")));
+        properties.put("content", property("string", "Full content to write (action=write)."));
+        properties.put("text", property("string", "Text to append (action=append)."));
+        return tool(
+                UPDATE_AGENTS_MD,
+                "Read, overwrite, or append to the project AGENTS.md memory file. Use this to record project conventions, decisions made, and pending tasks so they persist across sessions.",
+                properties,
+                Collections.singletonList("action")
+        );
+    }
+
     public static List<Tool> codingTools() {
         return new ArrayList<Tool>(CODING_TOOLS);
     }
@@ -204,6 +219,9 @@ public final class BuiltInTools {
         }
         if (EDIT.equals(name)) {
             return editTool();
+        }
+        if (UPDATE_AGENTS_MD.equals(name)) {
+            return updateAgentsMdTool();
         }
         return null;
     }

@@ -46,6 +46,7 @@ import io.github.lnyocly.ai4j.coding.tool.GrepToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.ReadFileToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.ToolExecutorDecorator;
+import io.github.lnyocly.ai4j.coding.tool.UpdateAgentsMdToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.WriteFileToolExecutor;
 import io.github.lnyocly.ai4j.coding.shell.SandboxShellCommandExecutor;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandExecutor;
@@ -443,6 +444,8 @@ public class CodingAgentBuilder {
                 decorate(CodingToolNames.GREP, new GrepToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.EDIT),
                 decorate(CodingToolNames.EDIT, new EditToolExecutor(workspaceContext), decorator)));
+        routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.UPDATE_AGENTS_MD),
+                decorate(CodingToolNames.UPDATE_AGENTS_MD, new UpdateAgentsMdToolExecutor(workspaceContext), decorator)));
         if (codingRuntime != null && definitionRegistry != null) {
             ToolExecutor delegateExecutor = new CodingDelegateToolExecutor(codingRuntime, definitionRegistry);
             routes.add(RoutingToolExecutor.route(resolveToolNames(new CodingDelegateToolRegistry(definitionRegistry)), delegateExecutor));

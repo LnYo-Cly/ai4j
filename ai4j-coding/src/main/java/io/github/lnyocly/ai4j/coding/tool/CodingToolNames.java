@@ -13,6 +13,7 @@ public final class CodingToolNames {
     public static final String GLOB = BuiltInTools.GLOB;
     public static final String GREP = BuiltInTools.GREP;
     public static final String EDIT = BuiltInTools.EDIT;
+    public static final String UPDATE_AGENTS_MD = BuiltInTools.UPDATE_AGENTS_MD;
 
     private CodingToolNames() {
     }
