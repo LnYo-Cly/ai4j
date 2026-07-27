@@ -118,7 +118,17 @@
                             <artifactId>java18</artifactId>
                             <version>1.0</version>
                         </signature>
+                        <!-- 仅检查本项目编译产物，不处理依赖 jar（避免 jline 等含 Java 22 字节码的依赖导致解析失败） -->
+                        <ignoreDependencies>true</ignoreDependencies>
                     </configuration>
+                    <dependencies>
+                        <!-- 覆盖内置 ASM 版本以支持 Java 22+ 字节码（jline 3.30.0 含 Java 22 class） -->
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>9.7</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <!-- E4: 覆盖率门禁 -->
                 <plugin>

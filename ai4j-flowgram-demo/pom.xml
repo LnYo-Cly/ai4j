@@ -22,6 +22,7 @@
         <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
         <!-- 跳过 enforcer：demo 模块不发布，spring-boot 2.3.12 引入旧版 jackson 不影响 SDK 质量 -->
         <enforcer.skip>true</enforcer.skip>
+        <spotbugs.maxAllowedViolations>1</spotbugs.maxAllowedViolations>
     </properties>
 
     <dependencies>

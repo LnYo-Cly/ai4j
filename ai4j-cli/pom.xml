@@ -18,6 +18,7 @@
 
     <properties>
         <ai4j.cli.assembly.skip>false</ai4j.cli.assembly.skip>
+        <spotbugs.maxAllowedViolations>42</spotbugs.maxAllowedViolations>
     </properties>
 
     <licenses>

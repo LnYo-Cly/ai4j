@@ -159,7 +159,15 @@
                         <artifactId>java18</artifactId>
                         <version>1.0</version>
                     </signature>
+                    <ignoreDependencies>true</ignoreDependencies>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                        <version>9.7</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>check-java8-signature</id>

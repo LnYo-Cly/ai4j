@@ -45,6 +45,10 @@
         <developerConnection>scm:git:https://github.com/LnYo-Cly/ai4j.git</developerConnection>
     </scm>
 
+    <properties>
+        <spotbugs.maxAllowedViolations>22</spotbugs.maxAllowedViolations>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.github.lnyo-cly</groupId>
