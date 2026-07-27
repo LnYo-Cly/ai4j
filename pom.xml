@@ -209,6 +209,9 @@
                              during test only. Production must NOT set this. -->
                         <ai4j.ssl.trust-all>true</ai4j.ssl.trust-all>
                     </systemPropertyVariables>
+                    <!-- surefire 3.x 默认 fork JVM，CLI/TUI 测试可能阻塞 stdin；
+                         设超时防止 CI 挂死 -->
+                    <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds> ([P0-E] E7 add forkedProcessTimeoutInSeconds to prevent CI hangs)
                 </configuration>
             </plugin>
             <plugin>

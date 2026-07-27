@@ -226,6 +226,7 @@
                     <argLine>${argLine}</argLine>
                     <groups>${test.groups}</groups>
                     <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
                 </configuration>
             </plugin>
             <plugin>
