@@ -334,6 +334,7 @@ public class AiConfigAutoConfiguration {
         }
 
         // 蹇界暐SSL璇佷功楠岃瘉, 榛樿寮€鍚?
+        System.setProperty("ai4j.ssl.trust-all", "true");
         if(okHttpConfigProperties.isIgnoreSsl()){
             try {
                 okHttpBuilder

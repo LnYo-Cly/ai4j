@@ -117,6 +117,11 @@
                 <configuration>
                     <groups>${test.groups}</groups>
                     <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <systemPropertyVariables>
+                        <!-- Tests run against MockWebServer / self-signed certs; allow trust-all
+                             during test only. Production must NOT set this. -->
+                        <ai4j.ssl.trust-all>true</ai4j.ssl.trust-all>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
