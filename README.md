@@ -15,13 +15,14 @@
   <img src="https://img.shields.io/badge/JDK-8%2B-2EA043" alt="JDK 8+" />
   <img src="https://img.shields.io/badge/Agentic-Enabled-6F42C1" alt="Agentic Enabled" />
   <img src="https://img.shields.io/badge/MCP-Supported-0F766E" alt="MCP Supported" />
+  <img src="https://img.shields.io/badge/A2A-Supported-DC2626" alt="A2A Supported" />
   <img src="https://img.shields.io/badge/RAG-Built--in-B45309" alt="RAG Built-in" />
   <img src="https://img.shields.io/badge/CLI%20%2F%20TUI%20%2F%20ACP-Built--in-475569" alt="CLI TUI ACP Built-in" />
 </p>
 
 # ai4j
 
-一款面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一的大模型接入、Tool Calling、MCP、RAG、Agent Runtime，以及内置的 Coding Agent CLI / TUI / ACP。从基础模型调用到完整的 agentic 应用，一套 SDK 覆盖全链路。
+一款面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一的大模型接入、Tool Calling、MCP、A2A、RAG、Agent Runtime，以及内置的 Coding Agent CLI / TUI / ACP。从基础模型调用到完整的 agentic 应用，一套 SDK 覆盖全链路。
 
 [English README](README-EN.md)
 
@@ -97,6 +98,7 @@ ai4j 是一款面向 JDK 8+ 的 Java AI Agentic 开发套件，覆盖统一模�
 - 5 分钟跑通第一条请求：[five-minute-first-chat](docs-site/docs/start-here/five-minute-first-chat.md)
 - 能力地图（28 项特性详解）：[feature-map](docs-site/docs/start-here/feature-map.md)
 - Coding Agent CLI / TUI / ACP：[coding-agent-cli](docs/readme/zh/coding-agent-cli.md)
+- A2A 协议（Agent 互操作）：[A2A Protocol](docs-site/docs/agent/a2a.md)
 - 更新日志：[CHANGELOG](CHANGELOG.md)
 - 贡献指南：[CONTRIBUTING](CONTRIBUTING.md)
 
