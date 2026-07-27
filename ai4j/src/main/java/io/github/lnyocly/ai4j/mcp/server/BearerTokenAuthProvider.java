@@ -68,7 +68,7 @@ public class BearerTokenAuthProvider implements McpAuthProvider {
         return "Bearer token: " + masked;
     }
 
-    /** Returns the full token so the server can log it at startup. */
+    /** Returns the configured token for callers that need to provision it out of band. */
     public String getToken() {
         return token;
     }

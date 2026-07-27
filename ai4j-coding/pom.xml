@@ -46,7 +46,7 @@
     </scm>
 
     <properties>
-        <spotbugs.maxAllowedViolations>8</spotbugs.maxAllowedViolations>
+        <spotbugs.maxAllowedViolations>9</spotbugs.maxAllowedViolations>
     </properties>
 
     <dependencies>

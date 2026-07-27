@@ -205,28 +205,65 @@ public class StreamableHttpTransport implements McpTransport {
         try {
             // 直接处理当前响应的SSE流
             BufferedReader reader = new BufferedReader(new InputStreamReader(response.body().byteStream()));
+            StringBuilder dataBuilder = new StringBuilder();
+            boolean hasData = false;
             String line;
 
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    String data = line.substring(6);
-                    try {
-                        McpMessage message = parseMcpMessage(data);
-                        if (messageHandler != null) {
-                            messageHandler.handleMessage(message);
-                        }
-                    } catch (Exception e) {
-                        log.debug("解析SSE数据失败: {} -> {}", McpTransportSupport.clip(data, 120), McpTransportSupport.safeMessage(e), e);
+                if (line.isEmpty()) {
+                    if (hasData) {
+                        dispatchSseEvent(dataBuilder.toString());
                     }
-                } else if (line.startsWith("id: ")) {
-                    lastEventId = line.substring(4);
+                    dataBuilder.setLength(0);
+                    hasData = false;
+                    continue;
                 }
+
+                if (line.startsWith(":")) {
+                    continue;
+                }
+
+                int separatorIndex = line.indexOf(':');
+                String field = separatorIndex >= 0 ? line.substring(0, separatorIndex) : line;
+                String value = separatorIndex >= 0 ? line.substring(separatorIndex + 1) : "";
+                if (value.startsWith(" ")) {
+                    value = value.substring(1);
+                }
+
+                if ("data".equals(field)) {
+                    if (hasData) {
+                        dataBuilder.append('\n');
+                    }
+                    dataBuilder.append(value);
+                    hasData = true;
+                } else if ("id".equals(field)) {
+                    lastEventId = value.isEmpty() ? null : value;
+                }
+            }
+
+            if (hasData) {
+                dispatchSseEvent(dataBuilder.toString());
             }
         } catch (Exception e) {
             log.debug("处理SSE响应失败: {}", McpTransportSupport.safeMessage(e), e);
             if (messageHandler != null) {
                 messageHandler.onError(e);
             }
+        }
+    }
+
+    private void dispatchSseEvent(String data) {
+        if (data == null || data.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            McpMessage message = parseMcpMessage(data);
+            if (messageHandler != null) {
+                messageHandler.handleMessage(message);
+            }
+        } catch (Exception e) {
+            log.debug("解析SSE数据失败: {} -> {}", McpTransportSupport.clip(data, 120), McpTransportSupport.safeMessage(e), e);
         }
     }
     

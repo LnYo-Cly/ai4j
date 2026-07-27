@@ -4,9 +4,14 @@ sidebar_position: 12
 
 # A2A Protocol (Agent-to-Agent)
 
-ai4j supports the Google [Agent2Agent (A2A) protocol](https://github.com/a2aproject/A2A) — an open
-standard for cross-framework agent interop. An ai4j agent can both call external A2A agents (as a
-client) and be exposed as an A2A service (as a server). JDK stdlib only, no new dependency.
+ai4j provides a Java 8-compatible A2A integration surface for agent discovery, JSON-RPC task
+exchange, Skills metadata, and API-key protected local services. An ai4j agent can call an A2A
+endpoint as a client or be exposed as an A2A service. JDK stdlib only, no new dependency.
+
+> Scope note: this page documents the current ai4j contract and its legacy aliases. It does not
+> claim complete coverage of every A2A 1.0 feature. Streaming, task query/cancel, standard-schema
+> version negotiation, and independent third-party framework interoperability remain follow-up
+> work.
 
 ## A2A Client — call external agents
 
@@ -16,6 +21,7 @@ A2AClient client = new A2AClient();
 // A2AClient client = new A2AClient("shared-secret-key");
 
 AgentCard card = client.discover("https://other-agent.example.com");
+// discover() tries /.well-known/agent-card.json first, then the legacy /.well-known/agent.json.
 String response = client.sendTask("https://other-agent.example.com", "What is 2+2?");
 ```
 
@@ -43,8 +49,10 @@ A2AServer server = new A2AServer(
 );
 
 // External agents (LangChain, CrewAI, etc.) can now call:
-//   GET  http://localhost:PORT/.well-known/agent.json  → AgentCard
-//   POST http://localhost:PORT/tasks/send              → JSON-RPC task
+//   GET  http://localhost:PORT/.well-known/agent-card.json  → AgentCard
+//   GET  http://localhost:PORT/.well-known/agent.json       → legacy alias
+//   POST http://localhost:PORT/tasks/send                   → JSON-RPC task
+//   POST http://localhost:PORT/message:send                 → compatible task alias
 server.close();
 ```
 
@@ -54,7 +62,7 @@ Both client and server support optional shared-secret auth via `X-API-Key` heade
 
 - **Client**: `new A2AClient("secret-key")` — sends `X-API-Key` on all requests.
 - **Server**: `new A2AServer(agent, port, name, desc, "secret-key")` — validates `X-API-Key` on
-  `/tasks/send`. The AgentCard endpoint is always open (discovery should be public).
+  task endpoints. The AgentCard endpoint is always open (discovery should be public).
 
 Full JWT/OIDC auth is a future addition.
 

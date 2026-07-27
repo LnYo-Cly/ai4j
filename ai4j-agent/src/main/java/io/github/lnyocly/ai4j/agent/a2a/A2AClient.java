@@ -49,11 +49,14 @@ public class A2AClient {
         this(null, connectTimeoutMillis, readTimeoutMillis);
     }
 
-    /** Fetches the AgentCard from {@code baseUrl/.well-known/agent.json}. */
+    /** Fetches the AgentCard, preferring the standard A2A path and falling back to ai4j's legacy path. */
     public AgentCard discover(String baseUrl) throws IOException {
-        String url = trimSlash(baseUrl) + "/.well-known/agent.json";
-        String body = httpGet(url);
-        return JSON.parseObject(body, AgentCard.class);
+        String root = trimSlash(baseUrl);
+        try {
+            return JSON.parseObject(httpGet(root + "/.well-known/agent-card.json"), AgentCard.class);
+        } catch (IOException first) {
+            return JSON.parseObject(httpGet(root + "/.well-known/agent.json"), AgentCard.class);
+        }
     }
 
     /**
@@ -102,9 +105,11 @@ public class A2AClient {
         // Check status for failure
         JSONObject status = result.getJSONObject("status");
         if (status != null) {
-            String state = status.getString("state");
-            if (state != null && ("failed".equalsIgnoreCase(state) || "canceled".equalsIgnoreCase(state))) {
-                return "A2A task " + state + ": " + status.getString("message");
+            String stateValue = status.getString("state");
+            TaskState state = TaskState.fromValue(stateValue);
+            if (state != null && state.isFailure()) {
+                String message = status.getString("message");
+                return "A2A task " + state.getValue() + ": " + (message != null ? message : "no message");
             }
         }
         // Extract first artifact text
