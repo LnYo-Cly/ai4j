@@ -72,9 +72,6 @@
             <artifactId>tika-core</artifactId>
             <version>2.9.2</version>
         </dependency>
-        <!-- JAXB API: BearerTokenUtils 使用 javax.xml.bind.DatatypeConverter。
-             JDK 8 由 rt.jar 自带；JDK 11+ 已移除，此前靠 tika-parsers 传递引入，
-             拆出 tika-parsers 后需显式声明（optional，下游 JDK 8 用户不需要）。 -->
         <dependency>
             <groupId>com.knuddels</groupId>
             <artifactId>jtokkit</artifactId>
