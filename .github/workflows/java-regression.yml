@@ -78,9 +78,42 @@ jobs:
       - name: Monorepo package smoke
         run: mvn -B -ntp -DskipTests package
 
-  module-tests:
-    name: module-tests (${{ matrix.module }})
+  # E3-E7: Quality gates run once on JDK 8 (animal-sniffer + jacoco + spotbugs + japicmp + surefire 3.x)
+  quality-gates:
+    name: quality-gates
     runs-on: ubuntu-latest
+    needs: detect-java-changes
+    if: needs.detect-java-changes.outputs.java == 'true'
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Run quality gates (animal-sniffer + jacoco + spotbugs + japicmp)
+        run: mvn -B -ntp verify
+
+      - name: Upload JaCoCo reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: |
+            **/target/site/jacoco/**
+            **/target/japicmp/**
+          if-no-files-found: ignore
+
+  # E1: JDK x OS matrix for cross-JDK test verification
+  module-tests:
+    name: module-tests (${{ matrix.module }} / JDK ${{ matrix.jdk }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     needs: detect-java-changes
     if: needs.detect-java-changes.outputs.java == 'true'
     timeout-minutes: 30
@@ -97,6 +130,63 @@ jobs:
           - ai4j-spring-boot-starter
           - ai4j-flowgram-spring-boot-starter
           - ai4j-flowgram-demo
+        jdk: ['8', '17', '21']
+        os: [ubuntu-latest, windows-latest]
+        exclude:
+          # Starter modules: JDK [8, 17] x ubuntu only (Boot 2.x 不支持 JDK 21)
+          - module: ai4j-spring-boot-starter
+            jdk: '21'
+          - module: ai4j-spring-boot-starter
+            os: windows-latest
+          - module: ai4j-flowgram-spring-boot-starter
+            jdk: '21'
+          - module: ai4j-flowgram-spring-boot-starter
+            os: windows-latest
+          # Light modules: JDK [8, 17] x ubuntu only
+          - module: ai4j-extension-api
+            jdk: '21'
+          - module: ai4j-extension-api
+            os: windows-latest
+          - module: ai4j-plugin-ask-user
+            jdk: '21'
+          - module: ai4j-plugin-ask-user
+            os: windows-latest
+          # Demo: ubuntu only, JDK [8, 17]
+          - module: ai4j-flowgram-demo
+            jdk: '21'
+          - module: ai4j-flowgram-demo
+            os: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.jdk }}
+          cache: maven
+
+      - name: Run module test gate
+        run: mvn -B -ntp -pl ${{ matrix.module }} -am -DskipTests=false test
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-${{ matrix.module }}-jdk${{ matrix.jdk }}-${{ matrix.os }}
+          path: |
+            **/target/surefire-reports/**
+          if-no-files-found: ignore
+
+  # E2: Dependency size assertion for ai4j core runtime classpath
+  check-size:
+    name: check-size
+    runs-on: ubuntu-latest
+    needs: detect-java-changes
+    if: needs.detect-java-changes.outputs.java == 'true'
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -109,17 +199,40 @@ jobs:
           java-version: '8'
           cache: maven
 
-      - name: Run module test gate
-        run: mvn -B -ntp -pl ${{ matrix.module }} -am -DskipTests=false test
+      - name: Assert ai4j runtime dependency size
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Upload surefire reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-${{ matrix.module }}
-          path: |
-            **/target/surefire-reports/**
-          if-no-files-found: ignore
+          # Copy runtime-scope dependencies to measure total size
+          mvn -B -ntp -pl ai4j dependency:copy-dependencies \
+            -DincludeScope=runtime \
+            -DoutputDirectory=target/runtime-deps
+
+          DEPS_DIR="ai4j/target/runtime-deps"
+          TOTAL_BYTES=$(find "$DEPS_DIR" -name '*.jar' -printf '%s\n' | awk '{s+=$1} END {print s}')
+          TOTAL_MB=$(awk "BEGIN {printf \"%.2f\", $TOTAL_BYTES / 1048576}")
+
+          echo "ai4j runtime dependencies: ${TOTAL_MB} MB ($TOTAL_BYTES bytes)"
+
+          # Print top 10 largest jars
+          echo ""
+          echo "Top 10 largest dependencies:"
+          find "$DEPS_DIR" -name '*.jar' -printf '%s %f\n' \
+            | sort -rn | head -10 | while read -r size name; do
+              mb=$(awk "BEGIN {printf \"%.2f\", $size / 1048576}")
+              echo "  ${mb} MB  $name"
+            done
+
+          # Assert under limit (25 MB baseline; goal is 15 MB, see task plan E2)
+          LIMIT_BYTES=$((25 * 1048576))
+          if [[ "$TOTAL_BYTES" -gt "$LIMIT_BYTES" ]]; then
+            echo ""
+            echo "FAIL: ai4j runtime dependencies ${TOTAL_MB} MB exceeds 25 MB limit"
+            exit 1
+          fi
+          echo ""
+          echo "PASS: ai4j runtime dependencies ${TOTAL_MB} MB within 25 MB limit"
 
   java-regression:
     name: java-regression
@@ -127,7 +240,9 @@ jobs:
     needs:
       - detect-java-changes
       - package-smoke
+      - quality-gates
       - module-tests
+      - check-size
     if: always()
     steps:
       - name: Assert Java regression gate
@@ -136,7 +251,9 @@ jobs:
           echo "java changes: ${{ needs.detect-java-changes.outputs.java }}"
           echo "detect-java-changes: ${{ needs.detect-java-changes.result }}"
           echo "package-smoke: ${{ needs.package-smoke.result }}"
+          echo "quality-gates: ${{ needs.quality-gates.result }}"
           echo "module-tests: ${{ needs.module-tests.result }}"
+          echo "check-size: ${{ needs.check-size.result }}"
 
           if [[ "${{ needs.detect-java-changes.result }}" != "success" ]]; then
             echo "detect-java-changes did not pass."
@@ -153,7 +270,17 @@ jobs:
             exit 1
           fi
 
+          if [[ "${{ needs.quality-gates.result }}" != "success" ]]; then
+            echo "quality-gates did not pass."
+            exit 1
+          fi
+
           if [[ "${{ needs.module-tests.result }}" != "success" ]]; then
             echo "module-tests did not pass."
+            exit 1
+          fi
+
+          if [[ "${{ needs.check-size.result }}" != "success" ]]; then
+            echo "check-size did not pass."
             exit 1
           fi
