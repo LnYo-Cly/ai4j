@@ -84,6 +84,15 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- GraalVM polyglot API：ai4j-agent 中 optional=true 不传递，
+             ai4j-coding 测试通过 AgentBuilder.createDefaultCodeExecutor() 间接引用
+             ProxyExecutable，需要 test scope 显式引入 -->
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+            <version>24.1.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
