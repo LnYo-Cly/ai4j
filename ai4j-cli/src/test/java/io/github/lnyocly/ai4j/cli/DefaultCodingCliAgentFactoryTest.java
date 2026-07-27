@@ -5,6 +5,10 @@ import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.CliUiMode;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.factory.CodingCliAgentFactory;
+import io.github.lnyocly.ai4j.cli.hook.CliHookEntry;
+import io.github.lnyocly.ai4j.cli.hook.CliHooksConfig;
+import io.github.lnyocly.ai4j.cli.hook.TrustedDirsStore;
+import io.github.lnyocly.ai4j.cli.hook.WorkspaceTrustGate;
 import io.github.lnyocly.ai4j.cli.provider.CliProviderConfigManager;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -19,6 +23,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -295,6 +302,56 @@ public class DefaultCodingCliAgentFactoryTest {
             }
         }
         return names;
+    }
+
+    // ---- A4: WorkspaceTrustGate integration ----
+
+    @Test
+    public void test_evaluate_hook_trust_returns_no_hooks_for_empty_config() {
+        WorkspaceTrustGate.TrustResult result = factory.evaluateHookTrust(
+                null, new CliHooksConfig(),
+                new ByteArrayInputStream(new byte[0]), new PrintStream(new ByteArrayOutputStream()));
+        Assert.assertEquals(WorkspaceTrustGate.TrustResult.NO_HOOKS, result);
+    }
+
+    @Test
+    public void test_evaluate_hook_trust_returns_untrusted_when_user_declines() throws Exception {
+        Path storeFile = Files.createTempFile("ai4j-trust-store", ".txt");
+        TrustedDirsStore store = new TrustedDirsStore(storeFile);
+        factory.trustGate = new WorkspaceTrustGate(store);
+        Path workspace = Files.createTempDirectory("ai4j-untrusted-ws");
+
+        CliHooksConfig hooks = new CliHooksConfig();
+        hooks.setPreToolUse(Arrays.asList(new CliHookEntry("echo test", null)));
+
+        ByteArrayInputStream in = new ByteArrayInputStream("n\n".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        WorkspaceTrustGate.TrustResult result = factory.evaluateHookTrust(
+                workspace, hooks, in, new PrintStream(out));
+
+        Assert.assertEquals(WorkspaceTrustGate.TrustResult.UNTRUSTED, result);
+        Assert.assertFalse(store.isTrusted(workspace));
+    }
+
+    @Test
+    public void test_evaluate_hook_trust_returns_trusted_for_pretrusted_dir() throws Exception {
+        Path storeFile = Files.createTempFile("ai4j-trust-store", ".txt");
+        TrustedDirsStore store = new TrustedDirsStore(storeFile);
+        Path workspace = Files.createTempDirectory("ai4j-trusted-ws");
+        store.trust(workspace);
+        factory.trustGate = new WorkspaceTrustGate(store);
+
+        CliHooksConfig hooks = new CliHooksConfig();
+        hooks.setPreToolUse(Arrays.asList(new CliHookEntry("echo test", null)));
+
+        ByteArrayInputStream in = new ByteArrayInputStream(new byte[0]);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        WorkspaceTrustGate.TrustResult result = factory.evaluateHookTrust(
+                workspace, hooks, in, new PrintStream(out));
+
+        Assert.assertEquals(WorkspaceTrustGate.TrustResult.TRUSTED, result);
     }
 
     private static final class TestFactory extends DefaultCodingCliAgentFactory {

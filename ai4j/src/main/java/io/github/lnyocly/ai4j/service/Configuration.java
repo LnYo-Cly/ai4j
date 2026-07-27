@@ -7,6 +7,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSources;
 
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * @Author cly
@@ -17,7 +19,12 @@ import okhttp3.sse.EventSources;
 @Data
 public class Configuration {
 
-    private OkHttpClient okHttpClient = new OkHttpClient();
+    private OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(300, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(0, TimeUnit.SECONDS)
+            .build();
 
     public EventSource.Factory createRequestFactory() {
         return EventSources.createFactory(okHttpClient);

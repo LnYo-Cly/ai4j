@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a new capability or an API improvement for ai4j
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Your use case
+      description: What are you trying to build, and where does ai4j currently fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround
+      description: How are you getting by today without this feature? (extra glue code, a fork, another tool, etc.)
+    validations:
+      required: true
+  - type: textarea
+    id: desired-api
+    attributes:
+      label: Desired API or behavior
+      description: Sketch the API surface or behavior you would expect. A code snippet helps a lot.
+      render: java
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of ai4j does this touch?
+      options:
+        - Core SDK (chat / embedding / rerank)
+        - Tool Calling / MCP
+        - RAG / Vector store
+        - Agent runtime
+        - Coding Agent / CLI / TUI / ACP
+        - Spring Boot starter
+        - FlowGram
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Willingness to contribute
+      options:
+        - label: I am willing to open a PR for this feature if maintainers agree it fits the roadmap.

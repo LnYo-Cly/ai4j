@@ -70,11 +70,14 @@
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
             <version>20.3.4</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.30</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -101,6 +104,23 @@
     </dependencies>
 
     <profiles>
+        <!-- JDK 15+ 移除了内置 Nashorn；DynamicWorkflow/CodeAct 的 Nashorn 路径需要外部 nashorn-core。
+             B2 从 ai4j 核心删了这个 profile 是对的（核心不该携带脚本运行时），
+             但 agent 模块实际使用 Nashorn，所以 profile 下沉到这里。 -->
+        <profile>
+            <id>nashorn-runtime</id>
+            <activation>
+                <jdk>[15,)</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjdk.nashorn</groupId>
+                    <artifactId>nashorn-core</artifactId>
+                    <version>15.6</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>release</id>
             <build>

@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class WriteFileToolExecutorTest {
 
@@ -47,17 +48,80 @@ public class WriteFileToolExecutorTest {
     }
 
     @Test
-    public void shouldAllowWritingAbsolutePathOutsideWorkspace() throws Exception {
+    public void shouldRejectWritingAbsolutePathOutsideWorkspace() throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("workspace-write-outside").toPath();
         Path outsideFile = temporaryFolder.newFolder("outside-root").toPath().resolve("outside.txt");
         WriteFileToolExecutor executor = new WriteFileToolExecutor(
                 WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
         );
 
-        JSONObject result = JSON.parseObject(executor.execute(call(outsideFile.toString(), "outside", "overwrite")));
-        assertTrue(Files.exists(outsideFile));
-        assertEquals("outside", new String(Files.readAllBytes(outsideFile), StandardCharsets.UTF_8));
-        assertEquals(outsideFile.toAbsolutePath().normalize().toString(), result.getString("resolvedPath"));
+        try {
+            executor.execute(call(outsideFile.toString(), "outside", "overwrite"));
+            fail("Expected IllegalArgumentException for path outside workspace");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("escapes workspace") || expected.getMessage().contains("outside"));
+        }
+        assertFalse(Files.exists(outsideFile));
+    }
+
+    @Test
+    public void shouldRejectParentDirectoryTraversal() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-traversal").toPath();
+        WriteFileToolExecutor executor = new WriteFileToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        try {
+            executor.execute(call("../../../etc/passwd", "evil", "overwrite"));
+            fail("Expected IllegalArgumentException for parent directory traversal");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("escapes workspace") || expected.getMessage().contains("outside"));
+        }
+    }
+
+    @Test
+    public void shouldRejectWriteToGitHooks() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-git-hooks").toPath();
+        WriteFileToolExecutor executor = new WriteFileToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        try {
+            executor.execute(call(".git/hooks/post-commit", "#!/bin/sh\nevil", "overwrite"));
+            fail("Expected IllegalArgumentException for .git/hooks write");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("blocked") || expected.getMessage().contains(".git"));
+        }
+    }
+
+    @Test
+    public void shouldRejectWriteToSshDirectory() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-ssh").toPath();
+        WriteFileToolExecutor executor = new WriteFileToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        try {
+            executor.execute(call(".ssh/authorized_keys", "ssh-rsa ...", "overwrite"));
+            fail("Expected IllegalArgumentException for .ssh write");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("blocked") || expected.getMessage().contains(".ssh"));
+        }
+    }
+
+    @Test
+    public void shouldRejectWriteToAwsDirectory() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-aws").toPath();
+        WriteFileToolExecutor executor = new WriteFileToolExecutor(
+                WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
+        );
+
+        try {
+            executor.execute(call(".aws/credentials", "[default]\naws_access_key_id=...", "overwrite"));
+            fail("Expected IllegalArgumentException for .aws write");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("blocked") || expected.getMessage().contains(".aws"));
+        }
     }
 
     private AgentToolCall call(String path, String content, String mode) {

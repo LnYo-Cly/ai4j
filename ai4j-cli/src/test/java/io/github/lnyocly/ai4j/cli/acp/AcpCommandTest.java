@@ -91,7 +91,7 @@ public class AcpCommandTest {
         Assert.assertEquals("acp-session", newSessionResult.getString("sessionId"));
         Assert.assertTrue(containsConfigOption(newSessionResult.getJSONArray("configOptions"), "mode"));
         Assert.assertTrue(containsConfigOption(newSessionResult.getJSONArray("configOptions"), "model"));
-        Assert.assertEquals("auto", newSessionResult.getJSONObject("modes").getString("currentModeId"));
+        Assert.assertEquals("safe", newSessionResult.getJSONObject("modes").getString("currentModeId"));
         JSONObject availableCommands = findSessionUpdate(messages, "available_commands_update");
         Assert.assertNotNull(availableCommands);
         JSONArray available = availableCommands.getJSONArray("availableCommands");

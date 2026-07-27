@@ -322,4 +322,4 @@ AI4J 当前的 Coding Agent 里：
 1. [Runtime 架构](/docs/coding-agent/runtime-architecture)
 2. [会话、流式与进程](/docs/coding-agent/session-runtime)
 3. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
-4. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+4. [Core SDK / MCP](/docs/mcp/overview)

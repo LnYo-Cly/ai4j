@@ -61,7 +61,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/rag-legal-assistant)
+- [旧路径案例页](/docs/solutions/legal-assistant)
 
 ## 7. 关键对象
 

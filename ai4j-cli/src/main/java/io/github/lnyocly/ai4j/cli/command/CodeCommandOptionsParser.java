@@ -186,7 +186,7 @@ public class CodeCommandOptionsParser {
                 values.get("approval"),
                 envValue(env, "AI4J_APPROVAL"),
                 propertyValue(properties, "ai4j.approval"),
-                ApprovalMode.AUTO.getValue()
+                ApprovalMode.SAFE.getValue()
         ));
 
         String apiKey = resolvedProviderConfig.getApiKey();

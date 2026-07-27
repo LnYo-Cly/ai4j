@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.lingyi.chat.entity.LingyiChatCompletion;
@@ -266,8 +267,8 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
             if (response.isSuccessful() && response.body() != null) {
                 return objectMapper.readValue(response.body().string(), LingyiChatCompletionResponse.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        return null;
     }
 
     private Request buildChatCompletionRequest(String baseUrl, String apiKey, LingyiChatCompletion lingyiChatCompletion)

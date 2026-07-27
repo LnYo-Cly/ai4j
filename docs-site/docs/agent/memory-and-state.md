@@ -292,7 +292,7 @@ summary 不是冗余字符串拼在 item 里，而是单独存一条记录；但
 
 ## 12. 继续阅读
 
-1. [Memory 管理与压缩策略](/docs/agent/memory-management)
+1. [Memory 管理与压缩策略](/docs/agent/memory-compact-context)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
 3. [Agent Architecture](/docs/agent/architecture)
 4. [Trace Observability](/docs/agent/trace-observability)

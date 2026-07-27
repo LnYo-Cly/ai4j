@@ -59,40 +59,99 @@ public class McpServerFactory {
      * 服务器配置类
      */
     public static class ServerConfig {
+        /** Default bind address — loopback only for safety. */
+        public static final String DEFAULT_HOST = "127.0.0.1";
+        /** Wildcard address — binds to all interfaces; logged with a security warning. */
+        public static final String WILDCARD_HOST = "0.0.0.0";
+
         private String name;
         private String version;
         private Integer port;
         private String host;
-        
+        private McpAuthProvider authProvider;
+        private boolean authEnabled = true;
+        private String corsAllowedOrigin; // null = same-origin (no CORS header)
+
         public ServerConfig(String name, String version) {
             this.name = name;
             this.version = version;
             this.port = 8080; // 默认端口
-            this.host = "localhost"; // 默认主机
+            this.host = DEFAULT_HOST; // 默认绑定回环地址，不再暴露到外网
         }
-        
+
         public ServerConfig withPort(int port) {
             this.port = port;
             return this;
         }
-        
+
         public ServerConfig withHost(String host) {
             this.host = host;
             return this;
         }
-        
+
+        /**
+         * Sets a custom auth provider. When called, token auth is enabled and the supplied
+         * provider decides whether each request passes.
+         */
+        public ServerConfig withAuth(McpAuthProvider authProvider) {
+            this.authProvider = authProvider;
+            this.authEnabled = true;
+            return this;
+        }
+
+        /**
+         * Explicitly disables token auth. Insecure — only use when the server is behind a
+         * reverse proxy or restricted network that already handles authentication.
+         */
+        public ServerConfig withNoAuth() {
+            this.authProvider = null;
+            this.authEnabled = false;
+            return this;
+        }
+
+        /**
+         * Sets the CORS allowed origin. Pass {@code null} (the default) for same-origin only,
+         * or a specific origin like {@code "https://example.com"}. The wildcard {@code "*"} is
+         * allowed but discouraged for token-protected endpoints.
+         */
+        public ServerConfig withCorsAllowedOrigin(String origin) {
+            this.corsAllowedOrigin = origin;
+            return this;
+        }
+
+        /**
+         * Resolves the effective auth provider. When auth is enabled (the default) and no
+         * custom provider was configured, a {@link BearerTokenAuthProvider} with a random
+         * token is created on first call.
+         */
+        public McpAuthProvider resolveAuthProvider() {
+            if (!authEnabled) {
+                return null;
+            }
+            if (authProvider == null) {
+                authProvider = new BearerTokenAuthProvider();
+            }
+            return authProvider;
+        }
+
         // Getters
         public String getName() { return name; }
         public String getVersion() { return version; }
         public Integer getPort() { return port; }
         public String getHost() { return host; }
-        
+        public McpAuthProvider getAuthProvider() { return authProvider; }
+        public boolean isAuthEnabled() { return authEnabled; }
+        public String getCorsAllowedOrigin() { return corsAllowedOrigin; }
+
         // Setters
         public void setName(String name) { this.name = name; }
         public void setVersion(String version) { this.version = version; }
         public void setPort(Integer port) { this.port = port; }
         public void setHost(String host) { this.host = host; }
-        
+        public void setAuthProvider(McpAuthProvider authProvider) { this.authProvider = authProvider; }
+        public void setAuthEnabled(boolean authEnabled) { this.authEnabled = authEnabled; }
+        public void setCorsAllowedOrigin(String corsAllowedOrigin) { this.corsAllowedOrigin = corsAllowedOrigin; }
+
         @Override
         public String toString() {
             return "ServerConfig{" +
@@ -100,6 +159,7 @@ public class McpServerFactory {
                     ", version='" + version + '\'' +
                     ", port=" + port +
                     ", host='" + host + '\'' +
+                    ", authEnabled=" + authEnabled +
                     '}';
         }
     }
@@ -164,14 +224,30 @@ public class McpServerFactory {
      * 创建SSE服务器
      */
     private static SseMcpServer createSseServer(ServerConfig config) {
-        return new SseMcpServer(config.getName(), config.getVersion(), config.getPort());
+        warnIfWildcardHost(config);
+        return new SseMcpServer(
+                config.getName(), config.getVersion(), config.getHost(), config.getPort(),
+                config.resolveAuthProvider(), config.getCorsAllowedOrigin());
     }
-    
+
     /**
      * 创建Streamable HTTP服务器
      */
     private static StreamableHttpMcpServer createStreamableHttpServer(ServerConfig config) {
-        return new StreamableHttpMcpServer(config.getName(), config.getVersion(), config.getPort());
+        warnIfWildcardHost(config);
+        return new StreamableHttpMcpServer(
+                config.getName(), config.getVersion(), config.getHost(), config.getPort(),
+                config.resolveAuthProvider(), config.getCorsAllowedOrigin());
+    }
+
+    /**
+     * 安全警告：当 host 配置为 0.0.0.0（通配符）时记录一条 WARNING 日志。
+     */
+    private static void warnIfWildcardHost(ServerConfig config) {
+        if (ServerConfig.WILDCARD_HOST.equals(config.getHost())) {
+            log.warn("MCP server host is set to 0.0.0.0 — the server will be reachable from ALL network interfaces. "
+                    + "Ensure auth is enabled and the network is trusted. Server: {}", config.getName());
+        }
     }
     
     /**

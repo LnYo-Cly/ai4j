@@ -50,7 +50,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/searxng-web-search)
+- [旧路径案例页](/docs/solutions/searxng-web-search)
 
 ## 7. 关键对象
 

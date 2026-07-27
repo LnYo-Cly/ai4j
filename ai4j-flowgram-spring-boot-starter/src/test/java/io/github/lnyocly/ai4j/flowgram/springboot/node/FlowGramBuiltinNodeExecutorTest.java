@@ -3,8 +3,11 @@ package io.github.lnyocly.ai4j.flowgram.springboot.node;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramNodeSchema;
+import io.github.lnyocly.ai4j.flowgram.springboot.node.HttpNodeSsrfGuard.SsrfBlockedException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -21,6 +24,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FlowGramBuiltinNodeExecutorTest {
+
+    @Before
+    public void allowPrivateNetworkForHttpNodeTests() {
+        // Tests that start a local HTTP server need the SSRF guard to allow loopback.
+        // This mirrors the opt-out switch ai4j.flowgram.http-node.allow-private-network=true.
+        System.setProperty(FlowGramHttpNodeExecutor.ALLOW_PRIVATE_NETWORK_PROPERTY, "true");
+    }
+
+    @After
+    public void clearPrivateNetworkOptOut() {
+        System.clearProperty(FlowGramHttpNodeExecutor.ALLOW_PRIVATE_NETWORK_PROPERTY);
+    }
 
     @Test
     public void shouldResolveVariableAssignments() throws Exception {
@@ -138,6 +153,38 @@ public class FlowGramBuiltinNodeExecutorTest {
             Assert.assertEquals("{\"ok\":true}", result.getOutputs().get("body"));
         } finally {
             server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldBlockPrivateNetworkByDefault() {
+        // Clear the opt-out to verify the guard blocks loopback by default.
+        System.clearProperty(FlowGramHttpNodeExecutor.ALLOW_PRIVATE_NETWORK_PROPERTY);
+        FlowGramHttpNodeExecutor executor = new FlowGramHttpNodeExecutor();
+        try {
+            executor.execute(FlowGramNodeExecutionContext.builder()
+                    .taskId("task-ssrf")
+                    .node(node("http_0", "HTTP", mapOf(
+                            "api", mapOf(
+                                    "method", "GET",
+                                    "url", mapOf("type", "constant", "content", "http://127.0.0.1:9999/echo")
+                            ),
+                            "headersValues", Collections.<String, Object>emptyMap(),
+                            "paramsValues", Collections.<String, Object>emptyMap(),
+                            "timeout", mapOf("timeout", 1000, "retryTimes", 1),
+                            "body", mapOf("bodyType", "none")
+                    )))
+                    .inputs(Collections.<String, Object>emptyMap())
+                    .taskInputs(Collections.<String, Object>emptyMap())
+                    .nodeOutputs(Collections.<String, Object>emptyMap())
+                    .locals(Collections.<String, Object>emptyMap())
+                    .build());
+            Assert.fail("expected SsrfBlockedException for 127.0.0.1 without opt-out");
+        } catch (SsrfBlockedException expected) {
+            Assert.assertTrue(expected.getMessage().contains("blocked"));
+        } catch (Exception e) {
+            // If the guard passed but the connection failed, that's a bug in the guard.
+            Assert.fail("expected SsrfBlockedException, got " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 

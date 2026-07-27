@@ -58,7 +58,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/pinecone-vector-workflow)
+- [旧路径案例页](/docs/solutions/pinecone-vector-workflow)
 
 ## 7. 关键对象
 

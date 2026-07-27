@@ -151,6 +151,10 @@ public class FlowGramTaskControllerIntegrationTest {
         String taskId = runResponse.getString("taskId");
         assertNotNull(taskId);
 
+        // Wait for the task to complete before reading the report — otherwise the LLM node
+        // may not have run yet and metrics will be null (race condition).
+        JSONObject result = awaitResult(taskId);
+
         JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
         JSONObject llmOutputs = report.getJSONObject("nodes").getJSONObject("llm_0").getJSONObject("outputs");
         JSONObject outputMetrics = llmOutputs.getJSONObject("metrics");
@@ -165,7 +169,6 @@ public class FlowGramTaskControllerIntegrationTest {
         assertEquals(439L, report.getJSONObject("trace").getJSONObject("nodes")
                 .getJSONObject("llm_0").getJSONObject("metrics").getLongValue("totalTokens"));
 
-        JSONObject result = awaitResult(taskId);
         JSONObject resultTraceMetrics = result.getJSONObject("trace").getJSONObject("summary").getJSONObject("metrics");
         assertEquals(439L, resultTraceMetrics.getLongValue("totalTokens"));
     }

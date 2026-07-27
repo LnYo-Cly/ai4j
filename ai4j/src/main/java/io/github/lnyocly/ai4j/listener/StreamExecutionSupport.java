@@ -48,7 +48,13 @@ public final class StreamExecutionSupport {
                 return;
             }
             if (listener.hasReceivedEvent() || attempt >= maxAttempts) {
-                return;
+                if (failure instanceof Exception) {
+                    throw (Exception) failure;
+                }
+                if (failure instanceof Error) {
+                    throw (Error) failure;
+                }
+                throw new RuntimeException(failure);
             }
 
             int nextAttempt = attempt + 1;

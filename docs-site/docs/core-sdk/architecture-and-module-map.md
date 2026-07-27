@@ -182,7 +182,7 @@ ai4j-flowgram-demo          -> ai4j-flowgram-spring-boot-starter
 2. [Core SDK / Model Access](/docs/core-sdk/model-access/overview)
 3. [Core SDK / Tools](/docs/core-sdk/tools/overview)
 4. [Core SDK / Skills](/docs/core-sdk/skills/overview)
-5. [Core SDK / MCP](/docs/core-sdk/mcp/overview)
+5. [Core SDK / MCP](/docs/mcp/overview)
 6. [Spring Boot / Overview](/docs/spring-boot/overview)
 7. [Extension / Plugin Packages](/docs/core-sdk/extension/plugin-packages)
 8. [Extension / Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)

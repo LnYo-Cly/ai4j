@@ -165,7 +165,7 @@ public class CodeCommand {
         terminal.println("  --system <text>                    Additional system prompt");
         terminal.println("  --instructions <text>              Additional instructions");
         terminal.println("  --theme <name>                     TUI theme name or override");
-        terminal.println("  --approval <auto|safe|manual>     Tool approval strategy, default: auto");
+        terminal.println("  --approval <auto|safe|manual>     Tool approval strategy, default: safe");
         terminal.println("  --session-id <id>                  Use a fixed session id for a new session");
         terminal.println("  --resume <id>                      Resume a saved session");
         terminal.println("  --fork <id>                        Fork a saved session into a new branch");

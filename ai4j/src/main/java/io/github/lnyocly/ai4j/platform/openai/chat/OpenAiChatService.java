@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.*;
@@ -133,7 +134,7 @@ public class OpenAiChatService implements IChatService {
                     }
 
                 }else{
-                    return null;
+                    throw HttpErrorDecoder.decode(execute);
                 }
 
             }

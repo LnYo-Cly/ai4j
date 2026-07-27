@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
@@ -286,8 +287,8 @@ public class ZhipuChatService implements IChatService, ParameterConvert<ZhipuCha
             if (response.isSuccessful() && response.body() != null) {
                 return objectMapper.readValue(response.body().string(), ZhipuChatCompletionResponse.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        return null;
     }
 
     private Request buildChatCompletionRequest(String baseUrl, String token, ZhipuChatCompletion zhipuChatCompletion)

@@ -57,10 +57,37 @@
         <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
     </properties>
 
+    <!-- B9 依赖版本统一：消除 dependencyConvergence 冲突 -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- slf4j-api 统一到 1.7.30（与 ai4j 核心声明一致；tika-core 2.9.2 传递 2.0.10，
+                 reflections 传递 1.7.32，统一后 classpath 只保留一个版本。
+                 slf4j-api 1.7 的 Logger API 与 2.0 向后兼容） -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.30</version>
+            </dependency>
+            <!-- kotlin-stdlib 统一到 1.9.10（okhttp 4.12.0 传递 1.8.21 + 1.9.10，取高版本） -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>1.9.10</version>
+            </dependency>
+            <!-- jackson-databind 统一到 2.16.0（与 ai4j 核心声明一致；传递依赖可能引入旧版本） -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.16.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>ai4j-extension-api</module>
         <module>ai4j-plugin-ask-user</module>
         <module>ai4j</module>
+        <module>ai4j-document-tika</module>
         <module>ai4j-agent</module>
         <module>ai4j-coding</module>
         <module>ai4j-cli</module>
@@ -90,6 +117,11 @@
                 <configuration>
                     <groups>${test.groups}</groups>
                     <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <systemPropertyVariables>
+                        <!-- Tests run against MockWebServer / self-signed certs; allow trust-all
+                             during test only. Production must NOT set this. -->
+                        <ai4j.ssl.trust-all>true</ai4j.ssl.trust-all>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
@@ -109,6 +141,35 @@
                 <configuration>
                     <skip>${root.publish.skip}</skip>
                 </configuration>
+            </plugin>
+            <!-- B9 maven-enforcer：依赖收敛 + 禁止日志实现污染非 test scope -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-dependency-rules</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <dependencyConvergence />
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- 日志实现不得出现在非 test scope（避免污染下游日志栈） -->
+                                        <exclude>org.slf4j:slf4j-simple:*:*:!:test</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12:*:*:!:test</exclude>
+                                        <exclude>ch.qos.logback:logback-classic:*:*:!:test</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

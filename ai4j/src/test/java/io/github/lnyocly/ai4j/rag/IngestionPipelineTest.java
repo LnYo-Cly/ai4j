@@ -185,6 +185,8 @@ public class IngestionPipelineTest {
 
     @Test
     public void shouldLoadLocalFileThroughTikaLoader() throws Exception {
+        org.junit.Assume.assumeTrue("ai4j-document-tika not on test classpath (moved to separate module)",
+                io.github.lnyocly.ai4j.document.DocumentParsers.isAvailable());
         File tempFile = File.createTempFile("ai4j-ingestion-", ".txt");
         FileWriter writer = new FileWriter(tempFile);
         try {

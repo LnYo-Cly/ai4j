@@ -5,7 +5,6 @@ import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.EncodingType;
-import com.knuddels.jtokkit.api.ModelType;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -27,16 +26,19 @@ public class TikTokensUtil {
      */
     private static final Map<String, Encoding> modelMap = new ConcurrentHashMap<>();
     /**
-     * registry实例
+     * registry实例（延迟初始化，避免冷启动时遍历所有 ModelType）
      */
-    private static final EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
+    private static volatile EncodingRegistry registry;
 
-
-    static {
-        for (ModelType model : ModelType.values()){
-            Optional<Encoding> encodingForModel = registry.getEncodingForModel(model.getName());
-            encodingForModel.ifPresent(encoding -> modelMap.put(model.getName(), encoding));
+    private static EncodingRegistry getRegistry() {
+        if (registry == null) {
+            synchronized (TikTokensUtil.class) {
+                if (registry == null) {
+                    registry = Encodings.newDefaultEncodingRegistry();
+                }
+            }
         }
+        return registry;
     }
 
     /**
@@ -46,7 +48,7 @@ public class TikTokensUtil {
      * @return
      */
     public static int tokens(EncodingType encodingType, String content){
-        Encoding encoding = registry.getEncoding(encodingType);
+        Encoding encoding = getRegistry().getEncoding(encodingType);
         return encoding.countTokens(content);
     }
     public static int tokens(String modelName, String content)  {
@@ -63,7 +65,7 @@ public class TikTokensUtil {
         }
         Encoding encoding = modelMap.get(modelName);
         if (ObjectUtils.isEmpty(encoding)) {
-            Optional<Encoding> encodingForModel = registry.getEncodingForModel(modelName);
+            Optional<Encoding> encodingForModel = getRegistry().getEncodingForModel(modelName);
             if (encodingForModel.isPresent()) {
                 encoding = encodingForModel.get();
                 modelMap.put(modelName, encoding);

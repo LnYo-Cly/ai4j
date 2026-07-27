@@ -19,7 +19,7 @@ public enum ApprovalMode {
 
     public static ApprovalMode parse(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
-            return AUTO;
+            return SAFE;
         }
         String normalized = raw.trim().toLowerCase(Locale.ROOT);
         for (ApprovalMode mode : values()) {

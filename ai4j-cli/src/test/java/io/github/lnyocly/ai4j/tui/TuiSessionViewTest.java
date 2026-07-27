@@ -677,6 +677,44 @@ public class TuiSessionViewTest {
         Assert.assertTrue(rendered.contains("heartbeats: 2"));
     }
 
+    @Test
+    public void shouldRenderApprovalCommandWithoutTruncationAndStripsAnsiAndCr() {
+        TuiSessionView view = new TuiSessionView(new TuiConfig(), new TuiTheme(), false);
+        TuiInteractionState state = new TuiInteractionState();
+        String ansi = "\u001B[31m" + "\u001B[0m";
+        String cr = "\r";
+        String longArg = String.join("", Collections.nCopies(200, "A"));
+        String rawCommand = ansi + cr + "echo '" + longArg + "'" + ansi;
+        state.showApproval("safe", "bash", "command=" + rawCommand + ", processId=p1");
+
+        String rendered = view.render(TuiScreenModel.builder()
+                .interactionState(state)
+                .renderContext(TuiRenderContext.builder().terminalColumns(500).build())
+                .build());
+
+        Assert.assertTrue("approval overlay must be shown", rendered.contains("Approve command"));
+        Assert.assertTrue("full command must be shown without truncation", rendered.contains(longArg));
+        Assert.assertFalse("ANSI escape sequences must be stripped", rendered.contains("\u001B"));
+        Assert.assertFalse("carriage return must be stripped", rendered.contains("\r"));
+    }
+
+    @Test
+    public void shouldWrapApprovalCommandByTerminalWidthInsteadOfTruncating() {
+        TuiSessionView view = new TuiSessionView(new TuiConfig(), new TuiTheme(), false);
+        TuiInteractionState state = new TuiInteractionState();
+        String longArg = String.join("", Collections.nCopies(200, "A"));
+        String rawCommand = "echo '" + longArg + "'";
+        state.showApproval("safe", "bash", "command=" + rawCommand + ", processId=p1");
+
+        String rendered = view.render(TuiScreenModel.builder()
+                .interactionState(state)
+                .renderContext(TuiRenderContext.builder().terminalColumns(40).build())
+                .build());
+
+        String collapsed = rendered.replace("\n", "").replace("\r", "");
+        Assert.assertTrue("wrapped command must retain every character", collapsed.contains(longArg));
+    }
+
     private int countOccurrences(String text, String needle) {
         int count = 0;
         int index = 0;

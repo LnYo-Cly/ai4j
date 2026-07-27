@@ -39,17 +39,32 @@ public class SseMcpServer implements McpServer {
 
     private final String serverName;
     private final String serverVersion;
+    private final String host;
     private final int port;
+    private final McpAuthProvider authProvider;
+    private final String corsAllowedOrigin;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, PrintWriter> sseClients = new ConcurrentHashMap<String, PrintWriter>();
     private final ConcurrentHashMap<String, SessionContext> sessions = new ConcurrentHashMap<String, SessionContext>();
     private final McpServerEngine serverEngine;
     private HttpServer httpServer;
 
+    /**
+     * Backward-compatible constructor. Binds to loopback ({@code 127.0.0.1}) with no auth.
+     * New code should use {@link McpServerFactory#createServer} with a {@link McpServerFactory.ServerConfig}.
+     */
     public SseMcpServer(String serverName, String serverVersion, int port) {
+        this(serverName, serverVersion, McpServerFactory.ServerConfig.DEFAULT_HOST, port, null, null);
+    }
+
+    public SseMcpServer(String serverName, String serverVersion, String host, int port,
+                        McpAuthProvider authProvider, String corsAllowedOrigin) {
         this.serverName = serverName;
         this.serverVersion = serverVersion;
+        this.host = host == null ? McpServerFactory.ServerConfig.DEFAULT_HOST : host;
         this.port = port;
+        this.authProvider = authProvider;
+        this.corsAllowedOrigin = corsAllowedOrigin;
         this.serverEngine = new McpServerEngine(
                 serverName,
                 serverVersion,
@@ -66,9 +81,21 @@ public class SseMcpServer implements McpServer {
             public void run() {
                 if (running.compareAndSet(false, true)) {
                     try {
-                        log.info("启动SSE MCP服务器: {} v{}, 端口: {}", serverName, serverVersion, port);
+                        log.info("启动SSE MCP服务器: {} v{}, 地址: {}:{}", serverName, serverVersion, host, port);
 
-                        httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+                        if (McpServerFactory.ServerConfig.WILDCARD_HOST.equals(host)) {
+                            log.warn("SSE MCP服务器绑定到 0.0.0.0 — 将监听所有网络接口，请确保网络可信且鉴权已开启");
+                        }
+                        if (authProvider != null) {
+                            log.info("SSE MCP服务器鉴权已开启: {}", authProvider.describe());
+                            if (authProvider instanceof BearerTokenAuthProvider) {
+                                log.info("SSE MCP服务器 Bearer Token: {}", ((BearerTokenAuthProvider) authProvider).getToken());
+                            }
+                        } else {
+                            log.warn("SSE MCP服务器鉴权未开启 — 任何能访问该端口的请求都将被接受");
+                        }
+
+                        httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
                         httpServer.createContext("/sse", new SseHandler());
                         httpServer.createContext("/message", new MessageHandler());
                         httpServer.createContext("/health", new HealthHandler());
@@ -77,9 +104,9 @@ public class SseMcpServer implements McpServer {
                         httpServer.start();
 
                         log.info("SSE MCP服务器启动成功");
-                        log.info("SSE端点: http://localhost:{}/sse", port);
-                        log.info("POST端点: http://localhost:{}/message", port);
-                        log.info("健康检查: http://localhost:{}/health", port);
+                        log.info("SSE端点: http://{}:{}/sse", host, port);
+                        log.info("POST端点: http://{}:{}/message", host, port);
+                        log.info("健康检查: http://{}:{}/health", host, port);
                     } catch (Exception e) {
                         running.set(false);
                         log.error("启动SSE MCP服务器失败", e);
@@ -145,7 +172,7 @@ public class SseMcpServer implements McpServer {
     private class SseHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept");
+            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept", corsAllowedOrigin);
 
             String method = exchange.getRequestMethod();
             String sessionId = exchange.getRequestHeaders().getFirst("mcp-session-id");
@@ -155,6 +182,10 @@ public class SseMcpServer implements McpServer {
             if ("OPTIONS".equals(method)) {
                 exchange.sendResponseHeaders(200, 0);
                 exchange.close();
+                return;
+            }
+
+            if (!McpHttpServerSupport.requireAuth(exchange, authProvider)) {
                 return;
             }
 
@@ -180,7 +211,7 @@ public class SseMcpServer implements McpServer {
     private class MessageHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept");
+            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept", corsAllowedOrigin);
 
             String method = exchange.getRequestMethod();
             String sessionId = exchange.getRequestHeaders().getFirst("mcp-session-id");
@@ -190,6 +221,10 @@ public class SseMcpServer implements McpServer {
             if ("OPTIONS".equals(method)) {
                 exchange.sendResponseHeaders(200, 0);
                 exchange.close();
+                return;
+            }
+
+            if (!McpHttpServerSupport.requireAuth(exchange, authProvider)) {
                 return;
             }
 
@@ -294,7 +329,7 @@ public class SseMcpServer implements McpServer {
     private class HealthHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept");
+            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept", corsAllowedOrigin);
 
             Map<String, Object> health = new HashMap<String, Object>();
             health.put("status", "healthy");
@@ -414,7 +449,7 @@ public class SseMcpServer implements McpServer {
     private class RootHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept");
+            McpHttpServerSupport.setCorsHeaders(exchange, "GET, POST, OPTIONS", "Content-Type, Mcp-Session-Id, Accept", corsAllowedOrigin);
 
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();

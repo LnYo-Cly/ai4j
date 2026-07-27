@@ -54,7 +54,7 @@
 
 继续看深页：
 
-- [旧路径案例页](/docs/guides/spi-dispatcher-connectionpool)
+- [旧路径案例页](/docs/solutions/spi-dispatcher-connectionpool)
 
 ## 7. 关键对象
 

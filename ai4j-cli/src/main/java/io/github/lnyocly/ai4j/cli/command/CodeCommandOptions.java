@@ -7,7 +7,7 @@ import io.github.lnyocly.ai4j.service.PlatformType;
 
 public final class CodeCommandOptions {
 
-    private static final ApprovalMode DEFAULT_APPROVAL_MODE = ApprovalMode.AUTO;
+    private static final ApprovalMode DEFAULT_APPROVAL_MODE = ApprovalMode.SAFE;
     private static final boolean DEFAULT_NO_SESSION = true;
     private static final boolean DEFAULT_AUTO_SAVE_SESSION = true;
     private static final boolean DEFAULT_AUTO_COMPACT = true;

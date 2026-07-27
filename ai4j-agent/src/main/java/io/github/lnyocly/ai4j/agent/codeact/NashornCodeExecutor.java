@@ -11,6 +11,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleScriptContext;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -55,7 +56,7 @@ public class NashornCodeExecutor implements CodeExecutor {
     }
 
     private CodeExecutionResult executeJavaScript(CodeExecutionRequest request) {
-        ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+        ScriptEngine engine = createHardenedNashornEngine();
         if (engine == null) {
             return CodeExecutionResult.builder()
                     .error("Nashorn engine not found. Use JDK 8 or add nashorn engine dependency.")
@@ -122,6 +123,11 @@ public class NashornCodeExecutor implements CodeExecutor {
     private String buildPrelude(List<String> toolNames) {
         StringBuilder builder = new StringBuilder();
         builder.append("var __codeact_result = null;\n");
+        builder.append("try {\n");
+        builder.append("  this.Java = undefined; this.Packages = undefined; this.java = undefined; this.javax = undefined;\n");
+        builder.append("  this.org = undefined; this.com = undefined; this.load = undefined; this.loadWithNewGlobal = undefined;\n");
+        builder.append("  this.exit = undefined; this.quit = undefined;\n");
+        builder.append("} catch (__codeact_harden_error) {}\n");
         builder.append("function __parseIfJson(value) {\n");
         builder.append("  if (value == null) { return value; }\n");
         builder.append("  var text = null;\n");
@@ -184,6 +190,42 @@ public class NashornCodeExecutor implements CodeExecutor {
             return null;
         }
         return error.trim();
+    }
+
+    /**
+     * Create a Nashorn engine with Java interop disabled via {@code --no-java --no-java-import}
+     * command-line flags. Falls back to the plain {@link ScriptEngineManager} lookup only when the
+     * factory API is unavailable (non-JDK8 Nashorn distributions), in which case the runtime
+     * hardening prelude ({@code this.Java = undefined; ...}) still neutralises the most common
+     * RCE vectors.
+     */
+    private ScriptEngine createHardenedNashornEngine() {
+        ScriptEngine hardened = createNashornEngineWithOptions(new String[]{"--no-java", "--no-java-import"});
+        if (hardened != null) {
+            return hardened;
+        }
+        return new ScriptEngineManager().getEngineByName("nashorn");
+    }
+
+    private ScriptEngine createNashornEngineWithOptions(String[] args) {
+        String[] factoryClassNames = new String[]{
+                "org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory",
+                "jdk.nashorn.api.scripting.NashornScriptEngineFactory"
+        };
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        for (String factoryClassName : factoryClassNames) {
+            try {
+                Class<?> factoryClass = Class.forName(factoryClassName, true, loader);
+                Object factory = factoryClass.getDeclaredConstructor().newInstance();
+                Method method = factoryClass.getMethod("getScriptEngine", String[].class);
+                Object engine = method.invoke(factory, new Object[]{args});
+                if (engine instanceof ScriptEngine) {
+                    return (ScriptEngine) engine;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
     }
 
     public static class ToolBridge {
