@@ -88,9 +88,6 @@ public class SseMcpServer implements McpServer {
                         }
                         if (authProvider != null) {
                             log.info("SSE MCP服务器鉴权已开启: {}", authProvider.describe());
-                            if (authProvider instanceof BearerTokenAuthProvider) {
-                                log.info("SSE MCP服务器 Bearer Token: {}", ((BearerTokenAuthProvider) authProvider).getToken());
-                            }
                         } else {
                             log.warn("SSE MCP服务器鉴权未开启 — 任何能访问该端口的请求都将被接受");
                         }

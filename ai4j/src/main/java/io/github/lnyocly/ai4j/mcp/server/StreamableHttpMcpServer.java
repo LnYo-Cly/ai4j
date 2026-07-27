@@ -84,9 +84,6 @@ public class StreamableHttpMcpServer implements McpServer {
                         }
                         if (authProvider != null) {
                             log.info("Streamable HTTP MCP服务器鉴权已开启: {}", authProvider.describe());
-                            if (authProvider instanceof BearerTokenAuthProvider) {
-                                log.info("Streamable HTTP MCP服务器 Bearer Token: {}", ((BearerTokenAuthProvider) authProvider).getToken());
-                            }
                         } else {
                             log.warn("Streamable HTTP MCP服务器鉴权未开启 — 任何能访问该端口的请求都将被接受");
                         }
