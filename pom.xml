@@ -57,6 +57,8 @@
         <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
         <!-- jacoco prepare-agent 注入 argLine；默认空串避免 surefire 未定义报错 -->
         <argLine></argLine>
+        <!-- spotbugs 基线：当前代码存量 bug 上限，新增 bug 会 fail，逐步降低此值 -->
+        <spotbugs.maxAllowedViolations>0</spotbugs.maxAllowedViolations>
     </properties>
 
     <!-- B9 依赖版本统一：消除 dependencyConvergence 冲突 -->
@@ -136,6 +138,12 @@
                             <version>4.8.6</version>
                         </dependency>
                     </dependencies>
+                    <configuration>
+                        <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
+                        <effort>Medium</effort>
+                        <threshold>Medium</threshold>
+                        <maxAllowedViolations>${spotbugs.maxAllowedViolations}</maxAllowedViolations>
+                    </configuration>
                 </plugin>
                 <!-- E6: API 兼容性检查 -->
                 <plugin>
@@ -295,7 +303,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- E5: spotbugs 静态分析（effort Medium, threshold Medium） -->
+            <!-- E5: spotbugs 静态分析（effort Medium, threshold Medium, baseline 在 pluginManagement） -->
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
@@ -306,10 +314,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <effort>Medium</effort>
-                            <threshold>Medium</threshold>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

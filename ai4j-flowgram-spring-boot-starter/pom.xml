@@ -185,6 +185,12 @@
                         <version>4.8.6</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
+                    <effort>Medium</effort>
+                    <threshold>Medium</threshold>
+                    <maxAllowedViolations>0</maxAllowedViolations>
+                </configuration>
                 <executions>
                     <execution>
                         <id>spotbugs-check</id>
@@ -192,10 +198,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <effort>Medium</effort>
-                            <threshold>Medium</threshold>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

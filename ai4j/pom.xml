@@ -22,6 +22,7 @@
         <test.groups></test.groups>
         <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
         <argLine></argLine>
+        <spotbugs.maxAllowedViolations>100</spotbugs.maxAllowedViolations>
     </properties>
     <licenses>
         <license>
@@ -327,6 +328,12 @@
                         <version>4.8.6</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml</excludeFilterFile>
+                    <effort>Medium</effort>
+                    <threshold>Medium</threshold>
+                    <maxAllowedViolations>${spotbugs.maxAllowedViolations}</maxAllowedViolations>
+                </configuration>
                 <executions>
                     <execution>
                         <id>spotbugs-check</id>
@@ -334,10 +341,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <effort>Medium</effort>
-                            <threshold>Medium</threshold>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
