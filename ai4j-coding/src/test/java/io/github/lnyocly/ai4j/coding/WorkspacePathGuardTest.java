@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -146,7 +147,14 @@ public class WorkspacePathGuardTest {
                     WorkspaceContext.builder().rootPath(root.toString()).build(), "loop-a/deep.txt");
             fail("Expected IOException or IllegalArgumentException for symlink loop");
         } catch (Exception expected) {
-            assertTrue(expected.getMessage().contains("loop") || expected.getMessage().contains("depth"));
+            // Accept any IOException (incl. FileSystemLoopException on Linux whose message is just the path)
+            // or messages mentioning loop/depth/cycle.
+            String msg = expected.getMessage() == null ? "" : expected.getMessage();
+            String cls = expected.getClass().getSimpleName();
+            assertTrue(
+                    "Got " + cls + ": " + msg,
+                    expected instanceof IOException
+                            || msg.contains("loop") || msg.contains("depth") || msg.contains("cycle"));
         }
     }
 
