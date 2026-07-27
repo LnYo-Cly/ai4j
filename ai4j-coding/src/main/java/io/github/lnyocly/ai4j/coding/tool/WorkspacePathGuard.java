@@ -8,8 +8,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Security guard for write/patch tool executors.
@@ -67,47 +69,59 @@ public final class WorkspacePathGuard {
     }
 
     /**
-     * Follow symbolic links up to {@link #MAX_SYMLINK_DEPTH} hops.
-     * Uses {@link Files#readSymbolicLink} iteratively so that we can apply a depth limit
-     * (unlike {@link Path#toRealPath()} which has no configurable limit).
+     * Follow symbolic links up to {@link #MAX_SYMLINK_DEPTH} hops, using a visited-set
+     * to detect cycles in an OS-independent manner.
      */
     static Path resolveSymlinks(Path path) throws IOException {
         if (path == null) {
             return null;
         }
+        return resolveSymlinks(path, new HashSet<Path>());
+    }
+
+    private static Path resolveSymlinks(Path path, Set<Path> visited) throws IOException {
         Path current = path;
         for (int i = 0; i < MAX_SYMLINK_DEPTH; i++) {
+            Path normalized = current.toAbsolutePath().normalize();
+            if (!visited.add(normalized)) {
+                throw new IOException("Symlink loop detected: " + path);
+            }
+            // Check isSymbolicLink BEFORE exists: a symlink whose target is in a loop
+            // reports exists()=false, but we still need to follow it to detect the cycle.
+            if (Files.isSymbolicLink(current)) {
+                Path target = Files.readSymbolicLink(current);
+                if (!target.isAbsolute()) {
+                    target = current.getParent().resolve(target);
+                }
+                current = target.toAbsolutePath().normalize();
+                continue;
+            }
             if (!Files.exists(current)) {
                 // The file doesn't exist yet (it's about to be created).
-                // Resolve the parent if it exists; otherwise stop.
+                // Resolve the parent if it exists or is itself a symlink (whose target
+                // may be in a loop, causing exists()=false).
                 Path parent = current.getParent();
-                if (parent != null && Files.exists(parent)) {
-                    Path realParent = resolveSymlinks(parent);
+                if (parent != null
+                        && !(current.isAbsolute() && parent.equals(current.getRoot()))
+                        && (Files.exists(parent) || Files.isSymbolicLink(parent))) {
+                    Path realParent = resolveSymlinks(parent, visited);
                     current = realParent.resolve(current.getFileName());
                 }
                 break;
             }
-            if (!Files.isSymbolicLink(current)) {
-                // Not a symlink — but parent might be. Resolve parent and re-compose.
-                Path parent = current.getParent();
-                if (parent == null) {
-                    break;
-                }
-                if (current.isAbsolute() && parent.equals(current.getRoot())) {
-                    break;
-                }
-                if (!Files.isSymbolicLink(parent)) {
-                    break;
-                }
-                Path realParent = resolveSymlinks(parent);
-                current = realParent.resolve(current.getFileName());
-                continue;
+            // current exists and is not a symlink — but parent might be.
+            Path parent = current.getParent();
+            if (parent == null) {
+                break;
             }
-            Path target = Files.readSymbolicLink(current);
-            if (!target.isAbsolute()) {
-                target = current.getParent().resolve(target);
+            if (current.isAbsolute() && parent.equals(current.getRoot())) {
+                break;
             }
-            current = target.toAbsolutePath().normalize();
+            if (!Files.isSymbolicLink(parent)) {
+                break;
+            }
+            Path realParent = resolveSymlinks(parent, visited);
+            current = realParent.resolve(current.getFileName());
         }
         if (Files.isSymbolicLink(current)) {
             throw new IOException(
