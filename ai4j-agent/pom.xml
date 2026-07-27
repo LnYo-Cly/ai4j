@@ -66,23 +66,10 @@
             <artifactId>snakeyaml</artifactId>
             <version>2.2</version>
         </dependency>
-        <!-- GraalVM Polyglot SDK 24.x 新坐标（graal-sdk 在 24.x 已拆分为 polyglot + 各语言 artifact）。
-             GraalVmCodeExecutor 使用 org.graalvm.polyglot.* API（Context/HostAccess/Value/Proxy*）。
-             optional=true：不强迫下游引入 GraalVM，需 CodeAct Python 运行时的用户自行添加
-             org.graalvm.polyglot:python:24.1.2 运行时依赖。 -->
         <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-            <version>24.1.2</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>python</artifactId>
-            <version>24.1.2</version>
-            <type>pom</type>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>20.3.4</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
