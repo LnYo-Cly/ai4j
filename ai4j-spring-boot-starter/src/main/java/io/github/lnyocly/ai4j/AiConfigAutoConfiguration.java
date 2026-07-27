@@ -334,8 +334,9 @@ public class AiConfigAutoConfiguration {
         }
 
         // 蹇界暐SSL璇佷功楠岃瘉, 榛樿寮€鍚?
-        System.setProperty("ai4j.ssl.trust-all", "true");
+        // Only unlock trust-all when the user explicitly sets ignore-ssl=true
         if(okHttpConfigProperties.isIgnoreSsl()){
+            System.setProperty("ai4j.ssl.trust-all", "true");
             try {
                 okHttpBuilder
                         .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)

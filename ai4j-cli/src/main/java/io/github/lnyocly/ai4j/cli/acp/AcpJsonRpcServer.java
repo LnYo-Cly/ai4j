@@ -62,7 +62,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -93,8 +95,8 @@ public class AcpJsonRpcServer implements Closeable {
     private final AgentFactoryProvider agentFactoryProvider;
     private final Object writeLock = new Object();
     private final AtomicLong outboundRequestIds = new AtomicLong(1L);
-    private final ExecutorService requestExecutor = Executors.newSingleThreadExecutor();
-    private final ExecutorService promptExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService requestExecutor = Executors.newSingleThreadExecutor(daemonThreadFactory("acp-request"));
+    private final ExecutorService promptExecutor = Executors.newCachedThreadPool(daemonThreadFactory("acp-prompt"));
     private final ConcurrentMap<String, SessionHandle> sessions = new ConcurrentHashMap<String, SessionHandle>();
     private final ConcurrentMap<String, CompletableFuture<JSONObject>> pendingClientResponses = new ConcurrentHashMap<String, CompletableFuture<JSONObject>>();
 
@@ -696,6 +698,18 @@ public class AcpJsonRpcServer implements Closeable {
             }
         }
         return map;
+    }
+
+    private static ThreadFactory daemonThreadFactory(final String name) {
+        final AtomicInteger counter = new AtomicInteger(0);
+        return new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r, name + "-" + counter.incrementAndGet());
+                thread.setDaemon(true);
+                return thread;
+            }
+        };
     }
 
     private String requestIdKey(Object id) {

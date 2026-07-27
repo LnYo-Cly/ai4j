@@ -28,7 +28,9 @@ public class OkHttpConfigProperties {
     private TimeUnit timeUnit = TimeUnit.SECONDS;
 
     /**
-     * 忽略SSL证书，用于请求Moonshot(Kimi)，其它平台可以不用忽略
+     * 忽略SSL证书，用于请求Moonshot(Kimi)，其它平台可以不用忽略。
+     * 默认 false：生产环境不应跳过证书校验。用户需要 trust-all 时显式配
+     * {@code ai.okhttp.ignore-ssl=true}。
      */
-    private boolean ignoreSsl = true;
+    private boolean ignoreSsl = false;
 }

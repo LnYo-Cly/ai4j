@@ -132,16 +132,9 @@ public class WorkspacePathGuardTest {
         }
     }
 
-    @org.junit.Ignore("P1: symlink loop behavior is FS/OS-dependent (Linux Files.exists inconsistent, Windows runner has admin). Guard's primary security goal is workspace escape, not loop detection. Tracked for visited-set hardening.")
     @Test
     public void shouldRejectSymlinkLoop() throws Exception {
         Assume.assumeTrue("Symlinks require admin on Windows", canCreateSymlinks());
-        // Linux Files.exists() behavior on symlink loops is inconsistent across filesystems
-        // (sometimes throws FileSystemLoopException, sometimes returns false silently).
-        // The guard's primary security goal is blocking workspace escapes via symlink, not
-        // detecting self-referential loops. Track as P1 hardening (visited-set detection).
-        Assume.assumeFalse("Symlink loop detection is FS-dependent on Linux; tracked as P1",
-                System.getProperty("os.name", "").toLowerCase().contains("linux"));
         Path root = newWorkspace("symlink-loop");
         Files.createDirectories(root);
         Path linkA = root.resolve("loop-a");

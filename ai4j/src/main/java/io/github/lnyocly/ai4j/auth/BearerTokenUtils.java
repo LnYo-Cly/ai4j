@@ -7,7 +7,6 @@ import com.google.common.cache.CacheBuilder;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
@@ -105,7 +104,7 @@ public class BearerTokenUtils {
         byte[] secretService = hmac256(secretDate, service);
         byte[] secretSigning = hmac256(secretService, "tc3_request");
 
-        String signature = DatatypeConverter.printHexBinary(hmac256(secretSigning, stringToSign)).toLowerCase();
+        String signature = toHexLower(hmac256(secretSigning, stringToSign));
 
         // ************* 步骤 4：拼接 Authorization *************
         String authorization = algorithm + " " + "Credential=" + id + "/" + credentialScope + ", "
@@ -123,7 +122,19 @@ public class BearerTokenUtils {
     private static String sha256Hex(String s) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] d = md.digest(s.getBytes(StandardCharsets.UTF_8));
-        return DatatypeConverter.printHexBinary(d).toLowerCase();
+        return toHexLower(d);
+    }
+
+    private static final char[] HEX_LOWER = "0123456789abcdef".toCharArray();
+
+    private static String toHexLower(byte[] bytes) {
+        char[] chars = new char[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xFF;
+            chars[i * 2] = HEX_LOWER[v >>> 4];
+            chars[i * 2 + 1] = HEX_LOWER[v & 0x0F];
+        }
+        return new String(chars);
     }
 
 }
