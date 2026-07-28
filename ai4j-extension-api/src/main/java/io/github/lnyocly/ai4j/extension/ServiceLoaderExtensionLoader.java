@@ -1,9 +1,12 @@
 package io.github.lnyocly.ai4j.extension;
 
+import io.github.lnyocly.ai4j.extension.api.annotation.Internal;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 
+@Internal("Default implementation; depend on ExtensionLoader.")
 public class ServiceLoaderExtensionLoader implements ExtensionLoader {
 
     private final ClassLoader classLoader;
