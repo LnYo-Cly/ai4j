@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.agent.a2a;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,8 @@ public class AgentCard {
     private List<SupportedInterface> supportedInterfaces;
     private List<String> defaultInputModes;
     private List<String> defaultOutputModes;
+    private Map<String, Object> securitySchemes;
+    private List<Map<String, List<String>>> securityRequirements;
 
     public AgentCard() {
         this.capabilities = new ArrayList<String>();
@@ -52,6 +55,8 @@ public class AgentCard {
         this.supportedInterfaces = new ArrayList<SupportedInterface>();
         this.defaultInputModes = new ArrayList<String>();
         this.defaultOutputModes = new ArrayList<String>();
+        this.securitySchemes = new LinkedHashMap<String, Object>();
+        this.securityRequirements = new ArrayList<Map<String, List<String>>>();
     }
 
     // === Original getters/setters (backward compatibility) ===
@@ -117,6 +122,20 @@ public class AgentCard {
     public void setDefaultOutputModes(List<String> defaultOutputModes) {
         this.defaultOutputModes = defaultOutputModes != null
             ? defaultOutputModes : new ArrayList<String>();
+    }
+
+    /** Standard A2A AgentCard security scheme declarations, keyed by scheme name. */
+    public Map<String, Object> getSecuritySchemes() { return securitySchemes; }
+    public void setSecuritySchemes(Map<String, Object> securitySchemes) {
+        this.securitySchemes = securitySchemes != null
+            ? securitySchemes : new LinkedHashMap<String, Object>();
+    }
+
+    /** Standard A2A security requirements. Each entry represents one acceptable requirement set. */
+    public List<Map<String, List<String>>> getSecurityRequirements() { return securityRequirements; }
+    public void setSecurityRequirements(List<Map<String, List<String>>> securityRequirements) {
+        this.securityRequirements = securityRequirements != null
+            ? securityRequirements : new ArrayList<Map<String, List<String>>>();
     }
 
     public AgentCard withCapability(String capability) {
