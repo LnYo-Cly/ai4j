@@ -14,11 +14,9 @@ import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.Inet6Address;
@@ -84,6 +82,7 @@ public class A2AServer implements AutoCloseable {
     private final ExecutorService callbackExecutor;
     private final ConcurrentMap<String, A2ATaskRecord> tasks = new ConcurrentHashMap<String, A2ATaskRecord>();
     private final ConcurrentLinkedQueue<String> taskOrder = new ConcurrentLinkedQueue<String>();
+    private final Object taskRegistryLock = new Object();
     private volatile String authenticationHeader = DEFAULT_API_KEY_HEADER;
     private volatile boolean bearerAuthentication;
     private volatile Predicate<String> pushNotificationUrlValidator = new Predicate<String>() {
@@ -730,7 +729,6 @@ public class A2AServer implements AutoCloseable {
                     }
                     try {
                         AgentSession session = agent.newSession();
-                        record.setSession(session);
                         AgentResult result;
                         if (streaming) {
                             result = session.runStreamResult(AgentRequest.builder().input(message).build(),
@@ -1185,7 +1183,7 @@ public class A2AServer implements AutoCloseable {
     }
 
     private void registerTask(A2ATaskRecord record) throws StandardErrorException {
-        synchronized (taskOrder) {
+        synchronized (taskRegistryLock) {
             pruneTasks();
             if (tasks.size() >= MAX_RETAINED_TASKS) {
                 throw new StandardErrorException(-32003, "A2A task capacity reached");
@@ -1238,7 +1236,9 @@ public class A2AServer implements AutoCloseable {
                 int status = connection.getResponseCode();
                 InputStream input = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
                 drain(input);
-            } catch (Exception ignored) {
+            } catch (IOException ignored) {
+                // Push delivery is best effort. It must not rewrite the task outcome or leak details.
+            } catch (RuntimeException ignored) {
                 // Push delivery is best effort. It must not rewrite the task outcome or leak details.
             } finally {
                 if (connection != null) {
@@ -1276,7 +1276,6 @@ public class A2AServer implements AutoCloseable {
         private String statusMessage = "Task is submitted";
         private long updatedAt = System.currentTimeMillis();
         private Future<?> future;
-        private AgentSession session;
 
         private A2ATaskRecord(String id, String contextId) {
             this.id = id;
@@ -1291,10 +1290,6 @@ public class A2AServer implements AutoCloseable {
         private synchronized boolean hasArtifactText() { return artifactText.length() > 0; }
         private synchronized String getArtifactText() { return artifactText.toString(); }
         private synchronized Future<?> getFuture() { return future; }
-
-        private synchronized void setSession(AgentSession session) {
-            this.session = session;
-        }
 
         private synchronized void setFuture(Future<?> future) {
             this.future = future;
@@ -1476,8 +1471,8 @@ public class A2AServer implements AutoCloseable {
             return;
         }
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-            while (reader.readLine() != null) {
+            byte[] buffer = new byte[1024];
+            while (input.read(buffer) != -1) {
                 // Drain the response so HttpURLConnection can release the connection cleanly.
             }
         } finally {
