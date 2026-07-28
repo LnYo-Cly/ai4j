@@ -53,6 +53,8 @@ public class CodingAgentLoopController {
         List<AgentToolResult> aggregatedResults = new ArrayList<AgentToolResult>();
         CodingAgentResult lastResult = null;
         int totalSteps = 0;
+        Long totalInputTokens = null;
+        Long totalOutputTokens = null;
         int turns = 0;
         int autoFollowUps = 0;
         String continuationPrompt = null;
@@ -63,7 +65,8 @@ public class CodingAgentLoopController {
                 CodingLoopDecision forcedStop = stopDecision(turns, CodingStopReason.MAX_TOTAL_TURNS_REACHED,
                         "Stopped after reaching the total turn limit.");
                 session.recordLoopDecision(forcedStop);
-                return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps, turns, autoFollowUps, forcedStop);
+                return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
+                        totalInputTokens, totalOutputTokens, turns, autoFollowUps, forcedStop);
             }
 
             AgentListener effectiveListener = listener == null ? null : new StepOffsetAgentListener(listener, totalSteps);
@@ -72,6 +75,8 @@ public class CodingAgentLoopController {
                     : session.runSingleTurn(turnRequest(request, continuationPrompt), continuationPrompt);
             turns += 1;
             totalSteps += turnResult == null ? 0 : turnResult.getSteps();
+            totalInputTokens = sumTokens(totalInputTokens, turnResult == null ? null : turnResult.getInputTokens());
+            totalOutputTokens = sumTokens(totalOutputTokens, turnResult == null ? null : turnResult.getOutputTokens());
             if (turnResult != null && turnResult.getToolCalls() != null) {
                 aggregatedCalls.addAll(turnResult.getToolCalls());
             }
@@ -91,7 +96,8 @@ public class CodingAgentLoopController {
             session.recordLoopDecision(decision);
 
             if (!decision.isContinueLoop()) {
-                return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps, turns, autoFollowUps, decision);
+                return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
+                        totalInputTokens, totalOutputTokens, turns, autoFollowUps, decision);
             }
 
             autoFollowUps += 1;
@@ -228,11 +234,20 @@ public class CodingAgentLoopController {
                 .build();
     }
 
+    private Long sumTokens(Long total, Long value) {
+        if (total == null) {
+            return value;
+        }
+        return value == null ? total : total + value;
+    }
+
     private CodingAgentResult aggregate(CodingSession session,
                                         CodingAgentResult lastResult,
                                         List<io.github.lnyocly.ai4j.agent.tool.AgentToolCall> aggregatedCalls,
                                         List<AgentToolResult> aggregatedResults,
                                         int totalSteps,
+                                        Long totalInputTokens,
+                                        Long totalOutputTokens,
                                         int turns,
                                         int autoFollowUps,
                                         CodingLoopDecision decision) {
@@ -245,6 +260,8 @@ public class CodingAgentLoopController {
                 .toolCalls(aggregatedCalls.isEmpty() ? Collections.<io.github.lnyocly.ai4j.agent.tool.AgentToolCall>emptyList() : aggregatedCalls)
                 .toolResults(aggregatedResults.isEmpty() ? Collections.<AgentToolResult>emptyList() : aggregatedResults)
                 .steps(totalSteps)
+                .inputTokens(totalInputTokens)
+                .outputTokens(totalOutputTokens)
                 .turns(turns)
                 .stopReason(decision == null ? null : decision.getStopReason())
                 .autoContinued(autoFollowUps > 0)

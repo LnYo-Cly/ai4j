@@ -44,6 +44,38 @@ public class CodingAgentResult {
 
     private boolean lastCompactApplied;
 
+    private Long inputTokens;
+
+    private Long outputTokens;
+
+    public CodingAgentResult(String runId,
+                              String sessionId,
+                              String turnId,
+                              String outputText,
+                              Object rawResponse,
+                              List<AgentToolCall> toolCalls,
+                              List<AgentToolResult> toolResults,
+                              int steps,
+                              int turns,
+                              CodingStopReason stopReason,
+                              boolean autoContinued,
+                              int autoFollowUpCount,
+                              boolean lastCompactApplied) {
+        this.runId = runId;
+        this.sessionId = sessionId;
+        this.turnId = turnId;
+        this.outputText = outputText;
+        this.rawResponse = rawResponse;
+        this.toolCalls = toolCalls;
+        this.toolResults = toolResults;
+        this.steps = steps;
+        this.turns = turns;
+        this.stopReason = stopReason;
+        this.autoContinued = autoContinued;
+        this.autoFollowUpCount = autoFollowUpCount;
+        this.lastCompactApplied = lastCompactApplied;
+    }
+
     public static CodingAgentResult from(String sessionId, AgentResult result) {
         if (result == null) {
             return CodingAgentResult.builder()
@@ -62,6 +94,8 @@ public class CodingAgentResult {
                 .toolResults(result.getToolResults())
                 .steps(result.getSteps())
                 .turns(1)
+                .inputTokens(result.getInputTokens())
+                .outputTokens(result.getOutputTokens())
                 .build();
     }
 }
