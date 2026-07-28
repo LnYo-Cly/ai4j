@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class CodingAgentLoopControllerTest {
@@ -48,9 +49,9 @@ public class CodingAgentLoopControllerTest {
     @Test
     public void shouldContinueWithHiddenInstructionsWithoutAddingExtraUserMessage() throws Exception {
         InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
-        modelClient.enqueue(toolCallResult(STUB_TOOL, "call-1"));
-        modelClient.enqueue(assistantResult("Continuing with remaining work."));
-        modelClient.enqueue(assistantResult("Completed the requested change."));
+        modelClient.enqueue(toolCallResult(STUB_TOOL, "call-1", 2L, 3L));
+        modelClient.enqueue(assistantResult("Continuing with remaining work.", 5L, 7L));
+        modelClient.enqueue(assistantResult("Completed the requested change.", 11L, 13L));
 
         try (CodingSession session = newAgent(modelClient, okToolExecutor(), defaultOptions()).newSession()) {
             CodingAgentResult result = session.run(CodingAgentRequest.builder().input("Implement the requested change.").build());
@@ -59,11 +60,24 @@ public class CodingAgentLoopControllerTest {
             assertEquals(2, result.getTurns());
             assertTrue(result.isAutoContinued());
             assertEquals(1, result.getAutoFollowUpCount());
+            assertEquals(Long.valueOf(18L), result.getInputTokens());
+            assertEquals(Long.valueOf(23L), result.getOutputTokens());
             assertEquals(1, countUserMessages(session.exportState().getMemorySnapshot()));
             assertTrue(modelClient.getPrompts().size() >= 3);
             assertTrue(modelClient.getPrompts().get(2).getInstructions().contains("Internal continuation. This is not a new user message."));
             assertTrue(modelClient.getPrompts().get(2).getInstructions().contains("Continuation reason: CONTINUE_AFTER_TOOL_WORK."));
         }
+    }
+
+    @Test
+    public void shouldKeepLegacyCodingAgentResultConstructor() {
+        CodingAgentResult result = new CodingAgentResult(
+                "run", "session", "turn", "output", null, null, null,
+                1, 1, CodingStopReason.COMPLETED, false, 0, false);
+
+        assertEquals("run", result.getRunId());
+        assertNull(result.getInputTokens());
+        assertNull(result.getOutputTokens());
     }
 
     @Test
@@ -86,6 +100,8 @@ public class CodingAgentLoopControllerTest {
             assertEquals(2, result.getTurns());
             assertTrue(result.isAutoContinued());
             assertEquals(1, result.getAutoFollowUpCount());
+            assertNull(result.getInputTokens());
+            assertNull(result.getOutputTokens());
             assertEquals(2, result.getToolResults().size());
             assertEquals(2, decisions.size());
             assertTrue(decisions.get(0).isContinueLoop());
@@ -137,7 +153,7 @@ public class CodingAgentLoopControllerTest {
     @Test
     public void shouldReanchorContinuationPromptFromCheckpointAfterCompaction() throws Exception {
         InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
-        modelClient.enqueue(assistantResult("Continuing with remaining work. " + repeat("checkpoint-pressure-", 80)));
+        modelClient.enqueue(assistantResult("Continuing with remaining work. " + repeat("checkpoint-pressure-", 80), 17L, 19L));
         modelClient.enqueue(assistantResult("Completed the requested change."));
 
         CodingAgentOptions options = defaultOptions().toBuilder()
@@ -155,6 +171,8 @@ public class CodingAgentLoopControllerTest {
             assertEquals(CodingStopReason.COMPLETED, result.getStopReason());
             assertEquals(2, result.getTurns());
             assertTrue(result.isAutoContinued());
+            assertEquals(Long.valueOf(17L), result.getInputTokens());
+            assertEquals(Long.valueOf(19L), result.getOutputTokens());
             assertTrue(modelClient.getPrompts().size() >= 3);
             String continuationInstructions = findContinuationInstructions(modelClient.getPrompts());
 
@@ -267,6 +285,10 @@ public class CodingAgentLoopControllerTest {
     }
 
     private AgentModelResult toolCallResult(String toolName, String callId) {
+        return toolCallResult(toolName, callId, null, null);
+    }
+
+    private AgentModelResult toolCallResult(String toolName, String callId, Long inputTokens, Long outputTokens) {
         return AgentModelResult.builder()
                 .toolCalls(Collections.singletonList(AgentToolCall.builder()
                         .name(toolName)
@@ -275,13 +297,21 @@ public class CodingAgentLoopControllerTest {
                         .type("function")
                         .build()))
                 .memoryItems(Collections.<Object>emptyList())
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
                 .build();
     }
 
     private AgentModelResult assistantResult(String text) {
+        return assistantResult(text, null, null);
+    }
+
+    private AgentModelResult assistantResult(String text, Long inputTokens, Long outputTokens) {
         return AgentModelResult.builder()
                 .outputText(text)
                 .memoryItems(Collections.<Object>singletonList(AgentInputItem.message("assistant", text)))
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
                 .build();
     }
 
