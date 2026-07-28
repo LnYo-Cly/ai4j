@@ -218,11 +218,7 @@ final class BuiltInProcessRegistry {
                 public void run() {
                     try {
                         int code = process.waitFor();
-                        exitCode = code;
-                        endedAt = System.currentTimeMillis();
-                        if (!"STOPPED".equals(status)) {
-                            status = "EXITED";
-                        }
+                        markExited(code);
                     } catch (InterruptedException ignored) {
                         Thread.currentThread().interrupt();
                     }
@@ -251,7 +247,15 @@ final class BuiltInProcessRegistry {
             return outputBuffer.read(processId, offset, limit, status, exitCode);
         }
 
-        private void stop() {
+        private synchronized void markExited(int code) {
+            exitCode = code;
+            endedAt = System.currentTimeMillis();
+            if (!"STOPPED".equals(status)) {
+                status = "EXITED";
+            }
+        }
+
+        private synchronized void stop() {
             if (!process.isAlive()) {
                 if (exitCode == null) {
                     try {
