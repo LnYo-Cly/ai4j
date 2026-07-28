@@ -5,12 +5,14 @@ sidebar_position: 12
 # A2A Protocol (Agent-to-Agent)
 
 ai4j provides a Java 8-compatible A2A integration surface for agent discovery, JSON-RPC task
-exchange, Skills metadata, and API-key protected local services. An ai4j agent can call an A2A
-endpoint as a client or be exposed as an A2A service. JDK stdlib only, no new dependency.
+exchange, task lifecycle, SSE streaming, push-notification configuration, Skills metadata, and
+standard API-key or Bearer authentication. An ai4j agent can call an A2A endpoint as a client or
+be exposed as an A2A service. JDK stdlib only, no new dependency.
 
-> Scope note: non-streaming A2A 1.0 JSON-RPC `SendMessage` and AgentCard discovery are verified
-> against the official `a2a-sdk==1.1.0` Python implementation. Streaming, task query/cancel,
-> push notifications, standard security schemes, and other A2A operations remain follow-up work.
+> Scope note: `SendMessage` and `SendStreamingMessage` have bidirectional, opt-in verification
+> against the official `a2a-sdk==1.1.0` Python implementation. Task lookup, listing,
+> cancellation, push configuration, and standard security schemes have deterministic local
+> regression coverage. Task state is intentionally in-memory and is not restart-durable.
 
 ## A2A Client — call external agents
 
@@ -28,6 +30,26 @@ When the standard AgentCard advertises a JSON-RPC 1.0 interface, `sendTask()` se
 `SendMessage` to that interface URL with `A2A-Version: 1.0` and reads the returned
 `result.task.artifacts[].parts[].text`. If no standard interface is advertised, it retains the
 legacy `POST /tasks/send` behavior.
+
+### Tasks and streaming
+
+Standard JSON-RPC peers can return immediately and be polled, canceled, or subscribed to:
+
+```java
+JSONObject result = client.sendTaskResponse("https://other-agent.example.com", "Process this", true);
+String taskId = result.getJSONObject("task").getString("id");
+
+JSONObject current = client.getTask("https://other-agent.example.com", taskId);
+JSONObject all = client.listTasks("https://other-agent.example.com");
+client.cancelTask("https://other-agent.example.com", taskId);
+
+client.sendStreamingTask("https://other-agent.example.com", "Stream this", event -> {
+    // event contains task, statusUpdate, or artifactUpdate.
+});
+client.subscribeToTask("https://other-agent.example.com", taskId, event -> {
+    // receives the current task followed by updates until terminal state.
+});
+```
 
 Wrap the client as a tool so your agent can call external agents:
 
@@ -61,27 +83,47 @@ A2AServer server = new A2AServer(
 server.close();
 ```
 
-The standard card advertises `supportedInterfaces`, default `text/plain` modes, and standard
-Skill fields (`id`, modes, tags, and examples). The root endpoint requires
-`A2A-Version: 1.0`; it returns `result.task` with `TASK_STATE_COMPLETED` or
-`TASK_STATE_FAILED`. The existing aliases keep their previous lower-case task-state contract.
+The standard card advertises `supportedInterfaces`, default `text/plain` modes, standard Skill
+fields (`id`, modes, tags, and examples), streaming and push capabilities, and security schemes
+when configured. The root endpoint supports `SendMessage`, `GetTask`, `ListTasks`, `CancelTask`,
+`SendStreamingMessage`, `SubscribeToTask`, and task push-configuration CRUD. It accepts
+`A2A-Version: 1.0` and rejects an explicit unsupported version; omission remains accepted for
+official SDK compatibility. The existing aliases keep their previous lower-case task-state
+contract.
+
+Push callbacks default to public HTTPS URLs only, revalidate that policy again immediately before
+delivery, and do not follow redirects. Local and private targets are rejected during URL validation.
+Callback tokens and `authentication.credentials` are write-only: create, get, and list responses
+never disclose them, while the server retains them only for callback delivery. A test-only or
+deployment-specific callback policy must be configured explicitly; high-risk deployments must also
+enforce destination restrictions at the network egress layer because DNS resolution cannot be made
+atomic with a JDK URL connection. A push config may include A2A `authentication` fields (`scheme`
+and `credentials`), which the server sends as the callback `Authorization` header.
+Callback delivery uses a separate bounded executor so slow callback receivers do not consume Agent
+execution slots. Each task accepts at most 32 push configurations; callers must delete stale
+configurations before adding more.
 
 ## Auth
 
-Both client and server support optional shared-secret auth via `X-API-Key` header:
+Both client and server support optional shared-secret authentication. AgentCard discovery stays
+open so peers can select the advertised scheme.
 
-- **Client**: `new A2AClient("secret-key")` — sends `X-API-Key` on all requests.
-- **Server**: `new A2AServer(agent, port, name, desc, "secret-key")` — validates `X-API-Key` on
-  task endpoints. The AgentCard endpoint is always open (discovery should be public).
+- **API key**: `new A2AClient("secret-key")` reads a standard `apiKeySecurityScheme` from the
+  AgentCard and uses its declared header. `A2AServer.withAuthentication("api-key", "X-My-Key", ...)
+  configures the matching server metadata and check.
+- **Bearer**: `A2AClient.bearerToken("token")` sends `Authorization: Bearer token`.
+  `A2AServer.withBearerAuthentication(...)` advertises and validates the matching HTTP Bearer
+  scheme.
 
-Full JWT/OIDC auth is a future addition.
+The server intentionally does not implement JWT/OIDC token verification; use a terminating
+identity-aware gateway for those flows.
 
 ## External Interoperability Regression
 
-`A2AOfficialJsonRpcTest` has deterministic JVM contract coverage and two opt-in tests against the
-official Python SDK: ai4j calls a configured Python peer, then the Python client discovers and
-calls an ai4j server. Supply the peer URL, Python executable, and its working directory as Maven
-system properties; none of them are committed or required by default CI.
+`A2AOfficialJsonRpcTest` has deterministic JVM contract coverage plus four opt-in checks against
+the official Python SDK: both client directions for `SendMessage` and `SendStreamingMessage`.
+Supply the peer URL, Python executable, and its working directory as Maven system properties;
+none are committed or required by default CI.
 
 ## Where this fits
 

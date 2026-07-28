@@ -98,6 +98,42 @@ public class A2AClientTest {
     }
 
     @Test
+    public void streamingRejectsOversizedSseEvent() throws Exception {
+        server.createContext("/.well-known/agent-card.json", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                String card = "{\"name\":\"test-agent\",\"description\":\"test\",\"version\":\"1.0\",\"supportedInterfaces\":[{\"url\":\""
+                    + baseUrl + "\",\"protocolBinding\":\"JSONRPC\",\"protocolVersion\":\"1.0\"}]}";
+                respond(exchange, 200, card);
+            }
+        });
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                StringBuilder oversized = new StringBuilder(1024 * 1024 + 1);
+                for (int index = 0; index <= 1024 * 1024; index++) {
+                    oversized.append('x');
+                }
+                exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
+                exchange.sendResponseHeaders(200, 0);
+                OutputStream output = exchange.getResponseBody();
+                try {
+                    output.write(("data: " + oversized + "\n").getBytes(StandardCharsets.UTF_8));
+                } finally {
+                    output.close();
+                }
+            }
+        });
+
+        try {
+            new A2AClient().sendStreamingTask(baseUrl, "stream", event -> { });
+            Assert.fail("oversized SSE event was accepted");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("exceeds"));
+        }
+    }
+
+    @Test
     @Category(LiveProviderTest.class)
     public void liveGlmAgentCallsA2aToolAndUsesResponse() throws Exception {
         String key = System.getenv("ANTHROPIC_API_KEY");

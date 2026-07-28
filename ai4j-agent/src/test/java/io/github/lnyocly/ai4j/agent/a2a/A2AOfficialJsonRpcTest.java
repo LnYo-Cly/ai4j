@@ -24,9 +24,11 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/** Contract tests for the non-streaming A2A 1.0 JSON-RPC shapes used by a2a-sdk 1.1.0. */
+/** Contract tests for A2A 1.0 JSON-RPC shapes used by a2a-sdk 1.1.0. */
 public class A2AOfficialJsonRpcTest {
 
     private HttpServer officialPeer;
@@ -149,15 +151,51 @@ public class A2AOfficialJsonRpcTest {
     }
 
     @Test
+    public void clientStreamsConfiguredOfficialPythonPeer() throws Exception {
+        String peerUrl = System.getProperty("a2a.official.peer.url");
+        Assume.assumeTrue("set -Da2a.official.peer.url to run the external peer smoke test",
+            peerUrl != null && !peerUrl.trim().isEmpty());
+
+        List<JSONObject> events = new ArrayList<JSONObject>();
+        new A2AClient().sendStreamingTask(peerUrl, "ai4j external streaming probe", events::add);
+
+        boolean sawCompleted = false;
+        boolean sawArtifact = false;
+        for (JSONObject event : events) {
+            JSONObject statusUpdate = event.getJSONObject("statusUpdate");
+            if (statusUpdate != null && "TASK_STATE_COMPLETED".equals(statusUpdate
+                .getJSONObject("status").getString("state"))) {
+                sawCompleted = true;
+            }
+            JSONObject artifactUpdate = event.getJSONObject("artifactUpdate");
+            if (artifactUpdate != null && artifactUpdate.getJSONObject("artifact").toJSONString()
+                .contains("Hello, World!")) {
+                sawArtifact = true;
+            }
+        }
+        assertTrue("official Python streaming events: " + events, sawCompleted);
+        assertTrue("official Python streaming events: " + events, sawArtifact);
+    }
+
+    @Test
     public void officialPythonClientCallsServerWhenConfigured() throws Exception {
+        runOfficialPythonClient(false, "ai4j official python reply");
+    }
+
+    @Test
+    public void officialPythonClientStreamsFromServerWhenConfigured() throws Exception {
+        runOfficialPythonClient(true, "ai4j official python stream reply");
+    }
+
+    private void runOfficialPythonClient(boolean streaming, String expectedReply) throws Exception {
         String python = System.getProperty("a2a.official.python");
         String workdir = System.getProperty("a2a.official.python.workdir");
         Assume.assumeTrue("set -Da2a.official.python and -Da2a.official.python.workdir to run this smoke test",
             python != null && !python.trim().isEmpty() && workdir != null && !workdir.trim().isEmpty());
 
-        ai4jServer = new A2AServer(fixedAgent("ai4j official python reply"), 0,
+        ai4jServer = new A2AServer(fixedAgent(expectedReply), 0,
             "ai4j-python-peer", "A2A peer for the official Python client");
-        ProcessBuilder builder = new ProcessBuilder(python, "-c", officialPythonClientScript())
+        ProcessBuilder builder = new ProcessBuilder(python, "-c", officialPythonClientScript(streaming))
             .directory(new File(workdir))
             .redirectErrorStream(true);
         builder.environment().put("A2A_TEST_URL", ai4jServer.getBaseUrl());
@@ -171,7 +209,7 @@ public class A2AOfficialJsonRpcTest {
         String output = readBody(process.getInputStream());
         assertTrue("official Python client timed out", finished);
         assertEquals("official Python client output: " + output, 0, process.exitValue());
-        assertTrue("official Python client output: " + output, output.contains("ai4j official python reply"));
+        assertTrue("official Python client output: " + output, output.contains(expectedReply));
     }
 
     private static Map<String, Object> standardCard(String endpoint) {
@@ -201,7 +239,7 @@ public class A2AOfficialJsonRpcTest {
         return card;
     }
 
-    private static String officialPythonClientScript() {
+    private static String officialPythonClientScript(boolean streaming) {
         return "import asyncio, os, httpx\n"
             + "from a2a.client import A2ACardResolver, ClientConfig, create_client\n"
             + "from a2a.helpers import new_text_message\n"
@@ -209,7 +247,9 @@ public class A2AOfficialJsonRpcTest {
             + "async def main():\n"
             + "    async with httpx.AsyncClient(trust_env=False) as http_client:\n"
             + "        card = await A2ACardResolver(http_client, os.environ['A2A_TEST_URL']).get_agent_card()\n"
-            + "        client = await create_client(agent=card, client_config=ClientConfig(streaming=False, httpx_client=http_client))\n"
+            + "        client = await create_client(agent=card, client_config=ClientConfig(streaming="
+            + (streaming ? "True" : "False")
+            + ", httpx_client=http_client))\n"
             + "        message = new_text_message('official python client probe', role=Role.ROLE_USER)\n"
             + "        events = []\n"
             + "        async for event in client.send_message(SendMessageRequest(message=message)):\n"
