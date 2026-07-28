@@ -78,6 +78,10 @@ public class A2AProtocolTest {
         assertEquals(TaskState.COMPLETED, TaskState.fromValue("completed"));
         assertEquals(TaskState.FAILED, TaskState.fromValue("failed"));
         assertEquals(TaskState.CANCELED, TaskState.fromValue("canceled"));
+        assertEquals(TaskState.COMPLETED, TaskState.fromValue("TASK_STATE_COMPLETED"));
+        assertEquals(TaskState.INPUT_REQUIRED, TaskState.fromValue("TASK_STATE_INPUT_REQUIRED"));
+        assertEquals(TaskState.AUTH_REQUIRED, TaskState.fromValue("TASK_STATE_AUTH_REQUIRED"));
+        assertEquals(TaskState.REJECTED, TaskState.fromValue("TASK_STATE_REJECTED"));
 
         // Test case insensitivity
         assertEquals(TaskState.WORKING, TaskState.fromValue("WORKING"));
@@ -93,6 +97,7 @@ public class A2AProtocolTest {
         assertTrue(TaskState.COMPLETED.isTerminal());
         assertTrue(TaskState.FAILED.isTerminal());
         assertTrue(TaskState.CANCELED.isTerminal());
+        assertTrue(TaskState.REJECTED.isTerminal());
         assertFalse(TaskState.WORKING.isTerminal());
 
         assertTrue(TaskState.COMPLETED.isSuccess());
@@ -100,6 +105,7 @@ public class A2AProtocolTest {
 
         assertTrue(TaskState.FAILED.isFailure());
         assertTrue(TaskState.CANCELED.isFailure());
+        assertTrue(TaskState.REJECTED.isFailure());
         assertFalse(TaskState.COMPLETED.isFailure());
     }
 
@@ -159,10 +165,14 @@ public class A2AProtocolTest {
         assertNotNull(card.getCapabilities());
         assertNotNull(card.getSkills());
         assertNotNull(card.getEndpoints());
+        assertNotNull(card.getSupportedInterfaces());
+        assertNotNull(card.getDefaultInputModes());
+        assertNotNull(card.getDefaultOutputModes());
 
         assertTrue(card.getCapabilities().isEmpty());
         assertTrue(card.getSkills().isEmpty());
         assertTrue(card.getEndpoints().isEmpty());
+        assertTrue(card.getSupportedInterfaces().isEmpty());
     }
 
     @Test
@@ -181,5 +191,9 @@ public class A2AProtocolTest {
         card.setEndpoints(null);
         assertNotNull(card.getEndpoints());
         assertTrue(card.getEndpoints().isEmpty());
+
+        card.setSupportedInterfaces(null);
+        assertNotNull(card.getSupportedInterfaces());
+        assertTrue(card.getSupportedInterfaces().isEmpty());
     }
 }

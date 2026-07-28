@@ -17,6 +17,7 @@ import java.util.Map;
  *   <li>Added {@code skills} (skill definitions)</li>
  *   <li>Added {@code authentication} (auth metadata)</li>
  *   <li>Added {@code endpoints} (endpoint mapping)</li>
+ *   <li>Added {@code supportedInterfaces} and default input/output modes</li>
  * </ul>
  *
  * <p>Backward compatibility: Old fields ({@code name}, {@code description}, {@code version},
@@ -37,14 +38,20 @@ public class AgentCard {
 
     // === A2A 1.0 optional fields ===
     private List<String> capabilities; // e.g., ["search", "discovery"]
-    private List<A2ASkill> skills;     // Skill definitions (placeholder for P2-C-4)
+    private List<A2ASkill> skills;     // Skill definitions
     private Authentication authentication; // Auth metadata
     private Map<String, String> endpoints; // Endpoint mapping
+    private List<SupportedInterface> supportedInterfaces;
+    private List<String> defaultInputModes;
+    private List<String> defaultOutputModes;
 
     public AgentCard() {
         this.capabilities = new ArrayList<String>();
         this.skills = new ArrayList<A2ASkill>();
         this.endpoints = new HashMap<String, String>();
+        this.supportedInterfaces = new ArrayList<SupportedInterface>();
+        this.defaultInputModes = new ArrayList<String>();
+        this.defaultOutputModes = new ArrayList<String>();
     }
 
     // === Original getters/setters (backward compatibility) ===
@@ -94,6 +101,24 @@ public class AgentCard {
         this.endpoints = endpoints != null ? endpoints : new HashMap<String, String>();
     }
 
+    public List<SupportedInterface> getSupportedInterfaces() { return supportedInterfaces; }
+    public void setSupportedInterfaces(List<SupportedInterface> supportedInterfaces) {
+        this.supportedInterfaces = supportedInterfaces != null
+            ? supportedInterfaces : new ArrayList<SupportedInterface>();
+    }
+
+    public List<String> getDefaultInputModes() { return defaultInputModes; }
+    public void setDefaultInputModes(List<String> defaultInputModes) {
+        this.defaultInputModes = defaultInputModes != null
+            ? defaultInputModes : new ArrayList<String>();
+    }
+
+    public List<String> getDefaultOutputModes() { return defaultOutputModes; }
+    public void setDefaultOutputModes(List<String> defaultOutputModes) {
+        this.defaultOutputModes = defaultOutputModes != null
+            ? defaultOutputModes : new ArrayList<String>();
+    }
+
     public AgentCard withCapability(String capability) {
         if (capability != null && !capability.trim().isEmpty()) {
             getCapabilities().add(capability.trim());
@@ -111,6 +136,14 @@ public class AgentCard {
     public AgentCard withEndpoint(String name, String endpoint) {
         if (name != null && !name.trim().isEmpty() && endpoint != null && !endpoint.trim().isEmpty()) {
             getEndpoints().put(name.trim(), endpoint.trim());
+        }
+        return this;
+    }
+
+    public AgentCard withSupportedInterface(String url, String protocolBinding, String protocolVersion) {
+        if (url != null && !url.trim().isEmpty()
+            && protocolBinding != null && !protocolBinding.trim().isEmpty()) {
+            getSupportedInterfaces().add(new SupportedInterface(url.trim(), protocolBinding.trim(), protocolVersion));
         }
         return this;
     }
@@ -134,5 +167,30 @@ public class AgentCard {
 
         public String getObtainAt() { return obtainAt; }
         public void setObtainAt(String obtainAt) { this.obtainAt = obtainAt; }
+    }
+
+    /** A standard A2A transport endpoint advertised by an AgentCard. */
+    public static class SupportedInterface {
+        private String url;
+        private String protocolBinding;
+        private String protocolVersion;
+
+        public SupportedInterface() {
+        }
+
+        public SupportedInterface(String url, String protocolBinding, String protocolVersion) {
+            this.url = url;
+            this.protocolBinding = protocolBinding;
+            this.protocolVersion = protocolVersion;
+        }
+
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+
+        public String getProtocolBinding() { return protocolBinding; }
+        public void setProtocolBinding(String protocolBinding) { this.protocolBinding = protocolBinding; }
+
+        public String getProtocolVersion() { return protocolVersion; }
+        public void setProtocolVersion(String protocolVersion) { this.protocolVersion = protocolVersion; }
     }
 }
