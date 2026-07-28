@@ -16,7 +16,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -25,9 +28,11 @@ import java.util.concurrent.ExecutorService;
  * Exposes an ai4j {@link Agent} as a Google A2A (Agent2Agent) HTTP service so external agents
  * (LangChain, CrewAI, etc.) can call it. Complement to {@link A2AClient}.
  *
- * <p>Serves AgentCard and task endpoints:</p>
+ * <p>Serves a standard A2A 1.0 JSON-RPC interface plus legacy aliases:</p>
  * <ul>
- *   <li>{@code GET /.well-known/agent.json} — the {@link AgentCard}.</li>
+ *   <li>{@code GET /.well-known/agent-card.json} — standard AgentCard.</li>
+ *   <li>{@code POST /} — standard {@code SendMessage} JSON-RPC operation.</li>
+ *   <li>{@code GET /.well-known/agent.json} — legacy AgentCard alias.</li>
  *   <li>{@code POST /tasks/send} — JSON-RPC: extracts the message text, runs
  *       {@code agent.newSession().run(message)}, returns the output as an A2A artifact.</li>
  *   <li>{@code POST /message:send} and {@code POST /message/send} — compatible task aliases.</li>
@@ -42,13 +47,16 @@ import java.util.concurrent.ExecutorService;
 public class A2AServer implements AutoCloseable {
 
     private static final int MAX_REQUEST_BYTES = 1024 * 1024;
+    private static final String A2A_VERSION_HEADER = "A2A-Version";
+    private static final String A2A_PROTOCOL_VERSION = "1.0";
 
     private final HttpServer server;
     private final Agent agent;
     private final AgentCard card;
     private final String apiKey;
     private final ExecutorService executor;
-    private volatile String cachedCardJson;
+    private volatile String cachedStandardCardJson;
+    private volatile String cachedLegacyCardJson;
 
     public A2AServer(Agent agent, int port, String name, String description) throws IOException {
         this(agent, port, name, description, null);
@@ -69,6 +77,9 @@ public class A2AServer implements AutoCloseable {
         // A2A 1.0 fields
         card.setProtocol("a2a/1.0");
         card.setAgentUri("agent://" + (name == null ? "ai4j-agent" : name).toLowerCase().replace(" ", "-"));
+        card.getDefaultInputModes().add("text/plain");
+        card.getDefaultOutputModes().add("text/plain");
+        card.withSupportedInterface(card.getUrl(), "JSONRPC", A2A_PROTOCOL_VERSION);
 
         // Set default authentication if API key is configured
         if (apiKey != null && !apiKey.trim().isEmpty()) {
@@ -80,8 +91,9 @@ public class A2AServer implements AutoCloseable {
         }
 
         refreshCardJson();
-        server.createContext("/.well-known/agent-card.json", new CardHandler());
-        server.createContext("/.well-known/agent.json", new CardHandler());
+        server.createContext("/.well-known/agent-card.json", new CardHandler(true));
+        server.createContext("/.well-known/agent.json", new CardHandler(false));
+        server.createContext("/", new TaskHandler());
         server.createContext("/tasks/send", new TaskHandler());
         server.createContext("/message:send", new TaskHandler());
         server.createContext("/message/send", new TaskHandler());
@@ -99,7 +111,78 @@ public class A2AServer implements AutoCloseable {
     }
 
     private void refreshCardJson() {
-        this.cachedCardJson = JSON.toJSONString(card);
+        this.cachedLegacyCardJson = JSON.toJSONString(card);
+        this.cachedStandardCardJson = JSON.toJSONString(buildStandardCard());
+    }
+
+    private Map<String, Object> buildStandardCard() {
+        Map<String, Object> standardCard = new LinkedHashMap<String, Object>();
+        standardCard.put("name", card.getName());
+        standardCard.put("description", card.getDescription());
+        standardCard.put("version", card.getVersion());
+        standardCard.put("defaultInputModes", card.getDefaultInputModes());
+        standardCard.put("defaultOutputModes", card.getDefaultOutputModes());
+
+        Map<String, Object> capabilities = new LinkedHashMap<String, Object>();
+        capabilities.put("streaming", false);
+        standardCard.put("capabilities", capabilities);
+        if (!card.getCapabilities().isEmpty()) {
+            standardCard.put("ai4jCapabilities", card.getCapabilities());
+        }
+
+        List<Map<String, Object>> interfaces = new ArrayList<Map<String, Object>>();
+        for (AgentCard.SupportedInterface supportedInterface : card.getSupportedInterfaces()) {
+            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            entry.put("url", supportedInterface.getUrl());
+            entry.put("protocolBinding", supportedInterface.getProtocolBinding());
+            entry.put("protocolVersion", supportedInterface.getProtocolVersion());
+            interfaces.add(entry);
+        }
+        standardCard.put("supportedInterfaces", interfaces);
+
+        List<Map<String, Object>> skills = new ArrayList<Map<String, Object>>();
+        int index = 1;
+        for (A2ASkill skill : card.getSkills()) {
+            Map<String, Object> entry = new LinkedHashMap<String, Object>();
+            entry.put("id", standardSkillId(skill, index++));
+            entry.put("name", skill.getName());
+            entry.put("description", skill.getDescription());
+            entry.put("tags", skill.getTags());
+            entry.put("examples", skill.getExamples());
+            entry.put("inputModes", skill.getInputModes().isEmpty()
+                ? card.getDefaultInputModes() : skill.getInputModes());
+            entry.put("outputModes", skill.getOutputModes().isEmpty()
+                ? card.getDefaultOutputModes() : skill.getOutputModes());
+            skills.add(entry);
+        }
+        standardCard.put("skills", skills);
+        return standardCard;
+    }
+
+    private static String standardSkillId(A2ASkill skill, int index) {
+        if (skill.getId() != null && !skill.getId().trim().isEmpty()) {
+            return skill.getId().trim();
+        }
+        String name = skill.getName();
+        if (name == null || name.trim().isEmpty()) {
+            return "skill-" + index;
+        }
+        StringBuilder id = new StringBuilder();
+        boolean previousDash = false;
+        for (char character : name.trim().toLowerCase(Locale.ROOT).toCharArray()) {
+            if ((character >= 'a' && character <= 'z') || (character >= '0' && character <= '9')
+                || character == '_' || character == '-') {
+                id.append(character);
+                previousDash = character == '-';
+            } else if (!previousDash) {
+                id.append('-');
+                previousDash = true;
+            }
+        }
+        while (id.length() > 0 && id.charAt(id.length() - 1) == '-') {
+            id.deleteCharAt(id.length() - 1);
+        }
+        return id.length() == 0 ? "skill-" + index : id.toString();
     }
 
     /**
@@ -243,8 +326,21 @@ public class A2AServer implements AutoCloseable {
         respond(exchange, status, body);
     }
 
+    private static void respondStandardError(HttpExchange exchange, Object requestId, int code,
+                                             String message) throws IOException {
+        Map<String, Object> error = new LinkedHashMap<String, Object>();
+        error.put("code", code);
+        error.put("message", message);
+        Map<String, Object> response = new LinkedHashMap<String, Object>();
+        response.put("jsonrpc", "2.0");
+        response.put("error", error);
+        response.put("id", requestId);
+        respond(exchange, 200, JSON.toJSONString(response));
+    }
+
     private static boolean supportedMethod(String method) {
-        return "tasks/send".equals(method) || "message/send".equals(method);
+        return "SendMessage".equals(method) || "tasks/send".equals(method)
+            || "message/send".equals(method);
     }
 
     private static final class RequestTooLargeException extends IOException {
@@ -262,6 +358,19 @@ public class A2AServer implements AutoCloseable {
         return taskId == null || taskId.trim().isEmpty()
             ? "task-" + UUID.randomUUID()
             : taskId;
+    }
+
+    private static String extractStandardTaskId(JSONObject root) {
+        JSONObject params = root.getJSONObject("params");
+        if (params == null) {
+            throw new IllegalArgumentException("Missing params");
+        }
+        String taskId = params.getString("taskId");
+        if (taskId == null || taskId.trim().isEmpty()) {
+            JSONObject message = params.getJSONObject("message");
+            taskId = message == null ? null : message.getString("taskId");
+        }
+        return taskId == null || taskId.trim().isEmpty() ? UUID.randomUUID().toString() : taskId;
     }
 
     private static String extractMessage(JSONObject root) {
@@ -290,9 +399,20 @@ public class A2AServer implements AutoCloseable {
     }
 
     private final class CardHandler implements HttpHandler {
+        private final boolean standard;
+
+        private CardHandler(boolean standard) {
+            this.standard = standard;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            byte[] body = cachedCardJson.getBytes(StandardCharsets.UTF_8);
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                respond(exchange, 405, "{\"error\":\"AgentCard endpoint requires GET\"}");
+                return;
+            }
+            String cardJson = standard ? cachedStandardCardJson : cachedLegacyCardJson;
+            byte[] body = cardJson.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
             OutputStream os = exchange.getResponseBody();
@@ -307,7 +427,9 @@ public class A2AServer implements AutoCloseable {
     private final class TaskHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            boolean standardEndpoint = "/".equals(exchange.getHttpContext().getPath());
             if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.getResponseHeaders().set("Allow", "POST");
                 respondA2AError(exchange, 405, null,
                     A2AError.invalidRequest("A2A task endpoint requires POST"));
                 return;
@@ -321,7 +443,11 @@ public class A2AServer implements AutoCloseable {
             try {
                 request = readBody(exchange.getRequestBody(), MAX_REQUEST_BYTES);
             } catch (RequestTooLargeException e) {
-                respondA2AError(exchange, 413, null, A2AError.invalidRequest(e.getMessage()));
+                if (standardEndpoint) {
+                    respondStandardError(exchange, null, -32600, e.getMessage());
+                } else {
+                    respondA2AError(exchange, 413, null, A2AError.invalidRequest(e.getMessage()));
+                }
                 return;
             }
 
@@ -329,34 +455,63 @@ public class A2AServer implements AutoCloseable {
             try {
                 root = JSON.parseObject(request);
             } catch (Exception e) {
-                respondA2AError(exchange, 400, null,
-                    A2AError.invalidRequest("Malformed JSON-RPC request"));
+                if (standardEndpoint) {
+                    respondStandardError(exchange, null, -32600, "Malformed JSON-RPC request");
+                } else {
+                    respondA2AError(exchange, 400, null,
+                        A2AError.invalidRequest("Malformed JSON-RPC request"));
+                }
                 return;
             }
             if (root == null) {
-                respondA2AError(exchange, 400, null,
-                    A2AError.invalidRequest("Request body must be a JSON object"));
+                if (standardEndpoint) {
+                    respondStandardError(exchange, null, -32600, "Request body must be a JSON object");
+                } else {
+                    respondA2AError(exchange, 400, null,
+                        A2AError.invalidRequest("Request body must be a JSON object"));
+                }
                 return;
             }
             Object requestId = extractRequestId(root);
             if (!"2.0".equals(root.getString("jsonrpc"))) {
-                respondA2AError(exchange, 400, requestId,
-                    A2AError.invalidRequest("jsonrpc must be 2.0"));
+                if (standardEndpoint) {
+                    respondStandardError(exchange, requestId, -32600, "jsonrpc must be 2.0");
+                } else {
+                    respondA2AError(exchange, 400, requestId,
+                        A2AError.invalidRequest("jsonrpc must be 2.0"));
+                }
                 return;
             }
-            if (!supportedMethod(root.getString("method"))) {
-                respondA2AError(exchange, 400, requestId,
-                    A2AError.invalidRequest("Unsupported A2A method"));
+            String method = root.getString("method");
+            boolean standardRequest = "SendMessage".equals(method);
+            if (!supportedMethod(method)) {
+                if (standardEndpoint) {
+                    respondStandardError(exchange, requestId, -32601, "Unsupported A2A method");
+                } else {
+                    respondA2AError(exchange, 400, requestId,
+                        A2AError.invalidRequest("Unsupported A2A method"));
+                }
+                return;
+            }
+            if (standardRequest && !A2A_PROTOCOL_VERSION.equals(
+                exchange.getRequestHeaders().getFirst(A2A_VERSION_HEADER))) {
+                respondStandardError(exchange, requestId, -32009,
+                    "A2A version '" + exchange.getRequestHeaders().getFirst(A2A_VERSION_HEADER)
+                        + "' is not supported. Expected version '" + A2A_PROTOCOL_VERSION + "'.");
                 return;
             }
 
             String taskId;
             String message;
             try {
-                taskId = extractTaskId(root);
+                taskId = standardRequest ? extractStandardTaskId(root) : extractTaskId(root);
                 message = extractMessage(root);
             } catch (IllegalArgumentException e) {
-                respondA2AError(exchange, 400, requestId, A2AError.invalidRequest(e.getMessage()));
+                if (standardRequest) {
+                    respondStandardError(exchange, requestId, -32602, e.getMessage());
+                } else {
+                    respondA2AError(exchange, 400, requestId, A2AError.invalidRequest(e.getMessage()));
+                }
                 return;
             }
 
@@ -369,7 +524,9 @@ public class A2AServer implements AutoCloseable {
                 errorMessage = "error: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
                 responseText = errorMessage;
             }
-            String a2aResponse = buildA2AResponse(responseText, taskId, requestId, errorMessage);
+            String a2aResponse = standardRequest
+                ? buildStandardA2AResponse(responseText, taskId, requestId, errorMessage)
+                : buildA2AResponse(responseText, taskId, requestId, errorMessage);
             byte[] body = a2aResponse.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
@@ -403,6 +560,42 @@ public class A2AServer implements AutoCloseable {
         result.put("status", status);
         result.put("artifacts", java.util.Collections.singletonList(artifact));
 
+        Map<String, Object> response = new LinkedHashMap<String, Object>();
+        response.put("jsonrpc", "2.0");
+        response.put("result", result);
+        response.put("id", requestId);
+        return JSON.toJSONString(response);
+    }
+
+    private static String buildStandardA2AResponse(String text, String taskId, Object requestId,
+                                                   String errorMessage) {
+        Map<String, Object> part = new LinkedHashMap<String, Object>();
+        part.put("text", text);
+        part.put("mediaType", "text/plain");
+        Map<String, Object> artifact = new LinkedHashMap<String, Object>();
+        artifact.put("artifactId", UUID.randomUUID().toString());
+        artifact.put("parts", java.util.Collections.singletonList(part));
+
+        Map<String, Object> statusMessagePart = new LinkedHashMap<String, Object>();
+        statusMessagePart.put("text", errorMessage == null ? "Request is completed!" : errorMessage);
+        Map<String, Object> statusMessage = new LinkedHashMap<String, Object>();
+        statusMessage.put("messageId", UUID.randomUUID().toString());
+        statusMessage.put("role", "ROLE_AGENT");
+        statusMessage.put("parts", java.util.Collections.singletonList(statusMessagePart));
+
+        Map<String, Object> status = new LinkedHashMap<String, Object>();
+        status.put("state", errorMessage == null ? TaskState.COMPLETED.getOfficialValue()
+            : TaskState.FAILED.getOfficialValue());
+        status.put("message", statusMessage);
+
+        Map<String, Object> task = new LinkedHashMap<String, Object>();
+        task.put("id", taskId);
+        task.put("contextId", UUID.randomUUID().toString());
+        task.put("status", status);
+        task.put("artifacts", java.util.Collections.singletonList(artifact));
+
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        result.put("task", task);
         Map<String, Object> response = new LinkedHashMap<String, Object>();
         response.put("jsonrpc", "2.0");
         response.put("result", result);

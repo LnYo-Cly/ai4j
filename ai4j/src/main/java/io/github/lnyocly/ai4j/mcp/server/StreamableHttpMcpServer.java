@@ -75,7 +75,10 @@ public class StreamableHttpMcpServer implements McpServer {
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
-                if (running.compareAndSet(false, true)) {
+                synchronized (StreamableHttpMcpServer.this) {
+                    if (running.get()) {
+                        return;
+                    }
                     try {
                         log.info("启动Streamable HTTP MCP服务器: {} v{}, 地址: {}:{}", serverName, serverVersion, host, port);
 
@@ -94,6 +97,7 @@ public class StreamableHttpMcpServer implements McpServer {
                         httpServer.createContext("/health", new HealthHandler());
                         httpServer.setExecutor(Executors.newCachedThreadPool());
                         httpServer.start();
+                        running.set(true);
 
                         log.info("Streamable HTTP MCP服务器启动成功");
                         log.info("MCP端点: http://{}:{}/mcp", host, port);
@@ -113,14 +117,16 @@ public class StreamableHttpMcpServer implements McpServer {
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
-                if (running.compareAndSet(true, false)) {
-                    log.info("停止Streamable HTTP MCP服务器");
-                    if (httpServer != null) {
-                        httpServer.stop(5);
+                synchronized (StreamableHttpMcpServer.this) {
+                    if (running.compareAndSet(true, false)) {
+                        log.info("停止Streamable HTTP MCP服务器");
+                        if (httpServer != null) {
+                            httpServer.stop(5);
+                        }
+                        sseClients.clear();
+                        sessions.clear();
+                        log.info("Streamable HTTP MCP服务器已停止");
                     }
-                    sseClients.clear();
-                    sessions.clear();
-                    log.info("Streamable HTTP MCP服务器已停止");
                 }
             }
         });
