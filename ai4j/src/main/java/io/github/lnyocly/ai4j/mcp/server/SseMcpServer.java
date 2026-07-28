@@ -79,7 +79,10 @@ public class SseMcpServer implements McpServer {
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
-                if (running.compareAndSet(false, true)) {
+                synchronized (SseMcpServer.this) {
+                    if (running.get()) {
+                        return;
+                    }
                     try {
                         log.info("启动SSE MCP服务器: {} v{}, 地址: {}:{}", serverName, serverVersion, host, port);
 
@@ -99,6 +102,7 @@ public class SseMcpServer implements McpServer {
                         httpServer.createContext("/", new RootHandler());
                         httpServer.setExecutor(Executors.newCachedThreadPool());
                         httpServer.start();
+                        running.set(true);
 
                         log.info("SSE MCP服务器启动成功");
                         log.info("SSE端点: http://{}:{}/sse", host, port);
@@ -118,14 +122,16 @@ public class SseMcpServer implements McpServer {
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
-                if (running.compareAndSet(true, false)) {
-                    log.info("停止SSE MCP服务器");
-                    if (httpServer != null) {
-                        httpServer.stop(5);
+                synchronized (SseMcpServer.this) {
+                    if (running.compareAndSet(true, false)) {
+                        log.info("停止SSE MCP服务器");
+                        if (httpServer != null) {
+                            httpServer.stop(5);
+                        }
+                        sseClients.clear();
+                        sessions.clear();
+                        log.info("SSE MCP服务器已停止");
                     }
-                    sseClients.clear();
-                    sessions.clear();
-                    log.info("SSE MCP服务器已停止");
                 }
             }
         });
