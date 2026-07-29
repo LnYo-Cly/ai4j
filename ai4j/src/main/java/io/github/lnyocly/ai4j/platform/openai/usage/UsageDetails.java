@@ -5,13 +5,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * Optional detail buckets reported by OpenAI-compatible usage payloads.
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UsageDetails {
+public class UsageDetails implements Serializable {
 
     @JsonProperty("cached_tokens")
     private Long cachedTokens;
