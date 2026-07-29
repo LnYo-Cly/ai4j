@@ -163,6 +163,7 @@ public class AgentTraceListenerTest {
         Assert.assertEquals(Long.valueOf(120L), modelSpan.getMetrics().getPromptTokens());
         Assert.assertEquals(Long.valueOf(45L), modelSpan.getMetrics().getCompletionTokens());
         Assert.assertEquals(Long.valueOf(165L), modelSpan.getMetrics().getTotalTokens());
+        Assert.assertEquals(Long.valueOf(30L), modelSpan.getMetrics().getCacheWriteInputTokens());
         Assert.assertEquals("USD", modelSpan.getMetrics().getCurrency());
         Assert.assertEquals("glm-4.7", modelSpan.getAttributes().get("responseModel"));
         Assert.assertEquals("stop", modelSpan.getAttributes().get("finishReason"));
@@ -176,6 +177,7 @@ public class AgentTraceListenerTest {
         Assert.assertNotNull(runSpan);
         Assert.assertNotNull(runSpan.getMetrics());
         Assert.assertEquals(Long.valueOf(165L), runSpan.getMetrics().getTotalTokens());
+        Assert.assertEquals(Long.valueOf(30L), runSpan.getMetrics().getCacheWriteInputTokens());
         Assert.assertEquals(0.0006D, runSpan.getMetrics().getTotalCost(), 0.0000001D);
     }
 
@@ -310,6 +312,9 @@ public class AgentTraceListenerTest {
         usage.put("prompt_tokens", promptTokens);
         usage.put("completion_tokens", completionTokens);
         usage.put("total_tokens", promptTokens + completionTokens);
+        Map<String, Object> promptDetails = new LinkedHashMap<String, Object>();
+        promptDetails.put("cache_write_tokens", 30L);
+        usage.put("prompt_tokens_details", promptDetails);
 
         Map<String, Object> payload = new LinkedHashMap<String, Object>();
         payload.put("id", "resp_1");

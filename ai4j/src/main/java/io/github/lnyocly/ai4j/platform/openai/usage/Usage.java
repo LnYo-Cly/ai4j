@@ -47,7 +47,47 @@ public class Usage implements Serializable {
     }
 
     @JsonIgnore
+    public Long getCacheWriteTokens() {
+        return promptTokensDetails == null ? null : promptTokensDetails.getCacheWriteTokens();
+    }
+
+    @JsonIgnore
     public Long getReasoningTokens() {
         return completionTokensDetails == null ? null : completionTokensDetails.getReasoningTokens();
+    }
+
+    /** Adds usage from another completed request, including optional detail buckets. */
+    public void merge(Usage source) {
+        if (source == null) {
+            return;
+        }
+        promptTokens += source.getPromptTokens();
+        completionTokens += source.getCompletionTokens();
+        totalTokens += source.getTotalTokens();
+        promptTokensDetails = mergeDetails(promptTokensDetails, source.getPromptTokensDetails());
+        completionTokensDetails = mergeDetails(completionTokensDetails, source.getCompletionTokensDetails());
+    }
+
+    private static UsageDetails mergeDetails(UsageDetails target, UsageDetails source) {
+        if (source == null) {
+            return target;
+        }
+        if (target == null) {
+            target = new UsageDetails();
+        }
+        target.setCachedTokens(sum(target.getCachedTokens(), source.getCachedTokens()));
+        target.setCacheWriteTokens(sum(target.getCacheWriteTokens(), source.getCacheWriteTokens()));
+        target.setReasoningTokens(sum(target.getReasoningTokens(), source.getReasoningTokens()));
+        target.setAudioTokens(sum(target.getAudioTokens(), source.getAudioTokens()));
+        target.setAcceptedPredictionTokens(sum(target.getAcceptedPredictionTokens(), source.getAcceptedPredictionTokens()));
+        target.setRejectedPredictionTokens(sum(target.getRejectedPredictionTokens(), source.getRejectedPredictionTokens()));
+        return target;
+    }
+
+    private static Long sum(Long current, Long next) {
+        if (next == null) {
+            return current;
+        }
+        return current == null ? next : Long.valueOf(current.longValue() + next.longValue());
     }
 }

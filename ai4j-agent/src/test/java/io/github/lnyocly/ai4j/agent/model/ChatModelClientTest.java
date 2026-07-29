@@ -104,7 +104,7 @@ public class ChatModelClientTest {
             public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) {
                 eventSourceListener.onEvent(null, null, null,
                         "{\"choices\":[],\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120,"
-                                + "\"prompt_tokens_details\":{\"cached_tokens\":60},"
+                                + "\"prompt_tokens_details\":{\"cached_tokens\":60,\"cache_write_tokens\":30},"
                                 + "\"completion_tokens_details\":{\"reasoning_tokens\":7}}}");
             }
 
@@ -123,6 +123,7 @@ public class ChatModelClientTest {
         Usage usage = new Usage(100L, 20L, 120L);
         UsageDetails promptDetails = new UsageDetails();
         promptDetails.setCachedTokens(Long.valueOf(60L));
+        promptDetails.setCacheWriteTokens(Long.valueOf(30L));
         usage.setPromptTokensDetails(promptDetails);
         UsageDetails completionDetails = new UsageDetails();
         completionDetails.setReasoningTokens(Long.valueOf(7L));
@@ -134,6 +135,7 @@ public class ChatModelClientTest {
         Assert.assertEquals(Long.valueOf(100L), result.getInputTokens());
         Assert.assertEquals(Long.valueOf(40L), result.getUncachedInputTokens());
         Assert.assertEquals(Long.valueOf(60L), result.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), result.getCacheWriteInputTokens());
         Assert.assertEquals(Long.valueOf(20L), result.getOutputTokens());
         Assert.assertEquals(Long.valueOf(120L), result.getTotalTokens());
         Assert.assertEquals(Long.valueOf(7L), result.getReasoningTokens());

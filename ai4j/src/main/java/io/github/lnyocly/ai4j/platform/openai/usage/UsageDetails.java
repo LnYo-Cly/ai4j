@@ -18,6 +18,9 @@ public class UsageDetails implements Serializable {
     @JsonProperty("cached_tokens")
     private Long cachedTokens;
 
+    @JsonProperty("cache_write_tokens")
+    private Long cacheWriteTokens;
+
     @JsonProperty("reasoning_tokens")
     private Long reasoningTokens;
 

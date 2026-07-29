@@ -2,7 +2,10 @@ package io.github.lnyocly.ai4j.agent.model;
 
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicCacheCreation;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicServerToolUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -171,6 +174,19 @@ public class MessagesModelClientTest {
         AnthropicUsage usage = new AnthropicUsage(12L, 8L);
         usage.setCacheReadInputTokens(Long.valueOf(70L));
         usage.setCacheCreationInputTokens(Long.valueOf(30L));
+        AnthropicCacheCreation cacheCreation = new AnthropicCacheCreation();
+        cacheCreation.setEphemeral5mInputTokens(Long.valueOf(20L));
+        cacheCreation.setEphemeral1hInputTokens(Long.valueOf(10L));
+        usage.setCacheCreation(cacheCreation);
+        AnthropicOutputTokensDetails outputDetails = new AnthropicOutputTokensDetails();
+        outputDetails.setThinkingTokens(Long.valueOf(5L));
+        usage.setOutputTokensDetails(outputDetails);
+        AnthropicServerToolUsage serverToolUse = new AnthropicServerToolUsage();
+        serverToolUse.setWebFetchRequests(Long.valueOf(2L));
+        serverToolUse.setWebSearchRequests(Long.valueOf(3L));
+        usage.setServerToolUse(serverToolUse);
+        usage.setInferenceGeo("us");
+        usage.setServiceTier("priority");
         AnthropicChatCompletionResponse response = new AnthropicChatCompletionResponse();
         response.setUsage(usage);
         stub.response = response;
@@ -207,5 +223,24 @@ public class MessagesModelClientTest {
         Assert.assertEquals(Long.valueOf(30L), result.getCacheCreationInputTokens());
         Assert.assertEquals(Long.valueOf(8L), result.getOutputTokens());
         Assert.assertEquals(Long.valueOf(120L), result.getTotalTokens());
+        Assert.assertEquals(Long.valueOf(5L), result.getReasoningTokens());
+
+        AnthropicUsage rawUsage;
+        if (result.getRawResponse() instanceof AnthropicChatCompletionResponse) {
+            rawUsage = ((AnthropicChatCompletionResponse) result.getRawResponse()).getUsage();
+        } else {
+            Assert.assertTrue(result.getRawResponse() instanceof Map);
+            Object raw = ((Map<?, ?>) result.getRawResponse()).get("usage");
+            Assert.assertTrue(raw instanceof AnthropicUsage);
+            rawUsage = (AnthropicUsage) raw;
+        }
+        Assert.assertNotNull(rawUsage);
+        Assert.assertEquals(Long.valueOf(20L), rawUsage.getCacheCreation().getEphemeral5mInputTokens());
+        Assert.assertEquals(Long.valueOf(10L), rawUsage.getCacheCreation().getEphemeral1hInputTokens());
+        Assert.assertEquals(Long.valueOf(5L), rawUsage.getOutputTokensDetails().getThinkingTokens());
+        Assert.assertEquals(Long.valueOf(2L), rawUsage.getServerToolUse().getWebFetchRequests());
+        Assert.assertEquals(Long.valueOf(3L), rawUsage.getServerToolUse().getWebSearchRequests());
+        Assert.assertEquals("us", rawUsage.getInferenceGeo());
+        Assert.assertEquals("priority", rawUsage.getServiceTier());
     }
 }

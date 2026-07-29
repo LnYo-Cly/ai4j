@@ -131,11 +131,33 @@ public class AnthropicMessagesServiceTest {
         EventSourceListener listener = service.toEventListener(capture, null, null);
 
         feed(listener, "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"model\":\"claude-test\","
-                + "\"usage\":{\"input_tokens\":10,\"cache_read_input_tokens\":70,\"cache_creation_input_tokens\":30}}}");
+                + "\"usage\":{\"input_tokens\":10,\"output_tokens\":8,\"cache_read_input_tokens\":70,\"cache_creation_input_tokens\":30,"
+                + "\"cache_creation\":{\"ephemeral_5m_input_tokens\":20,\"ephemeral_1h_input_tokens\":10},"
+                + "\"output_tokens_details\":{\"thinking_tokens\":4},"
+                + "\"server_tool_use\":{\"web_fetch_requests\":2,\"web_search_requests\":3},"
+                + "\"inference_geo\":\"us\",\"service_tier\":\"priority\"}}}");
 
         Assert.assertNotNull(capture.latestUsage);
         Assert.assertEquals(10L, capture.latestUsage.getInputTokens());
+        Assert.assertEquals(8L, capture.latestUsage.getOutputTokens());
         Assert.assertEquals(Long.valueOf(70L), capture.latestUsage.getCacheReadInputTokens());
         Assert.assertEquals(Long.valueOf(30L), capture.latestUsage.getCacheCreationInputTokens());
+        Assert.assertEquals(Long.valueOf(20L), capture.latestUsage.getCacheCreation().getEphemeral5mInputTokens());
+        Assert.assertEquals(Long.valueOf(10L), capture.latestUsage.getCacheCreation().getEphemeral1hInputTokens());
+        Assert.assertEquals(Long.valueOf(4L), capture.latestUsage.getOutputTokensDetails().getThinkingTokens());
+        Assert.assertEquals(Long.valueOf(2L), capture.latestUsage.getServerToolUse().getWebFetchRequests());
+        Assert.assertEquals(Long.valueOf(3L), capture.latestUsage.getServerToolUse().getWebSearchRequests());
+        Assert.assertEquals("us", capture.latestUsage.getInferenceGeo());
+        Assert.assertEquals("priority", capture.latestUsage.getServiceTier());
+    }
+
+    @Test
+    public void shouldRetainFourBucketUsageConstructor() {
+        AnthropicUsage usage = new AnthropicUsage(10L, 8L, Long.valueOf(70L), Long.valueOf(30L));
+
+        Assert.assertEquals(10L, usage.getInputTokens());
+        Assert.assertEquals(8L, usage.getOutputTokens());
+        Assert.assertEquals(Long.valueOf(70L), usage.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), usage.getCacheCreationInputTokens());
     }
 }

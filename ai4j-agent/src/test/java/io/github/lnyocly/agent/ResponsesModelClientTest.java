@@ -68,6 +68,7 @@ public class ResponsesModelClientTest {
         usage.setTotalTokens(Integer.valueOf(120));
         ResponseUsageDetails inputDetails = new ResponseUsageDetails();
         inputDetails.setCachedTokens(Integer.valueOf(60));
+        inputDetails.setCacheWriteTokens(Integer.valueOf(30));
         usage.setInputTokensDetails(inputDetails);
         ResponseUsageDetails outputDetails = new ResponseUsageDetails();
         outputDetails.setReasoningTokens(Integer.valueOf(7));
@@ -81,6 +82,7 @@ public class ResponsesModelClientTest {
         Assert.assertEquals(Long.valueOf(100L), result.getInputTokens());
         Assert.assertEquals(Long.valueOf(40L), result.getUncachedInputTokens());
         Assert.assertEquals(Long.valueOf(60L), result.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), result.getCacheWriteInputTokens());
         Assert.assertEquals(Long.valueOf(20L), result.getOutputTokens());
         Assert.assertEquals(Long.valueOf(120L), result.getTotalTokens());
         Assert.assertEquals(Long.valueOf(7L), result.getReasoningTokens());

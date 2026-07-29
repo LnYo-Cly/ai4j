@@ -58,6 +58,7 @@ public class CodingAgentLoopController {
         Long totalTokens = null;
         Long totalUncachedInputTokens = null;
         Long totalCacheReadInputTokens = null;
+        Long totalCacheWriteInputTokens = null;
         Long totalCacheCreationInputTokens = null;
         Long totalReasoningTokens = null;
         CostBucket inputCost = new CostBucket();
@@ -79,7 +80,7 @@ public class CodingAgentLoopController {
                 session.recordLoopDecision(forcedStop);
                 return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
                         totalInputTokens, totalOutputTokens, totalTokens, totalUncachedInputTokens,
-                        totalCacheReadInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
+                        totalCacheReadInputTokens, totalCacheWriteInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
                         inputCost, cacheReadInputCost, cacheCreationInputCost, outputCost, totalCost,
                         currencyMismatch ? null : currency, !currencyMismatch, turns, autoFollowUps, forcedStop);
             }
@@ -97,6 +98,8 @@ public class CodingAgentLoopController {
                     turnResult == null ? null : turnResult.getUncachedInputTokens());
             totalCacheReadInputTokens = sumTokens(totalCacheReadInputTokens,
                     turnResult == null ? null : turnResult.getCacheReadInputTokens());
+            totalCacheWriteInputTokens = sumTokens(totalCacheWriteInputTokens,
+                    turnResult == null ? null : turnResult.getCacheWriteInputTokens());
             totalCacheCreationInputTokens = sumTokens(totalCacheCreationInputTokens,
                     turnResult == null ? null : turnResult.getCacheCreationInputTokens());
             totalReasoningTokens = sumTokens(totalReasoningTokens,
@@ -140,7 +143,7 @@ public class CodingAgentLoopController {
             if (!decision.isContinueLoop()) {
                 return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
                         totalInputTokens, totalOutputTokens, totalTokens, totalUncachedInputTokens,
-                        totalCacheReadInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
+                        totalCacheReadInputTokens, totalCacheWriteInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
                         inputCost, cacheReadInputCost, cacheCreationInputCost, outputCost, totalCost,
                         currencyMismatch ? null : currency, !currencyMismatch, turns, autoFollowUps, decision);
             }
@@ -297,7 +300,8 @@ public class CodingAgentLoopController {
     private boolean hasUsage(CodingAgentResult result) {
         return result != null && (result.getInputTokens() != null || result.getOutputTokens() != null
                 || result.getTotalTokens() != null || result.getUncachedInputTokens() != null
-                || result.getCacheReadInputTokens() != null || result.getCacheCreationInputTokens() != null);
+                || result.getCacheReadInputTokens() != null || result.getCacheWriteInputTokens() != null
+                || result.getCacheCreationInputTokens() != null);
     }
 
     private boolean hasKnownCost(CodingAgentResult result) {
@@ -344,6 +348,7 @@ public class CodingAgentLoopController {
                                         Long totalTokens,
                                         Long totalUncachedInputTokens,
                                         Long totalCacheReadInputTokens,
+                                        Long totalCacheWriteInputTokens,
                                         Long totalCacheCreationInputTokens,
                                         Long totalReasoningTokens,
                                         CostBucket inputCost,
@@ -370,6 +375,7 @@ public class CodingAgentLoopController {
                 .totalTokens(totalTokens)
                 .uncachedInputTokens(totalUncachedInputTokens)
                 .cacheReadInputTokens(totalCacheReadInputTokens)
+                .cacheWriteInputTokens(totalCacheWriteInputTokens)
                 .cacheCreationInputTokens(totalCacheCreationInputTokens)
                 .reasoningTokens(totalReasoningTokens)
                 .inputCost(costsComparable ? inputCost.valueOrNull() : null)

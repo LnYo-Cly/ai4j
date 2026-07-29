@@ -54,6 +54,8 @@ public class CodingAgentResult {
 
     private Long cacheReadInputTokens;
 
+    private Long cacheWriteInputTokens;
+
     private Long cacheCreationInputTokens;
 
     private Long reasoningTokens;
@@ -121,6 +123,7 @@ public class CodingAgentResult {
                 .totalTokens(result.getTotalTokens())
                 .uncachedInputTokens(result.getUncachedInputTokens())
                 .cacheReadInputTokens(result.getCacheReadInputTokens())
+                .cacheWriteInputTokens(result.getCacheWriteInputTokens())
                 .cacheCreationInputTokens(result.getCacheCreationInputTokens())
                 .reasoningTokens(result.getReasoningTokens())
                 .inputCost(result.getInputCost())

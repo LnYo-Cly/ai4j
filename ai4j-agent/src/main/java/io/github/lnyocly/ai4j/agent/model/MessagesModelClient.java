@@ -4,8 +4,11 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicCacheCreation;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicServerToolUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicTool;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
@@ -435,6 +438,52 @@ public class MessagesModelClient implements AgentModelClient {
             usage.setOutputTokens(Math.max(usage.getOutputTokens(), next.getOutputTokens()));
             usage.setCacheReadInputTokens(max(usage.getCacheReadInputTokens(), next.getCacheReadInputTokens()));
             usage.setCacheCreationInputTokens(max(usage.getCacheCreationInputTokens(), next.getCacheCreationInputTokens()));
+            usage.setCacheCreation(mergeCacheCreation(usage.getCacheCreation(), next.getCacheCreation()));
+            usage.setOutputTokensDetails(mergeOutputDetails(usage.getOutputTokensDetails(), next.getOutputTokensDetails()));
+            usage.setServerToolUse(mergeServerToolUse(usage.getServerToolUse(), next.getServerToolUse()));
+            if (next.getInferenceGeo() != null) {
+                usage.setInferenceGeo(next.getInferenceGeo());
+            }
+            if (next.getServiceTier() != null) {
+                usage.setServiceTier(next.getServiceTier());
+            }
+        }
+
+        private AnthropicCacheCreation mergeCacheCreation(AnthropicCacheCreation current, AnthropicCacheCreation next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicCacheCreation();
+            }
+            current.setEphemeral5mInputTokens(max(current.getEphemeral5mInputTokens(), next.getEphemeral5mInputTokens()));
+            current.setEphemeral1hInputTokens(max(current.getEphemeral1hInputTokens(), next.getEphemeral1hInputTokens()));
+            return current;
+        }
+
+        private AnthropicOutputTokensDetails mergeOutputDetails(AnthropicOutputTokensDetails current,
+                                                                 AnthropicOutputTokensDetails next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicOutputTokensDetails();
+            }
+            current.setThinkingTokens(max(current.getThinkingTokens(), next.getThinkingTokens()));
+            return current;
+        }
+
+        private AnthropicServerToolUsage mergeServerToolUse(AnthropicServerToolUsage current,
+                                                              AnthropicServerToolUsage next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicServerToolUsage();
+            }
+            current.setWebFetchRequests(max(current.getWebFetchRequests(), next.getWebFetchRequests()));
+            current.setWebSearchRequests(max(current.getWebSearchRequests(), next.getWebSearchRequests()));
+            return current;
         }
 
         private Long max(Long current, Long next) {

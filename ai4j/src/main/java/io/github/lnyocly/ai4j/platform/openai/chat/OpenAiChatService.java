@@ -98,9 +98,7 @@ public class OpenAiChatService implements IChatService {
                     finishReason = choice.getFinishReason();
 
                     Usage usage = chatCompletionResponse.getUsage();
-                    allUsage.setCompletionTokens(allUsage.getCompletionTokens() + usage.getCompletionTokens());
-                    allUsage.setTotalTokens(allUsage.getTotalTokens() + usage.getTotalTokens());
-                    allUsage.setPromptTokens(allUsage.getPromptTokens() + usage.getPromptTokens());
+                    allUsage.merge(usage);
 
                     // 判断是否为函数调用返回
                     if("tool_calls".equals(finishReason)){

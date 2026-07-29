@@ -92,6 +92,7 @@ public class CodingAgentLoopControllerTest {
                 .totalTokens(Long.valueOf(120L))
                 .uncachedInputTokens(Long.valueOf(40L))
                 .cacheReadInputTokens(Long.valueOf(60L))
+                .cacheWriteInputTokens(Long.valueOf(30L))
                 .cacheCreationInputTokens(Long.valueOf(10L))
                 .reasoningTokens(Long.valueOf(7L))
                 .inputCost(Double.valueOf(0.4D))
@@ -106,6 +107,7 @@ public class CodingAgentLoopControllerTest {
 
         assertEquals(Long.valueOf(120L), result.getTotalTokens());
         assertEquals(Long.valueOf(60L), result.getCacheReadInputTokens());
+        assertEquals(Long.valueOf(30L), result.getCacheWriteInputTokens());
         assertEquals(Long.valueOf(10L), result.getCacheCreationInputTokens());
         assertEquals(Long.valueOf(7L), result.getReasoningTokens());
         assertEquals(Double.valueOf(1.5D), result.getTotalCost());

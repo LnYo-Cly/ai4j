@@ -16,6 +16,7 @@ public class AgentUsageAccumulatorTest {
                 .inputTokens(Long.valueOf(1000000L))
                 .uncachedInputTokens(Long.valueOf(200000L))
                 .cacheReadInputTokens(Long.valueOf(800000L))
+                .cacheWriteInputTokens(Long.valueOf(50000L))
                 .cacheCreationInputTokens(Long.valueOf(50000L))
                 .outputTokens(Long.valueOf(100000L))
                 .totalTokens(Long.valueOf(1150000L))
@@ -35,6 +36,7 @@ public class AgentUsageAccumulatorTest {
         AgentResult result = accumulator.applyTo(AgentResult.builder(), context).build();
 
         Assert.assertEquals(Long.valueOf(800000L), result.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(50000L), result.getCacheWriteInputTokens());
         Assert.assertEquals(Long.valueOf(50000L), result.getCacheCreationInputTokens());
         Assert.assertEquals(0.4D, result.getInputCost().doubleValue(), 0.0000001D);
         Assert.assertEquals(0.4D, result.getCacheReadInputCost().doubleValue(), 0.0000001D);

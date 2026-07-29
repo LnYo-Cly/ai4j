@@ -508,6 +508,7 @@ public class AgentTraceListener implements AgentListener {
         target.setTotalTokens(sum(target.getTotalTokens(), metrics.getTotalTokens()));
         target.setUncachedInputTokens(sum(target.getUncachedInputTokens(), metrics.getUncachedInputTokens()));
         target.setCacheReadInputTokens(sum(target.getCacheReadInputTokens(), metrics.getCacheReadInputTokens()));
+        target.setCacheWriteInputTokens(sum(target.getCacheWriteInputTokens(), metrics.getCacheWriteInputTokens()));
         target.setCacheCreationInputTokens(sum(target.getCacheCreationInputTokens(), metrics.getCacheCreationInputTokens()));
         target.setReasoningTokens(sum(target.getReasoningTokens(), metrics.getReasoningTokens()));
         if (targetHasUnpricedUsage || incomingHasUnpricedUsage || currencyMismatch) {
@@ -564,6 +565,7 @@ public class AgentTraceListener implements AgentListener {
                 .totalTokens(source.getTotalTokens())
                 .uncachedInputTokens(source.getUncachedInputTokens())
                 .cacheReadInputTokens(source.getCacheReadInputTokens())
+                .cacheWriteInputTokens(source.getCacheWriteInputTokens())
                 .cacheCreationInputTokens(source.getCacheCreationInputTokens())
                 .reasoningTokens(source.getReasoningTokens())
                 .inputCost(source.getInputCost())
@@ -593,6 +595,7 @@ public class AgentTraceListener implements AgentListener {
         Long totalTokens = usage.getTotalTokens();
         Long uncachedInputTokens = usage.getUncachedInputTokens();
         Long cacheReadInputTokens = usage.getCacheReadInputTokens();
+        Long cacheWriteInputTokens = usage.getCacheWriteInputTokens();
         Long cacheCreationInputTokens = usage.getCacheCreationInputTokens();
         Long reasoningTokens = usage.getReasoningTokens();
         Double inputCost = null;
@@ -621,6 +624,7 @@ public class AgentTraceListener implements AgentListener {
                 .totalTokens(totalTokens)
                 .uncachedInputTokens(uncachedInputTokens)
                 .cacheReadInputTokens(cacheReadInputTokens)
+                .cacheWriteInputTokens(cacheWriteInputTokens)
                 .cacheCreationInputTokens(cacheCreationInputTokens)
                 .reasoningTokens(reasoningTokens)
                 .inputCost(inputCost)

@@ -12,7 +12,6 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.chat.enums.ChatMessageType;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
-import io.github.lnyocly.ai4j.platform.openai.usage.UsageDetails;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -138,11 +137,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         Usage currUsage = chatCompletionResponse.getUsage();
         if(currUsage != null){
             usagePresent = true;
-            usage.setPromptTokens(usage.getPromptTokens() + currUsage.getPromptTokens());
-            usage.setCompletionTokens(usage.getCompletionTokens() + currUsage.getCompletionTokens());
-            usage.setTotalTokens(usage.getTotalTokens() + currUsage.getTotalTokens());
-            mergeUsageDetails(currUsage.getPromptTokensDetails(), true);
-            mergeUsageDetails(currUsage.getCompletionTokensDetails(), false);
+            usage.merge(currUsage);
         }
 
 
@@ -280,33 +275,6 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return null;
         }
         return calls.get(0);
-    }
-
-    private void mergeUsageDetails(UsageDetails source, boolean promptDetails) {
-        if (source == null) {
-            return;
-        }
-        UsageDetails target = promptDetails ? usage.getPromptTokensDetails() : usage.getCompletionTokensDetails();
-        if (target == null) {
-            target = new UsageDetails();
-            if (promptDetails) {
-                usage.setPromptTokensDetails(target);
-            } else {
-                usage.setCompletionTokensDetails(target);
-            }
-        }
-        target.setCachedTokens(sumDetailTokens(target.getCachedTokens(), source.getCachedTokens()));
-        target.setReasoningTokens(sumDetailTokens(target.getReasoningTokens(), source.getReasoningTokens()));
-        target.setAudioTokens(sumDetailTokens(target.getAudioTokens(), source.getAudioTokens()));
-        target.setAcceptedPredictionTokens(sumDetailTokens(target.getAcceptedPredictionTokens(), source.getAcceptedPredictionTokens()));
-        target.setRejectedPredictionTokens(sumDetailTokens(target.getRejectedPredictionTokens(), source.getRejectedPredictionTokens()));
-    }
-
-    private Long sumDetailTokens(Long current, Long next) {
-        if (next == null) {
-            return current;
-        }
-        return current == null ? next : current + next;
     }
 
     private String safeToolArguments(ToolCall call) {

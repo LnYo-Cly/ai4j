@@ -34,6 +34,8 @@ public class AgentModelResult {
 
     private Long cacheReadInputTokens;
 
+    private Long cacheWriteInputTokens;
+
     private Long cacheCreationInputTokens;
 
     private Long reasoningTokens;

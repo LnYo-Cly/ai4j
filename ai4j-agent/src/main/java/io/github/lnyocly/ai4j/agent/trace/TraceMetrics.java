@@ -17,6 +17,7 @@ public class TraceMetrics {
     private Long totalTokens;
     private Long uncachedInputTokens;
     private Long cacheReadInputTokens;
+    private Long cacheWriteInputTokens;
     private Long cacheCreationInputTokens;
     private Long reasoningTokens;
     private Double inputCost;

@@ -26,6 +26,8 @@ public class ModelUsage {
     private Long totalTokens;
     private Long uncachedInputTokens;
     private Long cacheReadInputTokens;
+    /** Provider-reported cache writes are observable but not a standalone billing bucket. */
+    private Long cacheWriteInputTokens;
     private Long cacheCreationInputTokens;
     private Long reasoningTokens;
 
@@ -36,12 +38,14 @@ public class ModelUsage {
         Long input = Long.valueOf(usage.getPromptTokens());
         Long output = Long.valueOf(usage.getCompletionTokens());
         Long cacheRead = usage.getCachedTokens();
+        Long cacheWrite = usage.getCacheWriteTokens();
         return builder()
                 .inputTokens(input)
                 .outputTokens(output)
                 .totalTokens(Long.valueOf(usage.getTotalTokens()))
                 .uncachedInputTokens(uncachedInput(input, cacheRead))
                 .cacheReadInputTokens(cacheRead)
+                .cacheWriteInputTokens(cacheWrite)
                 .reasoningTokens(usage.getReasoningTokens())
                 .build();
     }
@@ -56,6 +60,7 @@ public class ModelUsage {
         ResponseUsageDetails inputDetails = usage.getInputTokensDetails();
         ResponseUsageDetails outputDetails = usage.getOutputTokensDetails();
         Long cacheRead = inputDetails == null ? null : asLong(inputDetails.getCachedTokens());
+        Long cacheWrite = inputDetails == null ? null : asLong(inputDetails.getCacheWriteTokens());
         Long reasoning = outputDetails == null ? null : asLong(outputDetails.getReasoningTokens());
         return builder()
                 .inputTokens(input)
@@ -63,6 +68,7 @@ public class ModelUsage {
                 .totalTokens(total == null ? total(input, output) : total)
                 .uncachedInputTokens(uncachedInput(input, cacheRead))
                 .cacheReadInputTokens(cacheRead)
+                .cacheWriteInputTokens(cacheWrite)
                 .reasoningTokens(reasoning)
                 .build();
     }
@@ -75,6 +81,8 @@ public class ModelUsage {
         Long output = Long.valueOf(usage.getOutputTokens());
         Long cacheRead = usage.getCacheReadInputTokens();
         Long cacheCreation = usage.getCacheCreationInputTokens();
+        Long reasoning = usage.getOutputTokensDetails() == null ? null
+                : usage.getOutputTokensDetails().getThinkingTokens();
         return builder()
                 .inputTokens(input)
                 .outputTokens(output)
@@ -82,6 +90,7 @@ public class ModelUsage {
                 .uncachedInputTokens(input)
                 .cacheReadInputTokens(cacheRead)
                 .cacheCreationInputTokens(cacheCreation)
+                .reasoningTokens(reasoning)
                 .build();
     }
 
@@ -115,11 +124,18 @@ public class ModelUsage {
                 nestedValue(usage, "inputTokensDetails", "cachedTokens")));
         Long cacheCreation = asLong(firstNonNull(
                 usage.get("cache_creation_input_tokens"), usage.get("cacheCreationInputTokens")));
+        Long cacheWrite = asLong(firstNonNull(
+                nestedValue(usage, "prompt_tokens_details", "cache_write_tokens"),
+                nestedValue(usage, "promptTokensDetails", "cacheWriteTokens"),
+                nestedValue(usage, "input_tokens_details", "cache_write_tokens"),
+                nestedValue(usage, "inputTokensDetails", "cacheWriteTokens")));
         Long reasoning = asLong(firstNonNull(
                 nestedValue(usage, "completion_tokens_details", "reasoning_tokens"),
                 nestedValue(usage, "completionTokensDetails", "reasoningTokens"),
                 nestedValue(usage, "output_tokens_details", "reasoning_tokens"),
                 nestedValue(usage, "outputTokensDetails", "reasoningTokens"),
+                nestedValue(usage, "output_tokens_details", "thinking_tokens"),
+                nestedValue(usage, "outputTokensDetails", "thinkingTokens"),
                 usage.get("reasoning_tokens"), usage.get("reasoningTokens")));
         boolean anthropic = usage.containsKey("cache_read_input_tokens")
                 || usage.containsKey("cacheReadInputTokens")
@@ -133,6 +149,7 @@ public class ModelUsage {
                         : total)
                 .uncachedInputTokens(anthropic ? input : uncachedInput(input, cacheRead))
                 .cacheReadInputTokens(cacheRead)
+                .cacheWriteInputTokens(cacheWrite)
                 .cacheCreationInputTokens(cacheCreation)
                 .reasoningTokens(reasoning)
                 .build();
@@ -145,6 +162,7 @@ public class ModelUsage {
                 .totalTokens(totalTokens)
                 .uncachedInputTokens(uncachedInputTokens)
                 .cacheReadInputTokens(cacheReadInputTokens)
+                .cacheWriteInputTokens(cacheWriteInputTokens)
                 .cacheCreationInputTokens(cacheCreationInputTokens)
                 .reasoningTokens(reasoningTokens);
     }

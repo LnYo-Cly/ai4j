@@ -8,8 +8,11 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicCacheCreation;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicServerToolUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.errors.AnthropicApiException;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
@@ -311,6 +314,42 @@ public class AnthropicMessagesService implements IMessagesService {
         }
         if (node.hasNonNull("cache_creation_input_tokens")) {
             usage.setCacheCreationInputTokens(Long.valueOf(node.path("cache_creation_input_tokens").asLong()));
+        }
+        JsonNode cacheCreation = node.path("cache_creation");
+        if (cacheCreation.isObject()) {
+            AnthropicCacheCreation details = new AnthropicCacheCreation();
+            if (cacheCreation.hasNonNull("ephemeral_5m_input_tokens")) {
+                details.setEphemeral5mInputTokens(Long.valueOf(cacheCreation.path("ephemeral_5m_input_tokens").asLong()));
+            }
+            if (cacheCreation.hasNonNull("ephemeral_1h_input_tokens")) {
+                details.setEphemeral1hInputTokens(Long.valueOf(cacheCreation.path("ephemeral_1h_input_tokens").asLong()));
+            }
+            usage.setCacheCreation(details);
+        }
+        JsonNode outputDetails = node.path("output_tokens_details");
+        if (outputDetails.isObject()) {
+            AnthropicOutputTokensDetails details = new AnthropicOutputTokensDetails();
+            if (outputDetails.hasNonNull("thinking_tokens")) {
+                details.setThinkingTokens(Long.valueOf(outputDetails.path("thinking_tokens").asLong()));
+            }
+            usage.setOutputTokensDetails(details);
+        }
+        JsonNode serverToolUse = node.path("server_tool_use");
+        if (serverToolUse.isObject()) {
+            AnthropicServerToolUsage details = new AnthropicServerToolUsage();
+            if (serverToolUse.hasNonNull("web_fetch_requests")) {
+                details.setWebFetchRequests(Long.valueOf(serverToolUse.path("web_fetch_requests").asLong()));
+            }
+            if (serverToolUse.hasNonNull("web_search_requests")) {
+                details.setWebSearchRequests(Long.valueOf(serverToolUse.path("web_search_requests").asLong()));
+            }
+            usage.setServerToolUse(details);
+        }
+        if (node.hasNonNull("inference_geo")) {
+            usage.setInferenceGeo(node.path("inference_geo").asText());
+        }
+        if (node.hasNonNull("service_tier")) {
+            usage.setServiceTier(node.path("service_tier").asText());
         }
         return usage;
     }

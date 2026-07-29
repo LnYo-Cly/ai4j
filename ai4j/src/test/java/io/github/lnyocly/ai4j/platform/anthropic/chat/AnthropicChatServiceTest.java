@@ -7,6 +7,7 @@ import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatComple
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -183,6 +184,29 @@ public class AnthropicChatServiceTest {
     }
 
     @Test
+    public void shouldMapAnthropicUsageDetailsToOpenAiCompatibleUsage() {
+        AnthropicChatService service = newService();
+        AnthropicUsage usage = new AnthropicUsage(10L, 5L);
+        usage.setCacheReadInputTokens(Long.valueOf(70L));
+        usage.setCacheCreationInputTokens(Long.valueOf(30L));
+        AnthropicOutputTokensDetails outputDetails = new AnthropicOutputTokensDetails();
+        outputDetails.setThinkingTokens(Long.valueOf(4L));
+        usage.setOutputTokensDetails(outputDetails);
+        AnthropicChatCompletionResponse response = new AnthropicChatCompletionResponse();
+        response.setContent(Collections.<AnthropicContentBlock>emptyList());
+        response.setUsage(usage);
+
+        ChatCompletionResponse result = service.convertChatCompletionResponse(response);
+
+        Assert.assertEquals(110L, result.getUsage().getPromptTokens());
+        Assert.assertEquals(5L, result.getUsage().getCompletionTokens());
+        Assert.assertEquals(115L, result.getUsage().getTotalTokens());
+        Assert.assertEquals(Long.valueOf(70L), result.getUsage().getPromptTokensDetails().getCachedTokens());
+        Assert.assertEquals(Long.valueOf(30L), result.getUsage().getPromptTokensDetails().getCacheWriteTokens());
+        Assert.assertEquals(Long.valueOf(4L), result.getUsage().getCompletionTokensDetails().getReasoningTokens());
+    }
+
+    @Test
     public void shouldMapThinkingBlockToReasoningContent() {
         AnthropicChatService service = newService();
         AnthropicChatCompletionResponse response = new AnthropicChatCompletionResponse();
@@ -244,12 +268,15 @@ public class AnthropicChatServiceTest {
         CapturingListener capture = new CapturingListener();
         EventSourceListener translator = service.convertEventSource(capture);
 
-        feed(translator, "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_s\",\"model\":\"claude-test\"}}");
+        feed(translator, "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_s\",\"model\":\"claude-test\","
+                + "\"usage\":{\"input_tokens\":10,\"output_tokens\":0,\"cache_read_input_tokens\":70,"
+                + "\"cache_creation_input_tokens\":30}}}");
         feed(translator, "{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}");
         feed(translator, "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hi\"}}");
         feed(translator, "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"!\"}}");
         feed(translator, "{\"type\":\"content_block_stop\",\"index\":0}");
-        feed(translator, "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":3}}");
+        feed(translator, "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},"
+                + "\"usage\":{\"output_tokens\":3,\"output_tokens_details\":{\"thinking_tokens\":2}}}");
         feed(translator, "{\"type\":\"message_stop\"}");
 
         Assert.assertTrue("expected at least 4 forwarded chunks, got " + capture.forwarded.size(),
@@ -270,6 +297,18 @@ public class AnthropicChatServiceTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> finishChoices = (List<Map<String, Object>>) finishChunk.get("choices");
         Assert.assertEquals("stop", finishChoices.get(0).get("finish_reason"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> usage = (Map<String, Object>) finishChunk.get("usage");
+        Assert.assertEquals(110L, ((Number) usage.get("prompt_tokens")).longValue());
+        Assert.assertEquals(3L, ((Number) usage.get("completion_tokens")).longValue());
+        Assert.assertEquals(113L, ((Number) usage.get("total_tokens")).longValue());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> promptDetails = (Map<String, Object>) usage.get("prompt_tokens_details");
+        Assert.assertEquals(70L, ((Number) promptDetails.get("cached_tokens")).longValue());
+        Assert.assertEquals(30L, ((Number) promptDetails.get("cache_write_tokens")).longValue());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> completionDetails = (Map<String, Object>) usage.get("completion_tokens_details");
+        Assert.assertEquals(2L, ((Number) completionDetails.get("reasoning_tokens")).longValue());
     }
 
     @Test

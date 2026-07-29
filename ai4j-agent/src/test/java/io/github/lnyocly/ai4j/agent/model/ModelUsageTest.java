@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.agent.model;
 
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseUsage;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseUsageDetails;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
@@ -15,6 +16,7 @@ public class ModelUsageTest {
         Usage usage = new Usage(100, 20, 120);
         UsageDetails promptDetails = new UsageDetails();
         promptDetails.setCachedTokens(60L);
+        promptDetails.setCacheWriteTokens(30L);
         usage.setPromptTokensDetails(promptDetails);
         UsageDetails completionDetails = new UsageDetails();
         completionDetails.setReasoningTokens(7L);
@@ -25,6 +27,7 @@ public class ModelUsageTest {
         Assert.assertEquals(Long.valueOf(100L), normalized.getInputTokens());
         Assert.assertEquals(Long.valueOf(40L), normalized.getUncachedInputTokens());
         Assert.assertEquals(Long.valueOf(60L), normalized.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), normalized.getCacheWriteInputTokens());
         Assert.assertEquals(Long.valueOf(20L), normalized.getOutputTokens());
         Assert.assertEquals(Long.valueOf(120L), normalized.getTotalTokens());
         Assert.assertEquals(Long.valueOf(7L), normalized.getReasoningTokens());
@@ -38,6 +41,7 @@ public class ModelUsageTest {
         usage.setTotalTokens(Integer.valueOf(120));
         ResponseUsageDetails inputDetails = new ResponseUsageDetails();
         inputDetails.setCachedTokens(Integer.valueOf(60));
+        inputDetails.setCacheWriteTokens(Integer.valueOf(30));
         usage.setInputTokensDetails(inputDetails);
         ResponseUsageDetails outputDetails = new ResponseUsageDetails();
         outputDetails.setReasoningTokens(Integer.valueOf(7));
@@ -48,6 +52,7 @@ public class ModelUsageTest {
         Assert.assertEquals(Long.valueOf(100L), normalized.getInputTokens());
         Assert.assertEquals(Long.valueOf(40L), normalized.getUncachedInputTokens());
         Assert.assertEquals(Long.valueOf(60L), normalized.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), normalized.getCacheWriteInputTokens());
         Assert.assertEquals(Long.valueOf(20L), normalized.getOutputTokens());
         Assert.assertEquals(Long.valueOf(120L), normalized.getTotalTokens());
         Assert.assertEquals(Long.valueOf(7L), normalized.getReasoningTokens());
@@ -58,6 +63,9 @@ public class ModelUsageTest {
         AnthropicUsage usage = new AnthropicUsage(10L, 20L);
         usage.setCacheReadInputTokens(Long.valueOf(70L));
         usage.setCacheCreationInputTokens(Long.valueOf(30L));
+        AnthropicOutputTokensDetails outputDetails = new AnthropicOutputTokensDetails();
+        outputDetails.setThinkingTokens(Long.valueOf(7L));
+        usage.setOutputTokensDetails(outputDetails);
 
         ModelUsage normalized = ModelUsage.fromAnthropic(usage);
 
@@ -67,5 +75,6 @@ public class ModelUsageTest {
         Assert.assertEquals(Long.valueOf(30L), normalized.getCacheCreationInputTokens());
         Assert.assertEquals(Long.valueOf(20L), normalized.getOutputTokens());
         Assert.assertEquals(Long.valueOf(130L), normalized.getTotalTokens());
+        Assert.assertEquals(Long.valueOf(7L), normalized.getReasoningTokens());
     }
 }

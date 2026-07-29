@@ -14,6 +14,7 @@ final class AgentUsageAccumulator {
     private Long totalTokens;
     private Long uncachedInputTokens;
     private Long cacheReadInputTokens;
+    private Long cacheWriteInputTokens;
     private Long cacheCreationInputTokens;
     private Long reasoningTokens;
     private boolean usagePresent;
@@ -27,6 +28,7 @@ final class AgentUsageAccumulator {
         outputTokens = sum(outputTokens, result.getOutputTokens());
         uncachedInputTokens = sum(uncachedInputTokens, result.getUncachedInputTokens());
         cacheReadInputTokens = sum(cacheReadInputTokens, result.getCacheReadInputTokens());
+        cacheWriteInputTokens = sum(cacheWriteInputTokens, result.getCacheWriteInputTokens());
         cacheCreationInputTokens = sum(cacheCreationInputTokens, result.getCacheCreationInputTokens());
         reasoningTokens = sum(reasoningTokens, result.getReasoningTokens());
         Long resultTotal = result.getTotalTokens();
@@ -50,6 +52,7 @@ final class AgentUsageAccumulator {
                 .totalTokens(totalTokens)
                 .uncachedInputTokens(uncachedInputTokens)
                 .cacheReadInputTokens(cacheReadInputTokens)
+                .cacheWriteInputTokens(cacheWriteInputTokens)
                 .cacheCreationInputTokens(cacheCreationInputTokens)
                 .reasoningTokens(reasoningTokens);
 
@@ -89,6 +92,7 @@ final class AgentUsageAccumulator {
         return result.getInputTokens() != null || result.getOutputTokens() != null
                 || result.getTotalTokens() != null || result.getUncachedInputTokens() != null
                 || result.getCacheReadInputTokens() != null
+                || result.getCacheWriteInputTokens() != null
                 || result.getCacheCreationInputTokens() != null
                 || result.getReasoningTokens() != null;
     }
