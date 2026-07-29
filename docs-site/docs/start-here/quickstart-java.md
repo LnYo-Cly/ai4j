@@ -1,6 +1,6 @@
 # Quickstart for Java
 
-这页是普通 Java / Maven 项目的最短接入路径。如果你还没跑过任何代码，建议先看一遍 [5 分钟首聊](/docs/start-here/five-minute-first-chat)，再回到本页补普通 Java 细节。
+这页是普通 Java / Maven 项目的正式最短接入路径。它从依赖、密钥到第一条模型调用给出一个完整的最小闭环。
 
 本页对应的主模块是：
 
@@ -33,7 +33,7 @@
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.2</version>
 </dependency>
 ```
 
@@ -181,6 +181,6 @@ openAiConfig.setApiHost("https://codex.trovebox.online/");
 
 - 想接入 Spring Boot：看 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
 - 想接 TroveBox 或其他中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/start-here/openai-compatible-and-trovebox)
-- 想理解 `Chat` 细节：看 [First Chat](/docs/start-here/first-chat)
+- 想理解 `Chat` 细节：看 [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 - 想让模型调用本地函数：看 [First Tool Call](/docs/start-here/first-tool-call)
 - 想继续看完整能力：看 [Feature Map](/docs/start-here/feature-map)

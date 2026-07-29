@@ -175,7 +175,7 @@ launcher 会自动找到 `../lib/` 下的 fat jar，于是可以直接：
 Windows 下用 `ai4j.bat`。也可以不按布局放，直接用环境变量指 jar：
 
 ```bash
-export AI4J_JAR=/path/to/ai4j-cli-2.3.0-jar-with-dependencies.jar
+export AI4J_JAR=/path/to/ai4j-cli-2.4.2-jar-with-dependencies.jar
 ai4j --help
 ```
 
@@ -186,7 +186,7 @@ launcher 支持的可选覆盖：`AI4J_JAR`（显式指 jar）、`JAVA_HOME`（�
 不想用 launcher 时，直接跑 fat jar 也完全可行：
 
 ```powershell
-java -jar .\ai4j-cli-2.3.0-jar-with-dependencies.jar code --model gpt-5-mini
+java -jar .\ai4j-cli-2.4.2-jar-with-dependencies.jar code --model gpt-5-mini
 ```
 
 两种方式都是当前源码真实支持的；launcher 只是省掉每次敲长 jar 名，并在升级版本时不用改命令。

@@ -24,10 +24,10 @@ sidebar_position: 4
 
 | 能力 | 状态 | 模块 | 适合你在什么时候用 | 从这里开始 |
 | --- | --- | --- | --- | --- |
-| 5 分钟首聊 | `stable` | `ai4j` / `ai4j-spring-boot-starter` | 第一次接入，想用最短路径跑通一条模型请求 | [5 分钟首聊](/docs/start-here/five-minute-first-chat) |
+| Java 首次调用 | `stable` | `ai4j` | 第一次接入，想用最短路径跑通一条模型请求 | [Quickstart for Java](/docs/start-here/quickstart-java) |
 | 普通 Java 快速开始 | `stable` | `ai4j` | 想先验证依赖、配置和一次模型调用 | [Quickstart for Java](/docs/start-here/quickstart-java) |
 | Spring Boot 快速开始 | `stable` | `ai4j-spring-boot-starter` | 已有 Spring Boot 项目，希望用配置和 Bean 接入 | [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) |
-| 第一次对话 | `stable` | `ai4j` | 想先发出一条消息，理解最小调用路径 | [First Chat](/docs/start-here/first-chat) |
+| Chat 调用语义 | `stable` | `ai4j` | 已跑通首次调用，想理解消息模型和调用细节 | [Model Access / Chat](/docs/core-sdk/model-access/chat) |
 | 第一次工具调用 | `stable` | `ai4j` | 想让模型调用本地函数或工具 | [First Tool Call](/docs/start-here/first-tool-call) |
 | 路径选择 | `stable` | docs | 不确定该走 SDK、Spring、Agent 还是 FlowGram | [Choose Your Path](/docs/start-here/choose-your-path) |
 | 文档地图 | `stable` | docs | 想确认 canonical 主线和旧路径去向 | [Documentation Map](/docs/start-here/documentation-map) |
@@ -118,9 +118,9 @@ AgentFlow 或其他外部平台，应先按能力归类阅读：
 第一次接入建议走：
 
 1. [Why AI4J](/docs/start-here/why-ai4j)
-2. [5 分钟首聊](/docs/start-here/five-minute-first-chat)
+2. [Quickstart for Java](/docs/start-here/quickstart-java)
 3. [Quickstart for Java](/docs/start-here/quickstart-java) 或 [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot)
-4. [First Chat](/docs/start-here/first-chat)
+4. [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 5. [First Tool Call](/docs/start-here/first-tool-call)
 6. 按需进入 [Core SDK](/docs/core-sdk/overview)、[Spring Boot](/docs/spring-boot/overview)、[Agent](/docs/agent/overview) 或 [FlowGram](/docs/flowgram/overview)
 7. 上线前检查 [Production Checklist](/docs/operations/production-checklist) 和 [Security](/docs/security/overview)

@@ -1,6 +1,6 @@
 # Quickstart for Spring Boot
 
-这页给 Spring Boot 项目一条最短成功路径。如果你想先同时看普通 Java 和 Spring Boot 的总览版，先读 [5 分钟首聊](/docs/start-here/five-minute-first-chat)。
+这页给 Spring Boot 项目一条最短成功路径。普通 Java 项目请直接使用 [Quickstart for Java](/docs/start-here/quickstart-java)。
 
 本页对应的主模块是：
 
@@ -32,7 +32,7 @@
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-spring-boot-starter</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.2</version>
 </dependency>
 ```
 
@@ -208,7 +208,7 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 
 ## 13. 跑通之后
 
-- 想看底层 `Chat` 调用语义：看 [First Chat](/docs/start-here/first-chat)
+- 想看底层 `Chat` 调用语义：看 [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 - 想配置更多 provider：看 [Spring Boot / Configuration Reference](/docs/spring-boot/configuration-reference)
 - 想扩展 Bean 或复用业务服务：看 [Spring Boot / Bean Extension](/docs/spring-boot/bean-extension)
 - 想做 Tool / Function Call：看 [First Tool Call](/docs/start-here/first-tool-call)

@@ -80,6 +80,11 @@ const config: Config = {
       '@docusaurus/plugin-client-redirects',
       {
         redirects: [
+          // Consolidated getting-started pages; preserve existing public links.
+          {from: '/docs/start-here/five-minute-first-chat', to: '/docs/start-here/quickstart-java'},
+          {from: '/docs/start-here/first-chat', to: '/docs/core-sdk/model-access/chat'},
+          {from: '/docs/start-here/troubleshooting', to: '/docs/troubleshooting/overview'},
+
           // agent/ — placeholder pages with explicit migration targets
           {from: '/docs/agent/runtimes/codeact-custom-sandbox', to: '/docs/agent/codeact-custom-sandbox'},
           {from: '/docs/agent/runtimes/codeact-runtime', to: '/docs/agent/codeact-runtime'},
@@ -174,7 +179,7 @@ const config: Config = {
           {from: '/docs/getting-started/coding-agent-cli-quickstart', to: '/docs/coding-agent/quickstart'},
           {from: '/docs/getting-started/multimodal-and-function-call', to: '/docs/start-here/first-tool-call'},
           {from: '/docs/getting-started/platforms-and-service-matrix', to: '/docs/core-sdk/platform-service-matrix'},
-          {from: '/docs/getting-started/troubleshooting', to: '/docs/start-here/troubleshooting'},
+          {from: '/docs/getting-started/troubleshooting', to: '/docs/troubleshooting/overview'},
           {from: '/docs/getting-started/modules-and-maven-central', to: '/docs/core-sdk/architecture-and-module-map'},
           {from: '/docs/getting-started/spring-boot-autoconfiguration', to: '/docs/spring-boot/auto-configuration'},
           {from: '/docs/getting-started/version-compatibility', to: '/docs/reference/version-compatibility'},

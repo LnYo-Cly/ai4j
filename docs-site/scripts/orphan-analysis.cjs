@@ -41,3 +41,7 @@ console.log('ORPHANS (in docs/, not in sidebars):', orphans.length);
 orphans.forEach(function (o) { console.log('  ' + o); });
 console.log('MISSING (in sidebars, not in docs/):', missing.length);
 missing.forEach(function (m) { console.log('  ' + m); });
+
+if (orphans.length || missing.length) {
+    process.exitCode = 1;
+}
