@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.anthropic.chat;
 
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
@@ -29,6 +30,7 @@ public class AnthropicMessagesServiceTest {
         final List<String> toolUseComplete = new ArrayList<String>();
         String stopReason;
         long stopOut;
+        AnthropicUsage latestUsage;
         boolean completed;
         Throwable error;
 
@@ -62,6 +64,11 @@ public class AnthropicMessagesServiceTest {
         public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
             this.stopReason = stopReason;
             this.stopOut = outputTokens;
+        }
+
+        @Override
+        public void onUsage(AnthropicUsage usage) {
+            this.latestUsage = usage;
         }
 
         @Override
@@ -115,5 +122,20 @@ public class AnthropicMessagesServiceTest {
         configuration.setAnthropicConfig(new AnthropicConfig());
         Object svc = new AiService(configuration).getMessagesService(PlatformType.ANTHROPIC);
         Assert.assertTrue(svc instanceof AnthropicMessagesService);
+    }
+
+    @Test
+    public void shouldExposeAnthropicCacheUsageFromStreamEvents() {
+        AnthropicMessagesService service = newService();
+        Capture capture = new Capture();
+        EventSourceListener listener = service.toEventListener(capture, null, null);
+
+        feed(listener, "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"model\":\"claude-test\","
+                + "\"usage\":{\"input_tokens\":10,\"cache_read_input_tokens\":70,\"cache_creation_input_tokens\":30}}}");
+
+        Assert.assertNotNull(capture.latestUsage);
+        Assert.assertEquals(10L, capture.latestUsage.getInputTokens());
+        Assert.assertEquals(Long.valueOf(70L), capture.latestUsage.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), capture.latestUsage.getCacheCreationInputTokens());
     }
 }

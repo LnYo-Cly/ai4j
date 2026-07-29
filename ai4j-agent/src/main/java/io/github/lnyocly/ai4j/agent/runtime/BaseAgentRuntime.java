@@ -158,9 +158,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         List<AgentToolResult> toolResults = new ArrayList<>();
         int step = 0;
         AgentModelResult lastResult = null;
-        long totalInputTokens = 0L;
-        long totalOutputTokens = 0L;
-        boolean hasUsage = false;
+        AgentUsageAccumulator usage = new AgentUsageAccumulator();
         boolean stepLimited = maxSteps > 0;
 
         while (!stepLimited || step < maxSteps) {
@@ -182,15 +180,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throwIfInterrupted();
             lastResult = modelResult;
             if (modelResult != null) {
-                if (modelResult.getInputTokens() != null) {
-                    totalInputTokens += modelResult.getInputTokens();
-                    hasUsage = true;
-                }
-                if (modelResult.getOutputTokens() != null) {
-                    totalOutputTokens += modelResult.getOutputTokens();
-                    hasUsage = true;
-                }
-                if (maxTokenBudget > 0 && hasUsage && (totalInputTokens + totalOutputTokens) >= maxTokenBudget) {
+                usage.add(modelResult);
+                if (usage.exceeds(maxTokenBudget)) {
                     throw new TimeoutException("Agent run exceeded token budget of " + maxTokenBudget + " tokens");
                 }
             }
@@ -205,7 +196,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, outputText, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
-                return AgentResult.builder()
+                AgentResult.AgentResultBuilder result = AgentResult.builder()
                         .runId(runId)
                         .sessionId(sessionId)
                         .turnId(turnId)
@@ -213,10 +204,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
-                        .steps(step + 1)
-                        .inputTokens(hasUsage ? totalInputTokens : null)
-                        .outputTokens(hasUsage ? totalOutputTokens : null)
-                        .build();
+                        .steps(step + 1);
+                return usage.applyTo(result, context).build();
             }
 
             List<AgentToolCall> validatedCalls = new ArrayList<AgentToolCall>();
@@ -259,7 +248,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         }
 
         String outputText = lastResult == null ? "" : lastResult.getOutputText();
-        return AgentResult.builder()
+        AgentResult.AgentResultBuilder result = AgentResult.builder()
                 .runId(runId)
                 .sessionId(sessionId)
                 .turnId(turnId)
@@ -267,10 +256,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .rawResponse(lastResult == null ? null : lastResult.getRawResponse())
                 .toolCalls(toolCalls)
                 .toolResults(toolResults)
-                .steps(step)
-                .inputTokens(hasUsage ? totalInputTokens : null)
-                .outputTokens(hasUsage ? totalOutputTokens : null)
-                .build();
+                .steps(step);
+        return usage.applyTo(result, context).build();
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.usage;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,4 +25,29 @@ public class Usage implements Serializable {
     private long completionTokens = 0L;
     @JsonProperty("total_tokens")
     private long totalTokens = 0L;
+
+    @JsonProperty("prompt_tokens_details")
+    private UsageDetails promptTokensDetails;
+
+    @JsonProperty("completion_tokens_details")
+    private UsageDetails completionTokensDetails;
+
+    /**
+     * Compatibility constructor retained for callers that only provide the original totals.
+     */
+    public Usage(long promptTokens, long completionTokens, long totalTokens) {
+        this.promptTokens = promptTokens;
+        this.completionTokens = completionTokens;
+        this.totalTokens = totalTokens;
+    }
+
+    @JsonIgnore
+    public Long getCachedTokens() {
+        return promptTokensDetails == null ? null : promptTokensDetails.getCachedTokens();
+    }
+
+    @JsonIgnore
+    public Long getReasoningTokens() {
+        return completionTokensDetails == null ? null : completionTokensDetails.getReasoningTokens();
+    }
 }

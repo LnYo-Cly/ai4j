@@ -10,6 +10,7 @@ import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatComple
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.errors.AnthropicApiException;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -191,6 +192,7 @@ public class AnthropicMessagesService implements IMessagesService {
                 if ("message_start".equals(eventType)) {
                     JsonNode message = node.path("message");
                     safeStart(handler, message.path("id").asText(null), message.path("model").asText(null));
+                    safeUsage(handler, parseUsage(message.path("usage")));
                 } else if ("content_block_start".equals(eventType)) {
                     int idx = node.path("index").asInt();
                     JsonNode block = node.path("content_block");
@@ -227,8 +229,10 @@ public class AnthropicMessagesService implements IMessagesService {
                     }
                 } else if ("message_delta".equals(eventType)) {
                     String stopReason = node.path("delta").path("stop_reason").asText(null);
-                    long out = node.path("usage").path("output_tokens").asLong(0L);
-                    long in = node.path("usage").path("input_tokens").asLong(0L);
+                    AnthropicUsage usage = parseUsage(node.path("usage"));
+                    safeUsage(handler, usage);
+                    long out = usage == null ? 0L : usage.getOutputTokens();
+                    long in = usage == null ? 0L : usage.getInputTokens();
                     handler.onStopReason(stopReason, in, out);
                 } else if ("message_stop".equals(eventType)) {
                     handler.onComplete();
@@ -295,6 +299,22 @@ public class AnthropicMessagesService implements IMessagesService {
         return (apiKey == null || apiKey.isEmpty()) ? anthropicConfig.getApiKey() : apiKey;
     }
 
+    private AnthropicUsage parseUsage(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        AnthropicUsage usage = new AnthropicUsage();
+        usage.setInputTokens(node.path("input_tokens").asLong(0L));
+        usage.setOutputTokens(node.path("output_tokens").asLong(0L));
+        if (node.hasNonNull("cache_read_input_tokens")) {
+            usage.setCacheReadInputTokens(Long.valueOf(node.path("cache_read_input_tokens").asLong()));
+        }
+        if (node.hasNonNull("cache_creation_input_tokens")) {
+            usage.setCacheCreationInputTokens(Long.valueOf(node.path("cache_creation_input_tokens").asLong()));
+        }
+        return usage;
+    }
+
     private static String writeJson(Object value) {
         if (value == null) {
             return null;
@@ -312,6 +332,17 @@ public class AnthropicMessagesService implements IMessagesService {
     private static void safeStart(AnthropicStreamHandler handler, String messageId, String model) {
         try {
             handler.onStart(messageId, model);
+        } catch (Throwable t) {
+            safeError(handler, t);
+        }
+    }
+
+    private static void safeUsage(AnthropicStreamHandler handler, AnthropicUsage usage) {
+        if (usage == null) {
+            return;
+        }
+        try {
+            handler.onUsage(usage);
         } catch (Throwable t) {
             safeError(handler, t);
         }

@@ -25,4 +25,14 @@ public class AnthropicTool {
 
     @JsonProperty("input_schema")
     private Object inputSchema;
+
+    @JsonProperty("cache_control")
+    private Object cacheControl;
+
+    /** Compatibility constructor retained for the original tool definition. */
+    public AnthropicTool(String name, String description, Object inputSchema) {
+        this.name = name;
+        this.description = description;
+        this.inputSchema = inputSchema;
+    }
 }

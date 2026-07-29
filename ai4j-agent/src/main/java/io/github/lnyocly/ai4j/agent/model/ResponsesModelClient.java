@@ -138,8 +138,9 @@ public class ResponsesModelClient implements AgentModelClient {
         builder.stream(stream);
         builder.streamExecution(prompt.getStreamExecution());
 
-        if (prompt.getSystemPrompt() != null && !prompt.getSystemPrompt().trim().isEmpty()) {
-            builder.instructions(prompt.getSystemPrompt());
+        String instructions = mergeText(prompt.getSystemPrompt(), prompt.getInstructions());
+        if (instructions != null) {
+            builder.instructions(instructions);
         }
 
         Map<String, Object> extraBody = prompt.getExtraBody();
@@ -155,12 +156,13 @@ public class ResponsesModelClient implements AgentModelClient {
         if (response != null && response.getOutput() != null) {
             memoryItems.addAll(response.getOutput());
         }
-        return AgentModelResult.builder()
+        AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
                 .outputText(ResponseUtil.extractOutputText(response))
                 .toolCalls(calls)
                 .memoryItems(memoryItems)
-                .rawResponse(response)
-                .build();
+                .rawResponse(response);
+        ModelUsage usage = response == null ? null : ModelUsage.fromResponses(response.getUsage());
+        return usage == null ? builder.build() : usage.applyTo(builder).build();
     }
 
     private List<Object> buildItems(AgentPrompt prompt) {
@@ -168,9 +170,15 @@ public class ResponsesModelClient implements AgentModelClient {
         if (prompt.getItems() != null) {
             items.addAll(prompt.getItems());
         }
-        if (prompt.getInstructions() != null && !prompt.getInstructions().trim().isEmpty()) {
-            items.add(0, io.github.lnyocly.ai4j.agent.util.AgentInputItem.systemMessage(prompt.getInstructions()));
-        }
         return items;
+    }
+
+    private static String mergeText(String first, String second) {
+        boolean hasFirst = first != null && !first.trim().isEmpty();
+        boolean hasSecond = second != null && !second.trim().isEmpty();
+        if (hasFirst && hasSecond) {
+            return first + "\n\n" + second;
+        }
+        return hasFirst ? first : (hasSecond ? second : null);
     }
 }

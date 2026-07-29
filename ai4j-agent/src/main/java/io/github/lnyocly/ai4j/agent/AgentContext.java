@@ -17,6 +17,7 @@ import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
+import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import lombok.Builder;
 import lombok.Data;
 
@@ -85,4 +86,6 @@ public class AgentContext {
     private String user;
 
     private Map<String, Object> extraBody;
+
+    private TracePricingResolver pricingResolver;
 }

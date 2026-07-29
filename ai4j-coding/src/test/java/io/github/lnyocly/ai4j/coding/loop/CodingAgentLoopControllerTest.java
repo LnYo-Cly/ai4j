@@ -1,10 +1,13 @@
 package io.github.lnyocly.ai4j.coding.loop;
 
+import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.trace.TracePricing;
+import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -33,6 +36,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -78,6 +82,86 @@ public class CodingAgentLoopControllerTest {
         assertEquals("run", result.getRunId());
         assertNull(result.getInputTokens());
         assertNull(result.getOutputTokens());
+    }
+
+    @Test
+    public void shouldCopyCacheUsageAndCostsFromAgentResult() {
+        AgentResult source = AgentResult.builder()
+                .inputTokens(Long.valueOf(100L))
+                .outputTokens(Long.valueOf(20L))
+                .totalTokens(Long.valueOf(120L))
+                .uncachedInputTokens(Long.valueOf(40L))
+                .cacheReadInputTokens(Long.valueOf(60L))
+                .cacheCreationInputTokens(Long.valueOf(10L))
+                .reasoningTokens(Long.valueOf(7L))
+                .inputCost(Double.valueOf(0.4D))
+                .cacheReadInputCost(Double.valueOf(0.1D))
+                .cacheCreationInputCost(Double.valueOf(0.2D))
+                .outputCost(Double.valueOf(0.8D))
+                .totalCost(Double.valueOf(1.5D))
+                .currency("USD")
+                .build();
+
+        CodingAgentResult result = CodingAgentResult.from("session", source);
+
+        assertEquals(Long.valueOf(120L), result.getTotalTokens());
+        assertEquals(Long.valueOf(60L), result.getCacheReadInputTokens());
+        assertEquals(Long.valueOf(10L), result.getCacheCreationInputTokens());
+        assertEquals(Long.valueOf(7L), result.getReasoningTokens());
+        assertEquals(Double.valueOf(1.5D), result.getTotalCost());
+        assertEquals("USD", result.getCurrency());
+    }
+
+    @Test
+    public void shouldClearCostsWhenAutoContinuedTurnsUseDifferentCurrencies() throws Exception {
+        InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
+        modelClient.enqueue(toolCallResult(STUB_TOOL, "call-1", Long.valueOf(1000000L), Long.valueOf(0L)));
+        modelClient.enqueue(assistantResult("Continuing with remaining work.", Long.valueOf(1000000L), Long.valueOf(1000000L)));
+        modelClient.enqueue(assistantResult("Completed the requested change.", Long.valueOf(1000000L), Long.valueOf(1000000L)));
+        AtomicInteger pricingCalls = new AtomicInteger();
+        TracePricingResolver pricingResolver = model -> TracePricing.builder()
+                .inputCostPerMillionTokens(Double.valueOf(2D))
+                .outputCostPerMillionTokens(Double.valueOf(4D))
+                .currency(pricingCalls.incrementAndGet() == 1 ? "USD" : "CNY")
+                .build();
+
+        try (CodingSession session = newAgent(modelClient, okToolExecutor(), defaultOptions(), pricingResolver).newSession()) {
+            CodingAgentResult result = session.run("Complete the requested change.");
+
+            assertEquals(2, result.getTurns());
+            assertEquals(Long.valueOf(3000000L), result.getInputTokens());
+            assertEquals(Long.valueOf(2000000L), result.getOutputTokens());
+            assertNull(result.getInputCost());
+            assertNull(result.getOutputCost());
+            assertNull(result.getTotalCost());
+            assertNull(result.getCurrency());
+        }
+    }
+
+    @Test
+    public void shouldClearCostsWhenAutoContinuedTurnsIncludeAnUnlabeledCurrency() throws Exception {
+        InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
+        modelClient.enqueue(toolCallResult(STUB_TOOL, "call-1", Long.valueOf(1000000L), Long.valueOf(0L)));
+        modelClient.enqueue(assistantResult("Continuing with remaining work.", Long.valueOf(1000000L), Long.valueOf(1000000L)));
+        modelClient.enqueue(assistantResult("Completed the requested change.", Long.valueOf(1000000L), Long.valueOf(1000000L)));
+        AtomicInteger pricingCalls = new AtomicInteger();
+        TracePricingResolver pricingResolver = model -> TracePricing.builder()
+                .inputCostPerMillionTokens(Double.valueOf(2D))
+                .outputCostPerMillionTokens(Double.valueOf(4D))
+                .currency(pricingCalls.incrementAndGet() == 1 ? "USD" : null)
+                .build();
+
+        try (CodingSession session = newAgent(modelClient, okToolExecutor(), defaultOptions(), pricingResolver).newSession()) {
+            CodingAgentResult result = session.run("Complete the requested change.");
+
+            assertEquals(2, result.getTurns());
+            assertEquals(Long.valueOf(3000000L), result.getInputTokens());
+            assertEquals(Long.valueOf(2000000L), result.getOutputTokens());
+            assertNull(result.getInputCost());
+            assertNull(result.getOutputCost());
+            assertNull(result.getTotalCost());
+            assertNull(result.getCurrency());
+        }
     }
 
     @Test
@@ -235,19 +319,29 @@ public class CodingAgentLoopControllerTest {
     private CodingAgent newAgent(InspectableQueueModelClient modelClient,
                                  ToolExecutor toolExecutor,
                                  CodingAgentOptions options) throws Exception {
+        return newAgent(modelClient, toolExecutor, options, null);
+    }
+
+    private CodingAgent newAgent(InspectableQueueModelClient modelClient,
+                                 ToolExecutor toolExecutor,
+                                 CodingAgentOptions options,
+                                 TracePricingResolver pricingResolver) throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("loop-controller-workspace").toPath();
         WorkspaceContext workspaceContext = WorkspaceContext.builder()
                 .rootPath(workspaceRoot.toString())
                 .description("JUnit loop controller workspace")
                 .build();
-        return CodingAgents.builder()
+        io.github.lnyocly.ai4j.coding.CodingAgentBuilder builder = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
                 .workspaceContext(workspaceContext)
                 .codingOptions(options)
                 .toolRegistry(singleToolRegistry(STUB_TOOL))
-                .toolExecutor(toolExecutor)
-                .build();
+                .toolExecutor(toolExecutor);
+        if (pricingResolver != null) {
+            builder.pricingResolver(pricingResolver);
+        }
+        return builder.build();
     }
 
     private CodingAgentOptions defaultOptions() {

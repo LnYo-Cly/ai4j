@@ -55,6 +55,18 @@ public class CodingAgentLoopController {
         int totalSteps = 0;
         Long totalInputTokens = null;
         Long totalOutputTokens = null;
+        Long totalTokens = null;
+        Long totalUncachedInputTokens = null;
+        Long totalCacheReadInputTokens = null;
+        Long totalCacheCreationInputTokens = null;
+        Long totalReasoningTokens = null;
+        CostBucket inputCost = new CostBucket();
+        CostBucket cacheReadInputCost = new CostBucket();
+        CostBucket cacheCreationInputCost = new CostBucket();
+        CostBucket outputCost = new CostBucket();
+        CostBucket totalCost = new CostBucket();
+        String currency = null;
+        boolean currencyMismatch = false;
         int turns = 0;
         int autoFollowUps = 0;
         String continuationPrompt = null;
@@ -66,7 +78,10 @@ public class CodingAgentLoopController {
                         "Stopped after reaching the total turn limit.");
                 session.recordLoopDecision(forcedStop);
                 return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
-                        totalInputTokens, totalOutputTokens, turns, autoFollowUps, forcedStop);
+                        totalInputTokens, totalOutputTokens, totalTokens, totalUncachedInputTokens,
+                        totalCacheReadInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
+                        inputCost, cacheReadInputCost, cacheCreationInputCost, outputCost, totalCost,
+                        currencyMismatch ? null : currency, !currencyMismatch, turns, autoFollowUps, forcedStop);
             }
 
             AgentListener effectiveListener = listener == null ? null : new StepOffsetAgentListener(listener, totalSteps);
@@ -77,6 +92,33 @@ public class CodingAgentLoopController {
             totalSteps += turnResult == null ? 0 : turnResult.getSteps();
             totalInputTokens = sumTokens(totalInputTokens, turnResult == null ? null : turnResult.getInputTokens());
             totalOutputTokens = sumTokens(totalOutputTokens, turnResult == null ? null : turnResult.getOutputTokens());
+            totalTokens = sumTokens(totalTokens, turnResult == null ? null : turnResult.getTotalTokens());
+            totalUncachedInputTokens = sumTokens(totalUncachedInputTokens,
+                    turnResult == null ? null : turnResult.getUncachedInputTokens());
+            totalCacheReadInputTokens = sumTokens(totalCacheReadInputTokens,
+                    turnResult == null ? null : turnResult.getCacheReadInputTokens());
+            totalCacheCreationInputTokens = sumTokens(totalCacheCreationInputTokens,
+                    turnResult == null ? null : turnResult.getCacheCreationInputTokens());
+            totalReasoningTokens = sumTokens(totalReasoningTokens,
+                    turnResult == null ? null : turnResult.getReasoningTokens());
+            addCost(inputCost, effectiveInputTokens(turnResult), turnResult == null ? null : turnResult.getInputCost());
+            addCost(cacheReadInputCost, turnResult == null ? null : turnResult.getCacheReadInputTokens(),
+                    turnResult == null ? null : turnResult.getCacheReadInputCost());
+            addCost(cacheCreationInputCost, turnResult == null ? null : turnResult.getCacheCreationInputTokens(),
+                    turnResult == null ? null : turnResult.getCacheCreationInputCost());
+            addCost(outputCost, turnResult == null ? null : turnResult.getOutputTokens(),
+                    turnResult == null ? null : turnResult.getOutputCost());
+            addCost(totalCost, hasUsage(turnResult), turnResult == null ? null : turnResult.getTotalCost());
+            if (hasKnownCost(turnResult)) {
+                String turnCurrency = turnResult.getCurrency();
+                if (isBlank(turnCurrency)) {
+                    currencyMismatch = true;
+                } else if (currency == null) {
+                    currency = turnCurrency;
+                } else if (!currency.equals(turnCurrency)) {
+                    currencyMismatch = true;
+                }
+            }
             if (turnResult != null && turnResult.getToolCalls() != null) {
                 aggregatedCalls.addAll(turnResult.getToolCalls());
             }
@@ -97,7 +139,10 @@ public class CodingAgentLoopController {
 
             if (!decision.isContinueLoop()) {
                 return aggregate(session, lastResult, aggregatedCalls, aggregatedResults, totalSteps,
-                        totalInputTokens, totalOutputTokens, turns, autoFollowUps, decision);
+                        totalInputTokens, totalOutputTokens, totalTokens, totalUncachedInputTokens,
+                        totalCacheReadInputTokens, totalCacheCreationInputTokens, totalReasoningTokens,
+                        inputCost, cacheReadInputCost, cacheCreationInputCost, outputCost, totalCost,
+                        currencyMismatch ? null : currency, !currencyMismatch, turns, autoFollowUps, decision);
             }
 
             autoFollowUps += 1;
@@ -241,6 +286,54 @@ public class CodingAgentLoopController {
         return value == null ? total : total + value;
     }
 
+    private Long effectiveInputTokens(CodingAgentResult result) {
+        if (result == null) {
+            return null;
+        }
+        return result.getUncachedInputTokens() == null
+                ? result.getInputTokens() : result.getUncachedInputTokens();
+    }
+
+    private boolean hasUsage(CodingAgentResult result) {
+        return result != null && (result.getInputTokens() != null || result.getOutputTokens() != null
+                || result.getTotalTokens() != null || result.getUncachedInputTokens() != null
+                || result.getCacheReadInputTokens() != null || result.getCacheCreationInputTokens() != null);
+    }
+
+    private boolean hasKnownCost(CodingAgentResult result) {
+        return result != null && (result.getInputCost() != null || result.getCacheReadInputCost() != null
+                || result.getCacheCreationInputCost() != null || result.getOutputCost() != null
+                || result.getTotalCost() != null);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private void addCost(CostBucket bucket, Long tokens, Double cost) {
+        if (tokens == null) {
+            return;
+        }
+        if (cost == null) {
+            bucket.unknown = bucket.unknown || tokens.longValue() > 0L;
+            return;
+        }
+        bucket.value += cost.doubleValue();
+        bucket.present = true;
+    }
+
+    private void addCost(CostBucket bucket, boolean present, Double cost) {
+        if (!present) {
+            return;
+        }
+        if (cost == null) {
+            bucket.unknown = true;
+            return;
+        }
+        bucket.value += cost.doubleValue();
+        bucket.present = true;
+    }
+
     private CodingAgentResult aggregate(CodingSession session,
                                         CodingAgentResult lastResult,
                                         List<io.github.lnyocly.ai4j.agent.tool.AgentToolCall> aggregatedCalls,
@@ -248,6 +341,18 @@ public class CodingAgentLoopController {
                                         int totalSteps,
                                         Long totalInputTokens,
                                         Long totalOutputTokens,
+                                        Long totalTokens,
+                                        Long totalUncachedInputTokens,
+                                        Long totalCacheReadInputTokens,
+                                        Long totalCacheCreationInputTokens,
+                                        Long totalReasoningTokens,
+                                        CostBucket inputCost,
+                                        CostBucket cacheReadInputCost,
+                                        CostBucket cacheCreationInputCost,
+                                        CostBucket outputCost,
+                                        CostBucket totalCost,
+                                        String currency,
+                                        boolean costsComparable,
                                         int turns,
                                         int autoFollowUps,
                                         CodingLoopDecision decision) {
@@ -262,6 +367,17 @@ public class CodingAgentLoopController {
                 .steps(totalSteps)
                 .inputTokens(totalInputTokens)
                 .outputTokens(totalOutputTokens)
+                .totalTokens(totalTokens)
+                .uncachedInputTokens(totalUncachedInputTokens)
+                .cacheReadInputTokens(totalCacheReadInputTokens)
+                .cacheCreationInputTokens(totalCacheCreationInputTokens)
+                .reasoningTokens(totalReasoningTokens)
+                .inputCost(costsComparable ? inputCost.valueOrNull() : null)
+                .cacheReadInputCost(costsComparable ? cacheReadInputCost.valueOrNull() : null)
+                .cacheCreationInputCost(costsComparable ? cacheCreationInputCost.valueOrNull() : null)
+                .outputCost(costsComparable ? outputCost.valueOrNull() : null)
+                .totalCost(costsComparable ? totalCost.valueOrNull() : null)
+                .currency(currency)
                 .turns(turns)
                 .stopReason(decision == null ? null : decision.getStopReason())
                 .autoContinued(autoFollowUps > 0)
@@ -355,6 +471,16 @@ public class CodingAgentLoopController {
                     .message(event.getMessage())
                     .payload(event.getPayload())
                     .build());
+        }
+    }
+
+    private static final class CostBucket {
+        private double value;
+        private boolean present;
+        private boolean unknown;
+
+        private Double valueOrNull() {
+            return unknown || !present ? null : Double.valueOf(value);
         }
     }
 }

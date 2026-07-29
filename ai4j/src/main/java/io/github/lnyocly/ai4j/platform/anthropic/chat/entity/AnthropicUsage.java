@@ -22,4 +22,18 @@ public class AnthropicUsage {
 
     @JsonProperty("output_tokens")
     private long outputTokens;
+
+    @JsonProperty("cache_read_input_tokens")
+    private Long cacheReadInputTokens;
+
+    @JsonProperty("cache_creation_input_tokens")
+    private Long cacheCreationInputTokens;
+
+    /**
+     * Compatibility constructor retained for callers using the original two buckets.
+     */
+    public AnthropicUsage(long inputTokens, long outputTokens) {
+        this.inputTokens = inputTokens;
+        this.outputTokens = outputTokens;
+    }
 }

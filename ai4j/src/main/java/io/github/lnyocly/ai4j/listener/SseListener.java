@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.chat.enums.ChatMessageType;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.platform.openai.usage.UsageDetails;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,9 @@ public abstract class SseListener extends AbstractManagedStreamListener {
     @Getter
     private final Usage usage = new Usage();
 
+    @Getter
+    private boolean usagePresent;
+
     @Setter
     @Getter
     private List<ToolCall> toolCalls = new ArrayList<>();
@@ -133,9 +137,12 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         // 统计token，当设置include_usage = true时，最后一条消息会携带usage, 其他消息中usage为null
         Usage currUsage = chatCompletionResponse.getUsage();
         if(currUsage != null){
+            usagePresent = true;
             usage.setPromptTokens(usage.getPromptTokens() + currUsage.getPromptTokens());
             usage.setCompletionTokens(usage.getCompletionTokens() + currUsage.getCompletionTokens());
             usage.setTotalTokens(usage.getTotalTokens() + currUsage.getTotalTokens());
+            mergeUsageDetails(currUsage.getPromptTokensDetails(), true);
+            mergeUsageDetails(currUsage.getCompletionTokensDetails(), false);
         }
 
 
@@ -273,6 +280,33 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return null;
         }
         return calls.get(0);
+    }
+
+    private void mergeUsageDetails(UsageDetails source, boolean promptDetails) {
+        if (source == null) {
+            return;
+        }
+        UsageDetails target = promptDetails ? usage.getPromptTokensDetails() : usage.getCompletionTokensDetails();
+        if (target == null) {
+            target = new UsageDetails();
+            if (promptDetails) {
+                usage.setPromptTokensDetails(target);
+            } else {
+                usage.setCompletionTokensDetails(target);
+            }
+        }
+        target.setCachedTokens(sumDetailTokens(target.getCachedTokens(), source.getCachedTokens()));
+        target.setReasoningTokens(sumDetailTokens(target.getReasoningTokens(), source.getReasoningTokens()));
+        target.setAudioTokens(sumDetailTokens(target.getAudioTokens(), source.getAudioTokens()));
+        target.setAcceptedPredictionTokens(sumDetailTokens(target.getAcceptedPredictionTokens(), source.getAcceptedPredictionTokens()));
+        target.setRejectedPredictionTokens(sumDetailTokens(target.getRejectedPredictionTokens(), source.getRejectedPredictionTokens()));
+    }
+
+    private Long sumDetailTokens(Long current, Long next) {
+        if (next == null) {
+            return current;
+        }
+        return current == null ? next : current + next;
     }
 
     private String safeToolArguments(ToolCall call) {
