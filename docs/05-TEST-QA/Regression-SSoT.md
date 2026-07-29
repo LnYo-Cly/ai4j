@@ -30,6 +30,10 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 | RG-008 | 🟢 | docs-site build | `npm run typecheck`, then `npm run build` in `docs-site/` | touched-surface, docs PR/push, merge-batch | L2 local_smoke | 2026-07-28 A2A lifecycle and external-SDK docs pass | `npm --prefix docs-site run typecheck` and `npm --prefix docs-site run build` passed; the A2A page documents task lifecycle, SSE, push SSRF policy, standard API-key/Bearer metadata, external SDK validation, and explicit in-memory/third-party coverage limits. |
 | RG-009 | 🟢 | FlowGram webapp demo build and test | `npm run test`, `npm run lint`, `npm run ts-check`, then `npm run build` in `ai4j-flowgram-webapp-demo/` | touched-surface, PR, merge-batch | L2 local_smoke | 2026-06-10 local and remote pass | `npm test` now runs deterministic backend workflow normalization tests before lint/type/build; local `npm run test`, `npm run lint`, `npm run ts-check`, and `npm run build` passed. GitHub Actions `flowgram-webapp-regression` run `27253773916` passed on `main@b0993f56` with `detect-webapp-changes`, `webapp-checks` steps `Test` / `Lint` / `Typecheck` / `Build`, and aggregate `flowgram-webapp-regression` all successful |
 
+### P2-B Nested Skill Discovery
+
+`RG-001`, `RG-003`, `RG-007`, and `RG-008` also cover recursive deterministic discovery of nested `SKILL.md` / `skill.md` directories, no-follow symlink behavior, host-visible `disable-model-invocation`, and exclusion of manual-only Skills from the automatic catalog. Focused evidence is `SkillsIChatServiceTest` (core) and `CodingSkillSupportTest` (coding); this does not grant Skills additional Tool, MCP, or permission scope.
+
 ## Live And Credential Opt-in Gates
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |

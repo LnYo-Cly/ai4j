@@ -15,4 +15,9 @@ public class CodingSkillDescriptor {
     private String description;
     private String skillFilePath;
     private String source;
+    private boolean disableModelInvocation;
+
+    public CodingSkillDescriptor(String name, String description, String skillFilePath, String source) {
+        this(name, description, skillFilePath, source, false);
+    }
 }

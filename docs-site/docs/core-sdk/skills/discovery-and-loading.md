@@ -58,25 +58,24 @@
    - `SKILL.md`
    - `skill.md`
 2. 如果有，就把这个目录识别为一个 skill
-3. 如果没有，再扫描它的直接子目录
-4. 每个子目录只要含有 `SKILL.md` 或 `skill.md`，就被当成一个 skill
+3. 如果没有，再递归扫描其子目录
+4. 任意子目录只要含有 `SKILL.md` 或 `skill.md`，就被当成一个 skill，并停止继续扫描该 skill 目录的内部
 
 这意味着当前支持两种组织方式：
 
 - 单 skill root
 - skill 集合 root
 
-## 4. 一个很重要的限制：当前只扫一层子目录
+## 4. 支持嵌套目录，skill 目录本身是叶子
 
-从 `discoverFromRoot(...)` 的实现看，当前不会无限递归扫描。
-
-也就是说：
+`discoverFromRoot(...)` 会递归扫描 skill root，因此可以按团队、领域或业务线组织目录。
 
 - root 本身可以是一个 skill
-- 或者 root 的直接子目录可以各自是 skill
-- 但更深的孙子目录不会自动继续向下发现
+- root 下任意深度的目录都可以成为一个 skill
+- 一旦某个目录含有 `SKILL.md` 或 `skill.md`，该目录会作为一个完整 skill，内部不再继续发现子 skill
+- 符号链接 root、目录和 `SKILL.md` 文件会跳过，避免 discovery 扩展到未声明的读取边界
 
-如果你想要更深层级的技能树，当前做法不是依赖递归，而是把更深目录显式作为新的 skill root 挂进来。
+发现结果按规范化路径稳定排序；同名 skill 仍按 root 优先级先到先得。
 
 ## 5. 一个 skill 的名字和描述是怎么来的
 
@@ -109,6 +108,7 @@ AI4J 仍然能构造出可用的技能目录。
 - `description`
 - `skillFilePath`
 - `source`
+- `disableModelInvocation`
 
 其中 `source` 由 `resolveSource(...)` 判断：
 
@@ -136,6 +136,8 @@ AI4J 仍然能构造出可用的技能目录。
 - skill 名称在当前体系里本质上是全局 key
 
 因此不要随意让 workspace 和 global skills 出现同名但不同语义的条目。
+
+`disable-model-invocation: true` 会保留在 discovery 结果中，供宿主显式选择，但不会进入模型自动选择的 `<available_skills>` 目录。它不改变 Tool 或 MCP 的权限。
 
 ## 8. 为什么 AI4J 不会直接读取全部 `SKILL.md`
 
@@ -217,9 +219,9 @@ AI4J 仍然能构造出可用的技能目录。
 - 依赖
 - capability graph
 
-### 没有递归深层扫描
+### 没有复杂的运行时激活模型
 
-只认 root 或 root 的直接子目录。
+Core SDK 提供发现和模型目录投影；UI、租户授权、slash command、业务 Tool 绑定和运行时激活仍由宿主应用决定。
 
 ### 没有正文级缓存层
 
@@ -245,6 +247,7 @@ AI4J 仍然能构造出可用的技能目录。
 
 - `name`
 - `description`
+- `disable-model-invocation: true`（仅允许宿主显式选择，不向模型自动公布）
 
 因为目录发现阶段最先依赖的就是这两项。
 

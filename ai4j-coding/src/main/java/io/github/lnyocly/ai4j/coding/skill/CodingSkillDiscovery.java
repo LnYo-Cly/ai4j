@@ -49,6 +49,7 @@ public final class CodingSkillDiscovery {
                     .description(skill.getDescription())
                     .skillFilePath(skill.getSkillFilePath())
                     .source(skill.getSource())
+                    .disableModelInvocation(skill.isDisableModelInvocation())
                     .build());
         }
         return descriptors;

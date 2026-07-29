@@ -54,6 +54,101 @@ public class SkillsIChatServiceTest {
     }
 
     @Test
+    public void shouldDiscoverNestedSkillsInStablePathOrder() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-nested-discovery").toPath();
+        Path skillsRoot = workspaceRoot.resolve(".ai4j").resolve("skills");
+        writeSkill(
+                skillsRoot.resolve("review").resolve("api").resolve("SKILL.md"),
+                "---\nname: api-review\ndescription: Review API changes.\n---\n"
+        );
+        writeSkill(
+                skillsRoot.resolve("review").resolve("java").resolve("skill.md"),
+                "---\nname: java-review\ndescription: Review Java changes.\n---\n"
+        );
+        writeSkill(
+                skillsRoot.resolve("planning").resolve("SKILL.md"),
+                "---\nname: planning\ndescription: Plan the work.\n---\n"
+        );
+
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("skills-nested-home").getAbsolutePath());
+        try {
+            Skills.DiscoveryResult first = Skills.discoverDefault(workspaceRoot);
+            Skills.DiscoveryResult second = Skills.discoverDefault(workspaceRoot);
+
+            Assert.assertEquals(3, first.getSkills().size());
+            Assert.assertEquals("planning", first.getSkills().get(0).getName());
+            Assert.assertEquals("api-review", first.getSkills().get(1).getName());
+            Assert.assertEquals("java-review", first.getSkills().get(2).getName());
+            Assert.assertEquals(first.getSkills(), second.getSkills());
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
+    public void shouldTreatDirectoryContainingSkillFileAsLeaf() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-leaf-discovery").toPath();
+        Path skillsRoot = workspaceRoot.resolve(".ai4j").resolve("skills");
+        Path parentSkill = writeSkill(
+                skillsRoot.resolve("review").resolve("SKILL.md"),
+                "---\nname: review\ndescription: Review all changes.\n---\n"
+        );
+        writeSkill(
+                skillsRoot.resolve("review").resolve("nested").resolve("SKILL.md"),
+                "---\nname: nested-review\ndescription: This must not be independently discovered.\n---\n"
+        );
+
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("skills-leaf-home").getAbsolutePath());
+        try {
+            Skills.DiscoveryResult discovery = Skills.discoverDefault(workspaceRoot);
+
+            Assert.assertEquals(1, discovery.getSkills().size());
+            Assert.assertEquals("review", discovery.getSkills().get(0).getName());
+            Assert.assertEquals(parentSkill.toAbsolutePath().normalize().toString(), discovery.getSkills().get(0).getSkillFilePath());
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
+    public void shouldKeepManualOnlySkillsForHostsAndHideThemFromModelPrompt() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-manual-only").toPath();
+        Path skillsRoot = workspaceRoot.resolve(".ai4j").resolve("skills");
+        Path automaticSkill = writeSkill(
+                skillsRoot.resolve("automatic").resolve("SKILL.md"),
+                "---\nname: automatic\ndescription: Available to the model.\n---\n"
+        );
+        Path manualSkill = writeSkill(
+                skillsRoot.resolve("manual").resolve("SKILL.md"),
+                "---\nname: manual\ndescription: Host-selected only.\ndisable-model-invocation: true\n---\n"
+        );
+
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("skills-manual-only-home").getAbsolutePath());
+        try {
+            Skills.DiscoveryResult discovery = Skills.discoverDefault(workspaceRoot);
+            Assert.assertEquals(2, discovery.getSkills().size());
+            SkillDescriptor manualOnly = null;
+            for (SkillDescriptor skill : discovery.getSkills()) {
+                if ("manual".equals(skill.getName())) {
+                    manualOnly = skill;
+                }
+            }
+            Assert.assertNotNull(manualOnly);
+            Assert.assertTrue(manualOnly.isDisableModelInvocation());
+
+            String prompt = Skills.buildAvailableSkillsPrompt(discovery.getSkills());
+            Assert.assertTrue(prompt.contains(automaticSkill.toAbsolutePath().normalize().toString()));
+            Assert.assertFalse(prompt.contains(manualSkill.toAbsolutePath().normalize().toString()));
+            Assert.assertNull(Skills.buildAvailableSkillsPrompt(Arrays.asList(manualOnly)));
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
     public void shouldAllowBasicIChatServiceToMountSkillsAndBuiltInTools() throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("skills-chat-request").toPath();
         Path skillFile = writeSkill(
@@ -288,6 +383,14 @@ public class SkillsIChatServiceTest {
         Files.createDirectories(skillFile.getParent());
         Files.write(skillFile, content.getBytes(StandardCharsets.UTF_8));
         return skillFile;
+    }
+
+    private static void restoreProperty(String key, String value) {
+        if (value == null) {
+            System.clearProperty(key);
+            return;
+        }
+        System.setProperty(key, value);
     }
 
     private static String escapeJson(String value) {
