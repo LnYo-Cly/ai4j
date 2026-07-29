@@ -4,7 +4,11 @@ import com.alibaba.fastjson2.JSON;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import io.github.lnyocly.ai4j.mcp.entity.McpError;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
+import io.github.lnyocly.ai4j.mcp.entity.McpResponse;
+import io.github.lnyocly.ai4j.mcp.McpHttpHeaderSupport;
+import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import io.github.lnyocly.ai4j.mcp.util.McpMessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +43,7 @@ public class StreamableHttpMcpServer implements McpServer {
     private final int port;
     private final McpAuthProvider authProvider;
     private final String corsAllowedOrigin;
+    private final McpProtocolProfile protocolProfile;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, PrintWriter> sseClients = new ConcurrentHashMap<String, PrintWriter>();
     private final ConcurrentHashMap<String, SessionContext> sessions = new ConcurrentHashMap<String, SessionContext>();
@@ -46,27 +51,41 @@ public class StreamableHttpMcpServer implements McpServer {
     private HttpServer httpServer;
 
     /**
-     * Backward-compatible constructor. Binds to loopback ({@code 127.0.0.1}) with no auth.
+     * Binds to loopback ({@code 127.0.0.1}) with no auth and uses the modern
+     * stateless profile. Use the profile constructor for explicit legacy compatibility.
      * New code should use {@link McpServerFactory#createServer} with a {@link McpServerFactory.ServerConfig}.
      */
     public StreamableHttpMcpServer(String serverName, String serverVersion, int port) {
-        this(serverName, serverVersion, McpServerFactory.ServerConfig.DEFAULT_HOST, port, null, null);
+        this(serverName, serverVersion, McpServerFactory.ServerConfig.DEFAULT_HOST, port, null, null,
+                McpProtocolProfile.MODERN_2026_07_28);
     }
 
     public StreamableHttpMcpServer(String serverName, String serverVersion, String host, int port,
                                    McpAuthProvider authProvider, String corsAllowedOrigin) {
+        this(serverName, serverVersion, host, port, authProvider, corsAllowedOrigin,
+                McpProtocolProfile.MODERN_2026_07_28);
+    }
+
+    public StreamableHttpMcpServer(String serverName, String serverVersion, String host, int port,
+                                   McpAuthProvider authProvider, String corsAllowedOrigin,
+                                   McpProtocolProfile protocolProfile) {
         this.serverName = serverName;
         this.serverVersion = serverVersion;
         this.host = host == null ? McpServerFactory.ServerConfig.DEFAULT_HOST : host;
         this.port = port;
         this.authProvider = authProvider;
         this.corsAllowedOrigin = corsAllowedOrigin;
+        this.protocolProfile = protocolProfile == null
+                ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
         this.serverEngine = new McpServerEngine(
                 serverName,
                 serverVersion,
-                Arrays.asList("2025-03-26", "2024-11-05"),
-                "2025-03-26",
-                true,
+                this.protocolProfile.isModern()
+                        ? Arrays.asList(McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion())
+                        : Arrays.asList("2025-03-26", "2024-11-05"),
+                this.protocolProfile.isModern()
+                        ? McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion() : "2025-03-26",
+                !this.protocolProfile.isModern(),
                 false,
                 true);
     }
@@ -172,13 +191,20 @@ public class StreamableHttpMcpServer implements McpServer {
         public void handle(HttpExchange exchange) throws IOException {
             McpHttpServerSupport.setCorsHeaders(
                     exchange,
-                    "GET, POST, DELETE, OPTIONS",
-                    "Content-Type, mcp-session-id, last-event-id, Accept",
+                    protocolProfile.isModern() ? "POST, OPTIONS" : "GET, POST, DELETE, OPTIONS",
+                    protocolProfile.isModern()
+                            ? "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
+                            : "Content-Type, mcp-session-id, last-event-id, Accept",
                     corsAllowedOrigin);
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(200, 0);
-                exchange.close();
+                McpHttpServerSupport.writeNoContent(exchange, 204);
+                return;
+            }
+
+            if (protocolProfile.isModern()
+                    && !McpHttpServerSupport.isAllowedOrigin(exchange, corsAllowedOrigin)) {
+                McpHttpServerSupport.sendError(exchange, 403, "Forbidden origin");
                 return;
             }
 
@@ -194,6 +220,14 @@ public class StreamableHttpMcpServer implements McpServer {
                     method, exchange.getRequestURI().getPath(), acceptHeader, sessionId);
 
             try {
+                if (protocolProfile.isModern()) {
+                    if (!"POST".equals(method)) {
+                        McpHttpServerSupport.sendError(exchange, 405, "Method Not Allowed");
+                        return;
+                    }
+                    processModernClientMessage(exchange, McpHttpServerSupport.readRequestBody(exchange));
+                    return;
+                }
                 if ("POST".equals(method)) {
                     handlePostRequest(exchange);
                 } else if ("GET".equals(method)) {
@@ -289,6 +323,146 @@ public class StreamableHttpMcpServer implements McpServer {
         } else {
             exchange.sendResponseHeaders(202, 0);
             exchange.close();
+        }
+    }
+
+    private void processModernClientMessage(HttpExchange exchange, String requestBody) throws IOException {
+        McpMessage message;
+        try {
+            message = McpMessageCodec.parseMessage(requestBody);
+        } catch (Exception e) {
+            McpHttpServerSupport.writeJsonResponse(exchange, 400,
+                    protocolError(null, -32600, "Invalid Request"));
+            return;
+        }
+
+        if (!message.isRequest() && !message.isNotification()) {
+            McpHttpServerSupport.writeJsonResponse(exchange, 400,
+                    protocolError(message.getId(), -32600, "Modern Streamable HTTP accepts only requests or notifications"));
+            return;
+        }
+
+        if (message.isNotification()) {
+            McpHttpServerSupport.writeNoContent(exchange, 202);
+            return;
+        }
+
+        McpResponse validationError = validateModernRequest(exchange, message);
+        if (validationError != null) {
+            McpHttpServerSupport.writeJsonResponse(exchange, 400, validationError);
+            return;
+        }
+
+        McpMessage response = serverEngine.processModernMessage(message);
+        String acceptHeader = exchange.getRequestHeaders().getFirst("Accept");
+        if (acceptHeader != null && acceptHeader.contains("text/event-stream") && response.isSuccessResponse()) {
+            sendModernSseResponse(exchange, response);
+        } else {
+            int status = response.isErrorResponse() && response.getError() != null
+                    && response.getError().getCode() == -32601 ? 404 : 200;
+            McpHttpServerSupport.writeJsonResponse(exchange, status, response);
+        }
+    }
+
+    private McpResponse validateModernRequest(HttpExchange exchange, McpMessage message) {
+        String version = exchange.getRequestHeaders().getFirst("MCP-Protocol-Version");
+        String methodHeader = exchange.getRequestHeaders().getFirst("Mcp-Method");
+        Map<String, Object> params = asMap(message.getParams());
+        Map<String, Object> metadata = params == null ? null : asMap(params.get("_meta"));
+        String metadataVersion = metadata == null ? null
+                : stringValue(metadata.get("io.modelcontextprotocol/protocolVersion"));
+
+        if (version == null || methodHeader == null || metadataVersion == null
+                || !version.equals(metadataVersion) || !methodHeader.equals(message.getMethod())) {
+            return protocolError(message.getId(), -32020, "Header mismatch");
+        }
+        if (!protocolProfile.getProtocolVersion().equals(version)) {
+            McpResponse error = protocolError(message.getId(), -32022, "Unsupported protocol version");
+            Map<String, Object> data = new HashMap<String, Object>();
+            data.put("supported", Arrays.asList(protocolProfile.getProtocolVersion()));
+            data.put("requested", version);
+            error.getError().setData(data);
+            return error;
+        }
+
+        if (requiresNameHeader(message.getMethod())) {
+            String expectedName = "resources/read".equals(message.getMethod())
+                    ? stringValue(params.get("uri")) : stringValue(params.get("name"));
+            String actualName = McpHttpServerSupport.decodeHeaderValue(
+                    exchange.getRequestHeaders().getFirst("Mcp-Name"));
+            if (expectedName == null || actualName == null || !expectedName.equals(actualName)) {
+                return protocolError(message.getId(), -32020, "Header mismatch: Mcp-Name");
+            }
+        }
+        if ("tools/call".equals(message.getMethod())) {
+            String toolName = stringValue(params.get("name"));
+            Map<String, Object> schema = serverEngine.getToolInputSchema(toolName);
+            if (schema != null) {
+                Map<String, String> expectedHeaders;
+                try {
+                    expectedHeaders = McpHttpHeaderSupport.createToolParameterHeaders(
+                            schema, params.get("arguments"));
+                } catch (IllegalArgumentException e) {
+                    return protocolError(message.getId(), -32020, "Invalid x-mcp-header schema");
+                }
+                for (String headerName : McpHttpHeaderSupport.getToolParameterHeaderNames(schema)) {
+                    String expected = expectedHeaders.get(headerName);
+                    String actual = exchange.getRequestHeaders().getFirst(headerName);
+                    if (expected == null ? actual != null : !expected.equals(actual)) {
+                        return protocolError(message.getId(), -32020,
+                                "Header mismatch: " + headerName);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean requiresNameHeader(String method) {
+        return "tools/call".equals(method) || "resources/read".equals(method)
+                || "prompts/get".equals(method);
+    }
+
+    private static McpResponse protocolError(Object id, int code, String message) {
+        McpError error = new McpError();
+        error.setCode(code);
+        error.setMessage(message);
+        McpResponse response = new McpResponse();
+        response.setId(id);
+        response.setError(error);
+        return response;
+    }
+
+    private static Map<String, Object> asMap(Object value) {
+        if (!(value instanceof Map<?, ?>)) {
+            return null;
+        }
+        Map<String, Object> result = new HashMap<String, Object>();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+            if (entry.getKey() != null) {
+                result.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private void sendModernSseResponse(HttpExchange exchange, McpMessage response) throws IOException {
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("X-Accel-Buffering", "no");
+        exchange.sendResponseHeaders(200, 0);
+        PrintWriter writer = new PrintWriter(
+                new OutputStreamWriter(exchange.getResponseBody(), StandardCharsets.UTF_8), true);
+        try {
+            writer.println("data: " + JSON.toJSONString(response));
+            writer.println();
+            writer.flush();
+        } finally {
+            writer.close();
         }
     }
 
@@ -444,7 +618,7 @@ public class StreamableHttpMcpServer implements McpServer {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
 
-            if ("POST".equals(method) && "/".equals(path)) {
+            if (!protocolProfile.isModern() && "POST".equals(method) && "/".equals(path)) {
                 String acceptHeader = exchange.getRequestHeaders().getFirst("Accept");
                 String contentType = exchange.getRequestHeaders().getFirst("Content-Type");
 
@@ -479,7 +653,9 @@ public class StreamableHttpMcpServer implements McpServer {
             info.put("endpoints", endpoints);
 
             Map<String, String> usage = new HashMap<String, String>();
-            usage.put("mcp_endpoint", "POST/GET to /mcp - Streamable HTTP protocol");
+            usage.put("mcp_endpoint", protocolProfile.isModern()
+                    ? "POST to /mcp - MCP 2026-07-28 Streamable HTTP"
+                    : "POST/GET to /mcp - legacy Streamable HTTP protocol");
             usage.put("health_check", "GET /health for server status");
             usage.put("documentation", "See MCP Streamable HTTP specification");
             info.put("usage", usage);

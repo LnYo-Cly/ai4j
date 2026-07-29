@@ -1,10 +1,12 @@
 package io.github.lnyocly.ai4j.mcp.client;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.mcp.McpHttpHeaderSupport;
 import io.github.lnyocly.ai4j.mcp.entity.*;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
 import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
 import io.github.lnyocly.ai4j.mcp.transport.McpTransport;
+import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import io.github.lnyocly.ai4j.mcp.transport.McpTransportSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,9 +81,13 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     transport.start().get(30, java.util.concurrent.TimeUnit.SECONDS);
                     log.debug("传输层启动成功");
 
-                    // 发送初始化请求，添加超时
-                    initialize().get(30, java.util.concurrent.TimeUnit.SECONDS);
-                    log.debug("初始化请求完成");
+                    if (transport.getProtocolProfile().isModern()) {
+                        initialized.set(true);
+                        log.debug("现代MCP按请求携带元数据，不执行初始化握手");
+                    } else {
+                        initialize().get(30, java.util.concurrent.TimeUnit.SECONDS);
+                        log.debug("初始化请求完成");
+                    }
 
                     connected.set(true); // 在所有步骤成功后再设置
                     log.debug("MCP客户端连接成功");
@@ -187,6 +193,17 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     try {
                         if (response.isSuccessResponse() && response.getResult() != null) {
                             List<McpToolDefinition> parsedTools = McpClientResponseSupport.parseToolsListResponse(response.getResult());
+                            if (transport.getProtocolProfile().isModern()) {
+                                List<McpToolDefinition> validTools = new ArrayList<McpToolDefinition>();
+                                for (McpToolDefinition tool : parsedTools) {
+                                    if (McpHttpHeaderSupport.isValidToolSchema(tool.getInputSchema())) {
+                                        validTools.add(tool);
+                                    } else {
+                                        log.warn("Ignoring MCP tool with invalid x-mcp-header schema: {}", tool.getName());
+                                    }
+                                }
+                                parsedTools = validTools;
+                            }
                             availableTools = parsedTools;
                             return parsedTools;
                         } else {
@@ -333,11 +350,15 @@ public class McpClient implements McpTransport.McpMessageHandler {
             return future;
         }
 
+        if (transport.getProtocolProfile().isModern() && availableTools == null) {
+            return getAvailableTools().thenCompose(ignored -> callTool(toolName, arguments));
+        }
+
         Map<String, Object> params = new HashMap<>();
         params.put("name", toolName);
         params.put("arguments", arguments);
 
-        return sendRequest("tools/call", params)
+        return sendRequest("tools/call", params, toolParameterHeaders(toolName, arguments))
                 .thenApply(response -> {
                     try {
                         if (response.isSuccessResponse() && response.getResult() != null) {
@@ -517,10 +538,15 @@ public class McpClient implements McpTransport.McpMessageHandler {
      * 发送请求消息
      */
     private CompletableFuture<McpMessage> sendRequest(String method, Object params) {
+        return sendRequest(method, params, null);
+    }
+
+    private CompletableFuture<McpMessage> sendRequest(String method, Object params,
+                                                       Map<String, String> requestHeaders) {
         long messageId = nextMessageId();
 
         // 创建请求消息
-        McpRequest request = new McpRequest(method, messageId, params);
+        McpRequest request = new McpRequest(method, messageId, prepareRequestParams(params));
 
         // 添加详细日志
         log.debug("发送MCP请求: method={}, id={}, params={}", method, messageId, JSON.toJSONString(params));
@@ -529,9 +555,53 @@ public class McpClient implements McpTransport.McpMessageHandler {
         pendingRequests.put(messageId, future);
 
         // 发送消息
-        transport.sendMessage(request);
+        transport.sendMessage(request, requestHeaders);
 
         return future;
+    }
+
+    private Map<String, String> toolParameterHeaders(String toolName, Object arguments) {
+        if (!transport.getProtocolProfile().isModern() || availableTools == null) {
+            return null;
+        }
+        for (McpToolDefinition tool : availableTools) {
+            if (toolName.equals(tool.getName())) {
+                return McpHttpHeaderSupport.createToolParameterHeaders(tool.getInputSchema(), arguments);
+            }
+        }
+        return null;
+    }
+
+    private Object prepareRequestParams(Object params) {
+        if (!transport.getProtocolProfile().isModern()) {
+            return params;
+        }
+
+        Map<String, Object> requestParams = new HashMap<String, Object>();
+        if (params instanceof Map<?, ?>) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) params).entrySet()) {
+                if (entry.getKey() != null) {
+                    requestParams.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+        } else if (params != null) {
+            throw new IllegalArgumentException("Modern MCP request params must be an object");
+        }
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion",
+                transport.getProtocolProfile().getProtocolVersion());
+
+        Map<String, Object> clientInfo = new HashMap<String, Object>();
+        clientInfo.put("name", clientName);
+        clientInfo.put("version", clientVersion);
+        metadata.put("io.modelcontextprotocol/clientInfo", clientInfo);
+
+        // Do not advertise sampling, roots, or elicitation until this client can
+        // satisfy the modern multi-round-trip protocol for those capabilities.
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        requestParams.put("_meta", metadata);
+        return requestParams;
     }
 
 

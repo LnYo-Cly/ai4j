@@ -10,6 +10,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,7 +45,9 @@ public class StreamableHttpTransportTest {
                 .setBody("{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"value\":\"json\"}}"));
         server.start();
 
-        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        TransportConfig config = TransportConfig.streamableHttp(server.url("/mcp").toString())
+                .withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
+        StreamableHttpTransport transport = new StreamableHttpTransport(config);
         CapturingHandler handler = new CapturingHandler();
         transport.setMessageHandler(handler);
 
@@ -72,6 +76,63 @@ public class StreamableHttpTransportTest {
         Assert.assertEquals("POST", firstRequest.getMethod());
         Assert.assertEquals("stream-1", secondRequest.getHeader("last-event-id"));
 
+        transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void modernProfileSendsPerRequestMetadataAndNoLegacySessionHeaders() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"jsonrpc\":\"2.0\",\"id\":9,\"result\":{\"resultType\":\"complete\"}}"));
+        server.start();
+
+        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        transport.setMessageHandler(new CapturingHandler());
+        transport.start().get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("_meta", metadata);
+        transport.sendMessage(new McpRequest("tools/list", 9L, params)).get(5, TimeUnit.SECONDS);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        Assert.assertEquals("2026-07-28", request.getHeader("MCP-Protocol-Version"));
+        Assert.assertEquals("tools/list", request.getHeader("Mcp-Method"));
+        Assert.assertNull(request.getHeader("mcp-session-id"));
+        Assert.assertNull(request.getHeader("last-event-id"));
+        Assert.assertTrue(request.getBody().readUtf8().contains("io.modelcontextprotocol/protocolVersion"));
+
+        transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void modernProfileMirrorsSchemaParameterHeaders() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"jsonrpc\":\"2.0\",\"id\":10,\"result\":{\"resultType\":\"complete\"}}"));
+        server.start();
+
+        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        transport.setMessageHandler(new CapturingHandler());
+        transport.start().get(5, TimeUnit.SECONDS);
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("name", "weather");
+        params.put("arguments", Collections.singletonMap("region", "cn"));
+        params.put("_meta", metadata);
+        transport.sendMessage(new McpRequest("tools/call", 10L, params),
+                Collections.singletonMap("Mcp-Param-Region", "cn")).get(5, TimeUnit.SECONDS);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        Assert.assertEquals("weather", request.getHeader("Mcp-Name"));
+        Assert.assertEquals("cn", request.getHeader("Mcp-Param-Region"));
         transport.stop().get(5, TimeUnit.SECONDS);
     }
 

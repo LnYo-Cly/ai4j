@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +35,7 @@ public class StreamableHttpTransport implements McpTransport {
     private EventSource eventSource;
     private String sessionId;
     private String lastEventId;
+    private final McpProtocolProfile protocolProfile;
     /**
      * 自定义HTTP头（用于认证等）
      */
@@ -42,6 +46,7 @@ public class StreamableHttpTransport implements McpTransport {
                 .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
+        this.protocolProfile = McpProtocolProfile.MODERN_2026_07_28;
     }
     public StreamableHttpTransport(TransportConfig config) {
         this.mcpEndpointUrl = config.getUrl();
@@ -50,6 +55,8 @@ public class StreamableHttpTransport implements McpTransport {
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
         this.headers = config.getHeaders();
+        this.protocolProfile = config.getProtocolProfile() == null
+                ? McpProtocolProfile.MODERN_2026_07_28 : config.getProtocolProfile();
     }
     
     @Override
@@ -88,6 +95,11 @@ public class StreamableHttpTransport implements McpTransport {
     
     @Override
     public CompletableFuture<Void> sendMessage(McpMessage message) {
+        return sendMessage(message, null);
+    }
+
+    @Override
+    public CompletableFuture<Void> sendMessage(McpMessage message, final Map<String, String> requestHeaders) {
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
@@ -110,22 +122,31 @@ public class StreamableHttpTransport implements McpTransport {
                         .header("Content-Type", "application/json")
                         .header("Accept", "application/json, text/event-stream");
                 
-                // 添加会话ID（如果存在）
-                if (sessionId != null) {
-                    requestBuilder.header("mcp-session-id", sessionId);
-                }
-                
-                // 添加Last-Event-ID用于恢复连接
-                if (lastEventId != null) {
-                    requestBuilder.header("last-event-id", lastEventId);
-                }
-
                 if (headers != null) {
                     for (Map.Entry<String, String> entry : headers.entrySet()) {
                         requestBuilder.header(entry.getKey(), entry.getValue());
                     }
                 }
-                
+
+                if (protocolProfile.isModern()) {
+                    applyModernRequestHeaders(message, requestBuilder);
+                    if (requestHeaders != null) {
+                        for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+                            if (entry.getKey() != null && entry.getKey().startsWith("Mcp-Param-")
+                                    && entry.getValue() != null) {
+                                requestBuilder.header(entry.getKey(), entry.getValue());
+                            }
+                        }
+                    }
+                } else {
+                    if (sessionId != null) {
+                        requestBuilder.header("mcp-session-id", sessionId);
+                    }
+                    if (lastEventId != null) {
+                        requestBuilder.header("last-event-id", lastEventId);
+                    }
+                }
+
                 Request request = requestBuilder.build();
                 
                     Response response = httpClient.newCall(request).execute();
@@ -135,10 +156,12 @@ public class StreamableHttpTransport implements McpTransport {
                         }
                     
                     // 检查会话ID
-                    String newSessionId = response.header("mcp-session-id");
-                    if (newSessionId != null) {
-                        StreamableHttpTransport.this.sessionId = newSessionId;
-                        log.debug("收到会话ID: {}", StreamableHttpTransport.this.sessionId);
+                    if (!protocolProfile.isModern()) {
+                        String newSessionId = response.header("mcp-session-id");
+                        if (newSessionId != null) {
+                            StreamableHttpTransport.this.sessionId = newSessionId;
+                            log.debug("收到会话ID: {}", StreamableHttpTransport.this.sessionId);
+                        }
                     }
                     
                     String contentType = response.header("Content-Type", "");
@@ -236,7 +259,7 @@ public class StreamableHttpTransport implements McpTransport {
                     }
                     dataBuilder.append(value);
                     hasData = true;
-                } else if ("id".equals(field)) {
+                } else if (!protocolProfile.isModern() && "id".equals(field)) {
                     lastEventId = value.isEmpty() ? null : value;
                 }
             }
@@ -281,7 +304,7 @@ public class StreamableHttpTransport implements McpTransport {
 
     @Override
     public boolean needsHeartbeat() {
-        return true;
+        return !protocolProfile.isModern();
     }
 
     @Override
@@ -289,17 +312,28 @@ public class StreamableHttpTransport implements McpTransport {
         return "streamable_http";
     }
 
+    @Override
+    public McpProtocolProfile getProtocolProfile() {
+        return protocolProfile;
+    }
+
     /**
      * 获取会话ID
      */
     public String getSessionId() {
-        return sessionId;
+        return protocolProfile.isModern() ? null : sessionId;
     }
     
     /**
      * 终止会话
      */
     public CompletableFuture<Void> terminateSession() {
+        if (protocolProfile.isModern()) {
+            CompletableFuture<Void> future = new CompletableFuture<Void>();
+            future.completeExceptionally(new UnsupportedOperationException(
+                    "Modern Streamable HTTP does not define protocol sessions"));
+            return future;
+        }
         return CompletableFuture.runAsync(new Runnable() {
             @Override
             public void run() {
@@ -335,6 +369,69 @@ public class StreamableHttpTransport implements McpTransport {
 
     public static McpMessage parseMcpMessage(String jsonString) {
         return McpMessageCodec.parseMessage(jsonString);
+    }
+
+    private void applyModernRequestHeaders(McpMessage message, Request.Builder requestBuilder) {
+        if (message == null || (!message.isRequest() && !message.isNotification())) {
+            throw new IllegalArgumentException("Modern Streamable HTTP accepts only JSON-RPC requests or notifications");
+        }
+        if (!message.isRequest()) {
+            return;
+        }
+
+        Map<String, Object> params = asMap(message.getParams());
+        Map<String, Object> metadata = params == null ? null : asMap(params.get("_meta"));
+        String version = metadata == null ? null
+                : stringValue(metadata.get("io.modelcontextprotocol/protocolVersion"));
+        if (!protocolProfile.getProtocolVersion().equals(version)) {
+            throw new IllegalArgumentException("Modern MCP request metadata must declare "
+                    + protocolProfile.getProtocolVersion());
+        }
+
+        requestBuilder.header("MCP-Protocol-Version", version);
+        requestBuilder.header("Mcp-Method", message.getMethod());
+        if (requiresNameHeader(message.getMethod())) {
+            String name = "resources/read".equals(message.getMethod())
+                    ? stringValue(params.get("uri")) : stringValue(params.get("name"));
+            if (name == null) {
+                throw new IllegalArgumentException("Modern MCP request requires a name header");
+            }
+            requestBuilder.header("Mcp-Name", encodeHeaderValue(name));
+        }
+    }
+
+    private static boolean requiresNameHeader(String method) {
+        return "tools/call".equals(method) || "resources/read".equals(method)
+                || "prompts/get".equals(method);
+    }
+
+    private static String encodeHeaderValue(String value) {
+        boolean safe = value.length() > 0 && value.equals(value.trim());
+        for (int i = 0; i < value.length() && safe; i++) {
+            char c = value.charAt(i);
+            safe = c >= 0x21 && c <= 0x7e;
+        }
+        if (safe && !(value.startsWith("=?base64?") && value.endsWith("?="))) {
+            return value;
+        }
+        return "=?base64?" + Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8)) + "?=";
+    }
+
+    private static Map<String, Object> asMap(Object value) {
+        if (!(value instanceof Map<?, ?>)) {
+            return null;
+        }
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+            if (entry.getKey() != null) {
+                map.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        return map;
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
 }

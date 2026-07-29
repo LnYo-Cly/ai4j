@@ -31,6 +31,8 @@ public class TransportConfig {
      * 自定义HTTP头（用于认证等）
      */
     private Map<String, String> headers;
+
+    private McpProtocolProfile protocolProfile;
     
     // 高级配置
     private Boolean enableRetry;
@@ -49,6 +51,7 @@ public class TransportConfig {
         this.retryDelay = 1000L;
         this.enableHeartbeat = false;
         this.heartbeatInterval = 30000L;
+        this.protocolProfile = McpProtocolProfile.MODERN_2026_07_28;
     }
     
     // 静态工厂方法
@@ -154,6 +157,12 @@ public class TransportConfig {
     public TransportConfig withHeartbeat(boolean enableHeartbeat, long heartbeatInterval) {
         this.enableHeartbeat = enableHeartbeat;
         this.heartbeatInterval = heartbeatInterval;
+        return this;
+    }
+
+    public TransportConfig withProtocolProfile(McpProtocolProfile protocolProfile) {
+        this.protocolProfile = protocolProfile == null
+                ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
         return this;
     }
     
@@ -269,6 +278,15 @@ public class TransportConfig {
 
     public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
+    }
+
+    public McpProtocolProfile getProtocolProfile() {
+        return protocolProfile;
+    }
+
+    public void setProtocolProfile(McpProtocolProfile protocolProfile) {
+        this.protocolProfile = protocolProfile == null
+                ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,6 +62,37 @@ public final class McpHttpServerSupport {
         exchange.getResponseHeaders().add("WWW-Authenticate", "Bearer");
         sendError(exchange, 401, "Unauthorized: valid Bearer token required");
         return false;
+    }
+
+    /**
+     * An absent Origin is allowed for non-browser clients. A present Origin
+     * must match an explicitly configured origin; wildcard CORS is not origin
+     * validation and therefore is never accepted here.
+     */
+    public static boolean isAllowedOrigin(HttpExchange exchange, String allowedOrigin) {
+        String origin = exchange.getRequestHeaders().getFirst("Origin");
+        return origin == null || (allowedOrigin != null && !"*".equals(allowedOrigin)
+                && allowedOrigin.equals(origin));
+    }
+
+    public static void writeNoContent(HttpExchange exchange, int statusCode) throws IOException {
+        exchange.sendResponseHeaders(statusCode, -1);
+        exchange.close();
+    }
+
+    public static String decodeHeaderValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.startsWith("=?base64?") && value.endsWith("?=")) {
+            String encoded = value.substring("=?base64?".length(), value.length() - 2);
+            try {
+                return new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return value;
     }
 
     public static String readRequestBody(HttpExchange exchange) throws IOException {
