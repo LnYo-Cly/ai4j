@@ -4,12 +4,16 @@ import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,7 +48,7 @@ public final class Skills {
         Set<String> allowedReadRoots = new LinkedHashSet<String>();
         if (roots != null) {
             for (Path root : roots) {
-                if (root == null || !Files.isDirectory(root)) {
+                if (root == null || Files.isSymbolicLink(root) || !Files.isDirectory(root)) {
                     continue;
                 }
                 allowedReadRoots.add(root.toAbsolutePath().normalize().toString());
@@ -109,18 +113,23 @@ public final class Skills {
         if (availableSkills == null || availableSkills.isEmpty()) {
             return null;
         }
+        StringBuilder entries = new StringBuilder();
+        for (SkillDescriptor skill : availableSkills) {
+            if (skill == null || skill.isDisableModelInvocation()) {
+                continue;
+            }
+            entries.append("- name: ").append(firstNonBlank(skill.getName(), "skill")).append("\n");
+            entries.append("  path: ").append(firstNonBlank(skill.getSkillFilePath(), "(missing)")).append("\n");
+            entries.append("  description: ").append(firstNonBlank(skill.getDescription(), "No description available.")).append("\n");
+        }
+        if (entries.length() == 0) {
+            return null;
+        }
         StringBuilder builder = new StringBuilder();
         builder.append("Some reusable skills are installed. Do not read every skill file up front. ")
                 .append("When the task clearly matches a skill, read that SKILL.md with read_file first and then follow it.\n");
         builder.append("<available_skills>\n");
-        for (SkillDescriptor skill : availableSkills) {
-            if (skill == null) {
-                continue;
-            }
-            builder.append("- name: ").append(firstNonBlank(skill.getName(), "skill")).append("\n");
-            builder.append("  path: ").append(firstNonBlank(skill.getSkillFilePath(), "(missing)")).append("\n");
-            builder.append("  description: ").append(firstNonBlank(skill.getDescription(), "No description available.")).append("\n");
-        }
+        builder.append(entries);
         builder.append("</available_skills>\n");
         builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse read_file instead of asking for a dedicated skill tool.");
         return builder.toString().trim();
@@ -154,30 +163,53 @@ public final class Skills {
             return Collections.singletonList(buildDescriptor(directSkillFile, root, workspaceRoot));
         }
 
-        List<SkillDescriptor> descriptors = new ArrayList<SkillDescriptor>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
-            for (Path child : stream) {
-                if (!Files.isDirectory(child)) {
-                    continue;
+        final List<Path> skillFiles = new ArrayList<Path>();
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attributes) {
+                    if (Files.isSymbolicLink(directory)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+                    if (directory.equals(root)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    Path skillFile = resolveSkillFile(directory);
+                    if (skillFile == null) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    skillFiles.add(skillFile);
+                    return FileVisitResult.SKIP_SUBTREE;
                 }
-                Path skillFile = resolveSkillFile(child);
-                if (skillFile == null) {
-                    continue;
-                }
-                descriptors.add(buildDescriptor(skillFile, root, workspaceRoot));
-            }
+            });
         } catch (IOException ignored) {
+        }
+        Collections.sort(skillFiles, new Comparator<Path>() {
+            @Override
+            public int compare(Path left, Path right) {
+                String leftPath = left.toAbsolutePath().normalize().toString();
+                String rightPath = right.toAbsolutePath().normalize().toString();
+                int result = leftPath.compareToIgnoreCase(rightPath);
+                return result != 0 ? result : leftPath.compareTo(rightPath);
+            }
+        });
+        List<SkillDescriptor> descriptors = new ArrayList<SkillDescriptor>();
+        for (Path skillFile : skillFiles) {
+            descriptors.add(buildDescriptor(skillFile, root, workspaceRoot));
         }
         return descriptors;
     }
 
     private static Path resolveSkillFile(Path directory) {
+        if (directory == null || Files.isSymbolicLink(directory)) {
+            return null;
+        }
         Path upper = directory.resolve(SKILL_FILE_NAME);
-        if (Files.isRegularFile(upper)) {
+        if (!Files.isSymbolicLink(upper) && Files.isRegularFile(upper, LinkOption.NOFOLLOW_LINKS)) {
             return upper;
         }
         Path lower = directory.resolve("skill.md");
-        return Files.isRegularFile(lower) ? lower : null;
+        return !Files.isSymbolicLink(lower) && Files.isRegularFile(lower, LinkOption.NOFOLLOW_LINKS) ? lower : null;
     }
 
     private static SkillDescriptor buildDescriptor(Path skillFile, Path skillRoot, Path workspaceRoot) {
@@ -197,6 +229,7 @@ public final class Skills {
                 .description(description)
                 .skillFilePath(skillFile.toAbsolutePath().normalize().toString())
                 .source(resolveSource(skillRoot, workspaceRoot))
+                .disableModelInvocation(parseBoolean(parseFrontMatterValue(content, "disable-model-invocation")))
                 .build();
     }
 
@@ -328,6 +361,10 @@ public final class Skills {
             return normalized.substring(1, normalized.length() - 1).trim();
         }
         return normalized;
+    }
+
+    private static boolean parseBoolean(String value) {
+        return "true".equalsIgnoreCase(value == null ? null : value.trim());
     }
 
     private static boolean isBlank(String value) {

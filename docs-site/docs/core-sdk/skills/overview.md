@@ -127,10 +127,13 @@ skill 不负责：
 - `description`
 - `skillFilePath`
 - `source`
+- `disableModelInvocation`
 
 ### 6.3 暴露层
 
 `buildAvailableSkillsPrompt(...)` 不直接塞正文，而是先给模型一个可用技能目录。
+
+标记 `disable-model-invocation: true` 的 skill 会保留给宿主显式选择，但不会出现在这个自动模型目录中。
 
 ### 6.4 读取边界层
 
@@ -204,6 +207,7 @@ AI4J 的设计重点是：
 - 描述
 - 文件路径
 - 来源
+- 是否只允许宿主显式选择
 
 这是一套轻量目录机制，不是复杂的版本依赖管理系统。
 

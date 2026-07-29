@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -90,6 +91,53 @@ public class CodingSkillSupportTest {
             assertTrue(prompt.getSystemPrompt().contains(workspaceSkillFile.toAbsolutePath().normalize().toString()));
             assertTrue(prompt.getSystemPrompt().contains("name: refactorer"));
             assertTrue(prompt.getSystemPrompt().contains(globalSkillFile.toAbsolutePath().normalize().toString()));
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
+    public void shouldKeepManualOnlySkillsAvailableButHideThemFromCodingPrompt() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-manual-only-skills").toPath();
+        Path automaticSkill = writeSkill(
+                workspaceRoot.resolve(".ai4j").resolve("skills").resolve("automatic").resolve("SKILL.md"),
+                "---\nname: automatic\ndescription: Model-visible skill.\n---\n"
+        );
+        Path manualSkill = writeSkill(
+                workspaceRoot.resolve(".ai4j").resolve("skills").resolve("manual").resolve("SKILL.md"),
+                "---\nname: manual\ndescription: Host-selected skill.\ndisable-model-invocation: true\n---\n"
+        );
+        Path fakeHome = temporaryFolder.newFolder("fake-home-manual-only").toPath();
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", fakeHome.toString());
+        try {
+            CapturingModelClient modelClient = new CapturingModelClient();
+            CodingAgent agent = CodingAgents.builder()
+                    .modelClient(modelClient)
+                    .model("glm-4.5-flash")
+                    .workspaceContext(WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build())
+                    .systemPrompt("Base prompt.")
+                    .build();
+
+            WorkspaceContext enriched = agent.getWorkspaceContext();
+            assertEquals(2, enriched.getAvailableSkills().size());
+            CodingSkillDescriptor manualOnly = null;
+            for (CodingSkillDescriptor skill : enriched.getAvailableSkills()) {
+                if ("manual".equals(skill.getName())) {
+                    manualOnly = skill;
+                }
+            }
+            assertNotNull(manualOnly);
+            assertTrue(manualOnly.isDisableModelInvocation());
+
+            try (CodingSession session = agent.newSession()) {
+                session.run("Use the most relevant installed skill.");
+            }
+
+            AgentPrompt prompt = modelClient.getLastPrompt();
+            assertNotNull(prompt);
+            assertTrue(prompt.getSystemPrompt().contains(automaticSkill.toAbsolutePath().normalize().toString()));
+            assertFalse(prompt.getSystemPrompt().contains(manualSkill.toAbsolutePath().normalize().toString()));
         } finally {
             restoreProperty("user.home", originalUserHome);
         }
