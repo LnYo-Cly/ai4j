@@ -18,6 +18,7 @@ import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
+import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.coding.definition.BuiltInCodingAgentDefinitions;
@@ -86,6 +87,7 @@ public class CodingAgentBuilder {
     private CodingToolPolicyResolver toolPolicyResolver;
     private CodingRuntime codingRuntime;
     private CodingSandboxRuntime sandboxRuntime;
+    private TracePricingResolver pricingResolver;
     private String model;
     private String instructions;
     private String systemPrompt;
@@ -218,6 +220,12 @@ public class CodingAgentBuilder {
 
     public CodingAgentBuilder sandboxRuntime(CodingSandboxRuntime sandboxRuntime) {
         this.sandboxRuntime = sandboxRuntime;
+        return this;
+    }
+
+    /** Resolves model-specific token prices for {@link CodingAgentResult} cost fields. */
+    public CodingAgentBuilder pricingResolver(TracePricingResolver pricingResolver) {
+        this.pricingResolver = pricingResolver;
         return this;
     }
 
@@ -356,6 +364,7 @@ public class CodingAgentBuilder {
                 .instructions(instructions)
                 .systemPrompt(resolvedSystemPrompt)
                 .options(resolvedAgentOptions)
+                .pricingResolver(pricingResolver)
                 .toolRegistry(resolvedToolRegistry)
                 .toolExecutor(resolvedToolExecutor)
                 .toolInterceptor(toolInterceptor)

@@ -47,4 +47,27 @@ public class AnthropicContentBlock {
 
     /** tool_result block 的结果内容（字符串或 content block 数组） */
     private Object content;
+
+    /** Optional Anthropic prompt-cache breakpoint for this content block. */
+    @JsonProperty("cache_control")
+    private Object cacheControl;
+
+    /** Compatibility constructor retained for the original content-block shape. */
+    public AnthropicContentBlock(String type,
+                                 String text,
+                                 String thinking,
+                                 String id,
+                                 String name,
+                                 Object input,
+                                 String toolUseId,
+                                 Object content) {
+        this.type = type;
+        this.text = text;
+        this.thinking = thinking;
+        this.id = id;
+        this.name = name;
+        this.input = input;
+        this.toolUseId = toolUseId;
+        this.content = content;
+    }
 }

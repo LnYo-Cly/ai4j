@@ -4,9 +4,13 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicCacheCreation;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicServerToolUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicTool;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
@@ -108,7 +112,9 @@ public class MessagesModelClient implements AgentModelClient {
             request.setToolChoice(prompt.getToolChoice());
         }
 
-        Map<String, Object> extra = prompt.getExtraBody();
+        Map<String, Object> extra = prompt.getExtraBody() == null
+                ? null : new LinkedHashMap<String, Object>(prompt.getExtraBody());
+        Object cacheControl = extra == null ? null : extra.remove("cache_control");
         if (prompt.getReasoning() != null) {
             if (extra == null) {
                 extra = new LinkedHashMap<String, Object>();
@@ -117,10 +123,37 @@ public class MessagesModelClient implements AgentModelClient {
                 extra.put("thinking", prompt.getReasoning());
             }
         }
-        if (extra != null) {
+        if (extra != null && !extra.isEmpty()) {
             request.setExtraBody(extra);
         }
+        applyPromptCacheControl(request, cacheControl);
         return request;
+    }
+
+    private void applyPromptCacheControl(AnthropicChatCompletion request, Object cacheControl) {
+        if (cacheControl == null || request == null) {
+            return;
+        }
+        List<AnthropicTool> tools = request.getTools();
+        if (tools != null && !tools.isEmpty()) {
+            tools.get(tools.size() - 1).setCacheControl(cacheControl);
+            return;
+        }
+        Object system = request.getSystem();
+        if (system instanceof String && !((String) system).trim().isEmpty()) {
+            AnthropicContentBlock block = new AnthropicContentBlock();
+            block.setType("text");
+            block.setText((String) system);
+            block.setCacheControl(cacheControl);
+            request.setSystem(Collections.singletonList(block));
+            return;
+        }
+        if (system instanceof List) {
+            List<?> blocks = (List<?>) system;
+            if (!blocks.isEmpty() && blocks.get(blocks.size() - 1) instanceof AnthropicContentBlock) {
+                ((AnthropicContentBlock) blocks.get(blocks.size() - 1)).setCacheControl(cacheControl);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -304,6 +337,8 @@ public class MessagesModelClient implements AgentModelClient {
         private final StringBuilder thinking = new StringBuilder();
         private final List<AgentToolCall> toolCalls = new ArrayList<AgentToolCall>();
         private String modelName;
+        private AnthropicUsage usage;
+        private boolean usagePresent;
 
         StreamBridge(AgentModelStreamListener listener) {
             this.listener = listener;
@@ -312,6 +347,11 @@ public class MessagesModelClient implements AgentModelClient {
         @Override
         public void onStart(String messageId, String model) {
             this.modelName = model;
+        }
+
+        @Override
+        public void onUsage(AnthropicUsage usage) {
+            mergeUsage(usage);
         }
 
         AgentModelResult toResult() {
@@ -349,6 +389,14 @@ public class MessagesModelClient implements AgentModelClient {
         }
 
         @Override
+        public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
+            AnthropicUsage snapshot = new AnthropicUsage();
+            snapshot.setInputTokens(inputTokens);
+            snapshot.setOutputTokens(outputTokens);
+            mergeUsage(snapshot);
+        }
+
+        @Override
         public void onError(Throwable t) {
             if (listener != null) {
                 listener.onError(t);
@@ -365,13 +413,84 @@ public class MessagesModelClient implements AgentModelClient {
             raw.put("outputText", outputText);
             raw.put("reasoningText", reasoningText);
             raw.put("toolCalls", toolCalls);
-            return AgentModelResult.builder()
+            if (usagePresent) {
+                raw.put("usage", usage);
+            }
+            AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
                     .reasoningText(reasoningText)
                     .outputText(outputText)
                     .toolCalls(toolCalls)
                     .memoryItems(memoryItems)
-                    .rawResponse(raw)
-                    .build();
+                    .rawResponse(raw);
+            ModelUsage modelUsage = usagePresent ? ModelUsage.fromAnthropic(usage) : null;
+            return modelUsage == null ? builder.build() : modelUsage.applyTo(builder).build();
+        }
+
+        private void mergeUsage(AnthropicUsage next) {
+            if (next == null) {
+                return;
+            }
+            usagePresent = true;
+            if (usage == null) {
+                usage = new AnthropicUsage();
+            }
+            usage.setInputTokens(Math.max(usage.getInputTokens(), next.getInputTokens()));
+            usage.setOutputTokens(Math.max(usage.getOutputTokens(), next.getOutputTokens()));
+            usage.setCacheReadInputTokens(max(usage.getCacheReadInputTokens(), next.getCacheReadInputTokens()));
+            usage.setCacheCreationInputTokens(max(usage.getCacheCreationInputTokens(), next.getCacheCreationInputTokens()));
+            usage.setCacheCreation(mergeCacheCreation(usage.getCacheCreation(), next.getCacheCreation()));
+            usage.setOutputTokensDetails(mergeOutputDetails(usage.getOutputTokensDetails(), next.getOutputTokensDetails()));
+            usage.setServerToolUse(mergeServerToolUse(usage.getServerToolUse(), next.getServerToolUse()));
+            if (next.getInferenceGeo() != null) {
+                usage.setInferenceGeo(next.getInferenceGeo());
+            }
+            if (next.getServiceTier() != null) {
+                usage.setServiceTier(next.getServiceTier());
+            }
+        }
+
+        private AnthropicCacheCreation mergeCacheCreation(AnthropicCacheCreation current, AnthropicCacheCreation next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicCacheCreation();
+            }
+            current.setEphemeral5mInputTokens(max(current.getEphemeral5mInputTokens(), next.getEphemeral5mInputTokens()));
+            current.setEphemeral1hInputTokens(max(current.getEphemeral1hInputTokens(), next.getEphemeral1hInputTokens()));
+            return current;
+        }
+
+        private AnthropicOutputTokensDetails mergeOutputDetails(AnthropicOutputTokensDetails current,
+                                                                 AnthropicOutputTokensDetails next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicOutputTokensDetails();
+            }
+            current.setThinkingTokens(max(current.getThinkingTokens(), next.getThinkingTokens()));
+            return current;
+        }
+
+        private AnthropicServerToolUsage mergeServerToolUse(AnthropicServerToolUsage current,
+                                                              AnthropicServerToolUsage next) {
+            if (next == null) {
+                return current;
+            }
+            if (current == null) {
+                current = new AnthropicServerToolUsage();
+            }
+            current.setWebFetchRequests(max(current.getWebFetchRequests(), next.getWebFetchRequests()));
+            current.setWebSearchRequests(max(current.getWebSearchRequests(), next.getWebSearchRequests()));
+            return current;
+        }
+
+        private Long max(Long current, Long next) {
+            if (next == null) {
+                return current;
+            }
+            return current == null || next.longValue() > current.longValue() ? next : current;
         }
     }
 
@@ -408,21 +527,14 @@ public class MessagesModelClient implements AgentModelClient {
             String outputText = text.toString();
             String reasoningText = thinking.toString();
             List<Object> memoryItems = buildAssistantMemoryItems(outputText, toolCalls);
-            Long inputTokens = null;
-            Long outputTokens = null;
-            if (response != null && response.getUsage() != null) {
-                inputTokens = response.getUsage().getInputTokens();
-                outputTokens = response.getUsage().getOutputTokens();
-            }
-            return AgentModelResult.builder()
+            AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
                     .reasoningText(reasoningText)
                     .outputText(outputText)
                     .toolCalls(toolCalls)
                     .memoryItems(memoryItems)
-                    .rawResponse(response)
-                    .inputTokens(inputTokens)
-                    .outputTokens(outputTokens)
-                    .build();
+                    .rawResponse(response);
+            ModelUsage usage = response == null ? null : ModelUsage.fromAnthropic(response.getUsage());
+            return usage == null ? builder.build() : usage.applyTo(builder).build();
         }
     }
 

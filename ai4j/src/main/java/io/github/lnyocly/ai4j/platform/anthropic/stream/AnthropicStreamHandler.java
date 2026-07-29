@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.platform.anthropic.stream;
 
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
+
 /**
  * Anthropic Messages 原生流式事件回调。
  * <p>
@@ -11,6 +13,10 @@ public interface AnthropicStreamHandler {
 
     /** message_start：消息 id 与模型名。 */
     default void onStart(String messageId, String model) {
+    }
+
+    /** Latest usage snapshot from message_start or message_delta. */
+    default void onUsage(AnthropicUsage usage) {
     }
 
     /** content_block_delta(text_delta)：正文文本增量。 */

@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatComple
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicTool;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
@@ -24,6 +25,7 @@ import io.github.lnyocly.ai4j.platform.openai.chat.enums.ChatMessageType;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.platform.openai.usage.UsageDetails;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IChatService;
 import io.github.lnyocly.ai4j.tool.ToolUtil;
@@ -234,6 +236,7 @@ public class AnthropicChatService implements IChatService,
         private String messageId;
         private String modelName;
         private EventSource eventSource;
+        private AnthropicUsage usage;
 
         OpenAiChunkBridge(SseListener sse) {
             this.sse = sse;
@@ -247,6 +250,11 @@ public class AnthropicChatService implements IChatService,
         public void onStart(String messageId, String model) {
             this.messageId = messageId;
             this.modelName = model;
+        }
+
+        @Override
+        public void onUsage(AnthropicUsage usage) {
+            mergeUsage(usage);
         }
 
         @Override
@@ -266,7 +274,8 @@ public class AnthropicChatService implements IChatService,
 
         @Override
         public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
-            emit(finishChunk(mapStopReason(stopReason), outputTokens));
+            mergeUsage(new AnthropicUsage(inputTokens, outputTokens));
+            emit(finishChunk(mapStopReason(stopReason)));
         }
 
         @Override
@@ -298,11 +307,41 @@ public class AnthropicChatService implements IChatService,
             return writeChunk(baseChunk(delta, null));
         }
 
-        private String finishChunk(String finishReason, long outputTokens) {
+        private String finishChunk(String finishReason) {
             ChatMessage delta = ChatMessage.builder().role(ChatMessageType.ASSISTANT.getRole()).content(Content.ofText("")).build();
             ChatCompletionResponse chunk = baseChunk(delta, finishReason);
-            chunk.setUsage(new Usage(0L, outputTokens, outputTokens));
+            chunk.setUsage(toUsage(usage));
             return writeChunk(chunk);
+        }
+
+        private void mergeUsage(AnthropicUsage next) {
+            if (next == null) {
+                return;
+            }
+            if (usage == null) {
+                usage = new AnthropicUsage();
+            }
+            usage.setInputTokens(Math.max(usage.getInputTokens(), next.getInputTokens()));
+            usage.setOutputTokens(Math.max(usage.getOutputTokens(), next.getOutputTokens()));
+            usage.setCacheReadInputTokens(max(usage.getCacheReadInputTokens(), next.getCacheReadInputTokens()));
+            usage.setCacheCreationInputTokens(max(usage.getCacheCreationInputTokens(), next.getCacheCreationInputTokens()));
+            if (next.getOutputTokensDetails() != null
+                    && next.getOutputTokensDetails().getThinkingTokens() != null) {
+                AnthropicOutputTokensDetails outputDetails = usage.getOutputTokensDetails();
+                if (outputDetails == null) {
+                    outputDetails = new AnthropicOutputTokensDetails();
+                    usage.setOutputTokensDetails(outputDetails);
+                }
+                outputDetails.setThinkingTokens(max(outputDetails.getThinkingTokens(),
+                        next.getOutputTokensDetails().getThinkingTokens()));
+            }
+        }
+
+        private Long max(Long current, Long next) {
+            if (next == null) {
+                return current;
+            }
+            return current == null || next.longValue() > current.longValue() ? next : current;
         }
 
         private ChatCompletionResponse baseChunk(ChatMessage delta, String finishReason) {
@@ -477,10 +516,31 @@ public class AnthropicChatService implements IChatService,
 
     private Usage toUsage(AnthropicUsage usage) {
         Usage result = new Usage();
-        if (usage != null) {
-            result.setPromptTokens(usage.getInputTokens());
-            result.setCompletionTokens(usage.getOutputTokens());
-            result.setTotalTokens(usage.getInputTokens() + usage.getOutputTokens());
+        if (usage == null) {
+            return result;
+        }
+
+        Long cacheReadTokens = usage.getCacheReadInputTokens();
+        Long cacheCreationTokens = usage.getCacheCreationInputTokens();
+        long promptTokens = usage.getInputTokens()
+                + (cacheReadTokens == null ? 0L : cacheReadTokens.longValue())
+                + (cacheCreationTokens == null ? 0L : cacheCreationTokens.longValue());
+        result.setPromptTokens(promptTokens);
+        result.setCompletionTokens(usage.getOutputTokens());
+        result.setTotalTokens(promptTokens + usage.getOutputTokens());
+
+        if (cacheReadTokens != null || cacheCreationTokens != null) {
+            UsageDetails promptDetails = new UsageDetails();
+            promptDetails.setCachedTokens(cacheReadTokens);
+            promptDetails.setCacheWriteTokens(cacheCreationTokens);
+            result.setPromptTokensDetails(promptDetails);
+        }
+        Long thinkingTokens = usage.getOutputTokensDetails() == null ? null
+                : usage.getOutputTokensDetails().getThinkingTokens();
+        if (thinkingTokens != null) {
+            UsageDetails completionDetails = new UsageDetails();
+            completionDetails.setReasoningTokens(thinkingTokens);
+            result.setCompletionTokensDetails(completionDetails);
         }
         return result;
     }
@@ -489,9 +549,7 @@ public class AnthropicChatService implements IChatService,
         if (usage == null) {
             return;
         }
-        target.setPromptTokens(target.getPromptTokens() + usage.getInputTokens());
-        target.setCompletionTokens(target.getCompletionTokens() + usage.getOutputTokens());
-        target.setTotalTokens(target.getTotalTokens() + usage.getInputTokens() + usage.getOutputTokens());
+        target.merge(toUsage(usage));
     }
 
     private void prepareChatCompletion(ChatCompletion chatCompletion, boolean stream) {

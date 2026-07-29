@@ -27,4 +27,33 @@ public class AgentModelResult {
     private Long inputTokens;
 
     private Long outputTokens;
+
+    private Long totalTokens;
+
+    private Long uncachedInputTokens;
+
+    private Long cacheReadInputTokens;
+
+    private Long cacheWriteInputTokens;
+
+    private Long cacheCreationInputTokens;
+
+    private Long reasoningTokens;
+
+    /** Compatibility constructor retained for the pre-cache-accounting result shape. */
+    public AgentModelResult(String reasoningText,
+                            String outputText,
+                            List<AgentToolCall> toolCalls,
+                            List<Object> memoryItems,
+                            Object rawResponse,
+                            Long inputTokens,
+                            Long outputTokens) {
+        this.reasoningText = reasoningText;
+        this.outputText = outputText;
+        this.toolCalls = toolCalls;
+        this.memoryItems = memoryItems;
+        this.rawResponse = rawResponse;
+        this.inputTokens = inputTokens;
+        this.outputTokens = outputTokens;
+    }
 }

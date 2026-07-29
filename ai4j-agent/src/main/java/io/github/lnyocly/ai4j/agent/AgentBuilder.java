@@ -53,6 +53,7 @@ import io.github.lnyocly.ai4j.service.IMessagesService;
 import io.github.lnyocly.ai4j.agent.trace.AgentTraceListener;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
+import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import okhttp3.OkHttpClient;
@@ -104,6 +105,7 @@ public class AgentBuilder {
     private AgentExecutionEnvironment executionEnvironment;
     private TraceExporter traceExporter;
     private TraceConfig traceConfig;
+    private TracePricingResolver pricingResolver;
     private AgentEventPublisher eventPublisher;
     private io.github.lnyocly.ai4j.agent.replay.IoCaptureSink captureSink;
     private AgentSessionStore sessionStore;
@@ -408,6 +410,15 @@ public class AgentBuilder {
         return this;
     }
 
+    /**
+     * Resolves model-specific token prices for {@link AgentResult} cost fields.
+     * The same resolver can be shared with {@link TraceConfig}.
+     */
+    public AgentBuilder pricingResolver(TracePricingResolver pricingResolver) {
+        this.pricingResolver = pricingResolver;
+        return this;
+    }
+
     public AgentBuilder eventPublisher(AgentEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
         return this;
@@ -536,6 +547,8 @@ public class AgentBuilder {
             resolvedEventPublisher.addListener(
                     new io.github.lnyocly.ai4j.agent.replay.IoCaptureAgentListener(captureSink));
         }
+        TracePricingResolver resolvedPricingResolver = pricingResolver != null
+                ? pricingResolver : (traceConfig == null ? null : traceConfig.getPricingResolver());
         if (modelClient == null) {
             throw new IllegalStateException("modelClient is required");
         }
@@ -579,6 +592,7 @@ public class AgentBuilder {
                 .store(store)
                 .user(user)
                 .extraBody(extraBody)
+                .pricingResolver(resolvedPricingResolver)
                 .build();
 
         return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);

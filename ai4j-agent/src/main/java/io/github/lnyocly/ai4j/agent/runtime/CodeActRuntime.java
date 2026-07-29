@@ -79,6 +79,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         List<AgentToolCall> toolCalls = new ArrayList<>();
         List<AgentToolResult> toolResults = new ArrayList<>();
         AgentModelResult lastResult = null;
+        AgentUsageAccumulator usage = new AgentUsageAccumulator();
         boolean finalizeRequested = false;
 
         int step = 0;
@@ -90,6 +91,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
             AgentPrompt prompt = buildPrompt(context, memory, false, step, listener, runId, sessionId, turnId);
             AgentModelResult modelResult = executeModel(context, prompt, listener, step, false, runId, sessionId, turnId);
             lastResult = modelResult;
+            usage.add(modelResult);
 
             if (modelResult != null && modelResult.getMemoryItems() != null) {
                 memory.addOutputItems(modelResult.getMemoryItems());
@@ -111,7 +113,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, answer, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
-                return AgentResult.builder()
+                return usage.applyTo(AgentResult.builder()
                         .runId(runId)
                         .sessionId(sessionId)
                         .turnId(turnId)
@@ -119,15 +121,14 @@ public class CodeActRuntime extends BaseAgentRuntime {
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
-                        .steps(step + 1)
-                        .build();
+                        .steps(step + 1), context).build();
             }
 
             if (!"code".equals(message.type) || message.code == null) {
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, output, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
-                return AgentResult.builder()
+                return usage.applyTo(AgentResult.builder()
                         .runId(runId)
                         .sessionId(sessionId)
                         .turnId(turnId)
@@ -135,8 +136,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
-                        .steps(step + 1)
-                        .build();
+                        .steps(step + 1), context).build();
             }
 
             AgentToolCall toolCall = AgentToolCall.builder()
@@ -183,7 +183,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, finalOutput, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
-                return AgentResult.builder()
+                return usage.applyTo(AgentResult.builder()
                         .runId(runId)
                         .sessionId(sessionId)
                         .turnId(turnId)
@@ -191,8 +191,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
-                        .steps(step + 1)
-                        .build();
+                        .steps(step + 1), context).build();
             }
 
             dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
@@ -201,7 +200,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         }
 
         String outputText = lastResult == null ? "" : lastResult.getOutputText();
-        return AgentResult.builder()
+        return usage.applyTo(AgentResult.builder()
                 .runId(runId)
                 .sessionId(sessionId)
                 .turnId(turnId)
@@ -209,8 +208,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                 .rawResponse(lastResult == null ? null : lastResult.getRawResponse())
                 .toolCalls(toolCalls)
                 .toolResults(toolResults)
-                .steps(step)
-                .build();
+                .steps(step), context).build();
     }
 
     @Override

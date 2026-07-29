@@ -14,6 +14,9 @@ public class ResponseUsageDetails {
     @JsonProperty("cached_tokens")
     private Integer cachedTokens;
 
+    @JsonProperty("cache_write_tokens")
+    private Integer cacheWriteTokens;
+
     @JsonProperty("text_tokens")
     private Integer textTokens;
 

@@ -48,6 +48,30 @@ public class CodingAgentResult {
 
     private Long outputTokens;
 
+    private Long totalTokens;
+
+    private Long uncachedInputTokens;
+
+    private Long cacheReadInputTokens;
+
+    private Long cacheWriteInputTokens;
+
+    private Long cacheCreationInputTokens;
+
+    private Long reasoningTokens;
+
+    private Double inputCost;
+
+    private Double cacheReadInputCost;
+
+    private Double cacheCreationInputCost;
+
+    private Double outputCost;
+
+    private Double totalCost;
+
+    private String currency;
+
     public CodingAgentResult(String runId,
                               String sessionId,
                               String turnId,
@@ -92,10 +116,22 @@ public class CodingAgentResult {
                 .rawResponse(result.getRawResponse())
                 .toolCalls(result.getToolCalls())
                 .toolResults(result.getToolResults())
-                .steps(result.getSteps())
+                .steps(result.getSteps() == null ? 0 : result.getSteps())
                 .turns(1)
                 .inputTokens(result.getInputTokens())
                 .outputTokens(result.getOutputTokens())
+                .totalTokens(result.getTotalTokens())
+                .uncachedInputTokens(result.getUncachedInputTokens())
+                .cacheReadInputTokens(result.getCacheReadInputTokens())
+                .cacheWriteInputTokens(result.getCacheWriteInputTokens())
+                .cacheCreationInputTokens(result.getCacheCreationInputTokens())
+                .reasoningTokens(result.getReasoningTokens())
+                .inputCost(result.getInputCost())
+                .cacheReadInputCost(result.getCacheReadInputCost())
+                .cacheCreationInputCost(result.getCacheCreationInputCost())
+                .outputCost(result.getOutputCost())
+                .totalCost(result.getTotalCost())
+                .currency(result.getCurrency())
                 .build();
     }
 }

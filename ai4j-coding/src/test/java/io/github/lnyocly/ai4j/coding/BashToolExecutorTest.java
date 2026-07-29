@@ -198,7 +198,7 @@ public class BashToolExecutorTest {
 
     private String backgroundCommand() {
         if (isWindows()) {
-            return "powershell -NoProfile -Command \"Write-Output ready; Start-Sleep -Seconds 10\"";
+            return "echo ready & timeout /t 10 /nobreak > nul";
         }
         return "echo ready && sleep 10";
     }

@@ -163,6 +163,7 @@ public class AgentTraceListenerTest {
         Assert.assertEquals(Long.valueOf(120L), modelSpan.getMetrics().getPromptTokens());
         Assert.assertEquals(Long.valueOf(45L), modelSpan.getMetrics().getCompletionTokens());
         Assert.assertEquals(Long.valueOf(165L), modelSpan.getMetrics().getTotalTokens());
+        Assert.assertEquals(Long.valueOf(30L), modelSpan.getMetrics().getCacheWriteInputTokens());
         Assert.assertEquals("USD", modelSpan.getMetrics().getCurrency());
         Assert.assertEquals("glm-4.7", modelSpan.getAttributes().get("responseModel"));
         Assert.assertEquals("stop", modelSpan.getAttributes().get("finishReason"));
@@ -176,7 +177,71 @@ public class AgentTraceListenerTest {
         Assert.assertNotNull(runSpan);
         Assert.assertNotNull(runSpan.getMetrics());
         Assert.assertEquals(Long.valueOf(165L), runSpan.getMetrics().getTotalTokens());
+        Assert.assertEquals(Long.valueOf(30L), runSpan.getMetrics().getCacheWriteInputTokens());
         Assert.assertEquals(0.0006D, runSpan.getMetrics().getTotalCost(), 0.0000001D);
+    }
+
+    @Test
+    public void test_trace_listener_keeps_aggregate_cost_unknown_when_one_model_is_unpriced() {
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        TraceConfig config = TraceConfig.builder()
+                .pricingResolver(model -> "priced-model".equals(model) ? TracePricing.builder()
+                        .inputCostPerMillionTokens(2.0D)
+                        .outputCostPerMillionTokens(8.0D)
+                        .currency("USD")
+                        .build() : null)
+                .build();
+        AgentTraceListener listener = new AgentTraceListener(exporter, config);
+
+        listener.onEvent(event(AgentEventType.STEP_START, 0, null, null));
+        listener.onEvent(event(AgentEventType.MODEL_REQUEST, 0, null, AgentPrompt.builder().model("unpriced-model").build()));
+        listener.onEvent(event(AgentEventType.MODEL_RESPONSE, 0, null, modelResponsePayload("unpriced-model", 100L, 20L)));
+        listener.onEvent(event(AgentEventType.STEP_END, 0, null, null));
+        listener.onEvent(event(AgentEventType.STEP_START, 1, null, null));
+        listener.onEvent(event(AgentEventType.MODEL_REQUEST, 1, null, AgentPrompt.builder().model("priced-model").build()));
+        listener.onEvent(event(AgentEventType.MODEL_RESPONSE, 1, null, modelResponsePayload("priced-model", 100L, 20L)));
+        listener.onEvent(event(AgentEventType.FINAL_OUTPUT, 1, "done", null));
+        listener.onEvent(event(AgentEventType.STEP_END, 1, null, null));
+
+        TraceSpan runSpan = findSpan(exporter.getSpans(), TraceSpanType.RUN);
+        Assert.assertNotNull(runSpan);
+        Assert.assertNotNull(runSpan.getMetrics());
+        Assert.assertEquals(Long.valueOf(240L), runSpan.getMetrics().getTotalTokens());
+        Assert.assertNull(runSpan.getMetrics().getInputCost());
+        Assert.assertNull(runSpan.getMetrics().getOutputCost());
+        Assert.assertNull(runSpan.getMetrics().getTotalCost());
+    }
+
+    @Test
+    public void test_trace_listener_keeps_aggregate_cost_unknown_when_one_priced_model_has_no_currency() {
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        TraceConfig config = TraceConfig.builder()
+                .pricingResolver(model -> TracePricing.builder()
+                        .inputCostPerMillionTokens(2.0D)
+                        .outputCostPerMillionTokens(8.0D)
+                        .currency("usd-model".equals(model) ? "USD" : null)
+                        .build())
+                .build();
+        AgentTraceListener listener = new AgentTraceListener(exporter, config);
+
+        listener.onEvent(event(AgentEventType.STEP_START, 0, null, null));
+        listener.onEvent(event(AgentEventType.MODEL_REQUEST, 0, null, AgentPrompt.builder().model("usd-model").build()));
+        listener.onEvent(event(AgentEventType.MODEL_RESPONSE, 0, null, modelResponsePayload("usd-model", 100L, 20L)));
+        listener.onEvent(event(AgentEventType.STEP_END, 0, null, null));
+        listener.onEvent(event(AgentEventType.STEP_START, 1, null, null));
+        listener.onEvent(event(AgentEventType.MODEL_REQUEST, 1, null, AgentPrompt.builder().model("unlabeled-model").build()));
+        listener.onEvent(event(AgentEventType.MODEL_RESPONSE, 1, null, modelResponsePayload("unlabeled-model", 100L, 20L)));
+        listener.onEvent(event(AgentEventType.FINAL_OUTPUT, 1, "done", null));
+        listener.onEvent(event(AgentEventType.STEP_END, 1, null, null));
+
+        TraceSpan runSpan = findSpan(exporter.getSpans(), TraceSpanType.RUN);
+        Assert.assertNotNull(runSpan);
+        Assert.assertNotNull(runSpan.getMetrics());
+        Assert.assertEquals(Long.valueOf(240L), runSpan.getMetrics().getTotalTokens());
+        Assert.assertNull(runSpan.getMetrics().getInputCost());
+        Assert.assertNull(runSpan.getMetrics().getOutputCost());
+        Assert.assertNull(runSpan.getMetrics().getTotalCost());
+        Assert.assertNull(runSpan.getMetrics().getCurrency());
     }
 
     private TraceSpan findSpan(List<TraceSpan> spans, TraceSpanType type) {
@@ -239,14 +304,21 @@ public class AgentTraceListenerTest {
     }
 
     private Map<String, Object> modelResponsePayload() {
+        return modelResponsePayload("glm-4.7", 120L, 45L);
+    }
+
+    private Map<String, Object> modelResponsePayload(String model, long promptTokens, long completionTokens) {
         Map<String, Object> usage = new LinkedHashMap<String, Object>();
-        usage.put("prompt_tokens", 120L);
-        usage.put("completion_tokens", 45L);
-        usage.put("total_tokens", 165L);
+        usage.put("prompt_tokens", promptTokens);
+        usage.put("completion_tokens", completionTokens);
+        usage.put("total_tokens", promptTokens + completionTokens);
+        Map<String, Object> promptDetails = new LinkedHashMap<String, Object>();
+        promptDetails.put("cache_write_tokens", 30L);
+        usage.put("prompt_tokens_details", promptDetails);
 
         Map<String, Object> payload = new LinkedHashMap<String, Object>();
         payload.put("id", "resp_1");
-        payload.put("model", "glm-4.7");
+        payload.put("model", model);
         payload.put("finishReason", "stop");
         payload.put("usage", usage);
         payload.put("outputText", "hello");

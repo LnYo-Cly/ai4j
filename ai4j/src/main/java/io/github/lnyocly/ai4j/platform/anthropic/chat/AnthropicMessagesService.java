@@ -8,8 +8,12 @@ import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicCacheCreation;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicOutputTokensDetails;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicServerToolUsage;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.errors.AnthropicApiException;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -191,6 +195,7 @@ public class AnthropicMessagesService implements IMessagesService {
                 if ("message_start".equals(eventType)) {
                     JsonNode message = node.path("message");
                     safeStart(handler, message.path("id").asText(null), message.path("model").asText(null));
+                    safeUsage(handler, parseUsage(message.path("usage")));
                 } else if ("content_block_start".equals(eventType)) {
                     int idx = node.path("index").asInt();
                     JsonNode block = node.path("content_block");
@@ -227,8 +232,10 @@ public class AnthropicMessagesService implements IMessagesService {
                     }
                 } else if ("message_delta".equals(eventType)) {
                     String stopReason = node.path("delta").path("stop_reason").asText(null);
-                    long out = node.path("usage").path("output_tokens").asLong(0L);
-                    long in = node.path("usage").path("input_tokens").asLong(0L);
+                    AnthropicUsage usage = parseUsage(node.path("usage"));
+                    safeUsage(handler, usage);
+                    long out = usage == null ? 0L : usage.getOutputTokens();
+                    long in = usage == null ? 0L : usage.getInputTokens();
                     handler.onStopReason(stopReason, in, out);
                 } else if ("message_stop".equals(eventType)) {
                     handler.onComplete();
@@ -295,6 +302,58 @@ public class AnthropicMessagesService implements IMessagesService {
         return (apiKey == null || apiKey.isEmpty()) ? anthropicConfig.getApiKey() : apiKey;
     }
 
+    private AnthropicUsage parseUsage(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        AnthropicUsage usage = new AnthropicUsage();
+        usage.setInputTokens(node.path("input_tokens").asLong(0L));
+        usage.setOutputTokens(node.path("output_tokens").asLong(0L));
+        if (node.hasNonNull("cache_read_input_tokens")) {
+            usage.setCacheReadInputTokens(Long.valueOf(node.path("cache_read_input_tokens").asLong()));
+        }
+        if (node.hasNonNull("cache_creation_input_tokens")) {
+            usage.setCacheCreationInputTokens(Long.valueOf(node.path("cache_creation_input_tokens").asLong()));
+        }
+        JsonNode cacheCreation = node.path("cache_creation");
+        if (cacheCreation.isObject()) {
+            AnthropicCacheCreation details = new AnthropicCacheCreation();
+            if (cacheCreation.hasNonNull("ephemeral_5m_input_tokens")) {
+                details.setEphemeral5mInputTokens(Long.valueOf(cacheCreation.path("ephemeral_5m_input_tokens").asLong()));
+            }
+            if (cacheCreation.hasNonNull("ephemeral_1h_input_tokens")) {
+                details.setEphemeral1hInputTokens(Long.valueOf(cacheCreation.path("ephemeral_1h_input_tokens").asLong()));
+            }
+            usage.setCacheCreation(details);
+        }
+        JsonNode outputDetails = node.path("output_tokens_details");
+        if (outputDetails.isObject()) {
+            AnthropicOutputTokensDetails details = new AnthropicOutputTokensDetails();
+            if (outputDetails.hasNonNull("thinking_tokens")) {
+                details.setThinkingTokens(Long.valueOf(outputDetails.path("thinking_tokens").asLong()));
+            }
+            usage.setOutputTokensDetails(details);
+        }
+        JsonNode serverToolUse = node.path("server_tool_use");
+        if (serverToolUse.isObject()) {
+            AnthropicServerToolUsage details = new AnthropicServerToolUsage();
+            if (serverToolUse.hasNonNull("web_fetch_requests")) {
+                details.setWebFetchRequests(Long.valueOf(serverToolUse.path("web_fetch_requests").asLong()));
+            }
+            if (serverToolUse.hasNonNull("web_search_requests")) {
+                details.setWebSearchRequests(Long.valueOf(serverToolUse.path("web_search_requests").asLong()));
+            }
+            usage.setServerToolUse(details);
+        }
+        if (node.hasNonNull("inference_geo")) {
+            usage.setInferenceGeo(node.path("inference_geo").asText());
+        }
+        if (node.hasNonNull("service_tier")) {
+            usage.setServiceTier(node.path("service_tier").asText());
+        }
+        return usage;
+    }
+
     private static String writeJson(Object value) {
         if (value == null) {
             return null;
@@ -312,6 +371,17 @@ public class AnthropicMessagesService implements IMessagesService {
     private static void safeStart(AnthropicStreamHandler handler, String messageId, String model) {
         try {
             handler.onStart(messageId, model);
+        } catch (Throwable t) {
+            safeError(handler, t);
+        }
+    }
+
+    private static void safeUsage(AnthropicStreamHandler handler, AnthropicUsage usage) {
+        if (usage == null) {
+            return;
+        }
+        try {
+            handler.onUsage(usage);
         } catch (Throwable t) {
             safeError(handler, t);
         }

@@ -6,11 +6,13 @@ import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.model.ModelUsage;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
-import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.platform.openai.response.entity.Response;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -437,20 +439,32 @@ public class AgentTraceListener implements AgentListener {
         String responseId = null;
         String responseModel = null;
         String finishReason = null;
-        Usage usage = null;
+        ModelUsage usage = null;
         if (payload instanceof ChatCompletionResponse) {
             ChatCompletionResponse response = (ChatCompletionResponse) payload;
             responseId = response.getId();
             responseModel = response.getModel();
-            usage = response.getUsage();
+            usage = ModelUsage.fromOpenAiChat(response.getUsage());
             finishReason = firstChoiceFinishReason(response.getChoices());
             putAttribute(span, "systemFingerprint", safeValue(response.getSystemFingerprint()));
+        } else if (payload instanceof Response) {
+            Response response = (Response) payload;
+            responseId = response.getId();
+            responseModel = response.getModel();
+            finishReason = response.getStatus();
+            usage = ModelUsage.fromResponses(response.getUsage());
+        } else if (payload instanceof AnthropicChatCompletionResponse) {
+            AnthropicChatCompletionResponse response = (AnthropicChatCompletionResponse) payload;
+            responseId = response.getId();
+            responseModel = response.getModel();
+            finishReason = response.getStopReason();
+            usage = ModelUsage.fromAnthropic(response.getUsage());
         } else if (payload instanceof Map) {
             Map<String, Object> response = payloadMap(payload);
             responseId = stringValue(response, "id");
             responseModel = stringValue(response, "model");
             finishReason = stringValue(response, "finishReason");
-            usage = mapToUsage(response.get("usage"));
+            usage = ModelUsage.fromMap(response.get("usage"));
         }
         if (responseId != null) {
             putAttribute(span, "responseId", responseId);
@@ -486,15 +500,59 @@ public class AgentTraceListener implements AgentListener {
         if (target.getDurationMillis() == null) {
             target.setDurationMillis(metrics.getDurationMillis());
         }
+        boolean targetHasUnpricedUsage = hasUnpricedUsage(target);
+        boolean incomingHasUnpricedUsage = hasUnpricedUsage(metrics);
+        boolean currencyMismatch = currenciesDiffer(target, metrics);
         target.setPromptTokens(sum(target.getPromptTokens(), metrics.getPromptTokens()));
         target.setCompletionTokens(sum(target.getCompletionTokens(), metrics.getCompletionTokens()));
         target.setTotalTokens(sum(target.getTotalTokens(), metrics.getTotalTokens()));
+        target.setUncachedInputTokens(sum(target.getUncachedInputTokens(), metrics.getUncachedInputTokens()));
+        target.setCacheReadInputTokens(sum(target.getCacheReadInputTokens(), metrics.getCacheReadInputTokens()));
+        target.setCacheWriteInputTokens(sum(target.getCacheWriteInputTokens(), metrics.getCacheWriteInputTokens()));
+        target.setCacheCreationInputTokens(sum(target.getCacheCreationInputTokens(), metrics.getCacheCreationInputTokens()));
+        target.setReasoningTokens(sum(target.getReasoningTokens(), metrics.getReasoningTokens()));
+        if (targetHasUnpricedUsage || incomingHasUnpricedUsage || currencyMismatch) {
+            target.setInputCost(null);
+            target.setCacheReadInputCost(null);
+            target.setCacheCreationInputCost(null);
+            target.setOutputCost(null);
+            target.setTotalCost(null);
+            target.setCurrency(null);
+            return;
+        }
         target.setInputCost(sum(target.getInputCost(), metrics.getInputCost()));
+        target.setCacheReadInputCost(sum(target.getCacheReadInputCost(), metrics.getCacheReadInputCost()));
+        target.setCacheCreationInputCost(sum(target.getCacheCreationInputCost(), metrics.getCacheCreationInputCost()));
         target.setOutputCost(sum(target.getOutputCost(), metrics.getOutputCost()));
         target.setTotalCost(sum(target.getTotalCost(), metrics.getTotalCost()));
         if (target.getCurrency() == null) {
             target.setCurrency(metrics.getCurrency());
         }
+    }
+
+    private boolean hasUnpricedUsage(TraceMetrics metrics) {
+        return metrics != null && metrics.getTotalCost() == null && hasNonZeroUsage(metrics);
+    }
+
+    private boolean hasNonZeroUsage(TraceMetrics metrics) {
+        return isPositive(metrics.getTotalTokens()) || isPositive(metrics.getPromptTokens())
+                || isPositive(metrics.getCompletionTokens()) || isPositive(metrics.getUncachedInputTokens())
+                || isPositive(metrics.getCacheReadInputTokens())
+                || isPositive(metrics.getCacheCreationInputTokens());
+    }
+
+    private boolean isPositive(Long value) {
+        return value != null && value.longValue() > 0L;
+    }
+
+    private boolean currenciesDiffer(TraceMetrics left, TraceMetrics right) {
+        if (hasPricedUsage(left) && isBlank(left.getCurrency())) {
+            return true;
+        }
+        if (hasPricedUsage(right) && isBlank(right.getCurrency())) {
+            return true;
+        }
+        return hasPricedUsage(left) && hasPricedUsage(right) && !left.getCurrency().equals(right.getCurrency());
     }
 
     private void mergeUsageMetrics(TraceSpan span, TraceMetrics source) {
@@ -505,7 +563,14 @@ public class AgentTraceListener implements AgentListener {
                 .promptTokens(source.getPromptTokens())
                 .completionTokens(source.getCompletionTokens())
                 .totalTokens(source.getTotalTokens())
+                .uncachedInputTokens(source.getUncachedInputTokens())
+                .cacheReadInputTokens(source.getCacheReadInputTokens())
+                .cacheWriteInputTokens(source.getCacheWriteInputTokens())
+                .cacheCreationInputTokens(source.getCacheCreationInputTokens())
+                .reasoningTokens(source.getReasoningTokens())
                 .inputCost(source.getInputCost())
+                .cacheReadInputCost(source.getCacheReadInputCost())
+                .cacheCreationInputCost(source.getCacheCreationInputCost())
                 .outputCost(source.getOutputCost())
                 .totalCost(source.getTotalCost())
                 .currency(source.getCurrency())
@@ -513,26 +578,43 @@ public class AgentTraceListener implements AgentListener {
         mergeMetrics(span, usageOnly);
     }
 
-    private TraceMetrics metricsFromUsage(Usage usage, TracePricing pricing) {
+    private boolean hasPricedUsage(TraceMetrics metrics) {
+        return metrics != null && hasNonZeroUsage(metrics) && metrics.getTotalCost() != null;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private TraceMetrics metricsFromUsage(ModelUsage usage, TracePricing pricing) {
         if (!config.isRecordMetrics() || usage == null) {
             return null;
         }
-        long promptTokens = usage.getPromptTokens();
-        long completionTokens = usage.getCompletionTokens();
-        long totalTokens = usage.getTotalTokens();
+        Long promptTokens = usage.getInputTokens();
+        Long completionTokens = usage.getOutputTokens();
+        Long totalTokens = usage.getTotalTokens();
+        Long uncachedInputTokens = usage.getUncachedInputTokens();
+        Long cacheReadInputTokens = usage.getCacheReadInputTokens();
+        Long cacheWriteInputTokens = usage.getCacheWriteInputTokens();
+        Long cacheCreationInputTokens = usage.getCacheCreationInputTokens();
+        Long reasoningTokens = usage.getReasoningTokens();
         Double inputCost = null;
+        Double cacheReadInputCost = null;
+        Double cacheCreationInputCost = null;
         Double outputCost = null;
         Double totalCost = null;
         String currency = null;
         if (pricing != null) {
-            if (pricing.getInputCostPerMillionTokens() != null) {
-                inputCost = (promptTokens / 1000000D) * pricing.getInputCostPerMillionTokens();
-            }
-            if (pricing.getOutputCostPerMillionTokens() != null) {
-                outputCost = (completionTokens / 1000000D) * pricing.getOutputCostPerMillionTokens();
-            }
-            if (inputCost != null || outputCost != null) {
-                totalCost = (inputCost == null ? 0D : inputCost) + (outputCost == null ? 0D : outputCost);
+            inputCost = bucketCost(uncachedInputTokens, pricing.getInputCostPerMillionTokens());
+            cacheReadInputCost = bucketCost(cacheReadInputTokens, pricing.getCacheReadInputCostPerMillionTokens());
+            cacheCreationInputCost = bucketCost(cacheCreationInputTokens, pricing.getCacheCreationInputCostPerMillionTokens());
+            outputCost = bucketCost(completionTokens, pricing.getOutputCostPerMillionTokens());
+            if (canCalculateTotal(uncachedInputTokens, inputCost)
+                    && canCalculateTotal(cacheReadInputTokens, cacheReadInputCost)
+                    && canCalculateTotal(cacheCreationInputTokens, cacheCreationInputCost)
+                    && canCalculateTotal(completionTokens, outputCost)) {
+                totalCost = zeroIfNull(inputCost) + zeroIfNull(cacheReadInputCost)
+                        + zeroIfNull(cacheCreationInputCost) + zeroIfNull(outputCost);
             }
             currency = pricing.getCurrency();
         }
@@ -540,11 +622,39 @@ public class AgentTraceListener implements AgentListener {
                 .promptTokens(promptTokens)
                 .completionTokens(completionTokens)
                 .totalTokens(totalTokens)
+                .uncachedInputTokens(uncachedInputTokens)
+                .cacheReadInputTokens(cacheReadInputTokens)
+                .cacheWriteInputTokens(cacheWriteInputTokens)
+                .cacheCreationInputTokens(cacheCreationInputTokens)
+                .reasoningTokens(reasoningTokens)
                 .inputCost(inputCost)
+                .cacheReadInputCost(cacheReadInputCost)
+                .cacheCreationInputCost(cacheCreationInputCost)
                 .outputCost(outputCost)
                 .totalCost(totalCost)
                 .currency(currency)
                 .build();
+    }
+
+    private Double bucketCost(Long tokens, Double costPerMillionTokens) {
+        if (tokens == null) {
+            return null;
+        }
+        if (tokens.longValue() == 0L) {
+            return 0D;
+        }
+        if (costPerMillionTokens == null) {
+            return null;
+        }
+        return (tokens.longValue() / 1000000D) * costPerMillionTokens;
+    }
+
+    private boolean canCalculateTotal(Long tokens, Double cost) {
+        return tokens == null || tokens.longValue() == 0L || cost != null;
+    }
+
+    private double zeroIfNull(Double value) {
+        return value == null ? 0D : value.doubleValue();
     }
 
     private TracePricing resolveModelPricing(TraceSpan span, String responseModel) {
@@ -560,21 +670,6 @@ public class AgentTraceListener implements AgentListener {
             }
         }
         return model == null ? null : resolver.resolve(model);
-    }
-
-    private Usage mapToUsage(Object value) {
-        if (value instanceof Usage) {
-            return (Usage) value;
-        }
-        if (!(value instanceof Map)) {
-            return null;
-        }
-        Map<String, Object> usageMap = payloadMap(value);
-        Usage usage = new Usage();
-        usage.setPromptTokens(longValue(firstNonNull(usageMap.get("prompt_tokens"), usageMap.get("promptTokens"), usageMap.get("input"))));
-        usage.setCompletionTokens(longValue(firstNonNull(usageMap.get("completion_tokens"), usageMap.get("completionTokens"), usageMap.get("output"))));
-        usage.setTotalTokens(longValue(firstNonNull(usageMap.get("total_tokens"), usageMap.get("totalTokens"), usageMap.get("total"))));
-        return usage;
     }
 
     private String firstChoiceFinishReason(List<Choice> choices) {
@@ -749,18 +844,6 @@ public class AgentTraceListener implements AgentListener {
         return null;
     }
 
-    private Object firstNonNull(Object... values) {
-        if (values == null) {
-            return null;
-        }
-        for (Object value : values) {
-            if (value != null) {
-                return value;
-            }
-        }
-        return null;
-    }
-
     private Long sum(Long left, Long right) {
         if (left == null) {
             return right;
@@ -779,20 +862,6 @@ public class AgentTraceListener implements AgentListener {
             return left;
         }
         return left + right;
-    }
-
-    private long longValue(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        try {
-            return Long.parseLong(String.valueOf(value));
-        } catch (NumberFormatException ex) {
-            return 0L;
-        }
     }
 
     private void finishSpan(TraceSpan span, TraceSpanStatus status, String error) {

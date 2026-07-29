@@ -90,6 +90,9 @@ public abstract class SseListener extends AbstractManagedStreamListener {
     @Getter
     private final Usage usage = new Usage();
 
+    @Getter
+    private boolean usagePresent;
+
     @Setter
     @Getter
     private List<ToolCall> toolCalls = new ArrayList<>();
@@ -133,9 +136,8 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         // 统计token，当设置include_usage = true时，最后一条消息会携带usage, 其他消息中usage为null
         Usage currUsage = chatCompletionResponse.getUsage();
         if(currUsage != null){
-            usage.setPromptTokens(usage.getPromptTokens() + currUsage.getPromptTokens());
-            usage.setCompletionTokens(usage.getCompletionTokens() + currUsage.getCompletionTokens());
-            usage.setTotalTokens(usage.getTotalTokens() + currUsage.getTotalTokens());
+            usagePresent = true;
+            usage.merge(currUsage);
         }
 
 

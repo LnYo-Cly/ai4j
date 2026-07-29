@@ -13,6 +13,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
+import io.github.lnyocly.ai4j.agent.trace.TracePricing;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
@@ -56,6 +57,40 @@ public class CodingAgentBuilderTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Test
+    public void shouldForwardPricingResolverToDelegateAgent() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-pricing").toPath();
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("done")
+                .inputTokens(Long.valueOf(1000000L))
+                .uncachedInputTokens(Long.valueOf(1000000L))
+                .outputTokens(Long.valueOf(1000000L))
+                .totalTokens(Long.valueOf(2000000L))
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("priced-model")
+                .workspaceContext(WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build())
+                .pricingResolver(model -> TracePricing.builder()
+                        .inputCostPerMillionTokens(Double.valueOf(2D))
+                        .outputCostPerMillionTokens(Double.valueOf(4D))
+                        .currency("USD")
+                        .build())
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Return a result.");
+        }
+
+        assertEquals(Double.valueOf(2D), result.getInputCost());
+        assertEquals(Double.valueOf(4D), result.getOutputCost());
+        assertEquals(Double.valueOf(6D), result.getTotalCost());
+        assertEquals("USD", result.getCurrency());
+    }
 
     @Test
     public void shouldRunBuiltInCodingToolWithinAgentLoop() throws Exception {

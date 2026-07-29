@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.anthropic.chat;
 
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
+import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicUsage;
 import io.github.lnyocly.ai4j.platform.anthropic.stream.AnthropicStreamHandler;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
@@ -29,6 +30,7 @@ public class AnthropicMessagesServiceTest {
         final List<String> toolUseComplete = new ArrayList<String>();
         String stopReason;
         long stopOut;
+        AnthropicUsage latestUsage;
         boolean completed;
         Throwable error;
 
@@ -62,6 +64,11 @@ public class AnthropicMessagesServiceTest {
         public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
             this.stopReason = stopReason;
             this.stopOut = outputTokens;
+        }
+
+        @Override
+        public void onUsage(AnthropicUsage usage) {
+            this.latestUsage = usage;
         }
 
         @Override
@@ -115,5 +122,42 @@ public class AnthropicMessagesServiceTest {
         configuration.setAnthropicConfig(new AnthropicConfig());
         Object svc = new AiService(configuration).getMessagesService(PlatformType.ANTHROPIC);
         Assert.assertTrue(svc instanceof AnthropicMessagesService);
+    }
+
+    @Test
+    public void shouldExposeAnthropicCacheUsageFromStreamEvents() {
+        AnthropicMessagesService service = newService();
+        Capture capture = new Capture();
+        EventSourceListener listener = service.toEventListener(capture, null, null);
+
+        feed(listener, "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"model\":\"claude-test\","
+                + "\"usage\":{\"input_tokens\":10,\"output_tokens\":8,\"cache_read_input_tokens\":70,\"cache_creation_input_tokens\":30,"
+                + "\"cache_creation\":{\"ephemeral_5m_input_tokens\":20,\"ephemeral_1h_input_tokens\":10},"
+                + "\"output_tokens_details\":{\"thinking_tokens\":4},"
+                + "\"server_tool_use\":{\"web_fetch_requests\":2,\"web_search_requests\":3},"
+                + "\"inference_geo\":\"us\",\"service_tier\":\"priority\"}}}");
+
+        Assert.assertNotNull(capture.latestUsage);
+        Assert.assertEquals(10L, capture.latestUsage.getInputTokens());
+        Assert.assertEquals(8L, capture.latestUsage.getOutputTokens());
+        Assert.assertEquals(Long.valueOf(70L), capture.latestUsage.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), capture.latestUsage.getCacheCreationInputTokens());
+        Assert.assertEquals(Long.valueOf(20L), capture.latestUsage.getCacheCreation().getEphemeral5mInputTokens());
+        Assert.assertEquals(Long.valueOf(10L), capture.latestUsage.getCacheCreation().getEphemeral1hInputTokens());
+        Assert.assertEquals(Long.valueOf(4L), capture.latestUsage.getOutputTokensDetails().getThinkingTokens());
+        Assert.assertEquals(Long.valueOf(2L), capture.latestUsage.getServerToolUse().getWebFetchRequests());
+        Assert.assertEquals(Long.valueOf(3L), capture.latestUsage.getServerToolUse().getWebSearchRequests());
+        Assert.assertEquals("us", capture.latestUsage.getInferenceGeo());
+        Assert.assertEquals("priority", capture.latestUsage.getServiceTier());
+    }
+
+    @Test
+    public void shouldRetainFourBucketUsageConstructor() {
+        AnthropicUsage usage = new AnthropicUsage(10L, 8L, Long.valueOf(70L), Long.valueOf(30L));
+
+        Assert.assertEquals(10L, usage.getInputTokens());
+        Assert.assertEquals(8L, usage.getOutputTokens());
+        Assert.assertEquals(Long.valueOf(70L), usage.getCacheReadInputTokens());
+        Assert.assertEquals(Long.valueOf(30L), usage.getCacheCreationInputTokens());
     }
 }

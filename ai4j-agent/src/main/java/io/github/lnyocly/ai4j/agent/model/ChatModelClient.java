@@ -97,11 +97,9 @@ public class ChatModelClient implements AgentModelClient {
             throw new IllegalArgumentException("prompt is required");
         }
         List<ChatMessage> messages = new ArrayList<>();
-        if (prompt.getSystemPrompt() != null && !prompt.getSystemPrompt().trim().isEmpty()) {
-            messages.add(ChatMessage.withSystem(prompt.getSystemPrompt()));
-        }
-        if (prompt.getInstructions() != null && !prompt.getInstructions().trim().isEmpty()) {
-            messages.add(ChatMessage.withSystem(prompt.getInstructions()));
+        String systemPrompt = mergeText(prompt.getSystemPrompt(), prompt.getInstructions());
+        if (systemPrompt != null) {
+            messages.add(ChatMessage.withSystem(systemPrompt));
         }
 
         if (prompt.getItems() != null) {
@@ -311,7 +309,9 @@ public class ChatModelClient implements AgentModelClient {
 
     private AgentModelResult toModelResult(ChatCompletionResponse response) {
         if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
-            return AgentModelResult.builder().rawResponse(response).build();
+            AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder().rawResponse(response);
+            ModelUsage usage = response == null ? null : ModelUsage.fromOpenAiChat(response.getUsage());
+            return usage == null ? builder.build() : usage.applyTo(builder).build();
         }
         ChatMessage message = response.getChoices().get(0).getMessage();
         String outputText = null;
@@ -339,22 +339,14 @@ public class ChatModelClient implements AgentModelClient {
 
         List<Object> memoryItems = buildAssistantMemoryItems(outputText, toolCalls);
 
-        Long inputTokens = null;
-        Long outputTokens = null;
-        if (response.getUsage() != null) {
-            inputTokens = response.getUsage().getPromptTokens();
-            outputTokens = response.getUsage().getCompletionTokens();
-        }
-
-        return AgentModelResult.builder()
+        AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
                 .reasoningText(reasoningText == null ? "" : reasoningText)
                 .outputText(outputText == null ? "" : outputText)
                 .toolCalls(toolCalls)
                 .memoryItems(memoryItems)
-                .rawResponse(response)
-                .inputTokens(inputTokens)
-                .outputTokens(outputTokens)
-                .build();
+                .rawResponse(response);
+        ModelUsage usage = ModelUsage.fromOpenAiChat(response.getUsage());
+        return usage == null ? builder.build() : usage.applyTo(builder).build();
     }
 
     private final class StreamingSseListener extends SseListener {
@@ -413,13 +405,14 @@ public class ChatModelClient implements AgentModelClient {
             rawResponse.put("toolCalls", getToolCalls());
             rawResponse.put("usage", getUsage());
 
-            return AgentModelResult.builder()
+            AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
                     .reasoningText(reasoningText)
                     .outputText(outputText)
                     .toolCalls(calls)
                     .memoryItems(memoryItems)
-                    .rawResponse(rawResponse)
-                    .build();
+                    .rawResponse(rawResponse);
+            ModelUsage usage = isUsagePresent() ? ModelUsage.fromOpenAiChat(getUsage()) : null;
+            return usage == null ? builder.build() : usage.applyTo(builder).build();
         }
     }
 
@@ -436,6 +429,15 @@ public class ChatModelClient implements AgentModelClient {
             memoryItems.add(io.github.lnyocly.ai4j.agent.util.AgentInputItem.message("assistant", outputText));
         }
         return memoryItems;
+    }
+
+    private static String mergeText(String first, String second) {
+        boolean hasFirst = first != null && !first.trim().isEmpty();
+        boolean hasSecond = second != null && !second.trim().isEmpty();
+        if (hasFirst && hasSecond) {
+            return first + "\n\n" + second;
+        }
+        return hasFirst ? first : (hasSecond ? second : null);
     }
 
     private List<AgentToolCall> convertToolCalls(List<ToolCall> toolCalls) {

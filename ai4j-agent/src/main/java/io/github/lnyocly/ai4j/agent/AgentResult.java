@@ -34,4 +34,51 @@ public class AgentResult {
     private Long inputTokens;
 
     private Long outputTokens;
+
+    private Long totalTokens;
+
+    private Long uncachedInputTokens;
+
+    private Long cacheReadInputTokens;
+
+    private Long cacheWriteInputTokens;
+
+    private Long cacheCreationInputTokens;
+
+    private Long reasoningTokens;
+
+    private Double inputCost;
+
+    private Double cacheReadInputCost;
+
+    private Double cacheCreationInputCost;
+
+    private Double outputCost;
+
+    private Double totalCost;
+
+    private String currency;
+
+    /** Compatibility constructor retained for the pre-cache-accounting result shape. */
+    public AgentResult(String runId,
+                       String sessionId,
+                       String turnId,
+                       String outputText,
+                       Object rawResponse,
+                       List<AgentToolCall> toolCalls,
+                       List<AgentToolResult> toolResults,
+                       Integer steps,
+                       Long inputTokens,
+                       Long outputTokens) {
+        this.runId = runId;
+        this.sessionId = sessionId;
+        this.turnId = turnId;
+        this.outputText = outputText;
+        this.rawResponse = rawResponse;
+        this.toolCalls = toolCalls;
+        this.toolResults = toolResults;
+        this.steps = steps;
+        this.inputTokens = inputTokens;
+        this.outputTokens = outputTokens;
+    }
 }
