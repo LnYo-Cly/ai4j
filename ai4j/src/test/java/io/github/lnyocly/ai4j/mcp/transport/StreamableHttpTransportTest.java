@@ -128,11 +128,69 @@ public class StreamableHttpTransportTest {
         params.put("arguments", Collections.singletonMap("region", "cn"));
         params.put("_meta", metadata);
         transport.sendMessage(new McpRequest("tools/call", 10L, params),
-                Collections.singletonMap("Mcp-Param-Region", "cn")).get(5, TimeUnit.SECONDS);
+                Collections.singletonMap("mcp-param-Region", "cn")).get(5, TimeUnit.SECONDS);
 
         RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         Assert.assertEquals("weather", request.getHeader("Mcp-Name"));
         Assert.assertEquals("cn", request.getHeader("Mcp-Param-Region"));
+        transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void mandatoryContentHeadersOverrideCustomHeaders() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"jsonrpc\":\"2.0\",\"id\":12,\"result\":{\"resultType\":\"complete\"}}"));
+        server.start();
+
+        TransportConfig config = TransportConfig.streamableHttp(server.url("/mcp").toString());
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Accept", "application/xml");
+        headers.put("Content-Type", "text/plain");
+        config.setHeaders(headers);
+        StreamableHttpTransport transport = new StreamableHttpTransport(config);
+        transport.setMessageHandler(new CapturingHandler());
+        transport.start().get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("_meta", metadata);
+        transport.sendMessage(new McpRequest("server/discover", 12L, params)).get(5, TimeUnit.SECONDS);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
+        Assert.assertEquals("application/json, text/event-stream", request.getHeader("Accept"));
+        transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void modernProfileDeliversStructuredHttpErrorsWithoutDisconnecting() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(new MockResponse().setResponseCode(400)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"jsonrpc\":\"2.0\",\"id\":11,\"error\":{\"code\":-32020,\"message\":\"Header mismatch\"}}"));
+        server.start();
+
+        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        CapturingHandler handler = new CapturingHandler();
+        transport.setMessageHandler(handler);
+        transport.start().get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("_meta", metadata);
+        transport.sendMessage(new McpRequest("server/discover", 11L, params)).get(5, TimeUnit.SECONDS);
+
+        Assert.assertTrue(handler.firstMessageLatch.await(5, TimeUnit.SECONDS));
+        Assert.assertNull(handler.lastError);
+        Assert.assertNotNull(handler.firstMessage.get());
+        Assert.assertTrue(handler.firstMessage.get().isErrorResponse());
+        Assert.assertEquals(-32020, handler.firstMessage.get().getError().getCode().intValue());
         transport.stop().get(5, TimeUnit.SECONDS);
     }
 

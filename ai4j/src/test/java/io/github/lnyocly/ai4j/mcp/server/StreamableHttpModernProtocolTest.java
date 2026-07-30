@@ -1,7 +1,11 @@
 package io.github.lnyocly.ai4j.mcp.server;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.mcp.client.McpClient;
+import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
 import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
+import io.github.lnyocly.ai4j.mcp.transport.StreamableHttpTransport;
+import io.github.lnyocly.ai4j.mcp.transport.TransportConfig;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,6 +22,7 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +37,11 @@ public class StreamableHttpModernProtocolTest {
             RawResponse discover = post(port, "server/discover", 1, new HashMap<String, Object>(), null, null);
             Assert.assertEquals(200, discover.status);
             Assert.assertTrue(discover.body.contains("2026-07-28"));
+            Assert.assertTrue(discover.body.contains("\"supportedVersions\""));
             Assert.assertTrue(discover.body.contains("resultType"));
+            Assert.assertTrue(discover.body.contains("\"ttlMs\":3600000"));
+            Assert.assertTrue(discover.body.contains("\"cacheScope\":\"public\""));
+            Assert.assertFalse(discover.body.contains("listChanged"));
             Assert.assertNull(discover.sessionId);
 
             RawResponse tools = post(port, "tools/list", 2, new HashMap<String, Object>(), null, null);
@@ -56,10 +65,29 @@ public class StreamableHttpModernProtocolTest {
                     "https://forbidden.example", null);
             Assert.assertEquals(403, origin.status);
 
+            RawResponse preflight = options(port, "/mcp", "https://forbidden.example");
+            Assert.assertEquals(403, preflight.status);
+            Assert.assertEquals(403, options(port, "/health", "https://forbidden.example").status);
+            Assert.assertEquals(403, options(port, "/", "https://forbidden.example").status);
+
             RawResponse mismatch = post(port, "server/discover", 2, new HashMap<String, Object>(),
                     null, "tools/list");
             Assert.assertEquals(400, mismatch.status);
             Assert.assertTrue(mismatch.body.contains("-32020"));
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void modernServerReturnsParseErrorForMalformedJson() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = modernServer(port, null);
+        try {
+            server.start().get();
+            RawResponse response = rawPost(port, "{", null);
+            Assert.assertEquals(400, response.status);
+            Assert.assertTrue(response.body.contains("-32700"));
         } finally {
             server.stop().get();
         }
@@ -94,6 +122,56 @@ public class StreamableHttpModernProtocolTest {
             RawResponse response = rawPost(port, JSON.toJSONString(notification), null);
             Assert.assertEquals(202, response.status);
             Assert.assertEquals("", response.body);
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void modernClientAndServerInteroperateWithoutSessionHandshake() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = modernServer(port, null);
+        McpClient client = null;
+        try {
+            server.start().get();
+            TransportConfig config = TransportConfig.streamableHttp("http://127.0.0.1:" + port + "/mcp")
+                    .withProtocolProfile(McpProtocolProfile.MODERN_2026_07_28);
+            client = new McpClient("modern-client", "1.0", new StreamableHttpTransport(config), false);
+            client.connect().get(5, TimeUnit.SECONDS);
+
+            List<McpToolDefinition> tools = client.getAvailableTools().get(45, TimeUnit.SECONDS);
+            Assert.assertTrue(client.isInitialized());
+            Assert.assertNotNull(tools);
+        } finally {
+            if (client != null) {
+                client.disconnect().get(5, TimeUnit.SECONDS);
+            }
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void modernServerRejectsRequestWithoutRequiredClientCapabilities() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = modernServer(port, null);
+        try {
+            server.start().get();
+            Map<String, Object> metadata = new HashMap<String, Object>();
+            metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("_meta", metadata);
+            Map<String, Object> request = new HashMap<String, Object>();
+            request.put("jsonrpc", "2.0");
+            request.put("id", 1);
+            request.put("method", "server/discover");
+            request.put("params", params);
+
+            RawResponse response = rawPost(port, JSON.toJSONString(request), new String[] {
+                    "MCP-Protocol-Version", "2026-07-28",
+                    "Mcp-Method", "server/discover"
+            });
+            Assert.assertEquals(400, response.status);
+            Assert.assertTrue(response.body.contains("-32602"));
         } finally {
             server.stop().get();
         }
@@ -158,6 +236,26 @@ public class StreamableHttpModernProtocolTest {
                     builder.header(headers[i], headers[i + 1]);
                 }
             }
+        }
+        Response response = new OkHttpClient.Builder()
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
+                .newCall(builder.build())
+                .execute();
+        try {
+            return new RawResponse(response.code(), response.body() == null ? "" : response.body().string(),
+                    response.header("mcp-session-id"));
+        } finally {
+            response.close();
+        }
+    }
+
+    private static RawResponse options(int port, String path, String origin) throws IOException {
+        Request.Builder builder = new Request.Builder()
+                .url("http://127.0.0.1:" + port + path)
+                .method("OPTIONS", null);
+        if (origin != null) {
+            builder.header("Origin", origin);
         }
         Response response = new OkHttpClient.Builder()
                 .readTimeout(30, TimeUnit.SECONDS)

@@ -137,7 +137,7 @@ public class McpServerEngine {
 
     private McpMessage handleDiscover(McpMessage message) {
         Map<String, Object> result = new HashMap<String, Object>();
-        result.put("protocolVersions", new ArrayList<String>(supportedProtocolVersions));
+        result.put("supportedVersions", new ArrayList<String>(supportedProtocolVersions));
         result.put("capabilities", buildCapabilities());
         result.put("serverInfo", buildServerInfo());
 
@@ -159,7 +159,10 @@ public class McpServerEngine {
         Map<String, Object> metadata = new HashMap<String, Object>();
         metadata.put("io.modelcontextprotocol/serverInfo", buildServerInfo());
         result.put("_meta", metadata);
-        if ("tools/list".equals(method) || "resources/list".equals(method)
+        if ("server/discover".equals(method)) {
+            result.put("ttlMs", 3600000L);
+            result.put("cacheScope", "public");
+        } else if ("tools/list".equals(method) || "resources/list".equals(method)
                 || "resources/read".equals(method) || "prompts/list".equals(method)) {
             result.put("ttlMs", 30000L);
             result.put("cacheScope", "private");
@@ -435,11 +438,9 @@ public class McpServerEngine {
         capabilities.put("tools", toolsCapability);
 
         Map<String, Object> resourcesCapability = new HashMap<String, Object>();
-        resourcesCapability.put("listChanged", true);
         capabilities.put("resources", resourcesCapability);
 
         Map<String, Object> promptsCapability = new HashMap<String, Object>();
-        promptsCapability.put("listChanged", true);
         capabilities.put("prompts", promptsCapability);
 
         return capabilities;

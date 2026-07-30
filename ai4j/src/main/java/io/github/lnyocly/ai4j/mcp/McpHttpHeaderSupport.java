@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.mcp;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -52,6 +54,33 @@ public final class McpHttpHeaderSupport {
             createToolParameterHeaders(inputSchema, new HashMap<String, Object>());
             return true;
         } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Compares decoded parameter-header values using the type declared by the
+     * matching {@code x-mcp-header} binding. Integers use numeric equivalence
+     * so that equivalent decimal forms such as {@code 42} and {@code 42.0}
+     * are accepted by the server.
+     */
+    public static boolean areToolParameterHeaderValuesEquivalent(Map<String, Object> inputSchema,
+                                                                   String headerName,
+                                                                   String expectedValue,
+                                                                   String actualValue) {
+        if (expectedValue == null) {
+            return actualValue == null;
+        }
+        if (actualValue == null) {
+            return false;
+        }
+        Binding binding = findBinding(inputSchema, headerName);
+        if (binding == null || !"integer".equals(binding.type)) {
+            return expectedValue.equals(actualValue);
+        }
+        try {
+            return new BigDecimal(expectedValue).compareTo(new BigDecimal(actualValue)) == 0;
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -123,11 +152,37 @@ public final class McpHttpHeaderSupport {
         if (!(value instanceof Number)) {
             throw new IllegalArgumentException("x-mcp-header value must be an integer");
         }
-        long integer = ((Number) value).longValue();
+        long integer = asSafeInteger((Number) value);
         if (integer > MAX_SAFE_INTEGER || integer < -MAX_SAFE_INTEGER) {
             throw new IllegalArgumentException("x-mcp-header integer is outside the JavaScript safe range");
         }
         return String.valueOf(integer);
+    }
+
+    private static long asSafeInteger(Number value) {
+        BigDecimal decimal;
+        if (value instanceof BigDecimal) {
+            decimal = (BigDecimal) value;
+        } else if (value instanceof BigInteger) {
+            decimal = new BigDecimal((BigInteger) value);
+        } else if (value instanceof Double || value instanceof Float) {
+            double floatingPoint = value.doubleValue();
+            if (Double.isNaN(floatingPoint) || Double.isInfinite(floatingPoint)) {
+                throw new IllegalArgumentException("x-mcp-header integer must be finite");
+            }
+            decimal = BigDecimal.valueOf(floatingPoint);
+        } else {
+            try {
+                decimal = new BigDecimal(value.toString());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("x-mcp-header value must be an integer", e);
+            }
+        }
+        try {
+            return decimal.longValueExact();
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("x-mcp-header value must be an exact integer", e);
+        }
     }
 
     private static String encodeText(String value) {
@@ -176,6 +231,20 @@ public final class McpHttpHeaderSupport {
 
     private static String stringValue(Object value) {
         return value == null ? null : String.valueOf(value);
+    }
+
+    private static Binding findBinding(Map<String, Object> inputSchema, String headerName) {
+        if (headerName == null) {
+            return null;
+        }
+        List<Binding> bindings = new ArrayList<Binding>();
+        collectBindings(inputSchema, new ArrayList<String>(), false, bindings, new HashSet<String>());
+        for (Binding binding : bindings) {
+            if ((HEADER_PREFIX + binding.headerName).equalsIgnoreCase(headerName)) {
+                return binding;
+            }
+        }
+        return null;
     }
 
     private static final class Binding {

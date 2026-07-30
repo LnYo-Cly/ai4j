@@ -50,6 +50,50 @@ public class McpHttpHeaderSupportTest {
         Assert.assertFalse(McpHttpHeaderSupport.isValidToolSchema(schema));
     }
 
+    @Test
+    public void acceptsExactIntegerValuesAndRejectsFractionalOrUnsafeValues() {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("count", schema("integer", "Count"));
+        Map<String, Object> schema = new HashMap<String, Object>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+
+        Map<String, Object> arguments = new HashMap<String, Object>();
+        arguments.put("count", 42.0d);
+        Assert.assertEquals("42", McpHttpHeaderSupport.createToolParameterHeaders(schema, arguments)
+                .get("Mcp-Param-Count"));
+
+        arguments.put("count", 1.5d);
+        assertInvalidInteger(schema, arguments);
+
+        arguments.put("count", 9007199254740992L);
+        assertInvalidInteger(schema, arguments);
+    }
+
+    @Test
+    public void comparesIntegerHeadersNumericallyButStringHeadersExactly() {
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("count", schema("integer", "Count"));
+        properties.put("code", schema("string", "Code"));
+        Map<String, Object> schema = new HashMap<String, Object>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+
+        Assert.assertTrue(McpHttpHeaderSupport.areToolParameterHeaderValuesEquivalent(
+                schema, "mcp-param-count", "42", "42.0"));
+        Assert.assertFalse(McpHttpHeaderSupport.areToolParameterHeaderValuesEquivalent(
+                schema, "Mcp-Param-Code", "01", "1"));
+    }
+
+    private static void assertInvalidInteger(Map<String, Object> schema, Map<String, Object> arguments) {
+        try {
+            McpHttpHeaderSupport.createToolParameterHeaders(schema, arguments);
+            Assert.fail("expected an invalid integer header value");
+        } catch (IllegalArgumentException expected) {
+            // Expected: fractional and unsafe values cannot be mirrored into MCP headers.
+        }
+    }
+
     private static Map<String, Object> schema(String type, String header) {
         Map<String, Object> schema = new HashMap<String, Object>();
         schema.put("type", type);

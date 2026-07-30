@@ -118,9 +118,7 @@ public class StreamableHttpTransport implements McpTransport {
 
                 Request.Builder requestBuilder = new Request.Builder()
                         .url(mcpEndpointUrl)
-                        .post(body)
-                        .header("Content-Type", "application/json")
-                        .header("Accept", "application/json, text/event-stream");
+                        .post(body);
                 
                 if (headers != null) {
                     for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -132,7 +130,8 @@ public class StreamableHttpTransport implements McpTransport {
                     applyModernRequestHeaders(message, requestBuilder);
                     if (requestHeaders != null) {
                         for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
-                            if (entry.getKey() != null && entry.getKey().startsWith("Mcp-Param-")
+                            if (entry.getKey() != null && entry.getKey().regionMatches(
+                                    true, 0, "Mcp-Param-", 0, "Mcp-Param-".length())
                                     && entry.getValue() != null) {
                                 requestBuilder.header(entry.getKey(), entry.getValue());
                             }
@@ -147,12 +146,21 @@ public class StreamableHttpTransport implements McpTransport {
                     }
                 }
 
+                // Mandatory Streamable HTTP headers cannot be weakened by custom auth headers.
+                requestBuilder.header("Content-Type", "application/json")
+                        .header("Accept", "application/json, text/event-stream");
+
                 Request request = requestBuilder.build();
                 
                     Response response = httpClient.newCall(request).execute();
                     try {
                         if (!response.isSuccessful()) {
-                        throw new IOException(McpTransportSupport.buildHttpFailureMessage(response));
+                        String responseBody = response.body() == null ? "" : response.body().string();
+                        if (dispatchHttpErrorResponse(responseBody)) {
+                            return;
+                        }
+                        throw new IOException(McpTransportSupport.buildHttpFailureMessage(
+                                response.code(), response.message(), responseBody));
                         }
                     
                     // 检查会话ID
@@ -397,6 +405,24 @@ public class StreamableHttpTransport implements McpTransport {
                 throw new IllegalArgumentException("Modern MCP request requires a name header");
             }
             requestBuilder.header("Mcp-Name", encodeHeaderValue(name));
+        }
+    }
+
+    private boolean dispatchHttpErrorResponse(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            McpMessage message = parseMcpMessage(responseBody);
+            if (!message.isResponse()) {
+                return false;
+            }
+            if (messageHandler != null) {
+                messageHandler.handleMessage(message);
+            }
+            return true;
+        } catch (Exception ignored) {
+            return false;
         }
     }
 

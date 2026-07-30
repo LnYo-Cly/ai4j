@@ -87,7 +87,7 @@ public class StreamableHttpMcpServer implements McpServer {
                         ? McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion() : "2025-03-26",
                 !this.protocolProfile.isModern(),
                 false,
-                true);
+                false);
     }
 
     public CompletableFuture<Void> start() {
@@ -197,14 +197,12 @@ public class StreamableHttpMcpServer implements McpServer {
                             : "Content-Type, mcp-session-id, last-event-id, Accept",
                     corsAllowedOrigin);
 
-            if ("OPTIONS".equals(exchange.getRequestMethod())) {
-                McpHttpServerSupport.writeNoContent(exchange, 204);
+            if (rejectDisallowedModernOrigin(exchange)) {
                 return;
             }
 
-            if (protocolProfile.isModern()
-                    && !McpHttpServerSupport.isAllowedOrigin(exchange, corsAllowedOrigin)) {
-                McpHttpServerSupport.sendError(exchange, 403, "Forbidden origin");
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                McpHttpServerSupport.writeNoContent(exchange, 204);
                 return;
             }
 
@@ -332,7 +330,7 @@ public class StreamableHttpMcpServer implements McpServer {
             message = McpMessageCodec.parseMessage(requestBody);
         } catch (Exception e) {
             McpHttpServerSupport.writeJsonResponse(exchange, 400,
-                    protocolError(null, -32600, "Invalid Request"));
+                    protocolError(null, -32700, "Parse error"));
             return;
         }
 
@@ -376,6 +374,10 @@ public class StreamableHttpMcpServer implements McpServer {
                 || !version.equals(metadataVersion) || !methodHeader.equals(message.getMethod())) {
             return protocolError(message.getId(), -32020, "Header mismatch");
         }
+        if (!(metadata.get("io.modelcontextprotocol/clientCapabilities") instanceof Map<?, ?>)) {
+            return protocolError(message.getId(), -32602,
+                    "Invalid params: _meta.io.modelcontextprotocol/clientCapabilities is required");
+        }
         if (!protocolProfile.getProtocolVersion().equals(version)) {
             McpResponse error = protocolError(message.getId(), -32022, "Unsupported protocol version");
             Map<String, Object> data = new HashMap<String, Object>();
@@ -408,7 +410,7 @@ public class StreamableHttpMcpServer implements McpServer {
                 for (String headerName : McpHttpHeaderSupport.getToolParameterHeaderNames(schema)) {
                     String expected = expectedHeaders.get(headerName);
                     String actual = exchange.getRequestHeaders().getFirst(headerName);
-                    if (expected == null ? actual != null : !expected.equals(actual)) {
+                    if (!sameHeaderValue(schema, headerName, expected, actual)) {
                         return protocolError(message.getId(), -32020,
                                 "Header mismatch: " + headerName);
                     }
@@ -416,6 +418,30 @@ public class StreamableHttpMcpServer implements McpServer {
             }
         }
         return null;
+    }
+
+    private static boolean sameHeaderValue(Map<String, Object> schema, String headerName,
+                                           String expected, String actual) {
+        if (expected == null) {
+            return actual == null;
+        }
+        if (actual == null) {
+            return false;
+        }
+        String decodedExpected = McpHttpServerSupport.decodeHeaderValue(expected);
+        String decodedActual = McpHttpServerSupport.decodeHeaderValue(actual);
+        return decodedExpected != null && decodedActual != null
+                && McpHttpHeaderSupport.areToolParameterHeaderValuesEquivalent(
+                        schema, headerName, decodedExpected, decodedActual);
+    }
+
+    private boolean rejectDisallowedModernOrigin(HttpExchange exchange) throws IOException {
+        if (!protocolProfile.isModern()
+                || McpHttpServerSupport.isAllowedOrigin(exchange, corsAllowedOrigin)) {
+            return false;
+        }
+        McpHttpServerSupport.sendError(exchange, 403, "Forbidden origin");
+        return true;
     }
 
     private static boolean requiresNameHeader(String method) {
@@ -572,6 +598,10 @@ public class StreamableHttpMcpServer implements McpServer {
                     "Content-Type, mcp-session-id, last-event-id, Accept",
                     corsAllowedOrigin);
 
+            if (rejectDisallowedModernOrigin(exchange)) {
+                return;
+            }
+
             Map<String, Object> health = new HashMap<String, Object>();
             health.put("status", "healthy");
             health.put("server", serverName);
@@ -604,6 +634,10 @@ public class StreamableHttpMcpServer implements McpServer {
                     "GET, POST, DELETE, OPTIONS",
                     "Content-Type, mcp-session-id, last-event-id, Accept",
                     corsAllowedOrigin);
+
+            if (rejectDisallowedModernOrigin(exchange)) {
+                return;
+            }
 
             if ("OPTIONS".equals(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(200, 0);
