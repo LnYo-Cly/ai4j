@@ -87,9 +87,9 @@ public class CodingSkillSupportTest {
             AgentPrompt prompt = modelClient.getLastPrompt();
             assertNotNull(prompt);
             assertTrue(prompt.getSystemPrompt().contains("<available_skills>"));
-            assertTrue(prompt.getSystemPrompt().contains("name: reviewer"));
+            assertTrue(prompt.getSystemPrompt().contains("<name>reviewer</name>"));
             assertTrue(prompt.getSystemPrompt().contains(workspaceSkillFile.toAbsolutePath().normalize().toString()));
-            assertTrue(prompt.getSystemPrompt().contains("name: refactorer"));
+            assertTrue(prompt.getSystemPrompt().contains("<name>refactorer</name>"));
             assertTrue(prompt.getSystemPrompt().contains(globalSkillFile.toAbsolutePath().normalize().toString()));
         } finally {
             restoreProperty("user.home", originalUserHome);
@@ -178,63 +178,70 @@ public class CodingSkillSupportTest {
     @Test
     public void shouldInjectEnabledExtensionSkillAndPromptResources() throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("workspace-extension-resources").toPath();
-        WorkspaceContext workspaceContext = WorkspaceContext.builder()
-                .rootPath(workspaceRoot.toString())
-                .description("Extension resource workspace")
-                .build();
-        ExtensionRegistry registry = ExtensionRegistry.of(new CodingResourceExtension())
-                .enable("coding-resource-pack");
-        CapturingModelClient modelClient = new CapturingModelClient();
-
-        CodingAgent agent = CodingAgents.builder()
-                .modelClient(modelClient)
-                .model("glm-4.5-flash")
-                .workspaceContext(workspaceContext)
-                .extensions(registry)
-                .systemPrompt("Base prompt.")
-                .build();
-
-        WorkspaceContext enriched = agent.getWorkspaceContext();
-        assertEquals(1, enriched.getAvailableSkills().size());
-        assertEquals("coding-extension-skill", enriched.getAvailableSkills().get(0).getName());
-        assertEquals("extension:coding-resource-pack", enriched.getAvailableSkills().get(0).getSource());
-        assertEquals(1, enriched.getAvailablePrompts().size());
-        assertEquals("coding-extension-prompt", enriched.getAvailablePrompts().get(0).getName());
-        assertEquals("extension:coding-resource-pack", enriched.getAvailablePrompts().get(0).getSource());
-
-        LocalWorkspaceFileService fileService = new LocalWorkspaceFileService(enriched);
-        WorkspaceFileReadResult skillRead = fileService.readFile(
-                enriched.getAvailableSkills().get(0).getSkillFilePath(),
-                1,
-                10,
-                4000
-        );
-        assertTrue(skillRead.getContent().contains("name: coding-extension-skill"));
-        assertTrue(skillRead.getContent().contains("Verify coding agent extension skill projection."));
-        WorkspaceFileReadResult promptRead = fileService.readFile(
-                enriched.getAvailablePrompts().get(0).getPromptFilePath(),
-                1,
-                10,
-                4000
-        );
-        assertTrue(promptRead.getContent().contains("Coding extension prompt fixture"));
-
+        Path fakeHome = temporaryFolder.newFolder("fake-extension-home").toPath();
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", fakeHome.toString());
         try {
-            fileService.writeFile(enriched.getAvailableSkills().get(0).getSkillFilePath(), "mutated", false);
-            fail("extension resources should be read-only outside the workspace root");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(expected.getMessage().contains("escapes workspace root"));
-        }
+            WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                    .rootPath(workspaceRoot.toString())
+                    .description("Extension resource workspace")
+                    .build();
+            ExtensionRegistry registry = ExtensionRegistry.of(new CodingResourceExtension())
+                    .enable("coding-resource-pack");
+            CapturingModelClient modelClient = new CapturingModelClient();
 
-        try (CodingSession session = agent.newSession()) {
-            session.run("Use extension resources.");
+            CodingAgent agent = CodingAgents.builder()
+                    .modelClient(modelClient)
+                    .model("glm-4.5-flash")
+                    .workspaceContext(workspaceContext)
+                    .extensions(registry)
+                    .systemPrompt("Base prompt.")
+                    .build();
+
+            WorkspaceContext enriched = agent.getWorkspaceContext();
+            assertEquals(1, enriched.getAvailableSkills().size());
+            assertEquals("coding-extension-skill", enriched.getAvailableSkills().get(0).getName());
+            assertEquals("extension:coding-resource-pack", enriched.getAvailableSkills().get(0).getSource());
+            assertEquals(1, enriched.getAvailablePrompts().size());
+            assertEquals("coding-extension-prompt", enriched.getAvailablePrompts().get(0).getName());
+            assertEquals("extension:coding-resource-pack", enriched.getAvailablePrompts().get(0).getSource());
+
+            LocalWorkspaceFileService fileService = new LocalWorkspaceFileService(enriched);
+            WorkspaceFileReadResult skillRead = fileService.readFile(
+                    enriched.getAvailableSkills().get(0).getSkillFilePath(),
+                    1,
+                    10,
+                    4000
+            );
+            assertTrue(skillRead.getContent().contains("name: coding-extension-skill"));
+            assertTrue(skillRead.getContent().contains("Verify coding agent extension skill projection."));
+            WorkspaceFileReadResult promptRead = fileService.readFile(
+                    enriched.getAvailablePrompts().get(0).getPromptFilePath(),
+                    1,
+                    10,
+                    4000
+            );
+            assertTrue(promptRead.getContent().contains("Coding extension prompt fixture"));
+
+            try {
+                fileService.writeFile(enriched.getAvailableSkills().get(0).getSkillFilePath(), "mutated", false);
+                fail("extension resources should be read-only outside the workspace root");
+            } catch (IllegalArgumentException expected) {
+                assertTrue(expected.getMessage().contains("escapes workspace root"));
+            }
+
+            try (CodingSession session = agent.newSession()) {
+                session.run("Use extension resources.");
+            }
+            AgentPrompt prompt = modelClient.getLastPrompt();
+            assertNotNull(prompt);
+            assertTrue(prompt.getSystemPrompt().contains("<available_skills>"));
+            assertTrue(prompt.getSystemPrompt().contains("<name>coding-extension-skill</name>"));
+            assertTrue(prompt.getSystemPrompt().contains("<available_prompts>"));
+            assertTrue(prompt.getSystemPrompt().contains("name: coding-extension-prompt"));
+        } finally {
+            restoreProperty("user.home", originalUserHome);
         }
-        AgentPrompt prompt = modelClient.getLastPrompt();
-        assertNotNull(prompt);
-        assertTrue(prompt.getSystemPrompt().contains("<available_skills>"));
-        assertTrue(prompt.getSystemPrompt().contains("name: coding-extension-skill"));
-        assertTrue(prompt.getSystemPrompt().contains("<available_prompts>"));
-        assertTrue(prompt.getSystemPrompt().contains("name: coding-extension-prompt"));
     }
 
     private static Path writeSkill(Path skillFile, String content) throws Exception {
