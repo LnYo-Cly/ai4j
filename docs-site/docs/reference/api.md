@@ -4,31 +4,31 @@ sidebar_position: 1
 
 # API Reference
 
-这一页只负责把你带到发布版本的 API 文档，不在文档站手工复制类、字段或方法清单。
+Use the conceptual documentation to choose an integration path, then open the rendered Javadoc for exact Java types and method signatures. The links below point to the published `2.4.2` Javadoc, not the repository's next snapshot.
 
-## 先选模块
+## Rendered Javadoc by module
 
-| 你要使用什么 | Maven artifact | 发布版 Javadoc |
+| Area | Maven artifact | Versioned HTML API |
 | --- | --- | --- |
-| 模型、Tool、Skill、MCP、RAG | `ai4j` | [ai4j-2.4.2-javadoc.jar](https://repo1.maven.org/maven2/io/github/lnyo-cly/ai4j/2.4.2/ai4j-2.4.2-javadoc.jar) |
-| 通用 Agent runtime | `ai4j-agent` | [ai4j-agent-2.4.2-javadoc.jar](https://repo1.maven.org/maven2/io/github/lnyo-cly/ai4j-agent/2.4.2/ai4j-agent-2.4.2-javadoc.jar) |
-| Coding Agent runtime | `ai4j-coding` | [ai4j-coding-2.4.2-javadoc.jar](https://repo1.maven.org/maven2/io/github/lnyo-cly/ai4j-coding/2.4.2/ai4j-coding-2.4.2-javadoc.jar) |
-| CLI、TUI、ACP host | `ai4j-cli` | [ai4j-cli-2.4.2-javadoc.jar](https://repo1.maven.org/maven2/io/github/lnyo-cly/ai4j-cli/2.4.2/ai4j-cli-2.4.2-javadoc.jar) |
-| 扩展与插件契约 | `ai4j-extension-api` | [ai4j-extension-api-2.4.2-javadoc.jar](https://repo1.maven.org/maven2/io/github/lnyo-cly/ai4j-extension-api/2.4.2/ai4j-extension-api-2.4.2-javadoc.jar) |
+| Models, Tools, Skills, MCP, RAG | `ai4j` | [Open ai4j 2.4.2 Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/index.html) |
+| Generic Agent runtime | `ai4j-agent` | [Open ai4j-agent 2.4.2 Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-agent/2.4.2/index.html) |
+| Coding Agent runtime | `ai4j-coding` | [Open ai4j-coding 2.4.2 Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-coding/2.4.2/index.html) |
+| CLI, TUI, and ACP host | `ai4j-cli` | [Open ai4j-cli 2.4.2 Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-cli/2.4.2/index.html) |
+| Extension and plugin contracts | `ai4j-extension-api` | [Open ai4j-extension-api 2.4.2 Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-extension-api/2.4.2/index.html) |
 
-下载 Javadoc JAR 后解压并打开其中的 `index.html`。它和 Maven artifact 同版本发布，避免文档站手工维护 API 表而与源码漂移。
+These are browser-rendered API pages, so package navigation, search, inherited members, and linked types work without downloading and unpacking a Javadoc JAR.
 
-## 阅读顺序
+## Choose the right reference
 
-先使用概念和教程页面确定入口与边界，再查 Javadoc 的类型签名：
+1. Start with [Core SDK](/docs/core-sdk/overview) for normal model calls, Tools, Skills, MCP, and RAG.
+2. Start with [Agent Runtime](/docs/agent/overview) for orchestration, memory, and permission boundaries.
+3. Start with [Coding Agent](/docs/coding-agent/overview) for CLI, workspace, session, and ACP integration.
+4. Start with [Extensions](/docs/core-sdk/extension/overview) before depending on an extension or plugin SPI.
 
-1. 普通模型调用从 [Core SDK](/docs/core-sdk/overview) 开始。
-2. Spring 应用从 [Spring Boot](/docs/spring-boot/overview) 开始。
-3. 多步工具调用从 [Agent Runtime](/docs/agent/overview) 开始。
-4. 命令行或 ACP 宿主从 [Coding Agent](/docs/coding-agent/overview) 开始。
+The guides explain behavior and design boundaries. Javadoc is the source for Java signatures, overloads, annotations, and package-level types.
 
-Javadoc 解释“类型有什么”，而概念页解释“何时使用、与什么组合、有什么安全边界”。两者不应互相替代。
+## Version navigation
 
-## 版本边界
+The explicit `2.4.2` URLs make the reference reproducible for a released dependency. To browse a module's published versions, remove the version segment from the corresponding `javadoc.io` URL, for example [ai4j versions](https://javadoc.io/doc/io.github.lnyo-cly/ai4j).
 
-这里链接的是当前已发布的 `2.4.2`。根工程的 `2.4.3-SNAPSHOT` 是下一开发版本，不能作为用户安装或稳定 API 依据。升级前查看 [Version Compatibility](/docs/reference/version-compatibility)；多模块项目使用 [BOM](/docs/reference/release-and-artifacts) 对齐版本。
+The repository currently develops the next `2.4.3-SNAPSHOT`; snapshots are not release API documentation. Use [Version Compatibility](/docs/reference/version-compatibility) before upgrading, and use the [release and artifacts guide](/docs/reference/release-and-artifacts) to align a multi-module build with the BOM.

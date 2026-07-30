@@ -99,6 +99,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/mcp/protocol-capabilities',
             'mcp/client-integration',
             'mcp/transport-types',
+            'mcp/streamable-http',
             'mcp/gateway-management',
             'mcp/configuration-and-gateway-reference',
             'mcp/third-party-mcp-integration',
@@ -138,6 +139,7 @@ const sidebars: SidebarsConfig = {
         'agent/model-client-selection',
         'agent/provider-config-examples',
         'agent/tools-and-registry',
+        'agent/skills',
         'agent/approval-permission-policy',
         'agent/memory-and-state',
         'agent/session-runtime',
@@ -277,6 +279,7 @@ const sidebars: SidebarsConfig = {
         'core-sdk/strengths-and-differentiators',
         'faq',
         'glossary',
+        'contributing',
         {
           type: 'category',
           label: 'Maintainers',
