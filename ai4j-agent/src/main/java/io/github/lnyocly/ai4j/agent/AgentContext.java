@@ -17,10 +17,13 @@ import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillResolver;
 import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -88,4 +91,9 @@ public class AgentContext {
     private Map<String, Object> extraBody;
 
     private TracePricingResolver pricingResolver;
+
+    private AgentSkillResolver skillResolver;
+
+    /** Guardrails contributed by extensions; Skill-owned tools must use the same boundary. */
+    private List<ExtensionGuardrail> extensionGuardrails;
 }

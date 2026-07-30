@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.skill;
 
 import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
+import io.github.lnyocly.ai4j.tool.BuiltInTools;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -54,8 +55,13 @@ public final class Skills {
                 allowedReadRoots.add(root.toAbsolutePath().normalize().toString());
                 for (SkillDescriptor descriptor : discoverFromRoot(root, resolvedWorkspaceRoot)) {
                     String normalizedName = normalizeKey(descriptor.getName());
-                    if (!byName.containsKey(normalizedName)) {
+                    SkillDescriptor existing = byName.get(normalizedName);
+                    if (existing == null) {
                         byName.put(normalizedName, descriptor);
+                    } else if (!sameSkillFile(existing, descriptor)) {
+                        throw new IllegalArgumentException("Duplicate Skill name '" + descriptor.getName()
+                                + "' discovered at " + existing.getSkillFilePath()
+                                + " and " + descriptor.getSkillFilePath());
                     }
                 }
             }
@@ -82,9 +88,40 @@ public final class Skills {
                 .build();
     }
 
+    /**
+     * Creates a read_file context that exposes only the supplied Skill roots, never the workspace.
+     */
+    public static BuiltInToolContext createSkillToolContext(List<String> skillRoots) {
+        List<String> allowedReadRoots = new ArrayList<String>();
+        if (skillRoots != null) {
+            for (String skillRoot : skillRoots) {
+                if (!isBlank(skillRoot)) {
+                    allowedReadRoots.add(Paths.get(skillRoot).toAbsolutePath().normalize().toString());
+                }
+            }
+        }
+        Path restrictedRoot = allowedReadRoots.isEmpty()
+                ? Paths.get(".").toAbsolutePath().normalize().resolve(".ai4j-skill-read-denied")
+                : Paths.get(allowedReadRoots.get(0)).toAbsolutePath().normalize();
+        return BuiltInToolContext.builder()
+                .workspaceRoot(restrictedRoot.toString())
+                .allowedReadRoots(allowedReadRoots)
+                .restrictReadToAllowedRoots(true)
+                .build();
+    }
+
     public static String appendAvailableSkillsPrompt(String basePrompt,
                                                      List<? extends SkillDescriptor> availableSkills) {
-        String skillPrompt = buildAvailableSkillsPrompt(availableSkills);
+        return appendAvailableSkillsPrompt(basePrompt, availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Appends the Skill catalog using the actual reader exposed to the model.
+     */
+    public static String appendAvailableSkillsPrompt(String basePrompt,
+                                                     List<? extends SkillDescriptor> availableSkills,
+                                                     String readToolName) {
+        String skillPrompt = buildAvailableSkillsPrompt(availableSkills, readToolName);
         if (isBlank(basePrompt)) {
             return skillPrompt;
         }
@@ -96,10 +133,19 @@ public final class Skills {
 
     public static void appendAvailableSkillsPrompt(StringBuilder builder,
                                                    List<? extends SkillDescriptor> availableSkills) {
+        appendAvailableSkillsPrompt(builder, availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Appends the Skill catalog using the actual reader exposed to the model.
+     */
+    public static void appendAvailableSkillsPrompt(StringBuilder builder,
+                                                   List<? extends SkillDescriptor> availableSkills,
+                                                   String readToolName) {
         if (builder == null) {
             return;
         }
-        String skillPrompt = buildAvailableSkillsPrompt(availableSkills);
+        String skillPrompt = buildAvailableSkillsPrompt(availableSkills, readToolName);
         if (isBlank(skillPrompt)) {
             return;
         }
@@ -110,37 +156,90 @@ public final class Skills {
     }
 
     public static String buildAvailableSkillsPrompt(List<? extends SkillDescriptor> availableSkills) {
+        return buildAvailableSkillsPrompt(availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Builds a cache-stable Skill catalog and names the reader available for progressive loading.
+     */
+    public static String buildAvailableSkillsPrompt(List<? extends SkillDescriptor> availableSkills,
+                                                    String readToolName) {
         if (availableSkills == null || availableSkills.isEmpty()) {
             return null;
         }
-        StringBuilder entries = new StringBuilder();
+        String resolvedReadToolName = firstNonBlank(readToolName, BuiltInTools.READ_FILE);
+        List<SkillDescriptor> sortedSkills = new ArrayList<SkillDescriptor>();
         for (SkillDescriptor skill : availableSkills) {
-            if (skill == null || skill.isDisableModelInvocation()) {
-                continue;
+            if (skill != null && !skill.isDisableModelInvocation()) {
+                sortedSkills.add(skill);
             }
-            entries.append("- name: ").append(firstNonBlank(skill.getName(), "skill")).append("\n");
-            entries.append("  path: ").append(firstNonBlank(skill.getSkillFilePath(), "(missing)")).append("\n");
-            entries.append("  description: ").append(firstNonBlank(skill.getDescription(), "No description available.")).append("\n");
+        }
+        Collections.sort(sortedSkills, new Comparator<SkillDescriptor>() {
+            @Override
+            public int compare(SkillDescriptor first, SkillDescriptor second) {
+                int comparison = firstNonBlank(first.getName(), "skill")
+                        .compareTo(firstNonBlank(second.getName(), "skill"));
+                if (comparison != 0) {
+                    return comparison;
+                }
+                comparison = firstNonBlank(first.getDescription(), "No description available.")
+                        .compareTo(firstNonBlank(second.getDescription(), "No description available."));
+                if (comparison != 0) {
+                    return comparison;
+                }
+                return firstNonBlank(first.getSkillFilePath(), "(missing)")
+                        .compareTo(firstNonBlank(second.getSkillFilePath(), "(missing)"));
+            }
+        });
+        StringBuilder entries = new StringBuilder();
+        for (SkillDescriptor skill : sortedSkills) {
+            entries.append("  <skill>\n");
+            entries.append("    <name>").append(escapeXml(firstNonBlank(skill.getName(), "skill"))).append("</name>\n");
+            entries.append("    <description>").append(escapeXml(firstNonBlank(skill.getDescription(), "No description available."))).append("</description>\n");
+            entries.append("    <location>").append(escapeXml(firstNonBlank(skill.getSkillFilePath(), "(missing)"))).append("</location>\n");
+            entries.append("  </skill>\n");
         }
         if (entries.length() == 0) {
             return null;
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("Some reusable skills are installed. Do not read every skill file up front. ")
-                .append("When the task clearly matches a skill, read that SKILL.md with read_file first and then follow it.\n");
+        builder.append("The following skills provide specialized instructions for specific tasks. ")
+                .append("Do not read every skill file up front. When a task matches a skill's description, ")
+                .append("read its SKILL.md with ").append(resolvedReadToolName)
+                .append(" before proceeding. Resolve relative paths against the Skill directory.\n");
         builder.append("<available_skills>\n");
         builder.append(entries);
         builder.append("</available_skills>\n");
-        builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse read_file instead of asking for a dedicated skill tool.");
+        builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse ")
+                .append(resolvedReadToolName)
+                .append(" instead of asking for a dedicated skill tool.");
         return builder.toString().trim();
+    }
+
+    private static boolean sameSkillFile(SkillDescriptor first, SkillDescriptor second) {
+        if (first == null || second == null || isBlank(first.getSkillFilePath()) || isBlank(second.getSkillFilePath())) {
+            return false;
+        }
+        Path firstPath = Paths.get(first.getSkillFilePath()).toAbsolutePath().normalize();
+        Path secondPath = Paths.get(second.getSkillFilePath()).toAbsolutePath().normalize();
+        if (firstPath.equals(secondPath)) {
+            return true;
+        }
+        try {
+            return Files.isSameFile(firstPath, secondPath);
+        } catch (IOException ex) {
+            return false;
+        }
     }
 
     private static List<Path> resolveSkillRoots(Path workspaceRoot, List<String> skillDirectories) {
         Set<Path> roots = new LinkedHashSet<Path>();
         roots.add(workspaceRoot.resolve(".ai4j").resolve("skills").toAbsolutePath().normalize());
+        roots.add(workspaceRoot.resolve(".agents").resolve("skills").toAbsolutePath().normalize());
         String userHome = System.getProperty("user.home");
         if (!isBlank(userHome)) {
             roots.add(Paths.get(userHome).resolve(".ai4j").resolve("skills").toAbsolutePath().normalize());
+            roots.add(Paths.get(userHome).resolve(".agents").resolve("skills").toAbsolutePath().normalize());
         }
         if (skillDirectories != null) {
             for (String configuredRoot : skillDirectories) {
@@ -369,6 +468,15 @@ public final class Skills {
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private static String escapeXml(String value) {
+        return value == null ? "" : value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     public static final class DiscoveryResult {

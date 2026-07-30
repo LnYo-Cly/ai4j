@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -26,6 +27,12 @@ public class BuiltInToolContext {
     @Builder.Default
     private List<String> allowedReadRoots = new ArrayList<String>();
 
+    /**
+     * Restrict read_file to {@link #allowedReadRoots}; useful for prompt-owned assets such as Skills.
+     */
+    @Builder.Default
+    private boolean restrictReadToAllowedRoots = false;
+
     @Builder.Default
     private int defaultReadMaxChars = 12000;
 
@@ -42,6 +49,30 @@ public class BuiltInToolContext {
     private long processStopGraceMs = 1000L;
 
     private transient BuiltInProcessRegistry processRegistry;
+
+    /**
+     * Source-compatible constructor retained for callers compiled before restricted Skill reads.
+     */
+    public BuiltInToolContext(String workspaceRoot,
+                              boolean allowOutsideWorkspace,
+                              List<String> allowedReadRoots,
+                              int defaultReadMaxChars,
+                              long defaultCommandTimeoutMs,
+                              int defaultBashLogChars,
+                              int maxProcessOutputChars,
+                              long processStopGraceMs,
+                              BuiltInProcessRegistry processRegistry) {
+        this(workspaceRoot,
+                allowOutsideWorkspace,
+                allowedReadRoots,
+                false,
+                defaultReadMaxChars,
+                defaultCommandTimeoutMs,
+                defaultBashLogChars,
+                maxProcessOutputChars,
+                processStopGraceMs,
+                processRegistry);
+    }
 
     public Path getWorkspaceRootPath() {
         if (isBlank(workspaceRoot)) {
@@ -76,11 +107,15 @@ public class BuiltInToolContext {
             candidate = root.resolve(path);
         }
         candidate = candidate.toAbsolutePath().normalize();
-        if (allowOutsideWorkspace || candidate.startsWith(root)) {
+        if (allowOutsideWorkspace) {
+            return candidate;
+        }
+        if (!restrictReadToAllowedRoots && candidate.startsWith(root)) {
             return candidate;
         }
         for (Path allowedRoot : getAllowedReadRootPaths()) {
-            if (candidate.startsWith(allowedRoot)) {
+            if (candidate.startsWith(allowedRoot)
+                    && (!restrictReadToAllowedRoots || resolvesWithin(candidate, allowedRoot))) {
                 return candidate;
             }
         }
@@ -115,5 +150,13 @@ public class BuiltInToolContext {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean resolvesWithin(Path candidate, Path allowedRoot) {
+        try {
+            return candidate.toRealPath().startsWith(allowedRoot.toRealPath());
+        } catch (IOException ex) {
+            return false;
+        }
     }
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.util.List;
 
 @Data
 @Builder(toBuilder = true)
@@ -21,6 +22,18 @@ public class AgentRequest {
     private Object input;
 
     private Map<String, Object> metadata;
+
+    /**
+     * Skills explicitly selected by the host for this run. Manual-only Skills are eligible here.
+     */
+    private List<String> selectedSkills;
+
+    /**
+     * Source-compatible constructor retained for callers compiled before selectedSkills existed.
+     */
+    public AgentRequest(Object input, Map<String, Object> metadata) {
+        this(input, metadata, null);
+    }
 
     public String getMetadataString(String key) {
         if (metadata == null || key == null) {

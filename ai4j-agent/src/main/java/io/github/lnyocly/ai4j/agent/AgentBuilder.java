@@ -41,6 +41,7 @@ import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.AgentHooks;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillResolver;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
@@ -55,10 +56,12 @@ import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
 import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import okhttp3.OkHttpClient;
 
 import java.lang.reflect.Constructor;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -121,6 +124,7 @@ public class AgentBuilder {
     private Boolean store;
     private String user;
     private Map<String, Object> extraBody;
+    private AgentSkillResolver skillResolver;
 
     public AgentBuilder runtime(AgentRuntime runtime) {
         this.runtime = runtime;
@@ -456,6 +460,37 @@ public class AgentBuilder {
         return this;
     }
 
+    /** Enables workspace-owned .ai4j/skills and .agents/skills discovery for this Agent. */
+    public AgentBuilder skills(Path workspaceRoot) {
+        return skills(workspaceRoot, null);
+    }
+
+    /** Enables workspace-owned Skill discovery with additional host-declared root directories. */
+    public AgentBuilder skills(Path workspaceRoot, List<String> skillDirectories) {
+        return skillResolver(AgentSkillResolver.forWorkspace(workspaceRoot, skillDirectories));
+    }
+
+    /**
+     * Enables local developer Skill discovery including process-user roots. Do not use this
+     * convenience method for tenant services; supply a host-owned {@link AgentSkillResolver}.
+     */
+    public AgentBuilder skillsIncludingUserHome(Path workspaceRoot) {
+        return skillsIncludingUserHome(workspaceRoot, null);
+    }
+
+    /** Enables local developer Skill discovery including explicit roots and process-user roots. */
+    public AgentBuilder skillsIncludingUserHome(Path workspaceRoot, List<String> skillDirectories) {
+        return skillResolver(AgentSkillResolver.forWorkspaceIncludingUserHome(workspaceRoot, skillDirectories));
+    }
+
+    /**
+     * Supplies Skill roots dynamically for each Agent run, for example from host-owned tenant policy.
+     */
+    public AgentBuilder skillResolver(AgentSkillResolver skillResolver) {
+        this.skillResolver = skillResolver;
+        return this;
+    }
+
     public AgentBuilder temperature(Double temperature) {
         this.temperature = temperature;
         return this;
@@ -557,6 +592,9 @@ public class AgentBuilder {
             mergedHooks.addAll(extensionTools.getLifecycleHooks());
         }
         mergedHooks.addAll(additionalLifecycleHooks);
+        List<ExtensionGuardrail> resolvedExtensionGuardrails = extensionTools == null
+                ? Collections.<ExtensionGuardrail>emptyList()
+                : new ArrayList<ExtensionGuardrail>(extensionTools.getGuardrails());
         AgentLifecycleHookDispatcher lifecycleHooks = mergedHooks.isEmpty()
                 ? AgentLifecycleHookDispatcher.empty()
                 : new AgentLifecycleHookDispatcher(mergedHooks);
@@ -593,6 +631,8 @@ public class AgentBuilder {
                 .user(user)
                 .extraBody(extraBody)
                 .pricingResolver(resolvedPricingResolver)
+                .skillResolver(skillResolver)
+                .extensionGuardrails(resolvedExtensionGuardrails)
                 .build();
 
         return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);

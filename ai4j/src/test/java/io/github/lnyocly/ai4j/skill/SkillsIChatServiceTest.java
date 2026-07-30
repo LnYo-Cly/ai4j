@@ -16,6 +16,8 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,6 +34,19 @@ public class SkillsIChatServiceTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    private String originalUserHome;
+
+    @Before
+    public void isolateUserSkillRoots() throws Exception {
+        originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("isolated-user-home").getAbsolutePath());
+    }
+
+    @After
+    public void restoreUserSkillRoots() {
+        restoreProperty("user.home", originalUserHome);
+    }
 
     @Test
     public void shouldDiscoverSkillsAndAssemblePromptForBasicChatUsage() throws Exception {
@@ -84,6 +99,64 @@ public class SkillsIChatServiceTest {
         } finally {
             restoreProperty("user.home", originalUserHome);
         }
+    }
+
+    @Test
+    public void shouldDiscoverCrossClientAgentsSkillsAndEscapePromptCatalog() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-cross-client").toPath();
+        writeSkill(
+                workspaceRoot.resolve(".agents").resolve("skills").resolve("reviewer").resolve("SKILL.md"),
+                "---\nname: reviewer\ndescription: Review <API> changes & report risks.\n---\n"
+        );
+
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("skills-cross-client-home").getAbsolutePath());
+        try {
+            Skills.DiscoveryResult discovery = Skills.discoverDefault(workspaceRoot);
+            Assert.assertEquals(1, discovery.getSkills().size());
+            String prompt = Skills.buildAvailableSkillsPrompt(discovery.getSkills());
+            Assert.assertTrue(prompt.contains("<skill>"));
+            Assert.assertTrue(prompt.contains("Review &lt;API&gt; changes &amp; report risks."));
+            Assert.assertTrue(Skills.buildAvailableSkillsPrompt(discovery.getSkills(), "read_skill_file")
+                    .contains("read its SKILL.md with read_skill_file"));
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
+    public void shouldRejectDuplicateNormalizedSkillNamesFromDifferentFiles() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-duplicate-workspace").toPath();
+        Path firstRoot = temporaryFolder.newFolder("skills-duplicate-first").toPath();
+        Path secondRoot = temporaryFolder.newFolder("skills-duplicate-second").toPath();
+        Path first = writeSkill(firstRoot.resolve("first").resolve("SKILL.md"),
+                "---\nname: review\ndescription: First review skill.\n---\n");
+        Path second = writeSkill(secondRoot.resolve("second").resolve("SKILL.md"),
+                "---\nname: REVIEW\ndescription: Second review skill.\n---\n");
+
+        try {
+            Skills.discover(workspaceRoot, Arrays.asList(firstRoot, secondRoot));
+            Assert.fail("expected duplicate normalized Skill name rejection");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertTrue(expected.getMessage().contains("Duplicate Skill name"));
+            Assert.assertTrue(expected.getMessage().contains(first.toString()));
+            Assert.assertTrue(expected.getMessage().contains(second.toString()));
+        }
+    }
+
+    @Test
+    public void shouldAllowSameSkillFileWhenRootsOverlap() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-overlap-workspace").toPath();
+        Path root = temporaryFolder.newFolder("skills-overlap-root").toPath();
+        Path skillFile = writeSkill(root.resolve("shared").resolve("SKILL.md"),
+                "---\nname: shared\ndescription: Shared Skill.\n---\n");
+
+        Skills.DiscoveryResult discovery = Skills.discover(workspaceRoot,
+                Arrays.asList(root, skillFile.getParent()));
+
+        Assert.assertEquals(1, discovery.getSkills().size());
+        Assert.assertEquals(skillFile.toAbsolutePath().normalize().toString(),
+                discovery.getSkills().get(0).getSkillFilePath());
     }
 
     @Test
