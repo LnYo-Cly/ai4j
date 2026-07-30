@@ -16,6 +16,7 @@ import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillRuntimeSupport;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
@@ -46,6 +47,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
     }
 
     protected AgentResult runInternal(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
+        context = AgentSkillRuntimeSupport.apply(context, request, false);
         AgentOptions options = context.getOptions();
         int maxSteps = options == null ? 0 : options.getMaxSteps();
         CodeActOptions codeActOptions = context.getCodeActOptions();

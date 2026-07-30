@@ -16,6 +16,8 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,6 +34,19 @@ public class SkillsIChatServiceTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    private String originalUserHome;
+
+    @Before
+    public void isolateUserSkillRoots() throws Exception {
+        originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("isolated-user-home").getAbsolutePath());
+    }
+
+    @After
+    public void restoreUserSkillRoots() {
+        restoreProperty("user.home", originalUserHome);
+    }
 
     @Test
     public void shouldDiscoverSkillsAndAssemblePromptForBasicChatUsage() throws Exception {
@@ -81,6 +96,27 @@ public class SkillsIChatServiceTest {
             Assert.assertEquals("api-review", first.getSkills().get(1).getName());
             Assert.assertEquals("java-review", first.getSkills().get(2).getName());
             Assert.assertEquals(first.getSkills(), second.getSkills());
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
+    }
+
+    @Test
+    public void shouldDiscoverCrossClientAgentsSkillsAndEscapePromptCatalog() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-cross-client").toPath();
+        writeSkill(
+                workspaceRoot.resolve(".agents").resolve("skills").resolve("reviewer").resolve("SKILL.md"),
+                "---\nname: reviewer\ndescription: Review <API> changes & report risks.\n---\n"
+        );
+
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", temporaryFolder.newFolder("skills-cross-client-home").getAbsolutePath());
+        try {
+            Skills.DiscoveryResult discovery = Skills.discoverDefault(workspaceRoot);
+            Assert.assertEquals(1, discovery.getSkills().size());
+            String prompt = Skills.buildAvailableSkillsPrompt(discovery.getSkills());
+            Assert.assertTrue(prompt.contains("<skill>"));
+            Assert.assertTrue(prompt.contains("Review &lt;API&gt; changes &amp; report risks."));
         } finally {
             restoreProperty("user.home", originalUserHome);
         }

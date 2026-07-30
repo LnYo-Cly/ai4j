@@ -41,6 +41,7 @@ import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.AgentHooks;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillResolver;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
@@ -59,6 +60,7 @@ import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import okhttp3.OkHttpClient;
 
 import java.lang.reflect.Constructor;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -121,6 +123,7 @@ public class AgentBuilder {
     private Boolean store;
     private String user;
     private Map<String, Object> extraBody;
+    private AgentSkillResolver skillResolver;
 
     public AgentBuilder runtime(AgentRuntime runtime) {
         this.runtime = runtime;
@@ -456,6 +459,28 @@ public class AgentBuilder {
         return this;
     }
 
+    /**
+     * Enables the standard workspace/global Skill discovery for this Agent.
+     */
+    public AgentBuilder skills(Path workspaceRoot) {
+        return skills(workspaceRoot, null);
+    }
+
+    /**
+     * Enables the standard Skill discovery with additional root directories.
+     */
+    public AgentBuilder skills(Path workspaceRoot, List<String> skillDirectories) {
+        return skillResolver(AgentSkillResolver.forWorkspace(workspaceRoot, skillDirectories));
+    }
+
+    /**
+     * Supplies Skill roots dynamically for each Agent run, for example from host-owned tenant policy.
+     */
+    public AgentBuilder skillResolver(AgentSkillResolver skillResolver) {
+        this.skillResolver = skillResolver;
+        return this;
+    }
+
     public AgentBuilder temperature(Double temperature) {
         this.temperature = temperature;
         return this;
@@ -593,6 +618,7 @@ public class AgentBuilder {
                 .user(user)
                 .extraBody(extraBody)
                 .pricingResolver(resolvedPricingResolver)
+                .skillResolver(skillResolver)
                 .build();
 
         return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);

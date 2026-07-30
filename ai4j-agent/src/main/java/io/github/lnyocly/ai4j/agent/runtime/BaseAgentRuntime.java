@@ -28,6 +28,7 @@ import io.github.lnyocly.ai4j.agent.interceptor.PromptDecision;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxProvider;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillRuntimeSupport;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
@@ -97,6 +98,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentResult runInternal(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
+        context = AgentSkillRuntimeSupport.apply(context, request);
         AgentOptions options = context.getOptions();
         int maxSteps = options == null ? AgentOptions.DEFAULT_MAX_STEPS : options.getMaxSteps();
         long wallClockTimeoutMs = options == null ? AgentOptions.DEFAULT_WALL_CLOCK_TIMEOUT_MS : options.getWallClockTimeoutMillis();
