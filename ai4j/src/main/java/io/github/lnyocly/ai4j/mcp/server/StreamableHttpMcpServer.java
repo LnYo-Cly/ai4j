@@ -24,9 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -36,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StreamableHttpMcpServer implements McpServer {
 
     private static final Logger log = LoggerFactory.getLogger(StreamableHttpMcpServer.class);
+    private static final long SSE_KEEP_ALIVE_INTERVAL_MILLIS = 1000L;
 
     private final String serverName;
     private final String serverVersion;
@@ -49,6 +57,7 @@ public class StreamableHttpMcpServer implements McpServer {
     private final ConcurrentHashMap<String, SessionContext> sessions = new ConcurrentHashMap<String, SessionContext>();
     private final McpServerEngine serverEngine;
     private HttpServer httpServer;
+    private volatile ExecutorService requestExecutor;
 
     /**
      * Binds to loopback ({@code 127.0.0.1}) with no auth and uses the modern
@@ -69,6 +78,12 @@ public class StreamableHttpMcpServer implements McpServer {
     public StreamableHttpMcpServer(String serverName, String serverVersion, String host, int port,
                                    McpAuthProvider authProvider, String corsAllowedOrigin,
                                    McpProtocolProfile protocolProfile) {
+        this(serverName, serverVersion, host, port, authProvider, corsAllowedOrigin, protocolProfile, null);
+    }
+
+    StreamableHttpMcpServer(String serverName, String serverVersion, String host, int port,
+                            McpAuthProvider authProvider, String corsAllowedOrigin,
+                            McpProtocolProfile protocolProfile, McpServerEngine serverEngine) {
         this.serverName = serverName;
         this.serverVersion = serverVersion;
         this.host = host == null ? McpServerFactory.ServerConfig.DEFAULT_HOST : host;
@@ -77,7 +92,7 @@ public class StreamableHttpMcpServer implements McpServer {
         this.corsAllowedOrigin = corsAllowedOrigin;
         this.protocolProfile = protocolProfile == null
                 ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
-        this.serverEngine = new McpServerEngine(
+        this.serverEngine = serverEngine != null ? serverEngine : new McpServerEngine(
                 serverName,
                 serverVersion,
                 this.protocolProfile.isModern()
@@ -114,7 +129,8 @@ public class StreamableHttpMcpServer implements McpServer {
                         httpServer.createContext("/mcp", new McpHandler());
                         httpServer.createContext("/", new RootHandler());
                         httpServer.createContext("/health", new HealthHandler());
-                        httpServer.setExecutor(Executors.newCachedThreadPool());
+                        requestExecutor = Executors.newCachedThreadPool();
+                        httpServer.setExecutor(requestExecutor);
                         httpServer.start();
                         running.set(true);
 
@@ -141,6 +157,11 @@ public class StreamableHttpMcpServer implements McpServer {
                         log.info("停止Streamable HTTP MCP服务器");
                         if (httpServer != null) {
                             httpServer.stop(5);
+                            httpServer = null;
+                        }
+                        if (requestExecutor != null) {
+                            requestExecutor.shutdownNow();
+                            requestExecutor = null;
                         }
                         sseClients.clear();
                         sessions.clear();
@@ -351,20 +372,22 @@ public class StreamableHttpMcpServer implements McpServer {
             return;
         }
 
-        McpMessage response = serverEngine.processModernMessage(message);
         String acceptHeader = exchange.getRequestHeaders().getFirst("Accept");
-        if (acceptHeader != null && acceptHeader.contains("text/event-stream") && response.isSuccessResponse()) {
-            sendModernSseResponse(exchange, response);
-        } else {
-            int status = response.isErrorResponse() && response.getError() != null
-                    && response.getError().getCode() == -32601 ? 404 : 200;
-            McpHttpServerSupport.writeJsonResponse(exchange, status, response);
+        if (acceptHeader != null && acceptHeader.contains("text/event-stream")
+                && supportsModernSse(message.getMethod())) {
+            sendModernSseResponse(exchange, message);
+            return;
         }
+
+        McpMessage response = serverEngine.processModernMessage(message);
+        int status = response.isErrorResponse() && response.getError() != null
+                && response.getError().getCode() == -32601 ? 404 : 200;
+        McpHttpServerSupport.writeJsonResponse(exchange, status, response);
     }
 
     private McpResponse validateModernRequest(HttpExchange exchange, McpMessage message) {
-        String version = exchange.getRequestHeaders().getFirst("MCP-Protocol-Version");
-        String methodHeader = exchange.getRequestHeaders().getFirst("Mcp-Method");
+        String version = McpHttpServerSupport.getSingleHeaderValue(exchange, "MCP-Protocol-Version");
+        String methodHeader = McpHttpServerSupport.getSingleHeaderValue(exchange, "Mcp-Method");
         Map<String, Object> params = asMap(message.getParams());
         Map<String, Object> metadata = params == null ? null : asMap(params.get("_meta"));
         String metadataVersion = metadata == null ? null
@@ -391,7 +414,7 @@ public class StreamableHttpMcpServer implements McpServer {
             String expectedName = "resources/read".equals(message.getMethod())
                     ? stringValue(params.get("uri")) : stringValue(params.get("name"));
             String actualName = McpHttpServerSupport.decodeHeaderValue(
-                    exchange.getRequestHeaders().getFirst("Mcp-Name"));
+                    McpHttpServerSupport.getSingleHeaderValue(exchange, "Mcp-Name"));
             if (expectedName == null || actualName == null || !expectedName.equals(actualName)) {
                 return protocolError(message.getId(), -32020, "Header mismatch: Mcp-Name");
             }
@@ -409,8 +432,9 @@ public class StreamableHttpMcpServer implements McpServer {
                 }
                 for (String headerName : McpHttpHeaderSupport.getToolParameterHeaderNames(schema)) {
                     String expected = expectedHeaders.get(headerName);
-                    String actual = exchange.getRequestHeaders().getFirst(headerName);
-                    if (!sameHeaderValue(schema, headerName, expected, actual)) {
+                    String actual = McpHttpServerSupport.getSingleHeaderValue(exchange, headerName);
+                    if (McpHttpServerSupport.hasMultipleHeaderValues(exchange, headerName)
+                            || !sameHeaderValue(schema, headerName, expected, actual)) {
                         return protocolError(message.getId(), -32020,
                                 "Header mismatch: " + headerName);
                     }
@@ -449,6 +473,13 @@ public class StreamableHttpMcpServer implements McpServer {
                 || "prompts/get".equals(method);
     }
 
+    private static boolean supportsModernSse(String method) {
+        return "server/discover".equals(method) || "tools/list".equals(method)
+                || "tools/call".equals(method) || "resources/list".equals(method)
+                || "resources/read".equals(method) || "prompts/list".equals(method)
+                || "prompts/get".equals(method);
+    }
+
     private static McpResponse protocolError(Object id, int code, String message) {
         McpError error = new McpError();
         error.setCode(code);
@@ -476,20 +507,67 @@ public class StreamableHttpMcpServer implements McpServer {
         return value == null ? null : String.valueOf(value);
     }
 
-    private void sendModernSseResponse(HttpExchange exchange, McpMessage response) throws IOException {
+    private void sendModernSseResponse(HttpExchange exchange, final McpMessage message) throws IOException {
         exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
         exchange.getResponseHeaders().add("Cache-Control", "no-cache");
         exchange.getResponseHeaders().add("X-Accel-Buffering", "no");
         exchange.sendResponseHeaders(200, 0);
-        PrintWriter writer = new PrintWriter(
-                new OutputStreamWriter(exchange.getResponseBody(), StandardCharsets.UTF_8), true);
+        OutputStream output = exchange.getResponseBody();
+        Future<McpMessage> request = null;
         try {
-            writer.println("data: " + JSON.toJSONString(response));
-            writer.println();
-            writer.flush();
+            writeSseComment(output);
+            ExecutorService executor = requestExecutor;
+            if (executor == null) {
+                return;
+            }
+            request = executor.submit(new Callable<McpMessage>() {
+                @Override
+                public McpMessage call() {
+                    return serverEngine.processModernMessage(message);
+                }
+            });
+            while (true) {
+                try {
+                    writeSseMessage(output, request.get(SSE_KEEP_ALIVE_INTERVAL_MILLIS, TimeUnit.MILLISECONDS));
+                    return;
+                } catch (TimeoutException ignored) {
+                    writeSseComment(output);
+                } catch (CancellationException ignored) {
+                    return;
+                } catch (InterruptedException e) {
+                    request.cancel(true);
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (ExecutionException e) {
+                    writeSseMessage(output, protocolError(message.getId(), -32603, "Internal error"));
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            if (request != null) {
+                request.cancel(true);
+            }
+            log.debug("Modern SSE request cancelled by client", e);
         } finally {
-            writer.close();
+            try {
+                output.close();
+            } catch (IOException e) {
+                if (request != null) {
+                    request.cancel(true);
+                }
+                log.debug("Modern SSE response closed by client", e);
+            }
         }
+    }
+
+    private static void writeSseComment(OutputStream output) throws IOException {
+        output.write(":\n\n".getBytes(StandardCharsets.UTF_8));
+        output.flush();
+    }
+
+    private static void writeSseMessage(OutputStream output, McpMessage response) throws IOException {
+        output.write(("data: " + JSON.toJSONString(response) + "\n\n").getBytes(StandardCharsets.UTF_8));
+        output.flush();
     }
 
     /**

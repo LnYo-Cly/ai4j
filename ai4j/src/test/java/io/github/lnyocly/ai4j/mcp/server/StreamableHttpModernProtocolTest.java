@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.mcp.server;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.mcp.client.McpClient;
+import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
+import io.github.lnyocly.ai4j.mcp.entity.McpResponse;
 import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
 import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import io.github.lnyocly.ai4j.mcp.transport.StreamableHttpTransport;
@@ -15,15 +17,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class StreamableHttpModernProtocolTest {
@@ -178,6 +185,92 @@ public class StreamableHttpModernProtocolTest {
     }
 
     @Test
+    public void modernServerRejectsDuplicateMetadataHeaders() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = modernServer(port, null, new SchemaModernEngine());
+        try {
+            server.start().get();
+
+            assertHeaderMismatch(rawSocketPost(port,
+                    modernRequest("server/discover", 1, new HashMap<String, Object>()),
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "mcp-protocol-version: 2026-07-28",
+                    "Mcp-Method: server/discover"));
+            assertHeaderMismatch(rawSocketPost(port,
+                    modernRequest("server/discover", 2, new HashMap<String, Object>()),
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "Mcp-Method: server/discover",
+                    "Mcp-Method: tools/list"));
+
+            Map<String, Object> nameParams = new HashMap<String, Object>();
+            nameParams.put("name", "test-tool");
+            nameParams.put("arguments", new HashMap<String, Object>());
+            assertHeaderMismatch(rawSocketPost(port, modernRequest("tools/call", 3, nameParams),
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "Mcp-Method: tools/call",
+                    "Mcp-Name: test-tool",
+                    "Mcp-Name: attacker-selected"));
+
+            Map<String, Object> arguments = new HashMap<String, Object>();
+            arguments.put("region", "us-west1");
+            Map<String, Object> parameterParams = new HashMap<String, Object>();
+            parameterParams.put("name", "test-tool");
+            parameterParams.put("arguments", arguments);
+            assertHeaderMismatch(rawSocketPost(port, modernRequest("tools/call", 4, parameterParams),
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "Mcp-Method: tools/call",
+                    "Mcp-Name: test-tool",
+                    "Mcp-Param-Region: us-west1",
+                    "mcp-param-region: us-west1"));
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void modernSseDisconnectCancelsInFlightRequest() throws Exception {
+        int port = findFreePort();
+        BlockingModernEngine engine = new BlockingModernEngine();
+        StreamableHttpMcpServer server = modernServer(port, null, engine);
+        Socket socket = null;
+        try {
+            server.start().get();
+            socket = new Socket("127.0.0.1", port);
+            socket.setSoTimeout(5000);
+            writeRawPost(socket, modernRequest("server/discover", 1, new HashMap<String, Object>()),
+                    "Accept: text/event-stream",
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "Mcp-Method: server/discover");
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            Assert.assertEquals("HTTP/1.1 200 OK", reader.readLine());
+            String line;
+            while ((line = reader.readLine()) != null && !line.isEmpty()) {
+                // Consume response headers before asserting the actual SSE stream is open.
+            }
+            String firstSseLine = reader.readLine();
+            if (firstSseLine.matches("[0-9a-fA-F]+")) {
+                firstSseLine = reader.readLine();
+            }
+            Assert.assertEquals(":", firstSseLine);
+            Assert.assertEquals("", reader.readLine());
+            Assert.assertTrue("request worker did not start", engine.started.await(5, TimeUnit.SECONDS));
+
+            socket.setSoLinger(true, 0);
+            socket.close();
+            socket = null;
+            Assert.assertTrue("SSE disconnect did not interrupt in-flight work",
+                    engine.cancelled.await(5, TimeUnit.SECONDS));
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+            server.stop().get();
+        }
+    }
+
+    @Test
     public void explicitLegacyProfileStillMintsSessionForInitialize() throws Exception {
         int port = findFreePort();
         StreamableHttpMcpServer server = new StreamableHttpMcpServer(
@@ -205,6 +298,11 @@ public class StreamableHttpModernProtocolTest {
     private static StreamableHttpMcpServer modernServer(int port, String origin) {
         return new StreamableHttpMcpServer("modern", "1.0", "127.0.0.1", port, null, origin,
                 McpProtocolProfile.MODERN_2026_07_28);
+    }
+
+    private static StreamableHttpMcpServer modernServer(int port, String origin, McpServerEngine engine) {
+        return new StreamableHttpMcpServer("modern", "1.0", "127.0.0.1", port, null, origin,
+                McpProtocolProfile.MODERN_2026_07_28, engine);
     }
 
     private static RawResponse post(int port, String method, int id, Map<String, Object> params,
@@ -248,6 +346,62 @@ public class StreamableHttpModernProtocolTest {
         } finally {
             response.close();
         }
+    }
+
+    private static RawResponse rawSocketPost(int port, String body, String... headers) throws IOException {
+        Socket socket = new Socket("127.0.0.1", port);
+        socket.setSoTimeout(5000);
+        try {
+            writeRawPost(socket, body, prepend("Connection: close", headers));
+            String rawResponse = readText(socket.getInputStream());
+            int statusLineEnd = rawResponse.indexOf("\r\n");
+            int bodyStart = rawResponse.indexOf("\r\n\r\n");
+            int status = Integer.parseInt(rawResponse.substring(0, statusLineEnd).split(" ")[1]);
+            String responseBody = bodyStart < 0 ? "" : rawResponse.substring(bodyStart + 4);
+            return new RawResponse(status, responseBody, null);
+        } finally {
+            socket.close();
+        }
+    }
+
+    private static void writeRawPost(Socket socket, String body, String... headers) throws IOException {
+        StringBuilder request = new StringBuilder();
+        request.append("POST /mcp HTTP/1.1\r\n");
+        request.append("Host: 127.0.0.1\r\n");
+        request.append("Content-Type: application/json\r\n");
+        for (String header : headers) {
+            request.append(header).append("\r\n");
+        }
+        request.append("Content-Length: ").append(body.getBytes(StandardCharsets.UTF_8).length).append("\r\n\r\n");
+        request.append(body);
+        socket.getOutputStream().write(request.toString().getBytes(StandardCharsets.UTF_8));
+        socket.getOutputStream().flush();
+    }
+
+    private static String[] prepend(String first, String[] rest) {
+        String[] values = new String[rest.length + 1];
+        values[0] = first;
+        System.arraycopy(rest, 0, values, 1, rest.length);
+        return values;
+    }
+
+    private static String modernRequest(String method, int id, Map<String, Object> params) {
+        Map<String, Object> requestParams = new HashMap<String, Object>(params);
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        requestParams.put("_meta", metadata);
+        Map<String, Object> request = new HashMap<String, Object>();
+        request.put("jsonrpc", "2.0");
+        request.put("id", id);
+        request.put("method", method);
+        request.put("params", requestParams);
+        return JSON.toJSONString(request);
+    }
+
+    private static void assertHeaderMismatch(RawResponse response) {
+        Assert.assertEquals(400, response.status);
+        Assert.assertTrue(response.body.contains("-32020"));
     }
 
     private static RawResponse options(int port, String path, String origin) throws IOException {
@@ -316,6 +470,60 @@ public class StreamableHttpModernProtocolTest {
             this.body = body;
             this.sessionId = sessionId;
         }
+    }
+
+    private static final class SchemaModernEngine extends McpServerEngine {
+        private final Map<String, Object> inputSchema;
+
+        private SchemaModernEngine() {
+            super("test", "1.0", Arrays.asList("2026-07-28"), "2026-07-28", false, false, false);
+            Map<String, Object> property = new HashMap<String, Object>();
+            property.put("type", "string");
+            property.put("x-mcp-header", "Region");
+            Map<String, Object> properties = new HashMap<String, Object>();
+            properties.put("region", property);
+            inputSchema = new HashMap<String, Object>();
+            inputSchema.put("type", "object");
+            inputSchema.put("properties", properties);
+        }
+
+        @Override
+        public McpMessage processModernMessage(McpMessage message) {
+            return success(message.getId());
+        }
+
+        @Override
+        public Map<String, Object> getToolInputSchema(String toolName) {
+            return "test-tool".equals(toolName) ? inputSchema : null;
+        }
+    }
+
+    private static final class BlockingModernEngine extends McpServerEngine {
+        private final CountDownLatch started = new CountDownLatch(1);
+        private final CountDownLatch cancelled = new CountDownLatch(1);
+
+        private BlockingModernEngine() {
+            super("test", "1.0", Arrays.asList("2026-07-28"), "2026-07-28", false, false, false);
+        }
+
+        @Override
+        public McpMessage processModernMessage(McpMessage message) {
+            started.countDown();
+            try {
+                new CountDownLatch(1).await();
+            } catch (InterruptedException e) {
+                cancelled.countDown();
+                Thread.currentThread().interrupt();
+            }
+            return success(message.getId());
+        }
+    }
+
+    private static McpMessage success(Object id) {
+        McpResponse response = new McpResponse();
+        response.setId(id);
+        response.setResult(new HashMap<String, Object>());
+        return response;
     }
 
 }

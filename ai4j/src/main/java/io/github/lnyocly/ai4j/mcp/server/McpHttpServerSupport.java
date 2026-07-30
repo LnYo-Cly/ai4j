@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -73,6 +74,16 @@ public final class McpHttpServerSupport {
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         return origin == null || (allowedOrigin != null && !"*".equals(allowedOrigin)
                 && allowedOrigin.equals(origin));
+    }
+
+    static String getSingleHeaderValue(HttpExchange exchange, String headerName) {
+        List<String> values = exchange.getRequestHeaders().get(headerName);
+        return values != null && values.size() == 1 ? values.get(0) : null;
+    }
+
+    static boolean hasMultipleHeaderValues(HttpExchange exchange, String headerName) {
+        List<String> values = exchange.getRequestHeaders().get(headerName);
+        return values != null && values.size() > 1;
     }
 
     public static void writeNoContent(HttpExchange exchange, int statusCode) throws IOException {
