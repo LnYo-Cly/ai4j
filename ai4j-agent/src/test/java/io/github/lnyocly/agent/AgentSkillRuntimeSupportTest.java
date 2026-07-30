@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionRequest;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
@@ -200,6 +201,37 @@ public class AgentSkillRuntimeSupportTest {
     }
 
     @Test
+    public void shouldApplyToolInterceptorToAliasedSkillReader() throws Exception {
+        Path workspace = temporaryFolder.newFolder("skill-interceptor-conflict").toPath();
+        Path skillFile = writeSkill(workspace, "reader", "Read the Skill instructions.", false);
+        Tool hostReadFile = new Tool();
+        Tool.Function hostFunction = new Tool.Function();
+        hostFunction.setName("read_file");
+        hostReadFile.setFunction(hostFunction);
+        final AtomicReference<String> interceptedName = new AtomicReference<String>();
+        RecordingModelClient modelClient = new RecordingModelClient(
+                toolCallResult("alias-read", "read_skill_file", "{\"path\":\"" + escapeJson(skillFile.toString()) + "\"}"),
+                textResult("done"));
+
+        AgentResult result = Agents.react()
+                .modelClient(modelClient)
+                .model("test-model")
+                .skills(workspace)
+                .toolRegistry(() -> Collections.<Object>singletonList(hostReadFile))
+                .toolInterceptor((call, context) -> {
+                    interceptedName.set(call.getName());
+                    return ToolCallDecision.block("host blocked skill reads");
+                })
+                .options(AgentOptions.builder().maxSteps(2).build())
+                .build()
+                .run(AgentRequest.builder().input("read safely").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals("read_file", interceptedName.get());
+        Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("host blocked skill reads"));
+    }
+
+    @Test
     public void shouldKeepCustomResolverRootsIsolatedFromDefaultSkillRoots() throws Exception {
         Path workspace = temporaryFolder.newFolder("skill-isolation-workspace").toPath();
         writeSkill(workspace, "workspace-only", "Must not be exposed to the tenant resolver.", false);
@@ -308,6 +340,66 @@ public class AgentSkillRuntimeSupportTest {
     }
 
     @Test
+    public void shouldKeepHostProvidedCatalogStableWhenResolverOrderChanges() throws Exception {
+        Path workspace = temporaryFolder.newFolder("memory-skill-order").toPath();
+        final SkillDescriptor alpha = inMemorySkill("alpha", "Alpha workflow.", "# Alpha", "tenant://alpha/SKILL.md", false);
+        final SkillDescriptor beta = inMemorySkill("beta", "Beta workflow.", "# Beta", "tenant://beta/SKILL.md", false);
+        final AtomicInteger resolutionCount = new AtomicInteger();
+        RecordingModelClient modelClient = new RecordingModelClient(textResult("first"), textResult("second"));
+        Agent agent = Agents.react()
+                .modelClient(modelClient)
+                .model("test-model")
+                .skillResolver(new AgentSkillResolver() {
+                    @Override
+                    public AgentSkillScope resolve(AgentRequest request) {
+                        List<SkillDescriptor> ordered = resolutionCount.incrementAndGet() % 2 == 0
+                                ? Arrays.asList(beta, alpha) : Arrays.asList(alpha, beta);
+                        return AgentSkillScope.builder()
+                                .workspaceRoot(workspace)
+                                .providedSkills(ordered)
+                                .build();
+                    }
+                })
+                .options(AgentOptions.builder().maxSteps(2).build())
+                .build();
+
+        agent.run(AgentRequest.builder().input("first").build());
+        agent.run(AgentRequest.builder().input("second").build());
+
+        String firstPrompt = modelClient.prompts.get(0).getSystemPrompt();
+        Assert.assertEquals(firstPrompt, modelClient.prompts.get(1).getSystemPrompt());
+        Assert.assertTrue(firstPrompt.indexOf("<name>alpha</name>") < firstPrompt.indexOf("<name>beta</name>"));
+    }
+
+    @Test
+    public void shouldRejectFileBackedProvidedSkillOutsideDeclaredRoots() throws Exception {
+        Path workspace = temporaryFolder.newFolder("provided-skill-workspace").toPath();
+        Path outsideRoot = temporaryFolder.newFolder("provided-skill-outside").toPath();
+        Path outsideSkill = writeSkillUnderRoot(outsideRoot, "outside", "Outside the declared Skill root.", false);
+        SkillDescriptor descriptor = SkillDescriptor.builder()
+                .name("outside")
+                .description("Outside the declared Skill root.")
+                .skillFilePath(outsideSkill.toString())
+                .source("host")
+                .build();
+        RecordingModelClient modelClient = new RecordingModelClient(textResult("unused"));
+        Agent agent = Agents.react()
+                .modelClient(modelClient)
+                .model("test-model")
+                .skillResolver(hostProvidedResolver(workspace, descriptor))
+                .options(AgentOptions.builder().maxSteps(2).build())
+                .build();
+
+        try {
+            agent.run(AgentRequest.builder().input("outside").build());
+            Assert.fail("expected outside root rejection");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertTrue(expected.getMessage().contains("declared Skill root"));
+        }
+        Assert.assertTrue(modelClient.prompts.isEmpty());
+    }
+
+    @Test
     public void shouldRejectDuplicateHostProvidedSkillName() throws Exception {
         Path workspace = temporaryFolder.newFolder("memory-skill-duplicate").toPath();
         writeSkill(workspace, "shared", "File-backed shared Skill.", false);
@@ -375,6 +467,29 @@ public class AgentSkillRuntimeSupportTest {
         Assert.assertTrue(modelClient.prompts.get(0).getSystemPrompt().contains("<available_skills>"));
         Assert.assertTrue(modelClient.prompts.get(0).getSystemPrompt().contains("read_file"));
         Assert.assertTrue(readOutput.get().contains("Review code changes."));
+    }
+
+    @Test
+    public void shouldApplySelectedManualOnlySkillToCodeActRuntime() throws Exception {
+        Path workspace = temporaryFolder.newFolder("skill-codeact-selected").toPath();
+        writeSkill(workspace, "release-runbook", "Follow the release procedure.", true);
+        RecordingModelClient modelClient = new RecordingModelClient(
+                textResult("{\"type\":\"final\",\"output\":\"done\"}"));
+        Agent agent = Agents.codeAct()
+                .modelClient(modelClient)
+                .model("test-model")
+                .skills(workspace)
+                .options(AgentOptions.builder().maxSteps(2).build())
+                .build();
+
+        AgentResult result = agent.run(AgentRequest.builder()
+                .input("prepare the release")
+                .selectedSkills(Collections.singletonList("release-runbook"))
+                .build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertFalse(modelClient.prompts.get(0).getSystemPrompt().contains("release-runbook"));
+        Assert.assertTrue(promptItemsText(modelClient.prompts.get(0)).contains("# release-runbook"));
     }
 
     @Test

@@ -168,11 +168,31 @@ public final class Skills {
             return null;
         }
         String resolvedReadToolName = firstNonBlank(readToolName, BuiltInTools.READ_FILE);
-        StringBuilder entries = new StringBuilder();
+        List<SkillDescriptor> sortedSkills = new ArrayList<SkillDescriptor>();
         for (SkillDescriptor skill : availableSkills) {
-            if (skill == null || skill.isDisableModelInvocation()) {
-                continue;
+            if (skill != null && !skill.isDisableModelInvocation()) {
+                sortedSkills.add(skill);
             }
+        }
+        Collections.sort(sortedSkills, new Comparator<SkillDescriptor>() {
+            @Override
+            public int compare(SkillDescriptor first, SkillDescriptor second) {
+                int comparison = firstNonBlank(first.getName(), "skill")
+                        .compareTo(firstNonBlank(second.getName(), "skill"));
+                if (comparison != 0) {
+                    return comparison;
+                }
+                comparison = firstNonBlank(first.getDescription(), "No description available.")
+                        .compareTo(firstNonBlank(second.getDescription(), "No description available."));
+                if (comparison != 0) {
+                    return comparison;
+                }
+                return firstNonBlank(first.getSkillFilePath(), "(missing)")
+                        .compareTo(firstNonBlank(second.getSkillFilePath(), "(missing)"));
+            }
+        });
+        StringBuilder entries = new StringBuilder();
+        for (SkillDescriptor skill : sortedSkills) {
             entries.append("  <skill>\n");
             entries.append("    <name>").append(escapeXml(firstNonBlank(skill.getName(), "skill"))).append("</name>\n");
             entries.append("    <description>").append(escapeXml(firstNonBlank(skill.getDescription(), "No description available."))).append("</description>\n");

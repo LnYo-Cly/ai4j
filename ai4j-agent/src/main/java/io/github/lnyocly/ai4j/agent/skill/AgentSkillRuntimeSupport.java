@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.agent.skill;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
+import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
@@ -76,6 +78,9 @@ public final class AgentSkillRuntimeSupport {
         String prompt = Skills.appendAvailableSkillsPrompt(context.getSystemPrompt(), automatic, readToolName);
         String selectedPrompt = buildSelectedSkillsPrompt(selected);
         AgentContext.AgentContextBuilder contextBuilder = context.toBuilder().systemPrompt(prompt);
+        if (!BuiltInTools.READ_FILE.equals(readToolName)) {
+            contextBuilder.toolInterceptor(aliasSkillReaderInterceptor(context.getToolInterceptor(), readToolName));
+        }
         if (!isBlank(selectedPrompt)) {
             if (context.getMemory() == null) {
                 throw new IllegalStateException("memory is required to apply explicitly selected Skills");
@@ -142,7 +147,8 @@ public final class AgentSkillRuntimeSupport {
             addUniqueSkill(merged, byName, skill);
         }
         for (SkillDescriptor skill : safeList(provided)) {
-            validateProvidedSkill(skill);
+            validateProvidedSkill(skill, discovered == null
+                    ? Collections.<String>emptyList() : discovered.getAllowedReadRoots());
             addUniqueSkill(merged, byName, skill);
         }
         return new Skills.DiscoveryResult(merged,
@@ -177,12 +183,48 @@ public final class AgentSkillRuntimeSupport {
                 && equalsNullable(first.getContent(), second.getContent());
     }
 
-    private static void validateProvidedSkill(SkillDescriptor skill) {
+    private static void validateProvidedSkill(SkillDescriptor skill, List<String> allowedReadRoots) {
         if (skill == null || isBlank(skill.getName()) || isBlank(skill.getDescription()) || isBlank(skill.getSkillFilePath())) {
             throw new IllegalArgumentException("Host-provided Skill requires name, description, and skillFilePath");
         }
         if (skill.getContent() != null) {
             validateSelectedSkillContent(skill, skill.getContent());
+            return;
+        }
+        Path skillFile;
+        try {
+            skillFile = Paths.get(skill.getSkillFilePath()).toAbsolutePath().normalize();
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException("Host-provided Skill path is invalid: " + skill.getSkillFilePath(), ex);
+        }
+        if (Files.isSymbolicLink(skillFile) || !Files.isRegularFile(skillFile, LinkOption.NOFOLLOW_LINKS)) {
+            throw new IllegalArgumentException("Host-provided Skill file must be a regular non-symlink file: "
+                    + skill.getSkillFilePath());
+        }
+        if (!isWithinAllowedReadRoots(skillFile, allowedReadRoots)) {
+            throw new IllegalArgumentException("Host-provided Skill file must be under a declared Skill root: "
+                    + skill.getSkillFilePath());
+        }
+    }
+
+    private static boolean isWithinAllowedReadRoots(Path skillFile, List<String> allowedReadRoots) {
+        for (String configuredRoot : safeList(allowedReadRoots)) {
+            if (isBlank(configuredRoot)) {
+                continue;
+            }
+            Path root = Paths.get(configuredRoot).toAbsolutePath().normalize();
+            if (skillFile.startsWith(root) && resolvesWithin(skillFile, root)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean resolvesWithin(Path candidate, Path root) {
+        try {
+            return candidate.toRealPath().startsWith(root.toRealPath());
+        } catch (IOException ex) {
+            return false;
         }
     }
 
@@ -312,6 +354,54 @@ public final class AgentSkillRuntimeSupport {
                 context.getToolExecutor());
     }
 
+    private static ToolInterceptor aliasSkillReaderInterceptor(final ToolInterceptor interceptor,
+                                                                 final String alias) {
+        if (interceptor == null || BuiltInTools.READ_FILE.equals(alias)) {
+            return interceptor;
+        }
+        return new ToolInterceptor() {
+            @Override
+            public ToolCallDecision beforeToolCall(AgentToolCall call, AgentContext context) {
+                ToolCallDecision decision = interceptor.beforeToolCall(canonicalSkillReaderCall(call, alias), context);
+                return restoreAliasDecision(decision, alias);
+            }
+
+            @Override
+            public ToolCallDecision afterToolCall(AgentToolCall call, String output, AgentContext context) {
+                return interceptor.afterToolCall(canonicalSkillReaderCall(call, alias), output, context);
+            }
+        };
+    }
+
+    private static ToolCallDecision restoreAliasDecision(ToolCallDecision decision, String alias) {
+        if (decision == null || decision.getType() != ToolCallDecision.Type.MODIFY
+                || decision.getModifiedCall() == null
+                || !BuiltInTools.READ_FILE.equals(decision.getModifiedCall().getName())) {
+            return decision;
+        }
+        return ToolCallDecision.modify(aliasSkillReadCall(decision.getModifiedCall(), alias));
+    }
+
+    private static AgentToolCall canonicalSkillReaderCall(AgentToolCall call, String alias) {
+        return renameSkillReaderCall(call, alias, BuiltInTools.READ_FILE);
+    }
+
+    private static AgentToolCall aliasSkillReadCall(AgentToolCall call, String alias) {
+        return renameSkillReaderCall(call, BuiltInTools.READ_FILE, alias);
+    }
+
+    private static AgentToolCall renameSkillReaderCall(AgentToolCall call, String expectedName, String replacementName) {
+        if (call == null || !expectedName.equals(call.getName())) {
+            return call;
+        }
+        return AgentToolCall.builder()
+                .name(replacementName)
+                .arguments(call.getArguments())
+                .callId(call.getCallId())
+                .type(call.getType())
+                .build();
+    }
+
     private static boolean hasToolNamed(AgentToolRegistry registry, String name) {
         if (registry == null || registry.getTools() == null) {
             return false;
@@ -410,13 +500,7 @@ public final class AgentSkillRuntimeSupport {
             if (call == null || !alias.equals(call.getName())) {
                 throw new IllegalArgumentException("Unsupported Skill tool: " + (call == null ? null : call.getName()));
             }
-            AgentToolCall canonicalCall = AgentToolCall.builder()
-                    .name(BuiltInTools.READ_FILE)
-                    .arguments(call.getArguments())
-                    .callId(call.getCallId())
-                    .type(call.getType())
-                    .build();
-            return delegate.execute(canonicalCall);
+            return delegate.execute(canonicalSkillReaderCall(call, alias));
         }
     }
 
