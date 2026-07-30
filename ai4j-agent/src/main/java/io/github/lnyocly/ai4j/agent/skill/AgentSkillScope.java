@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agent.skill;
 
+import io.github.lnyocly.ai4j.skill.SkillDescriptor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,4 +36,20 @@ public class AgentSkillScope {
      */
     @Builder.Default
     private List<String> enabledSkillNames = new ArrayList<String>();
+
+    /**
+     * Host-provided Skills added to the discovered file catalog for this run. A descriptor with
+     * {@link SkillDescriptor#getContent()} uses {@code skillFilePath} as a stable virtual location.
+     */
+    @Builder.Default
+    private List<SkillDescriptor> providedSkills = new ArrayList<SkillDescriptor>();
+
+    /**
+     * Source-compatible constructor retained for callers compiled before host-provided Skills.
+     */
+    public AgentSkillScope(Path workspaceRoot, List<String> skillDirectories,
+                           boolean includeDefaultSkillRoots, List<String> enabledSkillNames) {
+        this(workspaceRoot, skillDirectories, includeDefaultSkillRoots, enabledSkillNames,
+                new ArrayList<SkillDescriptor>());
+    }
 }

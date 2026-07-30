@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.skill;
 
 import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
+import io.github.lnyocly.ai4j.tool.BuiltInTools;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -54,8 +55,13 @@ public final class Skills {
                 allowedReadRoots.add(root.toAbsolutePath().normalize().toString());
                 for (SkillDescriptor descriptor : discoverFromRoot(root, resolvedWorkspaceRoot)) {
                     String normalizedName = normalizeKey(descriptor.getName());
-                    if (!byName.containsKey(normalizedName)) {
+                    SkillDescriptor existing = byName.get(normalizedName);
+                    if (existing == null) {
                         byName.put(normalizedName, descriptor);
+                    } else if (!sameSkillFile(existing, descriptor)) {
+                        throw new IllegalArgumentException("Duplicate Skill name '" + descriptor.getName()
+                                + "' discovered at " + existing.getSkillFilePath()
+                                + " and " + descriptor.getSkillFilePath());
                     }
                 }
             }
@@ -106,7 +112,16 @@ public final class Skills {
 
     public static String appendAvailableSkillsPrompt(String basePrompt,
                                                      List<? extends SkillDescriptor> availableSkills) {
-        String skillPrompt = buildAvailableSkillsPrompt(availableSkills);
+        return appendAvailableSkillsPrompt(basePrompt, availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Appends the Skill catalog using the actual reader exposed to the model.
+     */
+    public static String appendAvailableSkillsPrompt(String basePrompt,
+                                                     List<? extends SkillDescriptor> availableSkills,
+                                                     String readToolName) {
+        String skillPrompt = buildAvailableSkillsPrompt(availableSkills, readToolName);
         if (isBlank(basePrompt)) {
             return skillPrompt;
         }
@@ -118,10 +133,19 @@ public final class Skills {
 
     public static void appendAvailableSkillsPrompt(StringBuilder builder,
                                                    List<? extends SkillDescriptor> availableSkills) {
+        appendAvailableSkillsPrompt(builder, availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Appends the Skill catalog using the actual reader exposed to the model.
+     */
+    public static void appendAvailableSkillsPrompt(StringBuilder builder,
+                                                   List<? extends SkillDescriptor> availableSkills,
+                                                   String readToolName) {
         if (builder == null) {
             return;
         }
-        String skillPrompt = buildAvailableSkillsPrompt(availableSkills);
+        String skillPrompt = buildAvailableSkillsPrompt(availableSkills, readToolName);
         if (isBlank(skillPrompt)) {
             return;
         }
@@ -132,9 +156,18 @@ public final class Skills {
     }
 
     public static String buildAvailableSkillsPrompt(List<? extends SkillDescriptor> availableSkills) {
+        return buildAvailableSkillsPrompt(availableSkills, BuiltInTools.READ_FILE);
+    }
+
+    /**
+     * Builds a cache-stable Skill catalog and names the reader available for progressive loading.
+     */
+    public static String buildAvailableSkillsPrompt(List<? extends SkillDescriptor> availableSkills,
+                                                    String readToolName) {
         if (availableSkills == null || availableSkills.isEmpty()) {
             return null;
         }
+        String resolvedReadToolName = firstNonBlank(readToolName, BuiltInTools.READ_FILE);
         StringBuilder entries = new StringBuilder();
         for (SkillDescriptor skill : availableSkills) {
             if (skill == null || skill.isDisableModelInvocation()) {
@@ -152,12 +185,31 @@ public final class Skills {
         StringBuilder builder = new StringBuilder();
         builder.append("The following skills provide specialized instructions for specific tasks. ")
                 .append("Do not read every skill file up front. When a task matches a skill's description, ")
-                .append("read its SKILL.md with read_file before proceeding. Resolve relative paths against the Skill directory.\n");
+                .append("read its SKILL.md with ").append(resolvedReadToolName)
+                .append(" before proceeding. Resolve relative paths against the Skill directory.\n");
         builder.append("<available_skills>\n");
         builder.append(entries);
         builder.append("</available_skills>\n");
-        builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse read_file instead of asking for a dedicated skill tool.");
+        builder.append("Only use a skill after reading its SKILL.md. Prefer the smallest relevant skill set and reuse ")
+                .append(resolvedReadToolName)
+                .append(" instead of asking for a dedicated skill tool.");
         return builder.toString().trim();
+    }
+
+    private static boolean sameSkillFile(SkillDescriptor first, SkillDescriptor second) {
+        if (first == null || second == null || isBlank(first.getSkillFilePath()) || isBlank(second.getSkillFilePath())) {
+            return false;
+        }
+        Path firstPath = Paths.get(first.getSkillFilePath()).toAbsolutePath().normalize();
+        Path secondPath = Paths.get(second.getSkillFilePath()).toAbsolutePath().normalize();
+        if (firstPath.equals(secondPath)) {
+            return true;
+        }
+        try {
+            return Files.isSameFile(firstPath, secondPath);
+        } catch (IOException ex) {
+            return false;
+        }
     }
 
     private static List<Path> resolveSkillRoots(Path workspaceRoot, List<String> skillDirectories) {

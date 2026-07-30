@@ -10,6 +10,7 @@ import org.junit.rules.TemporaryFolder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 public class BuiltInToolExecutorTest {
 
@@ -104,6 +105,27 @@ public class BuiltInToolExecutorTest {
         ));
         Assert.assertEquals(processId, stopResult.getString("processId"));
         Assert.assertEquals("STOPPED", stopResult.getString("status"));
+    }
+
+    @Test
+    public void shouldKeepLegacyBuiltInToolContextConstructor() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("legacy-built-in-context").toPath();
+
+        BuiltInToolContext context = new BuiltInToolContext(
+                workspaceRoot.toString(),
+                false,
+                Collections.<String>emptyList(),
+                100,
+                200L,
+                300,
+                400,
+                500L,
+                null);
+
+        Assert.assertEquals(workspaceRoot.toAbsolutePath().normalize(), context.getWorkspaceRootPath());
+        Assert.assertFalse(context.isRestrictReadToAllowedRoots());
+        Assert.assertEquals(100, context.getDefaultReadMaxChars());
+        Assert.assertEquals(200L, context.getDefaultCommandTimeoutMs());
     }
 
     private static boolean isWindows() {

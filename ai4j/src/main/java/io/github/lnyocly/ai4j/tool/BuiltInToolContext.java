@@ -50,6 +50,30 @@ public class BuiltInToolContext {
 
     private transient BuiltInProcessRegistry processRegistry;
 
+    /**
+     * Source-compatible constructor retained for callers compiled before restricted Skill reads.
+     */
+    public BuiltInToolContext(String workspaceRoot,
+                              boolean allowOutsideWorkspace,
+                              List<String> allowedReadRoots,
+                              int defaultReadMaxChars,
+                              long defaultCommandTimeoutMs,
+                              int defaultBashLogChars,
+                              int maxProcessOutputChars,
+                              long processStopGraceMs,
+                              BuiltInProcessRegistry processRegistry) {
+        this(workspaceRoot,
+                allowOutsideWorkspace,
+                allowedReadRoots,
+                false,
+                defaultReadMaxChars,
+                defaultCommandTimeoutMs,
+                defaultBashLogChars,
+                maxProcessOutputChars,
+                processStopGraceMs,
+                processRegistry);
+    }
+
     public Path getWorkspaceRootPath() {
         if (isBlank(workspaceRoot)) {
             return Paths.get(".").toAbsolutePath().normalize();

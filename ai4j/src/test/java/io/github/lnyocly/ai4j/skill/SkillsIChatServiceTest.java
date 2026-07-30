@@ -117,9 +117,46 @@ public class SkillsIChatServiceTest {
             String prompt = Skills.buildAvailableSkillsPrompt(discovery.getSkills());
             Assert.assertTrue(prompt.contains("<skill>"));
             Assert.assertTrue(prompt.contains("Review &lt;API&gt; changes &amp; report risks."));
+            Assert.assertTrue(Skills.buildAvailableSkillsPrompt(discovery.getSkills(), "read_skill_file")
+                    .contains("read its SKILL.md with read_skill_file"));
         } finally {
             restoreProperty("user.home", originalUserHome);
         }
+    }
+
+    @Test
+    public void shouldRejectDuplicateNormalizedSkillNamesFromDifferentFiles() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-duplicate-workspace").toPath();
+        Path firstRoot = temporaryFolder.newFolder("skills-duplicate-first").toPath();
+        Path secondRoot = temporaryFolder.newFolder("skills-duplicate-second").toPath();
+        Path first = writeSkill(firstRoot.resolve("first").resolve("SKILL.md"),
+                "---\nname: review\ndescription: First review skill.\n---\n");
+        Path second = writeSkill(secondRoot.resolve("second").resolve("SKILL.md"),
+                "---\nname: REVIEW\ndescription: Second review skill.\n---\n");
+
+        try {
+            Skills.discover(workspaceRoot, Arrays.asList(firstRoot, secondRoot));
+            Assert.fail("expected duplicate normalized Skill name rejection");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertTrue(expected.getMessage().contains("Duplicate Skill name"));
+            Assert.assertTrue(expected.getMessage().contains(first.toString()));
+            Assert.assertTrue(expected.getMessage().contains(second.toString()));
+        }
+    }
+
+    @Test
+    public void shouldAllowSameSkillFileWhenRootsOverlap() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("skills-overlap-workspace").toPath();
+        Path root = temporaryFolder.newFolder("skills-overlap-root").toPath();
+        Path skillFile = writeSkill(root.resolve("shared").resolve("SKILL.md"),
+                "---\nname: shared\ndescription: Shared Skill.\n---\n");
+
+        Skills.DiscoveryResult discovery = Skills.discover(workspaceRoot,
+                Arrays.asList(root, skillFile.getParent()));
+
+        Assert.assertEquals(1, discovery.getSkills().size());
+        Assert.assertEquals(skillFile.toAbsolutePath().normalize().toString(),
+                discovery.getSkills().get(0).getSkillFilePath());
     }
 
     @Test

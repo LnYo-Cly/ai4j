@@ -28,6 +28,13 @@ public class AgentRequest {
      */
     private List<String> selectedSkills;
 
+    /**
+     * Source-compatible constructor retained for callers compiled before selectedSkills existed.
+     */
+    public AgentRequest(Object input, Map<String, Object> metadata) {
+        this(input, metadata, null);
+    }
+
     public String getMetadataString(String key) {
         if (metadata == null || key == null) {
             return null;

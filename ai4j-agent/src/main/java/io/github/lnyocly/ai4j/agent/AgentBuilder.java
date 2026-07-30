@@ -56,6 +56,7 @@ import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
 import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
+import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import okhttp3.OkHttpClient;
 
@@ -459,18 +460,27 @@ public class AgentBuilder {
         return this;
     }
 
-    /**
-     * Enables the standard workspace/global Skill discovery for this Agent.
-     */
+    /** Enables workspace-owned .ai4j/skills and .agents/skills discovery for this Agent. */
     public AgentBuilder skills(Path workspaceRoot) {
         return skills(workspaceRoot, null);
     }
 
-    /**
-     * Enables the standard Skill discovery with additional root directories.
-     */
+    /** Enables workspace-owned Skill discovery with additional host-declared root directories. */
     public AgentBuilder skills(Path workspaceRoot, List<String> skillDirectories) {
         return skillResolver(AgentSkillResolver.forWorkspace(workspaceRoot, skillDirectories));
+    }
+
+    /**
+     * Enables local developer Skill discovery including process-user roots. Do not use this
+     * convenience method for tenant services; supply a host-owned {@link AgentSkillResolver}.
+     */
+    public AgentBuilder skillsIncludingUserHome(Path workspaceRoot) {
+        return skillsIncludingUserHome(workspaceRoot, null);
+    }
+
+    /** Enables local developer Skill discovery including explicit roots and process-user roots. */
+    public AgentBuilder skillsIncludingUserHome(Path workspaceRoot, List<String> skillDirectories) {
+        return skillResolver(AgentSkillResolver.forWorkspaceIncludingUserHome(workspaceRoot, skillDirectories));
     }
 
     /**
@@ -582,6 +592,9 @@ public class AgentBuilder {
             mergedHooks.addAll(extensionTools.getLifecycleHooks());
         }
         mergedHooks.addAll(additionalLifecycleHooks);
+        List<ExtensionGuardrail> resolvedExtensionGuardrails = extensionTools == null
+                ? Collections.<ExtensionGuardrail>emptyList()
+                : new ArrayList<ExtensionGuardrail>(extensionTools.getGuardrails());
         AgentLifecycleHookDispatcher lifecycleHooks = mergedHooks.isEmpty()
                 ? AgentLifecycleHookDispatcher.empty()
                 : new AgentLifecycleHookDispatcher(mergedHooks);
@@ -619,6 +632,7 @@ public class AgentBuilder {
                 .extraBody(extraBody)
                 .pricingResolver(resolvedPricingResolver)
                 .skillResolver(skillResolver)
+                .extensionGuardrails(resolvedExtensionGuardrails)
                 .build();
 
         return new Agent(resolvedRuntime, context, resolvedMemorySupplier, sessionStore);

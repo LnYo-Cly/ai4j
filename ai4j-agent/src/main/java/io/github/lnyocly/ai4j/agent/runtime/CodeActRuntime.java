@@ -47,7 +47,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
     }
 
     protected AgentResult runInternal(AgentContext context, AgentRequest request, AgentListener listener) throws Exception {
-        context = AgentSkillRuntimeSupport.apply(context, request, false);
+        context = AgentSkillRuntimeSupport.apply(context, request, true);
         AgentOptions options = context.getOptions();
         int maxSteps = options == null ? 0 : options.getMaxSteps();
         CodeActOptions codeActOptions = context.getCodeActOptions();
