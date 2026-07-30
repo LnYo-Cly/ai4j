@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -38,7 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Streamable HTTP MCP服务器实现
- * 支持MCP 2025-03-26规范
+ * Supports the 2026 stateless contract and, when configured with AUTO, the
+ * initialization-era Streamable HTTP contract on the same endpoint.
  */
 public class StreamableHttpMcpServer implements McpServer {
 
@@ -61,7 +63,8 @@ public class StreamableHttpMcpServer implements McpServer {
 
     /**
      * Binds to loopback ({@code 127.0.0.1}) with no auth and uses the modern
-     * stateless profile. Use the profile constructor for explicit legacy compatibility.
+     * stateless profile. Use the profile constructor with {@link McpProtocolProfile#AUTO}
+     * to accept legacy initialization-era traffic on the same endpoint.
      * New code should use {@link McpServerFactory#createServer} with a {@link McpServerFactory.ServerConfig}.
      */
     public StreamableHttpMcpServer(String serverName, String serverVersion, int port) {
@@ -95,14 +98,60 @@ public class StreamableHttpMcpServer implements McpServer {
         this.serverEngine = serverEngine != null ? serverEngine : new McpServerEngine(
                 serverName,
                 serverVersion,
-                this.protocolProfile.isModern()
-                        ? Arrays.asList(McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion())
-                        : Arrays.asList("2025-03-26", "2024-11-05"),
-                this.protocolProfile.isModern()
-                        ? McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion() : "2025-03-26",
+                supportedProtocolVersions(this.protocolProfile),
+                defaultProtocolVersion(this.protocolProfile),
                 !this.protocolProfile.isModern(),
                 false,
                 false);
+    }
+
+    private static List<String> supportedProtocolVersions(McpProtocolProfile profile) {
+        if (profile.isModern()) {
+            return Arrays.asList(McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion());
+        }
+        if (profile.isAutomatic()) {
+            return Arrays.asList(
+                    McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_11_25.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_06_18.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_03_26.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion());
+        }
+        if (profile == McpProtocolProfile.LEGACY_2025_11_25) {
+            return Arrays.asList(
+                    McpProtocolProfile.LEGACY_2025_11_25.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_06_18.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_03_26.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion());
+        }
+        if (profile == McpProtocolProfile.LEGACY_2025_06_18) {
+            return Arrays.asList(
+                    McpProtocolProfile.LEGACY_2025_06_18.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2025_03_26.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion());
+        }
+        if (profile == McpProtocolProfile.LEGACY_2025_03_26) {
+            return Arrays.asList(
+                    McpProtocolProfile.LEGACY_2025_03_26.getProtocolVersion(),
+                    McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion());
+        }
+        return Arrays.asList(McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion());
+    }
+
+    private static String defaultProtocolVersion(McpProtocolProfile profile) {
+        if (profile.isModern()) {
+            return McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion();
+        }
+        if (profile == McpProtocolProfile.LEGACY_2025_06_18) {
+            return McpProtocolProfile.LEGACY_2025_06_18.getProtocolVersion();
+        }
+        if (profile == McpProtocolProfile.LEGACY_2025_03_26) {
+            return McpProtocolProfile.LEGACY_2025_03_26.getProtocolVersion();
+        }
+        if (profile == McpProtocolProfile.LEGACY_2024_11_05) {
+            return McpProtocolProfile.LEGACY_2024_11_05.getProtocolVersion();
+        }
+        return McpProtocolProfile.LEGACY_2025_11_25.getProtocolVersion();
     }
 
     public CompletableFuture<Void> start() {
@@ -210,12 +259,17 @@ public class StreamableHttpMcpServer implements McpServer {
     private class McpHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            String allowMethods = protocolProfile.isModern()
+                    ? "POST, OPTIONS" : "GET, POST, DELETE, OPTIONS";
+            String allowHeaders = protocolProfile.isModern()
+                    ? "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
+                    : protocolProfile.isAutomatic()
+                    ? "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name, mcp-session-id, last-event-id"
+                    : "Content-Type, mcp-session-id, last-event-id, Accept";
             McpHttpServerSupport.setCorsHeaders(
                     exchange,
-                    protocolProfile.isModern() ? "POST, OPTIONS" : "GET, POST, DELETE, OPTIONS",
-                    protocolProfile.isModern()
-                            ? "Content-Type, Accept, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
-                            : "Content-Type, mcp-session-id, last-event-id, Accept",
+                    allowMethods,
+                    McpHttpServerSupport.appendRequestedMcpParameterHeaders(exchange, allowHeaders),
                     corsAllowedOrigin);
 
             if (rejectDisallowedModernOrigin(exchange)) {
@@ -245,6 +299,15 @@ public class StreamableHttpMcpServer implements McpServer {
                         return;
                     }
                     processModernClientMessage(exchange, McpHttpServerSupport.readRequestBody(exchange));
+                    return;
+                }
+                if (protocolProfile.isAutomatic() && "POST".equals(method)) {
+                    String requestBody = McpHttpServerSupport.readRequestBody(exchange);
+                    if (isModernRequest(exchange, requestBody)) {
+                        processModernClientMessage(exchange, requestBody);
+                    } else {
+                        processClientMessage(exchange, requestBody);
+                    }
                     return;
                 }
                 if ("POST".equals(method)) {
@@ -345,6 +408,22 @@ public class StreamableHttpMcpServer implements McpServer {
         }
     }
 
+    private static boolean isModernRequest(HttpExchange exchange, String requestBody) {
+        if (McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion().equals(
+                McpHttpServerSupport.getSingleHeaderValue(exchange, "MCP-Protocol-Version"))) {
+            return true;
+        }
+        try {
+            McpMessage message = McpMessageCodec.parseMessage(requestBody);
+            Map<String, Object> params = asMap(message.getParams());
+            Map<String, Object> metadata = params == null ? null : asMap(params.get("_meta"));
+            return metadata != null && McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion()
+                    .equals(stringValue(metadata.get("io.modelcontextprotocol/protocolVersion")));
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private void processModernClientMessage(HttpExchange exchange, String requestBody) throws IOException {
         McpMessage message;
         try {
@@ -361,14 +440,14 @@ public class StreamableHttpMcpServer implements McpServer {
             return;
         }
 
-        if (message.isNotification()) {
-            McpHttpServerSupport.writeNoContent(exchange, 202);
-            return;
-        }
-
         McpResponse validationError = validateModernRequest(exchange, message);
         if (validationError != null) {
             McpHttpServerSupport.writeJsonResponse(exchange, 400, validationError);
+            return;
+        }
+
+        if (message.isNotification()) {
+            McpHttpServerSupport.writeNoContent(exchange, 202);
             return;
         }
 
@@ -401,10 +480,10 @@ public class StreamableHttpMcpServer implements McpServer {
             return protocolError(message.getId(), -32602,
                     "Invalid params: _meta.io.modelcontextprotocol/clientCapabilities is required");
         }
-        if (!protocolProfile.getProtocolVersion().equals(version)) {
+        if (!McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion().equals(version)) {
             McpResponse error = protocolError(message.getId(), -32022, "Unsupported protocol version");
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("supported", Arrays.asList(protocolProfile.getProtocolVersion()));
+            data.put("supported", Arrays.asList(McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion()));
             data.put("requested", version);
             error.getError().setData(data);
             return error;
@@ -460,7 +539,7 @@ public class StreamableHttpMcpServer implements McpServer {
     }
 
     private boolean rejectDisallowedModernOrigin(HttpExchange exchange) throws IOException {
-        if (!protocolProfile.isModern()
+        if (!protocolProfile.supportsModern()
                 || McpHttpServerSupport.isAllowedOrigin(exchange, corsAllowedOrigin)) {
             return false;
         }

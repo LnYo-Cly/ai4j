@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
+import io.github.lnyocly.ai4j.mcp.entity.McpRequest;
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.mcp.util.McpMessageCodec;
 import okhttp3.*;
@@ -35,7 +36,8 @@ public class StreamableHttpTransport implements McpTransport {
     private EventSource eventSource;
     private String sessionId;
     private String lastEventId;
-    private final McpProtocolProfile protocolProfile;
+    private final McpProtocolProfile configuredProtocolProfile;
+    private volatile McpProtocolProfile negotiatedProtocolProfile;
     /**
      * 自定义HTTP头（用于认证等）
      */
@@ -46,7 +48,7 @@ public class StreamableHttpTransport implements McpTransport {
                 .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
-        this.protocolProfile = McpProtocolProfile.MODERN_2026_07_28;
+        this.configuredProtocolProfile = McpProtocolProfile.AUTO;
     }
     public StreamableHttpTransport(TransportConfig config) {
         this.mcpEndpointUrl = config.getUrl();
@@ -55,8 +57,8 @@ public class StreamableHttpTransport implements McpTransport {
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
                 .build();
         this.headers = config.getHeaders();
-        this.protocolProfile = config.getProtocolProfile() == null
-                ? McpProtocolProfile.MODERN_2026_07_28 : config.getProtocolProfile();
+        this.configuredProtocolProfile = config.getProtocolProfile() == null
+                ? McpProtocolProfile.AUTO : config.getProtocolProfile();
     }
     
     @Override
@@ -85,6 +87,11 @@ public class StreamableHttpTransport implements McpTransport {
                         eventSource.cancel();
                         eventSource = null;
                     }
+                    sessionId = null;
+                    lastEventId = null;
+                    if (configuredProtocolProfile.isAutomatic()) {
+                        negotiatedProtocolProfile = null;
+                    }
                     if (messageHandler != null) {
                         messageHandler.onDisconnected("传输层停止");
                     }
@@ -106,6 +113,7 @@ public class StreamableHttpTransport implements McpTransport {
                 if (!running.get()) {
                     throw new IllegalStateException("Streamable HTTP传输层未启动");
                 }
+                McpProtocolProfile activeProfile = requireNegotiatedProfile();
             
             try {
                 String jsonMessage = JSON.toJSONString(message);
@@ -126,8 +134,8 @@ public class StreamableHttpTransport implements McpTransport {
                     }
                 }
 
-                if (protocolProfile.isModern()) {
-                    applyModernRequestHeaders(message, requestBuilder);
+                if (activeProfile.isModern()) {
+                    applyModernRequestHeaders(message, requestBuilder, activeProfile);
                     if (requestHeaders != null) {
                         for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
                             if (entry.getKey() != null && entry.getKey().regionMatches(
@@ -143,6 +151,10 @@ public class StreamableHttpTransport implements McpTransport {
                     }
                     if (lastEventId != null) {
                         requestBuilder.header("last-event-id", lastEventId);
+                    }
+                    if (activeProfile.requiresLegacyProtocolVersionHeader()
+                            && !"initialize".equals(message.getMethod())) {
+                        requestBuilder.header("MCP-Protocol-Version", activeProfile.getProtocolVersion());
                     }
                 }
 
@@ -164,7 +176,7 @@ public class StreamableHttpTransport implements McpTransport {
                         }
                     
                     // 检查会话ID
-                    if (!protocolProfile.isModern()) {
+                    if (!activeProfile.isModern()) {
                         String newSessionId = response.header("mcp-session-id");
                         if (newSessionId != null) {
                             StreamableHttpTransport.this.sessionId = newSessionId;
@@ -267,7 +279,7 @@ public class StreamableHttpTransport implements McpTransport {
                     }
                     dataBuilder.append(value);
                     hasData = true;
-                } else if (!protocolProfile.isModern() && "id".equals(field)) {
+                } else if (!getProtocolProfile().isModern() && "id".equals(field)) {
                     lastEventId = value.isEmpty() ? null : value;
                 }
             }
@@ -312,7 +324,7 @@ public class StreamableHttpTransport implements McpTransport {
 
     @Override
     public boolean needsHeartbeat() {
-        return !protocolProfile.isModern();
+        return !getProtocolProfile().isModern();
     }
 
     @Override
@@ -322,21 +334,220 @@ public class StreamableHttpTransport implements McpTransport {
 
     @Override
     public McpProtocolProfile getProtocolProfile() {
-        return protocolProfile;
+        McpProtocolProfile resolved = negotiatedProtocolProfile;
+        return resolved == null ? configuredProtocolProfile : resolved;
+    }
+
+    /**
+     * Performs the only safe automatic probe: {@code server/discover}. A
+     * recognized modern error is evidence of the modern era and must never be
+     * retried as {@code initialize}. A method-not-found response to this
+     * mandatory modern method, or an otherwise unrecognized HTTP 400
+     * compatibility response, selects the initialization-era profile.
+     */
+    @Override
+    public CompletableFuture<McpProtocolProfile> negotiateProtocol(final String clientName,
+                                                                     final String clientVersion) {
+        if (!configuredProtocolProfile.isAutomatic()) {
+            return CompletableFuture.completedFuture(configuredProtocolProfile);
+        }
+        return CompletableFuture.supplyAsync(() -> {
+            synchronized (StreamableHttpTransport.this) {
+                if (!running.get()) {
+                    throw new IllegalStateException("Streamable HTTP transport is not started");
+                }
+                if (negotiatedProtocolProfile != null) {
+                    return negotiatedProtocolProfile;
+                }
+                negotiatedProtocolProfile = probeProtocol(clientName, clientVersion);
+                log.debug("Streamable HTTP protocol profile selected: {}", negotiatedProtocolProfile);
+                return negotiatedProtocolProfile;
+            }
+        });
+    }
+
+    private McpProtocolProfile requireNegotiatedProfile() {
+        McpProtocolProfile profile = getProtocolProfile();
+        if (!profile.isAutomatic()) {
+            return profile;
+        }
+        try {
+            return negotiateProtocol("ai4j-mcp-transport", "1.0.0")
+                    .get(30, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to negotiate Streamable HTTP protocol", e);
+        }
+    }
+
+    private McpProtocolProfile probeProtocol(String clientName, String clientVersion) {
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion",
+                McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion());
+        Map<String, Object> clientInfo = new HashMap<String, Object>();
+        clientInfo.put("name", clientName == null ? "ai4j" : clientName);
+        clientInfo.put("version", clientVersion == null ? "unknown" : clientVersion);
+        metadata.put("io.modelcontextprotocol/clientInfo", clientInfo);
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("_meta", metadata);
+        McpRequest requestMessage = new McpRequest("server/discover", Long.valueOf(0L), params);
+        RequestBody body = RequestBody.create(MediaType.get("application/json"), JSON.toJSONString(requestMessage));
+        Request.Builder requestBuilder = new Request.Builder().url(mcpEndpointUrl).post(body);
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                requestBuilder.header(entry.getKey(), entry.getValue());
+            }
+        }
+        requestBuilder.header("Content-Type", "application/json")
+                .header("Accept", "application/json, text/event-stream")
+                .header("MCP-Protocol-Version", McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion())
+                .header("Mcp-Method", "server/discover");
+
+        try {
+            Response response = httpClient.newCall(requestBuilder.build()).execute();
+            try {
+                String responseBody = readProbeResponse(response);
+                if (response.isSuccessful()) {
+                    return classifySuccessfulProbe(responseBody);
+                }
+                if (isLegacyFallbackStatus(response.code())
+                        && !isRecognizedModernError(response.code(), responseBody)) {
+                    return McpProtocolProfile.LEGACY_2025_11_25;
+                }
+                throw new IllegalStateException(McpTransportSupport.buildHttpFailureMessage(
+                        response.code(), response.message(), responseBody));
+            } finally {
+                response.close();
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("MCP protocol discovery failed: "
+                    + McpTransportSupport.safeMessage(e), e);
+        }
+    }
+
+    private static String readProbeResponse(Response response) throws IOException {
+        if (response.body() == null) {
+            return "";
+        }
+        String contentType = response.header("Content-Type", "");
+        if (contentType.startsWith("text/event-stream")) {
+            return readFirstSseData(response);
+        }
+        return response.body().string();
+    }
+
+    private static String readFirstSseData(Response response) throws IOException {
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8));
+        StringBuilder data = new StringBuilder();
+        boolean hasData = false;
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.isEmpty()) {
+                if (hasData) {
+                    return data.toString();
+                }
+                continue;
+            }
+            if (line.startsWith("data:")) {
+                String value = line.substring("data:".length());
+                if (value.startsWith(" ")) {
+                    value = value.substring(1);
+                }
+                if (hasData) {
+                    data.append('\n');
+                }
+                data.append(value);
+                hasData = true;
+            }
+        }
+        return hasData ? data.toString() : "";
+    }
+
+    private McpProtocolProfile classifySuccessfulProbe(String responseBody) {
+        McpMessage response;
+        try {
+            response = parseMcpMessage(responseBody);
+        } catch (Exception ignored) {
+            // A successful response that is not an MCP discovery result is not
+            // evidence of a legacy endpoint. Do not turn proxy corruption into
+            // an initialize retry.
+            throw new IllegalStateException("MCP server did not return a usable modern discovery result");
+        }
+        if (response.isSuccessResponse() && supportsModernVersion(response.getResult())) {
+            return McpProtocolProfile.MODERN_2026_07_28;
+        }
+        if (response.isErrorResponse()) {
+            if (response.getError() != null && response.getError().getCode() != null
+                    && response.getError().getCode().intValue() == -32601) {
+                // server/discover is mandatory in the 2026 era. A method-not-found
+                // reply to this probe is the legacy server signature used by v1 SDKs.
+                return McpProtocolProfile.LEGACY_2025_11_25;
+            }
+            throw new IllegalStateException(
+                    "MCP server returned a JSON-RPC error during protocol discovery");
+        }
+        throw new IllegalStateException("MCP server did not return a usable modern discovery result");
+    }
+
+    private static boolean supportsModernVersion(Object result) {
+        Map<String, Object> values = asMap(result);
+        if (values == null || !(values.get("supportedVersions") instanceof Iterable<?>)) {
+            return false;
+        }
+        for (Object version : (Iterable<?>) values.get("supportedVersions")) {
+            if (McpProtocolProfile.MODERN_2026_07_28.getProtocolVersion().equals(String.valueOf(version))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isLegacyFallbackStatus(int statusCode) {
+        return statusCode == 400;
+    }
+
+    private static boolean isRecognizedModernError(int statusCode, String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            McpMessage response = parseMcpMessage(responseBody);
+            if (!response.isErrorResponse() || response.getError() == null
+                    || response.getError().getCode() == null) {
+                return false;
+            }
+            int code = response.getError().getCode().intValue();
+            return code == -32020 || code == -32021 || code == -32022 || code == -32602
+                    || (code == -32601 && statusCode == 404);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     /**
      * 获取会话ID
      */
     public String getSessionId() {
-        return protocolProfile.isModern() ? null : sessionId;
+        return getProtocolProfile().isModern() ? null : sessionId;
+    }
+
+    /** Records the concrete legacy version chosen by a successful initialize response. */
+    public synchronized void acceptLegacyProtocolVersion(String protocolVersion) {
+        McpProtocolProfile selectedProfile = McpProtocolProfile.fromProtocolVersion(protocolVersion);
+        if (!configuredProtocolProfile.acceptsLegacyVersion(selectedProfile)) {
+            throw new IllegalStateException("MCP server selected unsupported legacy protocol version: "
+                    + protocolVersion);
+        }
+        negotiatedProtocolProfile = selectedProfile;
     }
     
     /**
      * 终止会话
      */
     public CompletableFuture<Void> terminateSession() {
-        if (protocolProfile.isModern()) {
+        if (getProtocolProfile().isModern()) {
             CompletableFuture<Void> future = new CompletableFuture<Void>();
             future.completeExceptionally(new UnsupportedOperationException(
                     "Modern Streamable HTTP does not define protocol sessions"));
@@ -353,11 +564,15 @@ public class StreamableHttpTransport implements McpTransport {
                                 builder.header(entry.getKey(), entry.getValue());
                             }
                         }
-                        Request request = builder
+                        Request.Builder requestBuilder = builder
                                 .url(mcpEndpointUrl)
                                 .delete()
-                                .header("mcp-session-id", sessionId)
-                                .build();
+                                .header("mcp-session-id", sessionId);
+                        McpProtocolProfile profile = getProtocolProfile();
+                        if (profile.requiresLegacyProtocolVersionHeader()) {
+                            requestBuilder.header("MCP-Protocol-Version", profile.getProtocolVersion());
+                        }
+                        Request request = requestBuilder.build();
 
                         Response response = httpClient.newCall(request).execute();
                         try {
@@ -379,21 +594,18 @@ public class StreamableHttpTransport implements McpTransport {
         return McpMessageCodec.parseMessage(jsonString);
     }
 
-    private void applyModernRequestHeaders(McpMessage message, Request.Builder requestBuilder) {
+    private void applyModernRequestHeaders(McpMessage message, Request.Builder requestBuilder,
+                                           McpProtocolProfile activeProfile) {
         if (message == null || (!message.isRequest() && !message.isNotification())) {
             throw new IllegalArgumentException("Modern Streamable HTTP accepts only JSON-RPC requests or notifications");
         }
-        if (!message.isRequest()) {
-            return;
-        }
-
         Map<String, Object> params = asMap(message.getParams());
         Map<String, Object> metadata = params == null ? null : asMap(params.get("_meta"));
         String version = metadata == null ? null
                 : stringValue(metadata.get("io.modelcontextprotocol/protocolVersion"));
-        if (!protocolProfile.getProtocolVersion().equals(version)) {
+        if (!activeProfile.getProtocolVersion().equals(version)) {
             throw new IllegalArgumentException("Modern MCP request metadata must declare "
-                    + protocolProfile.getProtocolVersion());
+                    + activeProfile.getProtocolVersion());
         }
 
         requestBuilder.header("MCP-Protocol-Version", version);

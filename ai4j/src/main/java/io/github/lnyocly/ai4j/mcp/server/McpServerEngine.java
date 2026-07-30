@@ -72,22 +72,22 @@ public class McpServerEngine {
                 return handleInitialize(message, session);
             }
             if ("tools/list".equals(method)) {
-                return handleToolsList(message, session);
+                return handleToolsList(message, session, false);
             }
             if ("tools/call".equals(method)) {
-                return handleToolsCall(message, session);
+                return handleToolsCall(message, session, false);
             }
             if ("resources/list".equals(method)) {
-                return handleResourcesList(message, session);
+                return handleResourcesList(message, session, false);
             }
             if ("resources/read".equals(method)) {
-                return handleResourcesRead(message, session);
+                return handleResourcesRead(message, session, false);
             }
             if ("prompts/list".equals(method)) {
-                return handlePromptsList(message, session);
+                return handlePromptsList(message, session, false);
             }
             if ("prompts/get".equals(method)) {
-                return handlePromptsGet(message, session);
+                return handlePromptsGet(message, session, false);
             }
             if ("ping".equals(method) && pingEnabled) {
                 return handlePing(message);
@@ -118,17 +118,17 @@ public class McpServerEngine {
         if ("server/discover".equals(method)) {
             response = handleDiscover(message);
         } else if ("tools/list".equals(method)) {
-            response = handleToolsList(message, null);
+            response = handleToolsList(message, null, true);
         } else if ("tools/call".equals(method)) {
-            response = handleToolsCall(message, null);
+            response = handleToolsCall(message, null, true);
         } else if ("resources/list".equals(method)) {
-            response = handleResourcesList(message, null);
+            response = handleResourcesList(message, null, true);
         } else if ("resources/read".equals(method)) {
-            response = handleResourcesRead(message, null);
+            response = handleResourcesRead(message, null, true);
         } else if ("prompts/list".equals(method)) {
-            response = handlePromptsList(message, null);
+            response = handlePromptsList(message, null, true);
         } else if ("prompts/get".equals(method)) {
-            response = handlePromptsGet(message, null);
+            response = handlePromptsGet(message, null, true);
         } else {
             response = createErrorResponse(message.getId(), -32601, "Method not found: " + method);
         }
@@ -137,14 +137,23 @@ public class McpServerEngine {
 
     private McpMessage handleDiscover(McpMessage message) {
         Map<String, Object> result = new HashMap<String, Object>();
-        result.put("supportedVersions", new ArrayList<String>(supportedProtocolVersions));
+        result.put("supportedVersions", modernSupportedProtocolVersions());
         result.put("capabilities", buildCapabilities());
-        result.put("serverInfo", buildServerInfo());
 
         McpResponse response = new McpResponse();
         response.setId(message.getId());
         response.setResult(result);
         return response;
+    }
+
+    private List<String> modernSupportedProtocolVersions() {
+        List<String> versions = new ArrayList<String>();
+        for (String version : supportedProtocolVersions) {
+            if (version != null && version.compareTo("2026-07-28") >= 0) {
+                versions.add(version);
+            }
+        }
+        return versions;
     }
 
     private McpMessage decorateModernResponse(McpMessage response, String method) {
@@ -206,8 +215,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleToolsList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleToolsList(McpMessage message, McpServerSessionState session,
+                                       boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -226,8 +236,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleToolsCall(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleToolsCall(McpMessage message, McpServerSessionState session,
+                                       boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -264,8 +275,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleResourcesList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleResourcesList(McpMessage message, McpServerSessionState session,
+                                           boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -286,8 +298,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleResourcesRead(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleResourcesRead(McpMessage message, McpServerSessionState session,
+                                           boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -326,8 +339,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handlePromptsList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handlePromptsList(McpMessage message, McpServerSessionState session,
+                                         boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -348,8 +362,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handlePromptsGet(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handlePromptsGet(McpMessage message, McpServerSessionState session,
+                                        boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -408,8 +423,10 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage requireInitialization(McpMessage message, McpServerSessionState session) {
-        if (initializationRequired && (session == null || !session.isInitialized())) {
+    private McpMessage requireInitialization(McpMessage message, McpServerSessionState session,
+                                             boolean statelessModernRequest) {
+        if (initializationRequired && !statelessModernRequest
+                && (session == null || !session.isInitialized())) {
             return createErrorResponse(message != null ? message.getId() : null, -32002, "Server not initialized");
         }
         return null;

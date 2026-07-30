@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
 import io.github.lnyocly.ai4j.mcp.transport.McpTransport;
 import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import io.github.lnyocly.ai4j.mcp.transport.McpTransportSupport;
+import io.github.lnyocly.ai4j.mcp.transport.StreamableHttpTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +82,13 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     transport.start().get(30, java.util.concurrent.TimeUnit.SECONDS);
                     log.debug("传输层启动成功");
 
-                    if (transport.getProtocolProfile().isModern()) {
+                    McpProtocolProfile protocolProfile = transport
+                            .negotiateProtocol(clientName, clientVersion)
+                            .get(30, java.util.concurrent.TimeUnit.SECONDS);
+                    if (protocolProfile == null || protocolProfile.isAutomatic()) {
+                        throw new IllegalStateException("MCP transport did not resolve a concrete protocol profile");
+                    }
+                    if (protocolProfile.isModern()) {
                         initialized.set(true);
                         log.debug("现代MCP按请求携带元数据，不执行初始化握手");
                     } else {
@@ -488,14 +495,6 @@ public class McpClient implements McpTransport.McpMessageHandler {
 
         // 构建客户端能力 - 使用更完整的配置
         Map<String, Object> capabilities = new HashMap<>();
-        // 添加sampling能力
-        capabilities.put("sampling", new HashMap<>());
-
-        // 添加roots能力
-        Map<String, Object> roots = new HashMap<>();
-        roots.put("listChanged", true);
-        capabilities.put("roots", roots);
-
         // 添加tools能力
         Map<String, Object> tools = new HashMap<>();
         tools.put("listChanged", true);
@@ -504,7 +503,6 @@ public class McpClient implements McpTransport.McpMessageHandler {
         // 添加resources能力
         Map<String, Object> resources = new HashMap<>();
         resources.put("listChanged", true);
-        resources.put("subscribe", true);
         capabilities.put("resources", resources);
 
         // 添加prompts能力
@@ -517,13 +515,17 @@ public class McpClient implements McpTransport.McpMessageHandler {
         clientInfo.put("version", clientVersion);
 
         Map<String, Object> params = new HashMap<>();
-        // 使用与服务器兼容的协议版本
-        params.put("protocolVersion", "2025-03-26");
+        McpProtocolProfile profile = transport.getProtocolProfile();
+        if (profile == null || profile.isAutomatic() || profile.isModern()) {
+            throw new IllegalStateException("Initialization requires a negotiated legacy MCP profile");
+        }
+        params.put("protocolVersion", profile.getProtocolVersion());
         params.put("capabilities", capabilities);
         params.put("clientInfo", clientInfo);
 
         return sendRequest("initialize", params)
                 .thenCompose(response -> {
+                    acceptLegacyProtocolVersion(response);
                     log.debug("收到初始化响应，发送initialized通知");
                     // 发送初始化完成通知 - 使用空对象而不是null
                     return sendNotification("notifications/initialized", new HashMap<>());
@@ -532,6 +534,20 @@ public class McpClient implements McpTransport.McpMessageHandler {
                     initialized.set(true);
                     log.debug("MCP客户端初始化完成");
                 });
+    }
+
+    private void acceptLegacyProtocolVersion(McpMessage response) {
+        if (!(transport instanceof StreamableHttpTransport)) {
+            return;
+        }
+        if (response == null || !(response.getResult() instanceof Map<?, ?>)) {
+            throw new IllegalStateException("Legacy MCP initialize response is missing a result object");
+        }
+        Object version = ((Map<?, ?>) response.getResult()).get("protocolVersion");
+        if (version == null) {
+            throw new IllegalStateException("Legacy MCP initialize response is missing protocolVersion");
+        }
+        ((StreamableHttpTransport) transport).acceptLegacyProtocolVersion(String.valueOf(version));
     }
 
     /**

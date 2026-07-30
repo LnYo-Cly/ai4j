@@ -69,6 +69,14 @@ public interface McpTransport {
     }
 
     /**
+     * Resolves an automatic wire profile before the client sends its first
+     * application request. Existing transports keep their fixed profile.
+     */
+    default CompletableFuture<McpProtocolProfile> negotiateProtocol(String clientName, String clientVersion) {
+        return CompletableFuture.completedFuture(getProtocolProfile());
+    }
+
+    /**
      * 消息处理器接口
      */
     interface McpMessageHandler {

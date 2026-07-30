@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.transport;
 
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
+import io.github.lnyocly.ai4j.mcp.entity.McpNotification;
 import io.github.lnyocly.ai4j.mcp.entity.McpRequest;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -88,7 +89,7 @@ public class StreamableHttpTransportTest {
                 .setBody("{\"jsonrpc\":\"2.0\",\"id\":9,\"result\":{\"resultType\":\"complete\"}}"));
         server.start();
 
-        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        StreamableHttpTransport transport = modernTransport(server.url("/mcp").toString());
         transport.setMessageHandler(new CapturingHandler());
         transport.start().get(5, TimeUnit.SECONDS);
 
@@ -110,6 +111,30 @@ public class StreamableHttpTransportTest {
     }
 
     @Test
+    public void modernProfileSendsMandatoryHeadersForNotifications() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(new MockResponse().setResponseCode(202));
+        server.start();
+
+        StreamableHttpTransport transport = modernTransport(server.url("/mcp").toString());
+        transport.setMessageHandler(new CapturingHandler());
+        transport.start().get(5, TimeUnit.SECONDS);
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+        metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("_meta", metadata);
+        transport.sendMessage(new McpNotification("notifications/example", params)).get(5, TimeUnit.SECONDS);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        Assert.assertEquals("2026-07-28", request.getHeader("MCP-Protocol-Version"));
+        Assert.assertEquals("notifications/example", request.getHeader("Mcp-Method"));
+        Assert.assertNull(request.getHeader("mcp-session-id"));
+        transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void modernProfileMirrorsSchemaParameterHeaders() throws Exception {
         server = new MockWebServer();
         server.enqueue(new MockResponse().setResponseCode(200)
@@ -117,7 +142,7 @@ public class StreamableHttpTransportTest {
                 .setBody("{\"jsonrpc\":\"2.0\",\"id\":10,\"result\":{\"resultType\":\"complete\"}}"));
         server.start();
 
-        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        StreamableHttpTransport transport = modernTransport(server.url("/mcp").toString());
         transport.setMessageHandler(new CapturingHandler());
         transport.start().get(5, TimeUnit.SECONDS);
         Map<String, Object> metadata = new HashMap<String, Object>();
@@ -149,6 +174,7 @@ public class StreamableHttpTransportTest {
         headers.put("Accept", "application/xml");
         headers.put("Content-Type", "text/plain");
         config.setHeaders(headers);
+        config.withProtocolProfile(McpProtocolProfile.MODERN_2026_07_28);
         StreamableHttpTransport transport = new StreamableHttpTransport(config);
         transport.setMessageHandler(new CapturingHandler());
         transport.start().get(5, TimeUnit.SECONDS);
@@ -174,7 +200,7 @@ public class StreamableHttpTransportTest {
                 .setBody("{\"jsonrpc\":\"2.0\",\"id\":11,\"error\":{\"code\":-32020,\"message\":\"Header mismatch\"}}"));
         server.start();
 
-        StreamableHttpTransport transport = new StreamableHttpTransport(server.url("/mcp").toString());
+        StreamableHttpTransport transport = modernTransport(server.url("/mcp").toString());
         CapturingHandler handler = new CapturingHandler();
         transport.setMessageHandler(handler);
         transport.start().get(5, TimeUnit.SECONDS);
@@ -192,6 +218,11 @@ public class StreamableHttpTransportTest {
         Assert.assertTrue(handler.firstMessage.get().isErrorResponse());
         Assert.assertEquals(-32020, handler.firstMessage.get().getError().getCode().intValue());
         transport.stop().get(5, TimeUnit.SECONDS);
+    }
+
+    private static StreamableHttpTransport modernTransport(String url) {
+        return new StreamableHttpTransport(TransportConfig.streamableHttp(url)
+                .withProtocolProfile(McpProtocolProfile.MODERN_2026_07_28));
     }
 
     private static final class CapturingHandler implements McpTransport.McpMessageHandler {

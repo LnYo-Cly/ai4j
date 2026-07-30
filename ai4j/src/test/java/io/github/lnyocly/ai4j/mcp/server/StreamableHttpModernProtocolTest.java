@@ -115,7 +115,7 @@ public class StreamableHttpModernProtocolTest {
     }
 
     @Test
-    public void modernServerRejectsLegacyEndpointsAndAcceptsNotification() throws Exception {
+    public void modernServerRejectsLegacyEndpointsAndValidatesNotifications() throws Exception {
         int port = findFreePort();
         StreamableHttpMcpServer server = modernServer(port, null);
         try {
@@ -123,10 +123,36 @@ public class StreamableHttpModernProtocolTest {
             Assert.assertEquals(405, method(port, "GET"));
             Assert.assertEquals(405, method(port, "DELETE"));
 
+            Map<String, Object> metadata = new HashMap<String, Object>();
+            metadata.put("io.modelcontextprotocol/protocolVersion", "2026-07-28");
+            metadata.put("io.modelcontextprotocol/clientCapabilities", new HashMap<String, Object>());
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("_meta", metadata);
             Map<String, Object> notification = new HashMap<String, Object>();
             notification.put("jsonrpc", "2.0");
             notification.put("method", "notifications/example");
-            RawResponse response = rawPost(port, JSON.toJSONString(notification), null);
+            notification.put("params", params);
+            String body = JSON.toJSONString(notification);
+
+            RawResponse missingHeaders = rawPost(port, body, null);
+            assertHeaderMismatch(missingHeaders);
+
+            RawResponse mismatch = rawPost(port, body, new String[] {
+                    "MCP-Protocol-Version", "2026-07-28",
+                    "Mcp-Method", "notifications/other"
+            });
+            assertHeaderMismatch(mismatch);
+
+            RawResponse duplicate = rawSocketPost(port, body,
+                    "MCP-Protocol-Version: 2026-07-28",
+                    "Mcp-Method: notifications/example",
+                    "Mcp-Method: notifications/example");
+            assertHeaderMismatch(duplicate);
+
+            RawResponse response = rawPost(port, body, new String[] {
+                    "MCP-Protocol-Version", "2026-07-28",
+                    "Mcp-Method", "notifications/example"
+            });
             Assert.assertEquals(202, response.status);
             Assert.assertEquals("", response.body);
         } finally {
@@ -290,6 +316,116 @@ public class StreamableHttpModernProtocolTest {
             RawResponse response = rawPost(port, JSON.toJSONString(request), null);
             Assert.assertEquals(200, response.status);
             Assert.assertNotNull(response.sessionId);
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void serverFactoryDefaultsToModernStatelessProfile() {
+        McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("modern", "1.0");
+
+        Assert.assertEquals(McpProtocolProfile.MODERN_2026_07_28, config.getProtocolProfile());
+    }
+
+    @Test
+    public void automaticServerServesModernAndInitializationEraClientsOnOneEndpoint() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = new StreamableHttpMcpServer(
+                "dual", "1.0", "127.0.0.1", port, null, null, McpProtocolProfile.AUTO);
+        try {
+            server.start().get();
+            Map<String, Object> legacyParams = new HashMap<String, Object>();
+            legacyParams.put("protocolVersion", "2025-11-25");
+            legacyParams.put("capabilities", new HashMap<String, Object>());
+            legacyParams.put("clientInfo", new HashMap<String, Object>());
+            Map<String, Object> legacyRequest = new HashMap<String, Object>();
+            legacyRequest.put("jsonrpc", "2.0");
+            legacyRequest.put("id", 1);
+            legacyRequest.put("method", "initialize");
+            legacyRequest.put("params", legacyParams);
+            RawResponse legacy = rawPost(port, JSON.toJSONString(legacyRequest), null);
+            Assert.assertEquals(200, legacy.status);
+            Assert.assertNotNull(legacy.sessionId);
+            Assert.assertTrue(legacy.body.contains("2025-11-25"));
+
+            legacyParams.put("protocolVersion", "2025-06-18");
+            legacyRequest.put("id", 3);
+            RawResponse legacyJune = rawPost(port, JSON.toJSONString(legacyRequest), null);
+            Assert.assertEquals(200, legacyJune.status);
+            Assert.assertNotNull(legacyJune.sessionId);
+            Assert.assertTrue(legacyJune.body.contains("2025-06-18"));
+
+            Map<String, Object> initialized = new HashMap<String, Object>();
+            initialized.put("jsonrpc", "2.0");
+            initialized.put("method", "notifications/initialized");
+            initialized.put("params", new HashMap<String, Object>());
+            RawResponse initializedResponse = rawPost(port, JSON.toJSONString(initialized), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", legacyJune.sessionId
+            });
+            Assert.assertEquals(202, initializedResponse.status);
+
+            Map<String, Object> toolsRequest = new HashMap<String, Object>();
+            toolsRequest.put("jsonrpc", "2.0");
+            toolsRequest.put("id", 5);
+            toolsRequest.put("method", "tools/list");
+            toolsRequest.put("params", new HashMap<String, Object>());
+            RawResponse legacyTools = rawPost(port, JSON.toJSONString(toolsRequest), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", legacyJune.sessionId
+            });
+            Assert.assertEquals(200, legacyTools.status);
+
+            legacyParams.put("protocolVersion", "2024-11-05");
+            legacyRequest.put("id", 6);
+            RawResponse legacyNovember = rawPost(port, JSON.toJSONString(legacyRequest), null);
+            Assert.assertEquals(200, legacyNovember.status);
+            Assert.assertTrue(legacyNovember.body.contains("2024-11-05"));
+
+            RawResponse modern = rawPost(port, modernRequest("server/discover", 2, new HashMap<String, Object>()),
+                    new String[] {
+                            "MCP-Protocol-Version", "2026-07-28",
+                            "Mcp-Method", "server/discover",
+                            "Accept", "application/json"
+                    });
+            Assert.assertEquals(200, modern.status);
+            Map<String, Object> root = JSON.parseObject(modern.body, Map.class);
+            Map<String, Object> result = (Map<String, Object>) root.get("result");
+            Assert.assertTrue(String.valueOf(result.get("supportedVersions")).contains("2026-07-28"));
+            Assert.assertNull("server identity belongs in result _meta, not the discover body", result.get("serverInfo"));
+            Assert.assertTrue(String.valueOf(result.get("_meta")).contains("io.modelcontextprotocol/serverInfo"));
+
+            RawResponse tools = post(port, "tools/list", 4, new HashMap<String, Object>(), null, null);
+            Assert.assertEquals(200, tools.status);
+            Assert.assertTrue(tools.body.contains("\"resultType\":\"complete\""));
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
+    public void automaticServerAllowsOnlyDeclaredMcpParameterHeadersInCorsPreflight() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = new StreamableHttpMcpServer(
+                "dual", "1.0", "127.0.0.1", port, null, "https://allowed.example", McpProtocolProfile.AUTO);
+        try {
+            server.start().get();
+            Request request = new Request.Builder()
+                    .url("http://127.0.0.1:" + port + "/mcp")
+                    .method("OPTIONS", null)
+                    .header("Origin", "https://allowed.example")
+                    .header("Access-Control-Request-Headers", "Mcp-Param-Region, X-Not-Allowed")
+                    .build();
+            Response response = new OkHttpClient().newCall(request).execute();
+            try {
+                Assert.assertEquals(204, response.code());
+                String allowed = response.header("Access-Control-Allow-Headers");
+                Assert.assertTrue(allowed.contains("Mcp-Param-Region"));
+                Assert.assertFalse(allowed.contains("X-Not-Allowed"));
+            } finally {
+                response.close();
+            }
         } finally {
             server.stop().get();
         }

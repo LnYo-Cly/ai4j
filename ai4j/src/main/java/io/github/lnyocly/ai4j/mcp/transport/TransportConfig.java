@@ -51,7 +51,7 @@ public class TransportConfig {
         this.retryDelay = 1000L;
         this.enableHeartbeat = false;
         this.heartbeatInterval = 30000L;
-        this.protocolProfile = McpProtocolProfile.MODERN_2026_07_28;
+        this.protocolProfile = McpProtocolProfile.AUTO;
     }
     
     // 静态工厂方法
@@ -113,6 +113,7 @@ public class TransportConfig {
     public static TransportConfig streamableHttp(McpServerConfig.McpServerInfo serverInfo) {
         TransportConfig config = streamableHttp(serverInfo.getUrl());
         config.headers = serverInfo.getHeaders();
+        config.withProtocolProfile(serverInfo.getProtocolProfile());
         return config;
     }
     
@@ -162,7 +163,7 @@ public class TransportConfig {
 
     public TransportConfig withProtocolProfile(McpProtocolProfile protocolProfile) {
         this.protocolProfile = protocolProfile == null
-                ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
+                ? McpProtocolProfile.AUTO : protocolProfile;
         return this;
     }
     
@@ -286,7 +287,7 @@ public class TransportConfig {
 
     public void setProtocolProfile(McpProtocolProfile protocolProfile) {
         this.protocolProfile = protocolProfile == null
-                ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
+                ? McpProtocolProfile.AUTO : protocolProfile;
     }
 
     @Override

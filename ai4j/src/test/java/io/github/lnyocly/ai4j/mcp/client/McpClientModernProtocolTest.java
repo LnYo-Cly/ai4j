@@ -35,6 +35,19 @@ public class McpClientModernProtocolTest {
         Assert.assertTrue(asMap(metadata.get("io.modelcontextprotocol/clientCapabilities")).isEmpty());
     }
 
+    @Test
+    public void legacyDefaultTransportStillCompletesInitializeHandshake() throws Exception {
+        LegacyCapturingTransport transport = new LegacyCapturingTransport();
+        McpClient client = new McpClient("test-client", "1.0", transport, false);
+
+        client.connect().get();
+
+        Assert.assertTrue(client.isInitialized());
+        Assert.assertEquals(2, transport.sent.size());
+        Assert.assertEquals("initialize", transport.sent.get(0).getMethod());
+        Assert.assertEquals("notifications/initialized", transport.sent.get(1).getMethod());
+    }
+
     private static Map<String, Object> asMap(Object value) {
         Map<String, Object> result = new HashMap<String, Object>();
         if (value instanceof Map<?, ?>) {
@@ -98,6 +111,55 @@ public class McpClientModernProtocolTest {
         @Override
         public McpProtocolProfile getProtocolProfile() {
             return McpProtocolProfile.MODERN_2026_07_28;
+        }
+    }
+
+    private static final class LegacyCapturingTransport implements McpTransport {
+        private final List<McpMessage> sent = new ArrayList<McpMessage>();
+        private McpMessageHandler handler;
+
+        @Override
+        public CompletableFuture<Void> start() {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> stop() {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletableFuture<Void> sendMessage(McpMessage message) {
+            sent.add(message);
+            if (message.isRequest()) {
+                McpResponse response = new McpResponse();
+                response.setId(message.getId());
+                Map<String, Object> result = new HashMap<String, Object>();
+                result.put("protocolVersion", "2025-03-26");
+                response.setResult(result);
+                handler.handleMessage(response);
+            }
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public void setMessageHandler(McpMessageHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public boolean needsHeartbeat() {
+            return false;
+        }
+
+        @Override
+        public String getTransportType() {
+            return "sse";
         }
     }
 }

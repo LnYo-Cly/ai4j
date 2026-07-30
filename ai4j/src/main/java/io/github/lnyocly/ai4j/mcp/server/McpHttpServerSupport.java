@@ -10,8 +10,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * MCP HTTP 服务端辅助方法
@@ -45,6 +47,57 @@ public final class McpHttpServerSupport {
         }
         exchange.getResponseHeaders().add("Access-Control-Allow-Methods", allowMethods);
         exchange.getResponseHeaders().add("Access-Control-Allow-Headers", allowHeaders);
+    }
+
+    /**
+     * Adds only syntactically valid {@code Mcp-Param-*} preflight headers.
+     * The modern protocol permits tools to declare these dynamically, while
+     * reflecting arbitrary requested header names would weaken CORS policy.
+     */
+    public static String appendRequestedMcpParameterHeaders(HttpExchange exchange, String allowHeaders) {
+        Set<String> allowed = new LinkedHashSet<String>();
+        if (allowHeaders != null) {
+            for (String header : allowHeaders.split(",")) {
+                if (header != null && !header.trim().isEmpty()) {
+                    allowed.add(header.trim());
+                }
+            }
+        }
+        String requested = exchange.getRequestHeaders().getFirst("Access-Control-Request-Headers");
+        if (requested != null) {
+            for (String header : requested.split(",")) {
+                String candidate = header == null ? "" : header.trim();
+                if (isMcpParameterHeader(candidate)) {
+                    allowed.add(candidate);
+                }
+            }
+        }
+        StringBuilder result = new StringBuilder();
+        for (String header : allowed) {
+            if (result.length() > 0) {
+                result.append(", ");
+            }
+            result.append(header);
+        }
+        return result.toString();
+    }
+
+    private static boolean isMcpParameterHeader(String header) {
+        if (header == null || header.length() <= "Mcp-Param-".length()
+                || !header.regionMatches(true, 0, "Mcp-Param-", 0, "Mcp-Param-".length())) {
+            return false;
+        }
+        for (int index = 0; index < header.length(); index++) {
+            char value = header.charAt(index);
+            boolean token = (value >= 'a' && value <= 'z')
+                    || (value >= 'A' && value <= 'Z')
+                    || (value >= '0' && value <= '9')
+                    || "!#$%&'*+-.^_`|~".indexOf(value) >= 0;
+            if (!token) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
