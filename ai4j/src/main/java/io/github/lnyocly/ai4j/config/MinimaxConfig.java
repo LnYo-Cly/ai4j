@@ -5,22 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author : isxuwl
- * @Date: 2024/10/15 16:08
- * @Model Description:
- * @Description:
+ * MiniMax OpenAI-compatible configuration.
+ * <p>
+ * Defaults to the global endpoint {@code https://api.minimax.io/}.
+ * Override {@code apiHost} together with {@code chatCompletionUrl} when switching
+ * to another regional base such as {@code https://api.minimaxi.com/}.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class MinimaxConfig {
-    /**
-     * MiniMax 网关。默认指向当前推荐的 OpenAI 兼容网关 {@code https://api.minimaxi.com/}，
-     * 支持最新模型（MiniMax-M3 等）与 coding-plan key。
-     * 旧私有 {@code v1/text/chatcompletion_v2} 端点（{@code api.minimax.chat}）对新模型返回
-     * plan-not-support / 空 choices；如需回退到旧端点，覆盖本字段与 {@link #chatCompletionUrl}。
-     */
-    private String apiHost = "https://api.minimaxi.com/";
+    private String apiHost = "https://api.minimax.io/";
     private String apiKey = "";
     private String chatCompletionUrl = "v1/chat/completions";
 }
