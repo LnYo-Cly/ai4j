@@ -411,8 +411,7 @@ public class StreamableHttpTransport implements McpTransport {
                 if (response.isSuccessful()) {
                     return classifySuccessfulProbe(responseBody);
                 }
-                if (isLegacyFallbackStatus(response.code())
-                        && !isRecognizedModernError(response.code(), responseBody)) {
+                if (isLegacyDiscoveryError(responseBody)) {
                     return McpProtocolProfile.LEGACY_2025_11_25;
                 }
                 throw new IllegalStateException(McpTransportSupport.buildHttpFailureMessage(
@@ -478,13 +477,12 @@ public class StreamableHttpTransport implements McpTransport {
         if (response.isSuccessResponse() && supportsModernVersion(response.getResult())) {
             return McpProtocolProfile.MODERN_2026_07_28;
         }
+        if (response.isErrorResponse() && isLegacyDiscoveryError(responseBody)) {
+            // server/discover is mandatory in the 2026 era. A JSON-RPC
+            // method-not-found reply is explicit legacy evidence.
+            return McpProtocolProfile.LEGACY_2025_11_25;
+        }
         if (response.isErrorResponse()) {
-            if (response.getError() != null && response.getError().getCode() != null
-                    && response.getError().getCode().intValue() == -32601) {
-                // server/discover is mandatory in the 2026 era. A method-not-found
-                // reply to this probe is the legacy server signature used by v1 SDKs.
-                return McpProtocolProfile.LEGACY_2025_11_25;
-            }
             throw new IllegalStateException(
                     "MCP server returned a JSON-RPC error during protocol discovery");
         }
@@ -504,11 +502,7 @@ public class StreamableHttpTransport implements McpTransport {
         return false;
     }
 
-    private static boolean isLegacyFallbackStatus(int statusCode) {
-        return statusCode == 400;
-    }
-
-    private static boolean isRecognizedModernError(int statusCode, String responseBody) {
+    private static boolean isLegacyDiscoveryError(String responseBody) {
         if (responseBody == null || responseBody.trim().isEmpty()) {
             return false;
         }
@@ -518,9 +512,7 @@ public class StreamableHttpTransport implements McpTransport {
                     || response.getError().getCode() == null) {
                 return false;
             }
-            int code = response.getError().getCode().intValue();
-            return code == -32020 || code == -32021 || code == -32022 || code == -32602
-                    || (code == -32601 && statusCode == 404);
+            return response.getError().getCode().intValue() == -32601;
         } catch (Exception ignored) {
             return false;
         }
@@ -539,6 +531,9 @@ public class StreamableHttpTransport implements McpTransport {
         if (!configuredProtocolProfile.acceptsLegacyVersion(selectedProfile)) {
             throw new IllegalStateException("MCP server selected unsupported legacy protocol version: "
                     + protocolVersion);
+        }
+        if (sessionId == null) {
+            throw new IllegalStateException("Legacy MCP initialize response did not provide mcp-session-id");
         }
         negotiatedProtocolProfile = selectedProfile;
     }

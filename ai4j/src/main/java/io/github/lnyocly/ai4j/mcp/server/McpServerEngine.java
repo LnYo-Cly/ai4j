@@ -200,7 +200,8 @@ public class McpServerEngine {
         result.put("serverInfo", buildServerInfo());
 
             if (session != null) {
-                session.setInitialized(true);
+                session.setInitialized(false);
+                session.setProtocolVersion(protocolVersion);
                 session.getCapabilities().clear();
                 session.getCapabilities().putAll(capabilities);
             }

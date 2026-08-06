@@ -75,10 +75,11 @@ public class McpClientProtocolNegotiationTest {
     }
 
     @Test
-    public void autoFallsBackToLegacyInitializeOnlyAfterUnrecognizedCompatibilityResponse() throws Exception {
+    public void autoFallsBackToLegacyInitializeOnlyAfterExplicitMethodNotFoundResponse() throws Exception {
         server = new MockWebServer();
-        server.enqueue(new MockResponse().setResponseCode(400));
-        server.enqueue(json(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
+        server.enqueue(json(400, "{\"jsonrpc\":\"2.0\",\"id\":0,\"error\":{"
+                + "\"code\":-32601,\"message\":\"Method not found: server/discover\"}}"));
+        server.enqueue(legacyJson(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
                 + "\"protocolVersion\":\"2025-11-25\",\"capabilities\":{},"
                 + "\"serverInfo\":{\"name\":\"legacy\",\"version\":\"1.0\"}}}"));
         server.enqueue(new MockResponse().setResponseCode(202));
@@ -105,7 +106,7 @@ public class McpClientProtocolNegotiationTest {
         server = new MockWebServer();
         server.enqueue(json(200, "{\"jsonrpc\":\"2.0\",\"id\":0,\"error\":{"
                 + "\"code\":-32601,\"message\":\"Method not found: server/discover\"}}"));
-        server.enqueue(json(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
+        server.enqueue(legacyJson(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
                 + "\"protocolVersion\":\"2025-11-25\",\"capabilities\":{},"
                 + "\"serverInfo\":{\"name\":\"legacy\",\"version\":\"1.0\"}}}"));
         server.enqueue(new MockResponse().setResponseCode(202));
@@ -125,8 +126,9 @@ public class McpClientProtocolNegotiationTest {
     @Test
     public void legacyClientUsesProtocolVersionSelectedByServer() throws Exception {
         server = new MockWebServer();
-        server.enqueue(new MockResponse().setResponseCode(400));
-        server.enqueue(json(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
+        server.enqueue(json(400, "{\"jsonrpc\":\"2.0\",\"id\":0,\"error\":{"
+                + "\"code\":-32601,\"message\":\"Method not found: server/discover\"}}"));
+        server.enqueue(legacyJson(200, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{"
                 + "\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},"
                 + "\"serverInfo\":{\"name\":\"legacy\",\"version\":\"1.0\"}}}"));
         server.enqueue(new MockResponse().setResponseCode(202));
@@ -163,6 +165,30 @@ public class McpClientProtocolNegotiationTest {
         }
         Assert.assertNotNull(server.takeRequest(5, TimeUnit.SECONDS));
         Assert.assertNull("authentication failure must not trigger initialize", server.takeRequest(250, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void autoDoesNotTreatBareBadRequestAsLegacy() throws Exception {
+        assertNoLegacyFallbackForStatus(400);
+    }
+
+    @Test
+    public void autoDoesNotTreatUnknownModernVersionAsLegacy() throws Exception {
+        server = new MockWebServer();
+        server.enqueue(json(200, "{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":{"
+                + "\"supportedVersions\":[\"2027-01-01\"],\"capabilities\":{}}}"));
+        server.start();
+
+        client = new McpClient("interop-client", "1.0", autoTransport(), false);
+        try {
+            client.connect().get(5, TimeUnit.SECONDS);
+            Assert.fail("expected unsupported modern discovery result");
+        } catch (Exception expected) {
+            Assert.assertTrue(String.valueOf(expected.getMessage()).contains("usable modern discovery result"));
+        }
+        Assert.assertNotNull(server.takeRequest(5, TimeUnit.SECONDS));
+        Assert.assertNull("unknown discovery version must not trigger initialize",
+                server.takeRequest(250, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -255,5 +281,9 @@ public class McpClientProtocolNegotiationTest {
         return new MockResponse().setResponseCode(code)
                 .setHeader("Content-Type", "application/json")
                 .setBody(body);
+    }
+
+    private static MockResponse legacyJson(int code, String body) {
+        return json(code, body).setHeader("mcp-session-id", "legacy-session");
     }
 }

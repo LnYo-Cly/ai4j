@@ -322,6 +322,78 @@ public class StreamableHttpModernProtocolTest {
     }
 
     @Test
+    public void legacyServerValidatesSessionLifecycleAndNegotiatedVersion() throws Exception {
+        int port = findFreePort();
+        StreamableHttpMcpServer server = new StreamableHttpMcpServer(
+                "legacy", "1.0", "127.0.0.1", port, null, null,
+                McpProtocolProfile.LEGACY_2025_06_18);
+        try {
+            server.start().get();
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("protocolVersion", "2025-06-18");
+            params.put("capabilities", new HashMap<String, Object>());
+            params.put("clientInfo", new HashMap<String, Object>());
+            Map<String, Object> initialize = new HashMap<String, Object>();
+            initialize.put("jsonrpc", "2.0");
+            initialize.put("id", 1);
+            initialize.put("method", "initialize");
+            initialize.put("params", params);
+
+            RawResponse initialized = rawPost(port, JSON.toJSONString(initialize), null);
+            Assert.assertEquals(200, initialized.status);
+            Assert.assertNotNull(initialized.sessionId);
+
+            Map<String, Object> tools = new HashMap<String, Object>();
+            tools.put("jsonrpc", "2.0");
+            tools.put("id", 2);
+            tools.put("method", "tools/list");
+            tools.put("params", new HashMap<String, Object>());
+
+            RawResponse beforeNotification = rawPost(port, JSON.toJSONString(tools), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", initialized.sessionId
+            });
+            Assert.assertEquals(400, beforeNotification.status);
+            Assert.assertTrue(beforeNotification.body.contains("Server not initialized"));
+
+            Map<String, Object> notification = new HashMap<String, Object>();
+            notification.put("jsonrpc", "2.0");
+            notification.put("method", "notifications/initialized");
+            notification.put("params", new HashMap<String, Object>());
+            RawResponse notificationResponse = rawPost(port, JSON.toJSONString(notification), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", initialized.sessionId
+            });
+            Assert.assertEquals(202, notificationResponse.status);
+
+            RawResponse missingSession = rawPost(port, JSON.toJSONString(tools), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18"
+            });
+            Assert.assertEquals(400, missingSession.status);
+
+            RawResponse unknownSession = rawPost(port, JSON.toJSONString(tools), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", "missing-session"
+            });
+            Assert.assertEquals(404, unknownSession.status);
+
+            RawResponse wrongVersion = rawPost(port, JSON.toJSONString(tools), new String[] {
+                    "MCP-Protocol-Version", "2025-11-25",
+                    "mcp-session-id", initialized.sessionId
+            });
+            Assert.assertEquals(400, wrongVersion.status);
+
+            RawResponse validTools = rawPost(port, JSON.toJSONString(tools), new String[] {
+                    "MCP-Protocol-Version", "2025-06-18",
+                    "mcp-session-id", initialized.sessionId
+            });
+            Assert.assertEquals(200, validTools.status);
+        } finally {
+            server.stop().get();
+        }
+    }
+
+    @Test
     public void serverFactoryDefaultsToModernStatelessProfile() {
         McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("modern", "1.0");
 

@@ -390,7 +390,34 @@ public class StreamableHttpMcpServer implements McpServer {
     private void processClientMessage(HttpExchange exchange, String requestBody) throws IOException {
         McpMessage message = McpMessageCodec.parseMessage(requestBody);
         String sessionId = exchange.getRequestHeaders().getFirst("mcp-session-id");
-        SessionContext session = getOrCreateSession(sessionId);
+        SessionContext session;
+        if ("initialize".equals(message.getMethod())) {
+            session = sessionId == null ? getOrCreateSession(null) : sessions.get(sessionId);
+            if (session == null) {
+                McpHttpServerSupport.sendError(exchange, 404, "Session not found");
+                return;
+            }
+            if (session.isInitialized()) {
+                McpHttpServerSupport.sendError(exchange, 400, "Session is already initialized");
+                return;
+            }
+        } else {
+            if (sessionId == null) {
+                McpHttpServerSupport.sendError(exchange, 400, "mcp-session-id is required");
+                return;
+            }
+            session = sessions.get(sessionId);
+            if (session == null) {
+                McpHttpServerSupport.sendError(exchange, 404, "Session not found");
+                return;
+            }
+            String sessionError = validateLegacySession(exchange, session,
+                    !"notifications/initialized".equals(message.getMethod()));
+            if (sessionError != null) {
+                McpHttpServerSupport.sendError(exchange, 400, sessionError);
+                return;
+            }
+        }
         McpMessage response = serverEngine.processMessage(message, session);
 
         if (response != null) {
@@ -406,6 +433,30 @@ public class StreamableHttpMcpServer implements McpServer {
             exchange.sendResponseHeaders(202, 0);
             exchange.close();
         }
+    }
+
+    private static String validateLegacySession(HttpExchange exchange, SessionContext session,
+                                                boolean requireInitialized) {
+        String protocolVersion = session.getProtocolVersion();
+        if (protocolVersion == null) {
+            return "Session has not completed initialize";
+        }
+        if (McpHttpServerSupport.hasMultipleHeaderValues(exchange, "MCP-Protocol-Version")) {
+            return "MCP-Protocol-Version must be a single value";
+        }
+        String requestVersion = McpHttpServerSupport.getSingleHeaderValue(exchange, "MCP-Protocol-Version");
+        if ((McpProtocolProfile.LEGACY_2025_11_25.getProtocolVersion().equals(protocolVersion)
+                || McpProtocolProfile.LEGACY_2025_06_18.getProtocolVersion().equals(protocolVersion))
+                && requestVersion == null) {
+            return "MCP-Protocol-Version is required for " + protocolVersion;
+        }
+        if (requestVersion != null && !protocolVersion.equals(requestVersion)) {
+            return "MCP-Protocol-Version does not match the negotiated session version";
+        }
+        if (requireInitialized && !session.isInitialized()) {
+            return "Server not initialized";
+        }
+        return null;
     }
 
     private static boolean isModernRequest(HttpExchange exchange, String requestBody) {

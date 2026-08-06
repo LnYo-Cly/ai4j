@@ -10,6 +10,7 @@ public class McpServerSessionState {
 
     private final String sessionId;
     private volatile boolean initialized;
+    private volatile String protocolVersion;
     private final Map<String, Object> capabilities = new ConcurrentHashMap<String, Object>();
 
     public McpServerSessionState(String sessionId) {
@@ -26,6 +27,14 @@ public class McpServerSessionState {
 
     public void setInitialized(boolean initialized) {
         this.initialized = initialized;
+    }
+
+    public String getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    public void setProtocolVersion(String protocolVersion) {
+        this.protocolVersion = protocolVersion;
     }
 
     public Map<String, Object> getCapabilities() {
