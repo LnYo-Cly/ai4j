@@ -183,6 +183,16 @@ McpClient client = new McpClient("my-client", "1.0.0", transport);
 client.connect().join();
 ```
 
+这个配置默认使用 `McpProtocolProfile.AUTO`。它只先以现代 `server/discover` 探测 Streamable HTTP peer：有效发现结果选择无状态 `2026-07-28`，未识别的 `400`、`404` 或 `405` 才会回退到 initialization-era profile。
+
+如果目标是尚未升级的 session-era Streamable HTTP server，显式选择 legacy profile：
+
+```java
+config.withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
+```
+
+AUTO 不是万能识别：认证失败、可识别的现代 JSON-RPC error、或无效发现响应都不会降级。`http` 类型别名会归一化成 `streamable_http` 并保留这个 profile 语义；deprecated HTTP+SSE 则必须显式使用 `sse`。完整差异和升级路线见 [Streamable HTTP](/docs/mcp/streamable-http)。
+
 ### 5.5 为什么它通常是生产优先选项
 
 因为它最容易和：
@@ -259,7 +269,8 @@ transport 选型本质上是在选“连接治理责任落在哪一层”。
 
 - URL 不通
 - 子进程没启动
-- initialize 没走完
+- legacy profile 的 `initialize` 没走完
+- 现代 HTTP profile 的请求 metadata 或 `MCP-Protocol-Version` 被代理剥离
 
 ### 9.2 SSE 经常断
 

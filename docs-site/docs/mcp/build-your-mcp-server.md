@@ -136,22 +136,33 @@ public class WeatherMcpService {
 
 ## 4. 协议引擎到底处理哪些请求
 
-`McpServerEngine` 当前直接处理这些方法：
+Tool、Resource 和 Prompt 的处理入口保持一致，但协议启动方式取决于 transport profile。
+
+### Streamable HTTP：AUTO 默认与现代分支
+
+`StreamableHttpMcpServer` 和 `McpServerFactory.ServerConfig` 默认使用 `AUTO`。AUTO 在同一个 `/mcp` endpoint 接受现代请求和 initialization-era Streamable HTTP 请求；它通过现代 headers 或 `_meta` 识别现代请求。
+
+被识别为 `2026-07-28` 的现代请求会处理：
+
+- `server/discover`
+- `tools/list` / `tools/call`
+- `resources/list` / `resources/read`
+- `prompts/list` / `prompts/get`
+
+每个请求必须带现代 `_meta` 和 HTTP headers。它不使用 `initialize`、`notifications/initialized` 或协议 session。
+
+### Initialization-era Streamable HTTP 与其他 legacy transport
+
+AUTO server 的同一 `/mcp` endpoint 也保留 initialization-era Streamable HTTP 处理。STDIO、显式 `sse` transport 和具体 legacy Streamable HTTP profile 同样保留 session-era 处理：
 
 - `initialize`
-- `tools/list`
-- `tools/call`
-- `resources/list`
-- `resources/read`
-- `prompts/list`
-- `prompts/get`
-- `ping`（仅当 server 类型启用）
-
-此外还处理：
-
 - `notifications/initialized`
+- `tools/list` / `tools/call`
+- `resources/list` / `resources/read`
+- `prompts/list` / `prompts/get`
+- `ping`（仅当 server transport 启用）
 
-这说明 AI4J 不是只做“工具执行接口”，而是已经把服务端协议面完整搭起来了。
+这说明 AI4J 不是只做“工具执行接口”，但也不能把 legacy handshake 写成所有 MCP transport 的共同前提。
 
 ## 5. 三种服务端 transport 的真实差异
 
@@ -177,23 +188,26 @@ public class WeatherMcpService {
 ### `StreamableHttpMcpServer`
 
 - 统一主端点 `/mcp`
-- `POST` 发送请求
-- `GET` 可返回 info 或建立 SSE 流
-- `DELETE` 终止会话
-- 支持 `2025-03-26` 和 `2024-11-05`
-- 默认协议版本 `2025-03-26`
+- 默认 `McpProtocolProfile.AUTO`，在同一 `/mcp` 同时接受现代和 initialization-era Streamable HTTP
+- 现代请求使用无状态 `POST /mcp`，可在同一请求上返回 JSON 或 SSE
+- 现代请求验证 `MCP-Protocol-Version`、`Mcp-Method`，并在需要时验证 `Mcp-Name` 和 schema 声明的 `Mcp-Param-*`
+- 现代请求提供 `server/discover` 和响应缓存 hints
+- 不提供 MRTR 或 subscriptions
+- 可显式选择 `McpProtocolProfile.MODERN_2026_07_28` 仅允许现代请求，或选择具体 legacy profile 以固定 session、`GET`/`DELETE` 和初始化握手
+- deprecated HTTP+SSE 仍是独立的 `sse` transport，不是 AUTO 的第三种分支
 
 如果你打算给外部系统、平台、网关长期消费，这个是当前最应该优先选的 server 形态。
 
 ## 6. 用 `McpServerFactory` 启动服务
 
 ```java
-McpServer server = McpServerFactory.createServer(
-        "streamable_http",
-        "weather-server",
-        "1.0.0",
-        8081
+McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig(
+        "weather-server", "1.0.0"
+).withPort(8081).withProtocolProfile(
+        McpProtocolProfile.AUTO
 );
+
+McpServer server = McpServerFactory.createServer("streamable_http", config);
 server.start().join();
 ```
 
@@ -210,6 +224,8 @@ server.start().join();
 - `http`
   仅兼容别名，最终映射为 `streamable_http`
 
+`http` 只是 `streamable_http` 的 transport 类型别名，并保留 AUTO 的有限 Streamable HTTP compatibility 语义。已知的 session-era peer 可以在 `ServerConfig` 或客户端 `TransportConfig` 中固定具体 legacy profile；deprecated HTTP+SSE 则应使用 `sse`。详见 [Streamable HTTP](/docs/mcp/streamable-http)。
+
 ## 7. 当前实现里哪些能力已经自动化，哪些还没有
 
 ### 已经打通的部分
@@ -217,7 +233,7 @@ server.start().join();
 - Tool 注解扫描与参数 schema 投影
 - Tool 调用到本地执行链
 - 三类 server transport
-- 初始化握手与 MCP 基本协议处理
+- AUTO 同端点兼容现代无状态与 initialization-era Streamable HTTP，另保留显式 SSE transport
 
 ### 你仍然要自己补的部分
 
@@ -277,7 +293,7 @@ server.start().join();
 
 1. 先只发布 Tool
 2. 优先用 `streamable_http`
-3. 用 `McpClient` 本地自测 `initialize -> tools/list -> tools/call`
+3. AUTO server 分别用现代 `server/discover -> tools/list -> tools/call` 与 legacy `initialize -> tools/list -> tools/call` 自测；HTTP+SSE 再按 `sse` transport 单独验证
 4. 再补 Resource / Prompt
 5. 最后再接 `McpGateway` 或外部平台
 

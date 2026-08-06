@@ -4,89 +4,148 @@ sidebar_position: 8
 
 # Agent Skills
 
-Skill is a reusable instruction asset. It tells a model how to approach a class of work; it does not grant a capability or execute an action.
+A Skill is a reusable instruction asset. It tells an Agent how to approach a class of work; it does not grant a tool, data access, or an approval bypass.
 
-This page is the canonical boundary for using file-based `SKILL.md` resources with AI4J agents. It deliberately separates what the SDK provides today from what an application must own.
+AI4J's Agent integration follows the same split that makes Skills safe in local and service hosts:
 
-## What is available now
-
-The Core SDK provides the file-based Skill primitives in `io.github.lnyocly.ai4j.skill.Skills`:
-
-- discovers `SKILL.md` files from `<workspace>/.ai4j/skills`, `~/.ai4j/skills`, and caller-supplied roots;
-- turns each file into a lightweight `SkillDescriptor` (`name`, `description`, path, and source);
-- creates a prompt catalog instead of placing every Skill body in the system prompt;
-- returns allowed read roots for `BuiltInToolContext` so a host can keep Skill reads scoped.
-
-The generic Agent runtime on `main` does **not** automatically discover, authorize, or inject Skills for every ReAct or CodeAct run. There is no published `AgentBuilder.skills(...)` convenience API to rely on yet. The application remains responsible for selecting Skills and connecting the catalog to its own prompt and read-tool policy.
+- the SDK discovers, catalogs, scopes, and reads `SKILL.md` content;
+- the application decides which Skills the current request is allowed to see;
+- the application continues to own authentication, tenant policy, tools, approvals, and UI.
 
 The Coding Agent has its own workspace integration. See [Coding Agent Skills](/docs/coding-agent/skills) when that is the runtime you are using.
 
-## P2-B branch semantics (not on `main` yet)
+## Start with the right integration
 
-:::warning
-The APIs in this section are implemented on the separate P2-B feature branch. They are not part of `main` or a published release at the time of writing. Do not compile against or document them as generally available until that branch is merged and released.
-:::
-
-The P2-B Agent integration deliberately narrows the convenience defaults:
-
-- `AgentBuilder.skills(workspace)` discovers only `<workspace>/.ai4j/skills` and `<workspace>/.agents/skills`.
-- `AgentBuilder.skillsIncludingUserHome(workspace)` is the explicit local-development opt-in for process-user Skill roots; it must not become the default in a tenant service.
-- `AgentBuilder.skillResolver(AgentSkillResolver)` is the service-safe integration point. A tenant host supplies the authorized catalog and roots instead of exposing a process user's filesystem.
-- Automatically discoverable Skill metadata remains in the cache-stable system prompt. Explicitly selected, manual-only Skill content is a request-scoped user overlay rather than a permanent system-prompt addition.
-- When the host already owns `read_file`, the SDK preserves it and exposes the scoped Skill reader as `read_skill_file`; it does not silently replace the host's tool or its policy chain.
-
-These semantics intentionally differ from the Core SDK's legacy `Skills.discoverDefault(...)` helper, which also considers `~/.ai4j/skills`. The explicit split avoids accidentally leaking a server process's local Skills across tenants.
-
-## Minimal host-owned integration
-
-Use the Core SDK primitives at the request boundary after the application has decided which roots are allowed for the current user, tenant, and workspace. This example uses APIs present on the current branch; it does not call the pending P2-B builder APIs above.
+For a local developer Agent, use the workspace convenience method:
 
 ```java
-import io.github.lnyocly.ai4j.skill.Skills;
-import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
+import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.Agents;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 
-Path workspaceRoot = Paths.get(System.getProperty("user.dir"));
-Skills.DiscoveryResult discovery = Skills.discoverDefault(
-        workspaceRoot,
-        Collections.<String>emptyList()
-);
-
-String systemPrompt = Skills.appendAvailableSkillsPrompt(
-        "Follow the application's safety and tool rules.",
-        discovery.getSkills()
-);
-BuiltInToolContext readContext = Skills.createToolContext(workspaceRoot, discovery);
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .skills(Paths.get(System.getProperty("user.dir")))
+        .build();
 ```
 
-The example only creates the catalog and its read boundary. The host must pass `systemPrompt` to its model request and use `readContext` in the file-reading path it owns. Do not treat `allowedReadRoots` as a replacement for the host's permission checks or tool guardrails.
+`skills(workspace)` searches only these workspace-owned roots:
 
-## Runtime contract
+- `<workspace>/.ai4j/skills`
+- `<workspace>/.agents/skills`
 
-For one agent run, resolve the catalog once and keep the prompt catalog and read roots paired. Re-resolve it for the next run if the application supports live administration or filesystem updates. This keeps a model from seeing one catalog while its reader is authorized against another one.
+It does not read the process user's home directory. That is the safe default for both repositories and service processes.
 
-The model should receive only Skill metadata first:
+For a local developer tool that deliberately needs process-user Skills, opt in explicitly:
 
-1. match the task against the catalog;
-2. read the smallest relevant `SKILL.md` through the scoped reader;
-3. follow the instructions only within the host's existing tool, approval, and sandbox boundaries.
+```java
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .skillsIncludingUserHome(Paths.get(System.getProperty("user.dir")))
+        .build();
+```
 
-Do not preload every Skill body into the stable system prompt. It increases context cost, weakens prompt-cache reuse, and makes unrelated instructions harder to distinguish. In the pending P2-B integration, a manually selected Skill body belongs in a request-scoped user overlay while the automatic catalog remains stable in the system prompt.
+Do not use `skillsIncludingUserHome(...)` for a tenant service. It can expose the server process's local Skill roots, which are not tenant policy.
 
-## Ownership boundaries
+## Use a host resolver for services
+
+`AgentSkillResolver` runs once at the start of each Agent run. It is the service-safe extension point for a database, configuration center, or other host-owned Skill source.
+
+```java
+import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.AgentRequest;
+import io.github.lnyocly.ai4j.agent.Agents;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillResolver;
+import io.github.lnyocly.ai4j.agent.skill.AgentSkillScope;
+import io.github.lnyocly.ai4j.skill.SkillDescriptor;
+
+import java.nio.file.Paths;
+import java.util.List;
+
+// tenantSkillService, currentTenantId(), currentUserId(), and namesOf(...)
+// are application code, not SDK services.
+AgentSkillResolver resolver = new AgentSkillResolver() {
+    @Override
+    public AgentSkillScope resolve(AgentRequest request) {
+        List<SkillDescriptor> allowed = tenantSkillService.findEnabledSkills(
+                currentTenantId(), currentUserId(), request);
+
+        return AgentSkillScope.builder()
+                .workspaceRoot(Paths.get(System.getProperty("user.dir")))
+                .providedSkills(allowed)
+                .enabledSkillNames(namesOf(allowed))
+                .build();
+    }
+};
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .skillResolver(resolver)
+        .build();
+```
+
+The resolver's result is a request-scoped snapshot. Re-resolve it on the next run when an administrator changes a Skill or its grant. Do not cache a tenant's authorization decision globally in the SDK.
+
+For an in-memory Skill from a tenant store, use a stable virtual location and provide the body directly:
+
+```java
+SkillDescriptor refundRunbook = SkillDescriptor.builder()
+        .name("invoice-refund")
+        .description("Handle a verified invoice-refund request.")
+        .content("# Invoice refund\n\nVerify the invoice before requesting a refund.")
+        .skillFilePath("tenant://acme/invoice-refund/SKILL.md")
+        .source("tenant")
+        .disableModelInvocation(true)
+        .build();
+```
+
+`skillFilePath` is a stable identifier for the scoped reader. A `tenant://...` path is not read from the local filesystem.
+
+## Automatic and explicit activation
+
+Skills have two activation paths.
+
+| Path | When to use it | Runtime behavior |
+| --- | --- | --- |
+| Automatic catalog | The model may choose a Skill for a task. | The stable system prompt gets metadata only. The model reads the relevant body through the scoped Skill reader on demand. |
+| Explicit selection | A user or host chooses a named Skill for this run. | The selected body is a request-scoped user overlay. It is not stored in long-lived memory or appended to the stable system-prompt prefix. |
+
+Set `disableModelInvocation(true)` for a manual-only Skill. It remains available to a host-selected request but is not offered for automatic model invocation.
+
+```java
+import io.github.lnyocly.ai4j.agent.AgentRequest;
+
+AgentRequest request = AgentRequest.builder()
+        .input("Refund invoice INV-42")
+        .selectedSkills(java.util.Collections.singletonList("invoice-refund"))
+        .build();
+
+agent.run(request);
+```
+
+Treat `selectedSkills` as a request from your UI, not proof of authorization. The resolver must return only Skills the authenticated tenant and user may activate. Unknown, disabled, or unauthorized names must not be added to the scope.
+
+## Prompt and tool boundary
+
+The automatic catalog is kept small for prompt-cache reuse. The Agent exposes the scoped reader as `read_file` unless the host already owns that name; in that case it uses `read_skill_file` and preserves the host tool unchanged.
+
+Reading a Skill does not grant the instructions inside it any extra authority. A Skill that says "call `refund_invoice`" still needs that tool to be registered and permitted by the host's existing tool, approval, sandbox, and guardrail policies.
+
+## What belongs where
 
 | Concern | Owner |
 | --- | --- |
-| `SKILL.md` discovery, descriptors, prompt catalog, read roots | Core SDK |
-| Per-request Skill selection and filesystem roots | Application host |
-| Tenant/user visibility, admin updates, versions, and audit records | Application business layer |
+| `SKILL.md` parsing, workspace discovery, descriptors, prompt catalog, scoped reading | AI4J SDK |
+| Per-run `AgentSkillScope` and explicit selection input | Application host |
+| Tenant storage, versioning, publish state, user/role grants, audit records | Application business layer |
 | Slash-command picker or a "my Skills" UI | Application frontend/backend |
-| Tool permissions, approval, sandboxing, and guardrails | Agent host/runtime configuration |
+| Tool registration, authorization, approval, sandboxing, and guardrails | Agent host/runtime configuration |
 
-This split is intentional. A reusable SDK cannot infer a tenant's authorization model or safely expose a process user's global Skills to all service users.
+This separation is intentional. A reusable SDK cannot infer a tenant's authorization model or safely expose a server process's global Skills to application users.
 
 ## Do not confuse these concepts
 

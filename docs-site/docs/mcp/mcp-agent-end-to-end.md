@@ -42,13 +42,14 @@ sidebar_position: 7
     "weather-http": {
       "type": "streamable_http",
       "url": "http://127.0.0.1:8000/mcp",
+      "protocolProfile": "AUTO",
       "enabled": true
     }
   }
 }
 ```
 
-这里的 `weather-http` 不是备注，而是后续 Agent 白名单要用到的真实 `serviceId`。
+这里的 `weather-http` 不是备注，而是后续 Agent 白名单要用到的真实 `serviceId`。`protocolProfile` 由 Gateway 配置模型读取；默认 `AUTO` 只对 Streamable HTTP 做 `server/discover` 的有限兼容探测，不会自动把 endpoint 切换为 HTTP+SSE。
 
 ## 3. 第 1 段：把第三方服务接进宿主
 
@@ -62,7 +63,7 @@ gateway.initialize("mcp-servers-config.json").join();
 1. gateway 读入配置
 2. `McpGatewayClientFactory` 根据 `type` 创建 transport
 3. 为 `weather-http` 创建 `McpClient`
-4. `client.connect()` 执行 MCP 握手
+4. `client.connect()` 执行与 profile 对应的生命周期：AUTO 发现现代 peer 或进入 legacy 初始化握手
 5. `toolRegistry.refresh(...)` 拉取工具清单
 
 建议你在这一步就先做一次显式检查：

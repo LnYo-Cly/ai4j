@@ -9,7 +9,7 @@ sidebar_position: 4
 也就是说，你当前的问题是：
 
 - 先连上一个 MCP server
-- 先把会话初始化成功
+- 先确定它使用现代无状态 HTTP 还是 session-era 协议
 - 先跑通 tool / resource / prompt 三类高层 API
 
 如果你已经要接多个服务或做用户隔离，就应该去读 gateway，而不是继续停在这页。
@@ -23,7 +23,7 @@ sidebar_position: 4
 1. 构造 transport
 2. new `McpClient(...)`
 3. `connect()`
-4. 初始化握手成功
+4. 按 transport/profile 完成就绪：默认 AUTO 先做有限探测；现代 HTTP 不握手；legacy transport 完成初始化握手
 5. 读取 tools / resources / prompts
 6. 调用能力
 7. `disconnect()`
@@ -32,41 +32,20 @@ sidebar_position: 4
 
 ## 2. `connect()` 到底做了什么
 
-从源码看，`connect()` 至少做了这几件事：
+`connect()` 总会先执行 `transport.start()`，超时 `30s`，然后按 transport/profile 进入不同路径：
 
-1. `transport.start()`，超时 `30s`
-2. 发 `initialize`
-3. 协议版本固定为 `2025-03-26`
-4. 上报 client capabilities
-5. 发送 `notifications/initialized`
-6. 若 transport 需要心跳，则启动 heartbeat
+- 默认的 `StreamableHttpTransport` 使用 `AUTO`。它只先发送现代 `server/discover`；有效的现代发现结果会选择 `2026-07-28`，不发送 `initialize` 或 `notifications/initialized`。
+- AUTO 只在该探测收到未识别的 HTTP `400`、`404` 或 `405` 时回退到 initialization-era Streamable HTTP，并执行 `initialize -> notifications/initialized`。认证失败、可识别的现代 JSON-RPC error、以及无效发现响应都不会触发降级。
+- STDIO、显式 `type: "sse"` 的 HTTP+SSE，以及显式选择 legacy Streamable HTTP profile 的 client，保留初始化时代流程。
+- 若 transport 需要心跳，client 会在准备就绪后启动 heartbeat。
 
-这意味着“网络已连通”和“client 已初始化”不是一回事。
+因此 `isConnected()` 和 `isInitialized()` 仍是调用前检查，但现代 HTTP 的 `isInitialized()` 表示 client ready，不表示发生过协议握手。
 
-也因此 `callTool()` 会先检查：
+## 3. `McpClient` capability 边界
 
-- `isConnected()`
-- `isInitialized()`
+AI4J 的高层 API 覆盖 Tool、Resource 和 Prompt。现代 HTTP 每次请求声明的 capabilities 是保守的：它不会声称支持 sampling、roots、elicitation、MRTR 或 subscriptions，直到这些多轮协议能力真正可用。
 
-## 3. `McpClient` 声明了哪些 client capabilities
-
-初始化时，client 默认声明的能力至少包括：
-
-- `sampling`
-- `roots`
-- `tools`
-- `resources`
-- `prompts`
-
-其中：
-
-- `roots.listChanged = true`
-- `tools.listChanged = true`
-- `resources.listChanged = true`
-- `resources.subscribe = true`
-- `prompts.listChanged = true`
-
-这说明 AI4J 的 client 不是只为了 `tools/call`，而是同时把 Resource / Prompt 也当成一等能力。
+不要根据旧 session-era `initialize` 示例推断现代 peer 也支持这些可选 capability。应以目标 server 的协议 profile 和实际能力目录为准。
 
 ## 4. 最小接入示例：STDIO
 
@@ -109,6 +88,14 @@ McpClient client = new McpClient("demo-client", "1.0.0", transport);
 client.connect().join();
 ```
 
+这个示例默认使用 `AUTO`。对未知或迁移中的 Streamable HTTP peer，它只通过 `server/discover` 做有限兼容探测；它不会自动选择 HTTP+SSE。对已知的 session-handshake server，显式设置：
+
+```java
+config.withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
+```
+
+完整请求头、server profile 和升级路线见 [Streamable HTTP](/docs/mcp/streamable-http)。
+
 ### SSE
 
 ```java
@@ -117,7 +104,7 @@ McpClient client = new McpClient("demo-client", "1.0.0", transport);
 client.connect().join();
 ```
 
-这两条路径的区别，不在 `McpClient`，而在 transport 连接模型。
+这两条路径的区别，不在 `McpClient`，而在 transport 连接模型。HTTP+SSE 是 `sse` 的显式 transport；不要把它当作 Streamable HTTP AUTO 的回退目标。
 
 ## 6. `McpClient` 提供的高层 API 不止 Tool
 
@@ -231,7 +218,8 @@ McpPromptResult prompt = client.getPrompt(
 先检查：
 
 - 有没有先 `connect()`
-- 初始化握手有没有真正完成
+- transport/profile 是否与目标 peer 匹配；AUTO 的 `server/discover` 是否收到允许回退的响应
+- 只有 legacy profile 才检查初始化握手是否真正完成；现代 HTTP 则检查请求 metadata 和 HTTP headers 是否被代理保留
 
 ### 11.2 `tool not found`
 

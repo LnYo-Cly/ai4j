@@ -71,6 +71,7 @@ sidebar_position: 3
 - `env`
 - `url`
 - `headers`
+- `protocolProfile`（仅 `streamable_http` / `http`）
 
 以及在配置源层生效的：
 
@@ -89,6 +90,7 @@ sidebar_position: 3
 | `env` | 是 | `stdio` 子进程环境变量 |
 | `url` | 是 | `sse / streamable_http` 必填 |
 | `headers` | 是 | 远程 HTTP/SSE 请求头 |
+| `protocolProfile` | 是，限 `streamable_http` / `http` | 由 `McpServerConfig.McpServerInfo` 反序列化，并由 `TransportConfig.fromServerInfo(...)` 传入 transport；省略时为 `AUTO` |
 | `enabled` | 是 | 配置源提取有效服务时使用 |
 | `cwd` | 否 | 配置里有，但 `TransportConfig.fromServerInfo(...)` 没有传下去 |
 | `autoReconnect` | 否 | gateway 创建 `McpClient` 时没把它传入构造器 |
@@ -181,6 +183,8 @@ sidebar_position: 3
 - `url`
 - `headers`
 
+这里的 `type: "sse"` 是 deprecated HTTP+SSE transport 的显式选择。不要把它写成 `streamable_http` 并期待 AUTO 改用 SSE。
+
 ### `streamable_http`
 
 ```json
@@ -189,6 +193,7 @@ sidebar_position: 3
     "weather-http": {
       "type": "streamable_http",
       "url": "http://127.0.0.1:8000/mcp",
+      "protocolProfile": "AUTO",
       "headers": {
         "Authorization": "Bearer ${TOKEN}"
       },
@@ -199,6 +204,16 @@ sidebar_position: 3
 ```
 
 `http` 仍兼容，但语义上已经被归一化到 `streamable_http`。
+
+### Streamable HTTP protocol profile
+
+`protocolProfile` 已被 `McpServerConfig.McpServerInfo` 支持。配置驱动的 Gateway 会把它传给 Streamable HTTP transport；省略时默认 `AUTO`，而 `http` 别名也会使用相同语义。
+
+- `AUTO` 仅以现代 `server/discover` 探测 Streamable HTTP：只有未识别的 `400`、`404` 或 `405` 才会进入 initialization-era fallback。
+- `MODERN_2026_07_28` 禁止 legacy fallback，适合已确定为现代的 peer。
+- `LEGACY_2025_11_25`、`LEGACY_2025_06_18` 和 `LEGACY_2025_03_26` 固定使用对应的初始化时代 profile。
+
+这不是万能自动识别：认证失败、可识别的现代 JSON-RPC error、或非预期成功响应不会降级。deprecated HTTP+SSE 仍然必须配置 `type: "sse"`。完整行为见 [Streamable HTTP](/docs/mcp/streamable-http)。
 
 ## 7. `enabled` 是真正的开关字段
 
@@ -231,7 +246,7 @@ sidebar_position: 3
 
 - `McpClient` 默认 `autoReconnect = true`
 - 断线后固定 5 秒后尝试重连
-- `connect()` 内部 transport 启动和初始化超时固定 30 秒
+- `connect()` 内部 transport 启动超时固定 30 秒；legacy profile 的初始化握手也使用该超时
 
 所以如果你在配置文件里写了这些字段，当前更应该把它理解成：
 

@@ -103,7 +103,7 @@ sidebar_position: 2
 你主要关心：
 
 - transport 能不能连上
-- initialize 是否完成
+- 目标 peer 使用现代无状态 HTTP 还是 legacy 初始化握手
 - tool/resource/prompt 能不能正确拿到
 
 ### gateway 路线
@@ -134,7 +134,7 @@ sidebar_position: 2
 
 原因很简单：
 
-- 单服务问题先解决 transport 和初始化
+- 单服务问题先解决 transport 与 protocol profile
 - 多服务问题再解决治理和映射
 
 过早上 gateway，只会把连接问题和治理问题叠在一起。

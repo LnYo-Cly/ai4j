@@ -16,6 +16,12 @@ sidebar_position: 4
 
 不同深度解决的是不同问题，别把它们混成“都是接个 MCP”。
 
+:::note Streamable HTTP peer profile
+
+`streamable_http` 默认使用 `AUTO`，且 Gateway JSON 支持 `protocolProfile`。AUTO 只用现代 `server/discover` 探测 Streamable HTTP：有效发现结果走无状态 `2026-07-28`，只有未识别的 `400`、`404` 或 `405` 才会回退到 initialization-era profile。它不是万能识别，也不会自动选用 deprecated HTTP+SSE；后者必须显式配置 `type: "sse"`。本页的 STDIO 示例仍是 session-era 流程，因此会使用 `initialize`。见 [Streamable HTTP](/docs/mcp/streamable-http)。
+
+:::
+
 ## 1. 先选集成层级，不要先写代码
 
 | 集成方式 | 解决的问题 | 适合场景 |
@@ -51,7 +57,7 @@ String result = client.callTool("search_repositories", Collections.singletonMap(
 client.disconnect().join();
 ```
 
-这条链真正跑的是：
+这个 **STDIO** 示例真正跑的是：
 
 1. transport 启动
 2. `initialize`
@@ -79,6 +85,7 @@ client.disconnect().join();
     "weather-http": {
       "type": "streamable_http",
       "url": "http://127.0.0.1:8000/mcp",
+      "protocolProfile": "AUTO",
       "enabled": true
     }
   }
@@ -185,7 +192,7 @@ Agent agent = Agents.react()
 
 1. `McpServerConfig` 或自定义配置源定义服务
 2. `McpGatewayClientFactory` 依据 type 创建 transport + client
-3. `McpClient.connect()` 完成 MCP 握手
+3. `McpClient.connect()` 完成与 profile 对应的生命周期：AUTO 发现现代 peer 或进入 legacy 初始化握手
 4. `McpGatewayToolRegistry` 收集工具清单
 5. Agent 通过 `mcpServices` 选择本次暴露面
 6. 模型触发 tool call
@@ -229,6 +236,7 @@ gateway 负责连接和路由，不负责：
 - `env`
 - `url`
 - `headers`
+- `protocolProfile`（仅 Streamable HTTP）
 
 像 `priority`、`tags`、`requiresAuth` 这类字段，更接近治理元数据，不会自动改变调用行为。
 
