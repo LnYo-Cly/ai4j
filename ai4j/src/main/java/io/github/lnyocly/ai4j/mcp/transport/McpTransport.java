@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.mcp.transport;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 /**
  * @Author cly
@@ -26,6 +27,14 @@ public interface McpTransport {
      * @return 发送结果
      */
     CompletableFuture<Void> sendMessage(McpMessage message);
+
+    /**
+     * Allows HTTP transports to mirror schema-designated request values into
+     * headers without changing the JSON-RPC message body.
+     */
+    default CompletableFuture<Void> sendMessage(McpMessage message, Map<String, String> requestHeaders) {
+        return sendMessage(message);
+    }
     
     /**
      * 设置消息接收处理器
@@ -50,6 +59,22 @@ public interface McpTransport {
      * @return 传输类型名称
      */
     String getTransportType();
+
+    /**
+     * HTTP transports can opt into a versioned wire profile. Existing
+     * transports remain legacy-compatible unless they override this method.
+     */
+    default McpProtocolProfile getProtocolProfile() {
+        return McpProtocolProfile.LEGACY_2025_03_26;
+    }
+
+    /**
+     * Resolves an automatic wire profile before the client sends its first
+     * application request. Existing transports keep their fixed profile.
+     */
+    default CompletableFuture<McpProtocolProfile> negotiateProtocol(String clientName, String clientVersion) {
+        return CompletableFuture.completedFuture(getProtocolProfile());
+    }
 
     /**
      * 消息处理器接口

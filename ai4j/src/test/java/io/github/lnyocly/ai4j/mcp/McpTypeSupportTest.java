@@ -1,7 +1,9 @@
 package io.github.lnyocly.ai4j.mcp;
 
+import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.mcp.config.McpServerConfig;
 import io.github.lnyocly.ai4j.mcp.entity.McpServerReference;
+import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import io.github.lnyocly.ai4j.mcp.transport.TransportConfig;
 import io.github.lnyocly.ai4j.mcp.util.McpTypeSupport;
 import org.junit.Assert;
@@ -47,6 +49,28 @@ public class McpTypeSupportTest {
         Assert.assertEquals(McpTypeSupport.TYPE_STDIO, config.getType());
         Assert.assertEquals("npx", config.getCommand());
         Assert.assertEquals(2, config.getArgs().size());
+    }
+
+    @Test
+    public void shouldCarryProtocolProfileFromJsonServerConfig() {
+        McpServerConfig serverConfig = JSON.parseObject("{\"mcpServers\":{\"legacy\":{"
+                + "\"type\":\"streamable_http\",\"url\":\"http://localhost:8080/mcp\","
+                + "\"protocolProfile\":\"LEGACY_2025_06_18\"}}}", McpServerConfig.class);
+
+        TransportConfig config = TransportConfig.fromServerInfo(serverConfig.getMcpServers().get("legacy"));
+
+        Assert.assertEquals(McpProtocolProfile.LEGACY_2025_06_18, config.getProtocolProfile());
+    }
+
+    @Test
+    public void directStreamableHttpServerInfoFactoryCarriesProtocolProfile() {
+        McpServerConfig serverConfig = JSON.parseObject("{\"mcpServers\":{\"legacy\":{"
+                + "\"type\":\"streamable_http\",\"url\":\"http://localhost:8080/mcp\","
+                + "\"protocolProfile\":\"LEGACY_2025_03_26\"}}}", McpServerConfig.class);
+
+        TransportConfig config = TransportConfig.streamableHttp(serverConfig.getMcpServers().get("legacy"));
+
+        Assert.assertEquals(McpProtocolProfile.LEGACY_2025_03_26, config.getProtocolProfile());
     }
 
     @Test

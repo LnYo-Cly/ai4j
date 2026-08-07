@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
 import lombok.Data;
 
 import java.util.List;
@@ -77,6 +78,12 @@ public class McpServerConfig {
          * 自定义HTTP头（用于认证等）
          */
         private Map<String, String> headers;
+
+        /**
+         * Streamable HTTP era selection. AUTO safely probes server/discover
+         * before falling back to an initialization-era server.
+         */
+        private McpProtocolProfile protocolProfile = McpProtocolProfile.AUTO;
 
         // Getters and Setters for new fields
         public String getType() {

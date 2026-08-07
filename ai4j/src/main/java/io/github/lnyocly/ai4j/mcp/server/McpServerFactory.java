@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.server;
 
+import io.github.lnyocly.ai4j.mcp.transport.McpProtocolProfile;
+
 import io.github.lnyocly.ai4j.mcp.util.McpTypeSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,7 @@ public class McpServerFactory {
         private McpAuthProvider authProvider;
         private boolean authEnabled = true;
         private String corsAllowedOrigin; // null = same-origin (no CORS header)
+        private McpProtocolProfile protocolProfile = McpProtocolProfile.MODERN_2026_07_28;
 
         public ServerConfig(String name, String version) {
             this.name = name;
@@ -119,6 +122,13 @@ public class McpServerFactory {
             return this;
         }
 
+        /** Selects modern stateless HTTP or the explicit legacy compatibility profile. */
+        public ServerConfig withProtocolProfile(McpProtocolProfile protocolProfile) {
+            this.protocolProfile = protocolProfile == null
+                    ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
+            return this;
+        }
+
         /**
          * Resolves the effective auth provider. When auth is enabled (the default) and no
          * custom provider was configured, a {@link BearerTokenAuthProvider} with a random
@@ -142,6 +152,7 @@ public class McpServerFactory {
         public McpAuthProvider getAuthProvider() { return authProvider; }
         public boolean isAuthEnabled() { return authEnabled; }
         public String getCorsAllowedOrigin() { return corsAllowedOrigin; }
+        public McpProtocolProfile getProtocolProfile() { return protocolProfile; }
 
         // Setters
         public void setName(String name) { this.name = name; }
@@ -151,6 +162,10 @@ public class McpServerFactory {
         public void setAuthProvider(McpAuthProvider authProvider) { this.authProvider = authProvider; }
         public void setAuthEnabled(boolean authEnabled) { this.authEnabled = authEnabled; }
         public void setCorsAllowedOrigin(String corsAllowedOrigin) { this.corsAllowedOrigin = corsAllowedOrigin; }
+        public void setProtocolProfile(McpProtocolProfile protocolProfile) {
+            this.protocolProfile = protocolProfile == null
+                    ? McpProtocolProfile.MODERN_2026_07_28 : protocolProfile;
+        }
 
         @Override
         public String toString() {
@@ -237,7 +252,7 @@ public class McpServerFactory {
         warnIfWildcardHost(config);
         return new StreamableHttpMcpServer(
                 config.getName(), config.getVersion(), config.getHost(), config.getPort(),
-                config.resolveAuthProvider(), config.getCorsAllowedOrigin());
+                config.resolveAuthProvider(), config.getCorsAllowedOrigin(), config.getProtocolProfile());
     }
 
     /**

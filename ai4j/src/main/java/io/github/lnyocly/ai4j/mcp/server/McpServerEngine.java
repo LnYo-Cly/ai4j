@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.mcp.server;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.mcp.McpHttpHeaderSupport;
 import io.github.lnyocly.ai4j.mcp.entity.McpError;
 import io.github.lnyocly.ai4j.mcp.entity.McpMessage;
 import io.github.lnyocly.ai4j.mcp.entity.McpPrompt;
@@ -71,22 +72,22 @@ public class McpServerEngine {
                 return handleInitialize(message, session);
             }
             if ("tools/list".equals(method)) {
-                return handleToolsList(message, session);
+                return handleToolsList(message, session, false);
             }
             if ("tools/call".equals(method)) {
-                return handleToolsCall(message, session);
+                return handleToolsCall(message, session, false);
             }
             if ("resources/list".equals(method)) {
-                return handleResourcesList(message, session);
+                return handleResourcesList(message, session, false);
             }
             if ("resources/read".equals(method)) {
-                return handleResourcesRead(message, session);
+                return handleResourcesRead(message, session, false);
             }
             if ("prompts/list".equals(method)) {
-                return handlePromptsList(message, session);
+                return handlePromptsList(message, session, false);
             }
             if ("prompts/get".equals(method)) {
-                return handlePromptsGet(message, session);
+                return handlePromptsGet(message, session, false);
             }
             if ("ping".equals(method) && pingEnabled) {
                 return handlePing(message);
@@ -103,6 +104,89 @@ public class McpServerEngine {
         return createErrorResponse(message.getId(), -32600, "Invalid Request");
     }
 
+    /**
+     * Processes the 2026-07-28 stateless contract. Legacy transports continue
+     * to use {@link #processMessage(McpMessage, McpServerSessionState)}.
+     */
+    public McpMessage processModernMessage(McpMessage message) {
+        if (message == null || !message.isRequest()) {
+            return createErrorResponse(message != null ? message.getId() : null, -32600, "Invalid Request");
+        }
+
+        McpMessage response;
+        String method = message.getMethod();
+        if ("server/discover".equals(method)) {
+            response = handleDiscover(message);
+        } else if ("tools/list".equals(method)) {
+            response = handleToolsList(message, null, true);
+        } else if ("tools/call".equals(method)) {
+            response = handleToolsCall(message, null, true);
+        } else if ("resources/list".equals(method)) {
+            response = handleResourcesList(message, null, true);
+        } else if ("resources/read".equals(method)) {
+            response = handleResourcesRead(message, null, true);
+        } else if ("prompts/list".equals(method)) {
+            response = handlePromptsList(message, null, true);
+        } else if ("prompts/get".equals(method)) {
+            response = handlePromptsGet(message, null, true);
+        } else {
+            response = createErrorResponse(message.getId(), -32601, "Method not found: " + method);
+        }
+        return decorateModernResponse(response, method);
+    }
+
+    private McpMessage handleDiscover(McpMessage message) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("supportedVersions", modernSupportedProtocolVersions());
+        result.put("capabilities", buildCapabilities());
+
+        McpResponse response = new McpResponse();
+        response.setId(message.getId());
+        response.setResult(result);
+        return response;
+    }
+
+    private List<String> modernSupportedProtocolVersions() {
+        List<String> versions = new ArrayList<String>();
+        for (String version : supportedProtocolVersions) {
+            if (version != null && version.compareTo("2026-07-28") >= 0) {
+                versions.add(version);
+            }
+        }
+        return versions;
+    }
+
+    private McpMessage decorateModernResponse(McpMessage response, String method) {
+        if (response == null || !response.isSuccessResponse()) {
+            return response;
+        }
+        Map<String, Object> result = asMap(response.getResult());
+        if (result == null) {
+            result = new HashMap<String, Object>();
+        }
+        result.put("resultType", "complete");
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("io.modelcontextprotocol/serverInfo", buildServerInfo());
+        result.put("_meta", metadata);
+        if ("server/discover".equals(method)) {
+            result.put("ttlMs", 3600000L);
+            result.put("cacheScope", "public");
+        } else if ("tools/list".equals(method) || "resources/list".equals(method)
+                || "resources/read".equals(method) || "prompts/list".equals(method)) {
+            result.put("ttlMs", 30000L);
+            result.put("cacheScope", "private");
+        }
+        response.setResult(result);
+        return response;
+    }
+
+    private Map<String, Object> buildServerInfo() {
+        Map<String, Object> serverInfo = new HashMap<String, Object>();
+        serverInfo.put("name", serverName);
+        serverInfo.put("version", serverVersion);
+        return serverInfo;
+    }
+
     private McpMessage handleInitialize(McpMessage message, McpServerSessionState session) {
         try {
             Map<String, Object> params = asMap(message.getParams());
@@ -110,17 +194,14 @@ public class McpServerEngine {
             String protocolVersion = resolveProtocolVersion(requestedVersion);
             Map<String, Object> capabilities = buildCapabilities();
 
-            Map<String, Object> serverInfo = new HashMap<String, Object>();
-            serverInfo.put("name", serverName);
-            serverInfo.put("version", serverVersion);
-
-            Map<String, Object> result = new HashMap<String, Object>();
-            result.put("protocolVersion", protocolVersion);
-            result.put("capabilities", capabilities);
-            result.put("serverInfo", serverInfo);
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("protocolVersion", protocolVersion);
+        result.put("capabilities", capabilities);
+        result.put("serverInfo", buildServerInfo());
 
             if (session != null) {
-                session.setInitialized(true);
+                session.setInitialized(false);
+                session.setProtocolVersion(protocolVersion);
                 session.getCapabilities().clear();
                 session.getCapabilities().putAll(capabilities);
             }
@@ -135,8 +216,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleToolsList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleToolsList(McpMessage message, McpServerSessionState session,
+                                       boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -155,8 +237,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleToolsCall(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleToolsCall(McpMessage message, McpServerSessionState session,
+                                       boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -193,8 +276,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleResourcesList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleResourcesList(McpMessage message, McpServerSessionState session,
+                                           boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -215,8 +299,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handleResourcesRead(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handleResourcesRead(McpMessage message, McpServerSessionState session,
+                                           boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -255,8 +340,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handlePromptsList(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handlePromptsList(McpMessage message, McpServerSessionState session,
+                                         boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -277,8 +363,9 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage handlePromptsGet(McpMessage message, McpServerSessionState session) {
-        McpMessage initError = requireInitialization(message, session);
+    private McpMessage handlePromptsGet(McpMessage message, McpServerSessionState session,
+                                        boolean statelessModernRequest) {
+        McpMessage initError = requireInitialization(message, session, statelessModernRequest);
         if (initError != null) {
             return initError;
         }
@@ -337,8 +424,10 @@ public class McpServerEngine {
         }
     }
 
-    private McpMessage requireInitialization(McpMessage message, McpServerSessionState session) {
-        if (initializationRequired && (session == null || !session.isInitialized())) {
+    private McpMessage requireInitialization(McpMessage message, McpServerSessionState session,
+                                             boolean statelessModernRequest) {
+        if (initializationRequired && !statelessModernRequest
+                && (session == null || !session.isInitialized())) {
             return createErrorResponse(message != null ? message.getId() : null, -32002, "Server not initialized");
         }
         return null;
@@ -367,12 +456,9 @@ public class McpServerEngine {
         capabilities.put("tools", toolsCapability);
 
         Map<String, Object> resourcesCapability = new HashMap<String, Object>();
-        resourcesCapability.put("subscribe", true);
-        resourcesCapability.put("listChanged", true);
         capabilities.put("resources", resourcesCapability);
 
         Map<String, Object> promptsCapability = new HashMap<String, Object>();
-        promptsCapability.put("listChanged", true);
         capabilities.put("prompts", promptsCapability);
 
         return capabilities;
@@ -409,6 +495,15 @@ public class McpServerEngine {
         }
 
         return mcpTools;
+    }
+
+    public Map<String, Object> getToolInputSchema(String toolName) {
+        for (McpToolDefinition tool : convertToMcpToolDefinitions()) {
+            if (toolName != null && toolName.equals(tool.getName())) {
+                return tool.getInputSchema();
+            }
+        }
+        return null;
     }
 
     private Map<String, Object> convertParametersToInputSchema(Tool.Function.Parameter parameters) {
