@@ -108,17 +108,15 @@ MCP 在仓库里的位置，不属于某个工具实现细节，而属于 AI 能
 
 看源码时最容易低估 `McpClient`。它不只是把消息发出去。
 
-### 3.1 `connect()` 做了完整握手
+### 3.1 `connect()` 取决于 transport profile
 
-`connect()` 当前会：
+`connect()` 先启动 transport，超时 `30s`；后续协议生命周期取决于 transport：
 
-1. 启动 transport，超时 `30s`
-2. 发送 `initialize`
-3. 协议版本固定为 `2025-03-26`
-4. 声明 client capabilities
-5. 再发送 `notifications/initialized`
+- `StreamableHttpTransport` 默认使用 `AUTO`。它只先发现代 `server/discover`；有效的发现结果选择无状态 `2026-07-28`，此时 `connect()` 不发送 `initialize`。
+- AUTO 仅在未识别的 `400`、`404` 或 `405` 时回退到 initialization-era Streamable HTTP。它不会因认证失败或可识别的现代错误降级，也不能自动识别 deprecated HTTP+SSE。
+- STDIO、显式 `sse` transport，以及显式选择 legacy Streamable HTTP profile 的 client，保留 session-era 流程：`initialize`、能力协商、`notifications/initialized`。
 
-也就是说，`connect()` 不是“底层 socket 通了”就算完成，而是 MCP 初始化真正走完才算完成。
+因此，`isInitialized()` 表示 client 已准备好调用，不应被理解成“所有 transport 都已经完成了一次初始化握手”。现代 HTTP 的协议详情和升级路径见 [Streamable HTTP](/docs/mcp/streamable-http)。
 
 ### 3.2 它默认会做缓存
 
@@ -128,7 +126,7 @@ MCP 在仓库里的位置，不属于某个工具实现细节，而属于 AI 能
 - `availableResources`
 - `availablePrompts`
 
-这解释了为什么它更像一个会话级 client，而不是每次都完全无状态请求。
+这是 client 侧的能力目录缓存，不等于现代 Streamable HTTP 在协议层创建了 session。现代 HTTP 请求本身仍是无状态的。
 
 ### 3.3 它默认会做心跳和重连
 

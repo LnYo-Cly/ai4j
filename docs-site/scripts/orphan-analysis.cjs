@@ -11,7 +11,7 @@ const idMatches = sidebarsContent.match(/'([a-z][a-z0-9-/]*)'/g) || [];
 const ids = new Set(idMatches.map(function (s) { return s.slice(1, -1); }));
 const sidebarIds = new Set();
 ids.forEach(function (i) { if (i.indexOf('/') !== -1) sidebarIds.add(i); });
-['intro', 'faq', 'glossary'].forEach(function (top) {
+['intro', 'faq', 'glossary', 'contributing'].forEach(function (top) {
     if (ids.has(top)) sidebarIds.add(top);
 });
 
@@ -41,3 +41,7 @@ console.log('ORPHANS (in docs/, not in sidebars):', orphans.length);
 orphans.forEach(function (o) { console.log('  ' + o); });
 console.log('MISSING (in sidebars, not in docs/):', missing.length);
 missing.forEach(function (m) { console.log('  ' + m); });
+
+if (orphans.length || missing.length) {
+    process.exitCode = 1;
+}

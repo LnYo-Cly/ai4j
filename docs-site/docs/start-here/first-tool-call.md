@@ -105,4 +105,4 @@ ChatCompletionResponse resp = chatService.chatCompletion(req);
 
 如果这里的 first tool call 没有触发，优先回看：
 
-- [Troubleshooting](/docs/start-here/troubleshooting)
+- [Troubleshooting](/docs/troubleshooting/overview)

@@ -48,7 +48,7 @@ mvn -pl ai4j-cli -am -DskipTests package
 当前最值得直接使用的产物是：
 
 ```text
-ai4j-cli/target/ai4j-cli-2.3.0-jar-with-dependencies.jar
+ai4j-cli/target/ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 为什么是这个文件，而不是普通 jar：
@@ -62,12 +62,14 @@ ai4j-cli/target/ai4j-cli-2.3.0-jar-with-dependencies.jar
 - 先构建 fat jar
 - 再直接 `java -jar`
 
+当前源码树的版本是 `2.4.3-SNAPSHOT`，因此上面的产物名使用该版本。使用已发布二进制时，请按实际 release 版本替换文件名；当前发布版依赖坐标见 [Release and Artifacts](/docs/reference/release-and-artifacts)。
+
 ---
 
 ## 3. 最小 one-shot
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar code `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `
@@ -99,7 +101,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar code `
 ## 4. 持续 CLI 会话
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar code `
+java -jar .\ai4j-cli\target\ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar code `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -136,7 +138,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar code `
 ## 5. TUI 入口的最短路径
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar tui `
+java -jar .\ai4j-cli\target\ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar tui `
   --provider zhipu `
   --protocol chat `
   --model glm-4.7 `
@@ -166,7 +168,7 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar tui `
 ## 6. ACP 入口的最短路径
 
 ```powershell
-java -jar .\ai4j-cli\target\ai4j-cli-2.3.0-jar-with-dependencies.jar acp `
+java -jar .\ai4j-cli\target\ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar acp `
   --provider openai `
   --protocol responses `
   --model gpt-5-mini `

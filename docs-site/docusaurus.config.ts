@@ -28,6 +28,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           include: [
             'intro.md',
+            'contributing.md',
             'glossary.md',
             'faq.md',
             'start-here/*.md',
@@ -80,6 +81,11 @@ const config: Config = {
       '@docusaurus/plugin-client-redirects',
       {
         redirects: [
+          // Consolidated getting-started pages; preserve existing public links.
+          {from: '/docs/start-here/five-minute-first-chat', to: '/docs/start-here/quickstart-java'},
+          {from: '/docs/start-here/first-chat', to: '/docs/core-sdk/model-access/chat'},
+          {from: '/docs/start-here/troubleshooting', to: '/docs/troubleshooting/overview'},
+
           // agent/ — placeholder pages with explicit migration targets
           {from: '/docs/agent/runtimes/codeact-custom-sandbox', to: '/docs/agent/codeact-custom-sandbox'},
           {from: '/docs/agent/runtimes/codeact-runtime', to: '/docs/agent/codeact-runtime'},
@@ -96,6 +102,8 @@ const config: Config = {
           {from: '/docs/agent/multi-provider-profiles', to: '/docs/coding-agent/provider-profiles'},
           {from: '/docs/agent/custom-agent-development', to: '/docs/agent/architecture'},
           {from: '/docs/agent/memory-management', to: '/docs/agent/memory-and-state'},
+          {from: '/docs/agent/skill', to: '/docs/agent/skills'},
+          {from: '/docs/agent/skills-overview', to: '/docs/agent/skills'},
 
           // core-sdk/chat/ → core-sdk/model-access/ and core-sdk/memory/
           {from: '/docs/core-sdk/chat/stream', to: '/docs/core-sdk/model-access/streaming'},
@@ -119,6 +127,12 @@ const config: Config = {
           {from: '/docs/core-sdk/mcp/tool-exposure-semantics', to: '/docs/mcp/tool-exposure-semantics'},
           {from: '/docs/core-sdk/mcp/publish-your-mcp-server', to: '/docs/mcp/build-your-mcp-server'},
           {from: '/docs/core-sdk/mcp/positioning-and-when-to-use', to: '/docs/mcp/use-cases-and-paths'},
+          {from: '/docs/core-sdk/mcp/streamable-http', to: '/docs/mcp/streamable-http'},
+
+          // Canonical Skill and Streamable HTTP entry points.
+          {from: '/docs/core-sdk/skills', to: '/docs/core-sdk/skills/overview'},
+          {from: '/docs/coding-agent/skill', to: '/docs/coding-agent/skills'},
+          {from: '/docs/mcp/streamable-http-transport', to: '/docs/mcp/streamable-http'},
 
           // core-sdk/ misc → canonical subdirectories
           {from: '/docs/core-sdk/embedding', to: '/docs/core-sdk/search-and-rag/embedding'},
@@ -174,7 +188,7 @@ const config: Config = {
           {from: '/docs/getting-started/coding-agent-cli-quickstart', to: '/docs/coding-agent/quickstart'},
           {from: '/docs/getting-started/multimodal-and-function-call', to: '/docs/start-here/first-tool-call'},
           {from: '/docs/getting-started/platforms-and-service-matrix', to: '/docs/core-sdk/platform-service-matrix'},
-          {from: '/docs/getting-started/troubleshooting', to: '/docs/start-here/troubleshooting'},
+          {from: '/docs/getting-started/troubleshooting', to: '/docs/troubleshooting/overview'},
           {from: '/docs/getting-started/modules-and-maven-central', to: '/docs/core-sdk/architecture-and-module-map'},
           {from: '/docs/getting-started/spring-boot-autoconfiguration', to: '/docs/spring-boot/auto-configuration'},
           {from: '/docs/getting-started/version-compatibility', to: '/docs/reference/version-compatibility'},
@@ -199,6 +213,20 @@ const config: Config = {
       },
     ],
   ],
+  themes: [
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        language: ['zh', 'en'],
+        indexDocs: true,
+        indexBlog: false,
+        docsRouteBasePath: 'docs',
+        searchResultLimits: 10,
+        searchResultContextMaxLength: 80,
+      },
+    ],
+  ],
   themeConfig: {
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
@@ -213,6 +241,10 @@ const config: Config = {
           sidebarId: 'tutorialSidebar',
           position: 'left',
           label: '文档',
+        },
+        {
+          type: 'search',
+          position: 'right',
         },
         {
           href: 'https://github.com/LnYo-Cly/ai4j',
@@ -239,6 +271,7 @@ const config: Config = {
         {
           title: '资源',
           items: [
+            {label: 'API Reference', to: '/docs/reference/api'},
             {label: '版本与兼容性', to: '/docs/reference/version-compatibility'},
             {label: '安全边界', to: '/docs/security/overview'},
             {label: '选型对比', to: '/docs/comparison/overview'},
@@ -251,6 +284,7 @@ const config: Config = {
           items: [
             {label: 'GitHub', href: 'https://github.com/LnYo-Cly/ai4j'},
             {label: 'Issues', href: 'https://github.com/LnYo-Cly/ai4j/issues'},
+            {label: '贡献指南', to: '/docs/contributing'},
           ],
         },
       ],

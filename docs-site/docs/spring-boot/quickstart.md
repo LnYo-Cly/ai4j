@@ -90,5 +90,5 @@ public String chatOnce(String userInput) throws Exception {
 
 如果是入口阶段问题，先回看：
 
-- [Start Here / Troubleshooting](/docs/start-here/troubleshooting)
+- [Troubleshooting](/docs/troubleshooting/overview)
 - [Configuration Reference](/docs/spring-boot/configuration-reference)

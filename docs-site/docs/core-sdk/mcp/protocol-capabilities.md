@@ -4,12 +4,12 @@
 
 AI4J 当前实现里的 MCP 协议面至少包括：
 
-- 初始化协商
+- 现代无状态 Streamable HTTP 与 legacy 初始化协商
 - Tool capability
 - Resource capability
 - Prompt capability
 - list_changed 通知
-- 与 transport 绑定的会话差异
+- 与 transport/profile 绑定的会话差异
 
 真正的协议入口在：
 
@@ -20,7 +20,7 @@ AI4J 当前实现里的 MCP 协议面至少包括：
 
 `McpServerEngine.processMessage(...)` 当前直接处理：
 
-- `initialize`
+- `server/discover`
 - `tools/list`
 - `tools/call`
 - `resources/list`
@@ -29,14 +29,19 @@ AI4J 当前实现里的 MCP 协议面至少包括：
 - `prompts/get`
 - `ping`
 
+对于 legacy transport，它还处理：
+
+- `initialize`
+- `notifications/initialized`
+
 这已经足够说明一件事：
 
 - MCP 在 AI4J 中不是“远程 Tool RPC”
 - Tool 只是其中一个 capability 面
 
-## 2. 初始化协商不是礼貌性握手
+## 2. 初始化只属于 legacy profile
 
-初始化时，`McpClient.initialize()` 会发送：
+在 STDIO、SSE 或显式 `LEGACY_2025_03_26` Streamable HTTP 下，`McpClient.initialize()` 会发送：
 
 - `protocolVersion = 2025-03-26`
 - `clientInfo`
@@ -66,19 +71,26 @@ AI4J 当前实现里的 MCP 协议面至少包括：
 
 所以初始化不是点缀，而是后续 capability 的门禁。
 
+当 Streamable HTTP 被显式设为 `MODERN_2026_07_28`，或默认 `AUTO` 的 `server/discover` 探测成功后，它不走这条链：没有 `initialize`、`notifications/initialized`、`Mcp-Session-Id` 或协议 session。每个 `POST /mcp` 都携带 `_meta`、`MCP-Protocol-Version`、`Mcp-Method`，并在需要时携带 `Mcp-Name` 和 schema 定义的 `Mcp-Param-*`。`isInitialized()` 在这个 profile 中表示 client ready，而不是已经握手。
+
+`AUTO` 只发送现代 `server/discover` 探测；只有未识别的 HTTP `400`、`404` 或 `405` 才会选择 initialization-era Streamable HTTP 并回到本节的初始化链。认证失败、可识别的现代 JSON-RPC error、或不合格的 discovery response 不会触发降级，因此 AUTO 不是通用的 MCP server 探测器。
+
+不要把 legacy 的初始化状态、session affinity 或 capability declaration 迁移到现代 endpoint。详见 [Streamable HTTP](/docs/mcp/streamable-http)。
+
 ## 3. 服务端返回的 capability 长什么样
 
-`McpServerEngine.buildCapabilities()` 当前会构建：
+`McpServerEngine.buildCapabilities()` 会构建 Tool、Resource 和 Prompt 目录相关的 capability 元数据。具体字段要按 profile 解释：
 
 - `tools`
   - 可选 `listChanged`
 - `resources`
-  - `subscribe = true`
   - `listChanged = true`
 - `prompts`
   - `listChanged = true`
 
 其中 `tools.listChanged` 是否为 `true`，取决于构造 `McpServerEngine` 时传入的 `toolsListChanged` 标志。
+
+旧实现的 capability metadata 中可能带有 `resources.subscribe` 标记；它不能作为现代 subscriptions 已实现的承诺。AI4J 目前不实现现代 subscription 或 MRTR 流程，现代 client 也不会宣称支持它们。不要基于该标记设计互操作流程。
 
 这说明 capability 不是全都固定不变，而会受具体 server transport 形态影响。
 
@@ -195,11 +207,13 @@ Prompt 的协议路径是：
 
 ### `StreamableHttpMcpServer`
 
-- 支持 `2025-03-26` 和 `2024-11-05`
-- 默认 `2025-03-26`
-- `initializationRequired = true`
-- `pingEnabled = false`
-- `toolsListChanged = true`
+- 默认 `AUTO`
+- AUTO 在同一个 `/mcp` endpoint 接受现代无状态请求和 initialization-era Streamable HTTP；modern 请求由 headers 或 `_meta` 识别
+- 现代请求使用无状态 `POST /mcp`，无初始化握手或协议 session，并验证现代 metadata 与 required HTTP headers
+- 现代请求支持 `server/discover` 和 response cache hints
+- 不支持 MRTR 或 subscriptions
+- `MODERN_2026_07_28` 可显式固定为 modern-only；具体 `LEGACY_*` profile 可固定 legacy-only
+- deprecated HTTP+SSE 保持显式 `sse` transport，不是 AUTO fallback
 
 这意味着 capability 不是单纯的业务声明，还和 transport 会话模型绑定。
 
@@ -244,4 +258,4 @@ Prompt 的协议路径是：
 
 ## 11. 这一页的结论
 
-> AI4J 里的 MCP capability 是“初始化协商 + Tool / Resource / Prompt + list_changed 通知 + transport 会话差异”的组合，不是单一的远程 tool 调用接口。Tool 只是模型执行链里最显眼的一层，不是 MCP 的全部。
+> AI4J 里的 MCP capability 是“profile-aware lifecycle + Tool / Resource / Prompt + list metadata”的组合，不是单一的远程 tool 调用接口。Tool 只是模型执行链里最显眼的一层，不是 MCP 的全部。
