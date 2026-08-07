@@ -186,7 +186,10 @@ public final class McpHttpHeaderSupport {
     }
 
     private static String encodeText(String value) {
-        boolean safe = value != null && !value.isEmpty() && value.equals(value.trim());
+        if (value == null) {
+            throw new IllegalArgumentException("x-mcp-header string value must not be null");
+        }
+        boolean safe = !value.isEmpty() && value.equals(value.trim());
         for (int i = 0; safe && i < value.length(); i++) {
             char c = value.charAt(i);
             safe = c >= 0x21 && c <= 0x7e;

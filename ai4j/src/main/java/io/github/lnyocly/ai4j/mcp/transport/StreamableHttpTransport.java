@@ -167,7 +167,8 @@ public class StreamableHttpTransport implements McpTransport {
                     Response response = httpClient.newCall(request).execute();
                     try {
                         if (!response.isSuccessful()) {
-                        String responseBody = response.body() == null ? "" : response.body().string();
+                        ResponseBody responseBodyObject = response.body();
+                        String responseBody = responseBodyObject == null ? "" : responseBodyObject.string();
                         if (dispatchHttpErrorResponse(responseBody)) {
                             return;
                         }
@@ -184,12 +185,12 @@ public class StreamableHttpTransport implements McpTransport {
                         }
                     }
                     
-                    String contentType = response.header("Content-Type", "");
+                    String contentType = response.header("Content-Type");
                     
-                    if (contentType.startsWith("text/event-stream")) {
+                    if (contentType != null && contentType.startsWith("text/event-stream")) {
                         // 服务器选择SSE流响应
                         handleSseResponse(response);
-                    } else if (contentType.startsWith("application/json")) {
+                    } else if (contentType != null && contentType.startsWith("application/json")) {
                         // 服务器选择单一JSON响应
                         handleJsonResponse(response);
                     } else {
@@ -214,9 +215,10 @@ public class StreamableHttpTransport implements McpTransport {
      * 处理JSON响应
      */
     private void handleJsonResponse(Response response) throws IOException {
-        if (response.body() == null) return;
+        ResponseBody body = response.body();
+        if (body == null) return;
 
-        String responseBody = response.body().string();
+        String responseBody = body.string();
         log.debug("收到JSON响应: {}", responseBody);
 
         // 如果响应体是空或只含空白，直接跳过
@@ -245,9 +247,14 @@ public class StreamableHttpTransport implements McpTransport {
     private void handleSseResponse(Response response) {
         log.debug("服务器升级到SSE流");
 
-        try {
+        ResponseBody body = response.body();
+        if (body == null) {
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(body.byteStream(), StandardCharsets.UTF_8))) {
             // 直接处理当前响应的SSE流
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response.body().byteStream()));
             StringBuilder dataBuilder = new StringBuilder();
             boolean hasData = false;
             String line;
@@ -426,42 +433,44 @@ public class StreamableHttpTransport implements McpTransport {
     }
 
     private static String readProbeResponse(Response response) throws IOException {
-        if (response.body() == null) {
+        ResponseBody body = response.body();
+        if (body == null) {
             return "";
         }
-        String contentType = response.header("Content-Type", "");
-        if (contentType.startsWith("text/event-stream")) {
-            return readFirstSseData(response);
+        String contentType = response.header("Content-Type");
+        if (contentType != null && contentType.startsWith("text/event-stream")) {
+            return readFirstSseData(body);
         }
-        return response.body().string();
+        return body.string();
     }
 
-    private static String readFirstSseData(Response response) throws IOException {
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8));
-        StringBuilder data = new StringBuilder();
-        boolean hasData = false;
-        String line;
-        while ((line = reader.readLine()) != null) {
-            if (line.isEmpty()) {
-                if (hasData) {
-                    return data.toString();
+    private static String readFirstSseData(ResponseBody body) throws IOException {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(body.byteStream(), StandardCharsets.UTF_8))) {
+            StringBuilder data = new StringBuilder();
+            boolean hasData = false;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty()) {
+                    if (hasData) {
+                        return data.toString();
+                    }
+                    continue;
                 }
-                continue;
+                if (line.startsWith("data:")) {
+                    String value = line.substring("data:".length());
+                    if (value.startsWith(" ")) {
+                        value = value.substring(1);
+                    }
+                    if (hasData) {
+                        data.append('\n');
+                    }
+                    data.append(value);
+                    hasData = true;
+                }
             }
-            if (line.startsWith("data:")) {
-                String value = line.substring("data:".length());
-                if (value.startsWith(" ")) {
-                    value = value.substring(1);
-                }
-                if (hasData) {
-                    data.append('\n');
-                }
-                data.append(value);
-                hasData = true;
-            }
+            return hasData ? data.toString() : "";
         }
-        return hasData ? data.toString() : "";
     }
 
     private McpProtocolProfile classifySuccessfulProbe(String responseBody) {
