@@ -147,6 +147,7 @@ const sidebars: SidebarsConfig = {
         'agent/system-prompt-vs-instructions',
         'agent/plugin-lifecycle-hooks',
         'agent/sandbox-spi',
+        'agent/cubesandbox-provider',
         'agent/agent-blueprint',
         {
           type: 'category',

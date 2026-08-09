@@ -31,7 +31,7 @@
 
 `Messages` 同时暴露两个入口，按你的需要选：
 
-```
+```text
 统一层   IChatService（OpenAI 格式）            ← 想跨 provider 统一调用 / 已有 OpenAI 链路
             │ 翻译（OpenAI ⇄ Anthropic），有损于通用语边界
 原生层 ★ IMessagesService（Anthropic 原生）     ← 系统本就说 Anthropic / 要零转换

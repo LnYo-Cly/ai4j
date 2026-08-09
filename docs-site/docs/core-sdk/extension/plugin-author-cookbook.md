@@ -220,7 +220,7 @@ ai4j-cli extension check weather-pack --enable \
 
 ```xml
 <dependency>
-  <groupId>com.example.ai4j</groupId>
+  <groupId>io.github.lnyocly</groupId>
   <artifactId>weather-ai4j-plugin</artifactId>
   <version>1.0.0</version>
 </dependency>

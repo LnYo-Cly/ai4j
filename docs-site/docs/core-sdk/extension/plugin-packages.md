@@ -26,7 +26,7 @@ AI4J 现在有两类容易混淆的扩展：
 
 ```xml
 <dependency>
-  <groupId>com.example</groupId>
+  <groupId>io.github.lnyocly</groupId>
   <artifactId>weather-ai4j-plugin</artifactId>
   <version>1.0.0</version>
 </dependency>

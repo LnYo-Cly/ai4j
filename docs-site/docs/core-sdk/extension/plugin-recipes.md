@@ -306,7 +306,7 @@ ai4j-cli extension plan repo-policy-pack --enable \
 ### Maven
 
 <dependency>
-  <groupId>com.example.ai4j</groupId>
+  <groupId>io.github.lnyocly</groupId>
   <artifactId>weather-ai4j-plugin</artifactId>
   <version>1.0.0</version>
 </dependency>
