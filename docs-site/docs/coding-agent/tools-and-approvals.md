@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Tools 与审批机制
 description: 拆解 Coding Agent 的内置工具(bash/read_file/write_file/apply_patch)装配与执行器路由、审批 decorator 拦截位置，以及审批与 workspace 边界为何必须分开理解。
+tags: [concept]
 ---
 
 # Tools 与审批机制

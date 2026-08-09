@@ -1,6 +1,7 @@
 ---
 title: Plugin Author Cookbook
 description: 面向第三方插件作者的动手指南：用 CLI 生成最小插件项目，稳定 manifest 与公共 ID 命名规则，写结构化 tool input schema，把 apply() 保持为轻量注册函数，完成 manifest/资源/schema 校验与发布前声明。
+tags: [how-to]
 ---
 
 # Plugin Author Cookbook

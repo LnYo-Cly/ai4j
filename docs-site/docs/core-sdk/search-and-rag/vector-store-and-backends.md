@@ -1,6 +1,7 @@
 ---
 title: Vector Store and Backends
 description: 讲清 AI4J VectorStore 统一契约如何收口 Pinecone/Qdrant/Milvus/PgVector/Redis 五个后端：dataset 是硬边界，capabilities() 显式暴露 returnStoredVector/metadataLookup 差异，统一调用但不抹平存储现实。
+tags: [concept]
 ---
 
 # Vector Store and Backends

@@ -2,6 +2,7 @@
 sidebar_position: 2
 title: 平台与服务矩阵
 description: 以 AiService 实现为准列出各 provider 对 Chat、Responses、Messages、Embedding、Rerank、Audio、Realtime、Image 的支持矩阵。
+tags: [reference]
 ---
 
 # 平台与服务矩阵

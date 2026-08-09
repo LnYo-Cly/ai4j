@@ -1,6 +1,7 @@
 ---
 title: Hybrid Retrieval
 description: 讲清 AI4J HybridRetriever 的本质是多检索器结果融合器而非固定 Dense+BM25 套餐：默认 RRF 按排名融合，用稳定 key 去重，融合后 score 语义变化以及无 getHybridRagService 便利入口的设计原因。
+tags: [concept]
 ---
 
 # Hybrid Retrieval

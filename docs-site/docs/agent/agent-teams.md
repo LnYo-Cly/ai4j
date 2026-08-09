@@ -2,6 +2,7 @@
 sidebar_position: 11
 title: Agent Teams
 description: "ai4j Agent Teams 是带控制面的团队运行时：planner 拆任务、task board 维护依赖与状态、成员注入 team_* 工具协作、synthesizer 汇总最终答案。"
+tags: [concept]
 ---
 
 # Agent Teams

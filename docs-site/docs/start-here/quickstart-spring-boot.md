@@ -1,6 +1,7 @@
 ---
 title: Quickstart for Spring Boot
 description: Spring Boot 项目接入 AI4J 的最短路径：引入 starter、最小 application.yml 配置、AiService Bean 注入，并给出 controller 发出第一条模型请求的完整示例。
+tags: [how-to]
 ---
 
 # Quickstart for Spring Boot

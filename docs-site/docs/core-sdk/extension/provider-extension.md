@@ -1,6 +1,7 @@
 ---
 title: Provider Extension
 description: 讲清 AI4J provider extension：新增模型平台是显式工厂分发扩展，必须同时触碰 PlatformType、Configuration、AiService、DefaultAiServiceRegistry 与 Spring Boot starter，provider 支持矩阵显式维护而非自动发现。
+tags: [concept]
 ---
 
 # Provider Extension

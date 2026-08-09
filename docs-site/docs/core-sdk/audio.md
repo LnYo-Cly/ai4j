@@ -2,6 +2,7 @@
 sidebar_position: 31
 title: Audio 接口
 description: 介绍 AI4J 音频 service 面：TTS、转录、翻译的统一入口、OpenAI 实现、请求对象校验以及资源与失败语义等接入要点。
+tags: [concept]
 ---
 
 # Audio 接口

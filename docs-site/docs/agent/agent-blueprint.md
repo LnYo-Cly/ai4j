@@ -2,6 +2,7 @@
 sidebar_position: 9
 title: Agent Blueprint YAML
 description: "用声明式 YAML 描述单 Agent 的模型、指令、工具、memory、compact、sandbox 与 workflow 参数，支持加载、校验与模板化，并由宿主提供依赖后创建可运行 Agent。"
+tags: [reference]
 ---
 
 # Agent Blueprint YAML

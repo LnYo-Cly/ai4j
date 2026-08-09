@@ -2,6 +2,7 @@
 sidebar_position: 12
 title: A2A Protocol (Agent-to-Agent)
 description: "Discover agents, exchange JSON-RPC tasks, stream SSE updates, and expose your ai4j agent as an A2A service with optional auth — JDK stdlib only."
+tags: [integration]
 ---
 
 # A2A Protocol (Agent-to-Agent)

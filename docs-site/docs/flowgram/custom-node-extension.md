@@ -2,6 +2,7 @@
 sidebar_position: 13
 title: Flowgram 自定义节点扩展
 description: 只讲后端 executor 这一半：FlowGramNodeExecutor 接口、runtime 识别与注册时机、getType 协议名稳定性、execute 前 runtime 已完成的输入解析与上下文字段。
+tags: [how-to]
 ---
 
 # Flowgram 自定义节点扩展

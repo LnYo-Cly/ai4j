@@ -1,6 +1,7 @@
 ---
 title: Model Extension
 description: 讲清 AI4J model extension：在不新增 PlatformType 的前提下，把新模型能力吸收进现有 provider 与现有契约，主战场是请求对象和 provider 适配层，强调把 provider 差异收敛在 provider service 内部而非泄漏到业务层。
+tags: [concept]
 ---
 
 # Model Extension

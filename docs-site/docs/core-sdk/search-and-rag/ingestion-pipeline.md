@@ -1,6 +1,7 @@
 ---
 title: Ingestion Pipeline
 description: 讲清 AI4J IngestionPipeline 这条 RAG 入库编排层：source 加载、文本清洗、chunk、metadata 富化、批量 embedding 与 vector upsert 如何串成统一流水线，以及 documentId/contentHash 稳定性与可插拔扩展位点。
+tags: [concept]
 ---
 
 # Ingestion Pipeline

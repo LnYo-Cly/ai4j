@@ -2,6 +2,7 @@
 sidebar_position: 9
 title: Trace 与可观测性
 description: 讲解 ai4j-agent 的 trace 与可观测性：traceExporter 才是开关、默认全记录需脱敏截断、事件如何折叠成 span、各 exporter 适用边界，以及与 OTel/Langfuse/FlowGram 的真实关系。
+tags: [concept]
 ---
 
 # Trace 与可观测性

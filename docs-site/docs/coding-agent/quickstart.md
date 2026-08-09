@@ -2,6 +2,7 @@
 sidebar_position: 2
 title: Coding Agent 快速开始
 description: 用最短路径把 ai4j-cli 跑起来：构建 fat jar、跑通 one-shot 与持续会话，并核对 session、workspace、provider/model 状态以完成最小验证。
+tags: [how-to]
 ---
 
 # Coding Agent 快速开始

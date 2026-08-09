@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: Feature Map
 description: AI4J 功能地图：用成熟度标记（stable/advanced/preview/experimental）列出每个能力的状态、所属模块、适合场景与继续阅读入口，帮助按需取用最小模块。
+tags: [reference]
 ---
 
 # Feature Map

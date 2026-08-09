@@ -1,6 +1,7 @@
 ---
 title: SearXNG Web Search
 description: 给回答链补上公网实时搜索能力的增强方案，讲解 SearXNG 配置、与 RAG 的边界及降级策略。
+tags: [integration]
 ---
 
 # SearXNG Web Search

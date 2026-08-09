@@ -2,6 +2,7 @@
 sidebar_position: 5
 title: Agent Session Runtime
 description: 讲解 AgentSession 长程运行态容器：sessionId、独立 memory、event log、snapshot/restore 与 AgentSessionStore，以及它与 memory/compact、Coding Agent/CLI 的边界和生产实现建议。
+tags: [concept]
 ---
 
 # Agent Session Runtime

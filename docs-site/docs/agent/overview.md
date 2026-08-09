@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Agent Overview
 description: ai4j-agent 总览：它在 Core SDK 之上提供多步推理、工具闭环、memory、workflow、trace 与多 Agent 协作，何时该用 Agent、最小心智模型、runtime 选型与模块边界。
+tags: [concept]
 ---
 
 # Agent Overview

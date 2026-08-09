@@ -1,6 +1,7 @@
 ---
 title: Why Coding Agent
 description: 解释 Coding Agent 在通用 Agent 之上叠加的 5 层本地交付语义（workspace、coding tools、多回合 loop、session/compact/restore、CLI/TUI/ACP 宿主），界定它和普通 Agent 的真实边界。
+tags: [concept]
 ---
 
 # Why Coding Agent

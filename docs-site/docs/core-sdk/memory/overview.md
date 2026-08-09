@@ -1,6 +1,7 @@
 ---
 title: "Memory 总览"
 description: "总览 AI4J Core SDK 会话事实层：ChatMemory 记录多轮对话与工具结果，存储与裁剪策略分离，可同时投影为 Chat 与 Responses 输入，支持快照恢复与摘要压缩。"
+tags: [concept]
 ---
 
 # Memory 总览

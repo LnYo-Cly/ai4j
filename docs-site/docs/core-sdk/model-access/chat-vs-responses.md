@@ -1,6 +1,7 @@
 ---
 title: Chat vs Responses
 description: 从输入心智、provider 覆盖、工具集成、流式语义和多模态投影等维度对比 Chat 与 Responses 两条主线，帮你完成选型。
+tags: [concept]
 ---
 
 # Chat vs Responses

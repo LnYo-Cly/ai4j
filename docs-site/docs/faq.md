@@ -2,6 +2,7 @@
 sidebar_position: 998
 title: FAQ
 description: AI4J 文档站常见问题收敛：第一次该看哪里、SDK 与 AI 基座的关系，以及 Chat/Responses、Function Call/Tool、MCP/Agent、Skill/Tool、ACP/MCP 等概念辨析与路径判断。
+tags: [reference]
 ---
 
 # FAQ

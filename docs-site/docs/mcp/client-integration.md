@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: MCP Client 接入（单服务模式）
 description: 聚焦单服务模式：McpClient 的真实生命周期、connect() 与 AUTO/legacy profile 的差异、缓存与心跳重连语义，以及 callTool 的失败语义和常见排障路径。
+tags: [how-to]
 ---
 
 # MCP Client 接入（单服务模式）

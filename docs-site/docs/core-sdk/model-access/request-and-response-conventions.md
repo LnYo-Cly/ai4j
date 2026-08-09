@@ -1,6 +1,7 @@
 ---
 title: Request and Response Conventions
 description: 统一讲解请求构造与返回读取约定，区分本地注册字段与 provider payload 字段、extraBody 角色及常见接入误区。
+tags: [concept]
 ---
 
 # Request and Response Conventions

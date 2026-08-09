@@ -2,6 +2,7 @@
 sidebar_position: 3
 title: MCP 传输类型详解（STDIO / SSE / Streamable HTTP）
 description: 对比 STDIO、SSE、Streamable HTTP 三种 MCP transport 的适用场景、优缺点与默认连接行为，讲清 TransportConfig 统一配置平面与选型责任归属。
+tags: [concept]
 ---
 
 # MCP 传输类型详解（STDIO / SSE / Streamable HTTP）

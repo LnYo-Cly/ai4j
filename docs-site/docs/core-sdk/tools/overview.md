@@ -1,6 +1,7 @@
 ---
 title: "Tools 总览"
 description: "解析 AI4J 工具子系统四层结构：工具声明、请求级白名单、provider schema 投影与本地执行回流，阐明 ToolUtil 作为调度中心的完整执行链与能力边界。"
+tags: [concept]
 ---
 
 # Tools 总览

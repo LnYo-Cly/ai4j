@@ -1,6 +1,7 @@
 ---
 title: DeepSeek Stream Search RAG
 description: 组合流式输出、公网搜索与私域 RAG 的回答链方案，讲解职责分层、引用证据策略与升级判断。
+tags: [concept]
 ---
 
 # DeepSeek Stream Search RAG

@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: Agentic 工作流平台快速开始
 description: 最短路径确认 starter 装配、task API 暴露、无 LLM 与带 LLM 两条最小流程跑通 validate -> run -> result -> report 链路，附 demo 默认模型配置踩坑与排障顺序。
+tags: [how-to]
 ---
 
 # Agentic 工作流平台快速开始

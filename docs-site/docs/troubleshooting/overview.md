@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Troubleshooting
 description: AI4J 生产排障入口。不列出所有异常栈，而是按能力层把问题定位到正确页面和检查项：模型请求失败查 provider key、Chat 能用 Responses 不能用查 provider 支持、Streaming 没增量查消费方式。
+tags: [how-to]
 ---
 
 # Troubleshooting

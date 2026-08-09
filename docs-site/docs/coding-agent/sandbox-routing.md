@@ -2,6 +2,7 @@
 sidebar_position: 11
 title: Sandbox Routing
 description: 说明 ai4j-coding 如何把 Coding Agent 的 bash exec 路由到 live SandboxSession（P3 首切片），覆盖当前 API、未路由的工具、与审批的关系以及非敏感 sandbox 摘要的安全边界。
+tags: [integration]
 ---
 
 # Sandbox Routing

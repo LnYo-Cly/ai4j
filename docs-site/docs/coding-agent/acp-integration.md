@@ -2,6 +2,7 @@
 sidebar_position: 9
 title: ACP 集成
 description: 讲清 ACP 作为 headless host 接入 IDE/桌面壳的真实链路：newline-delimited JSON-RPC、session 生命周期 RPC、available_commands_update、session/load replay 与服务端反向 session/request_permission。
+tags: [integration]
 ---
 
 # ACP 集成

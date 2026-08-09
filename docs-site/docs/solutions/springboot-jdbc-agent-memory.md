@@ -1,6 +1,7 @@
 ---
 title: Spring Boot JDBC Agent Memory
 description: 把 Agent 会话持久化到 JDBC 的方案，覆盖工具结果、runtime state 与压缩摘要的跨实例恢复。
+tags: [integration]
 ---
 
 # Spring Boot + JDBC Agent Memory

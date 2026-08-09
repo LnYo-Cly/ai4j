@@ -2,6 +2,7 @@
 title: Version Compatibility
 sidebar_position: 1
 description: AI4J 的版本评估与升级前检查：基线、模块兼容矩阵、Java 8 兼容说明、provider 能力差异与升级顺序建议。
+tags: [reference]
 ---
 
 # Version Compatibility

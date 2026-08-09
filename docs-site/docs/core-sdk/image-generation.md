@@ -2,6 +2,7 @@
 sidebar_position: 32
 title: Image 接口（生成与流式）
 description: 讲解 IImageService 图像生成与流式监听用法，覆盖 OpenAI 与豆包适配、请求字段、事件模型和常见接入问题。
+tags: [how-to]
 ---
 
 # Image 接口（生成与流式）

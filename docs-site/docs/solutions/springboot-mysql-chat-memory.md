@@ -1,6 +1,7 @@
 ---
 title: Spring Boot MySQL Chat Memory
 description: 基于 Spring Boot + MySQL 的多轮聊天会话持久化方案，讲解 JdbcChatMemory 接入、sessionId 绑定与裁剪策略。
+tags: [integration]
 ---
 
 # Spring Boot + MySQL Chat Memory

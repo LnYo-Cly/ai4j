@@ -1,6 +1,7 @@
 ---
 title: Streaming
 description: 讲解 Chat 与 Responses 两条流式主线的聚合模型：SseListener 与 ResponseSseListener 维护的状态、tool call 聚合与终止条件差异。
+tags: [concept]
 ---
 
 # Streaming

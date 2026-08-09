@@ -2,6 +2,7 @@
 title: API Reference
 sidebar_position: 1
 description: Versioned Javadoc entry points for each AI4J Maven module, indexed by capability for Core SDK, Agent, Coding Agent, and extension SPI Java types and signatures.
+tags: [reference]
 ---
 
 # API Reference

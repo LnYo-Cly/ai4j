@@ -1,6 +1,7 @@
 ---
 title: Extension 总览
 description: 建立 AI4J 扩展面心智：provider/service 走 PlatformType+AiService+Registry 代码主链，HTTP 并发与连接治理走底层 SPI，第三方插件包走 ai4j-extension-api+ServiceLoader+ExtensionRegistry，扩展面并不对称。
+tags: [concept]
 ---
 
 # Extension 总览

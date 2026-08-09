@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: Flowgram API 与运行时
 description: 面向外部调用者的 task 控制面 contract：validate/run/report/result/cancel 五个 HTTP 入口、DTO 经 adapter 与 facade 的变形，以及真正改变外部行为的配置项。
+tags: [reference]
 ---
 
 # Flowgram API 与运行时

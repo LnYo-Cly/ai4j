@@ -1,6 +1,7 @@
 ---
 title: Agent Quickstart
 description: 用最小但真实的链路帮你跑通第一条 Agent 主线：AgentBuilder 默认装配、ReActRuntime step loop、AgentModelClient 协议适配、AgentMemory 回灌与 AgentResult 收口。
+tags: [how-to]
 ---
 
 # Agent Quickstart

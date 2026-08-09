@@ -2,6 +2,7 @@
 sidebar_position: 2
 title: 最小 ReAct Agent
 description: 剖析最小但完整的 ReAct Agent 运行闭环：AgentBuilder 默认装配、ReActRuntime 与 BaseAgentRuntime 的关系、工具声明与执行边界，以及空工具 Agent 何时成立。
+tags: [concept]
 ---
 
 # 最小 ReAct Agent

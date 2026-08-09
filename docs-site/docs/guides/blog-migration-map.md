@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: 历史博客迁移映射
 description: 把 AI4J 历史 CSDN 博客文章映射到结构化文档，方便持续维护与版本同步。覆盖 Spring Boot + OpenAI 快速接入、DeepSeek/Qwen/Llama 本地模型接入等历史内容与对应新文档路径。
+tags: [reference]
 ---
 
 # 历史博客迁移映射

@@ -1,6 +1,7 @@
 ---
 title: Rerank
 description: 讲清 AI4J rerank 层：它夹在 retrieval 与 context assembly 之间做排序修正，默认 NoopReranker 不远程重排，ModelReranker 靠 provider 返回 index 映射，finalTopK 在 rerank 之后裁剪，returnDocuments 可能改写命中内容。
+tags: [concept]
 ---
 
 # Rerank

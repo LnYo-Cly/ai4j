@@ -1,6 +1,7 @@
 ---
 title: Messages（Anthropic 原生）
 description: 讲解 IMessagesService 原生 Anthropic 协议主线：原生 in/out 零转换、coding-plan 接入、thinking 映射、鉴权与异常处理。
+tags: [concept]
 ---
 
 # Messages（Anthropic 原生）

@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Compact 与 Checkpoint 机制
 description: 讲清 ai4j-coding 的 compact/checkpoint 管线：tool-result microcompact、checkpoint 总结、aggressive compact、fallback 与 auto-compact circuit breaker 的职责划分和调优入口。
+tags: [concept]
 ---
 
 # Compact 与 Checkpoint 机制

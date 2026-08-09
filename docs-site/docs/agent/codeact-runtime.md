@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: CodeAct 运行时
 description: "CodeActRuntime 用 code/final JSON 协议替代 native tool-calling，把模型生成的可执行代码纳入主循环，由 CodeExecutor 桥接工具并决定收口路径。"
+tags: [concept]
 ---
 
 # CodeAct 运行时

@@ -1,6 +1,7 @@
 ---
 title: "Memory and Tool Boundaries"
 description: "厘清 ChatMemory、Tool、MCP 三层职责边界：memory 只保存会话事实，工具审批与副作用治理归 runtime；说明为何不该把执行控制耦合进 memory 抽象。"
+tags: [concept]
 ---
 
 # Memory and Tool Boundaries

@@ -1,6 +1,7 @@
 ---
 title: Dynamic Workflow Plugin
 description: 讲清 ai4j-plugin-dynamic-workflow 样板插件：模型把复杂任务写成确定性 workflow script，插件只返回 host-mediated 请求 envelope，实际执行由 ai4j-agent runtime 可选接管，内置 Nashorn 执行器默认关闭 Java interop。
+tags: [integration]
 ---
 
 # Dynamic Workflow Plugin

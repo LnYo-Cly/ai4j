@@ -1,6 +1,7 @@
 ---
 title: Spring Boot Auto Configuration
 description: 深入解析 ai4j-spring-boot-starter 的真实装配链、初始化顺序与条件装配边界，理解统一 Configuration 与失败传播路径。
+tags: [integration]
 ---
 
 # Spring Boot Auto Configuration

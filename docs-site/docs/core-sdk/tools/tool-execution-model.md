@@ -1,6 +1,7 @@
 ---
 title: "Tool Execution Model"
 description: "拆解 AI4J 工具执行模型四段链：发现注册、请求级白名单、provider 返回 tool call、本地调用路由与执行，讲清 built-in/Function/MCP 优先级与结果文本化回流。"
+tags: [concept]
 ---
 
 # Tool Execution Model

@@ -1,6 +1,7 @@
 ---
 title: Citations and Trace
 description: 区分 AI4J 的 citation 与 trace 两条链：citation 由 DefaultRagContextAssembler 基于最终命中生成，trace 记录检索与 rerank 中间状态，generation usage 与 judge 分数需上层显式回填。
+tags: [concept]
 ---
 
 # Citations and Trace

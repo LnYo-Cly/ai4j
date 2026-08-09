@@ -1,6 +1,7 @@
 ---
 title: Online Search
 description: 讲清 AI4J Online Search 的真实定位：它不是统一检索框架，而是包裹 IChatService 的联网搜索增强层，用最后一条消息做 query 调 SearXNG，把结果 JSON 直接拼进用户 prompt，并会原地改写请求。
+tags: [concept]
 ---
 
 # Online Search

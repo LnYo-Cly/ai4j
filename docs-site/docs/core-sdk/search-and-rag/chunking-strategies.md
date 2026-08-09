@@ -1,6 +1,7 @@
 ---
 title: Chunking Strategies
 description: 讲清 AI4J 默认 RecursiveTextChunker 的真实行为与边界：它只填充 documentId/content/chunkIndex，不自动生成 chunkId、页码或章节元数据，以及 chunk 边界稳定性如何决定后续检索去重与引用质量。
+tags: [concept]
 ---
 
 # Chunking Strategies

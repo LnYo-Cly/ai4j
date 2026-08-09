@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: 构建并对外发布 MCP Server
 description: 讲解 AI4J 如何用 @McpService/@McpTool 注解、adapter 和 McpServerEngine 把 Java 能力发布成 MCP Server，覆盖 Tool/Resource/Prompt 三类能力链与三种服务端 transport 的真实差异。
+tags: [how-to]
 ---
 
 # 构建并对外发布 MCP Server
