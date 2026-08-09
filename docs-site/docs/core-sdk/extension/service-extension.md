@@ -108,7 +108,7 @@ service extension 不要求每个 provider 都马上支持，但你必须明确�
 - 这层并没有形成“新增 service 后自动进主线”的能力
 
 :::note
-不要把 `AiServiceFactory` 误解成 service 插件总线。
+所以不要把 `AiServiceFactory` 误解成 service 插件总线。
 :::
 
 ## 6. 一个更稳的判断方式

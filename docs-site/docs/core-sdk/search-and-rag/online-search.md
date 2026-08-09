@@ -190,7 +190,7 @@ chatCompletion.getMessages().get(chatLen - 1)
 
 ## 8. 这一层最真实的安全与质量边界
 
-:::warning[安全与质量边界]
+:::warning 安全与质量边界
 因为它本质上是把网页搜索结果原样注入 prompt，所以你要非常清楚它和离线知识库的差异：
 
 - 结果新鲜，但稳定性弱

@@ -413,7 +413,7 @@ Team 工具返回的是 JSON 字符串，里面通常至少包含：
 - `AgentTeamToolExecutor`
 
 :::note
-不要直接在 planner prompt 里”口头要求成员协作”，那只是提示，不是能力面。
+不要直接在 planner prompt 里“口头要求成员协作”，那只是提示，不是能力面。
 :::
 
 ## 10. 调试 Team runtime 时，先查这些源码点

@@ -227,7 +227,7 @@ InMemoryAgentMemory memory = new InMemoryAgentMemory(compressor);
 | `MemoryCompressor` | 想兼容旧 memory 写路径 |
 
 :::note 自定义实现必须可诊断
-最低要求：自定义实现必须让”保留了什么、丢了什么”可诊断。否则长程 Agent 出问题时很难定位。
+最低要求：自定义实现必须让“保留了什么、丢了什么”可诊断。否则长程 Agent 出问题时很难定位。
 :::
 
 ## 11. 当前限制

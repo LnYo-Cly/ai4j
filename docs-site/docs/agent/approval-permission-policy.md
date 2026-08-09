@@ -144,7 +144,7 @@ AgentRuntime
 - `ToolExecutor` 真正执行工具。
 
 :::note
-不要把业务授权逻辑塞进 sanitizer。sanitizer 只应该回答”这个调用像不像一个可执行调用”，不应该回答”业务上允不允许”。
+不要把业务授权逻辑塞进 sanitizer。sanitizer 只应该回答“这个调用像不像一个可执行调用”，不应该回答“业务上允不允许”。
 :::
 
 ## 7. 与插件、Guardrail、SubAgent 的关系

@@ -1,4 +1,4 @@
-﻿---
+---
 sidebar_position: 4
 title: 接入第三方 MCP（全部方式）
 description: 把第三方 MCP 在 AI4J 里的 5 种集成深度拆开：单 client 直连、配置驱动 gateway、运行时动态增删、用户级隔离与 Agent 暴露白名单，附常见踩坑。

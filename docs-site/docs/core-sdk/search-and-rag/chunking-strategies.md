@@ -70,7 +70,7 @@ List<RagChunk> chunk(RagDocument document, String content)
 这里最关键的事实是：
 
 :::note
-默认 chunker 并不会自动填充 `chunkId`、`pageNumber`、`sectionTitle`、`metadata`。
+**默认 chunker 并不会自动填充 `chunkId`、`pageNumber`、`sectionTitle`、`metadata`。**
 :::
 
 而 `RagChunk` 明明是支持这些字段的：

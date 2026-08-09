@@ -468,7 +468,7 @@ IllegalStateException: node not found: <id>
 这是当前 StateGraph 最需要主动记住的失败语义之一。
 
 :::warning maxSteps 不是成功保障
-如果你把 `maxSteps` 当成功保障，就会误判”流程完成了”，但其实只是被保险丝截断了。
+如果你把 `maxSteps` 当成功保障，就会误判“流程完成了”，但其实只是被保险丝截断了。
 :::
 
 ### 10.4 节点输出为空时，不会自动重写下一跳 request

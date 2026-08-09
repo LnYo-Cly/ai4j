@@ -122,7 +122,7 @@ HTTP SPI 的意义就在于，它把这种底层策略差异从“业务代码�
 - `IllegalStateException("No implementation found for ...")`
 
 :::warning
-如果你做了 fat jar、shade、重打包，或者错误排除了资源文件，starter 可能会在初始化 `OkHttpClient` 前就启动失败。
+所以如果你做了 fat jar、shade、重打包，或者错误排除了资源文件，starter 可能会在初始化 `OkHttpClient` 前就启动失败。
 :::
 
 ### 自定义 SPI 实现过度全局化

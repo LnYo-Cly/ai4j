@@ -158,7 +158,7 @@ context.resolveReadablePath(path)
 - 发网络请求
 - 产生长时间运行的后台进程
 
-所以 `bash` 不是”轻量文件工具”，而是宿主能力面最大的 built-in 之一。
+所以 `bash` 不是“轻量文件工具”，而是宿主能力面最大的 built-in 之一。
 :::
 
 ## 7. `readOnlyCodingToolNames()` 的边界要说清楚
@@ -223,7 +223,7 @@ readOnlyCodingToolNames()
 - OS / container 级沙箱
 
 :::warning
-尤其是 `bash`，当前更接近”受 workspace 路径约束的宿主 shell”，不是隔离级执行沙箱。
+尤其是 `bash`，当前更接近“受 workspace 路径约束的宿主 shell”，不是隔离级执行沙箱。
 :::
 
 ## 11. 最稳的使用建议

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: Migration Guide
+description: AI4J 文档站从旧 getting-started/ai-basics/guides 结构收敛到按模块组织的 canonical 结构。说明迁移规则：不直接删除强内容、先迁稳定结论、加 legacy notice、以 sidebar 为正式阅读路径。
 ---
 
 # Migration Guide
