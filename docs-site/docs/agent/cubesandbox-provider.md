@@ -184,7 +184,7 @@ AI4J 默认访问 envd 端口 `49983`，这是 CubeSandbox envd/BYOI/files 文�
 mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test
 ```
 
-这个测试会启动本地 HTTP server stub，通过 `envdBaseUrl` 覆盖将控制面 (POST /sandboxes, DELETE /sandboxes/{id}, POST /sandboxes/{id}/connect) 和数据面 (envd /process.Process/Start) 请求都路由到同一 stub，验证：Create + Execute + Destroy 完整流程、Bearer/Basic/X-Access-Token 鉴权、Connect envelope 帧解析、base64 stdout 解码、exitCode 提取、Connect end-stream 错误帧处理、partial envelope 失败路径、secret 过滤（apiKey 不出现在 create payload/metadata/labels 中）、connect-existing 模式（close 不删除远端 sandbox）、config 合并、provider 选择、env var 兼容（CUBE_* / E2B_*）、envdBaseUrl 覆盖、envdPort 配置、timeout 合并、spec 字段保护等。它不需要真实密钥。
+这个测试会启动本地 HTTP server stub，通过 `envdBaseUrl` 覆盖将控制面 (`POST /sandboxes`, `DELETE /sandboxes/{id}`, `POST /sandboxes/{id}/connect`) 和数据面 (`envd /process.Process/Start`) 请求都路由到同一 stub，验证：Create + Execute + Destroy 完整流程、Bearer/Basic/X-Access-Token 鉴权、Connect envelope 帧解析、base64 stdout 解码、exitCode 提取、Connect end-stream 错误帧处理、partial envelope 失败路径、secret 过滤（apiKey 不出现在 create payload/metadata/labels 中）、connect-existing 模式（close 不删除远端 sandbox）、config 合并、provider 选择、env var 兼容（CUBE_* / E2B_*）、envdBaseUrl 覆盖、envdPort 配置、timeout 合并、spec 字段保护等。它不需要真实密钥。
 
 真实 CubeSandbox smoke 是显式 opt-in：
 
