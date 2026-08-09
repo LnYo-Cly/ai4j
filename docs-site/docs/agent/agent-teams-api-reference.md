@@ -1,5 +1,7 @@
 ---
 sidebar_position: 15
+title: Agent Teams API Reference
+description: "以源码视角导航 Agent Teams runtime：AgentTeamBuilder 字段如何映射到运行链、task board 状态机、team 工具面、持久化恢复与扩展点。"
 ---
 
 # Agent Teams API Reference
@@ -265,12 +267,14 @@ runtime 会先调用 planner 生成 `AgentTeamPlan`，再把 plan 交给 `AgentT
 - 成员默认拿到较完整的协作上下文
 - 团队通信和 team tools 默认打开
 
+:::tip
 如果你的业务更偏强约束而不是高吞吐，通常至少要重新评估：
 
 - `continueOnMemberError`
 - `enableMemberTeamTools`
 - `includeMessageHistoryInDispatch`
 - `taskClaimTimeoutMillis`
+:::
 
 ## 6. Team 工具面：成员如何主动协作
 
@@ -408,7 +412,9 @@ Team 工具返回的是 JSON 字符串，里面通常至少包含：
 - `AgentTeamToolRegistry`
 - `AgentTeamToolExecutor`
 
+:::note
 不要直接在 planner prompt 里“口头要求成员协作”，那只是提示，不是能力面。
+:::
 
 ## 10. 调试 Team runtime 时，先查这些源码点
 

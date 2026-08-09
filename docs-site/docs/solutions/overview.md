@@ -1,3 +1,8 @@
+---
+title: Solutions 总览
+description: AI4J 场景组合入口总览，按常见业务问题给出方案选型路线、模块组合与回到主线的判断。
+---
+
 # Solutions 总览
 
 `Solutions` 是 AI4J 的场景组合入口。它不重新定义 SDK 能力，而是把 Core SDK、Spring Boot、RAG、MCP、Agent、FlowGram 等能力按常见问题组合成可复制路径。

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: Agent Skills
+description: "Explains ai4j-agent Skills: how the SDK discovers and scopes SKILL.md, the workspace-safe vs user-home roots, request-scoped AgentSkillResolver for tenants, and why Skills never bypass tool authorization."
 ---
 
 # Agent Skills
@@ -48,7 +50,9 @@ Agent agent = Agents.react()
         .build();
 ```
 
+:::warning 不要用于多租户服务
 Do not use `skillsIncludingUserHome(...)` for a tenant service. It can expose the server process's local Skill roots, which are not tenant policy.
+:::
 
 ## Use a host resolver for services
 
@@ -127,7 +131,9 @@ AgentRequest request = AgentRequest.builder()
 agent.run(request);
 ```
 
+:::warning selectedSkills 不是授权凭据
 Treat `selectedSkills` as a request from your UI, not proof of authorization. The resolver must return only Skills the authenticated tenant and user may activate. Unknown, disabled, or unauthorized names must not be added to the scope.
+:::
 
 ## Prompt and tool boundary
 

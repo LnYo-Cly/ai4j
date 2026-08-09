@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: 配置体系
+description: 讲清 Coding Agent 配置的三层（全局 provider 资产、全局 MCP 定义、工作区绑定）、逐字段求值优先级，以及哪些改动会触发当前 session runtime 重绑。
 ---
 
 # 配置体系
@@ -425,7 +427,9 @@ ACP 模式不是把 CLI 配置能力全部复制一遍。
 - env / property
 - 全局 profile 资产
 
+:::warning 凭证不要写进仓库
 这个边界是有意设计的，因为把敏感凭证和 repo 绑定混在一起风险很高。
+:::
 
 ---
 

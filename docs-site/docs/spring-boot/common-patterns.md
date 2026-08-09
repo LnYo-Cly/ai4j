@@ -1,3 +1,8 @@
+---
+title: Spring Boot Common Patterns
+description: 归纳 Spring Boot 接入 AI4J 的推荐分层与工程组织模式，明确 Web、AI4J 调用与 Tool、RAG、Workflow 的责任边界。
+---
+
 # Spring Boot Common Patterns
 
 这一页讲高频工程组织方式，不讲 API 语法。
@@ -52,7 +57,9 @@ config
 - 同一层既处理 Web 参数，又处理检索、memory、模型调用
 - RAG、Tool、Workflow 没有显式目录或责任边界
 
+:::warning 这类写法短期能跑长期难维护
 这类写法短期能跑，长期很难维护，也不利于架构演进和代码治理。
+:::
 
 ## 5. 适合放在这里的关键对象
 

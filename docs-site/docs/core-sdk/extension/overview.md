@@ -1,3 +1,8 @@
+---
+title: Extension 总览
+description: 建立 AI4J 扩展面心智：provider/service 走 PlatformType+AiService+Registry 代码主链，HTTP 并发与连接治理走底层 SPI，第三方插件包走 ai4j-extension-api+ServiceLoader+ExtensionRegistry，扩展面并不对称。
+---
+
 # Extension 总览
 
 `extension` 这一章讲的不是“哪里能塞自定义代码”，而是 **AI4J 当前把哪些变化看成基座内正式扩展，哪些变化仍然要求你进入工厂和配置主链改代码**。
@@ -131,7 +136,9 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 
 ### `PlatformType.getPlatform(...)` 的容错并不严格
 
+:::warning
 这个方法在找不到匹配值时会回退到 `OPENAI`。这对快速 demo 可能方便，但对正式扩展不安全，因为拼错 provider 名字时可能不会立即暴露。
+:::
 
 相比之下，`DefaultAiServiceRegistry.resolvePlatformType(...)` 遇到未知平台会直接抛出 `Unsupported ai platform ...`，这才是更适合正式配置的行为。
 

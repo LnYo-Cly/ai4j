@@ -1,3 +1,8 @@
+---
+title: Why AI4J
+description: 回答在 Java 项目里为什么可以考虑 AI4J：面向 Java 8+ 的渐进式 AI SDK 取舍、可按阶段取用的模块分层，以及与 Spring AI、LangChain4j 的差异和适合场景。
+---
+
 # Why AI4J
 
 AI4J 是一套面向 `Java 8+` 的 AI SDK。它最核心的目标是降低 Java 项目接入 AI 的成本：

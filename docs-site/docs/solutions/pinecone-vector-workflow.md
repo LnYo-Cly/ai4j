@@ -1,3 +1,8 @@
+---
+title: Pinecone Vector Workflow
+description: 在 Pinecone 后端上搭建入库、检索、rerank 工作流的标准方案，讲解 namespace 知识隔离与统一抽象边界。
+---
+
 # Pinecone Vector Workflow
 
 这个方案回答的是：当你已经确定底层向量库就是 Pinecone，AI4J 里最自然的工作流应该怎么搭。

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: SubAgent 与 Handoff Policy
+description: 剖析 SubAgent 如何把另一个 Agent 包装成受治理工具：StaticSubAgentRegistry 暴露 schema、SubAgentToolExecutor 拦截 handoff，以及 HandoffPolicy 的深度、超时、deny/fallback 与 session 模式语义。
 ---
 
 # SubAgent 与 Handoff Policy

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+title: Agent 使用路径与场景选择
+description: 按系统结构帮你选抽象层：ReAct 是默认起点，CodeAct 换中间表示，Workflow 加显式节点，SubAgent 做受控委派，Teams 引入协作模型；附决策表与常见误判。
 ---
 
 # Agent 使用路径与场景选择

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+title: 前端工作流如何在后端执行
+description: 把一条 workflow 从编辑态到执行态的完整管线拆成六个 stage：JSON 导出、归一化、runtime plugin 调用编排、controller/facade/runtime 分层执行与读侧投影。
 ---
 
 # 前端工作流如何在后端执行

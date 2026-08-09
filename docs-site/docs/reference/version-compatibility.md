@@ -1,5 +1,7 @@
 ---
+title: Version Compatibility
 sidebar_position: 1
+description: AI4J 的版本评估与升级前检查：基线、模块兼容矩阵、Java 8 兼容说明、provider 能力差异与升级顺序建议。
 ---
 
 # Version Compatibility
@@ -79,4 +81,6 @@ Spring Boot starter 的职责是配置绑定、自动装配和 Bean 生命周期
 | 改 Agent / Coding Agent | 对应模块测试 + CLI 或 session 层 smoke |
 | 改 FlowGram starter | starter 测试 + demo 或 task API smoke |
 
+:::danger 不要把密钥写入仓库
 如果 live provider 测试需要真实密钥，应显式走 live profile，不要把密钥写入仓库。
+:::

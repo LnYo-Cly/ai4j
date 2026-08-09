@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Prompt 组装与上下文来源
+description: 拆解送进模型的 5 类 prompt 来源（base system prompt、workspace prompt、instructions、session memory、当前 turn）与独立的 tool schemas，帮你定位行为偏差时该按什么顺序排查。
 ---
 
 # Prompt 组装与上下文来源

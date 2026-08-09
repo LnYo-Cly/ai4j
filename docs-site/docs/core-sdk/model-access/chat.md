@@ -1,3 +1,8 @@
+---
+title: Chat
+description: 解析 AI4J Chat 主线的请求对象、自动 tool loop、passThroughToolCalls、SseListener 流式聚合和多模态接入等运行时行为。
+---
+
 # Chat
 
 `Chat` 是 AI4J 当前最成熟、provider 覆盖最广、也最容易先跑通的一条模型访问主线。

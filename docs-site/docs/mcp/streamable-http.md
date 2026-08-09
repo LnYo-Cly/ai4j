@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+title: Streamable HTTP
+description: "Streamable HTTP transport for AI4J MCP: AUTO profile discovery, modern vs initialization-era peers, protocol headers, publishing a server, and upgrade paths."
 ---
 
 # Streamable HTTP
@@ -75,7 +77,9 @@ The modern server supports `server/discover` and includes cache hints in its res
 
 Treat these as protocol hints, not permission to share tenant-specific data across callers. A host or proxy remains responsible for cache keys, authentication, and invalidation policy.
 
+:::note MRTR and subscriptions are not supported
 AI4J does not currently claim support for modern multi-round-trip requests (MRTR) or subscriptions. Do not advertise or depend on those capabilities when integrating a modern peer.
+:::
 
 ## Pin an existing session-era server
 

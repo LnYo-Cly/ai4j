@@ -1,3 +1,8 @@
+---
+title: Flowgram Architecture
+description: 拆解 Flowgram 前端画布加 AI4J 后端执行层的四层架构：画布、适配、Spring Boot 平台接入与执行引擎，讲清编辑态与执行态 schema 的差异和默认安全姿态。
+---
+
 # Flowgram Architecture
 
 `Flowgram` 的架构重点，不是单讲 `Flowgram.ai` 前端库本身，而是讲“前端画布 + AI4J 后端执行层”如何组成一个真正可运行的工作流平台。
@@ -346,12 +351,14 @@ private final ConcurrentMap<String, TaskRecord> tasks = new ConcurrentHashMap<St
 
 ### 7.2 Access checker 默认永远放行
 
+:::warning 默认安全姿态是开放的
 `DefaultFlowGramAccessChecker.isAllowed(...)` 直接返回 `true`。
 
 这说明当前 starter 的默认定位是：
 
 - 先把平台接起来
 - 安全策略通过替换 bean 自行加固
+:::
 
 ### 7.3 Ownership 是有抽象层的
 

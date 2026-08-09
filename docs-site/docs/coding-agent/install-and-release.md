@@ -1,3 +1,8 @@
+---
+title: Install and Release
+description: 分清 Coding Agent 的构建、Maven 发布与终端 CLI 安装三层，说明当前仓库已提供 fat jar 与平台 launcher，并明确 fat jar 为最稳分发基线及 release 缺口。
+---
+
 # Install and Release
 
 这一页讲的不是“怎么配置 provider”，而是另一个更现实的问题：
@@ -231,10 +236,12 @@ ai4j-cli-<version>/
 
 ### 不该做
 
+:::danger launcher 不该做的事
 - 把 provider 或 model 写死在脚本里
 - 在脚本里偷偷生成仓库级配置
 - 把用户密钥硬写进 launcher
 - 把复杂业务判断塞进安装层
+:::
 
 原因很简单：
 

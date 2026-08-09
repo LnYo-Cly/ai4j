@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: CodeAct：自定义代码沙箱执行器
+description: "讲清 CodeAct 的代码执行边界与 CodeExecutor 扩展点：何时替换默认执行器、如何处理工具桥接，以及生产环境必须补齐的隔离与安全约束。"
 ---
 
 # CodeAct：自定义代码沙箱执行器
@@ -231,7 +233,9 @@ return error == null || error.isEmpty();
 
 也就是说，runtime 判定成功失败的第一依据不是有没有抛异常，而是你返回的 `error`。
 
+:::warning
 如果你吃掉异常但忘了填 `error`，runtime 会把这次执行误判为成功。
+:::
 
 ### 5.2 `stdout` 和 `result` 不是一回事
 
@@ -485,11 +489,15 @@ runtime 会误判成功。
 
 ### 13.4 开了工具桥接，但没做白名单和参数治理
 
+:::danger
 这相当于把宿主能力直接暴露给模型生成代码。
+:::
 
 ### 13.5 以为默认执行器已经是生产安全沙箱
 
+:::danger
 它不是。
+:::
 
 ## 14. 推荐阅读源码顺序
 

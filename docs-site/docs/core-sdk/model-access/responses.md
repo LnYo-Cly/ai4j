@@ -1,3 +1,8 @@
+---
+title: Responses
+description: 解析 AI4J Responses 主线的 ResponseRequest 语义、工具解析基座、payload 构建、流式事件聚合与 runtime 友好的运行模型。
+---
+
 # Responses
 
 `Responses` 是 AI4J 当前更现代、更结构化的一条模型访问主线。

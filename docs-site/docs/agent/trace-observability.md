@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+title: Trace 与可观测性
+description: 讲解 ai4j-agent 的 trace 与可观测性：traceExporter 才是开关、默认全记录需脱敏截断、事件如何折叠成 span、各 exporter 适用边界，以及与 OTel/Langfuse/FlowGram 的真实关系。
 ---
 
 # Trace 与可观测性
@@ -66,7 +68,9 @@ if (traceExporter != null) {
 
 因此默认行为更偏向研发调试，而不是生产最小暴露。
 
+:::warning 默认全记录，上线前必须脱敏
 如果直接把它开到线上而不加 masker / truncate，prompt、tool args、tool output 都可能被完整记录。
+:::
 
 ### 1.4 Trace 默认是 best-effort，不会阻断主流程
 

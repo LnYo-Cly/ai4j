@@ -1,5 +1,7 @@
 ---
 sidebar_position: 14
+title: Contribute to AI4J
+description: How to contribute to AI4J — reporting issues, proposing changes, running docs-site local checks and Java module tests, and following the security disclosure policy.
 ---
 
 # Contribute to AI4J
@@ -40,4 +42,6 @@ The [contribution guide](https://github.com/LnYo-Cly/ai4j/blob/main/CONTRIBUTING
 
 ## Security and conduct
 
+:::warning Report security issues privately
 Do not disclose a security vulnerability in a public issue. Follow the repository's [security policy](https://github.com/LnYo-Cly/ai4j/blob/main/SECURITY.md) instead. Participation is governed by the [Code of Conduct](https://github.com/LnYo-Cly/ai4j/blob/main/CODE_OF_CONDUCT.md).
+:::

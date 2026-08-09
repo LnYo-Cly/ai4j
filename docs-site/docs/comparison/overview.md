@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: Comparison and Positioning
+description: AI4J 与 Spring AI、LangChain4j、AgentScope Java、Pi Agent 等方案的定位对比。不做拉踩，而是讲清 AI4J 专注 Java 8+ 多模块 SDK、渐进接入能力和更轻的按需取用路径，帮你判断何时选 AI4J。
 ---
 
 # Comparison and Positioning

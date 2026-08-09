@@ -1,3 +1,8 @@
+---
+title: Spring Boot Bean Extension
+description: 讲解在 Spring Boot 中沿 AI4J 抽象层覆盖默认 Bean 的时机、层级选择与典型覆盖点，避免绕开统一容器模型。
+---
+
 # Spring Boot Bean Extension
 
 默认自动装配只是起点。真正的业务系统通常会覆盖一部分 Bean，但应该沿着 AI4J 的抽象层去接管。
@@ -61,7 +66,9 @@ public RagContextAssembler ragContextAssembler() {
 }
 ```
 
+:::tip encoding 不确定时不要硬猜
 不确定 encoding 时，不需要硬猜；保留模型名或只传 budget，让 SDK 使用默认估算并设置更保守的 budget。
+:::
 
 ## 5. 工程原则
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+title: Tools 与审批机制
+description: 拆解 Coding Agent 的内置工具(bash/read_file/write_file/apply_patch)装配与执行器路由、审批 decorator 拦截位置，以及审批与 workspace 边界为何必须分开理解。
 ---
 
 # Tools 与审批机制
@@ -117,8 +119,10 @@ sidebar_position: 6
 - 相对路径会落到 workspace root 下
 - 绝对路径会被直接标准化后使用
 
+:::warning write_file 可写出工作区
 这意味着它和 `read_file` 的边界并不完全对称。  
 如果调用方传了绝对路径，当前实现确实可能写到工作区之外。
+:::
 
 这也是为什么：
 

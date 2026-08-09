@@ -1,3 +1,8 @@
+---
+title: "Tool Whitelist and Security"
+description: "讲清 AI4J 工具安全两层防线：请求级 functions/mcpServices 白名单与 BuiltInToolContext 工作区读写边界，剖析 bash 等高风险 built-in 与待补的审批沙箱治理。"
+---
+
 # Tool Whitelist and Security
 
 工具安全里最重要的原则不是“模型能不能调”，而是“默认让模型看见什么、让它能碰到什么”。
@@ -145,6 +150,7 @@ context.resolveReadablePath(path)
 
 这是当前最需要保守对待的 built-in 工具。
 
+:::danger bash 是宿主能力面最大的 built-in
 它的 `cwd` 会被限制在 workspace 内，但命令本身仍然可以：
 
 - 读写工作区文件
@@ -153,6 +159,7 @@ context.resolveReadablePath(path)
 - 产生长时间运行的后台进程
 
 所以 `bash` 不是“轻量文件工具”，而是宿主能力面最大的 built-in 之一。
+:::
 
 ## 7. `readOnlyCodingToolNames()` 的边界要说清楚
 
@@ -215,7 +222,9 @@ readOnlyCodingToolNames()
 - 高风险动作审计
 - OS / container 级沙箱
 
+:::warning
 尤其是 `bash`，当前更接近“受 workspace 路径约束的宿主 shell”，不是隔离级执行沙箱。
+:::
 
 ## 11. 最稳的使用建议
 

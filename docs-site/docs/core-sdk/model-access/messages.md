@@ -1,3 +1,8 @@
+---
+title: Messages（Anthropic 原生）
+description: 讲解 IMessagesService 原生 Anthropic 协议主线：原生 in/out 零转换、coding-plan 接入、thinking 映射、鉴权与异常处理。
+---
+
 # Messages（Anthropic 原生）
 
 `Messages` 是 AI4J 里与 `Chat`（OpenAI Chat Completions）、`Responses`（OpenAI Responses）并列的第三条模型访问主线，走的是 **Anthropic Messages 协议**（`POST /v1/messages`）。
@@ -31,7 +36,7 @@
 
 `Messages` 同时暴露两个入口，按你的需要选：
 
-```
+```text
 统一层   IChatService（OpenAI 格式）            ← 想跨 provider 统一调用 / 已有 OpenAI 链路
             │ 翻译（OpenAI ⇄ Anthropic），有损于通用语边界
 原生层 ★ IMessagesService（Anthropic 原生）     ← 系统本就说 Anthropic / 要零转换
@@ -112,7 +117,9 @@ AgentResult result = agent.newSession().run("Introduce yourself in one sentence.
 | 智谱 Coding Plan | `https://open.bigmodel.cn/api/anthropic/` | glm-5.1 / glm-5.2 |
 | MiniMax Coding Plan | `https://api.minimaxi.com/anthropic/` | MiniMax-M3（国际 `api.minimax.io/anthropic`） |
 
-> 注意：同一个 coding-plan key 打到该厂家的 **OpenAI 兼容端点**（如智谱 `api/paas/v4`）会报"余额不足"——这不是 key 坏了，是 coding-plan 配额只挂在 Anthropic 入口上。必须走 `api/anthropic`。
+:::warning
+注意：同一个 coding-plan key 打到该厂家的 **OpenAI 兼容端点**（如智谱 `api/paas/v4`）会报"余额不足"——这不是 key 坏了，是 coding-plan 配额只挂在 Anthropic 入口上。必须走 `api/anthropic`。
+:::
 
 ## 7. thinking → reasoningContent
 

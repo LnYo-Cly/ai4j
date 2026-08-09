@@ -2,6 +2,7 @@
 sidebar_label: OpenAI-compatible / TroveBox
 title: OpenAI-compatible 与 TroveBox 中转平台配置
 slug: /start-here/openai-compatible-and-trovebox
+description: OpenAI-compatible 中转平台（含 TroveBox）如何在 AI4J 里配置：普通 Java 与 Spring Boot 单/多 profile 写法、endpoint path 判断，以及常见 401/404 排查。
 ---
 
 # OpenAI-compatible 与 TroveBox 中转平台配置
@@ -83,7 +84,9 @@ AI4J 的 `OpenAiConfig` 默认使用：
 | Responses | `v1/responses` |
 | Image | `v1/images/generations` |
 
+:::warning endpoint path 配置
 如果中转平台要求不同路径，再显式配置对应字段，例如 `chat-completion-url` 或 `embedding-url`。不要在 `api-host` 里同时塞 base URL 和完整 path，避免拼接出错。
+:::
 
 ## 5. 常见错误
 

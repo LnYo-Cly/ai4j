@@ -1,5 +1,7 @@
 ---
 sidebar_position: 31
+title: Audio 接口
+description: 介绍 AI4J 音频 service 面：TTS、转录、翻译的统一入口、OpenAI 实现、请求对象校验以及资源与失败语义等接入要点。
 ---
 
 # Audio 接口
@@ -102,17 +104,21 @@ sidebar_position: 31
 
 ### TTS 流由调用方负责关闭
 
-因为 `textToSpeech(...)` 返回的是可继续读取的 `InputStream`，所以谁消费这个流，谁就应该关闭它。  
+:::warning
+因为 `textToSpeech(...)` 返回的是可继续读取的 `InputStream`，所以谁消费这个流，谁就应该关闭它。
 否则底层 HTTP response 会保持占用状态。
+:::
 
 ### 非成功响应通常返回 `null`
 
-不论是 TTS、Transcription 还是 Translation，当前实现都没有构造统一错误对象。  
+:::warning
+不论是 TTS、Transcription 还是 Translation，当前实现都没有构造统一错误对象。
 这意味着业务层需要自己决定：
 
 - 是否把 `null` 转成异常
 - 是否做重试
 - 是否记录 provider 原始失败信息
+:::
 
 ### 大文件处理责任不在 SDK 内
 

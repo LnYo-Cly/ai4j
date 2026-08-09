@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+title: Provider Profile 与模型切换
+description: 说明 provider profile 作为可切换、可回退的 provider runtime binding 的真实语义，覆盖 activeProfile/effectiveProfile 解析、/provider 与 /model 命令及 session runtime 重绑行为。
 ---
 
 # Provider Profile 与模型切换
@@ -431,7 +433,9 @@ ACP 当前也支持：
 
 ### 16.5 把 API Key 固化进仓库
 
+:::warning
 profile 可以保存 key 字段，但实际团队使用中仍应优先让敏感值走环境变量或本地受控配置。
+:::
 
 ---
 

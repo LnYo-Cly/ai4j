@@ -1,3 +1,8 @@
+---
+title: "Chat Memory"
+description: "深入 ChatMemory 契约：ChatMemoryItem 承载多模态与工具事实、InMemory 与 Jdbc 两种存储、窗口与摘要策略、快照恢复，及投影到 Chat 与 Responses 的共享基座。"
+---
+
 # Chat Memory
 
 `ChatMemory` 是 AI4J 基座里一个非常核心、但容易被低估的对象。  
@@ -170,12 +175,15 @@ assistant 的 tool calls 和 tool outputs 是分开记录的：
 
 ### 把 `InMemoryChatMemory` 当成跨进程持久层
 
+:::warning
 它只适合单 JVM 生命周期内的会话，不适合服务重启后恢复。
+:::
 
 ### 业务层自己手工 `subList`
 
-更稳的方式是显式使用 `ChatMemoryPolicy`。  
-业务层手工截列表很容易破坏 system、summary、tool output 之间的结构。
+:::warning
+更稳的方式是显式使用 `ChatMemoryPolicy`。业务层手工截列表很容易破坏 system、summary、tool output 之间的结构。
+:::
 
 ### 以为 memory 会自动治理工具
 

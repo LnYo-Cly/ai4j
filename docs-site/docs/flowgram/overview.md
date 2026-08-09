@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: FlowGram 总览
+description: AI4J FlowGram 是围绕 FlowGram.ai 画布的 Java 后端执行层，把前端画出的工作流图转换成可验证、可运行、可取消、可观测的异步 task。
 ---
 
 # FlowGram 总览
@@ -70,6 +72,7 @@ LLM 节点可以复用 Agent runtime，但 FlowGram 不会把整个工作流重�
 
 ## 上线前要确认什么
 
+:::warning 默认配置面向 demo，不是生产就绪
 默认配置更适合 demo 和内网联调，正式上线前应确认：
 
 - API 是否有鉴权或网关保护。
@@ -78,6 +81,7 @@ LLM 节点可以复用 Agent runtime，但 FlowGram 不会把整个工作流重�
 - HTTP / CODE / TOOL / KNOWLEDGE 节点是否有白名单、超时和审计。
 - 前端编辑态 schema 到后端执行态 schema 的转换是否稳定。
 - cancel、失败重试、异常展示和日志脱敏是否覆盖。
+:::
 
 更多检查项见 [Production Checklist](/docs/operations/production-checklist)。
 

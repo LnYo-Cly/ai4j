@@ -1,3 +1,8 @@
+---
+title: Online Search
+description: 讲清 AI4J Online Search 的真实定位：它不是统一检索框架，而是包裹 IChatService 的联网搜索增强层，用最后一条消息做 query 调 SearXNG，把结果 JSON 直接拼进用户 prompt，并会原地改写请求。
+---
+
 # Online Search
 
 AI4J 当前的 `online search` 不是一套通用检索框架，也不是把网页抓取结果自动接进 `Retriever` 体系。  
@@ -185,12 +190,14 @@ chatCompletion.getMessages().get(chatLen - 1)
 
 ## 8. 这一层最真实的安全与质量边界
 
+:::warning 安全与质量边界
 因为它本质上是把网页搜索结果原样注入 prompt，所以你要非常清楚它和离线知识库的差异：
 
 - 结果新鲜，但稳定性弱
 - 数据开放，但噪音和 prompt injection 风险更高
 - 没有 chunk 级结构控制
 - 没有独立 rerank/trace 机制
+:::
 
 也就是说，Online Search 更适合解决：
 

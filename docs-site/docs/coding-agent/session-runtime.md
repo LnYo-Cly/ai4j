@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: 会话、流式与进程
+description: 说明 Coding Agent session runtime 如何把一次本地代码任务做成可持续、可中断、可恢复的工作会话：CodingSession、outer loop、事件账本、进程面与 headless 事件流。
 ---
 
 # 会话、流式与进程

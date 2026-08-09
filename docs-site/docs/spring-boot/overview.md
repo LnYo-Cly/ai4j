@@ -1,3 +1,8 @@
+---
+title: Spring Boot 总览
+description: ai4j-spring-boot-starter 的总览定位：何时使用、最小接入路径、装配能力与扩展点，以及上线前检查清单。
+---
+
 # Spring Boot 总览
 
 `ai4j-spring-boot-starter` 用来把 Core SDK 接入 Spring Boot 的配置、Bean 生命周期和业务分层。它不是一套新的 AI 实现，也不是必须先使用的入口；如果你不是 Spring 项目，直接从 [Core SDK](/docs/core-sdk/overview) 开始即可。

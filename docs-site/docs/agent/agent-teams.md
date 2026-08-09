@@ -1,5 +1,7 @@
 ---
 sidebar_position: 11
+title: Agent Teams
+description: "ai4j Agent Teams 是带控制面的团队运行时：planner 拆任务、task board 维护依赖与状态、成员注入 team_* 工具协作、synthesizer 汇总最终答案。"
 ---
 
 # Agent Teams
@@ -537,10 +539,12 @@ Agent Teams 的持久化能力很有用，但很容易被误解成“可暂停�
 
 这三项合起来，会让默认 Team 更偏“尽量继续推进”，而不是“任何异常立即终止”。
 
+:::note
 尤其要注意 `failOnUnknownMember = false`：
 
 - 当 planner 指向未知成员时，`resolveMember(...)` 会回退到第一个成员
 - 这能提升容错，但也可能掩盖 planner 分配错误
+:::
 
 ### 9.3 团队连续性来源
 
@@ -644,12 +648,14 @@ AgentTeamResult result = team.run("Review the latest release candidate and summa
 
 ### 11.4 hook 失败不会中断主流程
 
+:::note
 所有 `AgentTeamHook` 调用都吞掉异常。
 
 这保证了观测与审计逻辑不会打断主链路，但也意味着：
 
 - hook 自身失败默认是静默的
 - 如果你依赖 hook 做关键治理，必须自己在 hook 内部记录失败
+:::
 
 ## 12. 推荐阅读顺序
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+title: CodeAct 运行时
+description: "CodeActRuntime 用 code/final JSON 协议替代 native tool-calling，把模型生成的可执行代码纳入主循环，由 CodeExecutor 桥接工具并决定收口路径。"
 ---
 
 # CodeAct 运行时
@@ -118,7 +120,9 @@ CodeAct 的价值，就是把这种任务从“模型直接推理”转换成“
 
 - `maxSteps <= 0` 时没有步数上限
 
+:::warning
 所以 CodeAct 默认并不是生产安全的保守配置。和 ReAct 一样，如果不显式限制步数，失败修复或空转都可能持续发生。
+:::
 
 ### 4.2 Phase 2: 组 prompt，但不是注册工具
 
@@ -363,7 +367,9 @@ exec error
 
 这些都应该由 `CodeExecutor` 及其宿主环境承担。
 
+:::note
 所以内置执行器解决的是“可运行”，不是“可直接上生产”。
+:::
 
 ## 10. 适合什么任务，不适合什么任务
 

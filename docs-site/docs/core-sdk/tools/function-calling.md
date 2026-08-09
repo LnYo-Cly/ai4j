@@ -1,3 +1,8 @@
+---
+title: "Function Calling"
+description: "讲清 AI4J 基座层 Function Calling 执行链：用注解声明工具、ToolUtil 按白名单生成 provider tool schema、请求挂载与 tool call 回流，及其与 MCP、Agent 的边界。"
+---
+
 # Function Calling
 
 `Function Calling` 是 AI4J 基座层最核心的一条执行链。它不是简单的“把一个 Java 方法暴露给模型”，而是把本地能力稳定地转成模型可理解的 schema，再把调用结果交回当前 runtime 处理。
@@ -171,7 +176,9 @@ Core SDK 负责把“工具能被模型调用”这件事打通；但 **是不�
 
 ### 9.1 以为 classpath 上有工具类，模型就能直接看见
 
+:::warning
 不对。AI4J 当前默认是显式白名单，不传 `functions(...)` 就不该暴露。
+:::
 
 ### 9.2 把 `Function Calling` 当成完整 agent loop
 
@@ -183,7 +190,9 @@ Core SDK 负责把“工具能被模型调用”这件事打通；但 **是不�
 
 ### 9.4 副作用工具和查询工具混在一起暴露
 
+:::warning
 这会让模型看到过大的执行面。写文件、执行命令、远端修改类工具应单独治理。
+:::
 
 ## 10. 什么时候该停在这一层，什么时候该升级
 

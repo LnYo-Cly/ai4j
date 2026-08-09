@@ -1,3 +1,8 @@
+---
+title: Plugin Packages
+description: 讲清 AI4J plugin package：第三方 jar + ServiceLoader 发现 + ExtensionRegistry 三段式门禁 discover/enable/exposeTool，区分 tool/command/Skill/Prompt/Guardrail 资源进入方式，默认不自动暴露工具给模型。
+---
+
 # Plugin Packages
 
 AI4J 的 plugin package 解决的是：**第三方开发者把工具、命令、Skill、Prompt、Guardrail 等运行时资源打包成一个普通 Java 依赖，使用者通过 classpath 引入后再检查、启用、授权和暴露**。
@@ -26,7 +31,7 @@ AI4J 现在有两类容易混淆的扩展：
 
 ```xml
 <dependency>
-  <groupId>com.example</groupId>
+  <groupId>io.github.lnyocly</groupId>
   <artifactId>weather-ai4j-plugin</artifactId>
   <version>1.0.0</version>
 </dependency>
@@ -419,7 +424,11 @@ src/main/resources/
   prompts/weather-summary.md
 ```
 
-资源路径默认按 classpath 查找，也可以写成 `classpath:skills/weather/SKILL.md`。资源路径不能包含 `..`，避免插件把 resource contract 伪装成任意文件读取。
+资源路径默认按 classpath 查找，也可以写成 `classpath:skills/weather/SKILL.md`。
+
+:::danger
+资源路径不能包含 `..`，避免插件把 resource contract 伪装成任意文件读取。
+:::
 
 ### 5.5 写插件本地校验
 
@@ -447,7 +456,9 @@ if (!report.isValid()) {
 
 ## 6. 安全门禁
 
-> `manifest.permissions` is declarative metadata for host review and policy code. It is not an automatic AI4J permission engine; execution is still bounded by enable / expose / allowlist, Guardrail, and host permission policy.
+:::note
+`manifest.permissions` is declarative metadata for host review and policy code. It is not an automatic AI4J permission engine; execution is still bounded by enable / expose / allowlist, Guardrail, and host permission policy.
+:::
 
 插件生态的默认语义是三段式门禁：
 
@@ -458,7 +469,11 @@ if (!report.isValid()) {
 | allowCommand / allowSkill / allowPrompt / allowGuardrail | 在显式资源授权模式下允许非 tool 资源进入运行态 | 不会让 tool 进入模型可见列表 |
 | exposeTool | 指定工具名进入 agent/coding tool registry | 只暴露被点名的工具 |
 
-这个设计故意不做“安装后自动可用”。原因很直接：tool 一旦暴露给模型，就可能触发网络、文件系统、业务系统或工作区操作。AI4J 要求宿主应用明确决定哪些工具能进入模型上下文。
+这个设计故意不做“安装后自动可用”。原因很直接：
+
+:::warning
+tool 一旦暴露给模型，就可能触发网络、文件系统、业务系统或工作区操作。AI4J 要求宿主应用明确决定哪些工具能进入模型上下文。
+:::
 
 为了兼容旧代码，`enable(...)` 默认仍会激活 command、Skill、Prompt 和 Guardrail。需要更严格边界时，调用 `requireExplicitResourceActivation()`，或在 Spring Boot 中设置 `ai.extensions.explicit-resource-activation=true`。开启后，非 tool 资源必须通过对应 `allow*` API 或配置项逐项进入运行态。
 

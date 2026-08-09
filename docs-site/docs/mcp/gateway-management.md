@@ -1,5 +1,7 @@
-﻿---
+---
 sidebar_position: 5
+title: MCP Gateway 管理（多服务聚合与治理）
+description: McpGateway 作为多服务 MCP 运行时的真实职责：key 规则多租户隔离、tool registry 映射、配置源热更新与动态增删的重建式目录更新策略。
 ---
 
 # MCP Gateway 管理（多服务聚合与治理）
@@ -143,11 +145,14 @@ gateway.initialize().join();
 
 这里还有一个很容易被忽略但非常关键的事实：
 
-- 如果两个全局服务暴露了同名工具，映射会互相覆盖
+:::warning 全局同名工具会互相覆盖
+如果两个全局服务暴露了同名工具，映射会互相覆盖：
+
 - 当前实现没有为全局同名工具做命名空间隔离
 - 最终命中哪个 client，取决于 refresh 时最后写入的那一个
 
 所以在多服务平台里，`toolName` 命名规范不是建议，而是硬要求。
+:::
 
 ## 6. 调用路径怎么走
 
@@ -190,7 +195,9 @@ String result = gateway.callUserTool("u1001", "query_weather", arguments).join()
 - 用户级未命中，不代表该工具不可用
 - 可能只是落回了全局共享服务
 
+:::warning 默认回退不等于强隔离
 如果你的业务要求“租户强隔离，不允许回退”，就不能直接照搬默认策略。
+:::
 
 ## 7. `getAvailableTools(...)` 和 `getUserAvailableTools(...)` 的边界
 

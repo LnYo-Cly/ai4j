@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+title: 实战：天气分析双 Agent Workflow
+description: 用天气分析双 Agent workflow 讲清 SequentialWorkflow 的 outputText 接力、WorkflowContext side channel、节点 session 隔离与 NamedNode 最小观测，以及何时该升级到 StateGraphWorkflow。
 ---
 
 # 实战：天气分析双 Agent Workflow

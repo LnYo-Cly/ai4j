@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: AI4J Agent SDK Roadmap
+description: ai4j-agent 技术路线图：从 P0 运行内核（Session/Memory/Compact/Plugin/Permission）到 P1 Blueprint YAML、P2 Sandbox SPI、P3 Coding 沙箱路由、P4 CLI 与 P5 远端 Runner 的分阶段演进。
 ---
 
 # AI4J Agent SDK Roadmap
@@ -353,7 +355,9 @@ Runner 职责包括：
 - 收集 artifacts
 - 流式发送事件
 
+:::note Runner 必须晚于 P0-P4
 但它必须晚于 P0-P4。否则会过早把 SDK 内核、coding tools、沙箱、产品协议绑死。
+:::
 
 ## 9. 推荐实施顺序
 

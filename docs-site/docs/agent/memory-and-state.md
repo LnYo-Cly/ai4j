@@ -1,3 +1,8 @@
+---
+title: Memory and State
+description: 拆解 ai4j-agent 的 AgentMemory 状态模型：用户输入、模型输出与工具输出如何统一回灌下一轮 prompt，以及 InMemoryAgentMemory、JdbcAgentMemory 的写入、压缩与 session 隔离真实语义。
+---
+
 # Memory and State
 
 在 `ai4j-agent` 里，memory 不是“聊天记录附件”，而是 Agent loop 的状态源。
@@ -120,7 +125,9 @@ Supplier<AgentMemory> resolvedMemorySupplier =
 
 - `callId == null` 时，工具输出会被直接忽略
 
+:::note callId 必须非空
 正常情况下 runtime 的 `normalizeToolCalls()` 会补齐缺失的 `callId`，默认格式是 `tool_step_<step>_<index>`，但如果你绕过 runtime 自己写链路，这个约束必须自己保证。
+:::
 
 ### 5.2 压缩触发时机
 
@@ -242,7 +249,9 @@ summary 不是冗余字符串拼在 item 里，而是单独存一条记录；但
 - session 是否隔离，不取决于 `AgentSession` 这个类名
 - 取决于 `memorySupplier` 每次是否真的返回新的状态容器
 
+:::warning memorySupplier 不能是共享单例
 如果你把 `memorySupplier` 写成共享单例，即使表面上拿到了两个 session，它们仍会串状态。
+:::
 
 对 `JdbcAgentMemory` 来说，还要额外满足：
 

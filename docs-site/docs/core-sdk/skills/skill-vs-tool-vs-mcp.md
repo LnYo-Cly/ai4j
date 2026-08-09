@@ -1,3 +1,8 @@
+---
+title: "Skill vs Tool vs MCP"
+description: "用定义、对比表与源码入口区分 AI4J 三大基座概念：Skill 管方法论上下文、Tool 管宿主内执行、MCP 管外部协议接入，澄清投影与归属的常见混淆。"
+---
+
 # Skill vs Tool vs MCP
 
 这三个词是 AI4J 文档里最容易被混掉的部分。

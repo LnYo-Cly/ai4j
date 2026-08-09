@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+title: Agent Sandbox SPI
+description: 介绍 ai4j-agent 的 Sandbox SPI：SandboxProvider/SandboxSession 合同如何把执行交给隔离环境，AgentSessionSandboxBinding 只保存非敏感摘要，以及 Daytona、E2B 两个官方真实 provider。
 ---
 
 # Agent Sandbox SPI
@@ -146,7 +148,9 @@ session.clearSandbox();
 
 它不会保存 `SandboxSpec.config`，因为 provider config 可能包含 token、cookie、API key、连接串或租户信息。label 中包含 `secret`、`token`、`key`、`password`、`credential`、`cookie`、`authorization` 等敏感含义的 key 也会被过滤。
 
+:::warning secret 不会进入 snapshot
 也就是说，P2-B 让 session 能“知道自己绑定了哪个 sandbox”，但不会把真实 sandbox provider 的 secret 带进 snapshot、store、event log 或 docs 示例。
+:::
 
 ## 6. 与 Permission Policy 的关系
 
@@ -227,7 +231,9 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 ### sandbox 可以替代权限审批吗？
 
+:::note sandbox 不替代权限审批
 不能。sandbox 降低执行环境风险，permission policy 管控“是否允许执行”。两者应该叠加，而不是互相替代。
+:::
 
 
 ## 11. P2-C：Daytona provider

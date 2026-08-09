@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: AI4J 文档中心
+description: AI4J 是面向 Java 8+ 的 AI SDK 入口：按需取用的模型调用、工具、RAG、MCP、Spring Boot、Agent、Coding Agent 与 FlowGram building blocks 的总览、推荐起点与仓库模块地图。
 ---
 
 # AI4J 文档中心

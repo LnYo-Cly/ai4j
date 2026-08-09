@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: Coding Agent 总览
+description: AI4J Coding Agent 的模块分工、三种宿主入口(CLI/TUI/ACP)与核心概念总览，帮你判断本地代码仓任务是否适合使用 Coding Agent 运行时。
 ---
 
 # Coding Agent 总览
@@ -81,7 +83,9 @@ Coding Agent 装配时会同时决定：
 
 ## 安全和限制
 
+:::warning 安全边界
 Coding Agent 的高风险面比普通 Agent 更大，因为它可能接触文件系统、shell、进程和外部服务。
+:::
 
 上线或长期使用前应确认：
 

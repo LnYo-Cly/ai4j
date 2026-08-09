@@ -1,3 +1,8 @@
+---
+title: Vector Store and Backends
+description: 讲清 AI4J VectorStore 统一契约如何收口 Pinecone/Qdrant/Milvus/PgVector/Redis 五个后端：dataset 是硬边界，capabilities() 显式暴露 returnStoredVector/metadataLookup 差异，统一调用但不抹平存储现实。
+---
+
 # Vector Store and Backends
 
 AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / Redis”，信息密度其实很低。
@@ -87,7 +92,9 @@ VectorStoreCapabilities capabilities();
 
 它落到一栈多用的 Redis 实例里，按 dataset 隔离的 key 空间 + 索引过滤。
 
-> Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Jedis 是 optional 依赖，用户需自行在 pom 引入 `redis.clients:jedis:4.x`——4.x 是最后支持 JDK 8 的大版本，5.x 需 JDK 17，与 ai4j 的 JDK 8 字节码不兼容。**若你的项目已绑定 Jedis 5.x 且不可降级，请改用其他向量后端**（Milvus/Qdrant/Pinecone/PgVector），它们走同一套 `VectorStore` 契约。
+:::warning Redis 后端依赖
+Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Jedis 是 optional 依赖，用户需自行在 pom 引入 `redis.clients:jedis:4.x`——4.x 是最后支持 JDK 8 的大版本，5.x 需 JDK 17，与 ai4j 的 JDK 8 字节码不兼容。若你的项目已绑定 Jedis 5.x 且不可降级，请改用其他向量后端（Milvus/Qdrant/Pinecone/PgVector），它们走同一套 `VectorStore` 契约。
+:::
 
 所以从业务角度看大家都叫 `dataset`，但从存储现实看，它在不同后端对应的是：
 
@@ -167,7 +174,9 @@ Pinecone 当前封装没有 metadata-only lookup，因此保留默认 `false`，
 - Redis：走 RediSearch filter-only 查询
 - Pinecone：当前封装保持默认 `false`，不伪造 metadata-only lookup
 
+:::note
 调用方必须看 `capabilities().isMetadataLookup()`，不能假设所有向量库都支持。
+:::
 
 ## 6. `VectorStore` 和 `DenseRetriever` 的关系是什么
 

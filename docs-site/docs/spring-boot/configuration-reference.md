@@ -1,3 +1,8 @@
+---
+title: Spring Boot Configuration Reference
+description: 按 ai.* 能力面前缀梳理 AI4J 的 Spring Boot 配置，说明单实例与多实例注册表配置的流向与分层判断。
+---
+
 # Spring Boot Configuration Reference
 
 这一页只讲配置入口，不讲业务调用。

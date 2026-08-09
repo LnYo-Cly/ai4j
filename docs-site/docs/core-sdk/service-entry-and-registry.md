@@ -1,3 +1,8 @@
+---
+title: Service Entry and Registry
+description: 厘清 AiService 单实例入口与 AiServiceRegistry 多实例注册表的真实职责、配置回退和扩展边界。
+---
+
 # Service Entry and Registry
 
 这一页回答 `Core SDK` 最核心的工程问题之一：**当你真正开始接 provider、切模型、加能力时，代码应该从哪里进入。**
@@ -149,8 +154,10 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 
 ### `PlatformType.getPlatform(...)` 容错偏宽
 
-这个方法对未知值会回退到 `OPENAI`，而 `DefaultAiServiceRegistry.resolvePlatformType(...)` 对未知平台会显式抛错。  
+:::warning
+这个方法对未知值会回退到 `OPENAI`，而 `DefaultAiServiceRegistry.resolvePlatformType(...)` 对未知平台会显式抛错。
 正式多实例配置更应该依赖后者的严格行为。
+:::
 
 ## 10. 这一页的结论
 

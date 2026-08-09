@@ -1,3 +1,8 @@
+---
+title: Spring Boot MySQL Chat Memory
+description: 基于 Spring Boot + MySQL 的多轮聊天会话持久化方案，讲解 JdbcChatMemory 接入、sessionId 绑定与裁剪策略。
+---
+
 # Spring Boot + MySQL Chat Memory
 
 这个方案解决的是“先把多轮聊天和会话持久化做好”，而不是一上来就引入更重的 `Agent runtime`。
@@ -90,6 +95,8 @@
 
 ## 9. 实施时的注意事项
 
+:::warning 实施时的注意事项
 - `sessionId` 必须有稳定绑定规则，否则数据库持久化没有意义
 - 历史消息的裁剪和压缩策略要先定，否则会话会无限膨胀
 - 持久化成功不等于语义正确，仍要验证记忆窗口是否符合业务预期
+:::

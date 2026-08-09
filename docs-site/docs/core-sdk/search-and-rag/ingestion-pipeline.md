@@ -1,3 +1,8 @@
+---
+title: Ingestion Pipeline
+description: 讲清 AI4J IngestionPipeline 这条 RAG 入库编排层：source 加载、文本清洗、chunk、metadata 富化、批量 embedding 与 vector upsert 如何串成统一流水线，以及 documentId/contentHash 稳定性与可插拔扩展位点。
+---
+
 # Ingestion Pipeline
 
 这页讲“文档如何进入知识库”。在 AI4J 里，`IngestionPipeline` 不是一个随手拼出来的 demo helper，而是一条明确的 RAG 入库编排层。
@@ -134,7 +139,9 @@ int skipped = result.getSkippedCount();
 3. 已存在则跳过 embedding / upsert，并计入 `skippedCount`
 4. 后端不支持或 lookup 出错时 fail-open，按普通 ingest 继续写入
 
+:::note
 当前内置后端中，Qdrant / Milvus / PgVector / Redis 提供 metadata lookup；Pinecone 的现有封装仍保持默认不跳过。
+:::
 
 ## 7. 你可以在哪些位置扩展
 

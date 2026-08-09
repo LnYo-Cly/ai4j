@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: MCP 对接
+description: 讲清 MCP 在 Coding Agent 里如何变成活的工具面：全局定义与 workspace 启用两层配置、五种 server 运行状态、tool 名冲突校验，以及 ACP 下按会话注入 MCP 的独立链路。
 ---
 
 # MCP 对接

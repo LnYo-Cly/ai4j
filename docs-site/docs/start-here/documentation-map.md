@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Documentation Map
+description: AI4J 文档站的正式阅读路径：列出 canonical 主线入口、legacy 来源目录的定位，以及每个能力应该从哪条唯一路径进入，避免在旧页与新页之间来回跳。
 ---
 
 # Documentation Map

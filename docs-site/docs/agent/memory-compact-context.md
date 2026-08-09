@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+title: Memory Compact Context Projector
+description: 介绍 ai4j-agent 的 ContextProjector 与 CompactPolicy：如何把 memory snapshot 投影成本轮 prompt、用结构化 CompactResult 压缩长程上下文，并让压缩过程可诊断、可恢复。
 ---
 
 # Memory Compact Context Projector
@@ -224,7 +226,9 @@ InMemoryAgentMemory memory = new InMemoryAgentMemory(compressor);
 | `CompactPolicy` | 想用模型生成结构化 summary 或结合 event log/artifact 压缩 |
 | `MemoryCompressor` | 想兼容旧 memory 写路径 |
 
+:::note 自定义实现必须可诊断
 最低要求：自定义实现必须让“保留了什么、丢了什么”可诊断。否则长程 Agent 出问题时很难定位。
+:::
 
 ## 11. 当前限制
 

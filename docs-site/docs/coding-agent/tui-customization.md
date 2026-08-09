@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+title: TUI 定制与主题
+description: 讲清 TUI 的四层定制（config、theme、renderer、runtime）：主题查找顺序、tui.json 的文件级 override 语义、--theme 与 /theme 的区别，以及 useAlternateScreen 对 runtime backend 的影响。
 ---
 
 # TUI 定制与主题

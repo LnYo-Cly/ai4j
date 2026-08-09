@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: System Prompt vs Instructions
+description: 厘清 ai4j-agent 里 systemPrompt 与 instructions 的源码语义：两者都是 AgentContext 配置、每步重复进入模型，但在 Chat 与 Responses 路径映射不同，CodeAct 下更需分层。
 ---
 
 # System Prompt vs Instructions

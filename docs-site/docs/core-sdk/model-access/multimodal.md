@@ -1,3 +1,8 @@
+---
+title: Multimodal
+description: 说明图文输入如何作为会话事实经 ChatMemoryItem 投影到 Chat 与 Responses 两条主线，区分模型原生输入与外部视觉工具。
+---
+
 # Multimodal
 
 `Multimodal` 这一页讲的是：**文本之外的输入如何进入 AI4J 的统一模型请求链**。

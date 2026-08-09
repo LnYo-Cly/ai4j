@@ -1,3 +1,8 @@
+---
+title: Package Map
+description: 用包簇心智模型梳理 ai4j 模块源码分层，指明主能力面与支撑层包的职责，并给出读源码的推荐顺序。
+---
+
 # Package Map
 
 这一页讲的是 `ai4j/` 模块的包级心智模型。

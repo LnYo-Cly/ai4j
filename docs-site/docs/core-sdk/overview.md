@@ -1,3 +1,8 @@
+---
+title: Core SDK 总览
+description: 总览 ai4j 基座能力线：模型访问、Tool、Skill、MCP、Memory、RAG 与扩展，帮你选择第一条主线并理解与上层模块的关系。
+---
+
 # Core SDK 总览
 
 `Core SDK` 对应仓库里的 `ai4j/` 模块，是 AI4J 的基础能力层。你可以只使用这一层完成模型调用、Tool、Skill、MCP、Memory、Search/RAG 和 provider 扩展，也可以在它稳定后再接 Spring Boot、Agent、Coding Agent 或 FlowGram。

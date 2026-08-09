@@ -1,3 +1,8 @@
+---
+title: First Tool Call
+description: 讲清 AI4J 里“第一次工具调用”的真正含义：本地 Function Call 的最短示例，以及 Function Call、Skill、MCP 为什么必须分开理解，并给出下一步专题树。
+---
+
 # First Tool Call
 
 这一步的目标不是讲完全部工具体系，而是先让你知道：

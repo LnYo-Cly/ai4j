@@ -1,3 +1,8 @@
+---
+title: Agent Architecture
+description: "拆解 ai4j-agent 的 Builder、Runtime、ModelClient 三层边界，工具声明与执行双面，memory 作为状态源，以及事件流与 trace 的架构定位。"
+---
+
 # Agent Architecture
 
 `ai4j-agent` 的架构核心，不是“封装一下模型调用”，而是把多步推理、工具调用、状态延续和可观测性收敛成一套可复用 runtime。
@@ -399,7 +404,9 @@ Builder 阶段会直接校验：
 
 ### 9.2 `maxSteps = 0` 代表不设上限
 
+:::warning
 这是实验友好的默认值，但不是生产安全默认值。
+:::
 
 ### 9.3 工具异常默认不会中断整轮运行
 
@@ -432,7 +439,9 @@ TOOL_ERROR: {...}
 
 时，runtime 才会开线程池并行跑工具。
 
+:::note
 所以自定义 executor 必须自己保证线程安全。
+:::
 
 ## 10. 这个架构不解决什么
 

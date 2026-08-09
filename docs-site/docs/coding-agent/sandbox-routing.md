@@ -1,5 +1,7 @@
 ---
 sidebar_position: 11
+title: Sandbox Routing
+description: 说明 ai4j-coding 如何把 Coding Agent 的 bash exec 路由到 live SandboxSession（P3 首切片），覆盖当前 API、未路由的工具、与审批的关系以及非敏感 sandbox 摘要的安全边界。
 ---
 
 # Sandbox Routing
@@ -121,7 +123,9 @@ Sandbox routing 不会替代审批。
 
 它不会保存 `SandboxSpec.config`，label 中带有 token/key/password/credential/cookie 等敏感含义的字段也会被过滤。
 
+:::danger 敏感凭证不得入库
 因此，真实 provider token、cookie、API key、租户连接串应该只存在于宿主应用或 provider 实现中，不能写进文档示例、测试 fixture 或 session snapshot。
+:::
 
 ## 7. 验证入口
 

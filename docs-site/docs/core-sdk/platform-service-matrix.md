@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: 平台与服务矩阵
+description: 以 AiService 实现为准列出各 provider 对 Chat、Responses、Messages、Embedding、Rerank、Audio、Realtime、Image 的支持矩阵。
 ---
 
 # 平台与服务矩阵
@@ -103,11 +105,13 @@ IRerankService rerank = aiService.getRerankService(PlatformType.JINA);
 IImageService image = aiService.getImageService(PlatformType.DOUBAO);
 ```
 
+:::note
 如果平台不支持该 service，当前实现会直接抛：
 
 - `IllegalArgumentException("Unknown platform: ...")`
 
 也就是说，不支持不是“静默降级”，而是显式失败。
+:::
 
 ## 5. 和多实例注册表怎么结合
 

@@ -1,3 +1,8 @@
+---
+title: Ask User Plugin
+description: 讲清 ai4j-plugin-ask-user 样板插件：它把 Agent 需要的人类确认表达成 host-mediated JSON envelope，贡献 ask_user tool 与 command/Skill/Prompt 资源，本身不打开 UI、不读 stdin、不阻塞，由宿主决定展示与恢复。
+---
+
 # Ask User Plugin
 
 `ai4j-plugin-ask-user` 是 AI4J 的官方样板插件。它展示一件事：**插件可以把 Agent 需要的人类确认或补充信息，表达成结构化请求，由宿主应用负责展示、收集答案和恢复执行**。
@@ -112,7 +117,9 @@ permission: ui.prompt
 configPrefix: ai4j.extensions.ask-user
 ```
 
-> `permission: ui.prompt` is a host-policy hint. AI4J does not automatically enforce manifest permissions, open UI, read stdin, or grant network access from this field. Runtime exposure still depends on enable / expose / allowlist and host policy.
+:::warning
+`permission: ui.prompt` is a host-policy hint. AI4J does not automatically enforce manifest permissions, open UI, read stdin, or grant network access from this field. Runtime exposure still depends on enable / expose / allowlist and host policy.
+:::
 
 `ui.prompt` 表示插件会产生需要宿主展示给用户的问题，但插件本身不会打开窗口、读控制台或访问网络。
 

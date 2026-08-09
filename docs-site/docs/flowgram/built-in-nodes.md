@@ -1,3 +1,8 @@
+---
+title: Built-in Nodes
+description: 区分 Flowgram runtime 内核节点（START/END/LLM/CONDITION/LOOP）与 starter 注册的 executor 节点（HTTP/VARIABLE/CODE/TOOL/KNOWLEDGE），讲清共享值解析模型与各节点输入输出。
+---
+
 # Built-in Nodes
 
 `Built-in Nodes` 这一页最重要的不是罗列节点名，而是把“哪些能力属于 runtime 内核，哪些能力属于 starter 注册 executor”讲清楚。

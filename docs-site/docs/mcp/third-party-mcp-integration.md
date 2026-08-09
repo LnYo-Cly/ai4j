@@ -1,5 +1,7 @@
-﻿---
+---
 sidebar_position: 4
+title: 接入第三方 MCP（全部方式）
+description: 把第三方 MCP 在 AI4J 里的 5 种集成深度拆开：单 client 直连、配置驱动 gateway、运行时动态增删、用户级隔离与 Agent 暴露白名单，附常见踩坑。
 ---
 
 # 接入第三方 MCP（全部方式）
@@ -157,7 +159,9 @@ String result = gateway.callUserTool(
 - 先查用户级工具
 - 查不到再回退全局工具
 
+:::warning 用户级默认回退全局工具
 如果你的权限模型要求“用户没配就绝不允许调全局共享服务”，你要在业务层自己把回退禁掉。
+:::
 
 ## 6. 方式五：把第三方 MCP 暴露给 Agent
 
