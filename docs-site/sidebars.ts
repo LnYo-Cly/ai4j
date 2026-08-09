@@ -14,6 +14,8 @@ const sidebars: SidebarsConfig = {
         'start-here/openai-compatible-and-trovebox',
         'start-here/feature-map',
         'start-here/why-ai4j',
+        'start-here/extend-ai4j',
+        'start-here/programmatic-integration',
       ],
     },
     {
