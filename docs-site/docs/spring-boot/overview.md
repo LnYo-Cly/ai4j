@@ -1,6 +1,7 @@
 ---
 title: Spring Boot 总览
 description: ai4j-spring-boot-starter 的总览定位：何时使用、最小接入路径、装配能力与扩展点，以及上线前检查清单。
+tags: [integration]
 ---
 
 # Spring Boot 总览

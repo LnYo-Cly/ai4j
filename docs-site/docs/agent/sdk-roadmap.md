@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: AI4J Agent SDK Roadmap
 description: ai4j-agent 技术路线图：从 P0 运行内核（Session/Memory/Compact/Plugin/Permission）到 P1 Blueprint YAML、P2 Sandbox SPI、P3 Coding 沙箱路由、P4 CLI 与 P5 远端 Runner 的分阶段演进。
+tags: [reference]
 ---
 
 # AI4J Agent SDK Roadmap

@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Provider Profile 与模型切换
 description: 说明 provider profile 作为可切换、可回退的 provider runtime binding 的真实语义，覆盖 activeProfile/effectiveProfile 解析、/provider 与 /model 命令及 session runtime 重绑行为。
+tags: [concept]
 ---
 
 # Provider Profile 与模型切换

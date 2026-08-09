@@ -2,6 +2,7 @@
 sidebar_position: 5
 title: Tool 暴露语义与安全边界
 description: 讲清 MCP 工具暴露的安全边界：getAllTools 显式白名单与 getLocalMcpTools 本地枚举是两套语义，调用优先级与暴露面也是两套逻辑，附代码审查清单。
+tags: [concept]
 ---
 
 # Tool 暴露语义与安全边界

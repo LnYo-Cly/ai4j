@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: Plugin Lifecycle Hooks
 description: 说明 ai4j-extension-api 的 Agent 生命周期 Hook：插件如何观察 BEFORE_TURN/BEFORE_MODEL_REQUEST/BEFORE_TOOL_CALL/ON_COMPACT 等事件，事件 payload、异常策略与 Guardrail 的区别。
+tags: [integration]
 ---
 
 # Plugin Lifecycle Hooks

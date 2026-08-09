@@ -2,6 +2,7 @@
 sidebar_position: 3
 title: MCP 配置与网关参考
 description: 区分 mcp-servers-config.json 里哪些字段真正进入 transport/client/gateway 运行时，哪些只是治理元数据，避免把字段存在误写成能力已生效。
+tags: [reference]
 ---
 
 # MCP 配置与网关参考

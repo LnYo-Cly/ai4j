@@ -1,6 +1,7 @@
 ---
 title: Chat
 description: 解析 AI4J Chat 主线的请求对象、自动 tool loop、passThroughToolCalls、SseListener 流式聚合和多模态接入等运行时行为。
+tags: [concept]
 ---
 
 # Chat

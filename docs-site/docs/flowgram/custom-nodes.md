@@ -1,6 +1,7 @@
 ---
 title: Custom Nodes
 description: 自定义节点是把能力正式接入 Flowgram 前后端执行契约：后端 FlowGramNodeExecutor 扩展点、getType 协议名、输入输出 contract 稳定性原则与前后端协同三件事。
+tags: [how-to]
 ---
 
 # Custom Nodes

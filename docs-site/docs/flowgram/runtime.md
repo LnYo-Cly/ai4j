@@ -1,6 +1,7 @@
 ---
 title: Flowgram Runtime
 description: Flowgram 后端执行真相：FlowGramRuntimeService 把 workflow schema 变成异步任务，节点图变成有状态执行链，节点输出变成 report/result/trace 读侧结构。
+tags: [concept]
 ---
 
 # Flowgram Runtime

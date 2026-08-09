@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: Skills 使用与组织
 description: 讲清 Skill 在 Coding Agent 里作为文件化工作流知识的真实位置：发现链路、扫描与去重规则、SKILL.md 字段解析，以及 skill 如何同时影响 prompt 与只读路径边界。
+tags: [concept]
 ---
 
 # Skills 使用与组织

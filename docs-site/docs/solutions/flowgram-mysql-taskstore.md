@@ -1,6 +1,7 @@
 ---
 title: Flowgram MySQL Task Store
 description: 把 FlowGram 从单进程 demo 提升到平台后端的 JDBC 持久化方案，讲解任务生命周期与 task store 边界。
+tags: [integration]
 ---
 
 # Flowgram MySQL Task Store

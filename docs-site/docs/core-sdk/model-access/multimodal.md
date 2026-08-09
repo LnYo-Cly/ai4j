@@ -1,6 +1,7 @@
 ---
 title: Multimodal
 description: 说明图文输入如何作为会话事实经 ChatMemoryItem 投影到 Chat 与 Responses 两条主线，区分模型原生输入与外部视觉工具。
+tags: [concept]
 ---
 
 # Multimodal

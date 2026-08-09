@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Workflow 与 StateGraph
 description: 讲解 ai4j-agent 的 Workflow 与 StateGraph：编排层而非 runtime、节点默认只传 outputText、WorkflowContext 是 side channel、StateGraph 边解析优先级与 maxSteps 保险丝语义。
+tags: [concept]
 ---
 
 # Workflow 与 StateGraph

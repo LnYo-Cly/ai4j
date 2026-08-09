@@ -1,6 +1,7 @@
 ---
 title: "Chat Memory"
 description: "深入 ChatMemory 契约：ChatMemoryItem 承载多模态与工具事实、InMemory 与 Jdbc 两种存储、窗口与摘要策略、快照恢复，及投影到 Chat 与 Responses 的共享基座。"
+tags: [concept]
 ---
 
 # Chat Memory

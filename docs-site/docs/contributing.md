@@ -2,6 +2,7 @@
 sidebar_position: 14
 title: Contribute to AI4J
 description: How to contribute to AI4J — reporting issues, proposing changes, running docs-site local checks and Java module tests, and following the security disclosure policy.
+tags: [how-to]
 ---
 
 # Contribute to AI4J

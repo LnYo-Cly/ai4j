@@ -1,6 +1,7 @@
 ---
 title: Core SDK 总览
 description: 总览 ai4j 基座能力线：模型访问、Tool、Skill、MCP、Memory、RAG 与扩展，帮你选择第一条主线并理解与上层模块的关系。
+tags: [concept]
 ---
 
 # Core SDK 总览

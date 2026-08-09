@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Coding Agent 总览
 description: AI4J Coding Agent 的模块分工、三种宿主入口(CLI/TUI/ACP)与核心概念总览，帮你判断本地代码仓任务是否适合使用 Coding Agent 运行时。
+tags: [concept]
 ---
 
 # Coding Agent 总览

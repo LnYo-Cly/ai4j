@@ -1,6 +1,7 @@
 ---
 title: Query Planning
 description: 讲清 AI4J RagQueryPlanner 检索前处理层：它在 Retriever 之前产出 rewrite/multi-query/HyDE/step-back 检索计划，多 variant 用 RRF 融合，rerank 与上下文组装仍回原 query，planner 异常自动回退。
+tags: [concept]
 ---
 
 # Query Planning

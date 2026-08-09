@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: Runtime 架构
 description: 拆解 Coding Agent runtime 的 5 层装配链（factory、builder、session、host、MCP runtime），说明每层持有什么状态、决定什么行为以及与相邻层的边界。
+tags: [concept]
 ---
 
 # Runtime 架构

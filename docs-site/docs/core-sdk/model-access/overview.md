@@ -1,6 +1,7 @@
 ---
 title: Model Access 总览
 description: 总览模型请求在 AI4J 基座里如何被建模、投影、发送、流式消费和回读，厘清 Chat、Responses、Messages 三条主线的边界。
+tags: [concept]
 ---
 
 # Model Access 总览

@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: MCP 与 Agent 一体化实战（端到端）
 description: 拆开第三方 MCP 从配置文件一路进入 Agent 推理循环并被模型调用的 7 层执行链，覆盖投影、调用分发、多租户回退与 trace 诊断点。
+tags: [how-to]
 ---
 
 # MCP 与 Agent 一体化实战（端到端）

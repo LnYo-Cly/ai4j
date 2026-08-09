@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Cloudflare Pages 部署
 description: AI4J 文档站推荐部署方案：Docusaurus + Cloudflare Pages + 自定义域名。覆盖 GitHub 集成自动构建、全球 CDN 分发、免费额度、自定义域名配置与持续发布流程。
+tags: [how-to]
 ---
 
 # Cloudflare Pages 部署

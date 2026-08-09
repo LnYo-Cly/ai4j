@@ -1,6 +1,7 @@
 ---
 title: "Discovery and Loading"
 description: "详解 Skills 发现与加载：扫描工作区与全局根目录、识别 SKILL.md、提取名称描述、按名去重，以及 allowedReadRoots 如何把 skill 目录联动进宿主只读安全边界。"
+tags: [concept]
 ---
 
 # Discovery and Loading

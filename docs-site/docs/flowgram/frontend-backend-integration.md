@@ -2,6 +2,7 @@
 sidebar_position: 4
 title: 前端画布与后端 Runtime 对接
 description: Flowgram.ai 画布与 AI4J Java 后端执行层对齐的三个契约：workflow schema、task lifecycle、report/result/trace 读侧，讲清 schema 归一化、轮询与权限接入点。
+tags: [concept]
 ---
 
 # 前端画布与后端 Runtime 对接

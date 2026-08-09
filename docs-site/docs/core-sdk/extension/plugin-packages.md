@@ -1,6 +1,7 @@
 ---
 title: Plugin Packages
 description: 讲清 AI4J plugin package：第三方 jar + ServiceLoader 发现 + ExtensionRegistry 三段式门禁 discover/enable/exposeTool，区分 tool/command/Skill/Prompt/Guardrail 资源进入方式，默认不自动暴露工具给模型。
+tags: [concept]
 ---
 
 # Plugin Packages

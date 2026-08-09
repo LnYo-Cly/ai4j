@@ -1,6 +1,7 @@
 ---
 title: Why Agent
 description: 回答 ai4j 为什么要单独的 Agent 层：多步执行迟早会逼出 runtime、状态源与工具治理，Agent 把主循环、状态语义、治理边界和可观测性统一下来，而不是平行再造框架。
+tags: [concept]
 ---
 
 # Why Agent

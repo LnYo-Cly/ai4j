@@ -2,6 +2,7 @@
 sidebar_position: 8
 title: Agent Skills
 description: "Explains ai4j-agent Skills: how the SDK discovers and scopes SKILL.md, the workspace-safe vs user-home roots, request-scoped AgentSkillResolver for tenants, and why Skills never bypass tool authorization."
+tags: [how-to]
 ---
 
 # Agent Skills

@@ -1,6 +1,7 @@
 ---
 title: "Function Calling"
 description: "讲清 AI4J 基座层 Function Calling 执行链：用注解声明工具、ToolUtil 按白名单生成 provider tool schema、请求挂载与 tool call 回流，及其与 MCP、Agent 的边界。"
+tags: [concept]
 ---
 
 # Function Calling

@@ -1,6 +1,7 @@
 ---
 title: Flowgram Architecture
 description: 拆解 Flowgram 前端画布加 AI4J 后端执行层的四层架构：画布、适配、Spring Boot 平台接入与执行引擎，讲清编辑态与执行态 schema 的差异和默认安全姿态。
+tags: [concept]
 ---
 
 # Flowgram Architecture

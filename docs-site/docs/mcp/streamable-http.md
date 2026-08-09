@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Streamable HTTP
 description: "Streamable HTTP transport for AI4J MCP: AUTO profile discovery, modern vs initialization-era peers, protocol headers, publishing a server, and upgrade paths."
+tags: [integration]
 ---
 
 # Streamable HTTP

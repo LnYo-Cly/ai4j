@@ -1,6 +1,7 @@
 ---
 title: Spring Boot Bean Extension
 description: 讲解在 Spring Boot 中沿 AI4J 抽象层覆盖默认 Bean 的时机、层级选择与典型覆盖点，避免绕开统一容器模型。
+tags: [integration]
 ---
 
 # Spring Boot Bean Extension

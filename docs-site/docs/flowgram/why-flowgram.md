@@ -1,6 +1,7 @@
 ---
 title: Why Flowgram
 description: Flowgram 存在的价值：补上 Agent 给不了的平台化后端结构——工作流契约、任务生命周期、节点执行边界与面向平台的读侧输出，同时讲清当前边界与适用场景。
+tags: [concept]
 ---
 
 # Why Flowgram

@@ -1,6 +1,7 @@
 ---
 title: Service Entry and Registry
 description: 厘清 AiService 单实例入口与 AiServiceRegistry 多实例注册表的真实职责、配置回退和扩展边界。
+tags: [concept]
 ---
 
 # Service Entry and Registry

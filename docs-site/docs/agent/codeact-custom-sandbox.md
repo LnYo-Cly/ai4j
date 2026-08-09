@@ -2,6 +2,7 @@
 sidebar_position: 8
 title: CodeAct：自定义代码沙箱执行器
 description: "讲清 CodeAct 的代码执行边界与 CodeExecutor 扩展点：何时替换默认执行器、如何处理工具桥接，以及生产环境必须补齐的隔离与安全约束。"
+tags: [concept]
 ---
 
 # CodeAct：自定义代码沙箱执行器

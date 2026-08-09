@@ -1,6 +1,7 @@
 ---
 title: SPI HTTP Stack
 description: 讲清 AI4J HTTP stack SPI：通过 ServiceLoader 把 Dispatcher 与 ConnectionPool 注入 starter 构造的统一 OkHttpClient，默认实现靠 META-INF/services 注册，丢失会导致启动失败，仅 starter 装配链自动生效。
+tags: [concept]
 ---
 
 # SPI HTTP Stack

@@ -1,6 +1,7 @@
 ---
 title: Tools and Registry
 description: 拆解 ai4j-agent 工具体系：AgentToolRegistry 只管暴露面、ToolExecutor 管执行与权限边界，runtime 如何归一化、校验、执行工具并把结果回灌 memory，以及审批拦截该放哪层。
+tags: [concept]
 ---
 
 # Tools and Registry

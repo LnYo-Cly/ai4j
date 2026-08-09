@@ -2,6 +2,7 @@
 sidebar_position: 6
 title: Memory Compact Context Projector
 description: 介绍 ai4j-agent 的 ContextProjector 与 CompactPolicy：如何把 memory snapshot 投影成本轮 prompt、用结构化 CompactResult 压缩长程上下文，并让压缩过程可诊断、可恢复。
+tags: [concept]
 ---
 
 # Memory Compact Context Projector

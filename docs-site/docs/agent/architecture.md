@@ -1,6 +1,7 @@
 ---
 title: Agent Architecture
 description: "拆解 ai4j-agent 的 Builder、Runtime、ModelClient 三层边界，工具声明与执行双面，memory 作为状态源，以及事件流与 trace 的架构定位。"
+tags: [concept]
 ---
 
 # Agent Architecture

@@ -2,6 +2,7 @@
 sidebar_position: 3
 title: Model Client Selection
 description: 对比 ChatModelClient 与 ResponsesModelClient：systemPrompt/instructions 的协议映射、顶层字段下推差异、流式信号与 memoryItems 形状，帮你为 Agent 选对模型协议路径。
+tags: [concept]
 ---
 
 # Model Client Selection

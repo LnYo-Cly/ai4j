@@ -2,6 +2,7 @@
 sidebar_position: 15
 title: Agent Teams API Reference
 description: "以源码视角导航 Agent Teams runtime：AgentTeamBuilder 字段如何映射到运行链、task board 状态机、team 工具面、持久化恢复与扩展点。"
+tags: [reference]
 ---
 
 # Agent Teams API Reference

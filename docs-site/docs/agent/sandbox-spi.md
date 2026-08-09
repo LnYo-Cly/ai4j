@@ -2,6 +2,7 @@
 sidebar_position: 9
 title: Agent Sandbox SPI
 description: 介绍 ai4j-agent 的 Sandbox SPI：SandboxProvider/SandboxSession 合同如何把执行交给隔离环境，AgentSessionSandboxBinding 只保存非敏感摘要，以及 Daytona、E2B 两个官方真实 provider。
+tags: [integration]
 ---
 
 # Agent Sandbox SPI

@@ -2,6 +2,7 @@
 sidebar_position: 5
 title: MCP Gateway 管理（多服务聚合与治理）
 description: McpGateway 作为多服务 MCP 运行时的真实职责：key 规则多租户隔离、tool registry 映射、配置源热更新与动态增删的重建式目录更新策略。
+tags: [concept]
 ---
 
 # MCP Gateway 管理（多服务聚合与治理）

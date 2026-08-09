@@ -3,6 +3,7 @@ sidebar_label: OpenAI-compatible / TroveBox
 title: OpenAI-compatible 与 TroveBox 中转平台配置
 slug: /start-here/openai-compatible-and-trovebox
 description: OpenAI-compatible 中转平台（含 TroveBox）如何在 AI4J 里配置：普通 Java 与 Spring Boot 单/多 profile 写法、endpoint path 判断，以及常见 401/404 排查。
+tags: [integration]
 ---
 
 # OpenAI-compatible 与 TroveBox 中转平台配置

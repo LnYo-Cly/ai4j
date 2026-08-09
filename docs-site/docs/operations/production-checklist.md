@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Production Checklist
 description: AI4J 接入真实项目前的上线检查清单。不要求一次性启用所有能力，而是按已使用的模块确认风险边界：最小模块选择、密钥管理、网络隔离、Tool 暴露、本地文件边界。
+tags: [reference]
 ---
 
 # Production Checklist

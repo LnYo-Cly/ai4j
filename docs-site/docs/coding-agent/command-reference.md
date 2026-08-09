@@ -2,6 +2,7 @@
 sidebar_position: 11
 title: 命令参考
 description: 汇总 Coding Agent 已实现的高频 slash 命令（provider/model/mcp/session/process/team/compact 等）的作用域、常用参数与 CLI/TUI/ACP 三种宿主的命令可见性差异。
+tags: [reference]
 ---
 
 # 命令参考

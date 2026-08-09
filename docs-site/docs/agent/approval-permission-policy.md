@@ -2,6 +2,7 @@
 sidebar_position: 8
 title: Agent Approval / Permission Policy
 description: "AgentPermissionPolicy 在工具执行前做权限判断：ALLOW / DENY / REQUIRE_APPROVAL，可被普通 Agent、Blueprint、CLI 审批界面与后续 Sandbox SPI 复用。"
+tags: [concept]
 ---
 
 # Agent Approval / Permission Policy

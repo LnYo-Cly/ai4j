@@ -1,6 +1,7 @@
 ---
 title: Plugin Recipes
 description: 插件使用者的组装配方：jar 进 classpath 后如何用 CLI plan/check 做接入前检查，按 Java、Spring Boot、Agent、Coding Agent、多插件组合分别给出 enable/allow/expose 配置，区分 command 与 tool 暴露语义。
+tags: [how-to]
 ---
 
 # Plugin Recipes

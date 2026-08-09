@@ -1,6 +1,7 @@
 ---
 title: Responses
 description: 解析 AI4J Responses 主线的 ResponseRequest 语义、工具解析基座、payload 构建、流式事件聚合与 runtime 友好的运行模型。
+tags: [concept]
 ---
 
 # Responses

@@ -2,6 +2,7 @@
 sidebar_position: 5
 title: 配置体系
 description: 讲清 Coding Agent 配置的三层（全局 provider 资产、全局 MCP 定义、工作区绑定）、逐字段求值优先级，以及哪些改动会触发当前 session runtime 重绑。
+tags: [reference]
 ---
 
 # 配置体系

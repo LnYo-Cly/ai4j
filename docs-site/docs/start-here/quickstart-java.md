@@ -1,6 +1,7 @@
 ---
 title: Quickstart for Java
 description: 普通 Java / Maven 项目接入 AI4J 的最短路径：从依赖、环境变量到第一条同步 Chat 请求，给出可复制的 Configuration→AiService→IChatService 闭环代码与成功标准。
+tags: [how-to]
 ---
 
 # Quickstart for Java

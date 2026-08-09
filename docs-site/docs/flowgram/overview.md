@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: FlowGram 总览
 description: AI4J FlowGram 是围绕 FlowGram.ai 画布的 Java 后端执行层，把前端画出的工作流图转换成可验证、可运行、可取消、可观测的异步 task。
+tags: [concept]
 ---
 
 # FlowGram 总览

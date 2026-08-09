@@ -1,6 +1,7 @@
 ---
 title: Memory and State
 description: 拆解 ai4j-agent 的 AgentMemory 状态模型：用户输入、模型输出与工具输出如何统一回灌下一轮 prompt，以及 InMemoryAgentMemory、JdbcAgentMemory 的写入、压缩与 session 隔离真实语义。
+tags: [concept]
 ---
 
 # Memory and State

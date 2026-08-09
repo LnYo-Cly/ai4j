@@ -1,6 +1,7 @@
 ---
 title: Pinecone Vector Workflow
 description: 在 Pinecone 后端上搭建入库、检索、rerank 工作流的标准方案，讲解 namespace 知识隔离与统一抽象边界。
+tags: [integration]
 ---
 
 # Pinecone Vector Workflow

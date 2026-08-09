@@ -1,6 +1,7 @@
 ---
 title: Strengths and Differentiators
 description: 从能力统一、边界清晰、provider 非对称、向上演进路径等维度说明 AI4J 作为 Java AI 基座的差异点与适用场景。
+tags: [concept]
 ---
 
 # Strengths and Differentiators

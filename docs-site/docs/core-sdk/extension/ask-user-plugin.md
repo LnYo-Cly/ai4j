@@ -1,6 +1,7 @@
 ---
 title: Ask User Plugin
 description: 讲清 ai4j-plugin-ask-user 样板插件：它把 Agent 需要的人类确认表达成 host-mediated JSON envelope，贡献 ask_user tool 与 command/Skill/Prompt 资源，本身不打开 UI、不读 stdin、不阻塞，由宿主决定展示与恢复。
+tags: [integration]
 ---
 
 # Ask User Plugin

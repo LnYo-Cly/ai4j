@@ -1,6 +1,7 @@
 ---
 title: Architecture and Module Map
 description: 把 AI4J 仓库的 Maven 模块主线、依赖方向和代码定位入口落到真实工程上，帮助你在读源码或评估模块边界时找到正确落点。
+tags: [concept]
 ---
 
 # Architecture and Module Map

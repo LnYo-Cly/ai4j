@@ -1,6 +1,7 @@
 ---
 title: Solutions 总览
 description: AI4J 场景组合入口总览，按常见业务问题给出方案选型路线、模块组合与回到主线的判断。
+tags: [concept]
 ---
 
 # Solutions 总览

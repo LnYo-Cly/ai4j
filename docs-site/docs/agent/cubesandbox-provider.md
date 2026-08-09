@@ -2,6 +2,7 @@
 sidebar_position: 10
 title: CubeSandbox Provider
 description: "CubeSandboxProvider 是 ai4j 第一个真实远端 sandbox 适配器，把 SandboxProvider/SandboxSession 映射到 CubeSandbox 的 CubeAPI 控制面与 envd 执行 API。"
+tags: [integration]
 ---
 
 # CubeSandbox Provider

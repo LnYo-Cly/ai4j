@@ -2,6 +2,7 @@
 sidebar_position: 7
 title: Agent、Tool、知识库与 MCP 接入
 description: 讲清 Flowgram 当前已内置的能力接法（LLM/TOOL/KNOWLEDGE）与只能扩展的能力（Agent/MCP 无内置专属节点），给出 Tool 节点复用工具总线、KNOWLEDGE 复用 RAG 抽象的真实链路。
+tags: [concept]
 ---
 
 # Agent、Tool、知识库与 MCP 接入

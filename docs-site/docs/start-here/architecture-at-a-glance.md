@@ -1,6 +1,7 @@
 ---
 title: Architecture at a Glance
 description: 用一张四层图建立 AI4J 的整体心智模型：Start Here、Core SDK、上层模块（Spring Boot/Agent/Coding Agent/FlowGram）与 Solutions，并厘清 Function Call、Skill、MCP 三个最易混淆的概念边界。
+tags: [concept]
 ---
 
 # Architecture at a Glance

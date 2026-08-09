@@ -2,6 +2,7 @@
 sidebar_position: 33
 title: Realtime 接口（WebSocket）
 description: 讲解 IRealtimeService 长连接能力面：当前仅支持 OpenAI，统一入口、默认鉴权头、WebSocket 建连主线及回调注意事项。
+tags: [concept]
 ---
 
 # Realtime 接口（WebSocket）

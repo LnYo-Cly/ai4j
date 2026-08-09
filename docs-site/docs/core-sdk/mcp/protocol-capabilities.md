@@ -1,6 +1,7 @@
 ---
 title: Protocol Capabilities
 description: 讲清 AI4J MCP 协议面：服务端支持 tools/resources/prompts 三类 capability 与 list_changed 通知，legacy profile 需 initialize 握手而现代 Streamable HTTP 无状态，transport 会影响 capability 边界。
+tags: [concept]
 ---
 
 # Protocol Capabilities

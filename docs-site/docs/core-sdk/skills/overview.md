@@ -1,6 +1,7 @@
 ---
 title: "Skills 总览"
 description: "总览 AI4J Skills 方法论与上下文治理层：发现 SKILL.md、生成技能目录、按需懒加载正文并将 skill roots 纳入只读边界，厘清 Skill 与 Tool、MCP 的职责分工。"
+tags: [concept]
 ---
 
 # Skills 总览

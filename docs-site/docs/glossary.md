@@ -2,6 +2,7 @@
 sidebar_position: 999
 title: 术语表
 description: AI4J 文档核心术语统一表：定义 Agent、AiService、Chat、Coding Agent、Function Call、MCP、Memory、Skill、Responses、Tool Registry 等关键概念，避免跨专题混淆。
+tags: [reference]
 ---
 
 # 术语表

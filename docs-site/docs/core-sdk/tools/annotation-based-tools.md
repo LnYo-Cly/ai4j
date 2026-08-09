@@ -1,6 +1,7 @@
 ---
 title: "Annotation-based Tools"
 description: "深入 @FunctionCall、@FunctionRequest、@FunctionParameter 三注解如何把 Java 类型绑定为 provider tool schema，详解 ToolUtil 生成链、类型映射规则与真实约束。"
+tags: [concept]
 ---
 
 # Annotation-based Tools

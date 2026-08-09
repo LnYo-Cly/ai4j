@@ -2,6 +2,7 @@
 sidebar_position: 1
 title: Security Overview
 description: AI4J 安全边界由密钥、网络、Tool、MCP、RAG、Agent、Coding Agent 和 FlowGram 多层组成。接入前明确：哪些能力能被模型看见、调用、回写到用户或日志。密钥不入仓、Tool 最小暴露、本地边界约束。
+tags: [concept]
 ---
 
 # Security Overview

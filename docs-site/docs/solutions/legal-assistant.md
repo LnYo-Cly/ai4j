@@ -1,6 +1,7 @@
 ---
 title: Legal Assistant
 description: 高证据要求法律助手的 RAG 方案，强调元数据治理、证据引用与人工复核，区别于普通聊天加长 prompt。
+tags: [concept]
 ---
 
 # Legal Assistant
