@@ -1,3 +1,8 @@
+---
+title: Flowgram Runtime
+description: Flowgram 后端执行真相：FlowGramRuntimeService 把 workflow schema 变成异步任务，节点图变成有状态执行链，节点输出变成 report/result/trace 读侧结构。
+---
+
 # Flowgram Runtime
 
 `Runtime` 这一层是 Flowgram 的后端执行真相，不是“controller 后面接个 service”那么简单。
@@ -263,7 +268,9 @@ Runtime 默认用内部 `ExecutorService` 异步执行任务。
 
 ### 8.2 取消依赖线程中断
 
+:::note 取消响应取决于 executor 实现
 由于取消通过 `future.cancel(true)` 和中断传播完成，长时间阻塞的自定义 executor 是否能及时响应，取决于 executor 自己的实现质量。
+:::
 
 ## 9. 扩展 Runtime 最关键的入口
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Provider 配置样例
+description: Provider 配置样例已迁移至 Coding Agent 专题；本页保留兼容入口，指向新的配置体系、Provider Profile 与命令参考正式文档。
 ---
 
 # 页面已迁移

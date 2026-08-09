@@ -1,5 +1,7 @@
 ---
 sidebar_position: 12
+title: A2A Protocol (Agent-to-Agent)
+description: "Discover agents, exchange JSON-RPC tasks, stream SSE updates, and expose your ai4j agent as an A2A service with optional auth — JDK stdlib only."
 ---
 
 # A2A Protocol (Agent-to-Agent)
@@ -115,8 +117,10 @@ open so peers can select the advertised scheme.
   `A2AServer.withBearerAuthentication(...)` advertises and validates the matching HTTP Bearer
   scheme.
 
+:::note
 The server intentionally does not implement JWT/OIDC token verification; use a terminating
 identity-aware gateway for those flows.
+:::
 
 ## External Interoperability Regression
 

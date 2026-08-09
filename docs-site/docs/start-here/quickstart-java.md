@@ -1,3 +1,8 @@
+---
+title: Quickstart for Java
+description: 普通 Java / Maven 项目接入 AI4J 的最短路径：从依赖、环境变量到第一条同步 Chat 请求，给出可复制的 Configuration→AiService→IChatService 闭环代码与成功标准。
+---
+
 # Quickstart for Java
 
 这页是普通 Java / Maven 项目的正式最短接入路径。它从依赖、密钥到第一条模型调用给出一个完整的最小闭环。
@@ -53,7 +58,9 @@ Bash:
 export OPENAI_API_KEY="sk-..."
 ```
 
+:::danger 密钥不要进仓库
 不要把密钥写进 Java 文件、Git 跟踪的配置文件或 README 示例。
+:::
 
 ## 4. 首聊最短链路
 
@@ -119,7 +126,9 @@ public class Ai4jFirstChat {
 - 需要读取 `ChatCompletionResponse` 里的 usage、finish reason 或 tool calls
 - 需要在一个应用内管理多个 provider profile 或 `AiServiceRegistry`
 
+:::warning 不要改走隐藏式入口
 不要为了“少写几行”改走不存在的 `ChatClient` 或隐藏式 `Ai4j.chat()`。AI4J 当前的优势在于这条对象链能继续承载 Tool、MCP、RAG、Memory、Responses 和自定义网络栈。
+:::
 
 ## 7. 关于 `OkHttpClient`
 

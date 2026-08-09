@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: Flowgram 使用路径与场景选择
+description: 按任务目标给出 Flowgram 的五条进入路径，并对比何时选 Flowgram、Agent、Coding Agent 或 MCP，附推荐演进顺序、常见误判与按角色的最短阅读路径。
 ---
 
 # Flowgram 使用路径与场景选择

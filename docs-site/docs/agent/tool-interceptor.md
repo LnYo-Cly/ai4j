@@ -1,5 +1,7 @@
 ---
 sidebar_position: 11
+title: Interception Hooks
+description: ai4j-agent 的拦截层：ToolInterceptor(block/modify/routeTo sandbox) 与 PromptInterceptor 对应 Claude Code 的 PreToolUse/PostToolUse/UserPromptSubmit，加上 observe-only 生命周期 Hook，附 hooks 门面与 CLI 配置。
 ---
 
 # Interception Hooks (block / modify / route-to-sandbox + observe events)

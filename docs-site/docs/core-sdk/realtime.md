@@ -1,5 +1,7 @@
 ---
 sidebar_position: 33
+title: Realtime 接口（WebSocket）
+description: 讲解 IRealtimeService 长连接能力面：当前仅支持 OpenAI，统一入口、默认鉴权头、WebSocket 建连主线及回调注意事项。
 ---
 
 # Realtime 接口（WebSocket）
@@ -74,6 +76,7 @@ Realtime 在 AI4J 当前是一条 **很薄但正式存在的长连接能力面**
 - `onMessage(String)`
 - `onFailure()`
 
+:::warning
 这里要特别注意一个实现细节：
 
 - `onFailure(WebSocket, Throwable, Response)` 当前只记录日志，并没有调用抽象方法 `onFailure()`
@@ -81,6 +84,7 @@ Realtime 在 AI4J 当前是一条 **很薄但正式存在的长连接能力面**
 也就是说，接口表面看起来有一个统一失败回调，但当前实现实际上没有把底层 OkHttp failure 事件转发给你的抽象 `onFailure()`。
 
 这点非常值得文档明确写出来，否则调用方会误以为覆写 `onFailure()` 一定能收到断连失败通知。
+:::
 
 ## 5. 这一层当前没有替你做什么
 
@@ -116,8 +120,10 @@ Realtime 和其他 HTTP 能力一样，共享 `Configuration.okHttpClient`。
 
 ### 不要在回调里做重 CPU 工作
 
-`RealtimeListener` 回调直接挂在 OkHttp WebSocket listener 上。  
+:::tip
+`RealtimeListener` 回调直接挂在 OkHttp WebSocket listener 上。
 如果你在这里做重处理，很容易把消息消费和连接处理耦死。
+:::
 
 ### 自己定义事件路由层
 

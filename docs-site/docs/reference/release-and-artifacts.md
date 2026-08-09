@@ -1,5 +1,7 @@
 ---
+title: Release and Artifacts
 sidebar_position: 2
+description: AI4J 的发布 artifact、Maven 坐标与 BOM 版本对齐策略，说明各模块角色、依赖引入方式与版本升级顺序。
 ---
 
 # Release and Artifacts

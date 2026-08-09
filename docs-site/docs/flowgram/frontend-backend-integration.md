@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: 前端画布与后端 Runtime 对接
+description: Flowgram.ai 画布与 AI4J Java 后端执行层对齐的三个契约：workflow schema、task lifecycle、report/result/trace 读侧，讲清 schema 归一化、轮询与权限接入点。
 ---
 
 # 前端画布与后端 Runtime 对接
@@ -305,11 +307,13 @@ Runtime 负责：
 
 ## 10. 权限和多租户接入点在哪里
 
+:::warning 默认是轻安全姿态
 当前默认是轻安全姿态：
 
 - `auth.enabled = false`
 - caller 默认匿名
 - access checker 默认放行
+:::
 
 如果你要接企业平台，重点接入点在：
 

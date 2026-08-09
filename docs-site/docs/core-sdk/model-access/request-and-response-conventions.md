@@ -1,3 +1,8 @@
+---
+title: Request and Response Conventions
+description: 统一讲解请求构造与返回读取约定，区分本地注册字段与 provider payload 字段、extraBody 角色及常见接入误区。
+---
+
 # Request and Response Conventions
 
 这一页统一解释：**在 AI4J 里，请求应该怎么构造，返回应该怎么读，哪些字段是 SDK 本地语义，哪些字段才会真正进入 provider payload。**

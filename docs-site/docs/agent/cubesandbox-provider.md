@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+title: CubeSandbox Provider
+description: "CubeSandboxProvider 是 ai4j 第一个真实远端 sandbox 适配器，把 SandboxProvider/SandboxSession 映射到 CubeSandbox 的 CubeAPI 控制面与 envd 执行 API。"
 ---
 
 # CubeSandbox Provider
@@ -160,7 +162,9 @@ CLI 只做 attach，不做 create/auth：
 | `user` | envd Basic auth 用户，默认 `root` |
 | `connectEnvelopeLimitBytes` | Connect message 上限，默认 64MiB |
 
+:::danger
 不要把 `apiKey`、token、cookie、连接串放进 `SandboxSpec.config` 或 labels。`CubeSandboxConfig.withSpecOverrides(...)` 会有意忽略 `apiKey`；labels 和 metadata 中包含 `secret/token/key/password/passwd/credential/authorization/cookie` 的 key 会被过滤。
+:::
 
 ## 7. 协议映射
 
@@ -196,7 +200,9 @@ export CUBE_TEMPLATE_ID="..."
 mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=CubeSandboxLiveProviderTest" -DskipTests=false -DfailIfNoTests=false test
 ```
 
+:::warning
 如果缺少 live 环境变量，测试会通过 JUnit `Assume` 跳过；不要在日志、文档、PR 或 Harness 材料里写出真实 key。
+:::
 
 ## 9. 当前边界
 

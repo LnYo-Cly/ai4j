@@ -1,5 +1,7 @@
 ---
 sidebar_position: 10
+title: Replay, Recovery & Audit
+description: Covers ai4j-agent's four production layers on the event stream: node I/O capture and replay, resume-cache failure recovery, durable session stores, and tamper-evident hash-chained audit logging.
 ---
 
 # Replay, Recovery & Audit

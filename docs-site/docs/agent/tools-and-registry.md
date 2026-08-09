@@ -1,3 +1,8 @@
+---
+title: Tools and Registry
+description: 拆解 ai4j-agent 工具体系：AgentToolRegistry 只管暴露面、ToolExecutor 管执行与权限边界，runtime 如何归一化、校验、执行工具并把结果回灌 memory，以及审批拦截该放哪层。
+---
+
 # Tools and Registry
 
 在 `ai4j-agent` 里，工具体系真正解决的不是“函数怎么暴露给模型”，而是四个边界如何拆开：
@@ -124,8 +129,10 @@ RagTool ragTool = RagTool.builder(ragService)
         .build();
 ```
 
+:::warning 租户 filter 必须固定在服务端
 这样 LLM 只负责提出检索 query，真正的租户边界由服务端执行器写入 `RagQuery.filter`。
 这和普通工具权限一样，属于执行边界，不属于模型可协商的参数。
+:::
 
 ## 4. 默认 Builder 装配路径比看起来更具体
 

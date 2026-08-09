@@ -1,3 +1,8 @@
+---
+title: Query Planning
+description: 讲清 AI4J RagQueryPlanner 检索前处理层：它在 Retriever 之前产出 rewrite/multi-query/HyDE/step-back 检索计划，多 variant 用 RRF 融合，rerank 与上下文组装仍回原 query，planner 异常自动回退。
+---
+
 # Query Planning
 
 `Query Planning` 是 RAG 检索前处理层。它只回答一个问题：
@@ -274,7 +279,9 @@ if (trace.getQueryPlan() != null && trace.getQueryPlan().isFallback()) {
 
 ## 7. 什么时候不要用
 
+:::warning
 不要默认给每个 RAG 都加 planner。它会增加额外 LLM 调用、延迟和不确定性。
+:::
 
 优先在这些场景启用：
 

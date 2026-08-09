@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+title: Agent、Tool、知识库与 MCP 接入
+description: 讲清 Flowgram 当前已内置的能力接法（LLM/TOOL/KNOWLEDGE）与只能扩展的能力（Agent/MCP 无内置专属节点），给出 Tool 节点复用工具总线、KNOWLEDGE 复用 RAG 抽象的真实链路。
 ---
 
 # Agent、Tool、知识库与 MCP 接入
@@ -11,11 +13,13 @@ sidebar_position: 7
 
 最重要的结论先写死：
 
+:::note Agent 与 MCP 没有内置专属节点
 - `LLM`、`TOOL`、`KNOWLEDGE` 当前已经有正式接法
 - `Agent` 没有内置专属节点
 - `MCP` 没有内置专属节点
 
 不要把“理论上能接”写成“当前已经内置支持”。
+:::
 
 ## 1. `LLM` 节点：通过 AI4J 服务注册体系接模型
 

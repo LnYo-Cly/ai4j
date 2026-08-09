@@ -1,3 +1,8 @@
+---
+title: Chunking Strategies
+description: 讲清 AI4J 默认 RecursiveTextChunker 的真实行为与边界：它只填充 documentId/content/chunkIndex，不自动生成 chunkId、页码或章节元数据，以及 chunk 边界稳定性如何决定后续检索去重与引用质量。
+---
+
 # Chunking Strategies
 
 很多 RAG 文档会把 `chunking` 写成“把长文切成几段”。  
@@ -64,7 +69,9 @@ List<RagChunk> chunk(RagDocument document, String content)
 
 这里最关键的事实是：
 
-**默认 chunker 并不会自动填充 `chunkId`、`pageNumber`、`sectionTitle`、`metadata`。**
+:::note
+默认 chunker 并不会自动填充 `chunkId`、`pageNumber`、`sectionTitle`、`metadata`。
+:::
 
 而 `RagChunk` 明明是支持这些字段的：
 
@@ -117,7 +124,9 @@ List<RagChunk> chunk(RagDocument document, String content)
 
 这意味着：
 
-**一旦 chunk 顺序不稳定，后续检索去重、引用定位、评估对比都会变脆。**
+:::warning
+一旦 chunk 顺序不稳定，后续检索去重、引用定位、评估对比都会变脆。
+:::
 
 所以自定义 chunker 时，一个很稳的原则是：
 

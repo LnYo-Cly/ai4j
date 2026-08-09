@@ -1,3 +1,8 @@
+---
+title: Rerank
+description: 讲清 AI4J rerank 层：它夹在 retrieval 与 context assembly 之间做排序修正，默认 NoopReranker 不远程重排，ModelReranker 靠 provider 返回 index 映射，finalTopK 在 rerank 之后裁剪，returnDocuments 可能改写命中内容。
+---
+
 # Rerank
 
 `rerank` 在 AI4J 里的位置很容易被写浅。  
@@ -197,7 +202,9 @@ this(rerankService, model, null, null, false, true);
 copy.setContent(result.getDocument().getContent());
 ```
 
+:::warning
 这意味着 rerank 阶段不仅可能改顺序，还可能改内容。
+:::
 
 这个能力很强，但也要谨慎：
 

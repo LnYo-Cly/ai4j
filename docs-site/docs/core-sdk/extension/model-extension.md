@@ -1,3 +1,8 @@
+---
+title: Model Extension
+description: 讲清 AI4J model extension：在不新增 PlatformType 的前提下，把新模型能力吸收进现有 provider 与现有契约，主战场是请求对象和 provider 适配层，强调把 provider 差异收敛在 provider service 内部而非泄漏到业务层。
+---
+
 # Model Extension
 
 `model extension` 解决的是：**在不新增 `PlatformType`、不新增顶层 service 的前提下，把新的模型能力吸收到现有 provider 与现有契约中。**
@@ -57,7 +62,9 @@ model extension 最常落在这几类对象上：
 - 统一请求对象是否需要新增字段
 - 对应 provider service 是否有序列化/反序列化更新
 
+:::warning
 如果只改请求对象、不改 provider 映射，实现上最常见的结果就是“字段看起来加了，但平台端根本没收到”。
+:::
 
 ### 3.3 名义上是新模型，实际上已经冲破旧契约
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: Agent Approval / Permission Policy
+description: "AgentPermissionPolicy 在工具执行前做权限判断：ALLOW / DENY / REQUIRE_APPROVAL，可被普通 Agent、Blueprint、CLI 审批界面与后续 Sandbox SPI 复用。"
 ---
 
 # Agent Approval / Permission Policy
@@ -98,7 +100,9 @@ AgentPermissionPolicy policy = request -> {
 - `request.getToolCall()`
 - `request.getEnvironment()`
 
-注意：`getEnvironment()` 只是元数据。设置为 `REMOTE_SANDBOX` 不会自动创建远端沙箱，也不会自动把工具路由到远端机器。
+:::note
+`getEnvironment()` 只是元数据。设置为 `REMOTE_SANDBOX` 不会自动创建远端沙箱，也不会自动把工具路由到远端机器。
+:::
 
 ## 5. `REQUIRE_APPROVAL` 的语义
 
@@ -139,7 +143,9 @@ AgentRuntime
 - `AgentPermissionPolicy` 决定合法调用是否允许执行。
 - `ToolExecutor` 真正执行工具。
 
-不要把业务授权逻辑塞进 sanitizer。sanitizer 只应该回答“这个调用像不像一个可执行调用”，不应该回答“业务上允不允许”。
+:::note
+不要把业务授权逻辑塞进 sanitizer。sanitizer 只应该回答”这个调用像不像一个可执行调用”，不应该回答”业务上允不允许”。
+:::
 
 ## 7. 与插件、Guardrail、SubAgent 的关系
 
@@ -189,7 +195,9 @@ permission policy 决定能不能执行
 sandbox provider 决定在哪里执行以及怎么执行
 ```
 
+:::warning
 进入 sandbox 不等于自动放开权限。即使工具运行在远端环境，也仍然应该经过 approval / permission policy。
+:::
 
 ## 9. 常见策略
 

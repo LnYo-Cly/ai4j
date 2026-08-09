@@ -1,5 +1,7 @@
 ---
 sidebar_position: 999
+title: 术语表
+description: AI4J 文档核心术语统一表：定义 Agent、AiService、Chat、Coding Agent、Function Call、MCP、Memory、Skill、Responses、Tool Registry 等关键概念，避免跨专题混淆。
 ---
 
 # 术语表
@@ -293,10 +295,12 @@ Agent Workflow 中的状态图编排能力，适合分支、循环、条件路�
 
 指模型响应以增量方式到达，而不是一次性整包返回。
 
+:::note
 要注意：
 
 - 流式事件不等于 token
 - 不同平台的 chunk 粒度不同
+:::
 
 ---
 

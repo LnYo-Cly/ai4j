@@ -1,5 +1,7 @@
 ---
 sidebar_position: 14
+title: Agent 核心类参考
+description: ai4j-agent 核心类源码导航图：按装配、运行、模型适配、工具、memory、workflow、subagent、team、trace 分层，给出该先读哪条线、按问题类型选入口。
 ---
 
 # Agent 核心类参考

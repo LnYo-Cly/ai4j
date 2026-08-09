@@ -1,3 +1,8 @@
+---
+title: RAG Ingestion Vector Store
+description: AI4J 的标准 RAG 工程基线方案，串联文档入库、embedding、向量存储与检索链，不绑定特定向量库品牌。
+---
+
 # RAG Ingestion Vector Store
 
 这个方案回答的是：当你已经决定做 RAG，第一条标准工程路径应该是什么。

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: MCP Client 接入（单服务模式）
+description: 聚焦单服务模式：McpClient 的真实生命周期、connect() 与 AUTO/legacy profile 的差异、缓存与心跳重连语义，以及 callTool 的失败语义和常见排障路径。
 ---
 
 # MCP Client 接入（单服务模式）
@@ -197,7 +199,9 @@ McpPromptResult prompt = client.getPrompt(
 
 如果服务端返回 MCP error response，当前实现通常会把错误压成字符串返回，而不是一定抛异常。
 
+:::warning 协议层失败不一定抛异常
 因此调用方不要只抓异常，也要检查返回内容是否是失败文本。
+:::
 
 ## 10. 推荐的接入姿势
 

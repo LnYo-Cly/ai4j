@@ -1,5 +1,7 @@
 ﻿---
 sidebar_position: 7
+title: MCP 与 Agent 一体化实战（端到端）
+description: 拆开第三方 MCP 从配置文件一路进入 Agent 推理循环并被模型调用的 7 层执行链，覆盖投影、调用分发、多租户回退与 trace 诊断点。
 ---
 
 # MCP 与 Agent 一体化实战（端到端）
@@ -165,7 +167,9 @@ System.out.println(result.getOutputText());
 3. `toolRegistry(..., mcpServices)` 是否传了正确的 `serviceId`
 4. 是否把 serviceId 和 toolName 混用了
 
+:::note mcpServices 传的是服务 ID
 `mcpServices` 传的是服务 ID，不是工具名。
+:::
 
 ## 9. 为什么模型有时不触发工具
 
@@ -196,8 +200,10 @@ gateway.addUserMcpClient("u1001", "weather-http", userClient).join();
 
 这里要自己想清楚权限边界：
 
+:::warning 多租户默认会回退全局工具
 - 默认实现允许回退
 - 强隔离场景通常不应该回退
+:::
 
 ## 11. Trace 和诊断应该加在哪里
 

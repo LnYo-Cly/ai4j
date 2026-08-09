@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+title: Flowgram API 与运行时
+description: 面向外部调用者的 task 控制面 contract：validate/run/report/result/cancel 五个 HTTP 入口、DTO 经 adapter 与 facade 的变形，以及真正改变外部行为的配置项。
 ---
 
 # Flowgram API 与运行时
@@ -276,12 +278,14 @@ ai4j:
 - 状态快照落库
 - result snapshot 落库
 
+:::warning JDBC store 不是 durable 执行引擎
 但不要把它误解成“外部 API 已经变成可跨进程恢复执行的 durable workflow engine”。
 
 当前：
 
 - `report` / `result` 的第一真相仍来自 runtime 进程内 `TaskRecord`
 - task store 更像平台记录层
+:::
 
 ## 10. `report` / `result` 和 trace 的关系
 

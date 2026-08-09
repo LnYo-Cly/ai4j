@@ -1,5 +1,7 @@
 ﻿---
 sidebar_position: 5
+title: MySQL 动态 MCP 服务管理
+description: AI4J 未内置 MySQL 配置中心，但预留了 McpConfigSource 与 McpGatewayConfigSourceBinding 扩展点；本页讲如何实现数据库配置源并补齐命名、密钥、审计治理。
 ---
 
 # MySQL 动态 MCP 服务管理
@@ -239,7 +241,9 @@ gateway.initialize().join();
 
 ### 密钥治理
 
+:::danger 不要明文存储真实 token
 不要把真实 token 明文长期存进 `headers_json`。
+:::
 
 更稳的方案是：
 

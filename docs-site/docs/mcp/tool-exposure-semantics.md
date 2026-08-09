@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Tool 暴露语义与安全边界
+description: 讲清 MCP 工具暴露的安全边界：getAllTools 显式白名单与 getLocalMcpTools 本地枚举是两套语义，调用优先级与暴露面也是两套逻辑，附代码审查清单。
 ---
 
 # Tool 暴露语义与安全边界
@@ -128,9 +130,11 @@ sidebar_position: 5
 
 ### 这带来的含义
 
+:::warning 高风险 @McpTool 默认在本地枚举面可见
 如果你把一个高风险能力标成 `@McpTool`，它很可能在本地能力枚举面里天然可见。
 
 这也是为什么“是否暴露给模型”必须继续由上层白名单控制。
+:::
 
 ## 7. Gateway 工具暴露为什么还要引入 serviceId
 

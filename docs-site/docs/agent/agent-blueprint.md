@@ -1,5 +1,7 @@
 ---
 sidebar_position: 9
+title: Agent Blueprint YAML
+description: "用声明式 YAML 描述单 Agent 的模型、指令、工具、memory、compact、sandbox 与 workflow 参数，支持加载、校验与模板化，并由宿主提供依赖后创建可运行 Agent。"
 ---
 
 # Agent Blueprint YAML
@@ -10,7 +12,9 @@ sidebar_position: 9
 
 P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。P1-B 在此基础上增加 `AgentFactory`，可以在宿主显式提供 `AgentModelClient` 等依赖后把 Blueprint 转成 `AgentBuilder` / `Agent`。P1-C 进一步提供 `ai4j-cli run <agent.yaml>`，让单 Agent Blueprint 可以从终端直接运行一次。
 
-注意：`AgentFactory` 仍然不会读取 provider key、本地 profile、插件目录或真实 sandbox。它只做确定性映射，所有敏感配置和外部系统连接都由宿主应用提供。
+:::note
+`AgentFactory` 仍然不会读取 provider key、本地 profile、插件目录或真实 sandbox。它只做确定性映射，所有敏感配置和外部系统连接都由宿主应用提供。
+:::
 
 ## 1. 适合什么场景
 
@@ -46,7 +50,9 @@ workflow:
 - 模型来自通用 `openai-compatible` provider。
 - workflow 使用 `react`，最多 3 轮。
 
-注意：这里没有 provider token。Blueprint 不负责保存密钥，密钥仍应来自环境变量、宿主配置或外部 secret store。
+:::warning
+这里没有 provider token。Blueprint 不负责保存密钥，密钥仍应来自环境变量、宿主配置或外部 secret store。
+:::
 
 ## 3. 完整一点的示例
 
@@ -514,4 +520,6 @@ sandbox.enabled=true
 
 ### 想把 token 写进 YAML
 
+:::danger
 不要这样做。Blueprint 文件适合提交、分享和模板化；token 属于环境变量、宿主配置或 secret store。
+:::

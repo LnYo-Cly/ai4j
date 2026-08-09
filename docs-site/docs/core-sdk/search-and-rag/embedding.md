@@ -1,3 +1,8 @@
+---
+title: Embedding
+description: 讲清 AI4J embedding 层的薄接口与强约束：它统一 provider 调用但只支持 OPENAI/OLLAMA，ingest 与 query 必须使用同一模型，混用不会被框架自动阻止，是索引级协议的一部分。
+---
+
 # Embedding
 
 在 AI4J 当前实现里，`embedding` 不是一个孤立 API，而是离线 RAG 两端都在依赖的公共底座：
@@ -196,8 +201,9 @@ Embedding 层当前没有直接替你解决：
 3. 把模型名视为索引协议的一部分
 4. 更换模型时按新 dataset / 新索引重建
 
-不要一边沿用旧向量，一边改查询模型。  
-在当前架构下，这种混用不会被自动阻止。
+:::warning
+不要一边沿用旧向量，一边改查询模型。在当前架构下，这种混用不会被自动阻止。
+:::
 
 ## 11. 这页最该记住的结论
 

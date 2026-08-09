@@ -1,3 +1,8 @@
+---
+title: SearXNG Web Search
+description: 给回答链补上公网实时搜索能力的增强方案，讲解 SearXNG 配置、与 RAG 的边界及降级策略。
+---
+
 # SearXNG Web Search
 
 这个方案解决的是“如何给回答链补上一条公网实时搜索能力”，而不是替代私域知识库。
@@ -26,7 +31,9 @@
 - `SearXNG`：公网检索，时效强
 - `RAG`：私域知识库检索，边界更可控
 
+:::warning 不要用 SearXNG 替代 RAG
 如果你要查内部知识库，不要用 SearXNG 替代 RAG。
+:::
 
 ## 4. 这条方案的价值
 

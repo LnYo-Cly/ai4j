@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Runtime Implementations
+description: 拆解 ReActRuntime、CodeActRuntime、DeepResearchRuntime 三种 runtime：它们共享 BaseAgentRuntime 主循环，差异在于模型输出的中间表示，以及何时换中间表示、何时自定义 runtime。
 ---
 
 # Runtime Implementations

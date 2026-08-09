@@ -1,5 +1,7 @@
 ---
 sidebar_position: 12
+title: 前端自定义节点开发
+description: 在 ai4j-flowgram-webapp-demo 里把新节点做成可编辑、可校验、可序列化、可映射到后端的前端节点：type 枚举、FlowNodeRegistry、onAdd schema 工厂与 backend type 映射。
 ---
 
 # 前端自定义节点开发

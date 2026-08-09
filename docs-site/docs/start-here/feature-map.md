@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: Feature Map
+description: AI4J 功能地图：用成熟度标记（stable/advanced/preview/experimental）列出每个能力的状态、所属模块、适合场景与继续阅读入口，帮助按需取用最小模块。
 ---
 
 # Feature Map
@@ -111,7 +113,9 @@ AgentFlow 或其他外部平台，应先按能力归类阅读：
 | 知识库、检索增强或文档问答 | [Search & RAG](/docs/core-sdk/search-and-rag/overview) |
 | 可视化工作流后端 | [FlowGram](/docs/flowgram/overview) |
 
+:::note 集成成熟度
 这些集成不应该在入口页里被包装成已经完全稳定的能力。等对应专题页补齐后，再从这里添加深链。
+:::
 
 ## 推荐阅读顺序
 

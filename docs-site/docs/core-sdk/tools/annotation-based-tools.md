@@ -1,3 +1,8 @@
+---
+title: "Annotation-based Tools"
+description: "深入 @FunctionCall、@FunctionRequest、@FunctionParameter 三注解如何把 Java 类型绑定为 provider tool schema，详解 ToolUtil 生成链、类型映射规则与真实约束。"
+---
+
 # Annotation-based Tools
 
 AI4J 推荐注解式工具，不是因为“代码更短”，而是因为它把 Java 类型、字段说明和 provider tool schema 绑定到了同一条生成链上。
@@ -166,6 +171,7 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
 
 ### 工具名稳定性要自己治理
 
+:::warning
 `@FunctionCall(name = "...")` 是最终暴露给模型和上层 runtime 的名字。改名就会影响：
 
 - 请求里的 `functions(...)` 白名单
@@ -173,6 +179,7 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
 - 上层工具路由
 
 不要频繁修改。
+:::
 
 ## 7. 什么时候最适合用注解工具
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: MCP 使用路径与场景选择
+description: 按"要解决的问题"把 MCP 拆成三条路线：接一个现成 MCP、治理多个 MCP、把自己的 Java 能力发布成 MCP，给出每条路线的关键对象与阅读顺序。
 ---
 
 # MCP 使用路径与场景选择

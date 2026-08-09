@@ -1,3 +1,8 @@
+---
+title: Quickstart for Spring Boot
+description: Spring Boot 项目接入 AI4J 的最短路径：引入 starter、最小 application.yml 配置、AiService Bean 注入，并给出 controller 发出第一条模型请求的完整示例。
+---
+
 # Quickstart for Spring Boot
 
 这页给 Spring Boot 项目一条最短成功路径。普通 Java 项目请直接使用 [Quickstart for Java](/docs/start-here/quickstart-java)。
@@ -54,7 +59,9 @@ ai:
 $env:OPENAI_API_KEY="sk-..."
 ```
 
+:::danger 密钥不要进仓库
 不要在 `application.yml` 里写真实 key。提交到仓库的配置只能保留 `${OPENAI_API_KEY}` 这类占位。
+:::
 
 ## 4. Spring Boot 对象链
 

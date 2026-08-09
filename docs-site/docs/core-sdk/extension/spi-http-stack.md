@@ -1,3 +1,8 @@
+---
+title: SPI HTTP Stack
+description: 讲清 AI4J HTTP stack SPI：通过 ServiceLoader 把 Dispatcher 与 ConnectionPool 注入 starter 构造的统一 OkHttpClient，默认实现靠 META-INF/services 注册，丢失会导致启动失败，仅 starter 装配链自动生效。
+---
+
 # SPI HTTP Stack
 
 这一页讲的是 AI4J 当前少数真正已经 SPI 化的扩展面之一：**底层 `OkHttp` 并发调度与连接池策略**。
@@ -116,7 +121,9 @@ HTTP SPI 的意义就在于，它把这种底层策略差异从“业务代码�
 
 - `IllegalStateException("No implementation found for ...")`
 
-所以如果你做了 fat jar、shade、重打包，或者错误排除了资源文件，starter 可能会在初始化 `OkHttpClient` 前就启动失败。
+:::warning
+如果你做了 fat jar、shade、重打包，或者错误排除了资源文件，starter 可能会在初始化 `OkHttpClient` 前就启动失败。
+:::
 
 ### 自定义 SPI 实现过度全局化
 

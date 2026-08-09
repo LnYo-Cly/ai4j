@@ -1,5 +1,7 @@
 ﻿---
 sidebar_position: 6
+title: 构建并对外发布 MCP Server
+description: 讲解 AI4J 如何用 @McpService/@McpTool 注解、adapter 和 McpServerEngine 把 Java 能力发布成 MCP Server，覆盖 Tool/Resource/Prompt 三类能力链与三种服务端 transport 的真实差异。
 ---
 
 # 构建并对外发布 MCP Server
@@ -114,7 +116,9 @@ public class WeatherMcpService {
 - `McpResourceAdapter` 提供了 `scanAndRegisterMcpResources()`
 - 但 `McpServerEngine` 本身不会自动触发资源扫描
 
+:::warning Resource/Prompt 不会自动注册
 也就是说，如果你没有在服务启动前显式完成资源注册，`resources/list` 可能就是空的。
+:::
 
 ### Prompt 链路
 
@@ -260,7 +264,9 @@ server.start().join();
 5. 安全面
    - 发布能力不等于默认允许所有客户端调用
 
+:::note 发布层只负责能力可接入
 发布层只负责“能力可接入”，不负责“谁都能随便用”。
+:::
 
 ## 9. 常见失败点
 

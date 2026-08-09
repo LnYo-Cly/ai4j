@@ -1,3 +1,8 @@
+---
+title: SPI Dispatcher ConnectionPool
+description: AI4J 的 HTTP 栈扩展方案，通过 DispatcherProvider 与 ConnectionPoolProvider SPI 治理生产并发、连接池与网络隔离。
+---
+
 # SPI Dispatcher ConnectionPool
 
 这个方案讲的不是模型能力，而是当你已经进入生产并发和网络治理阶段时，AI4J 的 HTTP 栈该怎么扩展。

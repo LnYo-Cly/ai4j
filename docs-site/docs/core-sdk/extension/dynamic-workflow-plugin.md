@@ -1,3 +1,8 @@
+---
+title: Dynamic Workflow Plugin
+description: 讲清 ai4j-plugin-dynamic-workflow 样板插件：模型把复杂任务写成确定性 workflow script，插件只返回 host-mediated 请求 envelope，实际执行由 ai4j-agent runtime 可选接管，内置 Nashorn 执行器默认关闭 Java interop。
+---
+
 # Dynamic Workflow Plugin
 
 `ai4j-plugin-dynamic-workflow` 是 AI4J 的动态工作流样板插件，推荐作为独立 GitHub 仓库维护和单独发版，而不是并入 `ai4j-sdk` reactor。它采用 Claude Code style dynamic workflow 的生态模式：**模型先把复杂任务写成一段可检查的 workflow script，再由宿主决定如何把脚本拆给 subagent、worktree、审批和模型路由执行**。
@@ -121,7 +126,9 @@ permission: agent.workflow.request
 configPrefix: ai4j.extensions.dynamic-workflow
 ```
 
-> `agent.workflow.request` 是宿主策略提示，不会自动授予执行 JavaScript、创建 worktree、联网或调用 provider 的权限。真实执行仍由 host policy、Agent/Coding Agent 工厂和工具暴露配置决定。
+:::warning
+`agent.workflow.request` 是宿主策略提示，不会自动授予执行 JavaScript、创建 worktree、联网或调用 provider 的权限。真实执行仍由 host policy、Agent/Coding Agent 工厂和工具暴露配置决定。
+:::
 
 ## 5. Tool 输入
 
@@ -273,7 +280,9 @@ System.out.println(result.toJson());
 
 当前内置 runtime 是 Java 8 友好的 Nashorn 执行器，不是 Node.js，也不会暴露 `fs`、`process`、`fetch`、`import` 或任意系统 API。默认情况下，它还会用 `--no-java` 创建 Nashorn engine、移除 `load` / `quit` 等全局入口，并把宿主 bridge 收进闭包，只暴露 `phase` / `log` / `agent` / `parallel` / `pipeline` 这几个 workflow primitive。
 
+:::warning
 `DynamicWorkflowRuntimeOptions.allowJavaInterop` 默认为 `false`。只有在脚本完全可信、并且宿主愿意把 Java interop 作为显式扩展面时，才应改成 `true`。
+:::
 
 runtime 会做轻量 normalizer，方便运行常见 workflow script：
 

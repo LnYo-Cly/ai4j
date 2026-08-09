@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: 最小 ReAct Agent
+description: 剖析最小但完整的 ReAct Agent 运行闭环：AgentBuilder 默认装配、ReActRuntime 与 BaseAgentRuntime 的关系、工具声明与执行边界，以及空工具 Agent 何时成立。
 ---
 
 # 最小 ReAct Agent
@@ -279,10 +281,12 @@ AgentResult result = agent.run(AgentRequest.builder()
 
 `BaseAgentRuntime.runInternal(...)` 中：
 
+:::warning maxSteps 默认无上限
 - `maxSteps > 0` 才算有步数上限
 - 否则 loop 没有硬限制
 
 这对实验方便，但对生产通常不合适。
+:::
 
 ### 11.2 工具错误默认会被写回 memory，而不是直接抛出
 

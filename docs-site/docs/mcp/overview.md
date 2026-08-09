@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: MCP 总览
+description: AI4J 把 MCP 做成覆盖 client、transport、gateway、server 四个平面的能力连接子系统，而不是单一工具接入选项。本页给出整体地图与推荐阅读顺序。
 ---
 
 # MCP 总览

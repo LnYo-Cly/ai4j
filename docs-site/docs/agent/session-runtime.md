@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Agent Session Runtime
+description: 讲解 AgentSession 长程运行态容器：sessionId、独立 memory、event log、snapshot/restore 与 AgentSessionStore，以及它与 memory/compact、Coding Agent/CLI 的边界和生产实现建议。
 ---
 
 # Agent Session Runtime
@@ -70,7 +72,9 @@ System.out.println(result.getOutputText());
 System.out.println(session.getEventLog().getEvents().size());
 ```
 
+:::warning memorySupplier 必须返回独立实例
 重点是 `memorySupplier(...)`：每次 `newSession()` 都应该拿到独立 memory。否则多个 session 可能共享同一个 memory 实例。
+:::
 
 ## 4. 保存和恢复
 
@@ -93,7 +97,9 @@ session.save();
 AgentSession resumed = agent.resumeSession(session.getSessionId());
 ```
 
+:::warning InMemoryAgentSessionStore 不适用于生产
 `InMemoryAgentSessionStore` 只适合本地测试和 demo。生产环境应实现自己的 `AgentSessionStore`，例如 JDBC、Redis、对象存储或业务自有 session 表。
+:::
 
 ## 5. Snapshot 包含什么
 

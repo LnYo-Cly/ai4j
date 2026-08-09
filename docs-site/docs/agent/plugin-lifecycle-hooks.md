@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+title: Plugin Lifecycle Hooks
+description: 说明 ai4j-extension-api 的 Agent 生命周期 Hook：插件如何观察 BEFORE_TURN/BEFORE_MODEL_REQUEST/BEFORE_TOOL_CALL/ON_COMPACT 等事件，事件 payload、异常策略与 Guardrail 的区别。
 ---
 
 # Plugin Lifecycle Hooks
@@ -99,7 +101,9 @@ Agent agent = Agents.react()
 | `payload` | 对应事件的上下文对象，例如 `AgentPrompt`、`AgentModelResult`、`AgentToolCall`、`CompactResult` |
 | `attributes` | 扩展属性，首版用于插件自定义上下文 |
 
+:::warning payload 可能含敏感数据
 payload 是运行态对象，不建议插件直接持久化完整原文。尤其是 prompt、model raw response、tool arguments 可能包含用户输入、业务数据或配置内容。
+:::
 
 ## 4. 异常策略
 

@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+title: MCP 传输类型详解（STDIO / SSE / Streamable HTTP）
+description: 对比 STDIO、SSE、Streamable HTTP 三种 MCP transport 的适用场景、优缺点与默认连接行为，讲清 TransportConfig 统一配置平面与选型责任归属。
 ---
 
 # MCP 传输类型详解（STDIO / SSE / Streamable HTTP）
@@ -191,7 +193,9 @@ client.connect().join();
 config.withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
 ```
 
+:::note AUTO 不是万能识别
 AUTO 不是万能识别：认证失败、可识别的现代 JSON-RPC error、或无效发现响应都不会降级。`http` 类型别名会归一化成 `streamable_http` 并保留这个 profile 语义；deprecated HTTP+SSE 则必须显式使用 `sse`。完整差异和升级路线见 [Streamable HTTP](/docs/mcp/streamable-http)。
+:::
 
 ### 5.5 为什么它通常是生产优先选项
 

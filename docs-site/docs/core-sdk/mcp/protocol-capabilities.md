@@ -1,3 +1,8 @@
+---
+title: Protocol Capabilities
+description: 讲清 AI4J MCP 协议面：服务端支持 tools/resources/prompts 三类 capability 与 list_changed 通知，legacy profile 需 initialize 握手而现代 Streamable HTTP 无状态，transport 会影响 capability 边界。
+---
+
 # Protocol Capabilities
 
 如果把 MCP 只理解成 `tools/call`，你只看到了最薄的一层。
@@ -75,7 +80,9 @@ AI4J 当前实现里的 MCP 协议面至少包括：
 
 `AUTO` 只发送现代 `server/discover` 探测；只有未识别的 HTTP `400`、`404` 或 `405` 才会选择 initialization-era Streamable HTTP 并回到本节的初始化链。认证失败、可识别的现代 JSON-RPC error、或不合格的 discovery response 不会触发降级，因此 AUTO 不是通用的 MCP server 探测器。
 
+:::warning
 不要把 legacy 的初始化状态、session affinity 或 capability declaration 迁移到现代 endpoint。详见 [Streamable HTTP](/docs/mcp/streamable-http)。
+:::
 
 ## 3. 服务端返回的 capability 长什么样
 
@@ -90,7 +97,9 @@ AI4J 当前实现里的 MCP 协议面至少包括：
 
 其中 `tools.listChanged` 是否为 `true`，取决于构造 `McpServerEngine` 时传入的 `toolsListChanged` 标志。
 
+:::warning
 旧实现的 capability metadata 中可能带有 `resources.subscribe` 标记；它不能作为现代 subscriptions 已实现的承诺。AI4J 目前不实现现代 subscription 或 MRTR 流程，现代 client 也不会宣称支持它们。不要基于该标记设计互操作流程。
+:::
 
 这说明 capability 不是全都固定不变，而会受具体 server transport 形态影响。
 

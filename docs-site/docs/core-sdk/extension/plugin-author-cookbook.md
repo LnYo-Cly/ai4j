@@ -1,3 +1,8 @@
+---
+title: Plugin Author Cookbook
+description: 面向第三方插件作者的动手指南：用 CLI 生成最小插件项目，稳定 manifest 与公共 ID 命名规则，写结构化 tool input schema，把 apply() 保持为轻量注册函数，完成 manifest/资源/schema 校验与发布前声明。
+---
+
 # Plugin Author Cookbook
 
 这一页面向第三方插件作者：你想把一组工具、命令、Skill、Prompt 或 Guardrail 打成一个普通 Java jar，让使用者通过 Maven / Gradle 引入，再由宿主显式启用和暴露。
@@ -50,7 +55,11 @@ ExtensionValidationReport report = ExtensionValidator.validate(registry, "weathe
 
 这一步证明插件能被 AI4J 读取，不依赖真实模型、API key 或外部服务。后续你每改一次 manifest、resource path、tool schema 或 `apply(...)` 注册逻辑，都应该重新跑这个测试。
 
-`ExtensionValidator.validate(...)` 和 `ai4j-cli extension inspect --runtime` 都会临时调用插件 `apply(...)` 来收集运行时贡献。把 `apply(...)` 保持成轻量注册函数：只注册 tool spec、executor、command handler、Skill / Prompt classpath resource 和 Guardrail。不要在 `apply(...)` 里发起网络请求、写文件、读取密钥或做长耗时初始化；这些副作用应该留在 tool executor、command handler 或宿主显式初始化阶段。
+`ExtensionValidator.validate(...)` 和 `ai4j-cli extension inspect --runtime` 都会临时调用插件 `apply(...)` 来收集运行时贡献。把 `apply(...)` 保持成轻量注册函数：只注册 tool spec、executor、command handler、Skill / Prompt classpath resource 和 Guardrail。
+
+:::warning
+不要在 `apply(...)` 里发起网络请求、写文件、读取密钥或做长耗时初始化；这些副作用应该留在 tool executor、command handler 或宿主显式初始化阶段。
+:::
 
 ## 3. 替换示例逻辑
 
@@ -131,7 +140,9 @@ context.prompts().register(ExtensionPromptResource.builder()
         .build());
 ```
 
+:::danger
 资源路径必须在 jar 的 classpath 里存在。路径不要包含 `..`，不要把插件资源伪装成任意文件读取。
+:::
 
 ### 3.5 Guardrail 只做决策，不做业务动作
 

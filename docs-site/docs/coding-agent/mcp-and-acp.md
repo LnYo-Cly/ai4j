@@ -1,3 +1,8 @@
+---
+title: MCP and ACP
+description: 厘清 Coding Agent 里 MCP（把外部能力接进模型工具面）与 ACP（把 coding session 协议化暴露给宿主）两条完全不同的边界，说明它们如何在同一会话里同时生效。
+---
+
 # MCP and ACP
 
 `MCP` 和 `ACP` 在 Coding Agent 里经常一起出现，所以很容易被误写成“同一套接入机制的两个名字”。  

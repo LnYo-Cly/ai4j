@@ -1,5 +1,7 @@
 ---
 sidebar_position: 2
+title: Coding Agent 快速开始
+description: 用最短路径把 ai4j-cli 跑起来：构建 fat jar、跑通 one-shot 与持续会话，并核对 session、workspace、provider/model 状态以完成最小验证。
 ---
 
 # Coding Agent 快速开始
@@ -207,9 +209,11 @@ java -jar .\ai4j-cli\target\ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar ac
 - 在 OpenAI 官方 host 下做 quickstart，最稳的是 `responses`
 - 在 OpenAI-compatible host 下，不要想当然地继续套官方 OpenAI 默认
 
+:::tip 协议不确定时
 如果你不确定，最稳做法仍然是：
 
 - 在 quickstart 阶段把 `--protocol` 写死
+:::
 
 ---
 

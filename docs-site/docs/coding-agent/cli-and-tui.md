@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+title: CLI / TUI 使用指南
+description: 讲清 code 与 tui 两种入口如何共用同一套 coding runtime、在哪里分叉（JLINE/legacy/TUI runtime），以及 slash command、/stream、session store 等宿主层行为的真实边界。
 ---
 
 # CLI / TUI 使用指南

@@ -1,3 +1,8 @@
+---
+title: Hybrid Retrieval
+description: 讲清 AI4J HybridRetriever 的本质是多检索器结果融合器而非固定 Dense+BM25 套餐：默认 RRF 按排名融合，用稳定 key 去重，融合后 score 语义变化以及无 getHybridRagService 便利入口的设计原因。
+---
+
 # Hybrid Retrieval
 
 在 AI4J 里，`hybrid retrieval` 不是一个“神秘黑盒检索器”，而是一个非常具体的组合器：
@@ -122,7 +127,9 @@ RagResult result = rag.search(RagQuery.builder()
 | 专有名词、错误码、制度编号、API 名称 | `Bm25Retriever` |
 | 两种都重要 | `HybridRetriever(Arrays.asList(dense, bm25))` |
 
-注意：AI4J 现在没有 `getHybridRagService(...)` 便利入口。这样做是故意的：hybrid 需要你明确给出 BM25 corpus 和子检索器组合，先不把它藏进 `AiService`。
+:::note
+AI4J 现在没有 `getHybridRagService(...)` 便利入口。这样做是故意的：hybrid 需要你明确给出 BM25 corpus 和子检索器组合，先不把它藏进 `AiService`。
+:::
 
 ### 3.2 和 Query Planning 一起用时
 

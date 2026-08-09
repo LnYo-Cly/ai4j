@@ -1,5 +1,7 @@
 ---
 sidebar_position: 4
+title: Agentic 工作流平台快速开始
+description: 最短路径确认 starter 装配、task API 暴露、无 LLM 与带 LLM 两条最小流程跑通 validate -> run -> result -> report 链路，附 demo 默认模型配置踩坑与排障顺序。
 ---
 
 # Agentic 工作流平台快速开始
@@ -53,6 +55,7 @@ java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.1.0.jar
 
 ## 3. demo 的默认模型配置要先看清楚
 
+:::warning demo 默认模型服务是 minimax-coding
 这里最容易踩坑，因为 demo 里同时定义了两个 service，但默认值只指向其中一个。
 
 `ai4j-flowgram-demo/src/main/resources/application.yml` 当前配置的是：
@@ -73,6 +76,7 @@ java -jar ai4j-flowgram-demo/target/ai4j-flowgram-demo-2.1.0.jar
 
 1. 临时把 demo 配置中的 `default-service-id` 改成 `glm-coding`
 2. 或者在 LLM 节点里显式传 `serviceId = glm-coding`
+:::
 
 只填 `modelName` 不够，因为：
 

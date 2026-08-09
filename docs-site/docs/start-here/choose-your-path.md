@@ -1,3 +1,8 @@
+---
+title: Choose Your Path
+description: 按目标选择进入 AI4J 的主线：默认阅读顺序，以及快速发起模型请求、Spring Boot 接入、Tool/MCP/Agent/Coding Agent/FlowGram 各自的推荐起点与切深时机。
+---
+
 # Choose Your Path
 
 不同读者不该从同一页开始。

@@ -1,3 +1,8 @@
+---
+title: Architecture at a Glance
+description: 用一张四层图建立 AI4J 的整体心智模型：Start Here、Core SDK、上层模块（Spring Boot/Agent/Coding Agent/FlowGram）与 Solutions，并厘清 Function Call、Skill、MCP 三个最易混淆的概念边界。
+---
+
 # Architecture at a Glance
 
 这一页的目标不是讲细节，而是先帮你建立一个不会乱的总图。
@@ -123,7 +128,9 @@ docs-site                   文档站源码
 
 - [MCP](/docs/mcp/overview)
 
+:::note MCP 与 Tools 的边界
 注意：`MCP` 和 `Tools` 密切相关，但不是 `Tools` 的子目录。`MCP` 还包含 transport、gateway、server publish、tool exposure semantics 等协议层问题。
+:::
 
 ## 5. 按目标看，你应该从哪层进入
 

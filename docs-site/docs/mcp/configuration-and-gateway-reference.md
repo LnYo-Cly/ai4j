@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+title: MCP 配置与网关参考
+description: 区分 mcp-servers-config.json 里哪些字段真正进入 transport/client/gateway 运行时，哪些只是治理元数据，避免把字段存在误写成能力已生效。
 ---
 
 # MCP 配置与网关参考
@@ -131,7 +133,9 @@ sidebar_position: 3
 
 - 未知值会被归一化回 `stdio`
 
+:::warning 未知 type 会静默回退到 stdio
 这意味着如果你把类型写错了，不一定立刻显式报错，而可能被当成 `stdio` 继续走下去。生产环境里不要依赖这种容错。
+:::
 
 ## 6. 三种常见配置的正确写法
 

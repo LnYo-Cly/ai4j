@@ -1,3 +1,8 @@
+---
+title: Spring Boot Auto Configuration
+description: 深入解析 ai4j-spring-boot-starter 的真实装配链、初始化顺序与条件装配边界，理解统一 Configuration 与失败传播路径。
+---
+
 # Spring Boot Auto Configuration
 
 这一页讲的是 starter 的真实装配链，而不是泛泛地说“它会自动配置一些 Bean”。
@@ -43,7 +48,9 @@
 - 按配置加入代理和 SSL 策略
 - 最后写回 `Configuration.okHttpClient`
 
+:::warning initOkHttp 失败会全链路波及
 这一步一旦失败，后面的 provider、vector、RAG、websearch 相关能力都会一起受影响，因为它们共享同一个底层客户端入口。
+:::
 
 ## 4. 单实例和多实例在这里怎么分流
 

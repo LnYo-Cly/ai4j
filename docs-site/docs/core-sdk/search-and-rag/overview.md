@@ -1,3 +1,8 @@
+---
+title: Search and RAG 总览
+description: 建立 AI4J Search & RAG 的源码心智：离线私域路线 IngestionPipeline→VectorStore→Retriever→Reranker→ContextAssembler 与在线公网路线 ChatWithWebSearchEnhance 两条并行边界，以及默认骨架与可选增强的区别。
+---
+
 # Search and RAG 总览
 
 这一章如果只写成“支持在线搜索、向量库、重排、引用”，其实还没讲到重点。

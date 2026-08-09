@@ -1,3 +1,8 @@
+---
+title: Citations and Trace
+description: 区分 AI4J 的 citation 与 trace 两条链：citation 由 DefaultRagContextAssembler 基于最终命中生成，trace 记录检索与 rerank 中间状态，generation usage 与 judge 分数需上层显式回填。
+---
+
 # Citations and Trace
 
 AI4J 这一章里，`citation` 和 `trace` 很容易被一起写成“可解释性能力”。
@@ -346,7 +351,9 @@ AI4J 能提供引用材料，不等于模型最终一定严格按这些引用作
 
 ### 12.6 把 LLM judge 分数当强事实
 
+:::warning
 LLM judge 是线上质量信号，不是审计证明。高风险场景仍应保留人工抽检或规则校验。
+:::
 
 ## 13. 最稳的扩展位置在哪里
 

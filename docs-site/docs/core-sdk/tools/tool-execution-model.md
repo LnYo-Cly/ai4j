@@ -1,3 +1,8 @@
+---
+title: "Tool Execution Model"
+description: "拆解 AI4J 工具执行模型四段链：发现注册、请求级白名单、provider 返回 tool call、本地调用路由与执行，讲清 built-in/Function/MCP 优先级与结果文本化回流。"
+---
+
 # Tool Execution Model
 
 这一页讲的不是“工具怎么声明”，而是工具一旦进入请求链后，AI4J 实际怎样完成：
@@ -273,7 +278,9 @@ Core SDK 当前没有直接负责：
 
 ### 13.4 远程 MCP 工具不是自动全量开放
 
+:::note
 它们仍然要先经过 `mcpServices` 白名单。
+:::
 
 ### 13.5 返回值统一是字符串
 
