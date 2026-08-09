@@ -116,7 +116,7 @@ class CubeSandboxClient {
 
             int status = connection.getResponseCode();
             if (status >= 400) {
-                String errorBody = readBody(status >= 400 ? connection.getErrorStream() : connection.getInputStream());
+                String errorBody = readBody(connection.getErrorStream());
                 throw new CubeSandboxApiException(status, "CubeSandbox process start failed: POST " + url + " -> " + status, errorBody);
             }
             ProcessRun run = parseProcessStream(connection.getInputStream());

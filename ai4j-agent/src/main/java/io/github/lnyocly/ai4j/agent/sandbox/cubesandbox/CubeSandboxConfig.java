@@ -122,8 +122,8 @@ public final class CubeSandboxConfig {
             requestTimeoutMillis = millisValue(config, "requestTimeout");
         }
         builder.requestTimeoutMillis(requestTimeoutMillis);
-        builder.closeDestroysSandbox(booleanValue(config, "closeDestroysSandbox", "destroyOnClose", "deleteOnClose"));
-        builder.allowInternetAccessDefault(booleanValue(config, "allowInternetAccess", "allowInternetAccessDefault"));
+        applyBoolean(config, builder::closeDestroysSandbox, "closeDestroysSandbox", "destroyOnClose", "deleteOnClose");
+        applyBoolean(config, builder::allowInternetAccessDefault, "allowInternetAccess", "allowInternetAccessDefault");
         builder.user(stringValue(config, "user"));
         builder.connectEnvelopeLimitBytes(intValue(config, "connectEnvelopeLimitBytes"));
         builder.spec(spec.copy());
@@ -349,16 +349,19 @@ public final class CubeSandboxConfig {
         }
     }
 
-    private static Boolean booleanValue(Map<String, Object> config, String... keys) {
+    private static void applyBoolean(Map<String, Object> config, java.util.function.Consumer<Boolean> setter, String... keys) {
         Object value = objectValue(config, keys);
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
         if (value == null) {
-            return null;
+            return;
+        }
+        if (value instanceof Boolean) {
+            setter.accept((Boolean) value);
+            return;
         }
         String text = trimToNull(String.valueOf(value));
-        return text == null ? null : Boolean.valueOf(text);
+        if (text != null) {
+            setter.accept(Boolean.valueOf(text));
+        }
     }
 
     private static Object objectValue(Map<String, Object> config, String... keys) {

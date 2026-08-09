@@ -60,10 +60,7 @@ public class CubeSandboxProvider implements SandboxProvider {
         if (extraMetadata != null) {
             metadata.putAll(CubeSandboxSanitizer.nonSensitiveStringMap(extraMetadata));
         }
-        Boolean allowInternetAccess = booleanConfig(requested, "allowInternetAccess");
-        if (allowInternetAccess == null) {
-            allowInternetAccess = Boolean.valueOf(config.isAllowInternetAccessDefault());
-        }
+        boolean allowInternetAccess = booleanConfig(requested, "allowInternetAccess", config.isAllowInternetAccessDefault());
         Object network = requested.getConfig().get("network");
 
         CubeSandboxClient client = new CubeSandboxClient(config);
@@ -131,15 +128,15 @@ public class CubeSandboxProvider implements SandboxProvider {
                 .build();
     }
 
-    private static Boolean booleanConfig(SandboxSpec spec, String key) {
+    private static boolean booleanConfig(SandboxSpec spec, String key, boolean defaultValue) {
         Object value = spec.getConfig().get(key);
         if (value instanceof Boolean) {
-            return (Boolean) value;
+            return ((Boolean) value).booleanValue();
         }
         if (value == null) {
-            return null;
+            return defaultValue;
         }
-        return Boolean.valueOf(String.valueOf(value));
+        return Boolean.parseBoolean(String.valueOf(value));
     }
 
     private static Map<String, String> stringMap(Object value) throws SandboxException {
