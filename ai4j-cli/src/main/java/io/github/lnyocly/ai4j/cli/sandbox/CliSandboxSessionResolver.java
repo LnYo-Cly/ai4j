@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.cli.sandbox;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxException;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
+import io.github.lnyocly.ai4j.agent.sandbox.cubesandbox.CubeSandboxConfig;
+import io.github.lnyocly.ai4j.agent.sandbox.cubesandbox.CubeSandboxProvider;
 import io.github.lnyocly.ai4j.agent.sandbox.daytona.DaytonaSandboxConfig;
 import io.github.lnyocly.ai4j.agent.sandbox.daytona.DaytonaSandboxProvider;
 
@@ -21,15 +23,26 @@ public class CliSandboxSessionResolver {
                 || command.getAction() == CliSandboxCommand.Action.DISABLE) {
             throw new SandboxException("sandbox command does not create a session");
         }
-        String providerId = defaultIfBlank(command.getProviderId(), DaytonaSandboxConfig.DEFAULT_PROVIDER_ID);
-        if (!DaytonaSandboxConfig.DEFAULT_PROVIDER_ID.equalsIgnoreCase(providerId)) {
-            throw new SandboxException("Unsupported sandbox provider: " + providerId + ". Supported provider: daytona.");
-        }
+        String providerId = normalizeProviderId(command.getProviderId());
         SandboxSpec spec = toSpec(command);
-        DaytonaSandboxConfig config = DaytonaSandboxConfig.fromEnvironment(spec, env == null ? Collections.<String, String>emptyMap() : env);
-        DaytonaSandboxProvider provider = new DaytonaSandboxProvider(config);
-        SandboxSession session = provider.createSession(spec);
-        return new OpenedSandboxSession(session, CliSandboxBinding.from(session, command));
+        if (CubeSandboxConfig.DEFAULT_PROVIDER_ID.equalsIgnoreCase(providerId) || "cube".equalsIgnoreCase(providerId)) {
+            CubeSandboxConfig config = CubeSandboxConfig.fromEnvironment(spec, env == null ? Collections.<String, String>emptyMap() : env);
+            CubeSandboxProvider provider = new CubeSandboxProvider(config);
+            SandboxSession session;
+            if (command.getAction() == CliSandboxCommand.Action.ATTACH && !isBlank(command.getSandboxIdOrName())) {
+                session = provider.connect(command.getSandboxIdOrName(), spec);
+            } else {
+                session = provider.createSession(spec);
+            }
+            return new OpenedSandboxSession(session, CliSandboxBinding.from(session, command));
+        }
+        if (DaytonaSandboxConfig.DEFAULT_PROVIDER_ID.equalsIgnoreCase(providerId)) {
+            DaytonaSandboxConfig config = DaytonaSandboxConfig.fromEnvironment(spec, env == null ? Collections.<String, String>emptyMap() : env);
+            DaytonaSandboxProvider provider = new DaytonaSandboxProvider(config);
+            SandboxSession session = provider.createSession(spec);
+            return new OpenedSandboxSession(session, CliSandboxBinding.from(session, command));
+        }
+        throw new SandboxException("Unsupported sandbox provider: " + providerId + ". Supported providers: daytona, cubesandbox (or cube).");
     }
 
     private SandboxSpec toSpec(CliSandboxCommand command) {
