@@ -1,6 +1,6 @@
 ---
 title: 编程式集成
-description: 如何把 ai4j 嵌进你的应用：把 AiService 编程入口、ACP 宿主协议、trace/replay 事件流、CLI/TUI 嵌入与 Spring Boot 自动装配五条散落的集成主线收进一个落地页，每条给一句定位和深链。
+description: 如何把 ai4j 嵌进你的应用：把 AiService 编程入口、ACP 宿主协议、trace/replay 可观测、CLI/TUI 嵌入与 Spring Boot 自动装配五条散落的集成主线收进一个落地页，每条给一句定位和深链。
 tags: [concept]
 ---
 
@@ -22,11 +22,13 @@ ai4j 是 Java，集成面的划分和 Pi（Node / TypeScript）不同，但能�
 | --- | --- | --- |
 | SDK（`createAgentSession` 编程 API） | `AiService` / `AiServiceRegistry` 编程工厂 | [服务入口与注册表](/docs/core-sdk/service-entry-and-registry) |
 | RPC（stdin / stdout JSON-RPC 子进程协议） | ACP headless host（换行分隔 JSON-RPC） | [ACP 集成](/docs/coding-agent/acp-integration) |
-| JSON event stream（`--mode json` 事件流） | runtime 事件流 → trace span + replay 事件账本 | [Trace 与可观测性](/docs/agent/trace-observability) |
+| JSON event stream（`--mode json` 一次性事件流→stdout） | **无 turnkey 等价**（构建块见下文①） | — |
 | TUI（交互终端） | `ai4j-cli` 的 `code` / `tui` 宿主 | [CLI / TUI 使用指南](/docs/coding-agent/cli-and-tui) |
 | —（Pi 无对应，ai4j 独有） | Spring Boot 自动装配 | [Spring Boot Auto Configuration](/docs/spring-boot/auto-configuration) |
 
 最关键的差别：ai4j 没有"一个 SDK 对象包办一切"的单一 session 工厂。能力工厂（`AiService`）和会话协议（ACP）是分开的两层——前者是程序内调用，后者是跨进程协议。
+
+> ① Pi 的 `--mode json` 是"跑一个 prompt、把整个 agent 事件流以 JSONL 打到 stdout 供管道 / `jq` 消费"的**一次性 headless 模式**。ai4j **没有**这种 turnkey 模式：runtime 事件流（`MODEL_REQUEST` / `TOOL_CALL` 等）的**事件类型**与 Pi 同源，但在 ai4j 里它是给 **trace / replay** 做**可观测性与恢复**用的进程内机制（主线 4），不是"事件流→stdout"的集成模式；ACP（主线 3）也会往外发 agent 事件，但它是**双向控制协议**（≈ Pi RPC），不是一次性管道。若需要 Pi `--mode json` 那种用法，得用 runtime 事件流 + 自己加一个 stdout 发射器。
 
 ## 五条集成主线
 
@@ -48,9 +50,13 @@ ACP 是 ai4j 面向 IDE / 桌面壳的标准接入面：换行分隔 JSON-RPC（
 
 → [ACP 集成](/docs/coding-agent/acp-integration) · 与 MCP 的边界见 [MCP and ACP](/docs/coding-agent/mcp-and-acp)
 
-### 4. trace / replay 事件流 —— 嵌入可观测与恢复
+### 4. trace / replay —— 可观测性与恢复
 
-runtime 已经发布统一事件（`MODEL_REQUEST` / `MODEL_RESPONSE` / `TOOL_CALL` / `TOOL_RESULT`），trace 和 replay 都是这些事件的消费者而非埋点：`AgentTraceListener` 把事件折叠成 span 并导出到 OTel / Langfuse / JSONL；`IoCaptureAgentListener` + `NodeReplayer` 做节点级重放，`ResumeCache` 做崩溃续跑，`HashChainedEventLog` 做防篡改审计。这是 Pi 的 `--mode json` 事件流在 ai4j 里更生产化的形态。
+runtime 已经发布统一事件（`MODEL_REQUEST` / `MODEL_RESPONSE` / `TOOL_CALL` / `TOOL_RESULT`），trace 和 replay 都是这些事件的消费者而非埋点：`AgentTraceListener` 把事件折叠成 span 并导出到 OTel / Langfuse / JSONL；`IoCaptureAgentListener` + `NodeReplayer` 做节点级重放，`ResumeCache` 做崩溃续跑，`HashChainedEventLog` 做防篡改审计。
+
+:::note 这不是 Pi `--mode json` 的等价物
+trace / replay 是 ai4j 的**可观测性与可靠性**层（进程内 tracing、节点重放、崩溃续跑、防篡改审计），不是"把 agent 事件流一次性打到 stdout"的集成模式。它消费的事件类型与 Pi 的事件流同源，但**定位不同**——见上表①。Pi JSON 模式的"管道消费"用法在 ai4j 里需要自己用 runtime 事件流加一个发射器。
+:::
 
 → [Trace 与可观测性](/docs/agent/trace-observability) · 续跑 / 重放 / 审计见 [Replay, Recovery & Audit](/docs/agent/replay-recovery-audit)
 
