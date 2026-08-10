@@ -48,6 +48,16 @@ public class MoonshotChatCompletion {
     @JsonProperty("max_tokens")
     private Integer maxTokens;
 
+    @JsonProperty("max_completion_tokens")
+    private Integer maxCompletionTokens;
+
+    /**
+     * Constrains reasoning effort for reasoning models (Kimi K3: low/high/max).
+     * Also an OpenAI standard field for o1/o3/GPT-5 models.
+     */
+    @JsonProperty("reasoning_effort")
+    private String reasoningEffort;
+
     /**
      * 介于 -2.0 和 2.0 之间的数字。如果该值为正，那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。
      */

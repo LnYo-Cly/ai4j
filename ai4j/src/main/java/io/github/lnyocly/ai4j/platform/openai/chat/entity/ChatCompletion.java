@@ -83,6 +83,15 @@ public class ChatCompletion {
     private Integer maxCompletionTokens;
 
     /**
+     * Constrains reasoning effort for reasoning models (OpenAI o1/o3/GPT-5, Kimi K3, DeepSeek R1).
+     * Supported values: "none", "minimal", "low", "medium", "high", "xhigh", "max".
+     * Default varies by model. "none" disables reasoning.
+     */
+    @JsonProperty("reasoning_effort")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String reasoningEffort;
+
+    /**
      * 模型可能会调用的 tool 的列表。目前，仅支持 function 作为工具。使用此参数来提供以 JSON 作为输入参数的 function 列表。
      */
     private List<Tool> tools;

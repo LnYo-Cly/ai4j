@@ -63,6 +63,8 @@ public class Content {
         private String text;
         @JsonProperty("image_url")
         private ImageUrl imageUrl;
+        @JsonProperty("video_url")
+        private VideoUrl videoUrl;
 
 
         @Data
@@ -72,11 +74,26 @@ public class Content {
             private String url;
         }
 
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class VideoUrl {
+            private String url;
+        }
+
+        /**
+         * 兼容构造器：不带 videoUrl（保持既有调用方签名不变）。
+         */
+        public MultiModal(String type, String text, ImageUrl imageUrl) {
+            this(type, text, imageUrl, null);
+        }
+
         @Getter
         @AllArgsConstructor
         public enum Type {
             TEXT("text", "文本类型"),
             IMAGE_URL("image_url", "图片类型，可以为url或者base64"),
+            VIDEO_URL("video_url", "视频类型，可以为url或者base64（Kimi/Moonshot 扩展）"),
             ;
             private final String type;
             private final String info;
@@ -84,9 +101,9 @@ public class Content {
 
         public static List<MultiModal> withMultiModal(String text, String... imageUrl) {
             List<MultiModal> messages = new ArrayList<>();
-            messages.add(new MultiModal(MultiModal.Type.TEXT.getType(), text, null));
+            messages.add(new MultiModal(MultiModal.Type.TEXT.getType(), text, null, null));
             for (String url : imageUrl) {
-                messages.add(new MultiModal(MultiModal.Type.IMAGE_URL.getType(), null, new MultiModal.ImageUrl(url)));
+                messages.add(new MultiModal(MultiModal.Type.IMAGE_URL.getType(), null, new MultiModal.ImageUrl(url), null));
             }
             return messages;
         }

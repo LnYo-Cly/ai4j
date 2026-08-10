@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
-import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -49,9 +48,9 @@ public class MoonshotChatCompletionResponse {
     private List<Choice> choices;
 
     /**
-     * 该对话补全请求的用量信息。
+     * 该对话补全请求的用量信息（Kimi 把 cached_tokens 放在顶层，用 MoonshotUsage 捕获后归一化）。
      */
-    private Usage usage;
+    private MoonshotUsage usage;
 
     /**
      * 该指纹代表模型运行时使用的后端配置。
