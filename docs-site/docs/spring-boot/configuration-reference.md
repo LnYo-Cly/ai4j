@@ -195,7 +195,7 @@ ai4j:
 
 ### HTTP 节点 SSRF 防护
 
-`http-node.allow-private-network` 默认 `false`，HTTP 节点请求会先过 `HttpNodeSsrfGuard`，拦截回环/私网/链路本地/云元数据地址。仅在确需访问内网服务时才显式设为 `true`。详见 [Built-in Nodes / SSRF 防护](/docs/flowgram/built-in-nodes#71-ssrf-防护-httpnodessrfguard)。
+`http-node.allow-private-network` 默认 `false`，HTTP 节点请求会先过 `HttpNodeSsrfGuard`，拦截回环/私网/链路本地/云元数据地址。仅在确需访问内网服务时才显式设为 `true`。详见 [Built-in Nodes / SSRF 防护](/docs/flowgram/built-in-nodes#ssrf-guard)。
 
 ## 6. 这页应该怎么用
 
