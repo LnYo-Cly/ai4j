@@ -84,6 +84,7 @@ tags: [concept]
 `AiService.createChatService(...)` 当前能创建的 `Chat` provider 包括：
 
 - OpenAI
+- Anthropic（统一适配器 `AnthropicChatService`，把 OpenAI Chat 请求翻译成 Anthropic Messages）
 - Zhipu
 - DeepSeek
 - Moonshot
@@ -168,7 +169,7 @@ AI4J 把图文输入纳入了统一会话抽象：
 4. [Chat vs Responses](/docs/core-sdk/model-access/chat-vs-responses)
 5. [Streaming](/docs/core-sdk/model-access/streaming)
 6. [Multimodal](/docs/core-sdk/model-access/multimodal)
-6. [Request and Response Conventions](/docs/core-sdk/model-access/request-and-response-conventions)
+7. [Request and Response Conventions](/docs/core-sdk/model-access/request-and-response-conventions)
 
 ## 9. 这一页的结论
 

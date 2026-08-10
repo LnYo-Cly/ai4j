@@ -213,6 +213,38 @@ starter 侧多个 executor 都会用 `FlowGramNodeValueResolver` 解析输入值
 
 因此它更适合“把流程接到外部系统”，不适合承担复杂业务编排本身。
 
+### 7.1 SSRF 防护：`HttpNodeSsrfGuard`
+
+HTTP 节点在发出请求前会先过一道 `HttpNodeSsrfGuard`（`ssrfGuard.validate(fullUrl)`），防止工作流被诱导去访问内部网络。这是默认开启的，不需要额外配置。
+
+工作原理：
+
+- 把 URL 解析出 host，调用 `InetAddress.getAllByName(host)` 做真实 DNS 解析。
+- 拿到解析后的具体 IP 再判断，而不是只看 host 字符串 —— 这样能挡住 DNS rebinding：一个看起来公网的域名解析到内网 IP 时会被拦截。
+- 命中以下范围即抛 `HttpNodeSsrfGuard.SsrfBlockedException`（fail-closed）：
+  - 回环：`127.0.0.0/8`、`::1`
+  - 私网：`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`、IPv6 `fc00::/7`
+  - 链路本地：`169.254.0.0/16`（含云元数据端点 `169.254.169.254`）、`fe80::/10`
+  - 运营商级 NAT：`100.64.0.0/10`
+- 解析不到 host（`UnknownHostException`）时不拦截，交给 HTTP 客户端自然失败。
+
+### 7.2 关闭 SSRF 防护（仅内网场景）
+
+只有当你的 HTTP 节点确实需要访问内网服务时，才显式关闭它：
+
+```yaml
+ai4j:
+  flowgram:
+    http-node:
+      allow-private-network: true
+```
+
+设为 `true` 后，guard 会打一条 warn 日志再放行。这个开关经由 `FlowGramProperties.httpNode.allowPrivateNetwork` 注入到 `FlowGramHttpNodeExecutor`；非 Spring 场景下也可用系统属性 `ai4j.flowgram.http-node.allow-private-network=true`。生产环境默认 `false`，不要轻易打开。
+
+:::warning 关闭即放弃这一层防护
+`allow-private-network=true` 等于把工作流的 HTTP 节点重新暴露给 SSRF。仅在内网可信拓扑、且已在上游（网关/网络策略）做了限制时才使用。
+:::
+
 ## 8. `CODE`: 轻量可编程节点
 
 `FlowGramCodeNodeExecutor` 当前默认基于 `NashornCodeExecutor` 执行脚本。

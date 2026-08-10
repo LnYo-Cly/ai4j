@@ -35,11 +35,15 @@ tags: [concept]
 
 ## 2. 默认会扫描哪些根目录
 
-`discoverDefault(...)` 内部会先调用 `resolveSkillRoots(...)`，当前默认候选根有三类：
+`discoverDefault(...)` 内部会先调用 `resolveSkillRoots(...)`，当前默认候选根有 4 个（分两组，每组同时支持 `.ai4j` 和 `.agents` 命名空间），加上额外的挂载目录：
 
 1. `<workspace>/.ai4j/skills`
-2. `~/.ai4j/skills`
-3. 额外挂载的 `skillDirectories`
+2. `<workspace>/.agents/skills`
+3. `~/.ai4j/skills`
+4. `~/.agents/skills`
+5. 额外挂载的 `skillDirectories`（相对路径按 workspace root 解析）
+
+也就是说，工作区和用户主目录下、`.ai4j/skills` 与 `.agents/skills` 两套约定都会被扫到。`.agents/skills` 让 AI4J 与其它遵循 `.agents` 约定的工具（如 Claude / Agents.md 生态）共享同一份 skill 目录，不必复制。
 
 这里有两个重要点：
 
@@ -47,8 +51,8 @@ tags: [concept]
 
 这让你可以同时拥有：
 
-- 仓库专属 skill
-- 用户级跨项目通用 skill
+- 仓库专属 skill（`<workspace>/.ai4j/skills` 或 `<workspace>/.agents/skills`）
+- 用户级跨项目通用 skill（`~/.ai4j/skills` 或 `~/.agents/skills`）
 
 ### 相对路径会按 workspace root 解析
 
@@ -108,13 +112,14 @@ AI4J 仍然能构造出可用的技能目录。
 
 ## 6. `SkillDescriptor` 里到底保存什么
 
-当前 `SkillDescriptor` 很轻，只保存：
+当前 `SkillDescriptor` 很轻，保存：
 
 - `name`
 - `description`
 - `skillFilePath`
 - `source`
 - `disableModelInvocation`
+- `content` —— 可选的宿主提供的 `SKILL.md` 正文
 
 其中 `source` 由 `resolveSource(...)` 判断：
 
@@ -125,6 +130,15 @@ AI4J 仍然能构造出可用的技能目录。
 
 - 当前项目真相的一部分
 - 还是用户级共享能力
+
+### `content`：内存型 / 宿主提供的 skill
+
+`content` 为可选字段，用于支持两类磁盘之外的 skill：
+
+- **内存型 skill**：宿主在运行时构造的 skill，没有落盘文件。此时 `content` 直接持有 `SKILL.md` 正文。
+- **远程 / 受限源 skill**：skill 正文来自远端或受控源。此时 `skillFilePath` 是一个稳定的虚拟位置（由宿主的 scoped skill reader 解析，而不是本地文件系统），正文由 `content` 提供。
+
+`content` 缺省为 `null`；此时 skill 走常规的磁盘发现路径，`skillFilePath` 指向真实文件。提供 `content` 时宿主需自行保证正文可被按需读取——`Skills.appendAvailableSkillsPrompt(...)` 只负责把 `name`/`description`/`location` 投影进模型目录，`content` 本身不会拼进 prompt。
 
 ## 7. 去重策略是什么
 
@@ -216,6 +230,23 @@ AI4J 仍然能构造出可用的技能目录。
 - skill roots 额外作为只读目录放开
 
 这正是为什么模型可以读取工作区外的全局 skill 文件，但默认不能随便写这些目录。
+
+## 11.1 `createSkillToolContext(...)`：把 skill 读权限收紧到只读根
+
+`Skills.createToolContext(...)` 把 workspace root 和 skill roots 同时开放给 `read_file`——模型既能读工作区，也能读 skill。但某些场景（例如宿主只想暴露一个 scoped skill reader，完全不让模型碰当前工作区）需要更严格的边界。`Skills.createSkillToolContext(skillRoots)` 正是为这个场景设计的：
+
+- 只把传入的 `skillRoots` 写进 `allowedReadRoots`；
+- 把 `BuiltInToolContext.restrictReadToAllowedRoots` 置为 `true`；
+- `workspaceRoot` 被指到一个无关的占位目录（没有 skill roots 时是一个不存在的 `.ai4j-skill-read-denied` 路径），从而**主动放弃工作区读权限**。
+
+`restrictReadToAllowedRoots = true` 在 `BuiltInToolContext.resolveReadablePath(...)` 里的语义是：候选路径必须落在某个 `allowedRoot` 之下（且还要通过 `resolvesWithin` 校验，防止符号链接绕过），工作区 root 本身不再作为允许的读取来源。换言之：
+
+| 场景 | workspace 可读 | skill roots 可读 | 写工作区 |
+|------|---------------|------------------|----------|
+| `createToolContext(...)`（默认） | 是 | 是（只读） | 受 `resolveWorkspacePath` 约束 |
+| `createSkillToolContext(...)`（`restrict=true`） | 否 | 是（只读） | 占位 root，实际不可写 |
+
+这让 skill 懒加载可以跑在一个最小权限上下文里：模型只看到 skill 目录，连工作区源码都读不到，更别说写。
 
 ## 12. 当前实现的真实限制
 

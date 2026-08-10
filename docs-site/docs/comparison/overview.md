@@ -32,8 +32,15 @@ AI4J 的路线不是“替代所有框架”，而是先把 Java 项目接 AI �
 | Provider 现实感 | 重视 OpenAI-compatible、国内模型平台和私有 baseUrl |
 | 文档策略 | 每个能力讲入口、适用场景、限制、生产检查和下一步 |
 | 上层特色 | 同一套 Java 基座向 Coding Agent、CLI/TUI/ACP 和 FlowGram 后端延伸 |
+| 运行栈纯度 | 纯 Java 8 bytecode、无 Kotlin、JSON 只用 fastjson2 一条栈，依赖债小 |
+| Agent 互操作 | 内置 Google A2A 1.0 协议（`A2AServer`/`A2AClient`），Agent 可跨实现互操作 |
+| 执行隔离 | `SandboxProvider` SPI 官方带 E2B / Daytona / CubeSandbox 三套真实沙箱后端 |
+| 协议传输 | MCP 支持 Streamable HTTP（`StreamableHttpTransport`），不绑定 stdio/SSE 单一传输 |
+| 生产可观测 | 追踪（OTel/Langfuse）+ 节点级 I/O 重放 + 断点续跑 + 审计防篡改，一等公民 |
 
 这些不是生态规模优势，而是产品取舍优势。个人项目更应该把“容易开始、边界清楚、按需取用”做到极致。
+
+后五行是能在选型文档里直接复述的硬技术差异点：每一项都有对应模块代码和文档页支撑（见 [Strengths and Differentiators](/docs/core-sdk/strengths-and-differentiators)），不是路线图承诺。
 
 ## 与 Spring AI 的区别
 

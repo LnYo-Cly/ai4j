@@ -106,6 +106,44 @@ Callback delivery uses a separate bounded executor so slow callback receivers do
 execution slots. Each task accepts at most 32 push configurations; callers must delete stale
 configurations before adding more.
 
+## Publish ai4j Skills to the AgentCard
+
+`A2ASkill` describes a capability in an A2A AgentCard; an ai4j `SkillDescriptor` describes a local `SKILL.md` Skill (see [Agent Skills](/docs/agent/skills)). They are different models, so the SDK ships a small bridge — `io.github.lnyocly.ai4j.agent.a2a.A2ASkillMapper` — that publishes your resolved ai4j Skills as A2A skills on the server's card.
+
+`A2ASkillMapper` is a final utility class with three static entry points:
+
+| 方法 | 作用 |
+| --- | --- |
+| `mapToA2ASkill(SkillDescriptor)` | 把单个 ai4j skill 映射成 `A2ASkill`；descriptor 为 `null` 或 name 为空时返回 `null`。 |
+| `mapToA2ASkills(List<SkillDescriptor>)` | 批量映射，自动跳过 `null`。 |
+| `addSkillsToServer(A2AServer, List<SkillDescriptor>)` | 逐个映射并调 `server.withSkill(name, description, inputSchema)`，把 skill 直接挂到 AgentCard。 |
+
+当前只映射 `name` 和 `description`；`inputSchema` 留空（A2A 中可选）。后续如果 `SKILL.md` frontmatter 定义了 input schema 字段，可以在此处提取。
+
+典型用法：把一个 `AgentSkillResolver` 解析出的允许 skill 列表发布到 A2A 服务上。
+
+```java
+import io.github.lnyocly.ai4j.agent.a2a.A2AServer;
+import io.github.lnyocly.ai4j.agent.a2a.A2ASkillMapper;
+import io.github.lnyocly.ai4j.skill.SkillDescriptor;
+
+import java.util.List;
+
+A2AServer server = new A2AServer(myAgent, 0, "my-agent", "does stuff", null);
+
+// allowedSkills 来自你的 AgentSkillResolver / 租户授权，不是 SDK 内置来源
+List<SkillDescriptor> allowedSkills = resolver.resolveAllowedSkills(currentTenantId());
+
+// 把 ai4j Skills 发布为 AgentCard 上的 A2A skills
+A2ASkillMapper.addSkillsToServer(server, allowedSkills);
+
+server.start();
+```
+
+:::warning 映射不等于授权
+`A2ASkillMapper` 只搬运已授权 skill 的元数据（name/description）。它不读取 skill body，也不绕过 `AgentSkillResolver` 的租户授权决策——传入的 `SkillDescriptor` 列表必须已经是当前租户/用户被允许看到的 skill。A2A 调用方看到这些 skill 不代表能直接执行；执行仍受宿主的工具、审批、sandbox 策略约束（见 [Agent Skills — Prompt and tool boundary](/docs/agent/skills#prompt-and-tool-boundary)）。
+:::
+
 ## Auth
 
 Both client and server support optional shared-secret authentication. AgentCard discovery stays

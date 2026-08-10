@@ -156,7 +156,7 @@ CodingContextPromptAssembler.mergeSystemPrompt(systemPrompt, resolvedWorkspaceCo
 
 也就是说，它们是结构化工具面，而不是 prompt 文本的一部分。
 
-workspace prompt 里写“Available built-in tools: bash, read_file, write_file, apply_patch.”  
+workspace prompt 里写“Available built-in tools: bash, read_file, write_file, apply_patch, glob, grep, edit, update_agents_md.”  
 这只是环境提示，不是 schema 本身。
 
 所以如果模型调用不到某个工具，你首先该查的不是 prompt，而是：

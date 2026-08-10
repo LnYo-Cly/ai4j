@@ -61,7 +61,7 @@ scanAndRegisterAllTools();
 - `@FunctionCall` 声明的本地 Function 工具
 - `@McpService/@McpTool` 声明的本地 MCP 工具
 
-内建的 `bash/read_file/write_file/apply_patch` 不需要靠扫描注册才能执行，因为它们在 `BuiltInToolExecutor` 里有固定实现。
+内建 coding tools（共 8 个：`bash`/`read_file`/`write_file`/`apply_patch`/`glob`/`grep`/`edit`/`update_agents_md`）不需要靠扫描注册才能执行，因为它们在 `BuiltInToolExecutor` 里有固定实现。
 
 ## 4. 请求级暴露是怎么组装的
 
@@ -131,12 +131,16 @@ BuiltInToolExecutor.invoke(functionName, argument, builtInToolContext)
 
 如果返回非空，后续本地 Function / MCP 路由就不会再走。
 
-当前内建工具包括：
+当前内建工具共 8 个（见 `BuiltInTools.allCodingToolNames()`）：
 
-- `bash`
-- `read_file`
-- `write_file`
-- `apply_patch`
+- `bash` —— shell 命令 + 后台进程管理（`exec`/`start`/`status`/`logs`/`write`/`stop`/`list`）
+- `read_file` —— 读工作区或已批准只读根的文本文件
+- `write_file` —— 创建/覆盖/追加文本文件
+- `apply_patch` —— 应用结构化补丁
+- `glob` —— glob 模式匹配文件路径
+- `grep` —— 正则搜索文件内容
+- `edit` —— 精确字符串替换
+- `update_agents_md` —— 读写 `AGENTS.md` 记忆文件
 
 这些工具的特点是：
 
@@ -248,6 +252,41 @@ gateway.callUserTool(userId, toolName, argumentObject).join()
 
 - 结构化类型信息会在这层被文本化
 - 上层如果需要强结构，就要自己再 parse
+
+### 11.1 结构化 sub-trace：让 tool 内部步骤可见
+
+文本化 `output` 喂给 LLM，但“工具内部到底发生了什么”（一次 RAG 检索命中了哪些 chunk、是否经过 rerank、引用了哪些来源）对可观测性同样重要。Agent runtime 层为此提供了一条与 `output` 并行的结构化通道，**不改变 Core SDK 的字符串回流契约**：
+
+- `ai4j-agent` 的 `TraceableToolExecutor`（继承 `ToolExecutor`）多了一个 `Object lastTrace()`，返回该 executor 最近一次执行产生的 sub-trace（如 `RagResult`，含 `retrievedHits` / `rerankedHits` / `citations`）。
+- runtime 在调用 `execute(...)` 之后读取 `lastTrace()`，写入 `AgentToolResult.trace`，再流入 `IoCapture`，使一个 TOOL 节点不只记录最终字符串，也记录工具的内部步骤。
+- LLM 仍然只读 `AgentToolResult.output`，`trace` 仅供 trace / 重放 / 审计消费，对模型上下文零影响。
+
+并发约束（接口文档明确要求）：runtime 可能在同一个 executor 实例上并行执行多个 tool call，因此 `lastTrace()` 必须返回**当前线程**最近一次执行产生的 trace。实现用 `ThreadLocal` 持有，例如 `ai4j-agent` 的 `RagTool.RagToolExecutor`：
+
+```java
+// io.github.lnyocly.ai4j:ai4j-agent:2.4.2
+private class RagToolExecutor implements TraceableToolExecutor {
+    private final ThreadLocal<RagResult> lastResult = new ThreadLocal<RagResult>();
+
+    @Override
+    public AgentToolResult execute(AgentToolCall call) {
+        RagResult result = ragService.search(buildQuery(call));
+        lastResult.set(result);                 // ponytail: ThreadLocal, per-call trace
+        return AgentToolResult.builder()
+                .name(call.getName())
+                .callId(call.getCallId())
+                .output(formatContext(result))  // 字符串给 LLM
+                .build();
+    }
+
+    @Override
+    public Object lastTrace() {
+        return lastResult.get();                // 结构化 trace 给 IoCapture
+    }
+}
+```
+
+普通 tool（不实现 `TraceableToolExecutor`）的 `trace` 为 `null`，行为与之前完全一致；只有需要暴露内部步骤的 tool 才实现该接口。这让“结果回流”保持了字符串统一性，同时为可观测性留了一条可选的结构化侧通道。
 
 ## 12. 当前这层没有做什么
 

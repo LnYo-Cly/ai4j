@@ -263,6 +263,37 @@ String result = gateway.callUserTool("u1001", "query_weather", arguments).join()
 
 这类指标仍然需要你在网关外围补监控和日志。
 
+### 工具映射快照：`getToolToClientMap()`
+
+如果要看“当前每个工具名落在哪个 client”，用 `getToolToClientMap()`：
+
+```java
+Map<String, String> mapping = gateway.getToolToClientMap();
+// 形如：
+//   "search_repositories"                  -> "github"
+//   "user_123_tool_query_weather"          -> "user_123_service_weather"
+```
+
+它返回的是 `McpGatewayToolRegistry.snapshotMappings()` 的一份快照（`toolKey -> clientKey`），包含全局工具和用户级工具两类 key。它和 `getGatewayStatus()` 里的 `totalTools` 对应同一份目录，适合做调试、管理台展示或回归断言。注意它是一次性快照，不是实时视图。
+
+### 用户级批量清理：`clearUserMcpClients(userId)`
+
+对应 `addUserMcpClient(...)` / `removeUserMcpClient(...)` 的生命周期收尾，`clearUserMcpClients(userId)` 会一次性断开某个用户的**全部** MCP 客户端：
+
+```java
+gateway.clearUserMcpClients("u1001").join();
+// 等价于：找到所有以 "user_u1001_service_" 开头的 clientKey，
+// 逐个 removeMcpClientInternal(...)（断开连接 + refresh 目录）
+```
+
+它的真实行为是：
+
+1. 按 `user_{userId}_service_` 前缀过滤出该用户的全部 clientKey
+2. 逐个走 `removeMcpClientInternal(...)`：从 `mcpClients` 移除 → `client.disconnect()` → `toolRegistry.refresh(...)`
+3. 返回清理数量日志
+
+适用场景：用户登出、租户注销、会话过期回收。单个 client 移除失败只记日志不中断整批清理。和单个 `removeUserMcpClient(...)` 一样，它只清理用户**专属** client，全局共享服务不受影响。
+
 ## 10. 与 Agent 集成时真正的分层关系
 
 推荐结构是：

@@ -159,7 +159,7 @@ This separation is intentional. A reusable SDK cannot infer a tenant's authoriza
 - A file-based Skill is a method or instruction resource.
 - A Tool is an executable capability exposed by the host.
 - MCP is a protocol for connecting or publishing external capabilities.
-- `A2ASkill` describes an agent capability in an A2A AgentCard; it is not a local `SKILL.md` file.
+- `A2ASkill` describes an agent capability in an A2A AgentCard; it is not a local `SKILL.md` file. 用 `A2ASkillMapper` 可以把已授权的 ai4j `SkillDescriptor` 发布成 AgentCard 上的 A2A skill（见 [A2A — Publish ai4j Skills](/docs/agent/a2a#publish-ai4j-skills-to-the-agentcard)）。
 
 Read [Skill vs Tool vs MCP](/docs/core-sdk/skills/skill-vs-tool-vs-mcp) for the Core distinction and [A2A](/docs/agent/a2a) for the AgentCard capability model.
 

@@ -163,7 +163,24 @@ query variants × retrievers
 
 所以 Dense + BM25 场景里，向量库短暂不可用不一定会让整次 RAG 检索失败；只要 BM25 路还能返回结果，上层 `rag.search(...)` 仍然可以继续工作。
 
-## 4. 默认融合算法到底是什么
+## 4. 融合算法：RRF / RSF / DBSF
+
+`FusionStrategy` 是融合策略的扩展点，内置三种实现，分两族：
+
+- **按排名融合（rank-based）**：`RrfFusionStrategy` —— 只看名次，不看原始分数
+- **按分数融合（score-based）**：`RsfFusionStrategy`、`DbsfFusionStrategy` —— 把原始分数归一到同一量纲再相加
+
+它们都实现同一个接口：
+
+```java
+public interface FusionStrategy {
+    List<Double> scoreContributions(List<RagHit> hits);
+}
+```
+
+`HybridRetriever` 为每个子检索器的结果列表调一次 `scoreContributions(...)`，把返回的贡献值累加到去重后的命中上。
+
+### 4.1 默认 RRF（按排名）
 
 默认构造会走：
 
@@ -171,7 +188,7 @@ query variants × retrievers
 new RrfFusionStrategy()
 ```
 
-而 `RrfFusionStrategy` 默认 `rankConstant = 60`，贡献公式实际上是：
+`RrfFusionStrategy` 默认 `rankConstant = 60`，贡献公式实际上是：
 
 ```java
 1.0 / (rankConstant + rank)
@@ -189,7 +206,92 @@ new RrfFusionStrategy()
 - 不同检索器之间不需要先把分数归一到同一量纲
 - 融合更稳，但会牺牲一部分“原始相似度幅度信息”
 
-如果你希望保留更多原始 score 语义，就要自己换 `FusionStrategy`，而不是指望默认 RRF 替你做这件事。
+### 4.2 RSF：相对分数归一（Relative Score Fusion）
+
+如果你希望保留更多原始 score 语义，用 `RsfFusionStrategy`：
+
+```java
+Retriever hybrid = new HybridRetriever(
+        Arrays.asList(dense, bm25),
+        new RsfFusionStrategy()
+);
+```
+
+它的做法是：对每个子检索器内部，把原始分数做 **min-max 归一**，映射到 `[0, 1]`：
+
+```java
+contribution = (rawScore - min) / (max - min)
+```
+
+- 该检索器里得分最高的命中拿到 1.0
+- 得分最低的拿到 0.0
+- 中间的按线性插值
+
+效果：不同检索器的分数被拉到同一尺度后再相加。dense 的 0.95 和 bm25 的 12.0 不再被名次吞掉，而是按各自分布的相对位置比较。
+
+### 4.3 DBSF：分布归一（Distribution-Based Score Fusion）
+
+`DbsfFusionStrategy` 走得更深一步，用 **z-score + sigmoid** 归一：
+
+```java
+zScore      = (rawScore - mean) / standardDeviation
+contribution = 1.0 / (1.0 + exp(-zScore))
+```
+
+```java
+Retriever hybrid = new HybridRetriever(
+        Arrays.asList(dense, bm25),
+        new DbsfFusionStrategy()
+);
+```
+
+- 先用均值和标准差把分数中心化
+- 再用 sigmoid 压到 `(0, 1)`
+
+相比 RSF，DBSF 对“个别极端高分”不那么敏感：一个离群的高分会把 RSF 的 min-max 拉偏（其他命中被压到接近 0），但 z-score + sigmoid 会把它收敛到接近 1，给其余命中留出区分度。
+
+### 4.4 兜底：没有分数或分数无区分度时退回按排名
+
+这是 score-based 两族最容易忽略的安全细节。
+
+`RsfFusionStrategy` 和 `DbsfFusionStrategy` 都继承自 `AbstractScoreFusionStrategy`。当某个子检索器的结果出现以下情况，它们**不会强行做归一**，而是退回 RRF 风格的按排名贡献：
+
+- `RagHit.score` 为 `null`
+- 整组分数没有方差（全部相等，`max - min ≈ 0`）
+
+退回的公式是：
+
+```java
+contribution = 1.0 / (rank)
+```
+
+:::note
+这意味着：如果你的某一路检索器没填 `score`（例如自定义 `Retriever` 忘了给分），RSF/DBSF 不会崩，而是静默退化成“按名次”。如果你以为开了 DBSF 就一定是分数融合，结果可能和 RRF 没区别——这时先检查子检索器是否真的吐了有区分度的 `score`。
+:::
+
+### 4.5 三种策略怎么选
+
+| 策略 | 看什么 | 适合场景 | 注意点 |
+| --- | --- | --- | --- |
+| `RrfFusionStrategy`（默认） | 名次 | 各检索器分数语义差异大、量纲不一致 | 丢掉原始分数幅度 |
+| `RsfFusionStrategy` | 原始分数相对位置 | 分数语义可比、想保留幅度信息 | 对离群高分敏感 |
+| `DbsfFusionStrategy` | 原始分数分布 | 分数分布有偏、有离群值 | 计算量略大，对极值更鲁棒 |
+
+切换策略不需要改 retriever，只换 `HybridRetriever` 第二个参数：
+
+```java
+// 默认 RRF
+new HybridRetriever(Arrays.asList(dense, bm25));
+
+// 自定义 RRF 的 rankConstant
+new HybridRetriever(Arrays.asList(dense, bm25), 40);
+
+// 换成分数融合
+new HybridRetriever(Arrays.asList(dense, bm25), new RsfFusionStrategy());
+new HybridRetriever(Arrays.asList(dense, bm25), new DbsfFusionStrategy());
+```
+
+到底哪个更好，没有普适答案——它取决于你的 embedding 模型、BM25 语料分布和召回集大小。建议用 [RAG Evaluation](/docs/core-sdk/search-and-rag/evaluation) 的 NDCG 指标在同一批标注 query 上做 A/B 对比，而不是拍脑袋选。
 
 ## 5. “同一个命中” 是怎么判定的
 
@@ -353,7 +455,7 @@ AI4J 当前的 hybrid retrieval，本质上是一个 **`Retriever` 级结果融�
 
 ## 13. 继续阅读
 
-- [Hybrid Retrieval + Rerank workflow](/docs/core-sdk/search-and-rag/hybrid-retrieval)
+- [RAG Evaluation](/docs/core-sdk/search-and-rag/evaluation)
 - [Query Planning](/docs/core-sdk/search-and-rag/query-planning)
 - [Rerank](/docs/core-sdk/search-and-rag/rerank)
 - [Citations and Trace](/docs/core-sdk/search-and-rag/citations-and-trace)

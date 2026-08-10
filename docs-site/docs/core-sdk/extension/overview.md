@@ -89,12 +89,57 @@ AI4J 当前的扩展链路，大体上是下面这条：
 - coding agent 辅助工具
 - CLI 可检查的 extension manifest
 - prompt、skill 或 guardrail 资源
+- agent 生命周期观察 hook（session/turn/model/tool/compact 事件）
 
 这类扩展走 `ai4j-extension-api`。使用者先通过 Maven / Gradle 把插件 jar 放进 classpath，再用 `ExtensionRegistry.discover()` 发现，用 `enable(...)` 启用。工具必须再用 `exposeTool(...)` 显式暴露给模型；command、Skill、Prompt、Guardrail 可以继续使用默认兼容的整包启用语义，也可以通过 `requireExplicitResourceActivation()` 和 `allow*` API 逐项授权。Spring Boot 项目可以用 `ai.extensions.enabled`、`ai.extensions.tools.expose`、`ai.extensions.explicit-resource-activation` 和 `ai.extensions.{commands,skills,prompts,guardrails}.allow` 完成同样配置，但仍不会自动创建 Agent 或自动安装插件依赖。
 
 插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。接入前还可以用 `ai4j-cli extension plan <id> --enable ... --strict` 查看本次计划启用、授权和暴露后的 activation state；recipe 固定后，用 `ai4j-cli extension check <id> --enable ... --strict` 作为 CI 或发布前门禁。`check` 会在 validation 失败或显式请求的资源没有 active 时返回非零，但不会强制启用未请求资源。
 
 官方 `ai4j-plugin-ask-user` 是第一个随 SDK 发布的样板插件，展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope；独立仓库 `ai4j-plugin-dynamic-workflow` 展示如何把动态工作流请求表达成同样受宿主管控的 plugin envelope。已经准备接入插件时，优先看 [Plugin Recipes](/docs/core-sdk/extension/plugin-recipes)，它把依赖、检查、启用、授权、暴露和 Spring Boot / CLI 配置串成可复制配方。
+
+#### 3.1 插件能力清单（六种）
+
+`ai4j-extension-api` 把一个插件能贡献的资源归为六种 `ExtensionCapability`，插件在 manifest 里声明它要贡献哪几种，registry 才会接受对应注册：
+
+| Capability | 注册入口（`ExtensionContext`） | 贡献什么 | 稳定性 |
+| --- | --- | --- | --- |
+| `TOOL` | `tools()` | 模型可调用工具（spec + executor），必须 `exposeTool(...)` 才可见 | 稳定 |
+| `COMMAND` | `commands()` | 人工 / 宿主执行的命令，不自动暴露给模型 | 稳定 |
+| `SKILL` | `skills()` | classpath 文本 Skill 资源 | 实验 |
+| `PROMPT` | `prompts()` | classpath 文本 Prompt 资源 | 实验 |
+| `GUARDRAIL` | `guardrails()` | tool execution 前置允许/拒绝判断 | 实验 |
+| `LIFECYCLE` | `lifecycle()` | agent 生命周期事件 hook（session/turn/model/tool/compact） | 实验 |
+
+前五种能力覆盖“插件贡献什么资源”。`LIFECYCLE` 是第六种，覆盖的是另一类需求：**插件想在 agent 执行的关键节点（会话开始结束、每轮前后、模型请求前后、工具调用前后、上下文压缩前后）收到通知**，而不是贡献工具或资源。它解决的是观察/遥测/审计类扩展，而不是新增能力。
+
+声明 `LIFECYCLE` 后，插件在 `apply(...)` 里通过 `context.lifecycle().register(hook)` 注册 `AgentLifecycleHook`，agent 运行时会通过 `AgentLifecycleHookDispatcher` 把 `AgentLifecycleEvent` 分发给每个 hook。详见 [Lifecycle Extensions](/docs/core-sdk/extension/lifecycle-extensions)。
+
+#### 3.2 插件 SPI 的稳定性矩阵
+
+`ai4j-extension-api` 内部的公共元素并不都处于同一稳定性级别。AI4J 用三个标记区分：
+
+| 标记 | 含义 | 向后兼容承诺 |
+| --- | --- | --- |
+| 无注解 | 稳定 | 当前大版本内向后兼容 |
+| `@Experimental` | 实验：已发布但设计仍在收敛 | **不承诺**向后兼容，签名/行为/存在性都可能在小版本或 patch 版本里变，可能被移除或晋升为稳定 |
+| `@Internal` | 内部实现 | 不供消费者使用，无任何承诺 |
+
+:::warning
+依赖 `@Experimental` 标记的 API 时，应 pin 死确切版本，并在升级小版本时主动回归。这些 API 不会给弃用宽限期。
+:::
+
+截至 `2.4.3`，extension SPI 的实际分布：
+
+| 元素 | 类型 | 稳定性 |
+| --- | --- | --- |
+| `Ai4jExtension`、`ExtensionManifest`、`ExtensionRegistry`、`ExtensionContext` | 核心 SPI 入口 | 稳定 |
+| `ToolRegistry`、`CommandRegistry` | tool/command 注册 | 稳定 |
+| `SkillRegistry`、`PromptRegistry`、`GuardrailRegistry` | skill/prompt/guardrail 注册 | `@Experimental(since = "2.4.3")` |
+| `ExtensionGuardrail` | guardrail 接口 | `@Experimental(since = "2.4.3")` |
+| `LifecycleHookRegistry`、`AgentLifecycleHook` | lifecycle hook 注册与接口 | `@Experimental(since = "2.4.3")` |
+| `ServiceLoaderExtensionLoader` | 默认 ServiceLoader 加载器 | `@Internal`（依赖 `ExtensionLoader`，不要直接依赖实现类） |
+
+换句话说：tool / command 主链路是稳定的；skill、prompt、guardrail、lifecycle 这四类资源注册接口仍是实验阶段，设计可能在后续版本调整。`@Experimental` 和 `@Internal` 都通过反射保留到运行时，插件作者可以直接在 IDE 里看到注解，不必记这张表。
 
 ## 4. 当前实现里，哪些是“真 SPI”，哪些不是
 
@@ -118,6 +163,8 @@ AI4J 当前的扩展链路，大体上是下面这条：
 Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `ServiceLoaderUtil.load(...)` 加载这两个扩展点，并把返回的 `Dispatcher` 与 `ConnectionPool` 注入统一的 `OkHttpClient.Builder`。
 
 `Ai4jExtension` 也通过 `ServiceLoader` 发现，但它服务的是插件包资源注册，不会自动改变 provider 工厂分发。
+
+插件发现本身也有一层小 SPI：`ExtensionLoader` 接口（默认实现是 `@Internal` 的 `ServiceLoaderExtensionLoader`）。`ExtensionRegistry.discover()` 默认走 ServiceLoader，但你可以传一个自定义 `ExtensionLoader` 实现非 ServiceLoader 发现（例如固定列表、运行时扫描）。读取插件 jar 内的 Skill / Prompt 文本资源时，公共助手 `ExtensionResourceResolver` 会按“插件 classloader → TCCL → resolver classloader”的顺序解析，并把解析约束在插件自己的 classloader 上，避免同名资源被别的 jar 串读。这两者属于运行时接线细节，详见 [Extension SPI Internals](/docs/core-sdk/extension/extension-spi)。
 
 ## 5. 扩展决策顺序
 
@@ -170,6 +217,8 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 7. [Plugin Author Cookbook](/docs/core-sdk/extension/plugin-author-cookbook)
 8. [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)
 9. [Dynamic Workflow Plugin](/docs/core-sdk/extension/dynamic-workflow-plugin)
+10. [Lifecycle Extensions](/docs/core-sdk/extension/lifecycle-extensions)
+11. [Extension SPI Internals](/docs/core-sdk/extension/extension-spi)
 
 ## 9. 这一页的结论
 

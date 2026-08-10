@@ -1,35 +1,46 @@
 ---
 sidebar_position: 6
 title: Tools 与审批机制
-description: 拆解 Coding Agent 的内置工具(bash/read_file/write_file/apply_patch)装配与执行器路由、审批 decorator 拦截位置，以及审批与 workspace 边界为何必须分开理解。
+description: 拆解 Coding Agent 的八个内置工具(bash/read_file/write_file/apply_patch/glob/grep/edit/update_agents_md)装配与执行器路由、审批 decorator 拦截位置，以及审批与 workspace 边界为何必须分开理解。
 tags: [concept]
 ---
 
 # Tools 与审批机制
 
-如果说 `Coding Agent` 和普通 Agent 最大的外显差异是什么，答案通常不是 prompt，而是 tools。  
-但这页真正要讲清楚的，不是“有 4 个内置工具”这么简单，而是：
+如果说 `Coding Agent` 和普通 Agent 最大的外显差异是什么，答案通常不是 prompt，而是 tools。
+但这页真正要讲清楚的，不是“有 8 个内置工具”这么简单，而是：
 
 - 这些工具怎么被装配进去
 - 谁真正执行它们
-- 当前 session 可见工具面为什么不止 4 个
+- 当前 session 可见工具面为什么不止 8 个
 - 审批到底拦在什么位置
 - 审批和工作区边界为什么不是一回事
 
-## 1. 固定内置 Tool 只有四个，但运行面不止四个
+## 1. 固定内置 Tool 现在有八个，但运行面不止八个
 
-`CodingToolRegistryFactory.createBuiltInRegistry()` 当前固定挂进去的本地工具确实只有：
+`CodingToolRegistryFactory.createBuiltInRegistry()` 当前固定挂进去的本地工具有八个：
 
 - `bash`
 - `read_file`
 - `write_file`
 - `apply_patch`
+- `glob`
+- `grep`
+- `edit`
+- `update_agents_md`
 
-这四个来自：
+这八个来自：
 
 - `BuiltInTools.codingTools()`
 
-但模型在某个 session 里最终能看到的工具集合，未必只有这四个。  
+其中只读工具集合（`BuiltInTools.readOnlyCodingToolNames()`）是：
+
+- `bash`（exec）
+- `read_file`
+- `glob`
+- `grep`
+
+但模型在某个 session 里最终能看到的工具集合，未必只有这八个。
 `CodingAgentBuilder` 后面还可能继续合并：
 
 - custom tool registry
@@ -40,21 +51,25 @@ tags: [concept]
 
 所以最准确的说法是：
 
-- 固定内置本地执行工具 = 4 个
+- 固定内置本地执行工具 = 8 个
 - 当前 session 可见工具面 = 固定内置工具 + 运行时注入工具
 
-## 2. 真正把四个工具接上执行器的是哪一层
+## 2. 真正把工具接上执行器的是哪一层
 
 关键入口不是 registry，而是：
 
 - `CodingAgentBuilder.createBuiltInToolExecutor(...)`
 
-它会把 4 个工具分别路由到：
+它会把工具分别路由到对应的专用执行器：
 
 - `ReadFileToolExecutor`
 - `WriteFileToolExecutor`
 - `ApplyPatchToolExecutor`
 - `BashToolExecutor`
+- `GlobToolExecutor`
+- `GrepToolExecutor`
+- `EditToolExecutor`
+- `UpdateAgentsMdToolExecutor`
 
 最后用：
 
@@ -179,7 +194,81 @@ tags: [concept]
 
 所以 `bash` 不是普通 function tool，而是 session 级进程面入口。
 
-## 7. 当前 session 为什么可能还会出现 `delegate_*`、`subagent_*`、MCP tools
+## 7. 搜索、编辑与项目记忆工具
+
+除了前面四个“经典”工具，`BuiltInTools.codingTools()` 还固定挂了四个工具，分别覆盖搜索、精确编辑和跨会话项目记忆。
+
+### 7.1 `glob` —— 文件名模式匹配
+
+`GlobToolExecutor` 走 workspace 内的 glob 匹配（如 `**/*.java`），返回相对 workspace 根的匹配路径列表。
+
+参数：
+
+- `pattern`（必填）：glob 模式
+- `path`：搜索基目录，相对 workspace 根，默认 workspace 根
+- `maxResults`：返回路径上限
+
+它是只读工具（属于 `readOnlyCodingToolNames`），适合让模型快速定位“哪些文件满足某种命名约定”，而不是把整个目录灌进上下文。
+
+### 7.2 `grep` —— 文件内容搜索
+
+`GrepToolExecutor` 用正则在文件内容里搜索，返回 ripgrep 风格的结果（文件名 + 行号 + 匹配行）。
+
+参数：
+
+- `pattern`（必填）：正则表达式
+- `path`：搜索基目录或单个文件，相对 workspace 根
+- `include`：文件名 glob 过滤（如 `*.java`）
+- `caseInsensitive`：是否大小写不敏感，默认 false
+- `maxResults`：返回匹配行上限
+
+它同样是只读工具。`glob` 回答“哪些文件”，`grep` 回答“哪些文件里命中了这段内容”，两者搭配是 coding agent 做代码定位的主力组合。
+
+### 7.3 `edit` —— 精确字符串替换
+
+`EditToolExecutor` 做的是文件内的精确字符串替换，和 `apply_patch` 是互补关系：
+
+- `apply_patch`：适合多文件、增删改一体的结构化补丁
+- `edit`：适合单文件内的局部替换
+
+参数：
+
+- `path`（必填）：要编辑的文件，相对 workspace 根
+- `old_string`（必填）：要查找的精确文本，必须包含缩进和空白完全一致
+- `new_string`（必填）：替换文本
+- `replaceAll`：替换全部匹配；默认只允许唯一匹配
+
+默认情况下 `old_string` 必须在文件中**唯一**匹配，否则会失败——这是防止 edit 误改多处的设计。要替换多处同名片段，需要显式传 `replaceAll=true`。
+
+### 7.4 `update_agents_md` 与 AGENTS.md 项目记忆
+
+`update_agents_md` 是一个比较特殊的内置工具：它专门维护项目级的 **AGENTS.md 记忆文件**，让 agent 能把项目约定、已做的决定、待办事项沉淀下来，跨 session 持久存在。
+
+参数：
+
+- `action`（必填）：`read` / `write` / `append`
+- `content`：完整内容（`action=write` 时使用）
+- `text`：要追加的文本（`action=append` 时使用）
+
+它背后是 `UpdateAgentsMdToolExecutor` + `AgentsMdStore`。AGENTS.md 的查找顺序是：
+
+1. workspace 根目录下的 `AGENTS.md`
+2. workspace 根下的 `.agents/AGENTS.md`
+
+两个都不存在时，`read` 返回空内容，`write` 会在 workspace 根创建 `AGENTS.md`。
+
+:::tip AGENTS.md 是“项目记忆”，不是 skill
+注意区分：
+
+- **Skill**（见 [Skills 使用与组织](/docs/coding-agent/skills)）是“做法库”：文件化工作流知识，按需被 read_file 读取。
+- **AGENTS.md** 是“项目记忆”：agent 自己用 `update_agents_md` 写入的项目约定、决策、待办，跨 session 持久。
+
+两者都是只读知识输入面的一部分，但 AGENTS.md 是 agent **可写** 的，并且是 agent 主动维护的运行时状态。
+:::
+
+这个工具让 coding agent 具备了“长期记住这个项目的关键事实”的能力，而不必每次 session 都重新发现。
+
+## 8. 当前 session 为什么可能还会出现 `delegate_*`、`subagent_*`、MCP tools
 
 除了固定本地工具，`CodingAgentBuilder` 还会合并：
 
@@ -206,7 +295,7 @@ tags: [concept]
 - 执行面
 - 策略面
 
-## 8. 审批拦截到底发生在哪一层
+## 9. 审批拦截到底发生在哪一层
 
 审批当前不是：
 
@@ -236,7 +325,7 @@ tags: [concept]
 
 共用一套审批语义。
 
-## 9. `CliToolApprovalDecorator` 当前到底拦什么
+## 10. `CliToolApprovalDecorator` 当前到底拦什么
 
 从实现看，当前规则是：
 
@@ -258,7 +347,7 @@ tags: [concept]
 
 而不是改 prompt。
 
-## 10. 被拒绝的审批是怎样传回 runtime 的
+## 11. 被拒绝的审批是怎样传回 runtime 的
 
 `CliToolApprovalDecorator` 在审批拒绝时不会静默吞掉，而是抛出带：
 
@@ -274,7 +363,7 @@ tags: [concept]
 
 所以 approval 在 AI4J 里不是 UX 小细节，而是 stop reason 的一部分。
 
-## 11. ACP 的审批为什么又是另一条路径
+## 12. ACP 的审批为什么又是另一条路径
 
 CLI/TUI 下，审批是终端交互：
 
@@ -295,7 +384,7 @@ ACP 下，则是：
 - 都在执行前拦截
 - 都能把拒绝传回 runtime
 
-## 12. 为什么“审批”与“工作区沙箱”必须分开理解
+## 13. 为什么“审批”与“工作区沙箱”必须分开理解
 
 这是当前文档最容易写错的地方。
 
@@ -326,7 +415,7 @@ ACP 下，则是：
 - approval 只是执行前控制，不是文件系统隔离层
 
 
-## 13. Sandbox routing 当前做到哪一步
+## 14. Sandbox routing 当前做到哪一步
 
 `ai4j-coding` 已经有了 P3 首切片：当宿主通过 `CodingAgentBuilder.sandbox(SandboxSession)` 绑定 live sandbox 后，`bash action=exec` 会通过 `SandboxShellCommandExecutor` 调用 `SandboxSession.execute(SandboxCommand)`。
 
@@ -341,7 +430,7 @@ ACP 下，则是：
 
 注意：这不等于所有工具都已经远端化。`read_file`、`write_file`、`apply_patch`、后台进程、browser、git/project run 等仍需要后续切片逐步接入。完整边界见 [Sandbox Routing](/docs/coding-agent/sandbox-routing)。
 
-## 14. 当前最稳的扩展位置在哪里
+## 15. 当前最稳的扩展位置在哪里
 
 如果你要把 Coding Agent 接进企业环境，最稳的扩展入口通常是：
 
@@ -361,31 +450,31 @@ ACP 下，则是：
 
 否则工具面和执行面会脱节。
 
-## 15. 最容易踩坑的 5 个点
+## 16. 最容易踩坑的 5 个点
 
-### 15.1 把“固定内置工具”理解成“全部可见工具”
+### 16.1 把“固定内置工具”理解成“全部可见工具”
 
 当前 session 工具面可能还包含 delegate、subagent、MCP 工具。
 
-### 15.2 把审批理解成操作系统级 hook
+### 16.2 把审批理解成操作系统级 hook
 
 它本质上只是 ToolExecutor decorator。
 
-### 15.3 把 `safe` 模式想得比当前实现更严格
+### 16.3 把 `safe` 模式想得比当前实现更严格
 
 当前并不是所有写操作都会自动审批。
 
-### 15.4 把 `write_file` 和 `apply_patch` 的路径边界想成一致
+### 16.4 把 `write_file` 和 `apply_patch` 的路径边界想成一致
 
 当前实现并不完全对称。
 
-### 15.5 只设计 registry，不设计 executor
+### 16.5 只设计 registry，不设计 executor
 
 工具暴露面和执行面必须同时考虑。
 
-## 16. 这页最该记住的结论
+## 17. 这页最该记住的结论
 
-AI4J 当前的 Coding Agent tools 机制，不是“4 个函数 + 一个确认框”，而是一整套运行面：
+AI4J 当前的 Coding Agent tools 机制，不是“8 个函数 + 一个确认框”，而是一整套运行面：
 
 - 用 registry 决定模型看见什么
 - 用专用 executor 决定本地怎么执行
@@ -395,9 +484,10 @@ AI4J 当前的 Coding Agent tools 机制，不是“4 个函数 + 一个确认�
 而 approval 与 workspace 边界又是两套不同控制。  
 把这几层分清，才能真正理解 Coding Agent 的可控性来自哪里。
 
-## 17. 继续阅读
+## 18. 继续阅读
 
 1. [会话、流式与进程](/docs/coding-agent/session-runtime)
 2. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
 3. [Sandbox Routing](/docs/coding-agent/sandbox-routing)
-4. [Runtime 架构](/docs/coding-agent/runtime-architecture)
+4. [生命周期钩子与工作区信任](/docs/coding-agent/lifecycle-hooks)
+5. [Runtime 架构](/docs/coding-agent/runtime-architecture)

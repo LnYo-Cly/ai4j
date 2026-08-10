@@ -102,8 +102,11 @@ P3 首切片故意很窄，避免把路由边界一次做错。当前还没有�
 1. sandbox 文件读写抽象；
 2. patch 在 sandbox workspace 内应用；
 3. 长进程生命周期映射到 provider；
-4. browser/screenshot/artifact 收集；
-5. CLI `/sandbox` 状态展示和切换。
+4. browser/screenshot/artifact 收集。
+
+:::tip CLI `/sandbox` 命令已实现
+CLI/TUI 内的 `/sandbox` 状态展示与切换**已经落地**（解析器 `CliSandboxCommand`），不再是规划中能力。可在会话内用 `/sandbox status`、`/sandbox enable <provider>`、`/sandbox attach <provider> <id>`、`/sandbox disable` 管理当前 session 的 sandbox 绑定，命令细节见 [命令参考](/docs/coding-agent/command-reference)。
+:::
 
 ## 5. 与审批的关系
 
