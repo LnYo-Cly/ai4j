@@ -10,6 +10,14 @@ tags: [concept]
 
 真正的区别不在“哪个更新”，而在 **你到底想消费什么样的模型输出语义，以及你更在意 provider 覆盖还是事件结构**。
 
+:::tip 本页代码都是可跑通的
+下方对比示例来自
+[`ChatDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/ChatDocExamplesLiveTest.java)
+和
+[`ResponsesDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/ResponsesDocExamplesLiveTest.java)，
+已针对真实网关跑通。
+:::
+
 ## 1. 先给一句结论
 
 - `Chat`：消息式主线，provider 覆盖广，适合先打通、也适合自动 tool loop
@@ -42,6 +50,31 @@ tags: [concept]
 - 在一个更结构化的 response 协议里推进状态
 
 所以两者的差异不是参数名微调，而是接口哲学不同。
+
+同样的"一句话问答"，两条线的代码形态对比：
+
+```java
+// Chat：messages 列表
+ChatCompletion chatReq = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.withUser("用一句话解释向量数据库"))
+        .build();
+ChatCompletionResponse chatResp = chatService.chatCompletion(chatReq);
+String chatAnswer = chatResp.getChoices().get(0).getMessage().getContent().getText();
+
+// Responses：input + item 列表
+ResponseRequest resReq = ResponseRequest.builder()
+        .model("gpt-4o-mini")
+        .input("用一句话解释向量数据库")
+        .build();
+Response resResp = responsesService.create(resReq);
+String resAnswer = "";   // 遍历 output items 的 content parts
+for (ResponseItem item : resResp.getOutput()) {
+    for (ResponseContentPart part : item.getContent()) {
+        if (part.getText() != null) resAnswer += part.getText();
+    }
+}
+```
 
 ## 3. 从 provider 覆盖看，`Chat` 更像默认主线
 
@@ -119,7 +152,30 @@ tags: [concept]
 - 把事件和 response 聚合出来
 - 把后续编排留给上层 runtime
 
-所以如果你想要“SDK 先帮我把工具跑一轮再说”，`Chat` 更顺手。
+所以如果你想要"SDK 先帮我把工具跑一轮再说"，`Chat` 更顺手：
+
+```java
+// Chat：functions(...) 注册，SDK 收到 tool_calls 时自动执行并回填，
+// 这里拿到的已经是工具执行后的最终回答
+ChatCompletionResponse resp = chatService.chatCompletion(ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.withUser("订单 A1001 什么状态？"))
+        .functions("getOrderStatus")
+        .build());
+```
+
+而 `Responses` 会把 `function_call` item 原样交回，要不要执行由你决定：
+
+```java
+// Responses：tools 解析进 payload，但 function_call item 交回上层
+Response response = responsesService.create(ResponseRequest.builder()
+        .model("gpt-4o-mini")
+        .input("AAPL 现在多少钱？")
+        .functions("getStockPrice")
+        .build());
+// response.getOutput() 里可能出现 type="function_call" 的 item，
+// 你读取它的 name/arguments，执行后用 function_call_output 回填
+```
 
 ## 6. 从流式语义看，二者消费对象完全不同
 

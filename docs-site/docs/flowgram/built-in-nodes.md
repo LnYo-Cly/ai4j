@@ -213,7 +213,7 @@ starter 侧多个 executor 都会用 `FlowGramNodeValueResolver` 解析输入值
 
 因此它更适合“把流程接到外部系统”，不适合承担复杂业务编排本身。
 
-### 7.1 SSRF 防护：`HttpNodeSsrfGuard`
+### 7.1 SSRF 防护：`HttpNodeSsrfGuard` {#ssrf-guard}
 
 HTTP 节点在发出请求前会先过一道 `HttpNodeSsrfGuard`（`ssrfGuard.validate(fullUrl)`），防止工作流被诱导去访问内部网络。这是默认开启的，不需要额外配置。
 

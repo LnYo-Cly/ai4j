@@ -14,6 +14,13 @@ tags: [concept]
 - 它如何分别投影到 `Chat` 和 `Responses`
 - 哪些场景属于模型输入，哪些场景其实更像 Tool 或 MCP
 
+:::tip 本页代码都是可跑通的
+下面的 wire-shape 示例来自
+[`MultimodalDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/MultimodalDocExamplesTest.java)，
+无需密钥、在普通 CI 里跑；端到端的图片识别调用见
+[`ChatDocExamplesLiveTest#multiModalUserMessageWithImage`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/ChatDocExamplesLiveTest.java)。
+:::
+
 ## 1. 为什么它属于 Model Access，而不是 Tools
 
 多模态在 AI4J 当前实现里首先是请求编码问题，不是外部能力问题。
@@ -45,6 +52,20 @@ tags: [concept]
 
 这很重要，因为它说明 AI4J 把多模态首先视为“会话事实”，而不是单次请求的特殊分支。
 
+```java
+// 读本地文件成 data URL（推荐，跨网关可移植）
+byte[] bytes = Files.readAllBytes(Paths.get("photo.png"));
+String dataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+
+// 文本 + 图片作为一条会话事实存入 Memory
+ChatMemoryItem item = ChatMemoryItem.user("这张图是什么颜色？", dataUrl);
+```
+
+:::warning 优先用 base64 data URL，而不是远程图片 URL
+部分 OpenAI 兼容网关不会代拉远程图片，实测某网关对远程 URL 直接报 `Upstream service temporarily unavailable`，
+换成内联 base64 则正常识别。这是网关能力差异，不是 SDK 缺陷。
+:::
+
 ## 3. 同一份会话事实如何投影到 Chat
 
 `ChatMemoryItem.toChatMessage()` 在 user item 且存在图片时，会构造成：
@@ -64,6 +85,23 @@ tags: [concept]
 
 这对应了 Chat 主线对图文混合输入的编码方式。
 
+```java
+ChatMessage message = item.toChatMessage();
+// message.role = "user"
+// message.content.multiModals = [
+//   { type:"text", text:"这张图是什么颜色？" },
+//   { type:"image_url", image_url:{ url:"data:image/png;base64,..." } }
+// ]
+```
+
+不经 Memory 也可以直接构造：
+
+```java
+ChatMessage direct = ChatMessage.withUser("这张图是什么颜色？", dataUrl);
+```
+
+`ChatMessage.withUser(text, images...)` 接受任意多张图，编码成一段 `text` + N 个 `image_url` part。
+
 ## 4. 同一份会话事实如何投影到 Responses
 
 `ChatMemoryItem.toResponsesInput()` 会把同一条用户会话转成：
@@ -78,6 +116,16 @@ tags: [concept]
 - 图片会变成 `input_image`
 
 也就是说，AI4J 没有把多模态做成两套互不相干的数据结构，而是把同一份会话事实投影到两条请求主线各自的格式上。
+
+```java
+Object responsesInput = item.toResponsesInput();
+// { type:"message", role:"user", content:[
+//     { type:"input_text", text:"这张图是什么颜色？" },
+//     { type:"input_image", image_url:{ url:"data:image/png;base64,..." } }
+// ] }
+```
+
+同一个 `ChatMemoryItem`，调 `toChatMessage()` 得到 Chat 形状（`image_url`），调 `toResponsesInput()` 得到 Responses 形状（`input_image`）。无需为两条主线各写一套多模态数据结构。
 
 ## 5. 为什么这种双投影很重要
 
@@ -131,6 +179,19 @@ AI4J 当前多模态主要围绕：
 进行编码。
 
 也就是说，这一层更偏向“把图片引用纳入上下文”，而不是在基座层统一处理所有视觉媒体文件形态。对于更复杂的媒体处理，通常还需要外部工具链配合。
+
+### 视频：`video_url`（Kimi/Moonshot 扩展）
+
+除了 `image_url`，`Content.MultiModal` 还支持 `video_url`，用于支持视频输入的 provider（如 Kimi/Moonshot）：
+
+```java
+Content.MultiModal video = Content.MultiModal.builder()
+        .type(Content.MultiModal.Type.VIDEO_URL.getType())
+        .videoUrl(new Content.MultiModal.VideoUrl("data:video/mp4;base64," + videoBase64))
+        .build();
+```
+
+这是 provider 扩展，不属于 OpenAI 标准；发送给不支持的 provider 时该字段会被忽略或报错。
 
 ## 8. 使用时应该注意什么
 

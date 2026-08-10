@@ -10,6 +10,12 @@ tags: [concept]
 Realtime 在 AI4J 当前是一条 **很薄但正式存在的长连接能力面**。  
 它的重点不是事件协议建模得多完整，而是 SDK 已经给出了统一入口、默认鉴权头和 WebSocket 建连主线。
 
+:::tip 本页代码都是可跑通的
+下面的建连示例来自
+[`AudioAndRealtimeDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/AudioAndRealtimeDocExamplesLiveTest.java)。
+（realtime 端点不是所有网关都支持，测试在该场景会跳过。）
+:::
+
 ## 1. 当前支持矩阵
 
 从 `AiService.createRealtimeService(...)` 的分发看，当前 realtime 只支持：
@@ -34,6 +40,33 @@ Realtime 在 AI4J 当前是一条 **很薄但正式存在的长连接能力面**
 - 它只负责建连
 - 不负责替你定义事件语义
 - 也不负责状态机推进
+
+建连示例：
+
+```java
+IRealtimeService realtime = new AiService(configuration).getRealtimeService(PlatformType.OPENAI);
+
+WebSocket ws = realtime.createRealtimeClient("gpt-4o-realtime-preview", new RealtimeListener() {
+    @Override
+    protected void onOpen(WebSocket webSocket) {
+        System.out.println("realtime connected");
+    }
+
+    @Override
+    protected void onMessage(ByteString bytes) {
+        // 二进制音频帧
+    }
+
+    @Override
+    protected void onMessage(String text) {
+        // JSON 事件，自己解析事件类型后分发
+        System.out.println("event: " + text);
+    }
+
+    @Override
+    protected void onFailure() { /* 注意：见下文实现细节 */ }
+});
+```
 
 ## 3. `OpenAiRealtimeService` 的真实行为
 
