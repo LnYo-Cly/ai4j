@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletion;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletionResponse;
+import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotUsage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -73,7 +74,12 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         moonshotChatCompletion.setModel(chatCompletion.getModel());
         moonshotChatCompletion.setMessages(chatCompletion.getMessages());
         moonshotChatCompletion.setFrequencyPenalty(chatCompletion.getFrequencyPenalty());
-        moonshotChatCompletion.setMaxTokens(resolveMaxTokens(chatCompletion));
+        if (chatCompletion.getMaxCompletionTokens() != null) {
+            moonshotChatCompletion.setMaxCompletionTokens(chatCompletion.getMaxCompletionTokens());
+        } else {
+            moonshotChatCompletion.setMaxTokens(chatCompletion.getMaxTokens());
+        }
+        moonshotChatCompletion.setReasoningEffort(chatCompletion.getReasoningEffort());
         moonshotChatCompletion.setPresencePenalty(chatCompletion.getPresencePenalty());
         moonshotChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
         moonshotChatCompletion.setStop(chatCompletion.getStop());
@@ -124,7 +130,8 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         chatCompletionResponse.setCreated(moonshotChatCompletionResponse.getCreated());
         chatCompletionResponse.setModel(moonshotChatCompletionResponse.getModel());
         chatCompletionResponse.setChoices(moonshotChatCompletionResponse.getChoices());
-        chatCompletionResponse.setUsage(moonshotChatCompletionResponse.getUsage());
+        MoonshotUsage moonshotUsage = moonshotChatCompletionResponse.getUsage();
+        chatCompletionResponse.setUsage(moonshotUsage != null ? moonshotUsage.toStandardUsage() : null);
         return chatCompletionResponse;
     }
 
@@ -138,7 +145,7 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
 
             prepareChatCompletion(chatCompletion, false);
             MoonshotChatCompletion moonshotChatCompletion = convertChatCompletionObject(chatCompletion);
-            Usage allUsage = new Usage();
+            MoonshotUsage allUsage = new MoonshotUsage();
             String finishReason = FIRST_FINISH_REASON;
 
             while (requiresFollowUp(finishReason)) {
@@ -237,7 +244,7 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
             MoonshotChatCompletionResponse chatCompletionResponse =
                     objectMapper.readValue(data, MoonshotChatCompletionResponse.class);
             ChatCompletionResponse response = convertChatCompletionResponse(chatCompletionResponse);
-            Usage usage = extractStreamUsage(data);
+            MoonshotUsage usage = extractStreamUsage(data);
             if (usage != null) {
                 response.setUsage(usage);
             }
@@ -247,12 +254,12 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         }
     }
 
-    private Usage extractStreamUsage(String data) {
+    private MoonshotUsage extractStreamUsage(String data) {
         JSONObject object = (JSONObject) JSONPath.eval(data, "$.choices[0].usage");
         if (object == null) {
             return null;
         }
-        return object.toJavaObject(Usage.class);
+        return object.toJavaObject(MoonshotUsage.class);
     }
 
     private void prepareChatCompletion(ChatCompletion chatCompletion, boolean stream) {
@@ -309,13 +316,17 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
                 .build();
     }
 
-    private void mergeUsage(Usage target, Usage usage) {
+    private void mergeUsage(MoonshotUsage target, MoonshotUsage usage) {
         if (usage == null) {
             return;
         }
         target.setCompletionTokens(target.getCompletionTokens() + usage.getCompletionTokens());
         target.setTotalTokens(target.getTotalTokens() + usage.getTotalTokens());
         target.setPromptTokens(target.getPromptTokens() + usage.getPromptTokens());
+        if (usage.getCachedTokens() != null) {
+            long base = target.getCachedTokens() == null ? 0L : target.getCachedTokens();
+            target.setCachedTokens(base + usage.getCachedTokens());
+        }
     }
 
     private List<ChatMessage> appendToolMessages(
@@ -361,14 +372,6 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
 
     private String resolveApiKey(String apiKey) {
         return (apiKey == null || "".equals(apiKey)) ? moonshotConfig.getApiKey() : apiKey;
-    }
-
-    @SuppressWarnings("deprecation")
-    private Integer resolveMaxTokens(ChatCompletion chatCompletion) {
-        if (chatCompletion.getMaxCompletionTokens() != null) {
-            return chatCompletion.getMaxCompletionTokens();
-        }
-        return chatCompletion.getMaxTokens();
     }
 }
 
