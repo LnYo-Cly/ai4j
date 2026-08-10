@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.platform.doubao.response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.ResponseSseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.response.ResponseEventParser;
@@ -62,8 +62,8 @@ public class DoubaoResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), Response.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("Doubao Responses request failed");
     }
 
     @Override
@@ -118,8 +118,8 @@ public class DoubaoResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), Response.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("Doubao Responses retrieve failed");
     }
 
     @Override
@@ -143,8 +143,8 @@ public class DoubaoResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), ResponseDeleteResponse.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("Doubao Responses delete failed");
     }
 
     @Override

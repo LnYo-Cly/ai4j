@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.platform.openai.image;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.ImageSseListener;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGeneration;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGenerationResponse;
@@ -66,9 +66,8 @@ public class OpenAiImageService implements IImageService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), ImageGenerationResponse.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-
-        throw new CommonException("OpenAI 图片生成请求失败");
     }
 
     @Override

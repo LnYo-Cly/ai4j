@@ -13,6 +13,9 @@ public final class HttpErrorDecoder {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /** Upper bound on raw-body text kept in an exception message. */
+    private static final int MAX_RAW_BODY_CHARS = 500;
+
     private HttpErrorDecoder() {
     }
 
@@ -30,6 +33,12 @@ public final class HttpErrorDecoder {
         } catch (Exception ignored) {
         }
         String message = extractMessage(body);
+        if (message == null || message.isEmpty()) {
+            // Not a recognised JSON error shape: keep the raw body rather than
+            // discard it, otherwise gateway/proxy failures (HTML or plain-text
+            // error pages) leave the caller with nothing to debug.
+            message = rawBodySnippet(body);
+        }
         if (message == null || message.isEmpty()) {
             String httpMsg = response.message();
             message = (httpMsg != null && !httpMsg.isEmpty())
@@ -112,5 +121,18 @@ public final class HttpErrorDecoder {
 
     private static boolean isNotBlank(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private static String rawBodySnippet(String body) {
+        if (body == null) {
+            return null;
+        }
+        String trimmed = body.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.length() <= MAX_RAW_BODY_CHARS
+                ? trimmed
+                : trimmed.substring(0, MAX_RAW_BODY_CHARS) + "... (truncated)";
     }
 }

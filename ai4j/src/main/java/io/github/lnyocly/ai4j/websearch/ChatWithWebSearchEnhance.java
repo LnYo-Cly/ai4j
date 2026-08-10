@@ -2,6 +2,8 @@ package io.github.lnyocly.ai4j.websearch;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.Ai4jException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -100,12 +102,14 @@ public class ChatWithWebSearchEnhance implements IChatService {
 
 
             }else{
-                throw new CommonException("SearXNG request failed");
+                throw HttpErrorDecoder.decode(execute);
             }
 
 
+        } catch (Ai4jException e) {
+            throw e;
         } catch (Exception e) {
-            throw new CommonException("SearXNG request failed");
+            throw new CommonException("SearXNG request failed: " + e.getMessage());
         }
 
 

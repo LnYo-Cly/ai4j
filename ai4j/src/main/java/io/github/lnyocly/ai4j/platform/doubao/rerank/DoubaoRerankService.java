@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.rerank.entity.RerankDocument;
 import io.github.lnyocly.ai4j.rerank.entity.RerankRequest;
@@ -90,8 +90,8 @@ public class DoubaoRerankService implements IRerankService {
             if (response.isSuccessful() && response.body() != null) {
                 return parseResponse(objectMapper.readTree(response.body().string()), request);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("Doubao rerank request failed");
     }
 
     @Override

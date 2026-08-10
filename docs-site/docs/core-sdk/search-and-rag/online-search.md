@@ -175,19 +175,31 @@ chatCompletion.getMessages().get(chatLen - 1)
 
 ## 7. 当前失败路径是什么样的
 
-`performWebSearch(...)` 的失败处理相对保守：
+`performWebSearch(...)` 的失败按类型区分：
 
 - 没配置 `SearXNG url`，直接抛 `CommonException`
-- 请求失败，抛 `CommonException("SearXNG request failed")`
-- 解析或网络异常，也统一抛这个错误
+- 上游返回非 2xx，抛 `HttpErrorDecoder` 解码出的类型化异常（`AiAuthException` / `AiRateLimitException` / `AiServerErrorException` / `AiClientException`），**携带上游返回的原始错误信息**，并可通过 `getStatusCode()` 读取状态码
+- 解析或网络异常，抛 `CommonException`，消息中附带底层异常的 `getMessage()`
 
-这带来的好处是接口表面简单；代价是错误被压平了。  
-排障时你往往还得自己补日志，否则很难区分：
+因此排障时可以直接区分：
 
-- 网络错误
-- 上游返回异常
-- JSON 解析失败
-- 配置错误
+```java
+try {
+    String results = enhance.performWebSearch(query);
+} catch (AiRateLimitException e) {
+    // 上游限流，可退避重试
+} catch (AiAuthException e) {
+    // 凭证问题
+} catch (AiHttpException e) {
+    // 其它上游 HTTP 错误，e.getStatusCode() + e.getMessage() 已含上游原文
+} catch (CommonException e) {
+    // 配置缺失、网络或解析失败
+}
+```
+
+:::note 版本差异
+在 v2.4.2 及更早版本中，上述所有情况都会被压平成同一句 `CommonException("SearXNG request failed")`，无法区分。详见 [issue #228](https://github.com/LnYo-Cly/ai4j/issues/228)。
+:::
 
 ## 8. 这一层最真实的安全与质量边界
 

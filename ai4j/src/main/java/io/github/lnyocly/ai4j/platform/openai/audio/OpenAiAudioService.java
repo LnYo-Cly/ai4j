@@ -3,6 +3,9 @@ package io.github.lnyocly.ai4j.platform.openai.audio;
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
+import io.github.lnyocly.ai4j.exception.Ai4jException;
+import io.github.lnyocly.ai4j.exception.AiClientException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.TextToSpeech;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.Transcription;
 import io.github.lnyocly.ai4j.platform.openai.audio.entity.TranscriptionResponse;
@@ -62,19 +65,21 @@ public class OpenAiAudioService implements IAudioService {
         try {
             response = okHttpClient.newCall(request).execute();
             if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+                throw HttpErrorDecoder.decode(response);
             }
 
             ResponseBody responseBody = response.body();
-            if (responseBody != null) {
-                return new ResponseInputStream(response, responseBody.byteStream());
+            if (responseBody == null) {
+                throw new AiClientException(response.code(), "OpenAI speech response had no body");
             }
+            InputStream stream = new ResponseInputStream(response, responseBody.byteStream());
+            response = null; // ownership transferred to the returned stream
+            return stream;
         } catch (IOException e) {
+            throw new Ai4jException("OpenAI speech request failed: " + e.getMessage(), e);
+        } finally {
             closeQuietly(response);
-            e.printStackTrace();
         }
-        closeQuietly(response);
-        return null;
     }
 
     @Override
@@ -156,10 +161,10 @@ public class OpenAiAudioService implements IAudioService {
             if (response.isSuccessful() && response.body() != null) {
                 return JSON.parseObject(response.body().string(), responseType);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            throw HttpErrorDecoder.decode(response);
+        } catch (IOException e) {
+            throw new Ai4jException("OpenAI audio request failed: " + e.getMessage(), e);
         }
-        return null;
     }
 
     private String resolveBaseUrl(String baseUrl) {
