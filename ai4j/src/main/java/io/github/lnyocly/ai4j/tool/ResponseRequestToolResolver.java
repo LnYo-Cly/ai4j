@@ -71,6 +71,9 @@ public final class ResponseRequestToolResolver {
         if (function.getParameters() != null) {
             flat.put("parameters", function.getParameters());
         }
+        if (function.getStrict() != null) {
+            flat.put("strict", function.getStrict());
+        }
         return flat;
     }
 }

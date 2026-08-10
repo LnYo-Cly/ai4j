@@ -803,6 +803,9 @@ public class ToolUtil {
                         function.setDescription(functionCall.description());
 
                         setFunctionParameters(function, functionClass);
+                        if (functionCall.strict()) {
+                            applyStrictMode(function);
+                        }
                         toolClassMap.put(functionName, functionClass);
                         return function;
                     }
@@ -927,6 +930,19 @@ public class ToolUtil {
             log.error("设置Function参数失败: {}", function.getName(), e);
             throw new RuntimeException("设置Function参数失败: " + function.getName(), e);
         }
+    }
+
+    /**
+     * 开启严格模式：调整 schema 以满足 OpenAI 的硬性要求
+     * （{@code additionalProperties=false}、所有字段列入 {@code required}、
+     * 可选字段标为可空），并把 {@code strict} 置为 {@code true}。
+     */
+    private static void applyStrictMode(Tool.Function function) {
+        Tool.Function.Parameter params = function.getParameters();
+        if (params != null) {
+            params.enforceStrictSchema();
+        }
+        function.setStrict(Boolean.TRUE);
     }
 
     /**
