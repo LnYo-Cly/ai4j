@@ -12,6 +12,21 @@ tags: [concept]
 
 > 让本就说 Anthropic 方言的系统，**原生 in / 原生 out**地接入，零 OpenAI 格式转换、零字段丢失。
 
+:::tip 本页代码都是可跑通的
+下面的示例来自
+[`MessagesDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/MessagesDocExamplesLiveTest.java)，
+已针对真实 Anthropic 兼容网关（MiniMax-M3）跑通。本地复跑：
+
+```bash
+export MINIMAX_API_KEY=sk-...
+export MINIMAX_MODEL=MiniMax-M3   # 可选
+
+mvn -pl ai4j test -Plive-provider-tests -Dtest=MessagesDocExamplesLiveTest
+```
+
+没有 `MINIMAX_API_KEY` 时自动跳过。
+:::
+
 ## 1. 三条主线，不是新旧关系
 
 | 主线 | 协议 | 接口 | 适合 |
@@ -72,8 +87,54 @@ request.setMessages(Collections.singletonList(user));
 request.setMaxTokens(128);
 
 AnthropicChatCompletionResponse response = messages.messages(request);
+
 // 原生 content blocks（text / thinking / tool_use）原样拿到
+// 遍历 content 读取助手文本（thinking / tool_use 之外的 text block）
+StringBuilder answer = new StringBuilder();
+for (AnthropicContentBlock block : response.getContent()) {
+    if ("text".equals(block.getType())) {
+        answer.append(block.getText());
+    }
+}
+System.out.println(answer);
+
+System.out.println("input=" + response.getUsage().getInputTokens()
+        + " output=" + response.getUsage().getOutputTokens());
 ```
+
+### tool_use（Messages 原生工具调用）
+
+```java
+Map<String, Object> inputSchema = new LinkedHashMap<>();
+inputSchema.put("type", "object");
+inputSchema.put("properties", Map.of("city",
+        Map.of("type", "string", "description", "City name")));
+inputSchema.put("required", List.of("city"));
+
+AnthropicTool tool = new AnthropicTool();
+tool.setName("get_weather");
+tool.setDescription("Get the current weather for a city.");
+tool.setInputSchema(inputSchema);
+
+AnthropicChatCompletion toolReq = request("What is the weather in Beijing? Use the get_weather tool.");
+toolReq.setTools(List.of(tool));
+
+AnthropicChatCompletionResponse resp = messages.messages(toolReq);
+
+// 模型会 emit 一个 type="tool_use" 的 content block，带 name / id / input（已解析对象）
+for (AnthropicContentBlock block : resp.getContent()) {
+    if ("tool_use".equals(block.getType())) {
+        System.out.println("待执行: " + block.getName() + " input=" + block.getInput());
+        System.out.println("call_id: " + block.getId());   // 回填 tool_result 时要用
+    }
+}
+```
+
+:::note tool_use 与 Chat 的工具格式不同
+Anthropic 的工具声明用 `input_schema`（不是 OpenAI 的 `parameters`），返回的 `input` 是**已解析的对象**（不是 JSON 字符串）；
+回填结果用 `role:"user"` 消息里的 `tool_result` block + `tool_use_id`（不是 OpenAI 的 `role:"tool"` + `tool_call_id`）。
+原生路径走的就是这套，零转换。
+:::
 
 ### 流式（原生事件回调）
 
