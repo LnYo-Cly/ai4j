@@ -83,7 +83,69 @@ starter 里并不是所有东西都无条件创建。
 
 这意味着默认 Bean 的存在是“可被接管”的，而不是强制覆盖业务实现。
 
-## 6. 你应该怎么看这页
+## 6. 扩展与插件装配：`ai.extensions.*`
+
+`AiConfigAutoConfiguration` 不只装配模型和网络，还把 ai4j 的扩展/插件体系自动接进 Spring。绑定入口是 `AiExtensionProperties`（前缀 `ai.extensions`），产出两个 Bean：
+
+- `ExtensionRegistry`：`@ConditionalOnMissingBean`，先 `ExtensionRegistry.discover()` 做类路径发现，再把 YAML 配置逐项应用上去。
+- `ExtensionRuntimeSnapshot`：`registry.snapshot()` 的不可变快照，供运行时读取当前启用的 tools / commands / skills / prompts / guardrails。
+
+装配链把 YAML 的每一组配置映射成 registry 上的一次方法调用：
+
+| YAML 配置 | registry 调用 | 含义 |
+| --- | --- | --- |
+| `ai.extensions.enabled` | `enableAll(...)` | 显式启用一批扩展 |
+| `ai.extensions.explicit-resource-activation` | `requireExplicitResourceActivation()` | 强制资源必须显式激活 |
+| `ai.extensions.tools.expose` | `exposeTools(...)` | 暴露哪些工具 |
+| `ai.extensions.commands.allow` | `allowCommands(...)` | 允许哪些命令 |
+| `ai.extensions.skills.allow` | `allowSkills(...)` | 允许哪些 skill |
+| `ai.extensions.prompts.allow` | `allowPrompts(...)` | 允许哪些 prompt |
+| `ai.extensions.guardrails.allow` | `allowGuardrails(...)` | 允许哪些 guardrail |
+
+示例：
+
+```yaml
+ai:
+  extensions:
+    enabled: [filesystem, search]
+    explicit-resource-activation: true
+    tools:
+      expose: [read-file, web-search]
+    skills:
+      allow: [summarize]
+```
+
+这样启动后，`ExtensionRuntimeSnapshot` 就是当前生效的扩展视图，业务代码不再需要自己拼装这些清单。
+
+:::tip 两个 Bean 都是 @ConditionalOnMissingBean
+如果你想完全接管扩展装配（例如从企业内部的权限系统动态生成清单），直接在自己的 `@Configuration` 里声明同名 `ExtensionRegistry` Bean 即可，starter 的默认装配会自动让位。
+:::
+
+## 7. OkHttp SPI 扩展点
+
+`initOkHttp()` 里网络栈的两个关键零件不是写死的，而是通过 SPI 加载：
+
+```text
+ServiceLoaderUtil.load(DispatcherProvider.class)    // 并发调度策略
+ServiceLoaderUtil.load(ConnectionPoolProvider.class) // 连接池策略
+```
+
+接口定义在 `io.github.lnyocly.ai4j.network`：
+
+```java
+// ai4j 2.4.2, groupId io.github.lnyo-cly
+public interface DispatcherProvider {
+    okhttp3.Dispatcher getDispatcher();
+}
+
+public interface ConnectionPoolProvider {
+    okhttp3.ConnectionPool getConnectionPool();
+}
+```
+
+默认实现是 `DefaultDispatcherProvider` / `DefaultConnectionPoolProvider`（各返回一个 `new Dispatcher()` / `new ConnectionPool()`）。要替换它们，实现对应接口，并通过 Java SPI（`META-INF/services/...`）注册即可，整个 starter 共享的 `OkHttpClient` 就会走你的实现。常见用途：自定义最大并发请求、连接池存活时长、按租户隔离调度器。
+
+## 8. 你应该怎么看这页
 
 把它看成一个对象图说明页：
 

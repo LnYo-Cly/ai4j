@@ -188,6 +188,31 @@ McpPromptResult prompt = client.getPrompt(
 
 这意味着它已经具备基础会话恢复能力，但不是复杂的连接池。
 
+### 8.3 关闭自动重连
+
+默认的 3 参构造器把 `autoReconnect` 固定为 `true`：
+
+```java
+new McpClient("demo-client", "1.0.0", transport)
+// 等价于 new McpClient("demo-client", "1.0.0", transport, true)
+```
+
+如果你希望自己掌控连接生命周期（例如由上层 gateway、编排器统一调度重连，或短生命周期一次性调用），用 4 参构造器显式关闭：
+
+```java
+McpClient client = new McpClient("demo-client", "1.0.0", transport, false);
+```
+
+关闭后的行为差异：
+
+- 断线时仍会清缓存、停 heartbeat、停 transport、取消 pending requests
+- 但**不再调度重连**（日志会打印 `自动重连已禁用，跳过MCP重连`）
+- 后续是否重连完全由调用方决定，通常做法是重新 `new McpClient(...)` 再 `connect()`
+
+:::note Gateway 创建的 client 默认开启重连
+`McpGateway` 经由 `McpGatewayClientFactory` 创建 client 时使用默认的 3 参构造器，即 `autoReconnect = true`。当前没有配置项把 `autoReconnect` 从配置文件注入到 gateway 创建链路（见 [配置与网关参考 - autoReconnect 字段](/docs/mcp/configuration-and-gateway-reference)）。需要关闭时，应在 gateway 外自行构造 client 再用 `addMcpClient(...)` 接入。
+:::
+
 ## 9. `callTool()` 的失败语义要分两层看
 
 这里是一个容易写错的点。

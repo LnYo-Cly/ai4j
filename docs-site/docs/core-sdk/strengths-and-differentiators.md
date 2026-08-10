@@ -106,7 +106,54 @@ AI4J 的亮点并不只是“功能多”，而是很多长期工程问题已经
 - 团队协作项目
 - 面向生产的 agentic 系统
 
-## 7. 这页也要讲诚实边界
+## 7. 真正能写进选型文档的硬技术差异点
+
+前面六点讲的是工程取向。下面这五项是已经落地、并且能在选型文档里直接复述的硬技术差异点，每一项都有对应模块和文档支撑，不是路线图。
+
+### 7.1 A2A 协议：Agent 之间能互操作
+
+`ai4j-agent` 内置 Google A2A 1.0 协议实现（`A2AServer` / `A2AClient` / `AgentCard`）。一个 ai4j Agent 既能作为 A2A 服务被外部发现和调用，也能作为客户端去调用别的 A2A Agent。
+
+- 能力发现：在 `/.well-known/agent.json` 暴露标准 AgentCard
+- 任务语义：`SendMessage` / `SendStreamingMessage` / `GetTask` / `CancelTask`，支持 SSE 流式更新与 push-notification 回调
+- 仅用 JDK stdlib（`com.sun.net.httpserver`），不引入新依赖，Java 8 可用
+
+优势：多 Agent 系统不必绑死单一厂商，Agent 可以跨实现互操作。详见 [A2A Protocol](/docs/agent/a2a)。
+
+### 7.2 多 provider 沙箱：一个 SPI，三套真实后端
+
+`SandboxProvider` SPI 定义了“宿主如何把命令执行交给隔离环境”的合同，官方已带三个真实 provider：
+
+- `E2BSandboxProvider`（E2B，Firecracker 微 VM）
+- `DaytonaSandboxProvider`（Daytona）
+- `CubeSandboxProvider`（CubeSandbox）
+
+Agent 需要执行 shell / 文件 / 项目命令时，可以按 spec 选择沙箱后端，而不是绑定到单一平台或自建容器。优势：执行隔离能力可替换、可移植。详见 [Agent Sandbox SPI](/docs/agent/sandbox-spi)。
+
+### 7.3 纯 Java 8、无 Kotlin、单一 JSON 栈
+
+全 SDK 不引入 Kotlin 运行时，JSON 只用 fastjson2 一条栈（A2A、MCP、Agent 事件序列化都走它），编译目标面向 Java 8 bytecode。
+
+- 没有 Kotlin stdlib / 额外反射 / 双 JSON 序列化栈的依赖债
+- 存量 Java 8 + Maven 项目可以直接接入，不必先升 JDK
+- 对依赖治理严格的金融、政企、存量后端更友好
+
+### 7.4 MCP 2.0 Streamable HTTP
+
+`StreamableHttpTransport` 与 `StreamableHttpMcpServer` 实现 MCP Streamable HTTP 传输，支持会话 ID 协商和 SSE 流式响应。MCP server / client 既可走 stdio、SSE，也可走当前规范推荐的 Streamable HTTP，不必绑定单一传输。优势：MCP 集成能贴近网关、代理和无状态部署的真实拓扑。
+
+### 7.5 可观测、可重放、可审计
+
+`ai4j-agent` 把运行时事件流做成了可观测、可重放、可审计的一等公民，而不是事后埋点：
+
+- 追踪：`AgentTraceListener` + 多个 `TraceExporter`（Console / JSONL / OpenTelemetry / Langfuse）
+- 节点级 I/O 捕获与重放：`IoCaptureAgentListener` / `NodeReplayer` / `ResumableModelClient`
+- 失败恢复与断点续跑：`ResumeCache`
+- 审计与防篡改：trace 投影保留完整节点输入输出
+
+优势：生产级 Agent 系统能定位、能回放、能审计。详见 [Trace Observability](/docs/agent/trace-observability) 与 [Replay, Recovery, Audit](/docs/agent/replay-recovery-audit)。
+
+## 8. 这页也要讲诚实边界
 
 AI4J 的优势不是“所有场景都绝对更强”，而是它优化目标很明确。
 
@@ -123,6 +170,6 @@ AI4J 的优势不是“所有场景都绝对更强”，而是它优化目标很
 - 完全不需要工具、协议扩展、RAG、runtime
 - 不在乎分层，只追求最小接入代码
 
-## 8. 这一页的结论
+## 9. 这一页的结论
 
 > AI4J 的差异点不在“它也能调很多模型”，而在它把多 provider 访问、工具、Skill、MCP、RAG 和向上 runtime 演进路径放进了一套连续的 Java 工程模型里。它更像长期系统的基础能力层，而不是一次性 demo SDK。

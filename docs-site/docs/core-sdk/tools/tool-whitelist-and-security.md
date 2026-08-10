@@ -95,6 +95,23 @@ context.resolveWorkspacePath(path)
 
 也就是说，写相关 built-in 工具默认不允许越出工作区。
 
+#### 写路径的第二道闸：`WorkspacePathGuard`
+
+`BuiltInToolContext.resolveWorkspacePath(...)` 只是工作区边界检查。coding-agent 层（`ai4j-coding`）的写类执行器（`WriteFileToolExecutor` / `EditToolExecutor` / `ApplyPatchToolExecutor`）在落盘前还会过一遍 `WorkspacePathGuard.resolveForWrite(...)`，它在工作区边界之上叠了三层防御：
+
+- **符号链接回路解析**：沿符号链接最多追 `MAX_SYMLINK_DEPTH = 8` 跳，并用 visited-set 检测环。解析出 canonical 路径后**再做一次**工作区边界检查——因为符号链接可能指向工作区外，单纯 normalize 拦不住。命中回路或超深则抛异常，杜绝用软链接逃逸工作区。
+- **敏感目录黑名单**：canonical 路径任意一段为 `.ssh` 或 `.aws`、或落在 `.git/hooks/**` 下，一律拒绝写入（防 hook 后门、防凭据目录被改）。注意是精确拦 `.git/hooks`，不影响 `.gitignore` 等其它 `.git` 读写。
+- **`excludedPaths` 拒写**：`WorkspaceContext.getExcludedPaths()`（典型如 `.git`、`target`）中的路径即使在工作区内也拒绝写入。
+
+```java
+// io.github.lnyocly.ai4j:ai4j-coding:2.4.2
+// 写执行器落盘前的统一校验：工作区边界 + 符号链接 + 黑名单 + excludedPaths
+Path safe = WorkspacePathGuard.resolveForWrite(workspaceContext, rawPath);
+Files.write(safe, content.getBytes(StandardCharsets.UTF_8));
+```
+
+这层防御只在写/补丁路径生效；`read_file` 走的是 `resolveReadablePath(...)` 的只读规则，不受黑名单约束。
+
 ### 读路径
 
 `read_file` 用的是：
@@ -161,6 +178,24 @@ context.resolveReadablePath(path)
 
 所以 `bash` 不是“轻量文件工具”，而是宿主能力面最大的 built-in 之一。
 :::
+
+#### bash 的多动作 API：前台 `exec` + 后台进程管理
+
+`bash` 不是单参数命令执行器。它的 `action` 参数枚举为 `exec`/`start`/`status`/`logs`/`write`/`stop`/`list`，由 `BuiltInToolExecutor.runBash(...)` 路由，后台进程由 `BuiltInProcessRegistry` 托管。这套 API 让模型既能跑自终止命令，也能驱动交互式/长任务进程：
+
+| action | 作用 | 关键参数 |
+|--------|------|----------|
+| `exec`（默认） | 同步执行一条自终止命令，超时即杀 | `command`、`cwd`、`timeoutMs` |
+| `start` | 启动一个后台/交互式进程，返回 `processId` | `command`、`cwd` |
+| `status` | 查询某进程快照（`status`/`pid`/`exitCode`/`startedAt`/`endedAt`） | `processId` |
+| `logs` | 读取进程累计输出，支持 `offset` 游标分页 | `processId`、`offset`、`limit` |
+| `write` | 向后台进程 stdin 写文本 | `processId`、`input` |
+| `stop` | 停止后台进程（先 `destroy`，宽限 `processStopGraceMs` 后 `destroyForcibly`） | `processId` |
+| `list` | 列出当前上下文托管的所有后台进程快照 | — |
+
+后台进程的输出由 `BuiltInProcessRegistry` 内部的环形缓冲捕获（容量受 `BuiltInToolContext.maxProcessOutputChars` 约束，溢出从头部丢弃并推进 `startOffset`），`logs` 返回的 `nextOffset`/`truncated` 用于增量拉取。进程边界与 `cwd` 一致——`start` 的 `cwd` 同样经 `resolveWorkspacePath(...)` 校验，不会越出工作区。
+
+从安全面看，这意味着 `bash` 的能力面比“跑一条命令”大得多：`start` 可以留下持续占用资源、长期读写工作区或外联网络的后台进程。给模型开放 `bash` 即等于同时开放了后台进程治理，宿主应把 `start`/`write`/`stop` 视作与 `exec` 同级的副作用动作纳入审批与审计。
 
 ## 7. `readOnlyCodingToolNames()` 的边界要说清楚
 

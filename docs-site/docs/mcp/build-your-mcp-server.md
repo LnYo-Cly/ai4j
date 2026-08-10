@@ -231,7 +231,134 @@ server.start().join();
 
 `http` 只是 `streamable_http` 的 transport 类型别名，并保留 AUTO 的有限 Streamable HTTP compatibility 语义。已知的 session-era peer 可以在 `ServerConfig` 或客户端 `TransportConfig` 中固定具体 legacy profile；deprecated HTTP+SSE 则应使用 `sse`。详见 [Streamable HTTP](/docs/mcp/streamable-http)。
 
-## 7. 当前实现里哪些能力已经自动化，哪些还没有
+## 7. 服务端安全默认值与 HTTP 层扩展
+
+这一节只对 `sse` / `streamable_http` 两类 HTTP 服务端生效；`stdio` 没有网络层，不涉及认证、绑定和 CORS。
+
+### 7.1 默认绑定回环地址
+
+`ServerConfig` 的默认 host 是回环地址，而不是通配符：
+
+- `ServerConfig.DEFAULT_HOST = "127.0.0.1"`（默认，只对本机可见）
+- `ServerConfig.WILDCARD_HOST = "0.0.0.0"`（绑定所有网卡，工厂会记录一条 WARNING）
+
+需要对外暴露时显式指定：
+
+```java
+McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("orders", "1.0.0")
+        .withPort(8081)
+        .withHost("0.0.0.0"); // 绑定所有网卡；McpServerFactory 会打印安全告警
+```
+
+默认端口是 `8080`，可用 `withPort(int)` 覆盖。回环默认值的含义是：一个刚启动的 MCP server 不会自动暴露到外网，除非你显式改 host。
+
+### 7.2 Bearer Token 认证默认开启
+
+`ServerConfig` 默认 `authEnabled = true`。当没有显式配置 `McpAuthProvider` 时，`resolveAuthProvider()` 会在首次调用时懒创建一个 `BearerTokenAuthProvider`，并用 `SecureRandom` 生成随机 token。也就是说，HTTP/SSE 服务端**默认就带 Bearer Token 认证**，不再是裸奔状态。
+
+内置实现 `BearerTokenAuthProvider` 的行为：
+
+- 校验 `Authorization: Bearer <token>` 请求头
+- 常量时间比较，抵抗时序侧信道
+- 无参构造时生成随机 token（至少 32 字节十六进制）
+- `getToken()` 取出 token，供启动时打印或带外下发
+- `describe()` 返回脱敏描述（如 `Bearer token: abcd...wxyz`），用于启动日志
+
+```java
+BearerTokenAuthProvider auth = new BearerTokenAuthProvider("my-secret-token");
+McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("orders", "1.0.0")
+        .withPort(8081)
+        .withAuth(auth); // 注入自定义 provider，认证开启
+```
+
+认证失败时，服务端统一由 `McpHttpServerSupport.requireAuth(...)` 响应 HTTP 401 并带 `WWW-Authenticate: Bearer`。`/health` 这类探活端点不要求认证，业务端点（`/mcp`）才校验。
+
+### 7.3 自定义认证 SPI：`McpAuthProvider`
+
+要接 OAuth、JWT、API key 或内部鉴权系统，实现 `McpAuthProvider` 这个两方法 SPI：
+
+```java
+import com.sun.net.httpserver.HttpExchange;
+import io.github.lnyocly.ai4j.mcp.server.McpAuthProvider;
+
+public class JwtAuthProvider implements McpAuthProvider {
+    @Override
+    public boolean authenticate(HttpExchange exchange) {
+        // 读取 Authorization / Cookie / 自定义头；true 放行，false 拒绝
+        String header = exchange.getRequestHeaders().getFirst("Authorization");
+        return header != null && validateJwt(header.replace("Bearer ", ""));
+    }
+
+    @Override
+    public String describe() {
+        return "JWT (HS256)"; // 仅用于启动日志，不要泄露密钥
+    }
+}
+```
+
+要点：
+
+- `authenticate(HttpExchange)` 对每个入站 HTTP 请求调用一次；返回 `false` 即触发 401。
+- `describe()` 仅用于启动日志，不要在其中输出敏感信息。
+- 通过 `withAuth(new JwtAuthProvider())` 注入即可，无需改动 server 实现。
+
+如果服务端已位于反向代理或受控网络之后、由上层完成认证，可以用 `withNoAuth()` 显式关闭：
+
+```java
+McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("orders", "1.0.0")
+        .withPort(8081)
+        .withNoAuth(); // 不安全，仅用于已由上层网关认证的场景
+```
+
+:::warning 认证不等于鉴权
+`McpAuthProvider` 解决的是“请求能不能进来”（认证）。租户隔离、按工具授权、配额限制等鉴权策略仍需在业务层补齐。
+:::
+
+### 7.4 CORS 配置
+
+默认不发送任何 CORS 头（同源策略，最安全）。需要跨域访问时用 `withCorsAllowedOrigin(...)`：
+
+```java
+McpServerFactory.ServerConfig config = new McpServerFactory.ServerConfig("orders", "1.0.0")
+        .withPort(8081)
+        .withCorsAllowedOrigin("https://app.example.com"); // 指定可信来源
+```
+
+要点：
+
+- 传 `null`（默认）= 同源，不发送 `Access-Control-Allow-Origin`。
+- 传 `"*"` 允许任意来源，但对受 token 保护的端点不推荐。
+- 浏览器 `Origin` 校验（`McpHttpServerSupport.isAllowedOrigin(...)`）不接受 `"*"` 作为来源验证——通配 CORS 不等于来源校验。
+- 工具 schema 声明的 `Mcp-Param-*` 头会在 CORS 预检里按语法白名单追加，不会被任意反射（见下文）。
+
+### 7.5 工具 inputSchema 的 `x-mcp-header` 扩展
+
+现代 Streamable HTTP（`2026-07-28`）允许工具在 `inputSchema` 里声明：把某个原始类型属性镜像成一次 `tools/call` 的 `Mcp-Param-<Name>` HTTP 头。这样代理、网关、缓存层可以不解析 JSON body 就按参数做路由、缓存或鉴权。声明方式是在 `properties` 下某个**原始类型**属性上加 `"x-mcp-header": "<Header-Name>"`：
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "region": { "type": "string",  "x-mcp-header": "Region" },
+    "count":  { "type": "integer", "x-mcp-header": "Count" }
+  }
+}
+```
+
+调用 `tools/call` 时，客户端会自动从参数推导出 `Mcp-Param-Region` 和 `Mcp-Param-Count` 头。该机制由 `McpHttpHeaderSupport` 实现，规则如下（不满足则该工具 schema 被判为非法，`tools/list` 时被跳过并告警）：
+
+- 只接受 `properties` 下的原始类型（`string` / `integer` / `boolean`）；嵌套对象、数组 `items` 上的注解会被拒绝。
+- header 名必须是合法 HTTP token（不能含空格等非法字符）。
+- 大小写不敏感的重复 header 名会被拒绝。
+- `integer` 必须是精确整数且在 JavaScript safe integer 范围内，编码为十进制字符串。
+- `string` 含非 ASCII 可打印字符时，编码为 `=?base64?<b64>?=`。
+- 服务端会把 header 值与 JSON-RPC 请求体交叉校验，而不是把 header 当作唯一真相来源。
+
+:::note 注解路径暂不暴露 x-mcp-header
+`@McpParameter` 目前只生成 `name/description/required/defaultValue`，不携带 `x-mcp-header`。要用这个扩展，需要在自定义 inputSchema（例如手工构造的 `McpToolDefinition` 或远端工具 schema）上直接声明。AI4J 的现代客户端和服务端会自动识别并处理合法的 `x-mcp-header`。
+:::
+
+## 8. 当前实现里哪些能力已经自动化，哪些还没有
 
 ### 已经打通的部分
 
@@ -243,13 +370,13 @@ server.start().join();
 ### 你仍然要自己补的部分
 
 - Resource / Prompt 启动前扫描注册
-- 认证、鉴权、租户隔离
+- 鉴权策略、租户隔离（注：HTTP/SSE 服务端的 Bearer Token 认证已内置默认开启，自定义认证可走 `McpAuthProvider` SPI，详见第 7 节）
 - 服务端超时、并发控制、审计
 - 对外版本治理和兼容策略
 
 这部分必须讲清楚，否则文档会把“协议能跑”误写成“平台能力已经完备”。
 
-## 8. 对外发布时该怎么做边界设计
+## 9. 对外发布时该怎么做边界设计
 
 至少要先定清楚下面 5 件事：
 
@@ -269,7 +396,7 @@ server.start().join();
 发布层只负责“能力可接入”，不负责“谁都能随便用”。
 :::
 
-## 9. 常见失败点
+## 10. 常见失败点
 
 ### `tools/list` 为空
 
@@ -294,7 +421,7 @@ server.start().join();
 - 客户端是否把 `streamable_http` 和 `sse` 混用了
 - 是否存在代理层路径改写
 
-## 10. 推荐的最小发布姿势
+## 11. 推荐的最小发布姿势
 
 如果你想先把一条链路跑稳，推荐顺序是：
 

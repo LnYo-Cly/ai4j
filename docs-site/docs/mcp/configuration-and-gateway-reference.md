@@ -313,7 +313,63 @@ gateway.removeMcpClient("github").join();
 - 抽象配置源
 - 完全平台化热插拔
 
-## 11. Agent 侧怎么引用这些配置
+## 11. 配置源 SPI 与内置实现
+
+抽象配置源由 `McpConfigSource` 这个接口定义，是 gateway 走“模式 B / 模式 C”的前提。它的契约只有四件事：
+
+- `getAllConfigs()` / `getConfig(serverId)`
+- `addConfigChangeListener(...)` / `removeConfigChangeListener(...)`
+- `ConfigChangeListener` 回调：`onConfigAdded` / `onConfigRemoved` / `onConfigUpdated`
+
+`McpGateway` 通过 `setConfigSource(...)` 绑定配置源后，`McpGatewayConfigSourceBinding` 会把上面三类事件翻译成运行时动作（见 [Gateway 管理 - 配置源热更新](/docs/mcp/gateway-management)）：新增/更新 → 创建 client 并接入，移除 → 断开并下线。
+
+### 内置实现一：`FileMcpConfigSource`
+
+文件型配置源，从 `mcp-servers-config.json` 加载。它只提供手动的 `reloadConfigs()`，不会监控文件系统变化；要感知外部改动，需要你自己定时调用 reload 或换实现。
+
+### 内置实现二：`McpConfigManager`（内存型）
+
+`McpConfigManager` 是一个开箱即用的**纯内存** `McpConfigSource` 实现，适合：
+
+- 程序化动态注册 MCP 服务（后台管理台、多租户平台）
+- 单元测试里构造配置源
+- 作为自定义存储（数据库 / Redis / 配置中心）的基础构件
+
+它的特点：
+
+- 内部用 `ConcurrentHashMap` 存配置、`CopyOnWriteArrayList` 存监听器，线程安全
+- `addConfig(serverId, info)` 新增；对已存在的 key 会改触发 `onConfigUpdated`，否则触发 `onConfigAdded`
+- `removeConfig(serverId)` 删除并触发 `onConfigRemoved`
+- `updateConfig(...)` 等价于 `addConfig(...)`
+- `hasConfig(serverId)` / `getConfig(serverId)` / `getAllConfigs()` 查询
+- `validateConfig(info)` 校验：`name` 非空、transport 类型可识别、`TransportConfig` 合法；非法配置返回 `false` 而不抛异常
+
+最小用法：
+
+```java
+McpConfigManager source = new McpConfigManager();
+
+McpServerConfig.McpServerInfo github = new McpServerConfig.McpServerInfo();
+github.setName("github");
+github.setType("stdio");
+github.setCommand("npx");
+github.setArgs(Arrays.asList("-y", "@modelcontextprotocol/server-github"));
+source.addConfig("github", github);          // 触发 onConfigAdded
+
+source.updateConfig("github", updatedInfo);   // 触发 onConfigUpdated
+source.removeConfig("github");                // 触发 onConfigRemoved
+
+// 绑定到 gateway：事件会自动驱动 client 增删
+McpGateway gateway = new McpGateway();
+gateway.setConfigSource(source);
+gateway.initialize().join();
+```
+
+:::note 它只是内存实现
+`McpConfigManager` 进程重启后状态丢失，本身不做持久化。需要落库时，应自己实现 `McpConfigSource`（可参考它的监听器通知写法），或在其外层包一层持久化。
+:::
+
+## 12. Agent 侧怎么引用这些配置
 
 配置文件中注册的 `serverId`，最终要进入 Agent 的 `mcpServices` 白名单：
 
@@ -325,7 +381,7 @@ gateway.removeMcpClient("github").join();
 
 - “服务已被 gateway 注册”不等于“本次请求默认可见”
 
-## 12. 这页最该记住的结论
+## 13. 这页最该记住的结论
 
 在 AI4J 当前实现里，配置字段分成两层：
 

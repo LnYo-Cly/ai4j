@@ -1,7 +1,7 @@
 ---
 sidebar_position: 9
 title: Agent Sandbox SPI
-description: 介绍 ai4j-agent 的 Sandbox SPI：SandboxProvider/SandboxSession 合同如何把执行交给隔离环境，AgentSessionSandboxBinding 只保存非敏感摘要，以及 Daytona、E2B 两个官方真实 provider。
+description: 介绍 ai4j-agent 的 Sandbox SPI：SandboxProvider/SandboxSession 合同如何把执行交给隔离环境，AgentSessionSandboxBinding 只保存非敏感摘要，Daytona、E2B、CubeSandbox 三个官方真实 provider，以及 AgentBuilder/CodingAgentBuilder 如何消费 sandbox。
 tags: [integration]
 ---
 
@@ -11,7 +11,7 @@ tags: [integration]
 
 > Agent 已经决定要执行 shell、文件、浏览器或项目命令时，宿主如何把这次执行交给一个真实的隔离环境，并拿回 stdout、stderr、artifact 和事件？
 
-P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；P2-C 已提供首个真实 provider：Daytona；P2-D 已提供第二个真实 provider：E2B。你仍然可以把同一套 SPI 接到 CubeSandbox、Docker/K8s、公司内部 VM/microVM 或自己的远端执行平台。
+P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；后续阶段陆续落地了三个官方真实 provider：Daytona（P2-C）、E2B（P2-D）和 CubeSandbox（PR #218）。你仍然可以把同一套 SPI 接到 Docker/K8s、公司内部 VM/microVM 或自己的远端执行平台。
 
 ## 1. 它不是什么
 
@@ -224,7 +224,13 @@ mvn -pl ai4j-agent -am "-Dtest=AgentSandboxSpiModelTest" -DskipTests=false -Dfai
 
 ### AI4J 会官方内置很多 provider 吗？
 
-不会内置一堆 provider。更稳的路径是：AI4J 提供小而稳定的 SPI，并保留少量官方验证过的真实 provider。Daytona 与 E2B 是当前两个官方真实 provider；CubeSandbox、Docker/K8s、内部平台等可以继续由插件、业务方或后续独立任务接入。
+不会内置一堆 provider。更稳的路径是：AI4J 提供小而稳定的 SPI，并保留少量官方验证过的真实 provider。当前已落地三个官方真实 provider：**Daytona、E2B、CubeSandbox**；Docker/K8s、内部平台等可以继续由插件、业务方或后续独立任务接入。
+
+| Provider | providerId | 执行模型 | 详细文档 |
+| --- | --- | --- | --- |
+| Daytona | `daytona` | Daytona API 创建/启停沙箱 + toolbox execute API 跑命令 | 本文 [§11](#11-p2-cdaytona-provider) |
+| E2B | `e2b` | E2B 控制 API（`X-API-Key`）创建/销毁 + 每沙箱执行 host 的 Connect `process.Process/Start` 流 | 本文 [§12](#12-p2-de2b-provider) |
+| CubeSandbox | `cubesandbox` | 开源 TencentCloud/CubeSandbox 的 CubeAPI 控制面 + envd `process.Process/Start` 数据面 | [CubeSandbox Provider](/docs/agent/cubesandbox-provider) |
 
 ### 每个用户应该一个 sandbox，还是共享一个？
 
@@ -422,11 +428,107 @@ mvn -pl ai4j-agent -am "-Dtest=E2BSandboxClientTest,E2BSandboxProviderTest,E2BSa
 mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=E2BSandboxLiveSmokeTest" -DskipTests=false -DfailIfNoTests=false test
 ```
 
-## 13. 下一步
+## 13. CubeSandbox provider
+
+第三个官方真实 provider 适配的是开源 [TencentCloud/CubeSandbox](https://github.com/TencentCloud/CubeSandbox)：
+
+```text
+io.github.lnyocly.ai4j.agent.sandbox.cubesandbox
+```
+
+核心类：
+
+| 类型 | 作用 |
+| --- | --- |
+| `CubeSandboxProvider` | `SandboxProvider` 实现，`providerId=cubesandbox`。 |
+| `CubeSandboxConfig` | 从环境变量（`CUBE_*`，兼容 `E2B_*`）和 `SandboxSpec.config` 读取连接、模板、端口、超时配置；有意忽略 `apiKey`，不从 `spec.config` 读取密钥。 |
+| `CubeSandboxClient` | Java 8 `HttpURLConnection` 客户端：CubeAPI 控制面（`POST /sandboxes`、`DELETE`、`POST /connect`、`GET /health`）+ envd Connect 帧编解码。 |
+| `CubeSandboxSession` | 把 `SandboxCommand` 映射为 envd `process.Process/Start`（默认 `/bin/bash -l -c <command>`），返回 `SandboxResult`。 |
+
+与 Daytona / E2B 相比，CubeSandbox 多一个 **attach 既有 session** 的入口：
+
+```java
+import io.github.lnyocly.ai4j.agent.sandbox.cubesandbox.CubeSandboxProvider;
+
+CubeSandboxProvider provider = new CubeSandboxProvider();
+
+// 1) 创建新沙箱（close 时默认 DELETE 销毁）
+SandboxSession created = provider.createSession(SandboxSpec.builder()
+        .providerId("cubesandbox")
+        .image(System.getenv("CUBE_TEMPLATE_ID"))
+        .workspaceId("/workspace")
+        .build());
+
+// 2) 连接外部已存在的沙箱（close 时只关本地 handle，不销毁远端）
+SandboxSession attached = provider.connect("existing-sandbox-id", SandboxSpec.builder()
+        .providerId("cubesandbox")
+        .workspaceId("/workspace")
+        .build());
+```
+
+`ai4j-cli` 把这个 attach 能力暴露成 `/sandbox attach cubesandbox <sessionId> [workspaceId]`，让一个正在跑的 coding session 现场挂到一个已存在的 CubeSandbox 上。
+
+:::note 完整能力清单见专页
+CubeSandbox 的环境变量、`SandboxSpec.config` 支持项、协议映射表、envd 端口（默认 `49983`，部分模板用 `49999`）、本地与 live 验证命令、当前边界，都在 [CubeSandbox Provider](/docs/agent/cubesandbox-provider) 里。
+:::
+
+本地确定性回归：
+
+```bash
+mvn -pl ai4j-agent -am "-Dtest=CubeSandboxProviderTest" -DskipTests=false -DfailIfNoTests=false test
+```
+
+## 14. 运行时如何消费 SandboxProvider
+
+Sandbox SPI 只是接口和数据模型，真正让 agent / coding agent 用上 sandbox 的是 builder 层的接线。两条消费路径：
+
+### 14.1 AgentBuilder 注册 provider
+
+`AgentBuilder.sandboxProvider(SandboxProvider)` 把一个 provider 挂到 agent 上，供 runtime / session 按需创建 session：
+
+```java
+import io.github.lnyocly.ai4j.agent.Agents;
+import io.github.lnyocly.ai4j.agent.sandbox.e2b.E2BSandboxProvider;
+
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("glm-5.1")
+        .sandboxProvider(new E2BSandboxProvider())   // 注册 provider
+        .build();
+```
+
+provider 本身不会自动起沙箱。宿主决定何时 `provider.createSession(spec)` 拿到一个 live `SandboxSession`，再 `agentSession.bindSandbox(session)` 把它绑进当前 session（见 [§5](#5-p2-b绑定到-agentsession)）。绑定后只有非敏感摘要进入 snapshot / event log，密钥仍只留在 provider 侧。
+
+### 14.2 CodingAgentBuilder 配置 sandbox 路由
+
+`ai4j-coding` 的 `CodingAgentBuilder` 在 agent 之上多包了一层 sandbox 路由，让内置的 `bash` 工具自动走沙箱：
+
+```java
+import io.github.lnyocly.ai4j.coding.CodingAgent;
+import io.github.lnyocly.ai4j.coding.CodingAgentBuilder;
+
+CodingAgent agent = new CodingAgentBuilder()
+        .workspaceRoot(workspacePath)
+        .modelClient(modelClient)
+        .model("glm-5.1")
+        .sandbox(liveSandboxSession)        // 包成 CodingSandboxRuntime
+        .build();
+```
+
+接线细节（`CodingAgentBuilder` / `CodingAgent` 内部，使用者一般不用碰）：
+
+1. `.sandbox(SandboxSession)` 或 `.sandboxRuntime(CodingSandboxRuntime)` 把 live session 包进 `CodingSandboxRuntime`；`CodingSandboxRuntime` 只持有 live `SandboxSession`，**不**持久化密钥（持久化摘要仍由 `ai4j-agent` 的 `AgentSessionSandboxBinding` 负责）。
+2. `createBuiltInToolExecutor(...)` 在 `sandboxRuntime != null` 时，把内置工具表里的 `bash` 路由接到 `BashToolExecutor`，并用 `SandboxShellCommandExecutor` 取代本地 shell executor；`sandboxRuntime == null` 时返回 `null`，回退到本地执行。
+3. `SandboxShellCommandExecutor.execute(...)` 把每次 foreground shell 请求转成 `SandboxCommand`，调用 `SandboxSession.execute(...)`，stdout/stderr/exitCode/artifact 直接来自沙箱。
+4. `CodingAgent.bindSandbox(session)` 在 build 完成后自动把 live `SandboxSession` 绑到 `AgentSession`，于是 `/sandbox status`、snapshot、event log 都能看到当前 sandbox 摘要。
+
+当前路由范围：foreground `bash exec` 已进沙箱；`file`、`git`、`browser`、长进程和 artifact 下载还没有全部接到 `SandboxSession`，所以 coding agent 还需要后续切片才能做到“所有工具都跑在远端 sandbox”。
+
+## 15. 下一步
 
 推荐后续顺序：
 
 1. P2-B：已把 `SandboxSpec` / `SandboxSession` 的非敏感摘要绑定到 `AgentSession` snapshot / event log。
-2. P2-C / P2-D：已落地 Daytona 与 E2B 两个官方真实 provider，并保留 provider registry / 插件贡献 provider 的后续扩展空间。
+2. P2-C / P2-D / PR #218：已落地 Daytona、E2B、CubeSandbox 三个官方真实 provider，并保留 provider registry / 插件贡献 provider 的后续扩展空间。
 3. P3：已让 `ai4j-coding` 的 `bash exec` 根据 sandbox binding 路由执行；file/git/browser/project runner 仍应按边界继续拆小切片。
 4. P4：在 CLI/TUI 中显示 `/sandbox status`、provider、workspace、最近执行位置和 artifact。

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: 平台与服务矩阵
-description: 以 AiService 实现为准列出各 provider 对 Chat、Responses、Messages、Embedding、Rerank、Audio、Realtime、Image 的支持矩阵。
+description: 以 AiService 实现为准列出各 provider 对 Chat、Responses、Messages、Embedding、Rerank、Audio、Realtime、Image、Video、Music 的支持矩阵。
 tags: [reference]
 ---
 
@@ -16,7 +16,7 @@ tags: [reference]
 
 ## 1. 平台枚举
 
-当前平台枚举定义在 `PlatformType`：
+当前平台枚举定义在 `PlatformType`（共 14 个）：
 
 - `OPENAI`
 - `ANTHROPIC`
@@ -31,27 +31,29 @@ tags: [reference]
 - `DASHSCOPE`
 - `DOUBAO`
 - `JINA`
+- `SUNO`
 
 要注意一点：平台枚举存在，并不等于它自动支持所有 service 面。  
 真正的支持关系仍然取决于 `AiService.create*Service(...)` 里有没有对应分支。
 
 ## 2. 当前 service 支持矩阵
 
-| 平台 | Chat | Responses | Messages | Embedding | Rerank | Audio | Realtime | Image |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPENAI | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
-| ANTHROPIC | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| DOUBAO | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ |
-| DASHSCOPE | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| OLLAMA | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| JINA | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| ZHIPU | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| DEEPSEEK | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| MOONSHOT | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| HUNYUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| LINGYI | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| MINIMAX | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| BAICHUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| 平台 | Chat | Responses | Messages | Embedding | Rerank | Audio | Realtime | Image | Video | Music |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OPENAI | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ANTHROPIC | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| DOUBAO | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| DASHSCOPE | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| OLLAMA | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| JINA | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| SUNO | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| ZHIPU | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| DEEPSEEK | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MOONSHOT | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| HUNYUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| LINGYI | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MINIMAX | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| BAICHUAN | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ## 3. 这张矩阵真正说明了什么
 
@@ -81,6 +83,13 @@ tags: [reference]
 
 这说明这些 service 面虽然已经正式进入 SDK，但并没有被伪装成跨平台完全对称能力。
 
+### `Video` / `Music` 是异步提交→轮询的独立 service 面
+
+- `Video` 只支持 OpenAI（`IVideoService`：`create` / `retrieve` / `content` / `remix`）
+- `Music` 只支持 Suno（`IMusicService`：`submitMusic` / `submitLyrics` / `fetch`）
+
+它们与 Chat/Image 的同步/流式语义不同，都是 **提交任务 → 轮询状态 → 拉取结果** 的异步生命周期，SDK 不内建自动轮询。`SUNO` 平台当前只为 Music 这一条面存在，其它 service 全部不支持。详见 [Video 接口](/docs/core-sdk/video-generation) 与 [Music 接口](/docs/core-sdk/music-generation)。
+
 ### `Rerank` 是独立矩阵
 
 当前只支持：
@@ -104,6 +113,8 @@ IMessagesService messages = aiService.getMessagesService(PlatformType.ANTHROPIC)
 IEmbeddingService embedding = aiService.getEmbeddingService(PlatformType.OLLAMA);
 IRerankService rerank = aiService.getRerankService(PlatformType.JINA);
 IImageService image = aiService.getImageService(PlatformType.DOUBAO);
+IVideoService video = aiService.getVideoService(PlatformType.OPENAI);
+IMusicService music = aiService.getMusicService(PlatformType.SUNO);
 ```
 
 :::note

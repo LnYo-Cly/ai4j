@@ -15,7 +15,7 @@ tags: [concept]
 只要下面两件事还成立，优先按 model extension 处理：
 
 - 平台边界没有变，仍然属于同一个 provider
-- 调用心智仍然属于现有 `Chat`、`Responses`、`Embedding`、`Image`、`Audio`、`Realtime` 或 `Rerank`
+- 调用心智仍然属于现有 `Chat`、`Responses`、`Embedding`、`Image`、`Audio`、`Realtime`、`Rerank`、`Video` 或 `Music`
 
 一旦你必须新增 `PlatformType`，那已经更像 provider extension。  
 一旦你发现现有能力面根本装不下新的交互语义，那就要重新考虑 service extension。

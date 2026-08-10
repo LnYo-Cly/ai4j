@@ -85,7 +85,7 @@ new AgentBuilder().build()
 - workspace root
 - workspace description
 - built-in tools 列表
-- bash/read_file/write_file/apply_patch 的调用规则
+- bash/read_file/write_file/apply_patch/glob/grep/edit/update_agents_md 的调用规则
 - shell 使用指导
 - workspace 外部访问限制
 - 可用 skills 摘要
@@ -108,6 +108,10 @@ new AgentBuilder().build()
 - `read_file`
 - `write_file`
 - `apply_patch`
+- `glob`
+- `grep`
+- `edit`
+- `update_agents_md`
 
 但真正重要的不是工具名，而是 `CodingAgentBuilder.createBuiltInToolExecutor(...)` 里的执行路由。
 
@@ -117,6 +121,10 @@ new AgentBuilder().build()
 - `WriteFileToolExecutor`
 - `ApplyPatchToolExecutor`
 - `BashToolExecutor`
+- `GlobToolExecutor`
+- `GrepToolExecutor`
+- `EditToolExecutor`
+- `UpdateAgentsMdToolExecutor`
 
 并通过 `RoutingToolExecutor` 路由到具体实现。
 
@@ -125,6 +133,9 @@ new AgentBuilder().build()
 - workspace-aware 文件执行器
 - patch 专用执行器
 - bash 进程生命周期执行器
+- glob / grep 内容与文件名搜索执行器
+- 精确字符串 edit 执行器
+- AGENTS.md 项目记忆执行器
 
 这正是本地代码仓任务与通用 function calling 的本质区别。
 

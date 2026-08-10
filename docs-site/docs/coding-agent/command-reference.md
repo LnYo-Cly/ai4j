@@ -774,7 +774,238 @@ tags: [reference]
 
 ---
 
-## 7. 建议阅读
+## 7. 顶层 CLI 命令
+
+除了 session 内的 slash command，`ai4j-cli` 本身还有一组顶层子命令。它们的入口在 `Ai4jCli`：
+
+| 命令 | 作用 |
+| --- | --- |
+| `ai4j-cli code` | 启动 coding session（one-shot 或交互式 REPL），最常用的入口 |
+| `ai4j-cli tui` | 等价于 `code --ui tui`，启动更丰富的文本 UI shell |
+| `ai4j-cli acp` | 把 coding session 作为 ACP stdio server 启动（IDE / headless 集成） |
+| `ai4j-cli run` | 跑一次单 agent 的 Agent Blueprint YAML（一次性、无 session） |
+| `ai4j-cli trust` | 管理工作区钩子的信任目录（见 [生命周期钩子与工作区信任](/docs/coding-agent/lifecycle-hooks)） |
+| `ai4j-cli extension` | 检查 / 装配 / 运行 classpath 上的 AI4J 扩展包 |
+
+不带子命令、直接传 `--model` 等 flags 时，会按 `code` 命令处理，例如：
+
+```bash
+ai4j-cli --provider openai --model gpt-5-mini --prompt "Investigate why tests fail"
+```
+
+等价于 `ai4j-cli code ...`。
+
+---
+
+### 7.1 `ai4j-cli run` —— Agent Blueprint 一次性入口
+
+`run`（对应 `AgentBlueprintRunCommand`）用于把一个声明式 Agent Blueprint YAML 跑一次。它不进入交互式 session，适合脚本化、CI 或单次任务：
+
+```bash
+ai4j-cli run agent.yaml --input "结合知识库回答" --provider openai --protocol responses
+```
+
+用法：
+
+```text
+ai4j-cli run <agent.yaml> --input <text> [options]
+ai4j-cli run <agent.yaml> --prompt <text> [options]
+```
+
+`--input` 和 `--prompt` 是别名，二选一，必填（或通过 env 提供）。
+
+选项：
+
+| 选项 | 说明 |
+| --- | --- |
+| `--input` / `--prompt <text>` | 本次运行的用户输入（必填） |
+| `--provider <name>` | 覆盖 YAML 里的 `model.provider` |
+| `--protocol <chat\|responses>` | 覆盖协议 |
+| `--model <name>` | 覆盖 YAML 里的 `model.model` |
+| `--profile <name>` | 引用宿主侧 provider profile 元数据 |
+| `--api-key <key>` | 宿主运行时 key；优先用 env / config |
+| `--base-url <url>` | 兼容 provider 的运行时 base URL |
+| `--workspace <path>` | provider/profile 配置查找的工作区 |
+| `--allow-sandbox-declaration` | 接受 YAML 里 `sandbox.enabled` 声明，但不真正创建 sandbox |
+| `--verbose` | 出现意外失败时打印完整 stack trace |
+| `-h` / `--help` | 打印帮助 |
+
+环境变量：`AI4J_AGENT_INPUT`、`AI4J_PROVIDER`、`AI4J_PROTOCOL`、`AI4J_MODEL`、`AI4J_API_KEY`、`AI4J_BASE_URL`，以及各 provider 专属 key（如 `OPENAI_API_KEY` / `ZHIPU_API_KEY` / `MINIMAX_API_KEY`）。
+
+:::note YAML 不存密钥
+`AgentFactory` 由宿主提供：YAML 文件不保存密钥、不安装插件、不创建真实 sandbox session。运行时凭证来自宿主 env / config。
+:::
+
+---
+
+### 7.2 `ai4j-cli extension` —— 扩展包检查与运行
+
+`extension`（对应 `CliExtensionCommand`）用于检查、装配和运行 classpath 上发现的 AI4J 扩展包（对应扩展 API 版本 `2.4.2`，groupId `io.github.lnyo-cly`）。
+
+```text
+ai4j-cli extension list
+ai4j-cli extension inspect <id> [--runtime]
+ai4j-cli extension plan <id> [--enable] [activation options]
+ai4j-cli extension check <id> --enable [activation options]
+ai4j-cli extension init <directory> --id <extension-id> --package <java-package> [options]
+ai4j-cli extension validate <id>|--all
+ai4j-cli extension run --enable <extension-id> [--allow-command <command>] <command> [arguments...]
+ai4j-cli extension resource --enable <extension-id> [--allow-skill <name>|--allow-prompt <name>] <skill|prompt> <name>
+```
+
+子命令：
+
+| 子命令 | 作用 |
+| --- | --- |
+| `list` | 列出已发现的扩展 manifest |
+| `inspect <id>` | 展示 manifest、permissions、config prefix、source class；`--runtime` 额外列出贡献的 tools / commands / skills / prompts / guardrails / lifecycle hooks |
+| `plan <id>` | 预览 enable / expose / allow 的激活状态，先不真正接入宿主 |
+| `check <id> --enable` | 校验并在请求的激活资源未就绪时失败（pass/fail 门） |
+| `init <directory>` | 在本地生成一个 Maven Java 8 插件骨架 |
+| `validate <id>\|--all` | 校验 manifest、运行时资源与编写契约 |
+| `run --enable <id> <command>` | 执行来自显式启用扩展的命令 |
+| `resource --enable <id> <skill\|prompt> <name>` | 打印来自启用扩展的资源内容 |
+
+激活选项（用于 `plan` / `check` / `run` / `resource`）：`--expose-tool`、`--allow-command`、`--allow-skill`、`--allow-prompt`、`--allow-guardrail`、`--strict`。
+
+:::warning 运行扩展命令必须显式 --enable
+classpath 发现（discovery）不会自动启用扩展。执行扩展命令或读取资源都必须先 `--enable <id>`，避免隐式执行任意扩展代码。
+:::
+
+`init` 选项：`--id`（必填，如 `weather-pack`）、`--package`（必填，如 `com.example.ai4j.weather`）、`--name`、`--group-id`（默认取 `--package`）、`--artifact-id`（默认取 `--id`）、`--version`（默认 `1.0.0`）、`--class-name`、`--vendor`。
+
+---
+
+## 8. `code` / `tui` CLI flags 完整参考
+
+下面是 `code` / `tui` 命令（`CodeCommandOptionsParser`）支持的完整 flag 清单。所有 flag 都支持 `--name value` 和 `--name=value` 两种写法；布尔 flag 可以只写 `--name`（等价于 true）。
+
+### 模型与协议
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--model <name>` | — | 模型名，**必填**（除非由 profile / env 提供） |
+| `--provider <name>` | openai | provider，如 openai / zhipu / minimax / doubao / dashscope |
+| `--protocol <chat\|responses>` | 由 provider/baseUrl 推导 | 不接受 `auto` |
+| `--api-key <key>` | — | API key；优先用 env / config |
+| `--base-url <url>` | — | 兼容 provider 的 base URL |
+
+### 工作区与提示
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--workspace <path>` | 当前目录 | 工作区根目录 |
+| `--workspace-description <text>` | — | 工作区描述文本 |
+| `--system <text>` | — | 追加 system prompt |
+| `--instructions <text>` | — | 追加 instructions |
+| `--prompt <text>` | — | one-shot prompt；给了就走单次模式 |
+| `--allow-outside-workspace` | false | 是否允许工具写出工作区 |
+| `--ui <cli\|tui>` | cli | `tui` 命令会强制 `tui` |
+
+### 采样与生成
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--max-steps <n>` | 0（不限） | agent 循环最大步数 |
+| `--temperature <0..2>` | — | 采样温度 |
+| `--top-p <0..1>` | — | nucleus sampling |
+| `--max-output-tokens <n>` | — | 单次最大输出 token |
+| `--parallel-tool-calls` | false | 是否允许并行工具调用 |
+| `--stream` | true | 是否流式请求模型 |
+
+### 会话
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--no-session` | false（未指定时取 env/property） | true = 仅内存会话，不持久化 |
+| `--auto-save-session` | true | 是否自动保存 session |
+| `--session-id <id>` | — | 指定 session id |
+| `--resume <id>` / `--load <id>` | — | 恢复一个已保存 session（`--load` 是别名） |
+| `--fork <id>` | — | 从已有 session fork 一个新分支 |
+| `--session-dir <path>` | `<workspace>/.ai4j/sessions` | session 存储目录 |
+
+:::warning session flag 互斥
+`--resume` 和 `--fork` 不能同时使用；`--no-session` 不能与 `--resume` 或 `--fork` 组合。
+:::
+
+### 审批与 compact
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--approval <safe\|manual\|auto>` | safe | 审批模式，详见 [Tools 与审批机制](/docs/coding-agent/tools-and-approvals) |
+| `--auto-compact` | true | 是否自动 compact |
+| `--compact-context-window-tokens <n>` | 128000 | compact 用的上下文窗口 |
+| `--compact-reserve-tokens <n>` | 16384 | compact 预留 token |
+| `--compact-keep-recent-tokens <n>` | 20000 | compact 保留的最近 token |
+| `--compact-summary-max-output-tokens <n>` | 400 | compact 摘要最大输出 token |
+
+### 显示
+
+| Flag | 默认 | 说明 |
+| --- | --- | --- |
+| `--theme <name>` | — | TUI 主题 |
+| `--verbose` | false | 详细输出 |
+| `-h` / `--help` | — | 打印帮助 |
+
+多数 flag 都可以用环境变量（`AI4J_*`）或 Java property（`ai4j.*`）等价设置，例如 `AI4J_MODEL`、`AI4J_WORKSPACE`、`AI4J_STREAM`、`AI4J_APPROVAL`、`AI4J_SESSION_DIR` 等。
+
+---
+
+## 9. `/sandbox` 与 `/extension` slash 命令
+
+这两条 slash 命令在 CLI/TUI 里用于运行时切换执行环境和检查扩展，都已实现（不再是规划中能力）。
+
+### `/sandbox`
+
+管理当前 session 的 sandbox 绑定（解析器是 `CliSandboxCommand`）。命令动作：
+
+```text
+/sandbox                                显示当前 sandbox 绑定状态
+/sandbox status                         同上
+/sandbox enable <provider> [options]    创建/绑定一个 sandbox，把 bash exec 路由过去
+/sandbox attach <provider> <id> [options]  绑定一个已存在的 sandbox
+/sandbox disable                        解除当前 sandbox 绑定，回到本地执行
+```
+
+`enable` / `attach` 的选项：
+
+| 选项 | 说明 |
+| --- | --- |
+| `<provider>` | sandbox provider，当前支持 `daytona` |
+| `<id>`（attach） | 要绑定的 sandbox id 或名称 |
+| `--workspace` / `--sandbox-name <name>` | sandbox 名称 / 工作区 |
+| `--sandbox-id <id>` | 显式指定 sandbox id |
+| `--image` / `--snapshot <snapshot>` | sandbox 镜像 / 快照 |
+| `--delete-on-close` | CLI 关闭或 disable 时删除 sandbox |
+| `--keep-on-close` | 保留 sandbox（默认） |
+| `--create-if-missing` / `--no-create-if-missing` | attach 目标缺失时是否创建 |
+
+:::note 凭证不从命令行传
+sandbox 的凭证必须来自环境变量或本地配置，**不接受** slash 命令参数传入——避免在 shell 历史里泄露密钥。
+:::
+
+绑定 sandbox 后，`bash action=exec` 会路由到 `SandboxSession.execute(...)`，并在返回结果里带上 `executionEnvironment`、`sandboxSessionId`、`sandboxProviderId`。完整边界见 [Sandbox Routing](/docs/coding-agent/sandbox-routing)。
+
+### `/extension` / `/extensions`
+
+在 session 内检查 / 运行 classpath 上的扩展包，对应顶层 `ai4j-cli extension` 的会话内入口：
+
+```text
+/extensions                              列出已发现的扩展插件
+/extension list                          列出扩展
+/extension inspect <id>                  查看 manifest 与运行时资源
+/extension plan <id> [activation options]   预览激活状态
+/extension check <id> --enable [options]    pass/fail 激活门
+/extension validate <id>|--all           校验扩展契约
+/extension run --enable <id> <command> [args]   运行扩展命令
+/extension resource --enable <id> <skill|prompt> <name>  读取扩展资源
+```
+
+`/extension` 带补全：二级动作（list / inspect / plan / check / validate / run / resource）、资源类型（skill / prompt）以及激活选项（`--enable` / `--extension` / `--expose-tool` 等）都在补全候选里。
+
+---
+
+## 10. 建议阅读
 
 如果你不是查表，而是想理解命令背后的用法，建议看：
 
@@ -782,3 +1013,4 @@ tags: [reference]
 2. [配置体系](/docs/coding-agent/configuration)
 3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 4. [会话、流式与进程](/docs/coding-agent/session-runtime)
+5. [生命周期钩子与工作区信任](/docs/coding-agent/lifecycle-hooks)

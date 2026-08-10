@@ -46,14 +46,18 @@ tags: [concept]
 
 ### 3.1 内建 coding tools
 
-由 `BuiltInTools` / `BuiltInToolExecutor` 提供：
+由 `BuiltInTools` / `BuiltInToolExecutor` 提供，当前共 8 个（见 `BuiltInTools.allCodingToolNames()`）：
 
-- `bash`
-- `read_file`
-- `write_file`
-- `apply_patch`
+- `bash` —— 执行 shell 命令，并管理后台进程（`start`/`status`/`logs`/`write`/`stop`/`list`）
+- `read_file` —— 读取工作区或已批准只读 skill 根下的文本文件
+- `write_file` —— 创建、覆盖或追加文本文件
+- `apply_patch` —— 对工作区文件应用结构化补丁
+- `glob` —— 按 glob 模式（如 `**/*.java`）快速匹配文件路径
+- `grep` —— 按正则搜索文件内容（ripgrep 风格输出）
+- `edit` —— 在文件内做精确字符串替换
+- `update_agents_md` —— 读写项目 `AGENTS.md` 记忆文件
 
-这些工具已经有固定 schema 和固定执行器，不经过普通业务函数反射调用。
+这些工具已经有固定 schema 和固定执行器，不经过普通业务函数反射调用。其中 `bash`/`read_file`/`glob`/`grep` 构成只读集合（`BuiltInTools.readOnlyCodingToolNames()`），便于宿主按“只读 / 可写”分级暴露。
 
 ### 3.2 注解式 Function 工具
 
