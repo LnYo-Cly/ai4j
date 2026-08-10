@@ -75,6 +75,37 @@ SubAgent 最适合的场景是：
 
 SubAgent 真正进入系统，是在 `AgentBuilder.build()` 里。
 
+:::tip 本页代码都是可跑通的
+下面的装配与 HandoffPolicy 示例来自
+[`SubAgentHandoffDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j-agent/src/test/java/io/github/lnyocly/agent/SubAgentHandoffDocExamplesTest.java)，
+用内联 scripted model client，零网络、在普通 CI 里跑。
+:::
+
+最小装配——把一个 reviewer agent 作为 subagent 挂进 parent：
+
+```java
+Agent reviewer = Agents.react()
+        .modelClient(reviewerClient)
+        .model("reviewer-model")
+        .build();
+
+SubAgentDefinition reviewerSubAgent = SubAgentDefinition.builder()
+        .name("code-reviewer")
+        .description("Review code quality and risks")
+        .toolName("delegate_code_review")   // 暴露给 parent 模型的工具名
+        .agent(reviewer)
+        .build();
+
+Agent parent = Agents.react()
+        .modelClient(parentClient)
+        .model("manager-model")
+        .subAgent(reviewerSubAgent)         // 一行挂入
+        .build();
+
+AgentResult result = parent.run(AgentRequest.builder().input("analyze").build());
+// parent 模型调 delegate_code_review → reviewer 执行 → 输出回流给 parent
+```
+
 核心装配顺序是：
 
 1. 先拿到 `baseToolRegistry`
@@ -391,6 +422,23 @@ int attempts = Math.max(1, policy.getMaxRetries() + 1);
 - 但默认不开放递归 handoff
 - 也默认不自动吞错或自动降级
 
+收紧工具面 + 防递归的典型配置：
+
+```java
+Agent parent = Agents.react()
+        .modelClient(parentClient)
+        .model("manager")
+        .subAgent(workerDef)
+        .handoffPolicy(HandoffPolicy.builder()
+                .allowedTools(Collections.singleton("delegate_worker"))  // 只允许这一个 handoff 工具
+                .maxDepth(1)          // 只允许一层，挡住 subagent 再 handoff
+                .maxRetries(1)        // 失败重试一次
+                .build())
+        .build();
+```
+
+不在 `allowedTools` 里的 handoff 工具会被拒绝；默认 `onDenied=FAIL` 直接抛异常，异常信息会写明被哪个策略挡住（`tool is not in allowedTools` / `handoff depth N exceeds maxDepth`）。
+
 ## 11. `FALLBACK_TO_PRIMARY` 的语义必须说清
 
 当 `onDenied` 或 `onError` 设成 `FALLBACK_TO_PRIMARY` 时，执行器会：
@@ -413,6 +461,20 @@ delegate.execute(call)
 - 你的原始 `delegate` 必须真的能处理这个同名工具调用
 
 否则 fallback 配了也没有意义。
+
+```java
+// 被拒绝后不抛异常，而是把工具调用交回主执行链
+Agent parent = Agents.react()
+        .modelClient(parentClient)
+        .model("manager")
+        .subAgent(workerDef)
+        .handoffPolicy(HandoffPolicy.builder()
+                .allowedTools(Collections.singleton("delegate_other"))  // 不含 delegate_worker
+                .onDenied(HandoffFailureAction.FALLBACK_TO_PRIMARY)
+                .build())
+        .build();
+// parent 调 delegate_worker → 被 allowedTools 拒绝 → 回退给主 agent 自己处理
+```
 
 ## 12. 一个很容易忽略的设计细节
 
