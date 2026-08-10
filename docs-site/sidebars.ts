@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
         'start-here/why-ai4j',
         'start-here/extend-ai4j',
         'start-here/programmatic-integration',
+        'start-here/agent-concepts',
       ],
     },
     {
