@@ -55,6 +55,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/tools/tool-whitelist-and-security',
             'core-sdk/skills/overview',
             'core-sdk/skills/discovery-and-loading',
+            'core-sdk/skills/loading-and-activation',
             'core-sdk/skills/skill-vs-tool-vs-mcp',
           ],
         },
