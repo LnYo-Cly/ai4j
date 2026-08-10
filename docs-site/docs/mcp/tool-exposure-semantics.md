@@ -52,7 +52,14 @@ tags: [concept]
 - 只合并你显式传入的 function 列表
 - 只合并你显式传入的 MCP server 列表
 
-也就是说，它不是“把系统里所有可用工具都自动开放出来”。
+也就是说，它不是"把系统里所有可用工具都自动开放出来"。
+
+```java
+// 只把你显式点名的 function 和 MCP server 开放给模型——白名单语义
+List<Tool> exposed = ToolUtil.getAllTools(
+        List.of("queryWeather"),        // 本地 function 工具
+        List.of("weather-service"));    // MCP server id
+```
 
 这是一个非常重要的安全设计决策。
 
@@ -69,6 +76,11 @@ tags: [concept]
 - 本地 MCP 能力发布
 - 本地能力枚举
 - MCP server 侧暴露能力整理
+
+```java
+// 枚举本地扫描到的全部 @McpService/@McpTool 能力——不是白名单，是清点
+List<Tool> local = ToolUtil.getLocalMcpTools();
+```
 
 不适合直接等同于：
 
