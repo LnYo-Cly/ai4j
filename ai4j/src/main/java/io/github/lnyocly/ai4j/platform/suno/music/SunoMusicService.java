@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.SunoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.platform.suno.music.entity.SunoFetchResponse;
 import io.github.lnyocly.ai4j.platform.suno.music.entity.SunoLyricsRequest;
@@ -128,13 +128,7 @@ public class SunoMusicService implements IMusicService {
                 }
                 return parsed;
             }
-            throw new CommonException(errorMessage(response));
+            throw HttpErrorDecoder.decode(response);
         }
-    }
-
-    private String errorMessage(Response response) throws IOException {
-        ResponseBody body = response.body();
-        String detail = body == null ? "" : body.string();
-        return "Suno request failed: HTTP " + response.code() + (detail.length() == 0 ? "" : " - " + detail);
     }
 }

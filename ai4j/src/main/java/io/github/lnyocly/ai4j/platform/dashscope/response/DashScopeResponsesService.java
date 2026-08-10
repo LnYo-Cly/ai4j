@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.platform.dashscope.response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.DashScopeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.ResponseSseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.StreamOptions;
@@ -63,8 +63,8 @@ public class DashScopeResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), Response.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("DashScope Responses request failed");
     }
 
     @Override
@@ -121,8 +121,8 @@ public class DashScopeResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), Response.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("DashScope Responses retrieve failed");
     }
 
     @Override
@@ -146,8 +146,8 @@ public class DashScopeResponsesService implements IResponsesService {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), ResponseDeleteResponse.class);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("DashScope Responses delete failed");
     }
 
     @Override

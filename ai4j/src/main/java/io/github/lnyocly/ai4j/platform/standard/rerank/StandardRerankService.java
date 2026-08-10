@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.platform.standard.rerank;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.rerank.entity.RerankDocument;
 import io.github.lnyocly.ai4j.rerank.entity.RerankRequest;
@@ -72,8 +72,8 @@ public class StandardRerankService implements IRerankService {
                 JsonNode root = objectMapper.readTree(response.body().string());
                 return toResponse(root, request);
             }
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException("Standard rerank request failed");
     }
 
     @Override

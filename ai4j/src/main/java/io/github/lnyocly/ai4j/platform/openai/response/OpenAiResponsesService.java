@@ -3,7 +3,7 @@ package io.github.lnyocly.ai4j.platform.openai.response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.ResponseSseListener;
 import io.github.lnyocly.ai4j.listener.StreamExecutionSupport;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.StreamOptions;
@@ -81,7 +81,7 @@ public class OpenAiResponsesService implements IResponsesService {
         request = ResponseRequestToolResolver.resolve(request);
 
         Request httpRequest = buildJsonPostRequest(url, key, serializeRequest(request));
-        return executeJsonRequest(httpRequest, Response.class, "OpenAI Responses request failed");
+        return executeJsonRequest(httpRequest, Response.class);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class OpenAiResponsesService implements IResponsesService {
         Request httpRequest = authorizedRequestBuilder(url, key)
                 .get()
                 .build();
-        return executeJsonRequest(httpRequest, Response.class, "OpenAI Responses retrieve failed");
+        return executeJsonRequest(httpRequest, Response.class);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class OpenAiResponsesService implements IResponsesService {
         Request httpRequest = authorizedRequestBuilder(url, key)
                 .delete()
                 .build();
-        return executeJsonRequest(httpRequest, ResponseDeleteResponse.class, "OpenAI Responses delete failed");
+        return executeJsonRequest(httpRequest, ResponseDeleteResponse.class);
     }
 
     @Override
@@ -170,13 +170,14 @@ public class OpenAiResponsesService implements IResponsesService {
                 .url(url);
     }
 
-    private <T> T executeJsonRequest(Request request, Class<T> responseType, String failureMessage) throws Exception {
+    private <T> T executeJsonRequest(Request request, Class<T> responseType) throws Exception {
         try (okhttp3.Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 return objectMapper.readValue(response.body().string(), responseType);
             }
+            // Decode inside the try: once the response closes, the provider's error body is gone.
+            throw HttpErrorDecoder.decode(response);
         }
-        throw new CommonException(failureMessage);
     }
 
     private Map<String, Object> buildOpenAiPayload(ResponseRequest request) {

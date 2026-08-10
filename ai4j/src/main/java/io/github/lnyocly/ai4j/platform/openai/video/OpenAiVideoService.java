@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
-import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
@@ -101,9 +101,11 @@ public class OpenAiVideoService implements IVideoService {
                 .build();
         Response response = okHttpClient.newCall(request).execute();
         if (!response.isSuccessful() || response.body() == null) {
-            String message = errorMessage(response);
-            response.close();
-            throw new CommonException(message);
+            try {
+                throw HttpErrorDecoder.decode(response);
+            } finally {
+                response.close();
+            }
         }
         return new ResponseInputStream(response, response.body().byteStream());
     }
@@ -145,7 +147,7 @@ public class OpenAiVideoService implements IVideoService {
                 videoResponse.setRaw(mapper.readValue(body, new TypeReference<Map<String, Object>>() { }));
                 return videoResponse;
             }
-            throw new CommonException(errorMessage(response));
+            throw HttpErrorDecoder.decode(response);
         }
     }
 
@@ -165,12 +167,6 @@ public class OpenAiVideoService implements IVideoService {
 
     private String encodePathSegment(String value) throws IOException {
         return URLEncoder.encode(value, "UTF-8").replace("+", "%20");
-    }
-
-    private String errorMessage(Response response) throws IOException {
-        ResponseBody body = response.body();
-        String detail = body == null ? "" : body.string();
-        return "OpenAI video request failed: HTTP " + response.code() + (detail.length() == 0 ? "" : " - " + detail);
     }
 
     private static final class ResponseInputStream extends FilterInputStream {
