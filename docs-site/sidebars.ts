@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
         'start-here/why-ai4j',
         'start-here/extend-ai4j',
         'start-here/programmatic-integration',
+        'start-here/agent-concepts',
       ],
     },
     {
@@ -154,6 +155,7 @@ const sidebars: SidebarsConfig = {
         'agent/memory-and-state',
         'agent/session-runtime',
         'agent/memory-compact-context',
+        'agent/context-window-management',
         'agent/system-prompt-vs-instructions',
         'agent/plugin-lifecycle-hooks',
         'agent/sandbox-spi',
