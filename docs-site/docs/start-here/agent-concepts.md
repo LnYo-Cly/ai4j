@@ -85,7 +85,7 @@ ai4j 的文档按子系统组织（Core SDK / Agent Runtime / Coding Agent / MCP
 | 概念 | 一句话 | 所在层 | 详细页 |
 |---|---|---|---|
 | **Memory / Chat Memory** | session 级事实存储（system/user/assistant/tool-call/tool-output/summary），存储与保留策略分离 | Core SDK | [Memory 总览](/docs/core-sdk/memory/overview) |
-| **Context Window Management** | 管理进入模型的上下文窗口大小（ContextBudget 限制条目/字符/pinned prefix） | Agent Runtime | [Memory 与 Compact Context](/docs/agent/memory-compact-context) |
+| **Context Window Management** | 管理进入模型的上下文窗口大小（ContextBudget 限制条目/字符/pinned prefix） | Agent Runtime | [Context Window Management](/docs/agent/context-window-management) |
 | **Compaction** | 压缩上下文（ContextProjector 按策略裁剪/microcompact 工具结果/auto-compact 熔断） | Agent + Coding Agent | [Memory Compact Context](/docs/agent/memory-compact-context) · [Compact & Checkpoint](/docs/coding-agent/compact-and-checkpoint) |
 | **Checkpoint / Resume** | 结构化存档 + 崩溃恢复（ResumeCache 跳过已完成副作用 + hash-chained 防篡改审计） | Agent + Coding Agent | [Replay, Recovery & Audit](/docs/agent/replay-recovery-audit) · [Compact & Checkpoint](/docs/coding-agent/compact-and-checkpoint) |
 

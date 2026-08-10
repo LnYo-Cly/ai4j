@@ -155,6 +155,7 @@ const sidebars: SidebarsConfig = {
         'agent/memory-and-state',
         'agent/session-runtime',
         'agent/memory-compact-context',
+        'agent/context-window-management',
         'agent/system-prompt-vs-instructions',
         'agent/plugin-lifecycle-hooks',
         'agent/sandbox-spi',
