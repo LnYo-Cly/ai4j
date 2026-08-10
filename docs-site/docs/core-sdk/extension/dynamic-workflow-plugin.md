@@ -6,6 +6,12 @@ tags: [integration]
 
 # Dynamic Workflow Plugin
 
+:::tip 🚀 生产级参考插件
+`ai4j-plugin-dynamic-workflow` 是 ai4j 的**旗舰参考插件**——同时展示全部 4 种扩展能力（Tool + Command + Skill + Prompt），零运行时依赖（仅 `ai4j-extension-api`），安全设计（host-mediated 请求信封，不执行 JS / 不 spawn agent / 不碰文件），含 9 个单元测试 + 3 个 live 闭环烟测（MiniMax M3 → 脚本 → 信封 → agent 执行 → E2B 沙箱），Java 8 兼容，GitHub Actions CI。
+
+**GitHub**：[LnYo-Cly/ai4j-plugin-dynamic-workflow](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow)
+:::
+
 `ai4j-plugin-dynamic-workflow` 是 AI4J 的动态工作流样板插件，推荐作为独立 GitHub 仓库维护和单独发版，而不是并入 `ai4j-sdk` reactor。它采用 Claude Code style dynamic workflow 的生态模式：**模型先把复杂任务写成一段可检查的 workflow script，再由宿主决定如何把脚本拆给 subagent、worktree、审批和模型路由执行**。
 
 AI4J 这个插件首版刻意保持在 `ai4j-extension-api` 边界内：插件只贡献 tool、command、Skill 和 Prompt 资源，并返回 host-mediated JSON envelope；它不会在插件进程里执行 JavaScript、创建子 Agent、操作 git worktree 或绕过宿主审批。真正执行由宿主侧 `ai4j-agent` dynamic workflow runtime 可选接管。
