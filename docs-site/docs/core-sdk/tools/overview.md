@@ -81,6 +81,10 @@ tags: [concept]
 
 这就是为什么模型看到的“一个工具列表”，在实现层其实可能来自多条不同的能力来源。
 
+### 3.5 第三方扩展插件（SPI）
+
+上述四类都是基座内置来源。若要让**第三方 jar** 也注入工具（或命令、Skill、Prompt、Guardrail），走的是扩展 SPI——`ServiceLoader` 发现 + `ExtensionRegistry` 的 `discover/enable/exposeTool` 三段式门禁，**默认不自动把插件工具暴露给模型**。这条注入路径与本章的注解/白名单机制互补，详见 [Plugin Packages](/docs/core-sdk/extension/plugin-packages)。
+
 ## 4. 一条最重要的主线
 
 如果只记一条链，可以先记这个：

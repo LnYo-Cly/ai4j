@@ -15,20 +15,25 @@ tags: [how-to]
 
 ---
 
-## 1. 先知道当前真正的三个入口
+## 1. 先知道当前真正的入口
 
-`Ai4jCli` 当前暴露的是三个命令面：
+`Ai4jCli` 当前暴露的顶层子命令有六个：
 
-- `code`
-- `tui`
-- `acp`
+- `code` —— coding session 的 CLI host（最常用）
+- `tui` —— 等价于 `code --ui tui`
+- `acp` —— 把 coding session 作为 ACP stdio server 启动
+- `run` —— 跑一次单 agent 的 Agent Blueprint YAML（不进入交互式 session）
+- `extension` —— 检查 / 装配 / 运行 classpath 上的扩展包
+- `trust` —— 管理工作区钩子的信任目录
+
+quickstart 只关心前三类**会话型入口**（`code`/`tui`/`acp`）；`run`/`extension`/`trust` 是单次工具型子命令，完整说明见 [命令参考 §7](/docs/coding-agent/command-reference)。
 
 而且它还有两个常被忽略的行为：
 
 - 如果你直接写 `ai4j-cli --model ...`，默认按 `code` 处理
 - `tui` 本质上只是给 `code` 额外补上 `--ui tui`
 
-所以当前入口关系可以压成：
+所以当前会话型入口关系可以压成：
 
 ```text
 ai4j-cli code ...   -> coding session CLI host
@@ -300,7 +305,7 @@ quickstart 只能证明最小主链打通，不能替代完整运行验证。
 
 ## 11. 这页最该记住的结论
 
-- 当前真正的运行入口是 `code`、`tui`、`acp`
+- 会话型运行入口是 `code`、`tui`、`acp`；此外 `ai4j-cli` 还有 `run`、`extension`、`trust` 三个单次工具型子命令（见 [命令参考](/docs/coding-agent/command-reference)）
 - `tui` 只是 `code --ui tui` 的宿主别名，不是另一套 runtime
 - quickstart 最稳的直接产物是 `ai4j-cli-<version>-jar-with-dependencies.jar`
 - `--prompt` 决定 one-shot；不传 `--prompt` 才进入持续会话

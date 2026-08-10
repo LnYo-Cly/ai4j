@@ -380,3 +380,5 @@ AI4J 当前的 Coding Agent runtime 不是单层系统，而是一条清晰的�
 2. [Tools 与审批机制](/docs/coding-agent/tools-and-approvals)
 3. [Compact 与 Checkpoint 机制](/docs/coding-agent/compact-and-checkpoint)
 4. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
+
+→ API Javadoc：[`CodingAgentBuilder`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-coding/2.4.2/io/github/lnyocly/ai4j/coding/CodingAgentBuilder.html)（`ai4j-coding` 模块，本页 §3 装配分叉点的核心类）

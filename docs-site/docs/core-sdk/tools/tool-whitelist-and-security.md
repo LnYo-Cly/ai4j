@@ -197,6 +197,15 @@ context.resolveReadablePath(path)
 
 从安全面看，这意味着 `bash` 的能力面比“跑一条命令”大得多：`start` 可以留下持续占用资源、长期读写工作区或外联网络的后台进程。给模型开放 `bash` 即等于同时开放了后台进程治理，宿主应把 `start`/`write`/`stop` 视作与 `exec` 同级的副作用动作纳入审批与审计。
 
+#### bash 输出的字符集解析（Windows GBK 兜底）
+
+`bash` 的 stdout/stderr 在回流前要先按某个 `Charset` 解码成字符串。`BuiltInToolExecutor`（以及后台进程的 `BuiltInProcessRegistry`、`ai4j-coding` 的 `ShellCommandSupport.resolveShellCharset()`）按下面的顺序解析这个字符集：
+
+1. **显式覆盖优先**：系统属性 `ai4j.shell.encoding`（或环境变量 `AI4J_SHELL_ENCODING`）只要指向一个 JVM 支持的字符集就立即采用，常用于把 Windows 控制台强制钉成 UTF-8。
+2. **平台兜底**：未显式指定时，非 Windows 一律按 UTF-8；Windows 则依次尝试 `native.encoding` → `sun.jnu.encoding` → `file.encoding` → `Charset.defaultCharset()`——在中文 Windows 上这通常解析成 **GBK**。
+
+所以同一个 `bash` 工具，在 Linux/macOS 默认返回 UTF-8 文本，在中文 Windows 默认按 GBK 解码。若模型看到乱码，几乎都是控制台实际编码与上述推断不一致，这时用 `-Dai4j.shell.encoding=UTF-8`（或 `AI4J_SHELL_ENCODING=UTF-8`）显式钉死即可，无需改代码。
+
 ## 7. `readOnlyCodingToolNames()` 的边界要说清楚
 
 `BuiltInTools` 里当前有：
@@ -209,8 +218,10 @@ readOnlyCodingToolNames()
 
 - `bash`
 - `read_file`
+- `glob`
+- `grep`
 
-归到一个只读集合。
+归到一个只读集合（对应源码 `READ_ONLY_CODING_TOOL_NAMES = {BASH, READ_FILE, GLOB, GREP}`）。
 
 但要注意，这更像一个分类辅助，而不是完整的策略引擎。单靠这个集合本身，并不会自动阻止 `bash` 执行有副作用命令。
 
@@ -280,3 +291,7 @@ AI4J 当前的工具安全，不是“全量自动发现后再补救”，而是
 - 再用 `BuiltInToolContext` 收窄 built-in 宿主边界
 
 这已经构成了基座层的第一道防线；但审批、鉴权、审计、真正的进程隔离，仍然属于更上层 runtime 和宿主治理问题。
+
+## 继续阅读
+
+- → [BuiltInTools API Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/tool/BuiltInTools.html)（`allCodingToolNames()` / `readOnlyCodingToolNames()` 等内建工具契约）

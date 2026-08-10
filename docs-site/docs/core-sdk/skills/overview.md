@@ -147,6 +147,10 @@ skill 不负责：
 
 这四层一起构成的，才是当前 AI4J 的 skill 体系。
 
+:::note 第三方 Skill 也可以走扩展 SPI
+除内置的 `.ai4j/skills` 目录发现外，第三方 jar 同样能通过扩展 SPI（`ServiceLoader` + `ExtensionRegistry`）把 Skill 作为资源注入，门禁规则与 Tool/Prompt 一致，默认不自动暴露。见 [Plugin Packages](/docs/core-sdk/extension/plugin-packages)。
+:::
+
 ## 7. 典型工作流是什么
 
 一条标准 skill 工作流通常是：
@@ -249,3 +253,7 @@ AI4J 的 `Skill` 是基座里的方法论与上下文治理层。
 - 让读取边界和宿主工具约束保持一致
 
 这正是它和 Tool、MCP 根本不同的地方。
+
+## 继续阅读
+
+- → [Skills API Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/skill/Skills.html)（`discoverDefault(...)` / `buildAvailableSkillsPrompt(...)` / `createToolContext(...)` 等 skill 治理入口）

@@ -163,3 +163,7 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 ## 10. 这一页的结论
 
 > AI4J 当前的服务入口体系是显式且分层的：`AiService` 负责单实例统一能力工厂，`AiServiceRegistry` 负责正式多实例注册与路由，`FreeAiService` 只承担兼容壳角色。理解这条入口链，比记住单个 provider 的 API 更重要，因为后面的支持矩阵、扩展成本和上层装配都建立在这条链上。
+
+## 11. API Javadoc
+
+→ [`AiService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/factory/AiService.html) · [`AiServiceRegistry`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/factory/AiServiceRegistry.html)
