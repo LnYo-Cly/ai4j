@@ -16,6 +16,12 @@ tags: [concept]
 
 这就是为什么 `Skill` 应该被放在基座层，而不是只当成 `Coding Agent` 的产品特性。
 
+:::tip 本页代码都是可跑通的
+下面的发现/目录生成示例来自
+[`SkillsDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/SkillsDocExamplesTest.java)，
+无需密钥、在普通 CI 里跑。
+:::
+
 ## 1. `Skill` 在架构里的真实位置
 
 从源码看，skill 主线在：
@@ -161,7 +167,20 @@ skill 不负责：
 4. 模型根据任务匹配选择是否读取某个 `SKILL.md`
 5. 读取后按 skill 指南执行
 
-这套流程和“把所有 SOP 一开始全部喂给模型”是完全不同的设计。
+这套流程和"把所有 SOP 一开始全部喂给模型"是完全不同的设计。
+
+```java
+Skills.DiscoveryResult result = Skills.discoverDefault(workspaceRoot);
+
+// 只生成技能目录（name + description），不含正文
+String skillCatalog = Skills.buildAvailableSkillsPrompt(result.getSkills());
+
+// 把目录拼到既有 system prompt 上
+String systemPrompt = Skills.appendAvailableSkillsPrompt(
+        "You are a coding agent.", result.getSkills());
+```
+
+目录里只有 `name` / `description` 和"读取 SKILL.md"的提示；正文（具体步骤、约束）不会泄漏进目录——模型匹配后再决定读取哪个 skill。
 
 ## 8. 哪些场景最适合 Skill
 
