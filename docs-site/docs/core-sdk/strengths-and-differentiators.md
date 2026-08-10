@@ -173,3 +173,7 @@ AI4J 的优势不是“所有场景都绝对更强”，而是它优化目标很
 ## 9. 这一页的结论
 
 > AI4J 的差异点不在“它也能调很多模型”，而在它把多 provider 访问、工具、Skill、MCP、RAG 和向上 runtime 演进路径放进了一套连续的 Java 工程模型里。它更像长期系统的基础能力层，而不是一次性 demo SDK。
+
+## 10. API Javadoc
+
+→ [`AiService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/factory/AiService.html)

@@ -121,6 +121,34 @@ ToolUtil.getAllTools(functionList, mcpServerIds, userId)
 
 因此暴露层和执行层不是简单一一对应的。
 
+### 5.1 多租户路由：`user_{userId}_tool_{toolName}` 命名约定
+
+优先级里排在 built-in 之后的“用户级远程 MCP 工具”不是靠额外参数识别的，而是靠**函数名编码**。`ToolUtil.invoke(...)` 在 built-in 未命中后，会先用 `extractUserIdFromFunctionName(functionName)` 检查名字是否匹配：
+
+```text
+user_{userId}_tool_{toolName}
+```
+
+例如 `user_123_tool_create_issue` 会被解析成 `userId=123`、`toolName=create_issue`，然后直接走：
+
+```java
+gateway.callUserTool("123", "create_issue", argumentObject).join()
+```
+
+这条路径绕过了本地 MCP / Function / 全局 gateway 的常规查找，把调用定向到该用户专属的 `McpClient`。配套地，工具面组装侧的 `ToolUtil.getUserMcpTools(mcpServerIds, userId)` / `getAllTools(functionList, mcpServerIds, userId)` 只会把该用户已注册的用户级服务工具投影进本次请求，因此模型看到的 `user_123_tool_*` 名字与它能调用的用户工具一一对应。
+
+也可以不走名字编码，直接显式传 `userId` 调用：
+
+```java
+ToolUtil.invoke("create_issue", argument, "123");   // 等价于上面的路由
+```
+
+设计要点：
+
+- **隔离靠 key，不靠运行时判断**：用户级 MCP 客户端按 `user_{userId}_service_{serviceId}` / `user_{userId}_tool_{toolName}` 注册进 gateway，隔离在映射层就完成。
+- **用户级优先于全局**：一旦函数名命中 `user_..._tool_...`，就不会再落到全局 gateway 查找，同名工具不会串租户。
+- **这是 SaaS / 多租户宿主的能力**：单租户场景用不到这套约定，模型拿到的就是普通工具名。
+
 ## 6. 内建工具为什么是特殊路径
 
 `ToolUtil.invoke(...)` 一开始就会先尝试：
@@ -336,3 +364,7 @@ AI4J 当前的工具执行模型，本质上是一个“统一工具路由器”
 - 结果统一文本化回流给上层 runtime
 
 理解这条链后，再去看 Agent 或 Coding Agent 的审批、trace、长任务治理，层次就不会混。
+
+## 继续阅读
+
+- → [ToolUtil API Javadoc](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/tool/ToolUtil.html)（`getAllTools(...)` / `invoke(...)` / `getUserMcpTools(...)` 等工具调度入口）

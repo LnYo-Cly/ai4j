@@ -194,3 +194,5 @@ openAiConfig.setApiHost("https://codex.trovebox.online/");
 - 想理解 `Chat` 细节：看 [Core SDK / Model Access / Chat](/docs/core-sdk/model-access/chat)
 - 想让模型调用本地函数：看 [First Tool Call](/docs/start-here/first-tool-call)
 - 想继续看完整能力：看 [Feature Map](/docs/start-here/feature-map)
+
+→ API Javadoc：[`AiService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/factory/AiService.html) · [`IChatService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/IChatService.html)

@@ -491,3 +491,5 @@ AI4J 当前的 Coding Agent tools 机制，不是“8 个函数 + 一个确认�
 3. [Sandbox Routing](/docs/coding-agent/sandbox-routing)
 4. [生命周期钩子与工作区信任](/docs/coding-agent/lifecycle-hooks)
 5. [Runtime 架构](/docs/coding-agent/runtime-architecture)
+
+→ API Javadoc：[`BuiltInToolExecutor`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/tool/BuiltInToolExecutor.html)（`ai4j` 模块，内置工具执行路由的入口类）

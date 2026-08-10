@@ -718,6 +718,32 @@ tags: [reference]
 
 ---
 
+### 自定义命令模板文件
+
+`/commands`、`/palette`、`/cmd` 背后是同一套自定义命令模板机制（`CustomCommandRegistry`）。把常用提示词写成命令文件后，即可用 `/cmd <name>` 把正文注入当前 turn。
+
+**发现路径**（后加载者覆盖同名命令）：
+
+| 位置 | 作用域 |
+| --- | --- |
+| `~/.ai4j/commands/` | 用户全局，所有工作区可见 |
+| `<workspace>/.ai4j/commands/` | 当前工作区，覆盖同名全局命令 |
+
+支持的扩展名：`.md`、`.txt`、`.prompt`。命令名 = 文件名去掉扩展名（`review.md` → `/cmd review`）。
+
+**文件格式**：第一行以 `#` 开头时，该行去掉 `#` 作为命令描述，第二行起才是 prompt 正文；第一行不以 `#` 开头时，整文件都是正文、无描述。正文里的 `$key` 占位符在渲染时按变量替换。
+
+一个最小示例，`<workspace>/.ai4j/commands/refactor.md`：
+
+```text
+# 审阅并重构代码
+请审阅当前 workspace 的代码，按 $language 的惯用法重构，并指出潜在问题。
+```
+
+随后在会话内执行 `/cmd refactor` 即把正文注入当前 turn。
+
+---
+
 ### `/clear`
 
 打印一个新的屏幕分区，相当于重新整理当前终端视图。

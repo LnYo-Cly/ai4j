@@ -215,7 +215,41 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
 - 执行层可以是普通 `apply(...)`
 - 也可以是 built-in 专用执行器
 
-## 9. 最稳的设计建议
+## 9. 本地 MCP 工具也有一套对应注解
+
+前面三节讲的都是 `@FunctionCall` 这套**本地 Function 工具**注解。如果工具要走 MCP 协议（transport、服务化、被 `McpGateway` 统一治理），AI4J 另有一组**方法级**注解，无需写 `Function<Request,String>`，直接标在类和方法上即可：
+
+- `@McpService`（标在类上）—— 定义服务 identity：`name` / `version` / `description` / `transport`（`stdio`/`sse`/`streamable_http`）/ `port` / `autoStart`
+- `@McpTool`（标在方法上）—— 定义工具：`name`（默认方法名）/ `description` / `inputSchema`（不填则按方法参数自动生成）
+- `@McpParameter`（标在参数上）—— 定义参数：`name`（默认参数名）/ `description` / `required` / `defaultValue`
+
+一个最小例子：
+
+```java
+@McpService(name = "weather-service", description = "Weather MCP service")
+public class WeatherMcpService {
+
+    @McpTool(name = "query_weather", description = "Query weather by city")
+    public String queryWeather(@McpParameter(name = "city", description = "City name") String city,
+                               @McpParameter(name = "days", required = false, defaultValue = "3") int days) {
+        return "Weather(" + city + ", " + days + "d)";
+    }
+}
+```
+
+它和 Function 注解的关键区别：
+
+| | `@FunctionCall` 工具 | `@McpService`/`@McpTool` 工具 |
+|---|---|---|
+| 标注粒度 | 类 + 内部 request 类 + 字段 | 类 + 方法 + 方法参数 |
+| 参数载体 | `@FunctionRequest` 静态内部类 | 直接是方法形参 |
+| 执行链 | 反射调 `apply(Request)` | 先 parse 成 `Map` 再按参数逐个类型转换 |
+| 暴露名 | `@FunctionCall(name)` 原样 | 由 `generateApiFunctionName(service, tool)` 生成（仅保留字母/数字/下划线/连字符，最长 64，必要时加 `tool_` 前缀） |
+| 扫描入口 | `ToolUtil.scanFunctionTools()` | `ToolUtil.scanMcpTools()` |
+
+两套注解最终都会被 `ToolUtil` 扫描、缓存，并投影成统一的 `Tool.Function` 视图进入请求白名单（见 [Tool Execution Model](/docs/core-sdk/tools/tool-execution-model)）。完整的 transport 启停、网关治理、远端/本地投影语义属于 MCP 协议层，见 [构建 MCP 服务](/docs/mcp/build-your-mcp-server)。
+
+## 10. 最稳的设计建议
 
 基于当前实现，最稳妥的工具设计通常是：
 
@@ -228,7 +262,7 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
 
 这会显著降低 schema 漂移和模型误调用概率。
 
-## 10. 这页最该记住的结论
+## 11. 这页最该记住的结论
 
 AI4J 的注解式工具，不是“给类贴几个标签”，而是一条从 Java 类型到 provider tool schema 的生成链。
 

@@ -324,6 +324,8 @@ Runtime 负责：
 
 也就是说，权限控制不在前端 runtime plugin，而在后端 facade 这一层。
 
+另外，前端画布与后端任务 API 通常部署在不同 origin，浏览器跨域调用 `/flowgram/**` 需要后端放行 CORS：把编辑器来源加进 `ai4j.flowgram.cors.allowed-origins`（默认空列表，绑定 `CorsProperties`）。完整字段见 [Spring Boot Configuration Reference](/docs/spring-boot/configuration-reference) §5（`ai4j.flowgram.*` / CORS）。
+
 ## 11. 最重要的对接原则
 
 最稳的对接方式，不是让前端知道更多后端细节，而是守住这 3 条边界：

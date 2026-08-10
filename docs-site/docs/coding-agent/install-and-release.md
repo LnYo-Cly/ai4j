@@ -61,11 +61,14 @@ manifest 主类当前是：
 
 ### 2.3 `Ai4jCli` 本身已经完成了命令分发
 
-当前它直接支持：
+当前它直接支持的顶层子命令：
 
-- `code`
-- `tui`
-- `acp`
+- `code` —— coding session CLI host（最常用）
+- `tui` —— 等价于 `code --ui tui`
+- `acp` —— coding session 作为 ACP stdio server
+- `run` —— 跑一次 Agent Blueprint YAML（一次性、无 session）
+- `extension` —— 检查 / 装配 / 运行扩展包
+- `trust` —— 管理工作区钩子信任目录
 
 而且：
 
@@ -269,7 +272,7 @@ ai4j-cli-<version>/
 
 而是：
 
-- 一个带 `code` / `tui` / `acp` 三种入口的宿主程序
+- 一个带 `code` / `tui` / `acp` / `run` / `extension` / `trust` 等多种顶层子命令的宿主程序
 
 这也是为什么 release 文档必须同时谈：
 

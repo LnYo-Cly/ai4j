@@ -71,6 +71,19 @@ public RagContextAssembler ragContextAssembler() {
 不确定 encoding 时，不需要硬猜；保留模型名或只传 budget，让 SDK 使用默认估算并设置更保守的 budget。
 :::
 
+### OkHttp SPI 扩展点：Dispatcher 与 ConnectionPool
+
+OkHttp 的并发调度和连接池**不走 `@Bean` 覆盖**，而是走 Java SPI（`META-INF/services`）。两个扩展点都在 `io.github.lnyocly.ai4j.network`：
+
+- `DispatcherProvider` —— 控制并发请求调度（默认实现 `DefaultDispatcherProvider`）
+- `ConnectionPoolProvider` —— 控制连接复用与回收（默认实现 `DefaultConnectionPoolProvider`）
+
+要换实现，在自己的 JAR 里放 `META-INF/services/io.github.lnyocly.ai4j.network.DispatcherProvider`（或 `...ConnectionPoolProvider`），写入实现类全名即可，无需改 starter 或业务 Bean。超时、代理、SSL 等可调参数仍由 `ai.okhttp.*` 控制（见 [Configuration Reference §4](/docs/spring-boot/configuration-reference#4-aiokhttp-的位置)）。
+
+:::tip 何时走 SPI 而不是 @Bean
+Spring `@Bean` 适合替换业务/容器层对象（`RagContextAssembler`、`VectorStore` 等）。`OkHttpClient` 的并发原语被整个 starter 共享，且 starter 通过 SPI 解析它们，所以这里用 SPI 才是正确层级；不要试图用 `@Bean OkHttpClient` 硬覆盖去间接改调度策略。
+:::
+
 ## 5. 工程原则
 
 - 优先替换统一抽象后的 Bean，而不是修改底层 provider 私有实现

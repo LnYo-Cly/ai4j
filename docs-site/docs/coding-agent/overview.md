@@ -67,6 +67,10 @@ Coding Agent 装配时会同时决定：
 | TUI | 长时间在终端里工作的人 | slash command、状态视图、交互密度 |
 | ACP | IDE、桌面应用、自定义前端 | JSON-RPC session、permission request、宿主注入能力 |
 
+:::note 顶层子命令不止三个
+上表按 **host 交互模式** 区分了 CLI/TUI/ACP 三类入口。但 `ai4j-cli` 可执行文件本身还暴露了更多顶层子命令：除 `code`/`tui`/`acp` 这三个会话型入口外，还有 `run`（跑一次 Agent Blueprint YAML）、`extension`（检查/装配/运行扩展包）、`trust`（管理工作区钩子信任目录）。完整清单见 [命令参考 §7](/docs/coding-agent/command-reference)。
+:::
+
 如果你只是评估功能，先从 [Quickstart](/docs/coding-agent/quickstart) 和 [CLI / TUI](/docs/coding-agent/cli-and-tui) 开始。
 
 ## 核心概念

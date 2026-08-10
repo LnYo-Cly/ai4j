@@ -485,3 +485,5 @@ ACP 最常见的通知仍然是：
 3. [MCP 与 ACP](/docs/coding-agent/mcp-and-acp)
 4. [MCP 对接](/docs/coding-agent/mcp-integration)
 5. [命令参考](/docs/coding-agent/command-reference)
+
+→ API Javadoc：[`AcpJsonRpcServer`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j-cli/2.4.2/io/github/lnyocly/ai4j/cli/acp/AcpJsonRpcServer.html)（`ai4j-cli` 模块，ACP stdio server 的协议主类）

@@ -50,7 +50,10 @@ tags: [concept]
 
 ai4j 没有独立的"slash 提示模板引擎"。**Prompt 是插件资源的一种**：插件在 `apply(...)` 里用 `context.prompts().register(...)` 注册一个 `ExtensionPromptResource`（指向 jar 内的 markdown 资源），启用后它会被物化成只读文件，进入 agent 的 `<available_prompts>` 清单，由宿主或 Coding Agent 按需读取。
 
-也就是说，ai4j 的 Prompt 和 Skill 共享同一套"摘要先行、按需读取"的上下文治理思路，区别在资源类型。官方 `ask-user` 插件是同时贡献 tool + command + Skill + Prompt 的样板，最适合作为这条线的参考实现。
+也就是说，ai4j 的 Prompt 和 Skill 共享同一套"摘要先行、按需读取"的上下文治理思路，区别在资源类型。ai4j 有**两个官方参考插件**，各有侧重：
+
+- **`ask-user`**——最小插件（host-mediated 用户澄清 tool + command + Skill + Prompt），适合学习扩展的基本骨架。
+- **`dynamic-workflow`**——🚀 **生产级旗舰参考**（同时贡献 4 种能力 + host-mediated workflow 信封 + 零运行时依赖 + live 闭环测试）。适合学习如何构建一个完整的、安全的、可发布的 ai4j 插件。详见 [Dynamic Workflow Plugin](/docs/core-sdk/extension/dynamic-workflow-plugin)。
 
 → [Ask User Plugin](/docs/core-sdk/extension/ask-user-plugin)（同时贡献 Prompt 的样板）｜[Dynamic Workflow Plugin](/docs/core-sdk/extension/dynamic-workflow-plugin)（脚本化 Prompt + Skill 样板）
 
