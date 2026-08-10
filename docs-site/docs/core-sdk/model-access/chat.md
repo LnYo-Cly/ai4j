@@ -209,6 +209,8 @@ public static class GetOrderStatus implements Function<GetOrderStatus.Request, S
 }
 ```
 
+这里 `@FunctionCall` / `@FunctionRequest` / `@FunctionParameter` 三注解 + 反射会自动把 Java 类型生成 provider 的 JSON Schema（`String`→`string`、`enum`→`string+enum`、`Integer`→`integer`…），你不用手写 schema。`required`、复杂类型边界、`strict` 模式详见 [Annotation-based Tools](/docs/core-sdk/tools/annotation-based-tools)。
+
 调用时用 `functions(...)` 按 name 注册，其余交给 SDK：
 
 ```java
