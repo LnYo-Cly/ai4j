@@ -101,6 +101,42 @@ CodeAct 的价值，就是把这种任务从“模型直接推理”转换成“
 
 如果后者更重要，就该进入 CodeAct。
 
+:::tip 本页代码都是可跑通的
+下面的装配示例来自
+[`CodeActDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j-agent/src/test/java/io/github/lnyocly/agent/CodeActDocExamplesTest.java)，
+用内联 scripted client 验证 code→execute→finalize 协议，零网络。
+Nashorn 执行器仅 JDK 8/11 可用，更高 JDK 自动跳过。
+:::
+
+最小装配——`reAct=false`，模型发代码、执行器跑、结果直接作为输出：
+
+```java
+Agent agent = Agents.codeAct()
+        .modelClient(modelClient)
+        .model("gpt-4o-mini")
+        .codeExecutor(new NashornCodeExecutor())           // JDK 8/11 用 Nashorn；其它用 GraalVM/Python
+        .systemPrompt("你是代码执行助手。输出 {type:code,language,code} 让执行器跑。")
+        .codeActOptions(CodeActOptions.builder().reAct(false).build())
+        .options(AgentOptions.builder().maxSteps(4).build())
+        .build();
+
+AgentResult result = agent.run(AgentRequest.builder()
+        .input("请用 JavaScript 计算 17*3+5").build());
+// reAct=false：模型发 {"type":"code","language":"javascript","code":"return 17*3+5"}
+// → 执行得 56 → 直接作为输出，无需模型二次收尾
+```
+
+`reAct=true` 则是两段：先发代码执行，再发 `{"type":"final","output":"..."}` 由模型收尾——适合执行结果需要模型再解释或继续推理的场景。
+
+模型输出的 JSON 协议就两种：
+
+| type | 含义 |
+| --- | --- |
+| `code` | 触发执行器；`language` + `code` 桥接给 `CodeExecutor` |
+| `final` | 收尾；`output` 作为最终答案 |
+
+执行结果以 `CODE_RESULT: ...` / `CODE_ERROR: ...` 回灌进 memory，形成自修复闭环。
+
 ## 4. `runInternal()` 的真实生命周期
 
 从源码看，`CodeActRuntime.runInternal(...)` 可以拆成 6 个阶段。
