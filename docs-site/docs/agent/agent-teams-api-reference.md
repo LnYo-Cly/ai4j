@@ -25,28 +25,63 @@ tags: [reference]
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeam.java`
 - `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamAgentRuntime.java`
 
+:::tip 本页代码都是可跑通的
+下面的装配示例来自
+[`AgentTeamsDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j-agent/src/test/java/io/github/lnyocly/agent/AgentTeamsDocExamplesTest.java)，
+内联 scripted model client，零网络、CI 跑。
+:::
+
 `AgentTeamBuilder` 有两个终点：
 
 ### 1.1 `build()`
 
-返回 `AgentTeam`。
+返回 `AgentTeam`。适合你要直接用 team-specific API（读任务板、消息总线、持久化状态）：
 
-适合：
+```java
+AgentTeam team = Agents.team()
+        .planner((objective, members, options) -> AgentTeamPlan.builder()
+                .tasks(Collections.singletonList(
+                        AgentTeamTask.builder()
+                                .id("t1").memberId("worker").task("do work").build()))
+                .build())
+        .synthesizerAgent(synthAgent)
+        .member(AgentTeamMember.builder()
+                .id("worker").name("Worker").agent(workerAgent).build())
+        .build();                              // ← 返回 AgentTeam
 
-- 你明确要使用 team-specific API
-- 你要读取任务板、消息总线、持久化状态
-- 你要接 `planApproval`、`hooks`、`stateStore`
+AgentTeamResult result = team.run(AgentRequest.builder().input("go").build());
+result.getOutput();                            // 汇总输出
+team.snapshotState();                          // 任务板 / 消息总线 / 持久化状态
+team.listTaskStates();
+```
 
 ### 1.2 `buildAgent()`
 
-返回一个普通 `Agent`，但 runtime 被替换成 `AgentTeamAgentRuntime`。
+返回一个普通 `Agent`，但 runtime 被替换成 `AgentTeamAgentRuntime`。适合你想让 Team 接进统一 `Agent` 调用面（session、listener）：
+
+```java
+Agent teamAgent = Agents.teamAgent(Agents.team()
+        .planner((objective, members, options) -> AgentTeamPlan.builder()
+                .tasks(Arrays.asList(
+                        AgentTeamTask.builder()
+                                .id("collect").memberId("researcher")
+                                .task("Collect requirements").build()))
+                .build())
+        .synthesizerAgent(synthAgent)
+        .member(AgentTeamMember.builder()
+                .id("researcher").name("Researcher").agent(researcherAgent).build()));
+
+AgentResult result = teamAgent.run(AgentRequest.builder().input("prepare plan").build());
+result.getOutputText();                        // 走统一 Agent 接口
+result.getRawResponse();                       // 实际是 AgentTeamResult
+```
 
 这个包装做了两件事：
 
 - 用模板 `AgentTeamBuilder` 每次复制并构建新的 `AgentTeam`
 - 给包装后的 `Agent` 配一份新的 `InMemoryAgentMemory`
 
-因此 `buildAgent()` 的意义不是“把 Team 变成另一个对象模型”，而是：
+因此 `buildAgent()` 的意义不是"把 Team 变成另一个对象模型"，而是：
 
 - 让 Team orchestration 可以挂进统一 `Agent` 接口
 - 让 Team 能和普通 Agent 一样接入 session、listener、通用调用面
