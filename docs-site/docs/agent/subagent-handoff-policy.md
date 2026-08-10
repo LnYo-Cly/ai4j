@@ -16,6 +16,37 @@ SubAgent 的核心，不是“主 Agent 调另一个 Agent”，而是把另一�
 
 因此 SubAgent 的本质不是“多 Agent 聊天”，而是“带 handoff policy 的工具委派”。
 
+## 0. 通讯与并行模型（先建立正确心智）
+
+理解 SubAgent 最关键的一点：**通讯就是工具调用，是同步请求-响应，不是消息流。**
+
+```text
+父 agent 模型 ──tool_call(delegate_xxx, {task})──► SubAgentToolExecutor
+                                                       │ 起子 agent，跑完整个 ReAct loop
+                                                       ▼
+父 agent  ◄──── tool_result（子 agent 的 outputText）────┘
+```
+
+子 agent 拿到 task 输入后**独立跑完**，执行期间无法和父 agent 交互。父 agent 只在子 agent 返回后看到 `outputText`——**看不到子的 reasoning 或中间 tool 调用**（这与 Claude Code subagent 一致，是刻意的 context 经济设计）。
+
+### 并行多个 subagent：靠父模型一轮发多个 tool_call
+
+SDK 不主动 fan-out。"父 agent 同时跑多个子 agent"的真相是：
+
+1. 父模型在**一轮**里发出多个 tool_call（如同时调 `delegate_research` 和 `delegate_write`）
+2. 若 `parallelToolCalls=true`，runtime 用线程池**并行执行这一轮的所有 tool_call**
+3. 但这是一道 **fork-join barrier**：父必须等本轮全部 tool_call 结束才进下一轮
+
+所以并行的触发权在**模型的行为**（一轮发几个 call）+ `parallelToolCalls` 开关，不是 SDK 帮你调度。
+
+:::note 与 Claude Code 的差距
+Claude Code 的 background agent 是 **async**——父派子后可以继续干别的，子完成后异步回流。AI4J 的 SubAgent 是**同步阻塞**：父在 fork-join barrier 上等全部子返回。对短任务（读文件、grep）无感；对长耗时研究型子 agent，父会被阻塞。这是 roadmap 上待补的能力。
+:::
+
+### 嵌套 handoff 与 depth
+
+子 agent 也能挂自己的 subagent（嵌套 handoff）。`HandoffContext` 用 ThreadLocal 在**子 agent 运行的线程上**记录递归深度——不是靠继承父线程，而是在子 agent 启动时（`HandoffContext.runWithDepth`）在该线程 set。所以**并行嵌套 handoff 的 depth 计数正确**，`maxDepth` 在并行下不会失效。
+
 ## 1. 先抓住 3 个关键设计决策
 
 ### 1.1 SubAgent 先是 tool surface，后才是协作能力
@@ -461,6 +492,11 @@ delegate.execute(call)
 - 你的原始 `delegate` 必须真的能处理这个同名工具调用
 
 否则 fallback 配了也没有意义。
+
+:::note 默认 wiring 下主执行器通常不认识 subagent 工具名
+在默认 `AgentBuilder` wiring 下，主执行器（`ToolUtilExecutor`）的白名单在 subagent 合并进 registry 之前就捕获了，不含 subagent 工具名。所以 `FALLBACK_TO_PRIMARY` 在默认配置下，主执行器**无法**服务该 call——此时它返回一条清晰的「handoff unavailable」消息（而非把 call 当普通工具硬转）。
+要让 fallback 真正执行别的东西，需要自定义 `toolExecutor` 来服务该工具名。详见 [issue #238](https://github.com/LnYo-Cly/ai4j/issues/238)。
+:::
 
 ```java
 // 被拒绝后不抛异常，而是把工具调用交回主执行链
