@@ -11,6 +11,12 @@ tags: [concept]
 
 这一页真正要讲清的是：它目前支持什么、实现有多薄、哪些校验发生在请求对象层、以及哪些资源管理责任仍在调用方手里。
 
+:::tip 本页代码都是可跑通的
+下面的 TTS 示例来自
+[`AudioAndRealtimeDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/AudioAndRealtimeDocExamplesLiveTest.java)，
+已针对真实网关跑通（`gpt-4o-mini-tts`）。
+:::
+
 ## 1. 当前支持矩阵
 
 从 `AiService.createAudioService(...)` 的实际分发看，当前音频能力只支持：
@@ -54,6 +60,20 @@ tags: [concept]
 
 测试 `OpenAiAudioServiceTest` 已经专门验证了这件事。
 
+```java
+IAudioService audio = new AiService(configuration).getAudioService(PlatformType.OPENAI);
+
+InputStream speech = audio.textToSpeech(TextToSpeech.builder()
+        .model("gpt-4o-mini-tts")
+        .input("你好，这是 AI4J 的语音合成测试。")
+        .voice("alloy")
+        .build());
+
+// 流由调用方负责关闭；消费完再 close，否则底层 HTTP response 不会释放
+Files.copy(speech, Paths.get("output.mp3"), StandardCopyOption.REPLACE_EXISTING);
+speech.close();
+```
+
 ### 转录与翻译
 
 `transcription(...)` 和 `translation(...)` 都走 multipart/form-data：
@@ -68,7 +88,21 @@ tags: [concept]
 - `TranscriptionResponse`
 - `TranslationResponse`
 
-失败时当前实现不会抛出结构化业务异常，而是打印异常并返回 `null`。
+```java
+File audioFile = new File("meeting.mp3");   // 格式必须在白名单内
+
+TranscriptionResponse resp = audio.transcription(Transcription.builder()
+        .file(audioFile)
+        .model("whisper-1")
+        .language("zh")          // 可选，提高准确率
+        .responseFormat("json")  // 可选
+        .build());
+
+System.out.println(resp.getText());      // 纯文本
+System.out.println(resp.getSegments());  // 分段（verbose_json 时）
+```
+
+失败时抛出类型化异常（`AiAuthException` / `AiRateLimitException` / `AiClientException` 等，见下文"错误语义"）。
 
 ## 4. 请求对象层已经做了什么校验
 
@@ -110,15 +144,25 @@ tags: [concept]
 否则底层 HTTP response 会保持占用状态。
 :::
 
-### 非成功响应通常返回 `null`
+### 错误语义：抛出类型化异常
 
-:::warning
-不论是 TTS、Transcription 还是 Translation，当前实现都没有构造统一错误对象。
-这意味着业务层需要自己决定：
+非成功响应会抛出 `HttpErrorDecoder` 解码出的类型化异常（`AiAuthException` / `AiRateLimitException` / `AiServerErrorException` / `AiClientException`），消息里携带 provider 返回的原始错误，可通过 `getStatusCode()` 读取状态码：
 
-- 是否把 `null` 转成异常
-- 是否做重试
-- 是否记录 provider 原始失败信息
+```java
+try {
+    TranscriptionResponse resp = audio.transcription(req);
+} catch (AiRateLimitException e) {
+    // 限流，可退避重试
+} catch (AiAuthException e) {
+    // 凭证问题
+} catch (AiHttpException e) {
+    // 其它 HTTP 错误，e.getStatusCode() + e.getMessage() 含上游原文
+}
+```
+
+:::note 版本差异
+在 v2.4.2 及更早版本中，transcription/translation 失败时会打印异常并**返回 `null`**，TTS 同样静默返回 `null`，
+调用方拿到的是下游 NPE 而非真实原因。从 [PR #229](https://github.com/LnYo-Cly/ai4j/pull/229) 起统一改为抛出类型化异常。
 :::
 
 ### 大文件处理责任不在 SDK 内

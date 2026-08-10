@@ -87,6 +87,24 @@ AI4J 当前在模型访问层采用的是一种很明确的策略：
 
 而不是把所有东西都一股脑堆进 `extraBody`。
 
+```java
+// 主语义走正式字段
+ChatCompletion chat = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.withUser("你好"))
+        .reasoningEffort("medium")     // 正式字段，跨 provider 统一
+        .build();
+
+// 只有 provider 特有的、SDK 没建模的扩展，才走 extraBody
+ChatCompletion chat2 = ChatCompletion.builder()
+        .model("deepseek-chat")
+        .message(ChatMessage.withUser("你好"))
+        .extraBody("thinking", mapOf("type", "enabled"))   // DeepSeek 专属
+        .build();
+```
+
+`extraBody` 在 `ChatCompletion` 中会通过 `@JsonAnyGetter` 展开到 JSON 顶层；同名时 `extraBody` 的值会覆盖正式字段，所以用它前先确认 SDK 是否已有对应字段。
+
 ## 5. 返回值读取为什么也要有统一约定
 
 如果没有统一约定，最常见的坏结果是：
@@ -106,6 +124,12 @@ AI4J 当前给出的推荐读取方式其实很清晰：
 - `ChatMessage`
 - `Usage`
 
+```java
+ChatCompletionResponse resp = chatService.chatCompletion(req);
+String text = resp.getChoices().get(0).getMessage().getContent().getText();
+long total = resp.getUsage().getTotalTokens();
+```
+
 ### Chat 流式
 
 优先围绕：
@@ -115,11 +139,34 @@ AI4J 当前给出的推荐读取方式其实很清晰：
 - `toolCalls`
 - `finishReason`
 
+```java
+SseListener listener = new SseListener() {
+    @Override protected void send() { System.out.print(getCurrStr()); }
+};
+chatService.chatCompletionStream(req, listener);
+String full = listener.getOutput().toString();        // 聚合后的完整文本
+String reasoning = listener.getReasoningOutput();     // reasoning 片段
+String stop = listener.getFinishReason();
+```
+
 ### Responses 非流式
 
 优先围绕：
 
 - `Response`
+
+```java
+Response response = responsesService.create(req);
+// 遍历 output items 读取文本（不是 choice.message）
+StringBuilder text = new StringBuilder();
+for (ResponseItem item : response.getOutput()) {
+    if (item.getContent() == null) continue;
+    for (ResponseContentPart part : item.getContent()) {
+        if (part.getText() != null) text.append(part.getText());
+    }
+}
+int inputTokens = response.getUsage().getInputTokens();
+```
 
 ### Responses 流式
 
@@ -130,6 +177,15 @@ AI4J 当前给出的推荐读取方式其实很清晰：
 - `reasoningSummary`
 - `functionArguments`
 - `response`
+
+```java
+ResponseSseListener listener = new ResponseSseListener() {
+    @Override protected void onEvent() { System.out.print(getCurrText()); }
+};
+responsesService.createStream(req, listener);
+String full = listener.getOutputText().toString();
+String reasoning = listener.getReasoningSummary().toString();
+```
 
 ## 6. 一个很实用的团队规则
 
