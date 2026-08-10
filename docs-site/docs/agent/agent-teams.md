@@ -19,6 +19,15 @@ tags: [concept]
 
 如果只看表面 API，`AgentTeam.run("...")` 很像“高级版多 Agent demo”；但从源码看，它更像一个轻量 orchestration runtime。
 
+:::tip 成员间通讯模型
+与 [SubAgent 的工具调用 RPC](/docs/agent/subagent-handoff-policy#0-通讯与并行模型先建立正确心智) 不同，Teams 成员之间**不是工具调用关系**，而是通过两个共享组件协作：
+
+- **任务板（TaskBoard）**：planner 拆任务 → 成员 `claim_task` 抢占 → 执行 → 编排器自动 `markCompleted`。是分工的源头。
+- **消息总线（MessageBus）**：成员用 `team_send_message`（点对点）/ `team_broadcast` 发消息；**下个成员执行前**，编排器把 `historyFor(member)` 注入它的 prompt（拉模型，详见 §7.2）。
+
+成员间是**协作式**（共享状态），不是层级式（父调子）。同一轮多个 ready task 可并行（§5），board/bus 全 `synchronized` 保证线程安全。
+:::
+
 ## 1. 先抓住 3 个关键设计决策
 
 理解 Agent Teams，最重要的不是先背类名，而是先抓住 3 个设计决策。
