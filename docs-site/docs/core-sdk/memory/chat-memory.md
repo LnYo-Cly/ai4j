@@ -9,7 +9,26 @@ tags: [concept]
 `ChatMemory` 是 AI4J 基座里一个非常核心、但容易被低估的对象。  
 它真正做的不是“帮你存一份 messages”，而是 **把多轮会话事实组织成可投影、可裁剪、可快照、可恢复的统一上下文抽象**。
 
+:::tip 本页代码都是可跑通的
+下面的示例来自
+[`MemoryDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/MemoryDocExamplesTest.java)，
+无需密钥、在普通 CI 里跑。
+:::
+
 ## 1. 先看真实契约
+
+最小用法——记录会话事实，投影成请求消息：
+
+```java
+ChatMemory memory = new InMemoryChatMemory();
+
+memory.addSystem("You are a helpful assistant.");
+memory.addUser("记住数字 42");
+memory.addAssistant("好的，记住了。");
+
+// 投影到 Chat：ChatMessage 列表
+List<ChatMessage> messages = memory.toChatMessages();   // [system, user, assistant]
+```
 
 `ChatMemory.java` 当前定义的核心能力包括：
 
@@ -65,6 +84,16 @@ tags: [concept]
 
 同一份历史不需要被业务层维护两套结构，这正是 `ChatMemory` 的价值所在。
 
+```java
+ChatMemory memory = new InMemoryChatMemory();
+memory.addUser("这张图是什么颜色？", dataUrl);
+
+// Chat 投影：text + image_url
+memory.toChatMessages();
+// Responses 投影：input_text + input_image
+memory.toResponsesInput();
+```
+
 ## 4. `InMemoryChatMemory` 的真实行为
 
 默认实现是：
@@ -112,13 +141,26 @@ tags: [concept]
 
 ### `MessageWindowChatMemoryPolicy`
 
-这不是“简单保留最后 N 条数组元素”。
+这不是"简单保留最后 N 条数组元素"。
 
 它会：
 
 - 从尾部开始统计最近的非 system 消息
 - 尽量保留 `system` 项
 - 丢弃超出窗口的较早非 system 条目
+
+```java
+// 保留最近 2 条非 system 消息，但 system 总是被保住
+ChatMemory memory = new InMemoryChatMemory(new MessageWindowChatMemoryPolicy(2));
+
+memory.addSystem("system prompt");
+memory.addUser("u1");
+memory.addAssistant("a1");
+memory.addUser("u2");
+
+memory.getItems();
+// → [system, assistant("a1"), user("u2")]   // u1 被裁掉，system 保留
+```
 
 测试里已经验证了这一点：即使窗口裁剪发生，`system` 消息仍会被保住。
 
@@ -150,8 +192,21 @@ tags: [concept]
 - 手动 checkpoint
 - 持久化恢复
 
-这里的 `ChatMemorySnapshot` 只是复制 `ChatMemoryItem` 列表，不承担额外语义。  
-它的价值在于把“当下会话状态”稳定冻结下来。
+这里的 `ChatMemorySnapshot` 只是复制 `ChatMemoryItem` 列表，不承担额外语义。
+它的价值在于把"当下会话状态"稳定冻结下来。
+
+```java
+InMemoryChatMemory memory = new InMemoryChatMemory();
+memory.addUser("第一轮");
+memory.addAssistant("回复一");
+
+ChatMemorySnapshot snapshot = memory.snapshot();   // 冻结当前状态
+
+memory.addUser("第二轮");                           // 继续推进
+// ... 做一次试验性分支 ...
+
+memory.restore(snapshot);                            // 回到快照点，丢弃试验
+```
 
 ## 8. 多模态和工具结果如何进入 memory
 
@@ -171,6 +226,21 @@ assistant 的 tool calls 和 tool outputs 是分开记录的：
 
 - assistant 曾请求过什么工具
 - 那个工具返回了什么
+
+```java
+ChatMemory memory = new InMemoryChatMemory();
+
+ToolCall toolCall = new ToolCall(
+        "call_1", "function",
+        new ToolCall.Function("queryWeather", "{\"city\":\"Beijing\"}"));
+
+memory.addAssistant("让我查一下", Collections.singletonList(toolCall));
+memory.addToolOutput("call_1", "{\"weather\":\"sunny\"}");
+
+// 下一轮请求时，模型能看到完整的 [assistant tool_call → tool output] 链
+memory.toChatMessages();   // Chat: assistant(toolCalls) + role:"tool"
+memory.toResponsesInput(); // Responses: message(tool_calls) + function_call_output
+```
 
 ## 9. 使用这层时最常见的误区
 

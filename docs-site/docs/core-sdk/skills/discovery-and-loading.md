@@ -15,7 +15,25 @@ tags: [concept]
 - 为什么不应该一开始读取全部正文
 - 这些技能文件怎样进入安全读取边界
 
+:::tip 本页代码都是可跑通的
+下面的发现示例来自
+[`SkillsDocExamplesTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/SkillsDocExamplesTest.java)，
+它建一个临时工作区放 SKILL.md，跑通完整发现链。无需密钥、在普通 CI 里跑。
+:::
+
 ## 1. 主入口就在 `Skills.java`
+
+一次完整发现：
+
+```java
+// 工作区下放：<workspace>/.ai4j/skills/code-review/SKILL.md
+Skills.DiscoveryResult result = Skills.discoverDefault(workspaceRoot);
+
+List<SkillDescriptor> skills = result.getSkills();          // 发现到的技能
+List<String> readRoots = result.getAllowedReadRoots();       // 只读根（联动进安全边界）
+```
+
+每个 `SkillDescriptor` 带 `name` / `description` / `skillFilePath` / `source` / `disableModelInvocation`。
 
 这套机制几乎都集中在：
 
