@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.agent.compact;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
@@ -9,6 +10,7 @@ import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +32,13 @@ import java.util.Set;
 public class LlmCompactPolicy implements CompactPolicy {
 
     private static final String SUMMARY_SYSTEM_PROMPT =
-            "You are a conversation summarizer. Produce a concise structured summary with these sections:\n"
-            + "## Goal\n## Progress\n## Key Decisions\n## Critical Context\n"
-            + "Keep it under 500 words. Preserve any file paths, error messages, or code snippets that are still relevant.";
+            "You are a conversation summarizer for a coding agent. Return ONLY a JSON object — no prose, "
+            + "no code fences — with exactly these keys:\n"
+            + "{\"goal\": string, \"completed\": [string], \"pending\": [string], \"decisions\": [string], "
+            + "\"errors\": [string], \"testResults\": [string], \"openQuestions\": [string]}\n"
+            + "Use an empty array for a key with nothing to report. Keep each entry to one short line.\n"
+            + "Carry forward any still-unresolved entries from the previous summary's pending and decisions.\n"
+            + "Preserve file paths, error messages, and command names verbatim.";
 
     private final AgentModelClient modelClient;
     private final String modelName;
@@ -77,12 +83,19 @@ public class LlmCompactPolicy implements CompactPolicy {
         List<String> readFiles = extractFileOperations(toSummarize, true);
         List<String> modifiedFiles = extractFileOperations(toSummarize, false);
 
-        String summary = generateSummary(toSummarize, snapshot.getSummary(), readFiles, modifiedFiles);
+        StructuredSummary structured = generateSummary(toSummarize, snapshot.getSummary(), readFiles, modifiedFiles);
+        String summary = structured.text;
 
         MemorySnapshot compacted = MemorySnapshot.from(toKeep, summary);
         return CompactResult.builder()
                 .memory(compacted)
                 .summary(summary)
+                .completed(structured.completed)
+                .pending(structured.pending)
+                .decisions(structured.decisions)
+                .failedCommands(structured.errors)
+                .testResults(structured.testResults)
+                .openQuestions(structured.openQuestions)
                 .readFiles(readFiles)
                 .modifiedFiles(modifiedFiles)
                 .build();
@@ -116,8 +129,8 @@ public class LlmCompactPolicy implements CompactPolicy {
         return "user".equals(role);
     }
 
-    private String generateSummary(List<Object> itemsToSummarize, String previousSummary,
-                                   List<String> readFiles, List<String> modifiedFiles) {
+    private StructuredSummary generateSummary(List<Object> itemsToSummarize, String previousSummary,
+                                              List<String> readFiles, List<String> modifiedFiles) {
         StringBuilder userContent = new StringBuilder();
         if (previousSummary != null && !previousSummary.trim().isEmpty()) {
             userContent.append("Previous summary:\n").append(previousSummary.trim()).append("\n\n");
@@ -136,12 +149,133 @@ public class LlmCompactPolicy implements CompactPolicy {
         try {
             AgentModelResult result = modelClient.create(prompt);
             if (result != null && result.getOutputText() != null && !result.getOutputText().trim().isEmpty()) {
-                return result.getOutputText().trim();
+                return StructuredSummary.parse(result.getOutputText().trim());
             }
         } catch (Exception e) {
             // summarization failure → fall back to a mechanical note
         }
-        return "Compaction summary unavailable (LLM summarization failed). " + itemsToSummarize.size() + " items were summarized.";
+        return StructuredSummary.unavailable(itemsToSummarize.size());
+    }
+
+    /**
+     * The model's structured summary, parsed into the fields {@link CompactResult} reserves for it.
+     *
+     * <p>Parsing is best-effort by design: a summarizer that returns prose instead of JSON must not
+     * fail a compaction. In that case {@link #text} holds the raw output verbatim and the lists stay
+     * empty, which is exactly the pre-structured behaviour.
+     */
+    static final class StructuredSummary {
+
+        final String text;
+        final List<String> completed;
+        final List<String> pending;
+        final List<String> decisions;
+        final List<String> errors;
+        final List<String> testResults;
+        final List<String> openQuestions;
+
+        private StructuredSummary(String text, Map<String, List<String>> fields) {
+            this.text = text;
+            this.completed = fields.get("completed");
+            this.pending = fields.get("pending");
+            this.decisions = fields.get("decisions");
+            this.errors = fields.get("errors");
+            this.testResults = fields.get("testResults");
+            this.openQuestions = fields.get("openQuestions");
+        }
+
+        static StructuredSummary parse(String output) {
+            Map<String, List<String>> fields = new LinkedHashMap<String, List<String>>();
+            JSONObject json = parseJsonObject(output);
+            for (String key : STRUCTURED_KEYS) {
+                fields.put(key, json == null ? new ArrayList<String>() : stringList(json.get(key)));
+            }
+            // A structured response reads better as sections than as raw JSON in the system prompt.
+            return new StructuredSummary(json == null ? output : render(json, fields), fields);
+        }
+
+        static StructuredSummary unavailable(int itemCount) {
+            Map<String, List<String>> fields = new LinkedHashMap<String, List<String>>();
+            for (String key : STRUCTURED_KEYS) {
+                fields.put(key, new ArrayList<String>());
+            }
+            return new StructuredSummary("Compaction summary unavailable (LLM summarization failed). "
+                    + itemCount + " items were summarized.", fields);
+        }
+
+        /**
+         * Tolerates the two things summarizers do to JSON: wrapping it in ``` fences, and padding it
+         * with a sentence before or after. Returns null when there is no JSON object to be found.
+         */
+        private static JSONObject parseJsonObject(String output) {
+            int start = output.indexOf('{');
+            int end = output.lastIndexOf('}');
+            if (start < 0 || end <= start) {
+                return null;
+            }
+            try {
+                return JSON.parseObject(output.substring(start, end + 1));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        private static List<String> stringList(Object value) {
+            List<String> result = new ArrayList<String>();
+            if (value instanceof List) {
+                for (Object entry : (List<?>) value) {
+                    if (entry == null) {
+                        continue;
+                    }
+                    String text = String.valueOf(entry).trim();
+                    if (!text.isEmpty()) {
+                        result.add(text);
+                    }
+                }
+            } else if (value != null) {
+                // a single string where an array was asked for
+                String text = String.valueOf(value).trim();
+                if (!text.isEmpty()) {
+                    result.add(text);
+                }
+            }
+            return result;
+        }
+
+        private static String render(JSONObject json, Map<String, List<String>> fields) {
+            StringBuilder sb = new StringBuilder();
+            Object goal = json.get("goal");
+            if (goal != null && !String.valueOf(goal).trim().isEmpty()) {
+                sb.append("## Goal\n").append(String.valueOf(goal).trim()).append('\n');
+            }
+            for (String key : STRUCTURED_KEYS) {
+                List<String> values = fields.get(key);
+                if (values.isEmpty()) {
+                    continue;
+                }
+                sb.append("\n## ").append(SECTION_TITLES.get(key)).append('\n');
+                for (String value : values) {
+                    sb.append("- ").append(value).append('\n');
+                }
+            }
+            return sb.length() == 0 ? json.toString() : sb.toString().trim();
+        }
+    }
+
+    private static final List<String> STRUCTURED_KEYS = Collections.unmodifiableList(java.util.Arrays.asList(
+            "completed", "pending", "decisions", "errors", "testResults", "openQuestions"));
+
+    private static final Map<String, String> SECTION_TITLES;
+
+    static {
+        Map<String, String> titles = new LinkedHashMap<String, String>();
+        titles.put("completed", "Progress");
+        titles.put("pending", "Pending");
+        titles.put("decisions", "Key Decisions");
+        titles.put("errors", "Errors");
+        titles.put("testResults", "Test Results");
+        titles.put("openQuestions", "Open Questions");
+        SECTION_TITLES = Collections.unmodifiableMap(titles);
     }
 
     private static final Set<String> READ_TOOLS = new LinkedHashSet<String>(java.util.Arrays.asList(
