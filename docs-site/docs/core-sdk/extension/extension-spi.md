@@ -1,6 +1,6 @@
 ---
 title: Extension SPI Internals
-description: 讲清插件发现与资源读取的两层内部 SPI：ExtensionLoader 接口允许用非 ServiceLoader 方式发现插件（默认 ServiceLoaderExtensionLoader 标注 Internal），ExtensionResourceResolver 公共助手按插件 classloader -> TCCL -> resolver classloader 顺序读取 classpath 文本资源并隔离各插件 jar。
+description: 讲清插件发现与资源读取的两层内部 SPI：ExtensionLoader 接口允许用非 ServiceLoader 方式发现插件（默认 ServiceLoaderExtensionLoader 标注 Internal），ExtensionResourceResolver 公共助手按插件 classloader -> TCCL -> resolver classloader 顺序读取 classpath 文本资源并隔离各插件 jar，以及发现之后 ExtensionRegistry.list() 返回的检视投影 DiscoveredExtension（manifest + extension + enabled）。
 tags: [reference]
 ---
 
@@ -84,6 +84,34 @@ ExtensionRegistry registry = ExtensionRegistry.discover(
 :::note
 自定义 loader 跳过 ServiceLoader 后，仍然由 `ExtensionRegistry` 做 manifest 校验和去重。不要在 loader 里做启用/暴露/授权——那些是 registry 的职责。
 :::
+
+### 1.4 发现之后怎么检视：`DiscoveredExtension`
+
+`DiscoveredExtension` 不是发现管线里的一个环节——loader 从不产出它。它是 registry 在**被检视时**按需构造的投影，把每个已登记扩展的三样东西打包给外部读：
+
+```java
+public final class DiscoveredExtension {
+    public ExtensionManifest getManifest();   // id、version、capabilities 等声明
+    public Ai4jExtension getExtension();      // 扩展实例本身
+    public String getSourceClassName();       // extension.getClass().getName()，定位来源 jar
+    public boolean isEnabled();               // 是否通过了启用/暴露门禁
+}
+```
+
+入口是 `ExtensionRegistry.list()`：
+
+```java
+for (DiscoveredExtension discovered : registry.list()) {
+    if (!discovered.isEnabled()) {
+        System.out.println("disabled: " + discovered.getManifest().getId()
+                + " @ " + discovered.getSourceClassName());
+    }
+}
+```
+
+`enabled` 反映的是 registry 的启用门禁（enable/expose 授权），不是 manifest 声明——一个扩展可以已登记但未启用。这个投影有两个真实消费者：`ExtensionValidator` 遍历 `registry.list()` 逐个校验 manifest 与 `apply(...)` 贡献；CLI 的 `extension inspect` 底层也走它（见 [Plugin Author Cookbook — Runtime inspection](/docs/core-sdk/extension/plugin-author-cookbook)）。
+
+如果你只是想知道"有哪些扩展、哪些启用了"，用 `registry.list()`；要拿单个扩展的 manifest，用 `registry.manifest(id)`，不必自己过滤这个列表。
 
 ## 2. 插件资源读取：`ExtensionResourceResolver`
 
