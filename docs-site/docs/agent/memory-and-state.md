@@ -47,6 +47,54 @@ public interface AgentMemory {
 
 这说明 memory 不是给 UI 做 transcript 展示的二级副本，而是 Agent 下一轮 prompt 的直接来源。
 
+## 1.5 上下文管理四件套：memory / session / checkpoint / compact
+
+这四个词散在四个页面，但它们其实是**同一件事的四个层次**——让长程 Agent 在有限的上下文窗口里保持连贯。先用一张图把关系定死，再往下看细节就不会乱。
+
+```text
+                  ┌─────────────────────────────────────────────┐
+   每一轮 runtime │  buildPrompt(memory.getItems())             │  ← ④ compact 在这一步之前压缩
+   从 memory 取回 └─────────────────────────────────────────────┘
+                          ▲
+                          │ 读写
+                   ┌──────┴──────┐
+                   │ ① memory    │  AgentMemory：当前会话的全部事实（输入/输出/工具结果/summary）
+                   └──────┬──────┘
+                          │ 属于
+                   ┌──────┴──────┐
+                   │ ② session   │  AgentSession：一次会话 = memory + runtime 上下文，是隔离边界
+                   └──────┬──────┘
+                          │ snapshot/restore
+                   ┌──────┴──────┐
+                   │ ③ checkpoint│  AgentSessionStore：把 session snapshot 持久化，跨重启/跨实例恢复
+                   └─────────────┘
+```
+
+一句话定义每个：
+
+| 概念 | 解决什么 | 何时介入 | 源码入口 |
+| --- | --- | --- | --- |
+| **① memory** (`AgentMemory`) | 「下一轮带什么进 prompt」 | 每一轮 runtime 都读它 | `agent/memory/AgentMemory.java` |
+| **② session** (`AgentSession`) | 「一次会话的隔离边界」 | `agent.newSession()` 创建，`run()` 在其内执行 | `agent/AgentSession.java` |
+| **③ checkpoint** (`AgentSessionStore`) | 「跨重启/跨实例恢复会话」 | 显式 `snapshot()` 存、`restore()` 取 | `agent/InMemoryAgentSessionStore` / `FileAgentSessionStore` |
+| **④ compact** (`ContextProjector` + `CompactPolicy`) | 「上下文要溢出了，压掉哪些」 | `ContextProjector` 每轮投影；`CompactPolicy` 触发时压缩 memory snapshot | `agent/memory/ContextProjector.java` / `CompactPolicy.java` |
+
+**容易混的点**：
+- memory 是「事实层」，session 是「隔离层」，checkpoint 是「持久层」，compact 是「治理层」——四者不重叠。
+- compact 压缩的是 **memory 的 snapshot**（§7），不是 session 也不是 prompt 本身；压缩后再写回 memory，下一轮 prompt 自然变小。
+- session 隔离靠的是**复制 memory**（§8），不是复制 runtime。
+- checkpoint 存的是 session snapshot（memory + 运行态），不是单条消息——这是它和 `ChatMemory`（Core SDK 那套消息存储）的根本区别：`ChatMemory` 存会话事实，checkpoint 存**整个可恢复的执行状态**。
+
+**典型长程 Agent 的一次循环**：
+
+1. runtime 从 `memory.getItems()` 取回当前上下文
+2. `ContextProjector` 按预算/策略投影出本轮 prompt（④ 的投影职责）
+3. 模型 + 工具执行，结果写回 memory（①）
+4. 上下文快超限时，`CompactPolicy` 把 memory snapshot 压缩成结构化结果 + 新 snapshot（④ 的压缩职责）
+5. 用户要暂停/重启时，`AgentSessionStore` 存下 session snapshot（③）；恢复时 `restore()` 重建（② ← ③）
+
+下面 §2 起逐层展开。
+
 ## 2. 真实执行链：状态如何进入下一轮
 
 真正的主链在 `BaseAgentRuntime.runInternal()`：
