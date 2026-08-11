@@ -316,6 +316,24 @@ Plan:
 - `buildPrompt(...)`
 - 局部 `runInternal(...)`
 
+最小骨架（参考 `ReActRuntime`，它本身只覆写了 `runtimeName()`，主循环复用 base）：
+
+```java
+public class MyRuntime extends BaseAgentRuntime {
+    @Override
+    protected String runtimeName() {
+        return "my-runtime";
+    }
+
+    // 只在需要改主循环时才覆写；不改就完全复用 base 的 runInternal
+    // @Override
+    // protected AgentResult runInternal(AgentContext context, AgentRequest request,
+    //                                   AgentListener listener) throws Exception { ... }
+}
+```
+
+挂到 Agent 上：`Agents.builder().runtime(new MyRuntime())...build()`（或经 `AgentBuilder.runtime(...)`）。
+
 ### 9.2 真正换主循环
 
 只有当你要改变：

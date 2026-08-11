@@ -14,9 +14,47 @@ tags: [how-to]
 - 为什么一个节点用 `ChatModelClient`，另一个节点用 `ResponsesModelClient`
 - 为什么 cookbook 里还要自己包 `NamedNode` 做开始/结束日志
 
-对应测试源码：
+对应测试源码（已 live 跑通，需 `DOUBAO_API_KEY`）：
 
-- `ai4j-agent/src/test/java/io/github/lnyocly/agent/WeatherAgentWorkflowTest.java`
+- [`WeatherAgentWorkflowTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j-agent/src/test/java/io/github/lnyocly/agent/WeatherAgentWorkflowTest.java)
+
+## 0. 先把 workflow 装起来
+
+两阶段：分析节点（Chat + 工具）→ 格式化节点（Responses + strict JSON）。`SequentialWorkflow` 把上一节点的 `outputText` 默认接力成下一节点的 input。
+
+```java
+// 分析节点：Chat 主线 + queryWeather 工具
+Agent weatherAgent = Agents.react()
+        .modelClient(new ChatModelClient(aiService.getChatService(PlatformType.DOUBAO)))
+        .model("doubao-seed-1-8-251228")
+        .systemPrompt("You are a weather analyst. Always call queryWeather before answering.")
+        .instructions("Use queryWeather with the user's location, type=now, days=1.")
+        .toolRegistry(Arrays.asList("queryWeather"), null)
+        .options(AgentOptions.builder().maxSteps(2).build())
+        .build();
+
+// 格式化节点：Responses 主线，把分析收口成严格 JSON
+Agent formatAgent = Agents.react()
+        .modelClient(new ResponsesModelClient(aiService.getResponsesService(PlatformType.DOUBAO)))
+        .model("doubao-seed-1-8-251228")
+        .systemPrompt("You format weather analysis into strict JSON.")
+        .instructions("Return JSON with fields: city, summary, advice.")
+        .options(AgentOptions.builder().maxSteps(2).build())
+        .build();
+
+// 串成 workflow：NamedNode 只是包一层日志，RuntimeAgentNode 才是执行体
+SequentialWorkflow workflow = new SequentialWorkflow()
+        .addNode(new NamedNode("WeatherAnalysis", new RuntimeAgentNode(weatherAgent.newSession())))
+        .addNode(new NamedNode("FormatOutput", new RuntimeAgentNode(formatAgent.newSession())));
+
+WorkflowAgent runner = new WorkflowAgent(workflow, weatherAgent.newSession());
+AgentResult result = runner.run(AgentRequest.builder()
+        .input("Get the current weather in Beijing and provide advice.")
+        .build());
+// result.getOutputText() 是格式化节点产出的 JSON
+```
+
+`NamedNode` 是测试里自定义的一个薄包装，只做节点开始/结束日志——`SequentialWorkflow` 本身不要求它，`RuntimeAgentNode` 才是真正的执行节点。
 
 ## 1. 这个例子到底证明什么
 

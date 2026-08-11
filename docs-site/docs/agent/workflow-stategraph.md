@@ -9,6 +9,10 @@ tags: [concept]
 
 这一层解决的不是“再造一个 runtime”，而是把多个 Agent 节点串成一个显式流程。
 
+:::tip StateGraph 装配有可跑通的单元测试
+[`StateGraphWorkflowTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j-agent/src/test/java/io/github/lnyocly/agent/StateGraphWorkflowTest.java) 用 `StaticNode`/`CounterNode`（无需密钥）演示条件分支 + 循环路由，是 §5/§6 的可执行佐证。天气场景的 live 双节点 workflow 见 [实战 cookbook](/docs/agent/weather-workflow-cookbook)。
+:::
+
 如果 `ReActRuntime` 负责单个 Agent run 的循环，那么 `workflow` 包负责的是：
 
 - 节点之间怎么接力
