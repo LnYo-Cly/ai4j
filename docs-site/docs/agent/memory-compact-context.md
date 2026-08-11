@@ -111,6 +111,72 @@ Agent agent = Agents.react()
 投影后保留了多少？丢了多少？触发了哪种限制？
 ```
 
+## 4.5 压缩的机制与时机：何时触发、压什么、失败了怎么办
+
+这是 compact 最容易被误解的部分。三条规则定死：
+
+### 时机：每轮 tool 执行后检查，由 policy 决定要不要压
+
+runtime 在 `BaseAgentRuntime` 每一轮工具执行完后调 `autoCompactIfNecessary`：
+
+```text
+每一轮 loop:
+  memory.addUserInput / addOutputItems / addToolOutput   ← 事实进 memory
+  → 工具执行完
+  → autoCompactIfNecessary:
+      policy = context.getCompactPolicy()
+      if policy == null: 跳过
+      snapshot = memory.snapshot()
+      if !policy.shouldCompact(snapshot): 跳过          ← policy 决定时机
+      → policy.compact(snapshot)
+      → memory.restore(result.getMemory())              ← 压缩后写回 memory
+```
+
+关键：**runtime 不自己判断"该压了"，时机判断完全委托给 `CompactPolicy.shouldCompact(snapshot)`**。
+
+- 基础 `CompactPolicy` 的 `shouldCompact` 默认返回 `false` —— **不配 policy 就不会自动压缩**（纯手动）。
+- `StructuredSummaryCompactPolicy` 覆写为 `snapshot.getItems().size() > maxItems` —— **item 数超阈值才压**。
+- `LlmCompactPolicy` 用模型判断 —— 语义级判断该不该压。
+
+所以"何时压缩"的答案不是固定的，而是**你选的 policy 决定**。三种典型策略：
+
+| Policy | shouldCompact 判断 | 适合 |
+| --- | --- | --- |
+| 基础（默认） | 永不（手动才压） | 短任务，不需要自动 |
+| `StructuredSummaryCompactPolicy` | item 数 > maxItems | 确定性的 item 计数阈值 |
+| `LlmCompactPolicy` | 模型评估 | 语义级，按内容重要性 |
+
+### 压什么：压缩的是 memory snapshot，不是 prompt
+
+`compact(MemorySnapshot)` 拿到的是 memory 的完整快照（items + summary），压缩后返回**新的 `MemorySnapshot`**，runtime 再 `memory.restore(...)` 写回。**不是改 prompt，也不是删单条消息**——是替换 memory 的事实集合，下一轮 `buildPrompt(memory.getItems())` 自然就小了。
+
+这也解释了为什么压缩后旧的 item 细节会丢（被 summary 取代）——它们不再在 `memory.getItems()` 里了。
+
+### 两条触发路径
+
+1. **自动**（默认开发者的选择）：配一个带 `shouldCompact` 的 policy（如 `StructuredSummaryCompactPolicy`），runtime 每轮自动检查。
+2. **手动**：任何时刻调 `session.compact(policy)`，立即压一次。适合 UI 上"用户点了压缩"或"任务阶段切换时主动收口"。
+
+```java
+// 自动：挂在 context 上，runtime 每轮检查
+Agent agent = Agents.react()
+        .modelClient(client)
+        .compactPolicy(new StructuredSummaryCompactPolicy(
+                ContextBudget.builder().maxItems(30).pinnedPrefixItems(1).build()))
+        .build();
+
+// 手动：显式压一次
+session.compact(new StructuredSummaryCompactPolicy(budget));
+```
+
+### 失败安全：压缩异常不中断 run
+
+`autoCompactIfNecessary` 把 `policy.compact(...)` 包在 try/catch 里：**压缩抛异常，run 继续用未压缩的 memory，不会被压缩故障拖垮**。这是刻意的——压缩是优化，不是关键路径，不能因为它失败而让整个 agent run 崩。
+
+:::warning 手动 compact 不享受这个保护
+自动路径(runtime 调)吞异常；但你直接调 `session.compact(policy)` 抛异常会传播。手动场景要自己决定怎么处理压缩失败。
+:::
+
 ## 5. Compact Policy：压缩 memory snapshot
 
 `CompactPolicy` 处理的是 `MemorySnapshot`，不是单条消息。
