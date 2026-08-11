@@ -14,6 +14,13 @@ public interface AgentTeamControl {
 
     List<AgentTeamMessage> listMessagesFor(String memberId, int limit);
 
+    /**
+     * Returns messages addressed to {@code memberId} that arrived since its last read, and
+     * advances that member's read cursor. This is the reactive-receive path behind the
+     * {@code team_read_messages} tool.
+     */
+    List<AgentTeamMessage> readUnreadMessages(String memberId);
+
     void publishMessage(AgentTeamMessage message);
 
     void sendMessage(String fromMemberId, String toMemberId, String type, String taskId, String content);

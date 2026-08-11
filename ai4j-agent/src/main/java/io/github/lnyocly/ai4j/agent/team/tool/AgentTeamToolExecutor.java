@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.agent.team.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamControl;
+import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskState;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
@@ -52,6 +53,9 @@ public class AgentTeamToolExecutor implements ToolExecutor {
         }
         if (AgentTeamToolRegistry.TOOL_BROADCAST.equals(toolName)) {
             return handleBroadcast(args);
+        }
+        if (AgentTeamToolRegistry.TOOL_READ_MESSAGES.equals(toolName)) {
+            return handleReadMessages();
         }
         if (AgentTeamToolRegistry.TOOL_LIST_TASKS.equals(toolName)) {
             return handleListTasks();
@@ -116,6 +120,30 @@ public class AgentTeamToolExecutor implements ToolExecutor {
         List<AgentTeamTaskState> tasks = control.listTaskStates();
         JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_LIST_TASKS, true);
         result.put("tasks", tasks == null ? new ArrayList<AgentTeamTaskState>() : tasks);
+        return result.toJSONString();
+    }
+
+    private String handleReadMessages() {
+        List<AgentTeamMessage> unread = control.readUnreadMessages(memberId);
+        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_READ_MESSAGES, true);
+        int count = unread == null ? 0 : unread.size();
+        result.put("count", count);
+        result.put("hasNewMessages", count > 0);
+        if (count > 0) {
+            List<JSONObject> summaries = new ArrayList<JSONObject>();
+            for (AgentTeamMessage message : unread) {
+                JSONObject summary = new JSONObject();
+                summary.put("from", message.getFromMemberId());
+                summary.put("to", message.getToMemberId());
+                summary.put("type", message.getType());
+                if (message.getTaskId() != null) {
+                    summary.put("taskId", message.getTaskId());
+                }
+                summary.put("content", message.getContent());
+                summaries.add(summary);
+            }
+            result.put("messages", summaries);
+        }
         return result.toJSONString();
     }
 

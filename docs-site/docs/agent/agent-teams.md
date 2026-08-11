@@ -23,7 +23,7 @@ tags: [concept]
 与 [SubAgent 的工具调用 RPC](/docs/agent/subagent-handoff-policy#0-通讯与并行模型先建立正确心智) 不同，Teams 成员之间**不是工具调用关系**，而是通过两个共享组件协作：
 
 - **任务板（TaskBoard）**：planner 拆任务 → 成员 `claim_task` 抢占 → 执行 → 编排器自动 `markCompleted`。是分工的源头。
-- **消息总线（MessageBus）**：成员用 `team_send_message`（点对点）/ `team_broadcast` 发消息；**下个成员执行前**，编排器把 `historyFor(member)` 注入它的 prompt（拉模型，详见 §7.2）。
+- **消息总线（MessageBus）**：成员用 `team_send_message`（点对点）/ `team_broadcast` 发消息；接收有两条路径——编排器在下个成员执行前注入历史（拉模型，§7.2），成员也可在执行中调 `team_read_messages` 主动拉取新消息（reactive，§7.3）。
 
 成员间是**协作式**（共享状态），不是层级式（父调子）。同一轮多个 ready task 可并行（§5），board/bus 全 `synchronized` 保证线程安全。
 :::
@@ -386,17 +386,24 @@ Agent Teams 的并发不是 actor model，也不是复杂异步框架，而是�
 
 ### 6.1 `AgentTeamToolRegistry` 暴露了哪些能力
 
-默认工具有 7 个：
+默认工具有 8 个：
 
 - `team_send_message`
 - `team_broadcast`
+- `team_read_messages`
 - `team_list_tasks`
 - `team_claim_task`
 - `team_release_task`
 - `team_reassign_task`
 - `team_heartbeat_task`
 
-其中前两个是消息面，后五个是任务控制面。
+其中前三个是消息面（发、广播、收），后五个是任务控制面。
+
+:::tip `team_read_messages`：成员的 reactive receive
+成员执行中可调 `team_read_messages`（无参）主动检查自己的 mailbox，拉取**自上次读取以来**同伴发给自己的新消息（点对点 + 广播）。每次只返回未读的，已读不会重复报。这让"成员 A 发批判给 B、B 在执行中收到并回击"这类**辩论式协作**成为可能——对齐 Claude Code agent teams 的 teammate 互发消息能力。
+
+注意 AI4J 用**共享消息日志 + per-member 已读集合**实现这个能力，而不是 Claude Code 那种每 agent 一个 mailbox JSON 文件（文件式 IPC 是为多进程设计的，单 JVM 内的 SDK 不需要）。
+:::
 
 ### 6.2 `AgentTeamToolExecutor` 的拦截语义
 
@@ -468,6 +475,15 @@ Agent Teams 的并发不是 actor model，也不是复杂异步框架，而是�
 
 - Team 的连续性主要来自外部化的消息与任务状态
 - 不是来自成员 session 的长期复用
+
+### 7.3 两条接收路径：派发注入 + 主动读取
+
+成员看到同伴消息有两条路径，互补：
+
+- **派发注入（拉模型，§7.2）**：编排器在成员**开始执行前**把 `historyFor(member)` 拼进 prompt。这给成员起步时的上下文。
+- **主动读取（reactive，§6.1）**：成员在**执行中**调 `team_read_messages` 拉取新到达的消息。这覆盖"长任务中段收到同伴的新发现/提问"的场景。
+
+两条路径不冲突：派发注入的是"开始前"的历史，`team_read_messages` 返回的是"自上次读以来"的新消息（按消息 id 跟踪，已读不重复）。需要辩论/互相挑战的协作（Claude Code agent teams 的主打场景）靠第二条路径实现。
 
 ## 8. 持久化与恢复的边界，要讲清楚
 

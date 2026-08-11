@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,13 @@ public class AgentTeam implements AgentTeamControl {
 
     private final Object memberLock = new Object();
     private final Object runtimeLock = new Object();
+
+    /**
+     * Per-member set of message ids already returned by {@code team_read_messages}, powering
+     * reactive receive: each call returns only messages addressed to the member that it has not
+     * seen yet.
+     */
+    private final Map<String, Set<String>> memberDeliveredIds = new java.util.concurrent.ConcurrentHashMap<String, Set<String>>();
 
     private volatile AgentTeamTaskBoard activeBoard;
     private volatile List<AgentTeamTaskState> lastTaskStates = Collections.emptyList();
@@ -250,6 +258,43 @@ public class AgentTeam implements AgentTeamControl {
             validateKnownMemberId(normalizedMemberId, true, "memberId");
         }
         return messageBus.historyFor(normalizedMemberId, limit);
+    }
+
+    /**
+     * Reactive receive: returns messages addressed to {@code memberId} that the member has not
+     * yet read, and marks them read. A subsequent call reports only messages that arrived in
+     * between.
+     *
+     * <p>Aligns AI4J teams with the "teammates can challenge each other mid-task" capability
+     * Claude Code's per-agent mailbox provides, without copying its file-based IPC — the shared
+     * message log stays the source of truth, and a per-member delivered-id set gives each member
+     * its own "unread" view. Tracked by message id rather than timestamp so two messages sent in
+     * the same millisecond are still each delivered exactly once. Safe under
+     * {@code parallelDispatch}: the delivered set is per-member and each member reads its own
+     * mailbox.
+     */
+    public List<AgentTeamMessage> readUnreadMessages(String memberId) {
+        if (!options.isEnableMessageBus()) {
+            return Collections.emptyList();
+        }
+        String normalizedMemberId = normalize(memberId);
+        if (normalizedMemberId == null || normalizedMemberId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> delivered = memberDeliveredIds.computeIfAbsent(normalizedMemberId,
+                k -> java.util.Collections.synchronizedSet(new java.util.HashSet<String>()));
+        List<AgentTeamMessage> all = messageBus.historyFor(normalizedMemberId, Integer.MAX_VALUE);
+        List<AgentTeamMessage> unread = new ArrayList<AgentTeamMessage>();
+        for (AgentTeamMessage message : all) {
+            if (message == null) {
+                continue;
+            }
+            String id = message.getId();
+            if (id == null || delivered.add(id)) {
+                unread.add(message);
+            }
+        }
+        return unread;
     }
 
     @Override

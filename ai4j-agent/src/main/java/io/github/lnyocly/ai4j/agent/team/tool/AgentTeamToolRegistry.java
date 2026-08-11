@@ -16,6 +16,7 @@ public class AgentTeamToolRegistry implements AgentToolRegistry {
 
     public static final String TOOL_SEND_MESSAGE = "team_send_message";
     public static final String TOOL_BROADCAST = "team_broadcast";
+    public static final String TOOL_READ_MESSAGES = "team_read_messages";
     public static final String TOOL_LIST_TASKS = "team_list_tasks";
     public static final String TOOL_CLAIM_TASK = "team_claim_task";
     public static final String TOOL_RELEASE_TASK = "team_release_task";
@@ -25,6 +26,7 @@ public class AgentTeamToolRegistry implements AgentToolRegistry {
     private static final Set<String> TOOL_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             TOOL_SEND_MESSAGE,
             TOOL_BROADCAST,
+            TOOL_READ_MESSAGES,
             TOOL_LIST_TASKS,
             TOOL_CLAIM_TASK,
             TOOL_RELEASE_TASK,
@@ -51,6 +53,7 @@ public class AgentTeamToolRegistry implements AgentToolRegistry {
         List<Object> list = new ArrayList<>();
         list.add(createSendMessageTool());
         list.add(createBroadcastTool());
+        list.add(createReadMessagesTool());
         list.add(createListTasksTool());
         list.add(createClaimTaskTool());
         list.add(createReleaseTaskTool());
@@ -80,6 +83,16 @@ public class AgentTeamToolRegistry implements AgentToolRegistry {
                 "Broadcast a message to the whole team.",
                 props,
                 Arrays.asList("content"));
+    }
+
+    private Tool createReadMessagesTool() {
+        Map<String, Tool.Function.Property> props = new LinkedHashMap<>();
+        return createTool(TOOL_READ_MESSAGES,
+                "Check your mailbox for messages teammates sent you since your last read. "
+                        + "Returns only new direct/broadcast messages addressed to you. "
+                        + "Call this during long tasks to stay responsive to teammates' questions or findings.",
+                props,
+                Collections.<String>emptyList());
     }
 
     private Tool createListTasksTool() {
