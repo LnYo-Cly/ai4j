@@ -12,6 +12,13 @@ tags: [how-to]
 - `OPENAI`
 - `DOUBAO`
 
+:::tip 本页代码可跑通
+非流式生成示例来自
+[`ImageGenerationLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/ImageGenerationLiveTest.java)，
+已针对真实 OpenAI 兼容网关（grok-imagine-image）跑通。
+
+本地复跑：`OPENAI_API_KEY=... OPENAI_API_HOST=... OPENAI_IMAGE_MODEL=... mvn -pl ai4j test -Plive-provider-tests -Dtest=ImageGenerationLiveTest`，无 key 自动跳过。
+
 ## 1. 非流式生成
 
 ```java
@@ -21,11 +28,11 @@ ImageGeneration request = ImageGeneration.builder()
         .model("gpt-image-1")
         .prompt("A clean isometric illustration of a Java microservice")
         .size("1024x1024")
-        .responseFormat("url")
+        .responseFormat("b64_json")   // 内联 base64，避免依赖网关图片 URL 的可访问性
         .build();
 
 ImageGenerationResponse response = imageService.generate(request);
-System.out.println(response);
+// 图片在 response.getData().get(0).getB64Json()（或 getUrl()，取决于 responseFormat）
 ```
 
 ## 2. 流式生成
@@ -104,9 +111,12 @@ SDK 已做协议适配：
 
 ### 7.2 URL 可访问性问题
 
-:::tip
+:::warning
+- 部分网关返回的图片 URL 是**内网地址**（如 `127.0.0.1` 或私有 IP），外部无法访问——这是网关侧问题，不是 SDK 缺陷
 - 部分平台返回临时 URL，需尽快下载/转存
 - 生产建议落盘到对象存储
+
+**跨网关最稳的做法**：用 `responseFormat("b64_json")` 让图片内联返回，不依赖网关的图片托管 URL。代价是响应体较大。
 :::
 
 ### 7.3 base64 太大
