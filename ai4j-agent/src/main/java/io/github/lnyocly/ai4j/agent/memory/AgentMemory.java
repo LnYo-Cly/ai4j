@@ -14,6 +14,15 @@ public interface AgentMemory {
 
     String getSummary();
 
+    /**
+     * Sets the compacted summary text. Implementations should store it so that subsequent
+     * {@link #getSummary()} / {@link #snapshot()} calls return it. Default is a no-op so the
+     * interface stays backwards-compatible with implementations that don't track a summary.
+     */
+    default void setSummary(String summary) {
+        // no-op default; implementations that support compaction override this
+    }
+
     default MemorySnapshot snapshot() {
         return MemorySnapshot.from(getItems(), getSummary());
     }
@@ -25,6 +34,10 @@ public interface AgentMemory {
         }
         if (snapshot.getItems() != null) {
             addOutputItems(snapshot.getItems());
+        }
+        // Preserve the compacted summary so it survives a restore cycle.
+        if (snapshot.getSummary() != null) {
+            setSummary(snapshot.getSummary());
         }
     }
 
