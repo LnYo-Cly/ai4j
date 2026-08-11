@@ -17,6 +17,45 @@ be exposed as an A2A service. JDK stdlib only, no new dependency.
 > cancellation, push configuration, and standard security schemes have deterministic local
 > regression coverage. Task state is intentionally in-memory and is not restart-durable.
 
+## 0. 先理解 A2A 是什么（它和 SubAgent/Teams 完全不同）
+
+A2A 是一个**跨实现的开放协议**，不是一个进程内的调用机制。理解它的关键在与前面两个能力的对比：
+
+| 维度 | SubAgent / Agent Teams | A2A |
+| --- | --- | --- |
+| 作用范围 | 单 JVM 进程内 | 跨进程、跨语言、跨实现 |
+| 对方是谁 | 你自己代码里的 `Agent` 对象 | 任何遵循 A2A 协议的远端服务（LangChain、CrewAI、Google、另一个 ai4j 实例……） |
+| 怎么通讯 | 工具调用 / 共享内存（message bus） | HTTP + JSON-RPC（网络协议） |
+| 需要发现吗 | 不需要，直接持有对象引用 | 需要——通过 AgentCard 发现对方能力 |
+
+一句话：**SubAgent/Teams 是「我自己的 agent 之间协作」，A2A 是「我的 agent 和别人的 agent 协作」**。前者靠内存，后者靠标准协议。
+
+### A2A 的三块基石
+
+**1. AgentCard——能力发现**。每个 A2A 服务在 `/.well-known/agent-card.json` 暴露一张"名片"，声明自己的 name、description、skills（能做什么）、支持的接口、鉴权方式。调用方先 discover 这张卡，才知道对方能干什么、怎么调。
+
+**2. JSON-RPC task——请求-响应**。核心操作是 `SendMessage`（同步）和 `SendStreamingMessage`（SSE 流式），走 JSON-RPC 2.0 over HTTP，带 `A2A-Version: 1.0` 头。请求里带 message，响应里带 `task.artifacts[].parts[].text`。ai4j 同时保留了旧版的 `tasks/send` / `message:send` HTTP 别名做向后兼容。
+
+**3. Task 生命周期——异步状态机**。一个 task 不是"发完就结束"的单次 RPC，它有状态流转：
+
+```
+SUBMITTED → WORKING → COMPLETED
+                  ↘ → FAILED
+                  ↘ → CANCELED
+              WORKING → INPUT_REQUIRED  （需要更多输入）
+              WORKING → AUTH_REQUIRED   （需要鉴权）
+```
+
+`COMPLETED/FAILED/CANCELED/INPUT_REQUIRED/AUTH_REQUIRED` 是终态或需干预态。长任务可以先返回，client 用 `GetTask` 轮询、`CancelTask` 取消、或 `SubscribeToTask` 订阅更新（SSE 推送直到终态）。
+
+### 为什么是 JSON-RPC + SSE 这套组合
+
+A2A 任务可能跑很久（agent 要调工具、推理、多步）。纯 HTTP 请求-响应撑不住长耗时，所以协议设计成：**JSON-RPC 做请求结构 + SSE 做流式更新 + push-notification 做异步回调**。这是 agent 场景的标准解法（OpenAI Responses、Anthropic Messages 也用类似组合）。ai4j 的 push 回调默认只允许公网 HTTPS、不跟随重定向、拒绝内网地址——防止 SSRF。
+
+:::note 与 OpenAI Responses 的区别
+A2A 是 **agent-to-agent**（两个 agent 互相对话），Responses 是 **client-to-agent**（你的应用调一个 agent）。A2A 的 task 生命周期和 AgentCard 发现机制是它比 Responses 多出来的东西，因为对等 agent 需要协商"你是谁、你能干什么"。
+:::
+
 ## A2A Client — call external agents
 
 ```java
