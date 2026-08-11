@@ -11,6 +11,57 @@ Streamable HTTP is the HTTP transport for connecting AI4J to an MCP server or pu
 
 `AUTO` is a limited compatibility strategy, not universal protocol detection. A client starts with one modern `server/discover` request; an AUTO server accepts modern and initialization-era Streamable HTTP requests on the same `/mcp` endpoint. The deprecated HTTP+SSE transport remains separate and must be configured as `type: "sse"`.
 
+## 0. 协议演进:为什么有新旧两套 Streamable HTTP
+
+MCP 的 HTTP transport 经历了一次重大协议变更。AI4J **完整适配了新旧两套**,通过 `McpProtocolProfile` 让你按对端选。理解这条演进线,profile 配置才有意义。
+
+### 旧 transport:HTTP+SSE(协议 `2024-11-05`,已废弃)
+
+初版 MCP 用**两个端点**:
+
+- 一个 SSE 端点(长连接,server → client 推消息)
+- 一个 POST 端点(client → server 发请求)
+
+问题:要维护长连接、不利于无状态部署、两端点协调复杂。官方在后续版本里废弃了它。
+
+### 新 transport:Streamable HTTP(协议 `2025-03-26` 引入,`2025-06-18` 规范化)
+
+[2025-03-26 修订](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)用**单端点** `/mcp` 取代了双端点:
+
+- client POST 请求到 `/mcp`
+- server 可以直接返回 JSON(短任务),也可以升级成 SSE 流(长任务/流式)
+- 不再要求长连接,支持无状态 server,可恢复(用 `Last-Event-ID`)
+
+`2025-06-18` 把它规范化,并加了结构化 tool 输出、OAuth 2.1 + PKCE、JSON-RPC 批处理语义。
+
+### AI4J 的 modern 演进:`server/discover`(协议 `2025-11-25` / `2026-07-28`)
+
+更新的协议版本进一步简化了握手:
+
+- **去掉 `initialize` 握手**和 `notifications/initialized`
+- 用一次 `server/discover` 探测能力
+- **stateless `POST /mcp`**,无 `Mcp-Session-Id` 会话头
+
+AI4J 把这称为 **modern** profile(`MODERN_2026_07_28`),与仍保留握手的 **legacy** Streamable HTTP profile(`LEGACY_2025_03_26` 等)区分。
+
+### AI4J 的适配:5 个版本 + AUTO 自动协商
+
+AI4J 的 `McpProtocolProfile` 覆盖全部 5 个 MCP 协议版本:
+
+| Profile | 协议版本 | 性质 |
+| --- | --- | --- |
+| `MODERN_2026_07_28` | `2026-07-28` | modern:stateless、无握手、`server/discover` |
+| `LEGACY_2025_11_25` | `2025-11-25` | legacy Streamable HTTP(带握手) |
+| `LEGACY_2025_06_18` | `2025-06-18` | legacy Streamable HTTP |
+| `LEGACY_2025_03_26` | `2025-03-26` | legacy Streamable HTTP(最早引入) |
+| `LEGACY_2024_11_05` | `2024-11-05` | 旧的 HTTP+SSE(用 `type: "sse"`,不走 Streamable HTTP) |
+
+默认 `AUTO` 是协商策略:先发一次 modern `server/discover`,根据响应(或 400/404/405 回退)自动落到 modern 或 legacy。这样**调用方通常不用知道对端是哪个版本**——除非你要固定 pin 一个 profile。
+
+:::note 已废弃的 HTTP+SSE 仍可用,但单独配置
+旧的 HTTP+SSE(`2024-11-05`)没有消失——它在 AI4J 里作为 `SseTransport` / `type: "sse"` 保留,是和 Streamable HTTP 并列的独立 transport,不是 profile 的一种。`AUTO` 不会把 Streamable HTTP 端点重解释成 HTTP+SSE。
+:::
+
 ## Choose the profile for the peer you have
 
 | Peer | AI4J configuration | Wire behavior |
