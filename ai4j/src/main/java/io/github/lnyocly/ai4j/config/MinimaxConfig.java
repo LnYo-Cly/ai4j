@@ -5,11 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * MiniMax OpenAI-compatible configuration.
+ * MiniMax OpenAI-compatible and Anthropic-compatible configuration.
  * <p>
- * Defaults to the global endpoint {@code https://api.minimax.io/}.
- * Override {@code apiHost} together with {@code chatCompletionUrl} when switching
- * to another regional base such as {@code https://api.minimaxi.com/}.
+ * Defaults to the global endpoints. Override {@code apiHost} and
+ * {@code anthropicApiHost} for the CN endpoints when needed.
  */
 @Data
 @NoArgsConstructor
@@ -18,4 +17,12 @@ public class MinimaxConfig {
     private String apiHost = "https://api.minimax.io/";
     private String apiKey = "";
     private String chatCompletionUrl = "v1/chat/completions";
+    private String anthropicApiHost = "https://api.minimax.io/anthropic/";
+    private String anthropicMessagesUrl = "v1/messages";
+
+    public MinimaxConfig(String apiHost, String apiKey, String chatCompletionUrl) {
+        this.apiHost = apiHost;
+        this.apiKey = apiKey;
+        this.chatCompletionUrl = chatCompletionUrl;
+    }
 }

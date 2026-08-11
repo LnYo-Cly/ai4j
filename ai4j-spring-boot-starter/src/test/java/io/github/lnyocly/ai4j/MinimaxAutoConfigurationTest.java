@@ -20,6 +20,10 @@ public class MinimaxAutoConfigurationTest {
                             aiService.getConfiguration().getMinimaxConfig().getApiHost());
                     Assert.assertEquals("v1/chat/completions",
                             aiService.getConfiguration().getMinimaxConfig().getChatCompletionUrl());
+                    Assert.assertEquals("https://api.minimax.io/anthropic/",
+                            aiService.getConfiguration().getMinimaxConfig().getAnthropicApiHost());
+                    Assert.assertEquals("v1/messages",
+                            aiService.getConfiguration().getMinimaxConfig().getAnthropicMessagesUrl());
                 });
     }
 
@@ -28,12 +32,15 @@ public class MinimaxAutoConfigurationTest {
         contextRunner
                 .withPropertyValues(
                         "ai.minimax.api-key=unit-test-key",
-                        "ai.minimax.api-host=https://api.minimaxi.com/"
+                        "ai.minimax.api-host=https://api.minimaxi.com/",
+                        "ai.minimax.anthropic-api-host=https://api.minimaxi.com/anthropic/"
                 )
                 .run(context -> {
                     AiService aiService = context.getBean(AiService.class);
                     Assert.assertEquals("https://api.minimaxi.com/",
                             aiService.getConfiguration().getMinimaxConfig().getApiHost());
+                    Assert.assertEquals("https://api.minimaxi.com/anthropic/",
+                            aiService.getConfiguration().getMinimaxConfig().getAnthropicApiHost());
                 });
     }
 }
