@@ -115,6 +115,8 @@ A2AServer server = new A2AServer(
         "does stuff", // description
         "secret-key"  // optional shared-secret auth (null = open)
 );
+int port = server.getPort();        // actual port when 0 = auto-assign
+String baseUrl = server.getBaseUrl(); // http://localhost:<port>
 
 // External agents (LangChain, CrewAI, etc.) can now call:
 //   GET  http://localhost:PORT/.well-known/agent-card.json  → AgentCard
@@ -175,8 +177,6 @@ List<SkillDescriptor> allowedSkills = resolver.resolveAllowedSkills(currentTenan
 
 // 把 ai4j Skills 发布为 AgentCard 上的 A2A skills
 A2ASkillMapper.addSkillsToServer(server, allowedSkills);
-
-server.start();
 ```
 
 :::warning 映射不等于授权
