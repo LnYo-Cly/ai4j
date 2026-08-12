@@ -185,6 +185,8 @@ RagEvaluation eval = new RagEvaluator().evaluate(hits, Arrays.asList("b", "d"), 
 
 一句话：`RagEvaluator` 回答“召回集准不准”，`RagOnlineEvaluator` 回答“模型有没有基于召回集胡编”。前者衡量检索链路，后者衡量生成忠实度，互不替代。
 
+在线评判层（`RagJudge` SPI、`ChatRagJudge` 三维评分协议、评判如何写进 `RagTrace`）的完整说明见 [LLM-as-Judge](/docs/core-sdk/search-and-rag/llm-as-judge)。
+
 如果你要看在线 judge 怎么用，参考 [Citations and Trace](/docs/core-sdk/search-and-rag/citations-and-trace)。
 
 ## 9. 当前这一层没有替你做什么
