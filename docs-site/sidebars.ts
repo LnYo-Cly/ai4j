@@ -77,6 +77,7 @@ const sidebars: SidebarsConfig = {
             'core-sdk/search-and-rag/hybrid-retrieval',
             'core-sdk/search-and-rag/citations-and-trace',
             'core-sdk/search-and-rag/evaluation',
+            'core-sdk/search-and-rag/llm-as-judge',
           ],
         },
       ],
