@@ -1,0 +1,98 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.Start Here": {
+    "message": "Start Here",
+    "description": "The label for category 'Start Here' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Core SDK": {
+    "message": "Core SDK",
+    "description": "The label for category 'Core SDK' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Model Access": {
+    "message": "Model Access",
+    "description": "The label for category 'Model Access' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Tools and Skills": {
+    "message": "Tools and Skills",
+    "description": "The label for category 'Tools and Skills' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Memory and RAG": {
+    "message": "Memory and RAG",
+    "description": "The label for category 'Memory and RAG' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.MCP": {
+    "message": "MCP",
+    "description": "The label for category 'MCP' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Integrations": {
+    "message": "Integrations",
+    "description": "The label for category 'Integrations' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Spring Boot": {
+    "message": "Spring Boot",
+    "description": "The label for category 'Spring Boot' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Extensions": {
+    "message": "Extensions",
+    "description": "The label for category 'Extensions' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Agent Runtime": {
+    "message": "Agent Runtime",
+    "description": "The label for category 'Agent Runtime' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Runtimes and Orchestration": {
+    "message": "Runtimes and Orchestration",
+    "description": "The label for category 'Runtimes and Orchestration' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Observability and Interoperability": {
+    "message": "Observability and Interoperability",
+    "description": "The label for category 'Observability and Interoperability' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Coding Agent": {
+    "message": "Coding Agent",
+    "description": "The label for category 'Coding Agent' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.coding-agent-advanced": {
+    "message": "Architecture and Advanced Use",
+    "description": "The label for category 'Architecture and Advanced Use' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.FlowGram": {
+    "message": "FlowGram",
+    "description": "The label for category 'FlowGram' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.flowgram-advanced": {
+    "message": "Architecture and Advanced Use",
+    "description": "The label for category 'Architecture and Advanced Use' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Solutions": {
+    "message": "Solutions",
+    "description": "The label for category 'Solutions' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Operate": {
+    "message": "Operate",
+    "description": "The label for category 'Operate' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Reference": {
+    "message": "Reference",
+    "description": "The label for category 'Reference' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.API & Versions": {
+    "message": "API & Versions",
+    "description": "The label for category 'API & Versions' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Architecture & Maps": {
+    "message": "Architecture & Maps",
+    "description": "The label for category 'Architecture & Maps' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.About": {
+    "message": "About",
+    "description": "The label for category 'About' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Maintainers": {
+    "message": "Maintainers",
+    "description": "The label for category 'Maintainers' in sidebar 'tutorialSidebar'"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "link.title.文档": {
+    "message": "Docs",
+    "description": "The title of the footer links column with title=文档 in the footer"
+  },
+  "link.title.资源": {
+    "message": "Resources",
+    "description": "The title of the footer links column with title=资源 in the footer"
+  },
+  "link.title.开源": {
+    "message": "Open Source",
+    "description": "The title of the footer links column with title=开源 in the footer"
+  },
+  "link.item.label.开始阅读": {
+    "message": "Start Reading",
+    "description": "The label of footer link with label=开始阅读 linking to /docs/intro"
+  },
+  "link.item.label.Coding Agent": {
+    "message": "Coding Agent",
+    "description": "The label of footer link with label=Coding Agent linking to /docs/coding-agent/overview"
+  },
+  "link.item.label.Core SDK": {
+    "message": "Core SDK",
+    "description": "The label of footer link with label=Core SDK linking to /docs/core-sdk/overview"
+  },
+  "link.item.label.MCP": {
+    "message": "MCP",
+    "description": "The label of footer link with label=MCP linking to /docs/mcp/overview"
+  },
+  "link.item.label.Agent": {
+    "message": "Agent",
+    "description": "The label of footer link with label=Agent linking to /docs/agent/overview"
+  },
+  "link.item.label.FlowGram": {
+    "message": "FlowGram",
+    "description": "The label of footer link with label=FlowGram linking to /docs/flowgram/overview"
+  },
+  "link.item.label.生产检查清单": {
+    "message": "Production Checklist",
+    "description": "The label of footer link with label=生产检查清单 linking to /docs/operations/production-checklist"
+  },
+  "link.item.label.API Reference": {
+    "message": "API Reference",
+    "description": "The label of footer link with label=API Reference linking to /docs/reference/api"
+  },
+  "link.item.label.版本与兼容性": {
+    "message": "Versions & Compatibility",
+    "description": "The label of footer link with label=版本与兼容性 linking to /docs/reference/version-compatibility"
+  },
+  "link.item.label.安全边界": {
+    "message": "Security",
+    "description": "The label of footer link with label=安全边界 linking to /docs/security/overview"
+  },
+  "link.item.label.选型对比": {
+    "message": "Comparison",
+    "description": "The label of footer link with label=选型对比 linking to /docs/comparison/overview"
+  },
+  "link.item.label.历史博客迁移映射": {
+    "message": "Blog Migration Map",
+    "description": "The label of footer link with label=历史博客迁移映射 linking to /docs/guides/blog-migration-map"
+  },
+  "link.item.label.Cloudflare Pages 部署指南": {
+    "message": "Cloudflare Pages Deployment",
+    "description": "The label of footer link with label=Cloudflare Pages 部署指南 linking to /docs/deploy/cloudflare-pages"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/LnYo-Cly/ai4j"
+  },
+  "link.item.label.Issues": {
+    "message": "Issues",
+    "description": "The label of footer link with label=Issues linking to https://github.com/LnYo-Cly/ai4j/issues"
+  },
+  "link.item.label.贡献指南": {
+    "message": "Contributing",
+    "description": "The label of footer link with label=贡献指南 linking to /docs/contributing"
+  },
+  "copyright": {
+    "message": "Copyright (c) 2026 AI4J Contributors · Built with Docusaurus",
+    "description": "The footer copyright"
+  }
+}
