@@ -197,28 +197,29 @@ Agent agent = Agents.react()
 
 这是 compact 最容易被误解的部分。三条规则定死：
 
-### 时机：每轮 tool 执行后检查，由 policy 决定要不要压
+### 时机：每一步开头、模型调用前检查，由 policy 决定要不要压
 
-runtime 在 `BaseAgentRuntime` 每一轮工具执行完后调 `autoCompactIfNecessary`：
+runtime 在 `BaseAgentRuntime` 的每一步**开头**（模型调用之前）调 `autoCompactIfNecessary`：
 
 ```text
-每一轮 loop:
-  memory.addUserInput / addOutputItems / addToolOutput   ← 事实进 memory
-  → 工具执行完
-  → autoCompactIfNecessary:
+每一步 step:
+  → autoCompactIfNecessary（在本步模型调用之前）:
       policy = context.getCompactPolicy()
       if policy == null: 跳过
       snapshot = memory.snapshot()
       if !policy.shouldCompact(snapshot): 跳过          ← policy 决定时机
       → policy.compact(snapshot)
       → memory.restore(result.getMemory())              ← 压缩后写回 memory
+  → executeModel(...)                                    ← 用（可能已压缩的）memory 构造 prompt
+  → 工具执行（memory.addToolOutput ...）                  ← 事实进 memory
+  → 下一步
 ```
 
-关键：**runtime 不自己判断"该压了"，时机判断完全委托给 `CompactPolicy.shouldCompact(snapshot)`**。
+关键：**runtime 不自己判断"该压了"，时机判断完全委托给 `CompactPolicy.shouldCompact(snapshot)`**。压缩发生在模型调用前，所以这一步的 prompt 用的是压缩后的 memory。
 
 - 基础 `CompactPolicy` 的 `shouldCompact` 默认返回 `false` —— **不配 policy 就不会自动压缩**（纯手动）。
 - `StructuredSummaryCompactPolicy` 覆写为 `snapshot.getItems().size() > maxItems` —— **item 数超阈值才压**。
-- `LlmCompactPolicy` 用模型判断 —— 语义级判断该不该压。
+- `LlmCompactPolicy` 的 `shouldCompact` 同样是计数阈值（`items.size() > maxItems`）；**模型只在 `compact()` 里生成摘要，不参与"要不要压"的决策**。它和 `StructuredSummaryCompactPolicy` 的时机判断完全一样，区别在压的时候用什么手段（LLM 摘要 vs 机械投影）。
 
 所以"何时压缩"的答案不是固定的，而是**你选的 policy 决定**。三种典型策略：
 
@@ -226,7 +227,7 @@ runtime 在 `BaseAgentRuntime` 每一轮工具执行完后调 `autoCompactIfNece
 | --- | --- | --- |
 | 基础（默认） | 永不（手动才压） | 短任务，不需要自动 |
 | `StructuredSummaryCompactPolicy` | item 数 > maxItems | 确定性的 item 计数阈值 |
-| `LlmCompactPolicy` | 模型评估 | 语义级，按内容重要性 |
+| `LlmCompactPolicy` | item 数 > maxItems（同上） | 同样的计数阈值，但压缩时用 LLM 结构化摘要 |
 
 ### 压什么：压缩的是 memory snapshot，不是 prompt
 
