@@ -1,10 +1,10 @@
 ---
-title: "Discovery and Loading"
+title: "Skill 发现"
 description: "详解 Skills 发现与加载：扫描工作区与全局根目录、识别 SKILL.md、提取名称描述、按名去重，以及 allowedReadRoots 如何把 skill 目录联动进宿主只读安全边界。"
 tags: [concept]
 ---
 
-# Discovery and Loading
+# Skill 发现
 
 `Skill` 在 AI4J 里不是可执行工具，而是按需读取的方法论资源。
 
@@ -14,6 +14,8 @@ tags: [concept]
 - 如何生成技能目录
 - 为什么不应该一开始读取全部正文
 - 这些技能文件怎样进入安全读取边界
+
+本页只讲**发现**（目录怎么来）；发现之后的正文如何进入模型上下文（三条激活路径），见 [Skill 激活](/docs/capabilities/skills/activation)。
 
 :::tip 本页代码都是可跑通的
 下面的发现示例来自

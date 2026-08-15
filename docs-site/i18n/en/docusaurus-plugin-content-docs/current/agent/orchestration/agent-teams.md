@@ -20,7 +20,7 @@ It breaks multi-member collaboration into 5 explicit components:
 If you only look at the surface API, `AgentTeam.run("...")` looks like a "more advanced multi-Agent demo"; from the source, it is closer to a lightweight orchestration runtime.
 
 :::tip Inter-member communication model
-Unlike the [SubAgent tool-call RPC](/docs/agent/orchestration/subagent-handoff-policy#0-通讯与并行模型先建立正确心智), Teams members are **not** in a tool-call relationship with each other; they collaborate through two shared components:
+Unlike the [SubAgent tool-call RPC](/docs/agent/orchestration/subagent-handoff-policy#0-communication-and-concurrency-model-establish-the-right-mental-model-first), Teams members are **not** in a tool-call relationship with each other; they collaborate through two shared components:
 
 - **TaskBoard**: the planner decomposes tasks → members `claim_task` to grab them → execute → the orchestrator automatically `markCompleted`. This is the source of the division of labor.
 - **MessageBus**: members send messages via `team_send_message` (point-to-point) / `team_broadcast`; there are two receive paths — the orchestrator injects history before the next member executes (pull model, §7.2), and members can also actively pull new messages during execution by calling `team_read_messages` (reactive, §7.3).

@@ -1,65 +1,59 @@
 ---
 sidebar_position: 5
 title: Documentation Map
-description: AI4J 文档站的正式阅读路径：列出 canonical 主线入口、legacy 来源目录的定位，以及每个能力应该从哪条唯一路径进入，避免在旧页与新页之间来回跳。
+description: AI4J 文档站的正式阅读地图：八个顶层分区各回答什么问题、每个能力的唯一入口在哪，以及旧链接如何自动跳转。
 tags: [reference]
 ---
 
 # Documentation Map
 
-这页定义 AI4J 文档站的正式阅读路径。它的作用不是替代功能页，而是告诉读者：
+这页定义 AI4J 文档站的正式阅读地图。它的作用不是替代功能页，而是回答两个问题：
 
-- 哪些目录是当前 canonical 主线。
-- 哪些目录属于历史沉淀或迁移来源。
-- 同一个能力应该从哪条路径进入，避免在旧页和新页之间来回跳。
+- 八个顶层分区各自回答读者的什么问题，我该进哪个。
+- 同一个能力应该从哪条唯一路径进入，避免在主题相近的页面之间来回跳。
 
-## Canonical 主线
+## 八个顶层分区
 
-| 主题 | 正式入口 | 适合谁 |
+文档按**读者意图**组织，不按代码模块组织。顶层顺序即推荐阅读顺序：
+
+| 分区 | 回答什么问题 | 入口 |
 | --- | --- | --- |
-| 项目定位、模块选择、第一步运行 | [Start Here](/docs/intro) | 第一次接触 AI4J 的用户 |
-| Core SDK、模型、Tool、Skill、RAG、基础能力 | [Core SDK](/docs/capabilities/overview) | 普通 Java 或 SDK 接入者 |
-| MCP client、gateway、server、tool 暴露 | [MCP](/docs/capabilities/mcp/overview) | 要接外部工具或发布 Java 能力的团队 |
-| Spring Boot 自动配置和 Bean 扩展 | [Spring Boot](/docs/integrations/spring-boot/overview) | Spring 应用开发者 |
-| 通用 Agent runtime、workflow、trace、team | [Agent](/docs/agent/overview) | 要在业务系统中嵌入 Agent 的团队 |
-| 本地代码仓任务、CLI、TUI、ACP | [Coding Agent](/docs/products/coding-agent/overview) | 要做 coding agent 或本地开发宿主的团队 |
-| FlowGram.ai 画布后端执行层 | [FlowGram](/docs/products/flowgram/overview) | 要做可视化工作流平台的团队 |
-| 场景 cookbook | [Solutions](/docs/integrations/solutions/overview) | 已经有明确业务场景的读者 |
-| 版本、发布、安全、迁移、生产检查 | [Operations](/docs/production/production-checklist) | 选型、上线和维护人员 |
+| 入门 | AI4J 是什么、值不值得用、怎么跑通第一段代码 | [Intro](/docs/intro) |
+| 核心能力 | 不引入 Agent 模块也能用的能力：模型接入、媒体生成、工具、技能、会话记忆、RAG、MCP | [核心能力总览](/docs/capabilities/overview) |
+| Agent 开发 | 怎么构建自主 Agent：运行时、记忆与压缩、编排、治理、可观测与互操作 | [Agent 总览](/docs/agent/overview) |
+| 扩展 | 怎么扩展 AI4J 自身：jar 插件系统与代码内扩展面 | [扩展总览](/docs/extending/overview) |
+| 产品 | 建在 SDK 上的产品：Coding Agent（CLI）与 FlowGram | [Coding Agent](/docs/products/coding-agent/overview) · [FlowGram](/docs/products/flowgram/overview) |
+| 集成 | 怎么把 AI4J 接进你的栈：Spring Boot 与实战方案 | [Spring Boot](/docs/integrations/spring-boot/overview) · [实战方案](/docs/integrations/solutions/overview) |
+| 生产 | 上线前后的检查：安全、检查清单、排障 | [生产检查清单](/docs/production/production-checklist) |
+| 参考 | 查规格与背景：API、版本与迁移、架构地图、关于 | [API](/docs/reference/api) |
 
-## Legacy 来源目录
-
-这些目录暂时保留，因为里面有不少长文和迁移内容仍然有价值。它们不再作为新用户的第一入口。
-
-| 目录 | 当前定位 | 处理原则 |
-| --- | --- | --- |
-| `getting-started/` | 旧入门页、历史 quickstart 和版本页 | 精华迁移到 `start-here/`、`reference/`、`spring-boot/` 后保留跳转 |
-| `ai-basics/` | Core SDK 低层细节和旧能力树 | 迁移强内容到 `core-sdk/`、`mcp/`、`solutions/` 后降级为 legacy reference |
-| `guides/` | 历史博客、方案和迁移指南 | 迁移到 `solutions/` 或 `migration/`，保留博客迁移索引 |
-| `core-sdk/chat/`、`core-sdk/responses/` | 旧模型访问拆分页 | 内容逐步并入 `core-sdk/model-access/` |
-| `core-sdk/mcp/` | Core SDK 视角下的 MCP 深层参考 | 顶层 `mcp/` 是正式主线；独有技术细节再迁入或作为 advanced reference |
-| `agent/orchestration/`、`agent/runtimes/`、`agent/observability/` | 迁移期别名目录 | 优先阅读 `agent/` 下的平铺 canonical 页面 |
+核心能力与 Agent 开发的分界线是：**这个能力在不引入 `ai4j-agent` 模块时存在吗？** 存在则归核心能力（如会话记忆 chat memory），不存在则归 Agent 开发（如 Agent 记忆与压缩）。
 
 ## 能力到页面的唯一入口
 
-| 你要找的能力 | 从这里开始 | 不建议从这里开始 |
-| --- | --- | --- |
-| Chat / Responses / Streaming / Multimodal | [Model Access](/docs/capabilities/models/overview) | `ai-basics/chat/*`、`core-sdk/chat/*` |
-| Function Tool / Tool whitelist | [Tools](/docs/capabilities/tools/overview) | `ai-basics/chat/tool-calling` |
-| Skill | [Skills](/docs/capabilities/skills/overview) | `ai-basics/skills` |
-| MCP | [MCP Overview](/docs/capabilities/mcp/overview) | `core-sdk/mcp/overview` |
-| Memory | [Memory](/docs/capabilities/chat-memory/overview) | `ai-basics/chat/chat-memory*` |
-| RAG / Vector / Ingestion | [Search & RAG](/docs/capabilities/rag/overview) | `ai-basics/rag/*` |
-| Provider 扩展 | [Extension](/docs/extending/overview) | `ai-basics/provider-and-model-extension` |
-| Spring Boot | [Spring Boot Overview](/docs/integrations/spring-boot/overview) | `getting-started/quickstart-springboot` |
-| Coding Agent MCP / ACP | [MCP and ACP](/docs/products/coding-agent/mcp-and-acp) | `agent/coding-agent-*` |
-| FlowGram 节点和任务 API | [FlowGram Overview](/docs/products/flowgram/overview) | `flowgram/builtin-nodes` |
+| 你要找的能力 | 从这里开始 |
+| --- | --- |
+| Chat / Responses / Messages / Streaming / Multimodal | [模型接入](/docs/capabilities/models/overview) |
+| 图像 / 音频 / 视频 / 音乐 / Realtime | [媒体生成](/docs/capabilities/media/image-generation) |
+| Function Tool / 白名单 / 执行模型 | [工具](/docs/capabilities/tools/overview) |
+| Skill（SKILL.md、发现、激活） | [技能](/docs/capabilities/skills/overview) |
+| MCP（client / transport / gateway / server） | [MCP](/docs/capabilities/mcp/overview) |
+| Chat Memory（会话历史） | [会话记忆](/docs/capabilities/chat-memory/overview) |
+| RAG / 向量库 / 摄取 / 评测 | [RAG](/docs/capabilities/rag/overview) |
+| Agent 运行时 / 子代理 / Teams | [Agent 开发](/docs/agent/overview) |
+| Agent 记忆压缩 / 上下文管理 | [记忆与压缩](/docs/agent/memory/memory-and-state) |
+| 审批 / 拦截器 / 沙箱 | [治理](/docs/agent/governance/approval-permission-policy) |
+| Trace / 重放恢复 / A2A | [可观测与互操作](/docs/agent/observability/trace-observability) |
+| 插件包（jar / SPI） | [插件系统](/docs/extending/plugins/plugin-packages) |
+| Provider / 服务 / HTTP 栈扩展 | [代码内扩展面](/docs/extending/code-level/provider-extension) |
+| Coding Agent CLI / TUI / ACP | [Coding Agent](/docs/products/coding-agent/overview) |
+| FlowGram 节点 / 任务 API | [FlowGram](/docs/products/flowgram/overview) |
+| Spring Boot 自动配置 | [Spring Boot](/docs/integrations/spring-boot/overview) |
 
-## 迁移期间的阅读规则
+## 关于旧链接
 
-1. 新用户只从 sidebar 里的 canonical 主线进入。
-2. 搜索到旧页时，先看页面顶部是否给出正式入口。
-3. 旧页里的长代码和实现细节可以参考，但不要把旧页当成模块边界的来源。
-4. 新增文档必须落在 canonical 主线；不能继续向 `getting-started/`、`ai-basics/` 或 `guides/` 增加新主线内容。
+历史上的目录结构（`start-here/`、`core-sdk/`、`mcp/` 顶层等）已并入上述八区。**所有旧 URL 由站点 redirect 自动跳转到新位置**，不需要手动维护映射；搜索引擎收录的旧地址仍然有效。
+
+新增文档必须落在八个分区的既有主题内；不要为单一页面新开顶层目录。
 
 如果你还不知道应该读哪条线，回到 [Choose Your Path](/docs/getting-started/choose-your-path)。

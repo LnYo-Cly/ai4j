@@ -166,7 +166,7 @@ Read [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp) for 
 ## Next pages
 
 1. [Core Skills overview](/docs/capabilities/skills/overview)
-2. [Discovery and loading](/docs/capabilities/skills/discovery-and-loading)
-3. [Loading and activation](/docs/capabilities/skills/loading-and-activation) — three loading paths and the scoped executor
+2. [Discovery and loading](/docs/capabilities/skills/discovery)
+3. [Loading and activation](/docs/capabilities/skills/activation) — three loading paths and the scoped executor
 4. [Tools and registry](/docs/agent/tools-and-registry)
 4. [Coding Agent Skills](/docs/products/coding-agent/skills)

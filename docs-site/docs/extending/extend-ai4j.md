@@ -42,7 +42,7 @@ tags: [concept]
 
 最常见的载体就是 `SKILL.md`。它解决"方法论如何复用"，而不是"动作如何执行"——所以它不直接承担执行，也不会自动塞满上下文。
 
-→ [Skills 总览](/docs/capabilities/skills/overview)｜[Discovery and Loading](/docs/capabilities/skills/discovery-and-loading)｜[Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)｜[Coding Agent Skills 使用与组织](/docs/products/coding-agent/skills)
+→ [Skills 总览](/docs/capabilities/skills/overview)｜[Discovery and Loading](/docs/capabilities/skills/discovery)｜[Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)｜[Coding Agent Skills 使用与组织](/docs/products/coding-agent/skills)
 
 ---
 

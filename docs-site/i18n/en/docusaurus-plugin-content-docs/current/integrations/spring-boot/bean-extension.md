@@ -78,7 +78,7 @@ OkHttp's concurrency scheduling and connection pooling are **not overridden via 
 - `DispatcherProvider` — controls concurrent request scheduling (default implementation `DefaultDispatcherProvider`)
 - `ConnectionPoolProvider` — controls connection reuse and recycling (default implementation `DefaultConnectionPoolProvider`)
 
-To swap the implementation, place a `META-INF/services/io.github.lnyocly.ai4j.network.DispatcherProvider` (or `...ConnectionPoolProvider`) in your own JAR with the fully qualified implementation class name — no need to modify the starter or business Beans. Tunable parameters such as timeout, proxy, and SSL are still controlled by `ai.okhttp.*` (see [Configuration Reference §4](/docs/integrations/spring-boot/configuration-reference#4-aiokhttp-的位置)).
+To swap the implementation, place a `META-INF/services/io.github.lnyocly.ai4j.network.DispatcherProvider` (or `...ConnectionPoolProvider`) in your own JAR with the fully qualified implementation class name — no need to modify the starter or business Beans. Tunable parameters such as timeout, proxy, and SSL are still controlled by `ai.okhttp.*` (see [Configuration Reference §4](/docs/integrations/spring-boot/configuration-reference#4-where-aiokhttp-fits)).
 
 :::tip When to use SPI instead of @Bean
 Spring `@Bean` is suitable for replacing business/container-layer objects (`RagContextAssembler`, `VectorStore`, etc.). The concurrency primitives of `OkHttpClient` are shared across the entire starter, and the starter resolves them through SPI, so SPI is the correct layer here; do not attempt to indirectly change the scheduling strategy by force-overriding with `@Bean OkHttpClient`.

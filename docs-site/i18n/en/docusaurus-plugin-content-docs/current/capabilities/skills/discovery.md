@@ -1,10 +1,10 @@
 ---
-title: "Discovery and Loading"
+title: "Skill Discovery"
 description: "A deep look at Skills discovery and loading: scanning the workspace and global root directories, recognizing SKILL.md, extracting the name and description, deduplicating by name, and how allowedReadRoots links the skill directories into the host's read-only security boundary."
 tags: [concept]
 ---
 
-# Discovery and Loading
+# Skill Discovery
 
 A `Skill` in AI4J is not an executable tool, but a methodology resource read on demand.
 

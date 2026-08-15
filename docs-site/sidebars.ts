@@ -65,8 +65,8 @@ const sidebars: SidebarsConfig = {
           label: '技能',
           items: [
             'capabilities/skills/overview',
-            'capabilities/skills/discovery-and-loading',
-            'capabilities/skills/loading-and-activation',
+            'capabilities/skills/discovery',
+            'capabilities/skills/activation',
             'capabilities/skills/skill-vs-tool-vs-mcp',
           ],
         },

@@ -42,7 +42,7 @@ The key boundary is the **three-stage gate**: `discover()` only discovers withou
 
 The most common carrier is `SKILL.md`. It solves "how methodology is reused," not "how actions are executed" — so it does not take on execution itself, nor does it automatically fill the context.
 
-→ [Skills overview](/docs/capabilities/skills/overview) | [Discovery and Loading](/docs/capabilities/skills/discovery-and-loading) | [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp) | [Coding Agent Skills usage and organization](/docs/products/coding-agent/skills)
+→ [Skills overview](/docs/capabilities/skills/overview) | [Discovery and Loading](/docs/capabilities/skills/discovery) | [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp) | [Coding Agent Skills usage and organization](/docs/products/coding-agent/skills)
 
 ---
 

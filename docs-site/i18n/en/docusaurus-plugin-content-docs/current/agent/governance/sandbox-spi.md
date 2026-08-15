@@ -228,8 +228,8 @@ It will not bundle a pile of providers. The more stable path is: AI4J ships a sm
 
 | Provider | providerId | Execution model | Detailed docs |
 | --- | --- | --- | --- |
-| Daytona | `daytona` | Daytona API to create/stop sandboxes + toolbox execute API to run commands | this page [§11](#11-p2-c--daytona-provider) |
-| E2B | `e2b` | E2B control API (`X-API-Key`) to create/destroy + per-sandbox execution host using Connect `process.Process/Start` streaming | this page [§12](#12-p2-d--e2b-provider) |
+| Daytona | `daytona` | Daytona API to create/stop sandboxes + toolbox execute API to run commands | this page [§11](#11-p2-c-daytona-provider) |
+| E2B | `e2b` | E2B control API (`X-API-Key`) to create/destroy + per-sandbox execution host using Connect `process.Process/Start` streaming | this page [§12](#12-p2-d-e2b-provider) |
 | CubeSandbox | `cubesandbox` | CubeAPI control plane of the open-source TencentCloud/CubeSandbox + envd `process.Process/Start` data plane | [CubeSandbox Provider](/docs/agent/governance/cubesandbox-provider) |
 
 ### Should each user get their own sandbox, or share one?
@@ -497,7 +497,7 @@ Agent agent = Agents.react()
         .build();
 ```
 
-The provider itself does not auto-start a sandbox. The host decides when to call `provider.createSession(spec)` to get a live `SandboxSession`, then `agentSession.bindSandbox(session)` binds it into the current session (see [§5](#5-p2-b--binding-to-agentsession)). After binding, only the non-sensitive summary enters the snapshot / event log; keys stay on the provider side.
+The provider itself does not auto-start a sandbox. The host decides when to call `provider.createSession(spec)` to get a live `SandboxSession`, then `agentSession.bindSandbox(session)` binds it into the current session (see [§5](#5-p2-b-binding-to-agentsession)). After binding, only the non-sensitive summary enters the snapshot / event log; keys stay on the provider side.
 
 ### 14.2 CodingAgentBuilder configures sandbox routing
 

@@ -165,7 +165,7 @@ Response response = responsesService.create(request);
 
 Unlike Chat's automatic tool loop, `Responses` does **not** run an in-service auto-loop: any `function_call` item that appears in `output[]` is handed back to the upper layer as-is, and your runtime decides whether to execute it and how to fill in the `function_call_output`.
 
-When you need the model to follow a schema more strictly, enable [strict mode](/docs/capabilities/models/chat#5-chat-的一个关键特性自动-tool-loop) at registration time:
+When you need the model to follow a schema more strictly, enable [strict mode](/docs/capabilities/models/chat#5-a-key-property-of-chat-the-automatic-tool-loop) at registration time:
 
 ```java
 @FunctionCall(name = "getStockPrice", description = "...", strict = true)
