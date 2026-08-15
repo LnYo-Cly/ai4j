@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: AI4J Docs
+title: "AI4J Docs"
 description: "AI4J is a Java 8+ AI SDK entry point — an overview, recommended starting points, and a repository module map for its on-demand building blocks: model calls, tools, RAG, MCP, Spring Boot, Agent, Coding Agent, and FlowGram."
 tags: [concept]
 ---
