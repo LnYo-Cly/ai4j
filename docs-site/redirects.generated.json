@@ -121,11 +121,11 @@
   },
   {
     "from": "/docs/core-sdk/skills/discovery-and-loading",
-    "to": "/docs/capabilities/skills/discovery-and-loading"
+    "to": "/docs/capabilities/skills/discovery"
   },
   {
     "from": "/docs/core-sdk/skills/loading-and-activation",
-    "to": "/docs/capabilities/skills/loading-and-activation"
+    "to": "/docs/capabilities/skills/activation"
   },
   {
     "from": "/docs/core-sdk/skills/skill-vs-tool-vs-mcp",
@@ -662,5 +662,13 @@
   {
     "from": "/docs/agent/provider-config-examples",
     "to": "/docs/products/coding-agent/provider-profiles"
+  },
+  {
+    "from": "/docs/capabilities/skills/discovery-and-loading",
+    "to": "/docs/capabilities/skills/discovery"
+  },
+  {
+    "from": "/docs/capabilities/skills/loading-and-activation",
+    "to": "/docs/capabilities/skills/activation"
   }
 ]

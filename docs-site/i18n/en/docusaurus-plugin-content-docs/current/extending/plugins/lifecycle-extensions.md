@@ -18,7 +18,7 @@ Typical use cases:
 If you want to allow or deny a tool execution **before** it runs, that is the responsibility of `GUARDRAIL`, not `LIFECYCLE`. A lifecycle hook is a one-way notification and cannot block the flow.
 
 :::warning
-`LifecycleHookRegistry` and `AgentLifecycleHook` are currently annotated `@Experimental(since = "2.4.3")`; their signatures and behavior may change in later minor versions. Pin the exact version when you depend on them. See [Extension overview - Plugin SPI stability matrix](/docs/extending/overview#32-插件-spi-的稳定性矩阵).
+`LifecycleHookRegistry` and `AgentLifecycleHook` are currently annotated `@Experimental(since = "2.4.3")`; their signatures and behavior may change in later minor versions. Pin the exact version when you depend on them. See [Extension overview - Plugin SPI stability matrix](/docs/extending/overview#32-plugin-spi-stability-matrix).
 :::
 
 ## 1. Declare the capability and register a hook

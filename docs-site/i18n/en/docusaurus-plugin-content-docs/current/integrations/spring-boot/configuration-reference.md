@@ -136,7 +136,7 @@ Enabling `ignore-ssl=true` means giving up certificate verification for every re
 
 ### OkHttp SPI extension points
 
-Concurrency dispatch and connection pooling are not hard-coded; they are provided via SPI (see [Auto Configuration / OkHttp SPI extension points](/docs/integrations/spring-boot/auto-configuration#7-okhttp-spi-扩展点)):
+Concurrency dispatch and connection pooling are not hard-coded; they are provided via SPI (see [Auto Configuration / OkHttp SPI extension points](/docs/integrations/spring-boot/auto-configuration#7-okhttp-spi-extension-points)):
 
 - `DispatcherProvider` (default `DefaultDispatcherProvider`)
 - `ConnectionPoolProvider` (default `DefaultConnectionPoolProvider`)

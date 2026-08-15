@@ -1,12 +1,12 @@
 ---
-title: "加载与激活"
+title: "Skill 激活"
 description: 讲清 Skill 正文进入上下文的三条路径（模型自选 read_file、宿主 selectedSkills、宿主 providedContents）、受限执行器的安全模型，以及为什么 AI4J 不提供专用 activate_skill 工具。
 tags: [concept]
 ---
 
-# 加载与激活
+# Skill 激活
 
-[Discovery and Loading](/docs/capabilities/skills/discovery-and-loading) 讲的是「SKILL.md 怎么被发现、目录怎么生成」。
+[Skill 发现](/docs/capabilities/skills/discovery) 讲的是「SKILL.md 怎么被发现、目录怎么生成」。
 这一页讲的是更靠后的那一步：**目录生成之后，skill 正文到底怎么进入模型上下文**。
 
 这件事比看上去复杂，因为正文不是一开始就全塞进去的——它有三条路径，每条路径的安全边界和上下文成本都不同。

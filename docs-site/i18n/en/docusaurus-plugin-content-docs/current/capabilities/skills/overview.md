@@ -257,7 +257,7 @@ But the underlying principles are unchanged:
 
 ## 11. Recommended reading order
 
-1. [Discovery and Loading](/docs/capabilities/skills/discovery-and-loading)
+1. [Discovery and Loading](/docs/capabilities/skills/discovery)
 2. [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)
 3. [Coding Agent / Skills](/docs/products/coding-agent/skills)
 

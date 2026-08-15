@@ -1,6 +1,6 @@
 ---
 title: "Architecture at a Glance"
-description: "Build a mental model of AI4J with a four-layer diagram: Start Here, Core SDK, upper modules (Spring Boot/Agent/Coding Agent/FlowGram), and Solutions, and clarify the boundaries between the three most easily confused concepts: Function Call, Skill, and MCP."
+description: "Build a mental model of AI4J with a four-layer diagram: Getting Started, the Core SDK base, upper modules (Spring Boot/Agent/Coding Agent/FlowGram), and recipes — plus the boundaries between the three most easily confused concepts: Function Call, Skill, and MCP."
 tags: [concept]
 ---
 
@@ -32,9 +32,13 @@ Solutions
 
 The most important point: `Core SDK` is the backbone of the whole system. Every other module grows upward from this layer.
 
+:::note This diagram is about modules, not doc directories
+The docs sidebar is organized by **reader intent** into eight sections (Getting Started / Capabilities / Agent / Extending / Products / Integrations / Production / Reference) — not one-to-one with this module stack. For example, MCP spans several modules in code but is one sub-domain under Capabilities in the docs. The module stack helps you read the code; the eight sections help you find the page. See [Documentation Map](/docs/reference/maps/documentation-map) for how the two maps relate.
+:::
+
 ## 2. What each layer is responsible for
 
-### 2.1 Start Here
+### 2.1 Getting Started
 
 It only handles three things:
 
@@ -68,9 +72,9 @@ The upper modules don't start from scratch. They solve more specific problems on
 - `Coding Agent`: adds workspace-aware tools, session runtime, and CLI / TUI / ACP hosting
 - `FlowGram`: adds backend execution and platform integration for visual node workflows
 
-### 2.4 Solutions
+### 2.4 Recipes
 
-`Solutions` does not define foundational concepts. It tells you how these capabilities combine by scenario to ship.
+`Recipes` do not define foundational concepts. It tells you how these capabilities combine by scenario to ship.
 
 So the reading order should be:
 

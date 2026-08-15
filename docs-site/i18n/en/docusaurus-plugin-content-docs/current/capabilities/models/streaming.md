@@ -153,7 +153,7 @@ All methods have default empty implementations; override them as needed.
 - **Reuse scope**: The same event-parsing logic serves both native `IMessagesService.messagesStream(...)` and the unified adapter `AnthropicChatService` (which bridges the callbacks back to OpenAI chunks and feeds them into `SseListener`). The event parsing is never implemented twice.
 
 :::note
-For the exact callback semantics and field mapping, see [Messages (Anthropic native)](/docs/capabilities/models/messages#流式原生事件回调).
+For the exact callback semantics and field mapping, see [Messages (Anthropic native)](/docs/capabilities/models/messages#streaming-native-event-callbacks).
 :::
 
 ## 7. Why upper-layer runtimes prefer different lines

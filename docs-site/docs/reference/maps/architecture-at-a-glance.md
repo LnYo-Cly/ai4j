@@ -1,6 +1,6 @@
 ---
 title: Architecture at a Glance
-description: 用一张四层图建立 AI4J 的整体心智模型：Start Here、Core SDK、上层模块（Spring Boot/Agent/Coding Agent/FlowGram）与 Solutions，并厘清 Function Call、Skill、MCP 三个最易混淆的概念边界。
+description: 用一张四层图建立 AI4J 的整体心智模型：入门、Core SDK 基座、上层模块（Spring Boot/Agent/Coding Agent/FlowGram）与实战方案，并厘清 Function Call、Skill、MCP 三个最易混淆的概念边界。
 tags: [concept]
 ---
 
@@ -32,9 +32,13 @@ Solutions
 
 最重要的一点是：`Core SDK` 才是整套体系的主干，其余模块都是在这层基础上往上长出来的。
 
+:::note 这张图讲的是模块，不是文档目录
+文档侧边栏按**读者意图**组织成八个分区（入门 / 核心能力 / Agent 开发 / 扩展 / 产品 / 集成 / 生产 / 参考），与本页的模块栈不是一一对应——例如 MCP 在代码里横跨多个模块，在文档里是核心能力下的一个子域。模块栈帮你看懂代码结构，八分区帮你找到要读的页。两套地图的关系见 [Documentation Map](/docs/reference/maps/documentation-map)。
+:::
+
 ## 2. 每一层各自负责什么
 
-### 2.1 Start Here
+### 2.1 入门（Getting Started）
 
 只负责三件事：
 
@@ -68,9 +72,9 @@ Solutions
 - `Coding Agent`：增加 workspace-aware tools、session runtime、CLI / TUI / ACP 宿主
 - `FlowGram`：增加面向可视化节点工作流的后端运行与平台接入
 
-### 2.4 Solutions
+### 2.4 实战方案（Recipes）
 
-`Solutions` 不负责定义基础概念，而是告诉你这些能力如何按场景组合落地。
+`实战方案` 不负责定义基础概念，而是告诉你这些能力如何按场景组合落地。
 
 所以阅读顺序应该是：
 

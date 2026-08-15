@@ -1,12 +1,12 @@
 ---
-title: "Loading and Activation"
+title: "Skill Activation"
 description: "Explains the three paths by which skill content enters the context (model-selected read_file, host selectedSkills, host providedContents), the security model of the restricted executor, and why AI4J does not provide a dedicated activate_skill tool."
 tags: [concept]
 ---
 
-# Loading and Activation
+# Skill Activation
 
-[Discovery and Loading](/docs/capabilities/skills/discovery-and-loading) covers "how SKILL.md is discovered and how the directory is generated".
+[Discovery and Loading](/docs/capabilities/skills/discovery) covers "how SKILL.md is discovered and how the directory is generated".
 This page covers the step that comes after: **once the directory is generated, how exactly the skill content enters the model context**.
 
 This is more complex than it looks, because the content is not all stuffed in up front — there are three paths, each with different security boundaries and context costs.
