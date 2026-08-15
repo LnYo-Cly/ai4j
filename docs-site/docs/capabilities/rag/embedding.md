@@ -1,11 +1,10 @@
 ---
-title: Embedding
+title: 嵌入
 description: 讲清 AI4J embedding 层的薄接口与强约束：它统一 provider 调用但只支持 OPENAI/OLLAMA，ingest 与 query 必须使用同一模型，混用不会被框架自动阻止，是索引级协议的一部分。
 tags: [concept]
 ---
 
-# Embedding
-
+# 嵌入
 在 AI4J 当前实现里，`embedding` 不是一个孤立 API，而是离线 RAG 两端都在依赖的公共底座：
 
 - ingest 时，它把 chunk 变成向量
@@ -218,6 +217,6 @@ AI4J 当前的 embedding，是离线 RAG 的共享底层变换层：
 
 ## 12. 继续阅读
 
-- [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)
-- [Vector Store and Backends](/docs/capabilities/rag/vector-store-and-backends)
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
+- [摄取管线](/docs/capabilities/rag/ingestion-pipeline)
+- [向量存储与后端](/docs/capabilities/rag/vector-store-and-backends)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)

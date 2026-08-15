@@ -1,11 +1,10 @@
 ---
-title: Agent Architecture
+title: Agent 架构
 description: "拆解 ai4j-agent 的 Builder、Runtime、ModelClient 三层边界，工具声明与执行双面，memory 作为状态源，以及事件流与 trace 的架构定位。"
 tags: [concept]
 ---
 
-# Agent Architecture
-
+# Agent 架构
 `ai4j-agent` 的架构核心，不是“封装一下模型调用”，而是把多步推理、工具调用、状态延续和可观测性收敛成一套可复用 runtime。
 
 如果你把它当成一个“大一点的 SDK helper”，很多设计都会显得复杂；一旦把它当成“通用 Agent runtime”，这些分层就会合理很多。
@@ -471,7 +470,7 @@ TOOL_ERROR: {...}
 ## 12. 继续阅读
 
 1. [Quickstart](/docs/agent/quickstart)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
-4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
+4. [运行时实现](/docs/agent/runtimes/runtime-implementations)
 5. [Trace 与可观测性](/docs/agent/observability/trace-observability)

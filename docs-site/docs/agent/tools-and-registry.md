@@ -1,11 +1,10 @@
 ---
-title: Tools and Registry
+title: 工具与注册表
 description: 拆解 ai4j-agent 工具体系：AgentToolRegistry 只管暴露面、ToolExecutor 管执行与权限边界，runtime 如何归一化、校验、执行工具并把结果回灌 memory，以及审批拦截该放哪层。
 tags: [concept]
 ---
 
-# Tools and Registry
-
+# 工具与注册表
 在 `ai4j-agent` 里，工具体系真正解决的不是“函数怎么暴露给模型”，而是四个边界如何拆开：
 
 - 模型能看见什么工具
@@ -424,8 +423,8 @@ Agent agent = Agents.builder()
 
 ## 12. 继续阅读
 
-1. [Memory and State](/docs/agent/memory/memory-and-state)
+1. [记忆与状态](/docs/agent/memory/memory-and-state)
 2. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 3. [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-4. [Agent Teams](/docs/agent/orchestration/agent-teams)
+4. [Agent 团队](/docs/agent/orchestration/agent-teams)
 5. [Trace Observability](/docs/agent/observability/trace-observability)

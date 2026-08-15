@@ -1,11 +1,10 @@
 ---
-title: Chat vs Responses
+title: Chat 与 Responses 对比
 description: 从输入心智、provider 覆盖、工具集成、流式语义和多模态投影等维度对比 Chat 与 Responses 两条主线，帮你完成选型。
 tags: [concept]
 ---
 
-# Chat vs Responses
-
+# Chat 与 Responses 对比
 这是 AI4J 基座里最重要的选型问题之一。
 
 真正的区别不在“哪个更新”，而在 **你到底想消费什么样的模型输出语义，以及你更在意 provider 覆盖还是事件结构**。

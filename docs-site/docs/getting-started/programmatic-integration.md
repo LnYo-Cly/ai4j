@@ -24,7 +24,7 @@ ai4j 是 Java，集成面的划分和 Pi（Node / TypeScript）不同，但能�
 | RPC（stdin / stdout JSON-RPC 子进程协议） | ACP headless host（换行分隔 JSON-RPC） | [ACP 集成](/docs/products/coding-agent/acp-integration) |
 | JSON event stream（`--mode json` 一次性事件流→stdout） | **无 turnkey 等价**（构建块见下文①） | — |
 | TUI（交互终端） | `ai4j-cli` 的 `code` / `tui` 宿主 | [CLI / TUI 使用指南](/docs/products/coding-agent/cli-and-tui) |
-| —（Pi 无对应，ai4j 独有） | Spring Boot 自动装配 | [Spring Boot Auto Configuration](/docs/integrations/spring-boot/auto-configuration) |
+| —（Pi 无对应，ai4j 独有） | Spring Boot 自动装配 | [Spring Boot 自动配置](/docs/integrations/spring-boot/auto-configuration) |
 
 最关键的差别：ai4j 没有"一个 SDK 对象包办一切"的单一 session 工厂。能力工厂（`AiService`）和会话协议（ACP）是分开的两层——前者是程序内调用，后者是跨进程协议。
 
@@ -36,7 +36,7 @@ ai4j 是 Java，集成面的划分和 Pi（Node / TypeScript）不同，但能�
 
 `AiService` 是把模型访问、检索增强和组合能力统一收束在一个入口对象下的显式工厂（`getChatService` / `getResponsesService` / `getEmbeddingService` / `getRagService` 等），内部用一组 `switch(platform)` 决定创建哪个实现类。这是普通 Java 应用嵌 ai4j 的第一条链。
 
-→ [服务入口与注册表](/docs/capabilities/service-entry) · 首聊代码见 [Quickstart for Java](/docs/getting-started/quickstart-java)
+→ [服务入口与注册表](/docs/capabilities/service-entry) · 首聊代码见 [Java 快速开始](/docs/getting-started/quickstart-java)
 
 ### 2. AiServiceRegistry —— 多实例 / 多 profile
 
@@ -48,7 +48,7 @@ ai4j 是 Java，集成面的划分和 Pi（Node / TypeScript）不同，但能�
 
 ACP 是 ai4j 面向 IDE / 桌面壳的标准接入面：换行分隔 JSON-RPC（不是 LSP 的 `Content-Length` framing），暴露 session 创建 / 加载、prompt 执行、权限确认和结构化事件；权限确认是服务端反向发起的 `session/request_permission` RPC。它是 Pi RPC 模式在 ai4j 里的等价物，但底层和 `code` 命令共用同一套 coding runtime。
 
-→ [ACP 集成](/docs/products/coding-agent/acp-integration) · 与 MCP 的边界见 [MCP and ACP](/docs/products/coding-agent/mcp-and-acp)
+→ [ACP 集成](/docs/products/coding-agent/acp-integration) · 与 MCP 的边界见 [MCP 与 ACP](/docs/products/coding-agent/mcp-and-acp)
 
 ### 4. trace / replay —— 可观测性与恢复
 
@@ -58,7 +58,7 @@ runtime 已经发布统一事件（`MODEL_REQUEST` / `MODEL_RESPONSE` / `TOOL_CA
 trace / replay 是 ai4j 的**可观测性与可靠性**层（进程内 tracing、节点重放、崩溃续跑、防篡改审计），不是"把 agent 事件流一次性打到 stdout"的集成模式。它消费的事件类型与 Pi 的事件流同源，但**定位不同**——见上表①。Pi JSON 模式的"管道消费"用法在 ai4j 里需要自己用 runtime 事件流加一个发射器。
 :::
 
-→ [Trace 与可观测性](/docs/agent/observability/trace-observability) · 续跑 / 重放 / 审计见 [Replay, Recovery & Audit](/docs/agent/observability/replay-recovery-audit)
+→ [Trace 与可观测性](/docs/agent/observability/trace-observability) · 续跑 / 重放 / 审计见 [重放、恢复与审计](/docs/agent/observability/replay-recovery-audit)
 
 ### 5. CLI / TUI —— 嵌入终端宿主
 
@@ -70,7 +70,7 @@ trace / replay 是 ai4j 的**可观测性与可靠性**层（进程内 tracing�
 
 `ai4j-spring-boot-starter` 用 `AiConfigAutoConfiguration` 把 `ai.*` 属性绑成统一 `Configuration`，按固定顺序组装 OkHttpClient → provider → `AiService` / `AiServiceRegistry` / `FreeAiService` → 条件性创建 VectorStore / RAG / Reranker，关键 Bean 都是 `@ConditionalOnMissingBean`，可被业务实现接管。
 
-→ [Spring Boot Auto Configuration](/docs/integrations/spring-boot/auto-configuration) · 快速接入见 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+→ [Spring Boot 自动配置](/docs/integrations/spring-boot/auto-configuration) · 快速接入见 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 
 ## 最小可运行示例：编程式首聊
 
@@ -146,10 +146,10 @@ AI4J 是一个统一多家大模型、屏蔽 provider 差异的 Java AI SDK。
 
 ## 继续阅读
 
-- [Quickstart for Java](/docs/getting-started/quickstart-java) · [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+- [Java 快速开始](/docs/getting-started/quickstart-java) · [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 - [服务入口与注册表](/docs/capabilities/service-entry)
-- [ACP 集成](/docs/products/coding-agent/acp-integration) · [MCP and ACP](/docs/products/coding-agent/mcp-and-acp)
-- [Trace 与可观测性](/docs/agent/observability/trace-observability) · [Replay, Recovery & Audit](/docs/agent/observability/replay-recovery-audit)
+- [ACP 集成](/docs/products/coding-agent/acp-integration) · [MCP 与 ACP](/docs/products/coding-agent/mcp-and-acp)
+- [Trace 与可观测性](/docs/agent/observability/trace-observability) · [重放、恢复与审计](/docs/agent/observability/replay-recovery-audit)
 - [CLI / TUI 使用指南](/docs/products/coding-agent/cli-and-tui) · [TUI 定制与主题](/docs/products/coding-agent/tui-customization)
-- [Spring Boot Auto Configuration](/docs/integrations/spring-boot/auto-configuration)
-- 想看完整能力地图：[Feature Map](/docs/getting-started/feature-map)
+- [Spring Boot 自动配置](/docs/integrations/spring-boot/auto-configuration)
+- 想看完整能力地图：[功能地图](/docs/getting-started/feature-map)

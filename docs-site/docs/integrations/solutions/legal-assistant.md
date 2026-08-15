@@ -1,11 +1,10 @@
 ---
-title: Legal Assistant
+title: 法律助手
 description: 高证据要求法律助手的 RAG 方案，强调元数据治理、证据引用与人工复核，区别于普通聊天加长 prompt。
 tags: [concept]
 ---
 
-# Legal Assistant
-
+# 法律助手
 这个方案解决的是“高证据要求的法律助手 RAG”，重点不是把回答说得更像人，而是把依据链做得更可追溯。
 
 ## 1. 适合什么场景
@@ -56,7 +55,7 @@ tags: [concept]
 
 1. [Core SDK / Search & RAG](/docs/capabilities/rag/overview)
 2. [Core SDK / Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-3. [RAG Ingestion Vector Store](/docs/integrations/solutions/rag-ingestion-vector-store)
+3. [RAG 摄取与向量存储](/docs/integrations/solutions/rag-ingestion-vector-store)
 
 ## 6. 继续看实现细节
 

@@ -84,7 +84,7 @@ LLM 节点可以复用 Agent runtime，但 FlowGram 不会把整个工作流重�
 - cancel、失败重试、异常展示和日志脱敏是否覆盖。
 :::
 
-更多检查项见 [Production Checklist](/docs/production/production-checklist)。
+更多检查项见 [生产检查清单](/docs/production/production-checklist)。
 
 ## 推荐阅读顺序
 
@@ -95,7 +95,7 @@ LLM 节点可以复用 Agent runtime，但 FlowGram 不会把整个工作流重�
 5. [Runtime](/docs/products/flowgram/runtime)
 6. [Frontend / Backend Integration](/docs/products/flowgram/frontend-backend-integration)
 7. [API and Runtime](/docs/products/flowgram/api-and-runtime)
-8. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
-9. [Custom Nodes](/docs/products/flowgram/custom-nodes)
+8. [内置节点](/docs/products/flowgram/built-in-nodes)
+9. [自定义节点](/docs/products/flowgram/custom-nodes)
 
 如果你要做的是本地代码仓任务，应该从 [Coding Agent](/docs/products/coding-agent/overview) 开始；如果你要做的是通用业务智能体，应该从 [Agent](/docs/agent/overview) 开始。

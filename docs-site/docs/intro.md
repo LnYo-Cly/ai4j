@@ -18,13 +18,13 @@ AI4J 是一套面向 `Java 8+` 的 AI SDK。它不是一个要求全量采用的
 
 | 目标 | 推荐入口 | 你会得到什么 |
 | --- | --- | --- |
-| 普通 Java 跑通第一条 AI 请求 | [Quickstart for Java](/docs/getting-started/quickstart-java) | 最小依赖、密钥配置、验证标准和第一条模型调用 |
-| 普通 Java 项目先跑通 | [Quickstart for Java](/docs/getting-started/quickstart-java) | 最小依赖、配置和第一段调用代码 |
-| Spring Boot 项目接入 | [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot) | starter、配置项和 Bean 注入方式 |
-| 先看完整能力边界 | [Feature Map](/docs/getting-started/feature-map) | AI4J 当前能力、成熟度和继续阅读路径 |
-| 查正式文档路径 | [Documentation Map](/docs/reference/maps/documentation-map) | canonical 主线、legacy 来源和迁移方向 |
-| 上线前检查 | [Production Checklist](/docs/production/production-checklist) | 版本、密钥、Tool、MCP、RAG、Agent、FlowGram 的检查项 |
-| 理解为什么做 AI4J | [Why AI4J](/docs/getting-started/why-ai4j) | 项目定位、适合场景和与相邻方案的差异 |
+| 普通 Java 跑通第一条 AI 请求 | [Java 快速开始](/docs/getting-started/quickstart-java) | 最小依赖、密钥配置、验证标准和第一条模型调用 |
+| 普通 Java 项目先跑通 | [Java 快速开始](/docs/getting-started/quickstart-java) | 最小依赖、配置和第一段调用代码 |
+| Spring Boot 项目接入 | [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot) | starter、配置项和 Bean 注入方式 |
+| 先看完整能力边界 | [功能地图](/docs/getting-started/feature-map) | AI4J 当前能力、成熟度和继续阅读路径 |
+| 查正式文档路径 | [文档地图](/docs/reference/maps/documentation-map) | canonical 主线、legacy 来源和迁移方向 |
+| 上线前检查 | [生产检查清单](/docs/production/production-checklist) | 版本、密钥、Tool、MCP、RAG、Agent、FlowGram 的检查项 |
+| 理解为什么做 AI4J | [为什么选 AI4J](/docs/getting-started/why-ai4j) | 项目定位、适合场景和与相邻方案的差异 |
 
 ## 用多少，取多少
 
@@ -52,7 +52,7 @@ AI4J 的能力分为三层。阅读时建议先把 Core SDK 跑通，再按项�
 | 应用集成 | Spring Boot starter、配置治理、自动装配 | [Spring Boot](/docs/integrations/spring-boot/overview) |
 | 上层运行时 | Agent、Coding Agent、FlowGram 工作流 | [Agent](/docs/agent/overview)、[Coding Agent](/docs/products/coding-agent/overview)、[FlowGram](/docs/products/flowgram/overview) |
 | 场景方案 | 常见组合方案和可复制集成路径 | [Solutions](/docs/integrations/solutions/overview) |
-| 生产准备 | 版本兼容、发布 artifact、安全、迁移、排障 | [Version Compatibility](/docs/reference/version-compatibility)、[Security](/docs/production/security)、[Troubleshooting](/docs/production/troubleshooting) |
+| 生产准备 | 版本兼容、发布 artifact、安全、迁移、排障 | [版本兼容性](/docs/reference/version-compatibility)、[Security](/docs/production/security)、[排障指南](/docs/production/troubleshooting) |
 
 ## 三个概念不要混在一起
 
@@ -79,5 +79,5 @@ AI4J 文档会刻意区分三类能力：
 
 这些模块不是为了展示目录规模，而是为了让使用者只引入当下需要的能力，并保留向上升级的空间。
 
-下一步建议：如果你还没跑过代码，直接看 [Quickstart for Java](/docs/getting-started/quickstart-java)；
-如果你想先判断 AI4J 是否适合自己的项目，看 [Why AI4J](/docs/getting-started/why-ai4j)。
+下一步建议：如果你还没跑过代码，直接看 [Java 快速开始](/docs/getting-started/quickstart-java)；
+如果你想先判断 AI4J 是否适合自己的项目，看 [为什么选 AI4J](/docs/getting-started/why-ai4j)。

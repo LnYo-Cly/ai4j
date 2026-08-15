@@ -1,11 +1,10 @@
 ---
-title: Architecture at a Glance
+title: 架构一览
 description: 用一张四层图建立 AI4J 的整体心智模型：入门、Core SDK 基座、上层模块（Spring Boot/Agent/Coding Agent/FlowGram）与实战方案，并厘清 Function Call、Skill、MCP 三个最易混淆的概念边界。
 tags: [concept]
 ---
 
-# Architecture at a Glance
-
+# 架构一览
 这一页的目标不是讲细节，而是先帮你建立一个不会乱的总图。
 
 如果你能先把这张图记住，后面读 `Core SDK`、`Agent`、`Coding Agent`、`FlowGram` 时，就不会觉得这些模块只是“堆功能”。
@@ -33,7 +32,7 @@ Solutions
 最重要的一点是：`Core SDK` 才是整套体系的主干，其余模块都是在这层基础上往上长出来的。
 
 :::note 这张图讲的是模块，不是文档目录
-文档侧边栏按**读者意图**组织成八个分区（入门 / 核心能力 / Agent 开发 / 扩展 / 产品 / 集成 / 生产 / 参考），与本页的模块栈不是一一对应——例如 MCP 在代码里横跨多个模块，在文档里是核心能力下的一个子域。模块栈帮你看懂代码结构，八分区帮你找到要读的页。两套地图的关系见 [Documentation Map](/docs/reference/maps/documentation-map)。
+文档侧边栏按**读者意图**组织成八个分区（入门 / 核心能力 / Agent 开发 / 扩展 / 产品 / 集成 / 生产 / 参考），与本页的模块栈不是一一对应——例如 MCP 在代码里横跨多个模块，在文档里是核心能力下的一个子域。模块栈帮你看懂代码结构，八分区帮你找到要读的页。两套地图的关系见 [文档地图](/docs/reference/maps/documentation-map)。
 :::
 
 ## 2. 每一层各自负责什么
@@ -151,6 +150,6 @@ docs-site                   文档站源码
 
 ## 6. 下一步
 
-如果你已经知道自己想做哪类事情，继续看 [Choose Your Path](/docs/getting-started/choose-your-path)。
+如果你已经知道自己想做哪类事情，继续看 [入门路径选择](/docs/getting-started/choose-your-path)。
 
 如果你想先把基座主线吃透，下一页建议直接看 [Core SDK / Overview](/docs/capabilities/overview)。

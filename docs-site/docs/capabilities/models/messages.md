@@ -167,7 +167,7 @@ AgentResult result = agent.newSession().run("Introduce yourself in one sentence.
 // result.getRawResponse() —— 原生 AnthropicChatCompletionResponse（非 OpenAI 类型）
 ```
 
-底层是 `MessagesModelClient`（与 `ChatModelClient` / `ResponsesModelClient` 并列的第三个 `AgentModelClient`）。详见 [Model Client Selection](/docs/agent/model-client-selection)。
+底层是 `MessagesModelClient`（与 `ChatModelClient` / `ResponsesModelClient` 并列的第三个 `AgentModelClient`）。详见 [模型客户端选型](/docs/agent/model-client-selection)。
 
 ## 6. coding-plan：智谱 / MiniMax 的 Anthropic 入口
 
@@ -226,8 +226,8 @@ ai:
 
 ## 11. 继续阅读
 
-1. [Chat](/docs/capabilities/models/chat)
-2. [Responses](/docs/capabilities/models/responses)
-3. [Chat vs Responses](/docs/capabilities/models/chat-vs-responses)
-4. [Model Client Selection](/docs/agent/model-client-selection)
+1. [Chat 主线](/docs/capabilities/models/chat)
+2. [Responses 主线](/docs/capabilities/models/responses)
+3. [Chat 与 Responses 对比](/docs/capabilities/models/chat-vs-responses)
+4. [模型客户端选型](/docs/agent/model-client-selection)
 5. [平台与服务矩阵](/docs/capabilities/models/platform-service-matrix)

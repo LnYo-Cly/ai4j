@@ -70,7 +70,7 @@ ai4j-cli/target/ai4j-cli-2.4.3-SNAPSHOT-jar-with-dependencies.jar
 - 先构建 fat jar
 - 再直接 `java -jar`
 
-当前源码树的版本是 `2.4.3-SNAPSHOT`，因此上面的产物名使用该版本。使用已发布二进制时，请按实际 release 版本替换文件名；当前发布版依赖坐标见 [Release and Artifacts](/docs/reference/release-and-artifacts)。
+当前源码树的版本是 `2.4.3-SNAPSHOT`，因此上面的产物名使用该版本。使用已发布二进制时，请按实际 release 版本替换文件名；当前发布版依赖坐标见 [发布与制品](/docs/reference/release-and-artifacts)。
 
 ---
 

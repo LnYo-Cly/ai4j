@@ -1,11 +1,10 @@
 ---
-title: Pinecone Vector Workflow
+title: Pinecone 向量工作流
 description: 在 Pinecone 后端上搭建入库、检索、rerank 工作流的标准方案，讲解 namespace 知识隔离与统一抽象边界。
 tags: [integration]
 ---
 
-# Pinecone Vector Workflow
-
+# Pinecone 向量工作流
 这个方案回答的是：当你已经确定底层向量库就是 Pinecone，AI4J 里最自然的工作流应该怎么搭。
 
 ## 1. 适合什么场景
@@ -45,13 +44,13 @@ tags: [integration]
 
 如果你还没确定向量库，先回到：
 
-- [RAG Ingestion Vector Store](/docs/integrations/solutions/rag-ingestion-vector-store)
+- [RAG 摄取与向量存储](/docs/integrations/solutions/rag-ingestion-vector-store)
 
 ## 5. 先补哪些主线页
 
 1. [Core SDK / Search & RAG](/docs/capabilities/rag/overview)
 2. [Spring Boot / Auto Configuration](/docs/integrations/spring-boot/auto-configuration)
-3. [RAG Ingestion Vector Store](/docs/integrations/solutions/rag-ingestion-vector-store)
+3. [RAG 摄取与向量存储](/docs/integrations/solutions/rag-ingestion-vector-store)
 
 ## 6. 继续看实现细节
 

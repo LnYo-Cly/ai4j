@@ -229,7 +229,7 @@ server.start().join();
 - `http`
   仅兼容别名，最终映射为 `streamable_http`
 
-`http` 只是 `streamable_http` 的 transport 类型别名，并保留 AUTO 的有限 Streamable HTTP compatibility 语义。已知的 session-era peer 可以在 `ServerConfig` 或客户端 `TransportConfig` 中固定具体 legacy profile；deprecated HTTP+SSE 则应使用 `sse`。详见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+`http` 只是 `streamable_http` 的 transport 类型别名，并保留 AUTO 的有限 Streamable HTTP compatibility 语义。已知的 session-era peer 可以在 `ServerConfig` 或客户端 `TransportConfig` 中固定具体 legacy profile；deprecated HTTP+SSE 则应使用 `sse`。详见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 
 ## 7. 服务端安全默认值与 HTTP 层扩展
 

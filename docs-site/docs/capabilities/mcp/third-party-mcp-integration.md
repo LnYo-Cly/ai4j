@@ -21,7 +21,7 @@ tags: [integration]
 
 :::note Streamable HTTP peer profile
 
-`streamable_http` 默认使用 `AUTO`，且 Gateway JSON 支持 `protocolProfile`。AUTO 只用现代 `server/discover` 探测 Streamable HTTP：有效发现结果走无状态 `2026-07-28`，只有未识别的 `400`、`404` 或 `405` 才会回退到 initialization-era profile。它不是万能识别，也不会自动选用 deprecated HTTP+SSE；后者必须显式配置 `type: "sse"`。本页的 STDIO 示例仍是 session-era 流程，因此会使用 `initialize`。见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+`streamable_http` 默认使用 `AUTO`，且 Gateway JSON 支持 `protocolProfile`。AUTO 只用现代 `server/discover` 探测 Streamable HTTP：有效发现结果走无状态 `2026-07-28`，只有未识别的 `400`、`404` 或 `405` 才会回退到 initialization-era profile。它不是万能识别，也不会自动选用 deprecated HTTP+SSE；后者必须显式配置 `type: "sse"`。本页的 STDIO 示例仍是 session-era 流程，因此会使用 `initialize`。见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 
 :::
 

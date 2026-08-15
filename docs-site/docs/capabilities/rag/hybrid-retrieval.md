@@ -1,11 +1,10 @@
 ---
-title: Hybrid Retrieval
+title: 混合检索
 description: 讲清 AI4J HybridRetriever 的本质是多检索器结果融合器而非固定 Dense+BM25 套餐：默认 RRF 按排名融合，用稳定 key 去重，融合后 score 语义变化以及无 getHybridRagService 便利入口的设计原因。
 tags: [concept]
 ---
 
-# Hybrid Retrieval
-
+# 混合检索
 在 AI4J 里，`hybrid retrieval` 不是一个“神秘黑盒检索器”，而是一个非常具体的组合器：
 
 - 先让多个 `Retriever` 各自出结果
@@ -291,7 +290,7 @@ new HybridRetriever(Arrays.asList(dense, bm25), new RsfFusionStrategy());
 new HybridRetriever(Arrays.asList(dense, bm25), new DbsfFusionStrategy());
 ```
 
-到底哪个更好，没有普适答案——它取决于你的 embedding 模型、BM25 语料分布和召回集大小。建议用 [RAG Evaluation](/docs/capabilities/rag/evaluation) 的 NDCG 指标在同一批标注 query 上做 A/B 对比，而不是拍脑袋选。
+到底哪个更好，没有普适答案——它取决于你的 embedding 模型、BM25 语料分布和召回集大小。建议用 [RAG 评测](/docs/capabilities/rag/evaluation) 的 NDCG 指标在同一批标注 query 上做 A/B 对比，而不是拍脑袋选。
 
 ## 5. “同一个命中” 是怎么判定的
 
@@ -455,8 +454,8 @@ AI4J 当前的 hybrid retrieval，本质上是一个 **`Retriever` 级结果融�
 
 ## 13. 继续阅读
 
-- [RAG Evaluation](/docs/capabilities/rag/evaluation)
-- [Query Planning](/docs/capabilities/rag/query-planning)
-- [Rerank](/docs/capabilities/rag/rerank)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-- [Vector Store and Backends](/docs/capabilities/rag/vector-store-and-backends)
+- [RAG 评测](/docs/capabilities/rag/evaluation)
+- [查询规划](/docs/capabilities/rag/query-planning)
+- [重排](/docs/capabilities/rag/rerank)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+- [向量存储与后端](/docs/capabilities/rag/vector-store-and-backends)

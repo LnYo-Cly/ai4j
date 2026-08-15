@@ -1,12 +1,11 @@
 ---
-title: API Reference
+title: API 参考
 sidebar_position: 1
 description: Versioned Javadoc entry points for each AI4J Maven module, indexed by capability for Core SDK, Agent, Coding Agent, and extension SPI Java types and signatures.
 tags: [reference]
 ---
 
-# API Reference
-
+# API 参考
 Use the conceptual documentation to choose an integration path, then open the rendered Javadoc for exact Java types and method signatures. The links below point to the published `2.4.2` Javadoc, not the repository's next snapshot.
 
 ## Rendered Javadoc by module
@@ -34,4 +33,4 @@ The guides explain behavior and design boundaries. Javadoc is the source for Jav
 
 The explicit `2.4.2` URLs make the reference reproducible for a released dependency. To browse a module's published versions, remove the version segment from the corresponding `javadoc.io` URL, for example [ai4j versions](https://javadoc.io/doc/io.github.lnyo-cly/ai4j).
 
-The repository currently develops the next `2.4.3-SNAPSHOT`; snapshots are not release API documentation. Use [Version Compatibility](/docs/reference/version-compatibility) before upgrading, and use the [release and artifacts guide](/docs/reference/release-and-artifacts) to align a multi-module build with the BOM.
+The repository currently develops the next `2.4.3-SNAPSHOT`; snapshots are not release API documentation. Use [版本兼容性](/docs/reference/version-compatibility) before upgrading, and use the [release and artifacts guide](/docs/reference/release-and-artifacts) to align a multi-module build with the BOM.

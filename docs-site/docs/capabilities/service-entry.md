@@ -1,11 +1,10 @@
 ---
-title: Service Entry and Registry
+title: 服务入口与注册表
 description: 厘清 AiService 单实例入口与 AiServiceRegistry 多实例注册表的真实职责、配置回退和扩展边界。
 tags: [concept]
 ---
 
-# Service Entry and Registry
-
+# 服务入口与注册表
 这一页回答 `Core SDK` 最核心的工程问题之一：**当你真正开始接 provider、切模型、加能力时，代码应该从哪里进入。**
 
 ## 1. 先记住两条主线

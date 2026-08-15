@@ -1,11 +1,10 @@
 ---
-title: Why Agent
+title: 为什么需要 Agent 层
 description: 回答 ai4j 为什么要单独的 Agent 层：多步执行迟早会逼出 runtime、状态源与工具治理，Agent 把主循环、状态语义、治理边界和可观测性统一下来，而不是平行再造框架。
 tags: [concept]
 ---
 
-# Why Agent
-
+# 为什么需要 Agent 层
 `Agent` 这一层存在的原因，不是为了把 Core SDK 再包一层，而是因为一旦系统进入多步执行，业务代码迟早会自己长出一套 runtime。
 
 这不是抽象爱好，而是工程事实。
@@ -387,8 +386,8 @@ Agent 不自动具备：
 
 ## 12. 继续阅读
 
-1. [Agent Overview](/docs/agent/overview)
+1. [Agent 总览](/docs/agent/overview)
 2. [Architecture](/docs/agent/architecture)
 3. [Quickstart](/docs/agent/quickstart)
-4. [Tools and Registry](/docs/agent/tools-and-registry)
-5. [Memory and State](/docs/agent/memory/memory-and-state)
+4. [工具与注册表](/docs/agent/tools-and-registry)
+5. [记忆与状态](/docs/agent/memory/memory-and-state)

@@ -1,11 +1,10 @@
 ---
-title: "Memory and Tool Boundaries"
+title: 记忆与工具边界
 description: "厘清 ChatMemory、Tool、MCP 三层职责边界：memory 只保存会话事实，工具审批与副作用治理归 runtime；说明为何不该把执行控制耦合进 memory 抽象。"
 tags: [concept]
 ---
 
-# Memory and Tool Boundaries
-
+# 记忆与工具边界
 这一页只讲边界。把 memory、tool 和 MCP 分开，才能知道 Core SDK 到底负责到哪里。
 
 ## 1. `ChatMemory` 负责什么

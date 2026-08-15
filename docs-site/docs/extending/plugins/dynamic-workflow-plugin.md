@@ -1,11 +1,10 @@
 ---
-title: Dynamic Workflow Plugin
+title: 动态工作流插件
 description: 讲清 ai4j-plugin-dynamic-workflow 样板插件：模型把复杂任务写成确定性 workflow script，插件只返回 host-mediated 请求 envelope，实际执行由 ai4j-agent runtime 可选接管，内置 Nashorn 执行器默认关闭 Java interop。
 tags: [integration]
 ---
 
-# Dynamic Workflow Plugin
-
+# 动态工作流插件
 :::tip 🚀 生产级参考插件
 `ai4j-plugin-dynamic-workflow` 是 ai4j 的**旗舰参考插件**——同时展示全部 4 种扩展能力（Tool + Command + Skill + Prompt），零运行时依赖（仅 `ai4j-extension-api`），安全设计（host-mediated 请求信封，不执行 JS / 不 spawn agent / 不碰文件），含 9 个单元测试 + 3 个 live 闭环烟测（MiniMax M3 → 脚本 → 信封 → agent 执行 → E2B 沙箱），Java 8 兼容，GitHub Actions CI。
 
@@ -342,8 +341,8 @@ ai4j-cli extension run --enable dynamic-workflow --allow-command workflow workfl
 
 ## 10. 推荐阅读
 
-- [Plugin Packages](/docs/extending/plugins/plugin-packages)
-- [Plugin Recipes](/docs/extending/plugins/plugin-recipes)
-- [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)
+- [插件包](/docs/extending/plugins/plugin-packages)
+- [插件配方](/docs/extending/plugins/plugin-recipes)
+- [Ask User 插件](/docs/extending/plugins/ask-user-plugin)
 - [Agent / Orchestration](/docs/agent/runtimes/workflow-stategraph)
 - [Coding Agent / Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)

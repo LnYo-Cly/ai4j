@@ -1,11 +1,10 @@
 ---
-title: Coding Agent Architecture
+title: Coding Agent 架构
 description: 从执行主链拆解 Coding Agent 的分层架构：CodingAgentBuilder 装配点、WorkspaceContext 边界、CodingSession 容器、delegation runtime、审批 decorator 与 host runtime 的职责划分。
 tags: [concept]
 ---
 
-# Coding Agent Architecture
-
+# Coding Agent 架构
 `Coding Agent` 的架构重点不是“在 `AgentBuilder` 外面再包一层 API”，而是把通用 agent 运行时、workspace 语义、长期会话、宿主交互和外部工具接入拼成一条稳定的本地交付链。
 
 如果不从“执行链”看，你会低估很多类存在的必要性。

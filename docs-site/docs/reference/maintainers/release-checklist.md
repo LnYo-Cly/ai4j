@@ -1,12 +1,11 @@
 ---
-title: Release Checklist
+title: 发布检查清单
 sidebar_position: 3
 description: 维护者把 AI4J 发布到 Maven Central 与 GitHub Release 的前后检查清单，覆盖版本策略、本地验证与发布后核对。
 tags: [reference]
 ---
 
-# Release Checklist
-
+# 发布检查清单
 这页是维护者发布 AI4J 到 Maven Central 和 GitHub Release 前后的最小检查清单。
 
 ## 版本策略

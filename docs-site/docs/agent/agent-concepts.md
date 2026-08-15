@@ -73,7 +73,7 @@ ai4j 的文档按子系统组织（Core SDK / Agent Runtime / Coding Agent / MCP
 - **MCP** = 模型→外部工具服务器（cross-process）
 - **Skill** = 模型→方法论文档（no execution, just knowledge）
 
-详细的对比表和决策框架见 [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)。
+详细的对比表和决策框架见 [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)。
 :::
 
 ---
@@ -85,9 +85,9 @@ ai4j 的文档按子系统组织（Core SDK / Agent Runtime / Coding Agent / MCP
 | 概念 | 一句话 | 所在层 | 详细页 |
 |---|---|---|---|
 | **Memory / Chat Memory** | session 级事实存储（system/user/assistant/tool-call/tool-output/summary），存储与保留策略分离 | Core SDK | [Memory 总览](/docs/capabilities/chat-memory/overview) |
-| **Context Window Management** | 管理进入模型的上下文窗口大小（ContextBudget 限制条目/字符/pinned prefix） | Agent Runtime | [Context Window Management](/docs/agent/memory/context-window-management) |
+| **Context Window Management** | 管理进入模型的上下文窗口大小（ContextBudget 限制条目/字符/pinned prefix） | Agent Runtime | [上下文窗口管理](/docs/agent/memory/context-window-management) |
 | **Compaction** | 压缩上下文（ContextProjector 按策略裁剪/microcompact 工具结果/auto-compact 熔断） | Agent + Coding Agent | [Memory Compact Context](/docs/agent/memory/memory-compact-context) · [Compact & Checkpoint](/docs/products/coding-agent/compact-and-checkpoint) |
-| **Checkpoint / Resume** | 结构化存档 + 崩溃恢复（ResumeCache 跳过已完成副作用 + hash-chained 防篡改审计） | Agent + Coding Agent | [Replay, Recovery & Audit](/docs/agent/observability/replay-recovery-audit) · [Compact & Checkpoint](/docs/products/coding-agent/compact-and-checkpoint) |
+| **Checkpoint / Resume** | 结构化存档 + 崩溃恢复（ResumeCache 跳过已完成副作用 + hash-chained 防篡改审计） | Agent + Coding Agent | [重放、恢复与审计](/docs/agent/observability/replay-recovery-audit) · [Compact & Checkpoint](/docs/products/coding-agent/compact-and-checkpoint) |
 
 :::note 跨层注意
 Compaction 和 Checkpoint 在 Agent Runtime 和 Coding Agent 两个层都有实现，各层关注点不同：
@@ -108,7 +108,7 @@ Compaction 和 Checkpoint 在 Agent Runtime 和 Coding Agent 两个层都有实�
 | **Agent Loop (ReAct / CodeAct)** | 单 agent 的 think→act→observe 循环；ReAct 用 tool-call、CodeAct 用代码执行 | Agent Runtime | [Minimal React Agent](/docs/agent/runtimes/minimal-react-agent) · [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime) |
 | **DAG / Workflow Orchestration** | 把多个 agent 步骤编排成有向无环图（StateGraph），声明节点 + 边 + 条件分支 | Agent Runtime | [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph) |
 | **Subagents** | 主 agent 把子任务委派给隔离的子 agent（独立 memory + tool + session） | Agent Runtime | [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy) |
-| **Agent Teams** | 多个 agent 组成团队，通过 TaskBoard 协调任务分配、并行执行、结果汇总 | Agent Runtime | [Agent Teams](/docs/agent/orchestration/agent-teams) |
+| **Agent Teams** | 多个 agent 组成团队，通过 TaskBoard 协调任务分配、并行执行、结果汇总 | Agent Runtime | [Agent 团队](/docs/agent/orchestration/agent-teams) |
 
 ---
 
@@ -119,7 +119,7 @@ Compaction 和 Checkpoint 在 Agent Runtime 和 Coding Agent 两个层都有实�
 | 概念 | 一句话 | 所在层 | 详细页 |
 |---|---|---|---|
 | **Sandbox** | 隔离代码执行环境（E2B / Daytona / CubeSandbox），agent 在远程沙箱里跑代码 | Agent Runtime | [Sandbox SPI](/docs/agent/governance/sandbox-spi) · [CubeSandbox](/docs/agent/governance/cubesandbox-provider) |
-| **Lifecycle Hooks** | 在 PreToolUse / PostToolUse / Stop 等事件点拦截、审批或观察 agent 行为 | Agent + Coding Agent | [Plugin Lifecycle Hooks](/docs/agent/governance/plugin-lifecycle-hooks) · [Lifecycle Hooks](/docs/products/coding-agent/lifecycle-hooks) |
+| **Lifecycle Hooks** | 在 PreToolUse / PostToolUse / Stop 等事件点拦截、审批或观察 agent 行为 | Agent + Coding Agent | [插件生命周期钩子](/docs/agent/governance/plugin-lifecycle-hooks) · [Lifecycle Hooks](/docs/products/coding-agent/lifecycle-hooks) |
 | **Plugin / Extension** | 第三方打 jar 贡献 tool/command/skill/prompt，经 discover→enable→expose 三段式门禁 | Core SDK (extension-api) | [Extension 总览](/docs/extending/overview) · [扩展 ai4j](/docs/extending/extend-ai4j) |
 | **Workspace Trust** | 首次进入未信任目录时暂停问 y/n，`~/.ai4j/trusted-dirs.txt` 管理；`ai4j cli trust` 命令 | Coding Agent | [Lifecycle Hooks & Trust](/docs/products/coding-agent/lifecycle-hooks) |
 
@@ -141,7 +141,7 @@ Compaction 和 Checkpoint 在 Agent Runtime 和 Coding Agent 两个层都有实�
 | 概念 | 一句话 | 所在层 | 详细页 |
 |---|---|---|---|
 | **Agent Trace / Observability** | runtime 发布统一事件流（MODEL_REQUEST / TOOL_CALL / TOOL_RESULT），trace 消费并折叠成 span 导出到 OTel / Langfuse / JSONL | Agent Runtime | [Trace 与可观测性](/docs/agent/observability/trace-observability) |
-| **Replay / Audit** | 节点级 I/O 重放（live/mock）、崩溃续跑（ResumeCache）、防篡改 hash-chained 审计日志 | Agent Runtime | [Replay, Recovery & Audit](/docs/agent/observability/replay-recovery-audit) |
+| **Replay / Audit** | 节点级 I/O 重放（live/mock）、崩溃续跑（ResumeCache）、防篡改 hash-chained 审计日志 | Agent Runtime | [重放、恢复与审计](/docs/agent/observability/replay-recovery-audit) |
 
 :::note 事件流是基础
 Trace 和 Replay 都是 runtime 事件流的**消费者**，不是埋点——事件已经发布了，trace/replay 只是决定怎么消费。这意味着你可以在不改动 agent 代码的前提下，随时加 trace 导出或 replay 恢复。
@@ -169,7 +169,7 @@ Trace 和 Replay 都是 runtime 事件流的**消费者**，不是埋点——�
 | 概念 | 一句话 | 所在层 | 详细页 |
 |---|---|---|---|
 | **Session Management** | AgentSession 作为有状态长运行容器（sessionId + 独立 memory + event log + snapshot/restore） | Agent + Coding Agent | [Session Runtime](/docs/agent/session-runtime) · [Coding Session Runtime](/docs/products/coding-agent/session-runtime) |
-| **Prompt / System Prompt** | systemPrompt（运行时指令合并）vs instructions（独立保留）的字段语义 + coding-agent 的 prompt 组装管线 | Agent + Coding Agent | [System Prompt vs Instructions](/docs/agent/system-prompt-vs-instructions) · [Prompt Assembly](/docs/products/coding-agent/prompt-assembly) |
+| **Prompt / System Prompt** | systemPrompt（运行时指令合并）vs instructions（独立保留）的字段语义 + coding-agent 的 prompt 组装管线 | Agent + Coding Agent | [系统提示词与指令](/docs/agent/system-prompt-vs-instructions) · [Prompt Assembly](/docs/products/coding-agent/prompt-assembly) |
 | **Harness / Coding Agent** | 完整的终端 coding agent 宿主（CLI/TUI + ACP + sandbox-routing + tools + approvals + compaction） | Coding Agent | [Coding Agent 总览](/docs/products/coding-agent/overview) · [编程式集成](/docs/getting-started/programmatic-integration) |
 
 ---
@@ -184,8 +184,8 @@ Trace 和 Replay 都是 runtime 事件流的**消费者**，不是埋点——�
 
 ## 继续阅读
 
-- [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)——能力三角的详细消歧
+- [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)——能力三角的详细消歧
 - [Agent Runtime 总览](/docs/agent/overview)——agent 子系统的完整入口
 - [扩展 ai4j](/docs/extending/extend-ai4j)——插件/Skill/Prompt/自定义 provider 的聚合入口
 - [编程式集成](/docs/getting-started/programmatic-integration)——SDK/RPC/事件流/TUI 的聚合入口
-- [Feature Map](/docs/getting-started/feature-map)——功能成熟度地图
+- [功能地图](/docs/getting-started/feature-map)——功能成熟度地图

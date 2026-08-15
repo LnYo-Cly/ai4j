@@ -514,6 +514,6 @@ runtime 会误判成功。
 ## 15. 继续阅读
 
 1. [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
-2. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
-3. [Tools and Registry](/docs/agent/tools-and-registry)
+2. [运行时实现](/docs/agent/runtimes/runtime-implementations)
+3. [工具与注册表](/docs/agent/tools-and-registry)
 4. [Trace 与可观测性](/docs/agent/observability/trace-observability)

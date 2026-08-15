@@ -66,8 +66,8 @@ tags: [concept]
 
 先看：
 
-1. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
-2. [Custom Nodes](/docs/products/flowgram/custom-nodes)
+1. [内置节点](/docs/products/flowgram/built-in-nodes)
+2. [自定义节点](/docs/products/flowgram/custom-nodes)
 3. [Frontend / Backend Integration](/docs/products/flowgram/frontend-backend-integration)
 4. [Runtime](/docs/products/flowgram/runtime)
 
@@ -83,7 +83,7 @@ tags: [concept]
 
 先看：
 
-1. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
+1. [内置节点](/docs/products/flowgram/built-in-nodes)
 2. [Agent / Tool / Knowledge Integration](/docs/products/flowgram/agent-tool-knowledge-integration)
 3. [Runtime](/docs/products/flowgram/runtime)
 
@@ -226,8 +226,8 @@ tags: [concept]
 
 先看：
 
-1. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
-2. [Custom Nodes](/docs/products/flowgram/custom-nodes)
+1. [内置节点](/docs/products/flowgram/built-in-nodes)
+2. [自定义节点](/docs/products/flowgram/custom-nodes)
 
 然后再读：
 

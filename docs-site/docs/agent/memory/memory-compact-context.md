@@ -1,12 +1,11 @@
 ---
 sidebar_position: 6
-title: Memory Compact Context Projector
+title: 记忆压缩与上下文投影器
 description: 介绍 ai4j-agent 的 ContextProjector 与 CompactPolicy：如何把 memory snapshot 投影成本轮 prompt、用结构化 CompactResult 压缩长程上下文，并让压缩过程可诊断、可恢复。
 tags: [concept]
 ---
 
-# Memory Compact Context Projector
-
+# 记忆压缩与上下文投影器
 这一页说明 `ai4j-agent` 里新加入的 Memory / Compact / Context Projector 基础能力。
 
 先说结论：它不是“自动变聪明的摘要器”，而是把长程 Agent 里最容易混乱的三件事拆开：
@@ -400,9 +399,9 @@ P0-B 是基础层，不包含：
 
 ## 12. 推荐继续阅读
 
-- [Agent Session Runtime](/docs/agent/session-runtime)
-- [Memory and State](/docs/agent/memory/memory-and-state)
-- [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)
+- [Agent 会话运行时](/docs/agent/session-runtime)
+- [记忆与状态](/docs/agent/memory/memory-and-state)
+- [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)
 - [Coding Agent Compact and Checkpoint](/docs/products/coding-agent/compact-and-checkpoint)
 
 ## Auto-compaction (runtime-triggered)

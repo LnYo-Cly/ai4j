@@ -163,13 +163,13 @@ AI4J 把图文输入纳入了统一会话抽象：
 
 建议按下面顺序读：
 
-1. [Chat](/docs/capabilities/models/chat)
-2. [Responses](/docs/capabilities/models/responses)
+1. [Chat 主线](/docs/capabilities/models/chat)
+2. [Responses 主线](/docs/capabilities/models/responses)
 3. [Messages](/docs/capabilities/models/messages)
-4. [Chat vs Responses](/docs/capabilities/models/chat-vs-responses)
-5. [Streaming](/docs/capabilities/models/streaming)
-6. [Multimodal](/docs/capabilities/models/multimodal)
-7. [Request and Response Conventions](/docs/capabilities/models/request-and-response-conventions)
+4. [Chat 与 Responses 对比](/docs/capabilities/models/chat-vs-responses)
+5. [流式语义](/docs/capabilities/models/streaming)
+6. [多模态](/docs/capabilities/models/multimodal)
+7. [请求与返回约定](/docs/capabilities/models/request-and-response-conventions)
 
 ## 9. 这一页的结论
 

@@ -99,6 +99,6 @@ AI4J 的 `OpenAiConfig` 默认使用：
 
 ## 6. 下一步
 
-- 普通 Java 接入：看 [Quickstart for Java](/docs/getting-started/quickstart-java)
-- Spring Boot 接入：看 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
-- 多实例入口：看 [Service Entry and Registry](/docs/capabilities/service-entry)
+- 普通 Java 接入：看 [Java 快速开始](/docs/getting-started/quickstart-java)
+- Spring Boot 接入：看 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
+- 多实例入口：看 [服务入口与注册表](/docs/capabilities/service-entry)

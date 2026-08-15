@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Comparison and Positioning
+title: 对比与定位
 description: AI4J 与 Spring AI、LangChain4j、AgentScope Java、Pi Agent 等方案的定位对比。不做拉踩，而是讲清 AI4J 专注 Java 8+ 多模块 SDK、渐进接入能力和更轻的按需取用路径，帮你判断何时选 AI4J。
 tags: [concept]
 ---
 
-# Comparison and Positioning
-
+# 对比与定位
 这页回答 AI4J 与 Spring AI、LangChain4j、AgentScope Java、Pi Agent 这类方案的区别。它不做拉踩，也不试图证明个人项目在生态规模上超过大团队项目。更实际的判断是：AI4J 应该把 Java 接入 AI 的成本做低，把模块边界讲清楚，并提供一些更轻、更直、更容易按需取用的路径。
 
 ## 先说结论
@@ -40,7 +39,7 @@ AI4J 的路线不是“替代所有框架”，而是先把 Java 项目接 AI �
 
 这些不是生态规模优势，而是产品取舍优势。个人项目更应该把“容易开始、边界清楚、按需取用”做到极致。
 
-后五行是能在选型文档里直接复述的硬技术差异点：每一项都有对应模块代码和文档页支撑（见 [Strengths and Differentiators](/docs/reference/about/strengths-and-differentiators)），不是路线图承诺。
+后五行是能在选型文档里直接复述的硬技术差异点：每一项都有对应模块代码和文档页支撑（见 [优势与差异点](/docs/reference/about/strengths-and-differentiators)），不是路线图承诺。
 
 ## 与 Spring AI 的区别
 

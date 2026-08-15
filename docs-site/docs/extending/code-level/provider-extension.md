@@ -1,11 +1,10 @@
 ---
-title: Provider Extension
+title: Provider 扩展
 description: 讲清 AI4J provider extension：新增模型平台是显式工厂分发扩展，必须同时触碰 PlatformType、Configuration、AiService、DefaultAiServiceRegistry 与 Spring Boot starter，provider 支持矩阵显式维护而非自动发现。
 tags: [concept]
 ---
 
-# Provider Extension
-
+# Provider 扩展
 `provider extension` 解决的是：**把一个新的模型平台正式纳入 AI4J 的平台分发体系**。  
 它不是“再写一个 service 类”这么简单，因为 AI4J 当前对 provider 的建模是显式的、枚举驱动的。
 
@@ -56,7 +55,7 @@ AI4J 目前并没有“注册一个 provider 插件即可接入”的通用 prov
 - 某个 provider 的 `Chat` 已有能力里增加一个可选选项
 - 同一协议族下只是切换 `apiHost`
 
-这些更像 [Model Extension](/docs/extending/code-level/model-extension)。
+这些更像 [模型扩展](/docs/extending/code-level/model-extension)。
 
 只有当你需要：
 

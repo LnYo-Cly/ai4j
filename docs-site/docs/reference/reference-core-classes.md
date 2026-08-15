@@ -560,9 +560,9 @@ Agent runtime 的统一事件总线。
 
 ## 15. 继续阅读
 
-1. [Agent Architecture](/docs/agent/architecture)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+1. [Agent 架构](/docs/agent/architecture)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [运行时实现](/docs/agent/runtimes/runtime-implementations)
 4. [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
 5. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-6. [Agent Teams](/docs/agent/orchestration/agent-teams)
+6. [Agent 团队](/docs/agent/orchestration/agent-teams)

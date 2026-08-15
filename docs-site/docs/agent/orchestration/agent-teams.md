@@ -1,12 +1,11 @@
 ---
 sidebar_position: 11
-title: Agent Teams
+title: Agent 团队
 description: "ai4j Agent Teams 是带控制面的团队运行时：planner 拆任务、task board 维护依赖与状态、成员注入 team_* 工具协作、synthesizer 汇总最终答案。"
 tags: [concept]
 ---
 
-# Agent Teams
-
+# Agent 团队
 `AgentTeam` 不是“把多个 Agent 放进一个列表里依次调用”，而是一个带控制面的团队运行时。
 
 它把多成员协作拆成 5 个显式部件：
@@ -709,7 +708,7 @@ AgentTeamResult result = team.run("Review the latest release candidate and summa
 
 如果读完这一页还想往下钻，建议继续：
 
-1. [Agent Teams API Reference](/docs/agent/orchestration/agent-teams-api-reference)
+1. [Agent 团队 API 参考](/docs/agent/orchestration/agent-teams-api-reference)
 2. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
 3. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
 4. [Trace 与可观测性](/docs/agent/observability/trace-observability)

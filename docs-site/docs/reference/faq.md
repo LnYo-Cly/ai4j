@@ -1,12 +1,11 @@
 ---
 sidebar_position: 998
-title: FAQ
+title: 常见问题
 description: AI4J 文档站常见问题收敛：第一次该看哪里、SDK 与 AI 基座的关系，以及 Chat/Responses、Function Call/Tool、MCP/Agent、Skill/Tool、ACP/MCP 等概念辨析与路径判断。
 tags: [reference]
 ---
 
-# FAQ
-
+# 常见问题
 本页收敛 AI4J 文档站里最常见的“我到底该看哪一页”和“这几个概念到底有什么区别”。
 
 如果你遇到的是某个接口调用失败、参数异常或具体报错，优先看对应专题页里的排障部分；本页更偏“路径判断”和“概念澄清”。
@@ -17,10 +16,10 @@ tags: [reference]
 
 优先顺序：
 
-1. [Why AI4J](/docs/getting-started/why-ai4j)
-2. [Architecture at a Glance](/docs/reference/maps/architecture-at-a-glance)
-3. [Quickstart for Java](/docs/getting-started/quickstart-java)
-4. [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+1. [为什么选 AI4J](/docs/getting-started/why-ai4j)
+2. [架构一览](/docs/reference/maps/architecture-at-a-glance)
+3. [Java 快速开始](/docs/getting-started/quickstart-java)
+4. [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 
 ---
 
@@ -45,8 +44,8 @@ tags: [reference]
 
 如果你要先理解这套基座是怎么分层的，优先看：
 
-- [Why AI4J](/docs/getting-started/why-ai4j)
-- [Architecture at a Glance](/docs/reference/maps/architecture-at-a-glance)
+- [为什么选 AI4J](/docs/getting-started/why-ai4j)
+- [架构一览](/docs/reference/maps/architecture-at-a-glance)
 
 ---
 
@@ -77,7 +76,7 @@ tags: [reference]
 
 对应文档：
 
-- [Chat vs Responses](/docs/capabilities/models/chat-vs-responses)
+- [Chat 与 Responses 对比](/docs/capabilities/models/chat-vs-responses)
 
 ---
 
@@ -92,7 +91,7 @@ tags: [reference]
 
 如果你现在只是想先理解第一条工具链路，优先看：
 
-- [First Tool Call](/docs/getting-started/first-tool-call)
+- [第一次工具调用](/docs/getting-started/first-tool-call)
 - [Core SDK / Tools](/docs/capabilities/tools/overview)
 
 ---

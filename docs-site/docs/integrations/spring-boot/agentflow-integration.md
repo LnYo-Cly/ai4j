@@ -1,11 +1,10 @@
 ---
-title: AgentFlow Auto-Configuration
+title: AgentFlow 自动配置
 description: 讲解 ai.agentflow.* 如何在 Spring Boot 下自动装配多 profile 的 AgentFlow 注册表（AgentFlowRegistry），把 Coze / Dify / N8N 等外部工作流平台接进 ai4j，以及 default-name、条件 Bean 与默认 AgentFlow 的解析规则。
 tags: [integration]
 ---
 
-# AgentFlow Auto-Configuration
-
+# AgentFlow 自动配置
 `AgentFlow` 是 ai4j 对接外部工作流平台（Coze、Dify、N8N 等）的薄封装。这一页只讲它在 Spring Boot 下是怎么自动装配的，不讲单个平台的调用细节。
 
 ## 1. 配置入口：`ai.agentflow.*`
@@ -121,4 +120,4 @@ public class DefaultWorkflowService {
 ## 6. 继续阅读
 
 - 配置分层与其它 `ai.*` 前缀：见 [Configuration Reference](/docs/integrations/spring-boot/configuration-reference)
-- 装配链与失败传播：见 [Spring Boot Auto Configuration](/docs/integrations/spring-boot/auto-configuration)
+- 装配链与失败传播：见 [Spring Boot 自动配置](/docs/integrations/spring-boot/auto-configuration)

@@ -1,12 +1,11 @@
 ---
 sidebar_position: 5
-title: Runtime Implementations
+title: 运行时实现
 description: 拆解 ReActRuntime、CodeActRuntime、DeepResearchRuntime 三种 runtime：它们共享 BaseAgentRuntime 主循环，差异在于模型输出的中间表示，以及何时换中间表示、何时自定义 runtime。
 tags: [concept]
 ---
 
-# Runtime Implementations
-
+# 运行时实现
 `AgentRuntime` 决定的不是“模型用哪个 provider”，而是“一次 Agent run 如何推进、何时停止、何时发事件、工具结果如何回灌”。
 
 同一个 `AgentBuilder`，之所以可以切 `ReActRuntime`、`CodeActRuntime`、`DeepResearchRuntime`，是因为这三种 runtime 代表了三种不同的执行语义，而不是同一条链路的文案差异。
@@ -378,8 +377,8 @@ public class MyRuntime extends BaseAgentRuntime {
 
 ## 12. 继续阅读
 
-1. [Agent Architecture](/docs/agent/architecture)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
+1. [Agent 架构](/docs/agent/architecture)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
 4. [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
 5. [CodeAct Custom Sandbox](/docs/agent/runtimes/codeact-custom-sandbox)

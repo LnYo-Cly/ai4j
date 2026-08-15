@@ -335,7 +335,7 @@ TOOL_ERROR: {"errorType":"...","error":"...","tool":"...","callId":"..."}
 - 需要执行模型生成的代码：进入 [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
 - 需要显式节点和状态推进：进入 [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
 - 需要主从委派：进入 [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-- 需要团队协作：进入 [Agent Teams](/docs/agent/orchestration/agent-teams)
+- 需要团队协作：进入 [Agent 团队](/docs/agent/orchestration/agent-teams)
 
 判断标准不是“功能多不多”，而是当前问题是否还属于单一 tool loop。
 
@@ -351,7 +351,7 @@ TOOL_ERROR: {"errorType":"...","error":"...","tool":"...","callId":"..."}
 
 ## 15. 继续阅读
 
-1. [Agent Architecture](/docs/agent/architecture)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
+1. [Agent 架构](/docs/agent/architecture)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
 4. [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)

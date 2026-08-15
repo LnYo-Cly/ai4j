@@ -1,11 +1,10 @@
 ---
-title: Spring Boot Common Patterns
+title: Spring Boot 常用模式
 description: 归纳 Spring Boot 接入 AI4J 的推荐分层与工程组织模式，明确 Web、AI4J 调用与 Tool、RAG、Workflow 的责任边界。
 tags: [integration]
 ---
 
-# Spring Boot Common Patterns
-
+# Spring Boot 常用模式
 这一页讲高频工程组织方式，不讲 API 语法。
 
 ## 1. 这页真正解决什么

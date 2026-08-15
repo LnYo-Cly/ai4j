@@ -1,11 +1,10 @@
 ---
-title: Service Extension
+title: 服务扩展
 description: 讲清 AI4J service extension：新增顶层能力契约会扩大整个 SDK 公共 API 面，必须同步 AiService、AiServiceRegistry 与 FreeAiService 兼容入口，AiServiceFactory 不是 service 插件总线，仅在现有契约无法承载时才值得新增。
 tags: [concept]
 ---
 
-# Service Extension
-
+# 服务扩展
 `service extension` 解决的是：**AI4J 是否要新增一条新的顶层能力契约**。  
 这比 model extension 更重，因为你不是在补某个平台，而是在扩大整个 SDK 的公共能力面。
 

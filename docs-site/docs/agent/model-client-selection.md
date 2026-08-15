@@ -1,12 +1,11 @@
 ---
 sidebar_position: 3
-title: Model Client Selection
+title: 模型客户端选型
 description: 对比 ChatModelClient 与 ResponsesModelClient：systemPrompt/instructions 的协议映射、顶层字段下推差异、流式信号与 memoryItems 形状，帮你为 Agent 选对模型协议路径。
 tags: [concept]
 ---
 
-# Model Client Selection
-
+# 模型客户端选型
 `AgentModelClient` 决定的不是“你用哪个 provider”，而是：
 
 > Agent runtime 组装好的 `AgentPrompt`，最终以什么协议形态发给模型。
@@ -439,6 +438,6 @@ Agent agent = Agents.react()
 ## 13. 继续阅读
 
 1. [Quickstart](/docs/agent/quickstart)
-2. [System Prompt vs Instructions](/docs/agent/system-prompt-vs-instructions)
-3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+2. [系统提示词与指令](/docs/agent/system-prompt-vs-instructions)
+3. [工具与注册表](/docs/agent/tools-and-registry)
+4. [运行时实现](/docs/agent/runtimes/runtime-implementations)

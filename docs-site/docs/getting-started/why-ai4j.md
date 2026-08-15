@@ -1,10 +1,10 @@
 ---
-title: Why AI4J
+title: 为什么选 AI4J
 description: 回答在 Java 项目里为什么可以考虑 AI4J：面向 Java 8+ 的渐进式 AI SDK 取舍、可按阶段取用的模块分层，以及与 Spring AI、LangChain4j 的差异和适合场景。
 tags: [concept]
 ---
 
-# Why AI4J
+# 为什么选 AI4J
 
 AI4J 是一套面向 `Java 8+` 的 AI SDK。它最核心的目标是降低 Java 项目接入 AI 的成本：
 少引概念、少写胶水代码、少被 provider 差异拖住，同时保留向 RAG、MCP、Spring Boot、
@@ -66,19 +66,19 @@ AI4J 更适合把差异放在这些地方：
 ### 1. 普通 Java 也能先接入
 
 你不需要先把项目改造成某个完整应用框架，也不需要一开始就理解 Agent、workflow 或复杂编排。
-从 [Quickstart for Java](/docs/getting-started/quickstart-java) 开始，可以先验证模型配置和一次调用。
+从 [Java 快速开始](/docs/getting-started/quickstart-java) 开始，可以先验证模型配置和一次调用。
 
-如果项目已经是 Spring Boot，再走 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)，
+如果项目已经是 Spring Boot，再走 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)，
 用 starter 管理配置和 Bean。
 
 ### 2. 模型能力不是孤立 wrapper
 
 Core SDK 覆盖的不只是 `chat()`：
 
-- [Chat](/docs/capabilities/models/chat)
-- [Responses](/docs/capabilities/models/responses)
-- [Streaming](/docs/capabilities/models/streaming)
-- [Multimodal](/docs/capabilities/models/multimodal)
+- [Chat 主线](/docs/capabilities/models/chat)
+- [Responses 主线](/docs/capabilities/models/responses)
+- [流式语义](/docs/capabilities/models/streaming)
+- [多模态](/docs/capabilities/models/multimodal)
 - Embedding、Rerank、Image、Audio、Realtime 等扩展能力
 
 这些能力应该共享配置、provider 接入和工程约束，而不是每个能力都重新写一套入口。
@@ -144,11 +144,11 @@ AI4J 不太适合：
 
 | 你现在想做什么 | 下一页 |
 | --- | --- |
-| 跑通第一条请求 | [Quickstart for Java](/docs/getting-started/quickstart-java) |
-| 普通 Java 先跑通 | [Quickstart for Java](/docs/getting-started/quickstart-java) |
-| Spring Boot 接入 | [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot) |
-| 看完整功能地图 | [Feature Map](/docs/getting-started/feature-map) |
+| 跑通第一条请求 | [Java 快速开始](/docs/getting-started/quickstart-java) |
+| 普通 Java 先跑通 | [Java 快速开始](/docs/getting-started/quickstart-java) |
+| Spring Boot 接入 | [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot) |
+| 看完整功能地图 | [功能地图](/docs/getting-started/feature-map) |
 | 理解 Chat 调用 | [Model Access / Chat](/docs/capabilities/models/chat) |
-| 让模型调用本地工具 | [First Tool Call](/docs/getting-started/first-tool-call) |
+| 让模型调用本地工具 | [第一次工具调用](/docs/getting-started/first-tool-call) |
 
-如果你还不确定该走哪条线，先看 [Feature Map](/docs/getting-started/feature-map)。
+如果你还不确定该走哪条线，先看 [功能地图](/docs/getting-started/feature-map)。

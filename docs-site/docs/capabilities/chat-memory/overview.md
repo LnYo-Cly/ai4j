@@ -153,7 +153,7 @@ AI4J 保存的不是“最后一句聊天文本”，而是更完整的会话事
 ## 9. 推荐阅读顺序
 
 1. [Chat Memory](/docs/capabilities/chat-memory/)
-2. [Memory and Tool Boundaries](/docs/capabilities/chat-memory/memory-and-tool-boundaries)
+2. [记忆与工具边界](/docs/capabilities/chat-memory/memory-and-tool-boundaries)
 3. [Agent / Memory and State](/docs/agent/memory/memory-and-state)
 
 ## 10. 这一页的结论

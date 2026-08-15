@@ -119,7 +119,7 @@ MCP 在仓库里的位置，不属于某个工具实现细节，而属于 AI 能
 - AUTO 仅在未识别的 `400`、`404` 或 `405` 时回退到 initialization-era Streamable HTTP。它不会因认证失败或可识别的现代错误降级，也不能自动识别 deprecated HTTP+SSE。
 - STDIO、显式 `sse` transport，以及显式选择 legacy Streamable HTTP profile 的 client，保留 session-era 流程：`initialize`、能力协商、`notifications/initialized`。
 
-因此，`isInitialized()` 表示 client 已准备好调用，不应被理解成“所有 transport 都已经完成了一次初始化握手”。现代 HTTP 的协议详情和升级路径见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+因此，`isInitialized()` 表示 client 已准备好调用，不应被理解成“所有 transport 都已经完成了一次初始化握手”。现代 HTTP 的协议详情和升级路径见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 
 ### 3.2 它默认会做缓存
 

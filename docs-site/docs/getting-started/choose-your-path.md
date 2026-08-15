@@ -1,11 +1,10 @@
 ---
-title: Choose Your Path
+title: 入门路径选择
 description: 按目标选择进入 AI4J 的主线：默认阅读顺序，以及快速发起模型请求、Spring Boot 接入、Tool/MCP/Agent/Coding Agent/FlowGram 各自的推荐起点与切深时机。
 tags: [concept]
 ---
 
-# Choose Your Path
-
+# 入门路径选择
 不同读者不该从同一页开始。
 
 这页的作用不是替你讲完所有模块，而是先帮你决定：
@@ -18,10 +17,10 @@ tags: [concept]
 
 推荐的默认顺序是：
 
-1. [Why AI4J](/docs/getting-started/why-ai4j)
-2. [Architecture at a Glance](/docs/reference/maps/architecture-at-a-glance)
-3. [Quickstart for Java](/docs/getting-started/quickstart-java) 或 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
-4. [First Tool Call](/docs/getting-started/first-tool-call)
+1. [为什么选 AI4J](/docs/getting-started/why-ai4j)
+2. [架构一览](/docs/reference/maps/architecture-at-a-glance)
+3. [Java 快速开始](/docs/getting-started/quickstart-java) 或 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
+4. [第一次工具调用](/docs/getting-started/first-tool-call)
 5. [Core SDK / Overview](/docs/capabilities/overview)
 
 这条线最适合：
@@ -36,7 +35,7 @@ tags: [concept]
 
 从这里开始：
 
-1. [Quickstart for Java](/docs/getting-started/quickstart-java)
+1. [Java 快速开始](/docs/getting-started/quickstart-java)
 2. [Core SDK / Model Access](/docs/capabilities/models/overview)
 
 这条线会先让你确认三件事：
@@ -49,7 +48,7 @@ tags: [concept]
 
 从这里开始：
 
-1. [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+1. [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 2. [Spring Boot / 总览](/docs/integrations/spring-boot/overview)
 3. [Spring Boot / Auto Configuration](/docs/integrations/spring-boot/auto-configuration)
 
@@ -63,7 +62,7 @@ tags: [concept]
 
 从这里开始：
 
-1. [First Tool Call](/docs/getting-started/first-tool-call)
+1. [第一次工具调用](/docs/getting-started/first-tool-call)
 2. [Core SDK / Tools](/docs/capabilities/tools/overview)
 3. [Core SDK / Skills](/docs/capabilities/skills/overview)
 4. [MCP](/docs/capabilities/mcp/overview)
@@ -130,8 +129,8 @@ tags: [concept]
 
 建议按这个顺序读：
 
-1. [Why AI4J](/docs/getting-started/why-ai4j)
-2. [Architecture at a Glance](/docs/reference/maps/architecture-at-a-glance)
+1. [为什么选 AI4J](/docs/getting-started/why-ai4j)
+2. [架构一览](/docs/reference/maps/architecture-at-a-glance)
 3. [Core SDK / Overview](/docs/capabilities/overview)
 4. [Core SDK / Strengths and Differentiators](/docs/reference/about/strengths-and-differentiators)
 5. 再按你的重点补 `Spring Boot / Agent / Coding Agent / FlowGram`

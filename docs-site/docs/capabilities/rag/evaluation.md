@@ -1,11 +1,10 @@
 ---
-title: RAG Evaluation
+title: RAG 评测
 description: 讲清 AI4J 两套评估器的边界：离线 RagEvaluator 用人工标注的相关 id 算 precision/recall/F1/MRR/NDCG 衡量检索质量，在线 RagOnlineEvaluator 在生成回答后用 judge 模型打 faithfulness 分，两者不混用、不替代。
 tags: [concept]
 ---
 
-# RAG Evaluation
-
+# RAG 评测
 在 AI4J 里，“评估 RAG” 不是一件事，而是两件边界完全不同的事：
 
 - **离线检索质量评估**：`RagEvaluator`，衡量“召回准不准”
@@ -187,7 +186,7 @@ RagEvaluation eval = new RagEvaluator().evaluate(hits, Arrays.asList("b", "d"), 
 
 在线评判层（`RagJudge` SPI、`ChatRagJudge` 三维评分协议、评判如何写进 `RagTrace`）的完整说明见 [LLM-as-Judge](/docs/capabilities/rag/llm-as-judge)。
 
-如果你要看在线 judge 怎么用，参考 [Citations and Trace](/docs/capabilities/rag/citations-and-trace)。
+如果你要看在线 judge 怎么用，参考 [引用与 Trace](/docs/capabilities/rag/citations-and-trace)。
 
 ## 9. 当前这一层没有替你做什么
 
@@ -222,7 +221,7 @@ precision@K = 0.6 这个数字本身没意义，只有和“换策略前的 0.5�
 
 ## 12. 继续阅读
 
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
-- [Rerank](/docs/capabilities/rag/rerank)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-- [Query Planning](/docs/capabilities/rag/query-planning)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
+- [重排](/docs/capabilities/rag/rerank)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+- [查询规划](/docs/capabilities/rag/query-planning)

@@ -1,12 +1,11 @@
 ---
-title: Quickstart for Spring Boot
+title: Spring Boot 快速开始
 description: Spring Boot 项目接入 AI4J 的最短路径：引入 starter、最小 application.yml 配置、AiService Bean 注入，并给出 controller 发出第一条模型请求的完整示例。
 tags: [how-to]
 ---
 
-# Quickstart for Spring Boot
-
-这页给 Spring Boot 项目一条最短成功路径。普通 Java 项目请直接使用 [Quickstart for Java](/docs/getting-started/quickstart-java)。
+# Spring Boot 快速开始
+这页给 Spring Boot 项目一条最短成功路径。普通 Java 项目请直接使用 [Java 快速开始](/docs/getting-started/quickstart-java)。
 
 本页对应的主模块是：
 
@@ -219,4 +218,4 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 - 想看底层 `Chat` 调用语义：看 [Core SDK / Model Access / Chat](/docs/capabilities/models/chat)
 - 想配置更多 provider：看 [Spring Boot / Configuration Reference](/docs/integrations/spring-boot/configuration-reference)
 - 想扩展 Bean 或复用业务服务：看 [Spring Boot / Bean Extension](/docs/integrations/spring-boot/bean-extension)
-- 想做 Tool / Function Call：看 [First Tool Call](/docs/getting-started/first-tool-call)
+- 想做 Tool / Function Call：看 [第一次工具调用](/docs/getting-started/first-tool-call)

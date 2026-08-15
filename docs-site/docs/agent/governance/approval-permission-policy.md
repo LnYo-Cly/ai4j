@@ -1,12 +1,11 @@
 ---
 sidebar_position: 8
-title: Agent Approval / Permission Policy
+title: Agent 审批与权限策略
 description: "AgentPermissionPolicy 在工具执行前做权限判断：ALLOW / DENY / REQUIRE_APPROVAL，可被普通 Agent、Blueprint、CLI 审批界面与后续 Sandbox SPI 复用。"
 tags: [concept]
 ---
 
-# Agent Approval / Permission Policy
-
+# Agent 审批与权限策略
 `AgentPermissionPolicy` 是 `ai4j-agent` 的工具执行前置策略层。它解决的问题很明确：
 
 > 模型已经决定要调用某个工具，但宿主程序是否允许它现在执行？

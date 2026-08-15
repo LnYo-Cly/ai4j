@@ -1,14 +1,13 @@
 ---
-title: Extension SPI Internals
+title: 扩展 SPI 内部机制
 description: 讲清插件发现与资源读取的两层内部 SPI：ExtensionLoader 接口允许用非 ServiceLoader 方式发现插件（默认 ServiceLoaderExtensionLoader 标注 Internal），ExtensionResourceResolver 公共助手按插件 classloader -> TCCL -> resolver classloader 顺序读取 classpath 文本资源并隔离各插件 jar，以及发现之后 ExtensionRegistry.list() 返回的检视投影 DiscoveredExtension（manifest + extension + enabled）。
 tags: [reference]
 ---
 
-# Extension SPI Internals
-
+# 扩展 SPI 内部机制
 这一页覆盖插件机制里两个底层接线点：**怎么发现插件**，以及**怎么从插件 jar 里读 classpath 文本资源**。它们不是日常写插件会碰到的东西，只有在自定义发现方式、排查资源读取问题或构建宿主框架时才需要。
 
-如果你只是写一个普通插件，看 [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook) 就够了。
+如果你只是写一个普通插件，看 [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook) 就够了。
 
 ## 1. 插件发现：`ExtensionLoader`
 
@@ -190,6 +189,6 @@ String markdown = ExtensionResourceResolver.readTextStrict(
 
 ## 4. 下一步阅读
 
-1. [Plugin Packages](/docs/extending/plugins/plugin-packages)
-2. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
-3. [Lifecycle Extensions](/docs/extending/plugins/lifecycle-extensions)
+1. [插件包](/docs/extending/plugins/plugin-packages)
+2. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
+3. [生命周期扩展](/docs/extending/plugins/lifecycle-extensions)

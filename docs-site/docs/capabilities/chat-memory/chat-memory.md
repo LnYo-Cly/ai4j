@@ -1,11 +1,10 @@
 ---
-title: "Chat Memory"
+title: Chat 记忆
 description: "深入 ChatMemory 契约：ChatMemoryItem 承载多模态与工具事实、InMemory 与 Jdbc 两种存储、窗口与摘要策略、快照恢复，及投影到 Chat 与 Responses 的共享基座。"
 tags: [concept]
 ---
 
-# Chat Memory
-
+# Chat 记忆
 `ChatMemory` 是 AI4J 基座里一个非常核心、但容易被低估的对象。  
 它真正做的不是“帮你存一份 messages”，而是 **把多轮会话事实组织成可投影、可裁剪、可快照、可恢复的统一上下文抽象**。
 

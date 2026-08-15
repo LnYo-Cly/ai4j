@@ -1,11 +1,10 @@
 ---
-title: Architecture and Module Map
+title: 架构与模块地图
 description: 把 AI4J 仓库的 Maven 模块主线、依赖方向和代码定位入口落到真实工程上，帮助你在读源码或评估模块边界时找到正确落点。
 tags: [concept]
 ---
 
-# Architecture and Module Map
-
+# 架构与模块地图
 这一页把文档里的“分层”直接落到仓库真实模块上。
 
 如果你后面要读源码、做架构说明，或者评估模块边界，这一页应该能帮你回答三个问题：
@@ -196,7 +195,7 @@ ai4j-flowgram-demo          -> ai4j-flowgram-spring-boot-starter
 10. [Coding Agent / Overview](/docs/products/coding-agent/overview)
 11. [Flowgram / Overview](/docs/products/flowgram/overview)
 
-如果你下一步想继续从代码结构往包结构下钻，建议继续看 [Package Map](/docs/reference/maps/package-map)。
+如果你下一步想继续从代码结构往包结构下钻，建议继续看 [包地图](/docs/reference/maps/package-map)。
 
 ## 6. 还要特别注意两类相邻目录
 

@@ -27,8 +27,8 @@ tags: [reference]
 
 如果你要先看这套分层从哪里开始，优先看：
 
-- [Why AI4J](/docs/getting-started/why-ai4j)
-- [Architecture at a Glance](/docs/reference/maps/architecture-at-a-glance)
+- [为什么选 AI4J](/docs/getting-started/why-ai4j)
+- [架构一览](/docs/reference/maps/architecture-at-a-glance)
 
 ### ACP
 
@@ -54,7 +54,7 @@ AI4J 的统一服务工厂，用于按 `PlatformType` 获取 `Chat`、`Responses
 
 对应文档：
 
-- [Service Entry and Registry](/docs/capabilities/service-entry)
+- [服务入口与注册表](/docs/capabilities/service-entry)
 
 ---
 
@@ -111,7 +111,7 @@ AI4J 面向本地代码仓交付的一套工程化入口，包含：
 
 对应文档：
 
-- [First Tool Call](/docs/getting-started/first-tool-call)
+- [第一次工具调用](/docs/getting-started/first-tool-call)
 - [Core SDK / Tools / Function Calling](/docs/capabilities/tools/function-calling)
 
 ### FlowGram
@@ -225,7 +225,7 @@ AI4J 中的平台枚举，用于声明你要调用哪家模型平台。
 
 对应文档：
 
-- [Coding Agent Architecture](/docs/products/coding-agent/architecture)
+- [Coding Agent 架构](/docs/products/coding-agent/architecture)
 
 ---
 

@@ -1,11 +1,10 @@
 ---
-title: Memory and State
+title: 记忆与状态
 description: 拆解 ai4j-agent 的 AgentMemory 状态模型：用户输入、模型输出与工具输出如何统一回灌下一轮 prompt，以及 InMemoryAgentMemory、JdbcAgentMemory 的写入、压缩与 session 隔离真实语义。
 tags: [concept]
 ---
 
-# Memory and State
-
+# 记忆与状态
 在 `ai4j-agent` 里，memory 不是“聊天记录附件”，而是 Agent loop 的状态源。
 
 只要进入多步推理，runtime 每一轮都要回答四个问题：
@@ -351,6 +350,6 @@ summary 不是冗余字符串拼在 item 里，而是单独存一条记录；但
 ## 12. 继续阅读
 
 1. [Memory 管理与压缩策略](/docs/agent/memory/memory-compact-context)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Agent Architecture](/docs/agent/architecture)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [Agent 架构](/docs/agent/architecture)
 4. [Trace Observability](/docs/agent/observability/trace-observability)

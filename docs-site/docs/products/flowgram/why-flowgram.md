@@ -1,11 +1,10 @@
 ---
-title: Why Flowgram
+title: Flowgram 的价值
 description: Flowgram 存在的价值：补上 Agent 给不了的平台化后端结构——工作流契约、任务生命周期、节点执行边界与面向平台的读侧输出，同时讲清当前边界与适用场景。
 tags: [concept]
 ---
 
-# Why Flowgram
-
+# Flowgram 的价值
 `Flowgram` 值得单独存在，不是因为“可视化工作流”这个词听起来更完整，而是因为前端画布产品对后端的要求，和普通 `Agent` 运行时不是同一个问题。
 
 如果只靠 Agent，你可以做出能跑的智能体；如果要做一套能交给前端画布、平台控制面和任务中心消费的后端，你还缺很多结构化能力。
@@ -214,8 +213,8 @@ tags: [concept]
 1. [Architecture](/docs/products/flowgram/architecture)
 2. [Runtime](/docs/products/flowgram/runtime)
 3. [Frontend / Backend Integration](/docs/products/flowgram/frontend-backend-integration)
-4. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
-5. [Custom Nodes](/docs/products/flowgram/custom-nodes)
+4. [内置节点](/docs/products/flowgram/built-in-nodes)
+5. [自定义节点](/docs/products/flowgram/custom-nodes)
 
 如果你只记一个结论：
 

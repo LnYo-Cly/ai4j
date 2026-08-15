@@ -31,8 +31,8 @@ Spring Boot starter 解决的是：
 
 第一次接入建议按这个顺序：
 
-1. [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
-2. [Spring Boot Quickstart](/docs/integrations/spring-boot/quickstart)
+1. [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
+2. [Spring Boot 快速开始](/docs/integrations/spring-boot/quickstart)
 3. [Auto Configuration](/docs/integrations/spring-boot/auto-configuration)
 4. [Configuration Reference](/docs/integrations/spring-boot/configuration-reference)
 5. [Bean Extension](/docs/integrations/spring-boot/bean-extension)
@@ -101,10 +101,10 @@ ai:
 
 相关页面：
 
-- [Version Compatibility](/docs/reference/version-compatibility)
-- [Security Overview](/docs/production/security)
-- [Production Checklist](/docs/production/production-checklist)
-- [Troubleshooting](/docs/production/troubleshooting)
+- [版本兼容性](/docs/reference/version-compatibility)
+- [安全总览](/docs/production/security)
+- [生产检查清单](/docs/production/production-checklist)
+- [排障指南](/docs/production/troubleshooting)
 
 ## 继续阅读
 

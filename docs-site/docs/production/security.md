@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Security Overview
+title: 安全总览
 description: AI4J 安全边界由密钥、网络、Tool、MCP、RAG、Agent、Coding Agent 和 FlowGram 多层组成。接入前明确：哪些能力能被模型看见、调用、回写到用户或日志。密钥不入仓、Tool 最小暴露、本地边界约束。
 tags: [concept]
 ---
 
-# Security Overview
-
+# 安全总览
 AI4J 的安全边界不是单个开关，而是由密钥、网络、Tool、MCP、RAG、Agent、Coding Agent 和 FlowGram 多层共同组成。接入前应先明确：哪些能力能被模型看见，哪些能力能被模型调用，哪些结果能回写到用户或日志。
 
 ## 基本原则
@@ -49,7 +48,7 @@ Tool 的安全边界分两层：
 相关页面：
 
 - [Tools Overview](/docs/capabilities/tools/overview)
-- [Tool Whitelist and Security](/docs/capabilities/tools/tool-whitelist-and-security)
+- [工具白名单与安全](/docs/capabilities/tools/tool-whitelist-and-security)
 - [MCP Tool Exposure Semantics](/docs/capabilities/mcp/tool-exposure-semantics)
 
 ## MCP 安全
@@ -81,7 +80,7 @@ RAG 的最大风险通常不是模型，而是索引和权限。
 相关页面：
 
 - [Search & RAG Overview](/docs/capabilities/rag/overview)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
 
 ## Agent 与 Coding Agent 安全
 
@@ -112,7 +111,7 @@ FlowGram starter 默认更偏 demo / 内网集成姿态。正式上线前必须�
 相关页面：
 
 - [FlowGram Overview](/docs/products/flowgram/overview)
-- [Production Checklist](/docs/production/production-checklist)
+- [生产检查清单](/docs/production/production-checklist)
 
 ## 上线前最小安全清单
 

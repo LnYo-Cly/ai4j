@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Production Checklist
+title: 生产检查清单
 description: AI4J 接入真实项目前的上线检查清单。不要求一次性启用所有能力，而是按已使用的模块确认风险边界：最小模块选择、密钥管理、网络隔离、Tool 暴露、本地文件边界。
 tags: [reference]
 ---
 
-# Production Checklist
-
+# 生产检查清单
 这页是把 AI4J 接入真实项目之前的上线检查清单。它不是要让每个项目一次性启用所有能力，而是帮助你按已使用的模块确认风险边界。
 
 ## 1. 选择最小模块
@@ -98,7 +97,7 @@ live provider 测试需要真实凭证时，必须走显式 profile 或单独环
 
 ## 10. 发布前确认
 
-- [ ] 使用 [Version Compatibility](/docs/reference/version-compatibility) 检查版本和模块。
-- [ ] 使用 [Security Overview](/docs/production/security) 检查安全边界。
-- [ ] 使用 [Troubleshooting](/docs/production/troubleshooting) 准备排障入口。
-- [ ] 使用 [Migration Guide](/docs/reference/migration) 标记旧 API、旧文档或旧示例的替代路径。
+- [ ] 使用 [版本兼容性](/docs/reference/version-compatibility) 检查版本和模块。
+- [ ] 使用 [安全总览](/docs/production/security) 检查安全边界。
+- [ ] 使用 [排障指南](/docs/production/troubleshooting) 准备排障入口。
+- [ ] 使用 [迁移指南](/docs/reference/migration) 标记旧 API、旧文档或旧示例的替代路径。

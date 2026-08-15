@@ -97,7 +97,7 @@ client.connect().join();
 config.withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
 ```
 
-完整请求头、server profile 和升级路线见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+完整请求头、server profile 和升级路线见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 
 ### SSE
 

@@ -218,7 +218,7 @@ tags: [reference]
 - `MODERN_2026_07_28` 禁止 legacy fallback，适合已确定为现代的 peer。
 - `LEGACY_2025_11_25`、`LEGACY_2025_06_18` 和 `LEGACY_2025_03_26` 固定使用对应的初始化时代 profile。
 
-这不是万能自动识别：认证失败、可识别的现代 JSON-RPC error、或非预期成功响应不会降级。deprecated HTTP+SSE 仍然必须配置 `type: "sse"`。完整行为见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+这不是万能自动识别：认证失败、可识别的现代 JSON-RPC error、或非预期成功响应不会降级。deprecated HTTP+SSE 仍然必须配置 `type: "sse"`。完整行为见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 
 ## 7. `enabled` 是真正的开关字段
 

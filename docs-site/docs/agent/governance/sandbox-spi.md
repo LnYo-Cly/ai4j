@@ -1,12 +1,11 @@
 ---
 sidebar_position: 9
-title: Agent Sandbox SPI
+title: Agent 沙箱 SPI
 description: 介绍 ai4j-agent 的 Sandbox SPI：SandboxProvider/SandboxSession 合同如何把执行交给隔离环境，AgentSessionSandboxBinding 只保存非敏感摘要，Daytona、E2B、CubeSandbox 三个官方真实 provider，以及 AgentBuilder/CodingAgentBuilder 如何消费 sandbox。
 tags: [integration]
 ---
 
-# Agent Sandbox SPI
-
+# Agent 沙箱 SPI
 `io.github.lnyocly.ai4j.agent.sandbox` 是 `ai4j-agent` 的真实沙箱执行环境抽象。它解决的问题是：
 
 > Agent 已经决定要执行 shell、文件、浏览器或项目命令时，宿主如何把这次执行交给一个真实的隔离环境，并拿回 stdout、stderr、artifact 和事件？

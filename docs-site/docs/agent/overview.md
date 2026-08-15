@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Agent Overview
+title: Agent 总览
 description: ai4j-agent 总览：它在 Core SDK 之上提供多步推理、工具闭环、memory、workflow、trace 与多 Agent 协作，何时该用 Agent、最小心智模型、runtime 选型与模块边界。
 tags: [concept]
 ---
 
-# Agent Overview
-
+# Agent 总览
 `ai4j-agent` 是建立在 Core SDK 之上的 Java Agent runtime。它不替代模型调用层，而是解决“模型调用一次之后，系统如何继续推进任务”的问题。
 
 如果你只是想发一条消息，先看 [Core SDK / Model Access](/docs/capabilities/models/overview)。如果你需要多步推理、工具闭环、memory、workflow、trace 或多 agent 协作，再进入本章。
@@ -76,7 +75,7 @@ AgentRequest
 
 Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，但它本身不负责宿主产品形态。
 
-如果你关心后续 Agent SDK 会怎样增强 Session、Memory、Blueprint、Sandbox 和 Runner，看 [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)。
+如果你关心后续 Agent SDK 会怎样增强 Session、Memory、Blueprint、Sandbox 和 Runner，看 [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)。
 
 ## 生产接入要注意什么
 
@@ -87,34 +86,34 @@ Agent 是一层通用 runtime。它可以被 Coding Agent 和 FlowGram 复用，
 - 多用户场景下，session 隔离不等于工具权限隔离。
 - SubAgent 或 team orchestration 要有明确 handoff 和权限边界。
 
-更多检查项见 [Security Overview](/docs/production/security) 和 [Production Checklist](/docs/production/production-checklist)。
+更多检查项见 [安全总览](/docs/production/security) 和 [生产检查清单](/docs/production/production-checklist)。
 
 ## 推荐阅读顺序
 
 ### 想先判断是否需要 Agent
 
-1. [Why Agent](/docs/agent/why-agent)
+1. [为什么需要 Agent 层](/docs/agent/why-agent)
 2. [Use Cases and Paths](/docs/agent/use-cases-and-paths)
 3. [Architecture](/docs/agent/architecture)
-4. [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)
+4. [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)
 
 ### 想先跑通
 
 1. [Quickstart](/docs/agent/quickstart)
-2. [Model Client Selection](/docs/agent/model-client-selection)
+2. [模型客户端选型](/docs/agent/model-client-selection)
 3. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 
 ### 想深入运行时
 
-1. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
+1. [运行时实现](/docs/agent/runtimes/runtime-implementations)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
 4. [Trace Observability](/docs/agent/observability/trace-observability)
 
 ### 想做编排和协作
 
 1. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
 2. [SubAgent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-3. [Agent Teams](/docs/agent/orchestration/agent-teams)
+3. [Agent 团队](/docs/agent/orchestration/agent-teams)
 
 如果你想直接做本地代码仓任务，不要从这里硬扩展，直接看 [Coding Agent Overview](/docs/products/coding-agent/overview)。

@@ -1,11 +1,10 @@
 ---
-title: Why Coding Agent
+title: 为什么需要 Coding Agent
 description: 解释 Coding Agent 在通用 Agent 之上叠加的 5 层本地交付语义（workspace、coding tools、多回合 loop、session/compact/restore、CLI/TUI/ACP 宿主），界定它和普通 Agent 的真实边界。
 tags: [concept]
 ---
 
-# Why Coding Agent
-
+# 为什么需要 Coding Agent
 `Coding Agent` 这页最容易写成一句空话：  
 “它是面向代码任务的 Agent。”
 
@@ -381,6 +380,6 @@ AI4J 当前的 `Coding Agent` 之所以不是通用 Agent 的别名，是因为�
 3. [Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)
 4. [Compact and Checkpoint](/docs/products/coding-agent/compact-and-checkpoint)
 5. [CLI and TUI](/docs/products/coding-agent/cli-and-tui)
-6. [MCP and ACP](/docs/products/coding-agent/mcp-and-acp)
+6. [MCP 与 ACP](/docs/products/coding-agent/mcp-and-acp)
 
 下一页如果要继续沿着这条主线往下读，建议直接看 [Runtime Architecture](/docs/products/coding-agent/runtime-architecture)。

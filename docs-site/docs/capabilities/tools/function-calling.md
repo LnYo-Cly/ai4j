@@ -1,11 +1,10 @@
 ---
-title: "Function Calling"
+title: 函数调用
 description: "讲清 AI4J 基座层 Function Calling 执行链：用注解声明工具、ToolUtil 按白名单生成 provider tool schema、请求挂载与 tool call 回流，及其与 MCP、Agent 的边界。"
 tags: [concept]
 ---
 
-# Function Calling
-
+# 函数调用
 `Function Calling` 是 AI4J 基座层最核心的一条执行链。它不是简单的“把一个 Java 方法暴露给模型”，而是把本地能力稳定地转成模型可理解的 schema，再把调用结果交回当前 runtime 处理。
 
 如果这页没讲清楚，后面的 `Tool`、`Skill`、`MCP`、`Agent`、`Coding Agent` 都会看起来像混在一起的“模型扩展”。

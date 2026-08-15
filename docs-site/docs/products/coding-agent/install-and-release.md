@@ -1,11 +1,10 @@
 ---
-title: Install and Release
+title: 安装与发布
 description: 分清 Coding Agent 的构建、Maven 发布与终端 CLI 安装三层，说明当前仓库已提供 fat jar 与平台 launcher，并明确 fat jar 为最稳分发基线及 release 缺口。
 tags: [how-to]
 ---
 
-# Install and Release
-
+# 安装与发布
 这一页讲的不是“怎么配置 provider”，而是另一个更现实的问题：
 
 - 当前仓库里到底产出了什么可分发物

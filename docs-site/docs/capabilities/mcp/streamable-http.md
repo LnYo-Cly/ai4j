@@ -1,12 +1,11 @@
 ---
 sidebar_position: 6
-title: Streamable HTTP
+title: Streamable HTTP 传输
 description: "Streamable HTTP transport for AI4J MCP: AUTO profile discovery, modern vs initialization-era peers, protocol headers, publishing a server, and upgrade paths."
 tags: [integration]
 ---
 
-# Streamable HTTP
-
+# Streamable HTTP 传输
 Streamable HTTP is the HTTP transport for connecting AI4J to an MCP server or publishing an MCP server from Java. `TransportConfig.streamableHttp(...)` and `McpServerFactory.ServerConfig` both default to `McpProtocolProfile.AUTO`.
 
 `AUTO` is a limited compatibility strategy, not universal protocol detection. A client starts with one modern `server/discover` request; an AUTO server accepts modern and initialization-era Streamable HTTP requests on the same `/mcp` endpoint. The deprecated HTTP+SSE transport remains separate and must be configured as `type: "sse"`.

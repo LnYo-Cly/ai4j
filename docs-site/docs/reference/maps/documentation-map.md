@@ -1,12 +1,11 @@
 ---
 sidebar_position: 5
-title: Documentation Map
+title: 文档地图
 description: AI4J 文档站的正式阅读地图：八个顶层分区各回答什么问题、每个能力的唯一入口在哪，以及旧链接如何自动跳转。
 tags: [reference]
 ---
 
-# Documentation Map
-
+# 文档地图
 这页定义 AI4J 文档站的正式阅读地图。它的作用不是替代功能页，而是回答两个问题：
 
 - 八个顶层分区各自回答读者的什么问题，我该进哪个。
@@ -56,4 +55,4 @@ tags: [reference]
 
 新增文档必须落在八个分区的既有主题内；不要为单一页面新开顶层目录。
 
-如果你还不知道应该读哪条线，回到 [Choose Your Path](/docs/getting-started/choose-your-path)。
+如果你还不知道应该读哪条线，回到 [入门路径选择](/docs/getting-started/choose-your-path)。

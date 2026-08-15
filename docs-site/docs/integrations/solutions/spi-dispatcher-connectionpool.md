@@ -1,11 +1,10 @@
 ---
-title: SPI Dispatcher ConnectionPool
+title: SPI 调度器与连接池
 description: AI4J 的 HTTP 栈扩展方案，通过 DispatcherProvider 与 ConnectionPoolProvider SPI 治理生产并发、连接池与网络隔离。
 tags: [integration]
 ---
 
-# SPI Dispatcher ConnectionPool
-
+# SPI 调度器与连接池
 这个方案讲的不是模型能力，而是当你已经进入生产并发和网络治理阶段时，AI4J 的 HTTP 栈该怎么扩展。
 
 ## 1. 适合什么场景

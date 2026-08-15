@@ -1,11 +1,10 @@
 ---
-title: Spring Boot Quickstart
+title: Spring Boot 快速开始
 description: Spring Boot 接入 AI4J 的最短成功路径：引入 starter、配置 ai.*、注入 AiService 并发出第一个 ChatCompletion。
 tags: [how-to]
 ---
 
-# Spring Boot Quickstart
-
+# Spring Boot 快速开始
 如果你还没跑通第一个 Spring Boot 请求，先读这一页。
 
 ## 1. 最短成功路径
@@ -96,5 +95,5 @@ public String chatOnce(String userInput) throws Exception {
 
 如果是入口阶段问题，先回看：
 
-- [Troubleshooting](/docs/production/troubleshooting)
+- [排障指南](/docs/production/troubleshooting)
 - [Configuration Reference](/docs/integrations/spring-boot/configuration-reference)

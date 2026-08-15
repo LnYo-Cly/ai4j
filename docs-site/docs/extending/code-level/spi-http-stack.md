@@ -1,11 +1,10 @@
 ---
-title: SPI HTTP Stack
+title: SPI HTTP 栈
 description: 讲清 AI4J HTTP stack SPI：通过 ServiceLoader 把 Dispatcher 与 ConnectionPool 注入 starter 构造的统一 OkHttpClient，默认实现靠 META-INF/services 注册，丢失会导致启动失败，仅 starter 装配链自动生效。
 tags: [concept]
 ---
 
-# SPI HTTP Stack
-
+# SPI HTTP 栈
 这一页讲的是 AI4J 当前少数真正已经 SPI 化的扩展面之一：**底层 `OkHttp` 并发调度与连接池策略**。
 
 它和 provider extension 最大的区别是：这里不是靠 `AiService` 里的 `switch` 接线，而是真的走了 Java `ServiceLoader`。

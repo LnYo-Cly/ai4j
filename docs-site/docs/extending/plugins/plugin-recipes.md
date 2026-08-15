@@ -1,14 +1,13 @@
 ---
-title: Plugin Recipes
+title: 插件配方
 description: 插件使用者的组装配方：jar 进 classpath 后如何用 CLI plan/check 做接入前检查，按 Java、Spring Boot、Agent、Coding Agent、多插件组合分别给出 enable/allow/expose 配置，区分 command 与 tool 暴露语义。
 tags: [how-to]
 ---
 
-# Plugin Recipes
-
+# 插件配方
 这一页解决插件使用者的组装问题：**插件 jar 已经进入 classpath 以后，应该怎么检查、启用、授权、暴露，并接进 Java、Spring Boot、Agent、Coding Agent 或 CLI。**
 
-如果你还不知道插件包是什么，先看 [Plugin Packages](/docs/extending/plugins/plugin-packages)。如果你要写第三方插件，再看 [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)。
+如果你还不知道插件包是什么，先看 [插件包](/docs/extending/plugins/plugin-packages)。如果你要写第三方插件，再看 [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)。
 
 ## 1. 先按资源类型拆开
 
@@ -411,18 +410,18 @@ ai:
 
 下面几类需求不适合用 plugin package 解决：
 
-- 新增模型平台：看 [Provider Extension](/docs/extending/code-level/provider-extension)。
-- 给已有 provider 补请求字段：看 [Model Extension](/docs/extending/code-level/model-extension)。
-- 新增顶层 SDK 能力面：看 [Service Extension](/docs/extending/code-level/service-extension)。
-- 只调整 HTTP dispatcher 或 connection pool：看 [SPI HTTP Stack](/docs/extending/code-level/spi-http-stack)。
+- 新增模型平台：看 [Provider 扩展](/docs/extending/code-level/provider-extension)。
+- 给已有 provider 补请求字段：看 [模型扩展](/docs/extending/code-level/model-extension)。
+- 新增顶层 SDK 能力面：看 [服务扩展](/docs/extending/code-level/service-extension)。
+- 只调整 HTTP dispatcher 或 connection pool：看 [SPI HTTP 栈](/docs/extending/code-level/spi-http-stack)。
 
 插件适合交付运行时资源，不适合替核心 SDK 做 provider 自动注册。
 
 ## 10. 推荐阅读顺序
 
-1. [Plugin Packages](/docs/extending/plugins/plugin-packages)
+1. [插件包](/docs/extending/plugins/plugin-packages)
 2. 本页：Plugin Recipes
-3. [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)
-4. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
+3. [Ask User 插件](/docs/extending/plugins/ask-user-plugin)
+4. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
 5. [Agent Tools and Registry](/docs/agent/tools-and-registry)
 6. [Coding Agent Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)

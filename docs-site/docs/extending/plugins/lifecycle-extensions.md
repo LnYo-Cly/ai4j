@@ -1,11 +1,10 @@
 ---
-title: Lifecycle Extensions
+title: 生命周期扩展
 description: 讲清第六种插件能力 ExtensionCapability.LIFECYCLE：插件通过 context.lifecycle().register(hook) 注册 AgentLifecycleHook，在 session/turn/model/tool/compact 事件点接收 AgentLifecycleEvent，用于观察、遥测与审计，不贡献工具或资源。
 tags: [how-to]
 ---
 
-# Lifecycle Extensions
-
+# 生命周期扩展
 `LIFECYCLE` 是 `ExtensionCapability` 的第六种能力，和前五种（`TOOL` / `COMMAND` / `SKILL` / `PROMPT` / `GUARDRAIL`）不同：它不贡献工具或资源，而是让插件在 agent 执行的关键节点**收到通知**。它解决的是观察、遥测、审计、外部状态同步这类需求。
 
 适用场景：
@@ -145,7 +144,7 @@ Agent agent = Agent.builder()
 
 ## 7. 下一步阅读
 
-1. [Plugin Packages](/docs/extending/plugins/plugin-packages)
-2. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
-3. [Extension SPI Internals](/docs/extending/plugins/extension-spi)
+1. [插件包](/docs/extending/plugins/plugin-packages)
+2. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
+3. [扩展 SPI 内部机制](/docs/extending/plugins/extension-spi)
 4. [Agent Tools and Registry](/docs/agent/tools-and-registry)

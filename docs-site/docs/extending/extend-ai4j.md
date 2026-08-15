@@ -32,7 +32,7 @@ tags: [concept]
 
 关键边界是**三段式门禁**：`discover()` 只发现不执行，`enable(...)` 注册资源但不暴露给模型，`exposeTool(...)` 才把指定工具交给 agent tool registry。这个设计刻意不做"安装即自动可用"。
 
-→ [Plugin Packages](/docs/extending/plugins/plugin-packages)（概念与门禁）｜[Plugin Recipes](/docs/extending/plugins/plugin-recipes)（可复制接入配方）
+→ [插件包](/docs/extending/plugins/plugin-packages)（概念与门禁）｜[插件配方](/docs/extending/plugins/plugin-recipes)（可复制接入配方）
 
 ---
 
@@ -42,7 +42,7 @@ tags: [concept]
 
 最常见的载体就是 `SKILL.md`。它解决"方法论如何复用"，而不是"动作如何执行"——所以它不直接承担执行，也不会自动塞满上下文。
 
-→ [Skills 总览](/docs/capabilities/skills/overview)｜[Discovery and Loading](/docs/capabilities/skills/discovery)｜[Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)｜[Coding Agent Skills 使用与组织](/docs/products/coding-agent/skills)
+→ [Skills 总览](/docs/capabilities/skills/overview)｜[Discovery and Loading](/docs/capabilities/skills/discovery)｜[Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)｜[Coding Agent Skills 使用与组织](/docs/products/coding-agent/skills)
 
 ---
 
@@ -53,9 +53,9 @@ ai4j 没有独立的"slash 提示模板引擎"。**Prompt 是插件资源的一�
 也就是说，ai4j 的 Prompt 和 Skill 共享同一套"摘要先行、按需读取"的上下文治理思路，区别在资源类型。ai4j 有**两个官方参考插件**，各有侧重：
 
 - **`ask-user`**——最小插件（host-mediated 用户澄清 tool + command + Skill + Prompt），适合学习扩展的基本骨架。
-- **`dynamic-workflow`**——🚀 **生产级旗舰参考**（同时贡献 4 种能力 + host-mediated workflow 信封 + 零运行时依赖 + live 闭环测试）。适合学习如何构建一个完整的、安全的、可发布的 ai4j 插件。详见 [Dynamic Workflow Plugin](/docs/extending/plugins/dynamic-workflow-plugin)。
+- **`dynamic-workflow`**——🚀 **生产级旗舰参考**（同时贡献 4 种能力 + host-mediated workflow 信封 + 零运行时依赖 + live 闭环测试）。适合学习如何构建一个完整的、安全的、可发布的 ai4j 插件。详见 [动态工作流插件](/docs/extending/plugins/dynamic-workflow-plugin)。
 
-→ [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)（同时贡献 Prompt 的样板）｜[Dynamic Workflow Plugin](/docs/extending/plugins/dynamic-workflow-plugin)（脚本化 Prompt + Skill 样板）
+→ [Ask User 插件](/docs/extending/plugins/ask-user-plugin)（同时贡献 Prompt 的样板）｜[动态工作流插件](/docs/extending/plugins/dynamic-workflow-plugin)（脚本化 Prompt + Skill 样板）
 
 ---
 
@@ -73,7 +73,7 @@ ai4j 没有独立的"slash 提示模板引擎"。**Prompt 是插件资源的一�
 插件包**不能**用来新增 provider。要接一个新 LLM 后端，仍然走代码主链；插件包只负责给 agent 暴露运行时资源（工具 / 命令 / Skill / Prompt / Guardrail）。
 :::
 
-→ [Provider Extension](/docs/extending/code-level/provider-extension)｜[Model Extension](/docs/extending/code-level/model-extension)｜[Service Extension](/docs/extending/code-level/service-extension)｜[Extension 总览](/docs/extending/overview)
+→ [Provider 扩展](/docs/extending/code-level/provider-extension)｜[模型扩展](/docs/extending/code-level/model-extension)｜[服务扩展](/docs/extending/code-level/service-extension)｜[Extension 总览](/docs/extending/overview)
 
 ---
 
@@ -115,7 +115,7 @@ Agent agent = Agents.react()
 运行时会把暴露出的 `ExtensionToolSpec` 转成普通 `Tool`，把 `ExtensionToolExecutor` 路由到现有 `ToolExecutor`——Agent 主循环不用认识插件实现类。
 
 :::note Spring Boot
-Spring Boot 项目可以用配置完成同一件事：`ai.extensions.enabled` + `ai.extensions.tools.expose`，starter 会自动装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`，但不会自动创建 Agent。详见 [Plugin Recipes](/docs/extending/plugins/plugin-recipes)。
+Spring Boot 项目可以用配置完成同一件事：`ai.extensions.enabled` + `ai.extensions.tools.expose`，starter 会自动装配 `ExtensionRegistry` / `ExtensionRuntimeSnapshot`，但不会自动创建 Agent。详见 [插件配方](/docs/extending/plugins/plugin-recipes)。
 :::
 
 ---
@@ -134,8 +134,8 @@ Spring Boot 项目可以用配置完成同一件事：`ai.extensions.enabled` + 
 ## 继续阅读
 
 - [Extension 总览](/docs/extending/overview)——四条扩展线的全景与决策顺序
-- [Plugin Packages](/docs/extending/plugins/plugin-packages)——插件包概念与三段式门禁
+- [插件包](/docs/extending/plugins/plugin-packages)——插件包概念与三段式门禁
 - [Skills 总览](/docs/capabilities/skills/overview)——Skill 作为上下文治理层
-- [Tools](/docs/capabilities/tools/overview)——工具是模型在宿主内的执行能力（Skill / Tool / MCP 三者对比见 [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)）
+- [Tools](/docs/capabilities/tools/overview)——工具是模型在宿主内的执行能力（Skill / Tool / MCP 三者对比见 [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)）
 - [Agent Runtime](/docs/agent/overview)——插件工具接入通用 Agent loop 的宿主
 - [Coding Agent](/docs/products/coding-agent/overview)——插件工具 + Skill + Prompt 在 coding session 里的使用

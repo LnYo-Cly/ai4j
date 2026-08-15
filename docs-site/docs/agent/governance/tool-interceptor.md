@@ -1,12 +1,11 @@
 ---
 sidebar_position: 11
-title: Interception Hooks
+title: 拦截钩子
 description: ai4j-agent 的拦截层：ToolInterceptor(block/modify/routeTo sandbox) 与 PromptInterceptor 对应 Claude Code 的 PreToolUse/PostToolUse/UserPromptSubmit，加上 observe-only 生命周期 Hook，附 hooks 门面与 CLI 配置。
 tags: [how-to]
 ---
 
-# Interception Hooks (block / modify / route-to-sandbox + observe events)
-
+# 拦截钩子（block / modify / 路由到沙箱 + observe 事件）
 ai4j covers every Claude-Code-equivalent hook event: **interception** (can veto/rewrite) for tool
 calls and prompts, plus **observe** side-effect hooks for turn/compact/session boundaries. Two
 control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/agent/governance/plugin-lifecycle-hooks).
@@ -239,6 +238,6 @@ They coexist — register both; observe hooks see what happens, interceptors dec
 
 ## Where this fits
 
-- Observe/audit layer (tracing, replay, hash-chain audit): [Replay, Recovery & Audit](/docs/agent/observability/replay-recovery-audit).
+- Observe/audit layer (tracing, replay, hash-chain audit): [重放、恢复与审计](/docs/agent/observability/replay-recovery-audit).
 - The sandbox the `routeTo` decision targets: [Sandbox SPI](/docs/agent/governance/sandbox-spi).
 - The veto-by-exception policy mechanism (a coarser sibling): [Approval & Permission Policy](/docs/agent/governance/approval-permission-policy).

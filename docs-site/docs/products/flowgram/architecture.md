@@ -1,11 +1,10 @@
 ---
-title: Flowgram Architecture
+title: Flowgram 架构
 description: 拆解 Flowgram 前端画布加 AI4J 后端执行层的四层架构：画布、适配、Spring Boot 平台接入与执行引擎，讲清编辑态与执行态 schema 的差异和默认安全姿态。
 tags: [concept]
 ---
 
-# Flowgram Architecture
-
+# Flowgram 架构
 `Flowgram` 的架构重点，不是单讲 `Flowgram.ai` 前端库本身，而是讲“前端画布 + AI4J 后端执行层”如何组成一个真正可运行的工作流平台。
 
 如果你只看 demo，会觉得这是一组 REST API；如果你沿着源码看，会发现它其实拆成了 4 个很明确的层次。
@@ -438,8 +437,8 @@ private final ConcurrentMap<String, TaskRecord> tasks = new ConcurrentHashMap<St
 
 1. [Runtime](/docs/products/flowgram/runtime)
 2. [Frontend / Backend Integration](/docs/products/flowgram/frontend-backend-integration)
-3. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
-4. [Custom Nodes](/docs/products/flowgram/custom-nodes)
+3. [内置节点](/docs/products/flowgram/built-in-nodes)
+4. [自定义节点](/docs/products/flowgram/custom-nodes)
 
 如果你只记住一个架构结论：
 

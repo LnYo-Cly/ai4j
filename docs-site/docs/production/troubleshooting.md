@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Troubleshooting
+title: 排障指南
 description: AI4J 生产排障入口。不列出所有异常栈，而是按能力层把问题定位到正确页面和检查项：模型请求失败查 provider key、Chat 能用 Responses 不能用查 provider 支持、Streaming 没增量查消费方式。
 tags: [how-to]
 ---
 
-# Troubleshooting
-
+# 排障指南
 本页是生产排障入口。它不列出所有异常栈，而是按 AI4J 的能力层把问题定位到正确页面和检查项。
 
 ## 先定位是哪一层
@@ -39,7 +38,7 @@ tags: [how-to]
 
 - [Model Access Overview](/docs/capabilities/models/overview)
 - [Platform and Service Matrix](/docs/capabilities/models/platform-service-matrix)
-- [Chat vs Responses](/docs/capabilities/models/chat-vs-responses)
+- [Chat 与 Responses 对比](/docs/capabilities/models/chat-vs-responses)
 
 ## Spring Boot 配置
 
@@ -68,7 +67,7 @@ Tool 问题要分清“模型是否看见工具”和“系统是否执行成功
 相关页面：
 
 - [Tools Overview](/docs/capabilities/tools/overview)
-- [Tool Execution Model](/docs/capabilities/tools/tool-execution-model)
+- [工具执行模型](/docs/capabilities/tools/tool-execution-model)
 - [MCP Overview](/docs/capabilities/mcp/overview)
 - [Gateway Management](/docs/capabilities/mcp/gateway-management)
 
@@ -85,8 +84,8 @@ RAG 排障建议先分成 ingestion、retrieval、generation 三段。
 相关页面：
 
 - [Search & RAG Overview](/docs/capabilities/rag/overview)
-- [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
+- [摄取管线](/docs/capabilities/rag/ingestion-pipeline)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
 
 ## Agent / Coding Agent
 

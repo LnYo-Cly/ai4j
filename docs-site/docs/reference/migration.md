@@ -1,12 +1,11 @@
 ---
 sidebar_position: 1
-title: Migration Guide
+title: 迁移指南
 description: AI4J 文档站从旧 getting-started/ai-basics/guides 结构收敛到按模块组织的 canonical 结构。说明迁移规则：不直接删除强内容、先迁稳定结论、加 legacy notice、以 sidebar 为正式阅读路径。
 tags: [reference]
 ---
 
-# Migration Guide
-
+# 迁移指南
 AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结构收敛到按模块和接入路径组织的 canonical 结构。本页说明迁移规则，避免用户把历史页当成新的 source of truth。
 
 ## 迁移原则
@@ -21,11 +20,11 @@ AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结�
 
 | 旧路径 | 新路径 | 状态 |
 | --- | --- | --- |
-| `getting-started/installation` | [Quickstart for Java](/docs/getting-started/quickstart-java) | 迁移中 |
-| `getting-started/quickstart-openai-jdk8` | [Quickstart for Java](/docs/getting-started/quickstart-java) | 迁移中 |
-| `getting-started/quickstart-springboot` | [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot) | 迁移中 |
-| `getting-started/version-compatibility` | [Version Compatibility](/docs/reference/version-compatibility) | 已建立新入口 |
-| `getting-started/modules-and-maven-central` | [Release and Artifacts](/docs/reference/release-and-artifacts) | 已建立新入口 |
+| `getting-started/installation` | [Java 快速开始](/docs/getting-started/quickstart-java) | 迁移中 |
+| `getting-started/quickstart-openai-jdk8` | [Java 快速开始](/docs/getting-started/quickstart-java) | 迁移中 |
+| `getting-started/quickstart-springboot` | [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot) | 迁移中 |
+| `getting-started/version-compatibility` | [版本兼容性](/docs/reference/version-compatibility) | 已建立新入口 |
+| `getting-started/modules-and-maven-central` | [发布与制品](/docs/reference/release-and-artifacts) | 已建立新入口 |
 | `ai-basics/chat/*` | [Model Access](/docs/capabilities/models/overview) | 迁移中 |
 | `ai-basics/responses/*` | [Model Access](/docs/capabilities/models/overview) | 迁移中 |
 | `ai-basics/rag/*` | [Search & RAG](/docs/capabilities/rag/overview) | 迁移中 |
@@ -34,7 +33,7 @@ AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结�
 | `core-sdk/mcp/*` | [MCP Overview](/docs/capabilities/mcp/overview) | 顶层 MCP 已为正式主线 |
 | `guides/*` | [Solutions](/docs/integrations/solutions/overview) | 迁移中 |
 | `agent/coding-agent-*` | [Coding Agent](/docs/products/coding-agent/overview) | 已拆分新主线 |
-| `flowgram/builtin-nodes` | [Built-in Nodes](/docs/products/flowgram/built-in-nodes) | 命名收口中 |
+| `flowgram/builtin-nodes` | [内置节点](/docs/products/flowgram/built-in-nodes) | 命名收口中 |
 
 ## API 和使用方式迁移
 
@@ -48,7 +47,7 @@ AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结�
 
 正式入口：
 
-- [Service Entry and Registry](/docs/capabilities/service-entry)
+- [服务入口与注册表](/docs/capabilities/service-entry)
 - [Spring Boot Overview](/docs/integrations/spring-boot/overview)
 
 ### 从旧 Chat / Responses 分散页迁移
@@ -56,7 +55,7 @@ AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结�
 旧页按接口形态拆得比较细，适合查实现细节。新用户应先从：
 
 - [Model Access Overview](/docs/capabilities/models/overview)
-- [Chat vs Responses](/docs/capabilities/models/chat-vs-responses)
+- [Chat 与 Responses 对比](/docs/capabilities/models/chat-vs-responses)
 
 再进入具体 chat、responses、streaming、多模态页面。
 
@@ -77,11 +76,11 @@ AI4J 文档站正在从旧的 `getting-started/`、`ai-basics/`、`guides/` 结�
 
 生产检查、排障、安全、版本和发布说明应进入：
 
-- [Production Checklist](/docs/production/production-checklist)
-- [Troubleshooting](/docs/production/troubleshooting)
-- [Security Overview](/docs/production/security)
-- [Version Compatibility](/docs/reference/version-compatibility)
-- [Release and Artifacts](/docs/reference/release-and-artifacts)
+- [生产检查清单](/docs/production/production-checklist)
+- [排障指南](/docs/production/troubleshooting)
+- [安全总览](/docs/production/security)
+- [版本兼容性](/docs/reference/version-compatibility)
+- [发布与制品](/docs/reference/release-and-artifacts)
 
 ## 新文档写入规则
 

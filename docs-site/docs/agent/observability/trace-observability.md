@@ -706,7 +706,7 @@ TraceConfig traceConfig = TraceConfig.builder()
 - Agent trace 是后端运行视角
 - FlowGram trace projection 是画布与节点视角
 
-如果你在看 FlowGram 集成，继续读 [Flowgram Runtime](/docs/products/flowgram/runtime) 会更合适。
+如果你在看 FlowGram 集成，继续读 [Flowgram 运行时](/docs/products/flowgram/runtime) 会更合适。
 
 ## 13. 排障时应该怎么读 trace
 
@@ -742,8 +742,8 @@ TraceConfig traceConfig = TraceConfig.builder()
 
 ## 15. 继续阅读
 
-1. [Agent Architecture](/docs/agent/architecture)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
+1. [Agent 架构](/docs/agent/architecture)
+2. [工具与注册表](/docs/agent/tools-and-registry)
 3. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-4. [Agent Teams](/docs/agent/orchestration/agent-teams)
-5. [Flowgram Runtime](/docs/products/flowgram/runtime)
+4. [Agent 团队](/docs/agent/orchestration/agent-teams)
+5. [Flowgram 运行时](/docs/products/flowgram/runtime)
