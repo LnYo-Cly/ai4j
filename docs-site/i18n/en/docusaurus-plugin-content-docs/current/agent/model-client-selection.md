@@ -439,4 +439,4 @@ On the surface only one line differs, but the protocol semantics are not the sam
 1. [Quickstart](/docs/agent/quickstart)
 2. [System Prompt vs Instructions](/docs/agent/system-prompt-vs-instructions)
 3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Runtime Implementations](/docs/agent/runtime-implementations)
+4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)

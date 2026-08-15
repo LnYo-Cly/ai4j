@@ -354,8 +354,8 @@ This order looks slow, but in practice yields the fastest troubleshooting.
 
 ## 11. What to read next
 
-1. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+1. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 2. [Model Client Selection](/docs/agent/model-client-selection)
 3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Memory and State](/docs/agent/memory-and-state)
-5. [Runtime Implementations](/docs/agent/runtime-implementations)
+4. [Memory and State](/docs/agent/memory/memory-and-state)
+5. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)

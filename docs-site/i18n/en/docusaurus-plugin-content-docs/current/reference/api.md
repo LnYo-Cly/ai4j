@@ -23,10 +23,10 @@ These are browser-rendered API pages, so package navigation, search, inherited m
 
 ## Choose the right reference
 
-1. Start with [Core SDK](/docs/core-sdk/overview) for normal model calls, Tools, Skills, MCP, and RAG.
+1. Start with [Core SDK](/docs/capabilities/overview) for normal model calls, Tools, Skills, MCP, and RAG.
 2. Start with [Agent Runtime](/docs/agent/overview) for orchestration, memory, and permission boundaries.
-3. Start with [Coding Agent](/docs/coding-agent/overview) for CLI, workspace, session, and ACP integration.
-4. Start with [Extensions](/docs/core-sdk/extension/overview) before depending on an extension or plugin SPI.
+3. Start with [Coding Agent](/docs/products/coding-agent/overview) for CLI, workspace, session, and ACP integration.
+4. Start with [Extensions](/docs/extending/overview) before depending on an extension or plugin SPI.
 
 The guides explain behavior and design boundaries. Javadoc is the source for Java signatures, overloads, annotations, and package-level types.
 

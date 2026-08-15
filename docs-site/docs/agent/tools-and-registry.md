@@ -424,8 +424,8 @@ Agent agent = Agents.builder()
 
 ## 12. 继续阅读
 
-1. [Memory and State](/docs/agent/memory-and-state)
-2. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
-3. [Subagent Handoff Policy](/docs/agent/subagent-handoff-policy)
-4. [Agent Teams](/docs/agent/agent-teams)
-5. [Trace Observability](/docs/agent/trace-observability)
+1. [Memory and State](/docs/agent/memory/memory-and-state)
+2. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
+3. [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
+4. [Agent Teams](/docs/agent/orchestration/agent-teams)
+5. [Trace Observability](/docs/agent/observability/trace-observability)

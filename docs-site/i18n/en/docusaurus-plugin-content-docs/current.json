@@ -94,5 +94,109 @@
   "sidebar.tutorialSidebar.category.Maintainers": {
     "message": "Maintainers",
     "description": "The label for category 'Maintainers' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.入门": {
+    "message": "Getting Started",
+    "description": "The label for category '入门' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.核心能力": {
+    "message": "Capabilities",
+    "description": "The label for category '核心能力' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.模型接入": {
+    "message": "Models",
+    "description": "The label for category '模型接入' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.媒体生成": {
+    "message": "Media Generation",
+    "description": "The label for category '媒体生成' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.工具": {
+    "message": "Tools",
+    "description": "The label for category '工具' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.技能": {
+    "message": "Skills",
+    "description": "The label for category '技能' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.会话记忆": {
+    "message": "Chat Memory",
+    "description": "The label for category '会话记忆' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.RAG": {
+    "message": "RAG",
+    "description": "The label for category 'RAG' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Agent 开发": {
+    "message": "Agent",
+    "description": "The label for category 'Agent 开发' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.运行时": {
+    "message": "Runtimes",
+    "description": "The label for category '运行时' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.记忆与压缩": {
+    "message": "Memory & Compaction",
+    "description": "The label for category '记忆与压缩' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.编排": {
+    "message": "Orchestration",
+    "description": "The label for category '编排' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.治理": {
+    "message": "Governance",
+    "description": "The label for category '治理' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.可观测与互操作": {
+    "message": "Observability & Interop",
+    "description": "The label for category '可观测与互操作' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.扩展": {
+    "message": "Extending AI4J",
+    "description": "The label for category '扩展' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.插件系统": {
+    "message": "Plugin System",
+    "description": "The label for category '插件系统' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.代码内扩展面": {
+    "message": "Code-Level Extension Points",
+    "description": "The label for category '代码内扩展面' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.产品": {
+    "message": "Products",
+    "description": "The label for category '产品' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.集成": {
+    "message": "Integrations",
+    "description": "The label for category '集成' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.实战方案": {
+    "message": "Recipes",
+    "description": "The label for category '实战方案' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.生产": {
+    "message": "Production",
+    "description": "The label for category '生产' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.参考": {
+    "message": "Reference",
+    "description": "The label for category '参考' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.API 与版本": {
+    "message": "API & Versions",
+    "description": "The label for category 'API 与版本' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.架构与地图": {
+    "message": "Architecture & Maps",
+    "description": "The label for category '架构与地图' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.关于": {
+    "message": "About",
+    "description": "The label for category '关于' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.维护者": {
+    "message": "Maintainers",
+    "description": "The label for category '维护者' in sidebar 'tutorialSidebar'"
   }
 }

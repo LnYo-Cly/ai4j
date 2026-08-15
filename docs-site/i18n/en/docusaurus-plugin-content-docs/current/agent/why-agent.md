@@ -389,4 +389,4 @@ So "entering Agent" is both a capability upgrade and an engineering-responsibili
 2. [Architecture](/docs/agent/architecture)
 3. [Quickstart](/docs/agent/quickstart)
 4. [Tools and Registry](/docs/agent/tools-and-registry)
-5. [Memory and State](/docs/agent/memory-and-state)
+5. [Memory and State](/docs/agent/memory/memory-and-state)

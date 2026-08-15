@@ -1,0 +1,666 @@
+[
+  {
+    "from": "/docs/start-here/choose-your-path",
+    "to": "/docs/getting-started/choose-your-path"
+  },
+  {
+    "from": "/docs/start-here/quickstart-java",
+    "to": "/docs/getting-started/quickstart-java"
+  },
+  {
+    "from": "/docs/start-here/quickstart-spring-boot",
+    "to": "/docs/getting-started/quickstart-spring-boot"
+  },
+  {
+    "from": "/docs/start-here/first-tool-call",
+    "to": "/docs/getting-started/first-tool-call"
+  },
+  {
+    "from": "/docs/start-here/feature-map",
+    "to": "/docs/getting-started/feature-map"
+  },
+  {
+    "from": "/docs/start-here/why-ai4j",
+    "to": "/docs/getting-started/why-ai4j"
+  },
+  {
+    "from": "/docs/start-here/programmatic-integration",
+    "to": "/docs/getting-started/programmatic-integration"
+  },
+  {
+    "from": "/docs/core-sdk/overview",
+    "to": "/docs/capabilities/overview"
+  },
+  {
+    "from": "/docs/core-sdk/service-entry-and-registry",
+    "to": "/docs/capabilities/service-entry"
+  },
+  {
+    "from": "/docs/start-here/openai-compatible-and-trovebox",
+    "to": "/docs/capabilities/models/openai-compatible-and-trovebox"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/overview",
+    "to": "/docs/capabilities/models/overview"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/chat",
+    "to": "/docs/capabilities/models/chat"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/responses",
+    "to": "/docs/capabilities/models/responses"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/chat-vs-responses",
+    "to": "/docs/capabilities/models/chat-vs-responses"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/messages",
+    "to": "/docs/capabilities/models/messages"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/streaming",
+    "to": "/docs/capabilities/models/streaming"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/multimodal",
+    "to": "/docs/capabilities/models/multimodal"
+  },
+  {
+    "from": "/docs/core-sdk/model-access/request-and-response-conventions",
+    "to": "/docs/capabilities/models/request-and-response-conventions"
+  },
+  {
+    "from": "/docs/core-sdk/platform-service-matrix",
+    "to": "/docs/capabilities/models/platform-service-matrix"
+  },
+  {
+    "from": "/docs/core-sdk/image-generation",
+    "to": "/docs/capabilities/media/image-generation"
+  },
+  {
+    "from": "/docs/core-sdk/audio",
+    "to": "/docs/capabilities/media/audio"
+  },
+  {
+    "from": "/docs/core-sdk/realtime",
+    "to": "/docs/capabilities/media/realtime"
+  },
+  {
+    "from": "/docs/core-sdk/video-generation",
+    "to": "/docs/capabilities/media/video-generation"
+  },
+  {
+    "from": "/docs/core-sdk/music-generation",
+    "to": "/docs/capabilities/media/music-generation"
+  },
+  {
+    "from": "/docs/core-sdk/tools/overview",
+    "to": "/docs/capabilities/tools/overview"
+  },
+  {
+    "from": "/docs/core-sdk/tools/function-calling",
+    "to": "/docs/capabilities/tools/function-calling"
+  },
+  {
+    "from": "/docs/core-sdk/tools/annotation-based-tools",
+    "to": "/docs/capabilities/tools/annotation-based-tools"
+  },
+  {
+    "from": "/docs/core-sdk/tools/tool-execution-model",
+    "to": "/docs/capabilities/tools/tool-execution-model"
+  },
+  {
+    "from": "/docs/core-sdk/tools/tool-whitelist-and-security",
+    "to": "/docs/capabilities/tools/tool-whitelist-and-security"
+  },
+  {
+    "from": "/docs/core-sdk/skills/overview",
+    "to": "/docs/capabilities/skills/overview"
+  },
+  {
+    "from": "/docs/core-sdk/skills/discovery-and-loading",
+    "to": "/docs/capabilities/skills/discovery-and-loading"
+  },
+  {
+    "from": "/docs/core-sdk/skills/loading-and-activation",
+    "to": "/docs/capabilities/skills/loading-and-activation"
+  },
+  {
+    "from": "/docs/core-sdk/skills/skill-vs-tool-vs-mcp",
+    "to": "/docs/capabilities/skills/skill-vs-tool-vs-mcp"
+  },
+  {
+    "from": "/docs/core-sdk/memory/overview",
+    "to": "/docs/capabilities/chat-memory/overview"
+  },
+  {
+    "from": "/docs/core-sdk/memory/chat-memory",
+    "to": "/docs/capabilities/chat-memory/"
+  },
+  {
+    "from": "/docs/core-sdk/memory/memory-and-tool-boundaries",
+    "to": "/docs/capabilities/chat-memory/memory-and-tool-boundaries"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/overview",
+    "to": "/docs/capabilities/rag/overview"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/online-search",
+    "to": "/docs/capabilities/rag/online-search"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/embedding",
+    "to": "/docs/capabilities/rag/embedding"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/query-planning",
+    "to": "/docs/capabilities/rag/query-planning"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/rerank",
+    "to": "/docs/capabilities/rag/rerank"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/vector-store-and-backends",
+    "to": "/docs/capabilities/rag/vector-store-and-backends"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/ingestion-pipeline",
+    "to": "/docs/capabilities/rag/ingestion-pipeline"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/chunking-strategies",
+    "to": "/docs/capabilities/rag/chunking-strategies"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/hybrid-retrieval",
+    "to": "/docs/capabilities/rag/hybrid-retrieval"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/citations-and-trace",
+    "to": "/docs/capabilities/rag/citations-and-trace"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/evaluation",
+    "to": "/docs/capabilities/rag/evaluation"
+  },
+  {
+    "from": "/docs/core-sdk/search-and-rag/llm-as-judge",
+    "to": "/docs/capabilities/rag/llm-as-judge"
+  },
+  {
+    "from": "/docs/mcp/overview",
+    "to": "/docs/capabilities/mcp/overview"
+  },
+  {
+    "from": "/docs/mcp/use-cases-and-paths",
+    "to": "/docs/capabilities/mcp/use-cases-and-paths"
+  },
+  {
+    "from": "/docs/core-sdk/mcp/protocol-capabilities",
+    "to": "/docs/capabilities/mcp/protocol-capabilities"
+  },
+  {
+    "from": "/docs/mcp/client-integration",
+    "to": "/docs/capabilities/mcp/client-integration"
+  },
+  {
+    "from": "/docs/mcp/transport-types",
+    "to": "/docs/capabilities/mcp/transport-types"
+  },
+  {
+    "from": "/docs/mcp/streamable-http",
+    "to": "/docs/capabilities/mcp/streamable-http"
+  },
+  {
+    "from": "/docs/mcp/gateway-management",
+    "to": "/docs/capabilities/mcp/gateway-management"
+  },
+  {
+    "from": "/docs/mcp/configuration-and-gateway-reference",
+    "to": "/docs/capabilities/mcp/configuration-and-gateway-reference"
+  },
+  {
+    "from": "/docs/mcp/third-party-mcp-integration",
+    "to": "/docs/capabilities/mcp/third-party-mcp-integration"
+  },
+  {
+    "from": "/docs/mcp/tool-exposure-semantics",
+    "to": "/docs/capabilities/mcp/tool-exposure-semantics"
+  },
+  {
+    "from": "/docs/mcp/build-your-mcp-server",
+    "to": "/docs/capabilities/mcp/build-your-mcp-server"
+  },
+  {
+    "from": "/docs/mcp/mcp-agent-end-to-end",
+    "to": "/docs/capabilities/mcp/mcp-agent-end-to-end"
+  },
+  {
+    "from": "/docs/start-here/agent-concepts",
+    "to": "/docs/agent/agent-concepts"
+  },
+  {
+    "from": "/docs/agent/minimal-react-agent",
+    "to": "/docs/agent/runtimes/minimal-react-agent"
+  },
+  {
+    "from": "/docs/agent/runtime-implementations",
+    "to": "/docs/agent/runtimes/runtime-implementations"
+  },
+  {
+    "from": "/docs/agent/codeact-runtime",
+    "to": "/docs/agent/runtimes/codeact-runtime"
+  },
+  {
+    "from": "/docs/agent/codeact-custom-sandbox",
+    "to": "/docs/agent/runtimes/codeact-custom-sandbox"
+  },
+  {
+    "from": "/docs/agent/workflow-stategraph",
+    "to": "/docs/agent/runtimes/workflow-stategraph"
+  },
+  {
+    "from": "/docs/agent/memory-and-state",
+    "to": "/docs/agent/memory/memory-and-state"
+  },
+  {
+    "from": "/docs/agent/memory-compact-context",
+    "to": "/docs/agent/memory/memory-compact-context"
+  },
+  {
+    "from": "/docs/agent/context-window-management",
+    "to": "/docs/agent/memory/context-window-management"
+  },
+  {
+    "from": "/docs/agent/subagent-handoff-policy",
+    "to": "/docs/agent/orchestration/subagent-handoff-policy"
+  },
+  {
+    "from": "/docs/agent/agent-teams",
+    "to": "/docs/agent/orchestration/agent-teams"
+  },
+  {
+    "from": "/docs/agent/agent-teams-api-reference",
+    "to": "/docs/agent/orchestration/agent-teams-api-reference"
+  },
+  {
+    "from": "/docs/agent/weather-workflow-cookbook",
+    "to": "/docs/agent/orchestration/weather-workflow-cookbook"
+  },
+  {
+    "from": "/docs/agent/approval-permission-policy",
+    "to": "/docs/agent/governance/approval-permission-policy"
+  },
+  {
+    "from": "/docs/agent/tool-interceptor",
+    "to": "/docs/agent/governance/tool-interceptor"
+  },
+  {
+    "from": "/docs/agent/plugin-lifecycle-hooks",
+    "to": "/docs/agent/governance/plugin-lifecycle-hooks"
+  },
+  {
+    "from": "/docs/agent/sandbox-spi",
+    "to": "/docs/agent/governance/sandbox-spi"
+  },
+  {
+    "from": "/docs/agent/cubesandbox-provider",
+    "to": "/docs/agent/governance/cubesandbox-provider"
+  },
+  {
+    "from": "/docs/agent/trace-observability",
+    "to": "/docs/agent/observability/trace-observability"
+  },
+  {
+    "from": "/docs/agent/replay-recovery-audit",
+    "to": "/docs/agent/observability/replay-recovery-audit"
+  },
+  {
+    "from": "/docs/agent/a2a",
+    "to": "/docs/agent/observability/a2a"
+  },
+  {
+    "from": "/docs/start-here/extend-ai4j",
+    "to": "/docs/extending/extend-ai4j"
+  },
+  {
+    "from": "/docs/core-sdk/extension/overview",
+    "to": "/docs/extending/overview"
+  },
+  {
+    "from": "/docs/core-sdk/extension/plugin-packages",
+    "to": "/docs/extending/plugins/plugin-packages"
+  },
+  {
+    "from": "/docs/core-sdk/extension/plugin-recipes",
+    "to": "/docs/extending/plugins/plugin-recipes"
+  },
+  {
+    "from": "/docs/core-sdk/extension/plugin-author-cookbook",
+    "to": "/docs/extending/plugins/plugin-author-cookbook"
+  },
+  {
+    "from": "/docs/core-sdk/extension/ask-user-plugin",
+    "to": "/docs/extending/plugins/ask-user-plugin"
+  },
+  {
+    "from": "/docs/core-sdk/extension/dynamic-workflow-plugin",
+    "to": "/docs/extending/plugins/dynamic-workflow-plugin"
+  },
+  {
+    "from": "/docs/core-sdk/extension/extension-spi",
+    "to": "/docs/extending/plugins/extension-spi"
+  },
+  {
+    "from": "/docs/core-sdk/extension/lifecycle-extensions",
+    "to": "/docs/extending/plugins/lifecycle-extensions"
+  },
+  {
+    "from": "/docs/core-sdk/extension/provider-extension",
+    "to": "/docs/extending/code-level/provider-extension"
+  },
+  {
+    "from": "/docs/core-sdk/extension/model-extension",
+    "to": "/docs/extending/code-level/model-extension"
+  },
+  {
+    "from": "/docs/core-sdk/extension/service-extension",
+    "to": "/docs/extending/code-level/service-extension"
+  },
+  {
+    "from": "/docs/core-sdk/extension/spi-http-stack",
+    "to": "/docs/extending/code-level/spi-http-stack"
+  },
+  {
+    "from": "/docs/coding-agent/overview",
+    "to": "/docs/products/coding-agent/overview"
+  },
+  {
+    "from": "/docs/coding-agent/quickstart",
+    "to": "/docs/products/coding-agent/quickstart"
+  },
+  {
+    "from": "/docs/coding-agent/install-and-release",
+    "to": "/docs/products/coding-agent/install-and-release"
+  },
+  {
+    "from": "/docs/coding-agent/cli-and-tui",
+    "to": "/docs/products/coding-agent/cli-and-tui"
+  },
+  {
+    "from": "/docs/coding-agent/provider-profiles",
+    "to": "/docs/products/coding-agent/provider-profiles"
+  },
+  {
+    "from": "/docs/coding-agent/session-runtime",
+    "to": "/docs/products/coding-agent/session-runtime"
+  },
+  {
+    "from": "/docs/coding-agent/tools-and-approvals",
+    "to": "/docs/products/coding-agent/tools-and-approvals"
+  },
+  {
+    "from": "/docs/coding-agent/sandbox-routing",
+    "to": "/docs/products/coding-agent/sandbox-routing"
+  },
+  {
+    "from": "/docs/coding-agent/skills",
+    "to": "/docs/products/coding-agent/skills"
+  },
+  {
+    "from": "/docs/coding-agent/mcp-and-acp",
+    "to": "/docs/products/coding-agent/mcp-and-acp"
+  },
+  {
+    "from": "/docs/coding-agent/command-reference",
+    "to": "/docs/products/coding-agent/command-reference"
+  },
+  {
+    "from": "/docs/coding-agent/why-coding-agent",
+    "to": "/docs/products/coding-agent/why-coding-agent"
+  },
+  {
+    "from": "/docs/coding-agent/architecture",
+    "to": "/docs/products/coding-agent/architecture"
+  },
+  {
+    "from": "/docs/coding-agent/compact-and-checkpoint",
+    "to": "/docs/products/coding-agent/compact-and-checkpoint"
+  },
+  {
+    "from": "/docs/coding-agent/configuration",
+    "to": "/docs/products/coding-agent/configuration"
+  },
+  {
+    "from": "/docs/coding-agent/runtime-architecture",
+    "to": "/docs/products/coding-agent/runtime-architecture"
+  },
+  {
+    "from": "/docs/coding-agent/prompt-assembly",
+    "to": "/docs/products/coding-agent/prompt-assembly"
+  },
+  {
+    "from": "/docs/coding-agent/mcp-integration",
+    "to": "/docs/products/coding-agent/mcp-integration"
+  },
+  {
+    "from": "/docs/coding-agent/acp-integration",
+    "to": "/docs/products/coding-agent/acp-integration"
+  },
+  {
+    "from": "/docs/coding-agent/tui-customization",
+    "to": "/docs/products/coding-agent/tui-customization"
+  },
+  {
+    "from": "/docs/coding-agent/lifecycle-hooks",
+    "to": "/docs/products/coding-agent/lifecycle-hooks"
+  },
+  {
+    "from": "/docs/flowgram/overview",
+    "to": "/docs/products/flowgram/overview"
+  },
+  {
+    "from": "/docs/flowgram/quickstart",
+    "to": "/docs/products/flowgram/quickstart"
+  },
+  {
+    "from": "/docs/flowgram/use-cases-and-paths",
+    "to": "/docs/products/flowgram/use-cases-and-paths"
+  },
+  {
+    "from": "/docs/flowgram/frontend-backend-integration",
+    "to": "/docs/products/flowgram/frontend-backend-integration"
+  },
+  {
+    "from": "/docs/flowgram/api-and-runtime",
+    "to": "/docs/products/flowgram/api-and-runtime"
+  },
+  {
+    "from": "/docs/flowgram/built-in-nodes",
+    "to": "/docs/products/flowgram/built-in-nodes"
+  },
+  {
+    "from": "/docs/flowgram/custom-nodes",
+    "to": "/docs/products/flowgram/custom-nodes"
+  },
+  {
+    "from": "/docs/flowgram/agent-tool-knowledge-integration",
+    "to": "/docs/products/flowgram/agent-tool-knowledge-integration"
+  },
+  {
+    "from": "/docs/flowgram/why-flowgram",
+    "to": "/docs/products/flowgram/why-flowgram"
+  },
+  {
+    "from": "/docs/flowgram/architecture",
+    "to": "/docs/products/flowgram/architecture"
+  },
+  {
+    "from": "/docs/flowgram/runtime",
+    "to": "/docs/products/flowgram/runtime"
+  },
+  {
+    "from": "/docs/flowgram/workflow-execution-pipeline",
+    "to": "/docs/products/flowgram/workflow-execution-pipeline"
+  },
+  {
+    "from": "/docs/flowgram/custom-node-extension",
+    "to": "/docs/products/flowgram/custom-node-extension"
+  },
+  {
+    "from": "/docs/flowgram/frontend-custom-node-development",
+    "to": "/docs/products/flowgram/frontend-custom-node-development"
+  },
+  {
+    "from": "/docs/spring-boot/overview",
+    "to": "/docs/integrations/spring-boot/overview"
+  },
+  {
+    "from": "/docs/spring-boot/quickstart",
+    "to": "/docs/integrations/spring-boot/quickstart"
+  },
+  {
+    "from": "/docs/spring-boot/auto-configuration",
+    "to": "/docs/integrations/spring-boot/auto-configuration"
+  },
+  {
+    "from": "/docs/spring-boot/configuration-reference",
+    "to": "/docs/integrations/spring-boot/configuration-reference"
+  },
+  {
+    "from": "/docs/spring-boot/bean-extension",
+    "to": "/docs/integrations/spring-boot/bean-extension"
+  },
+  {
+    "from": "/docs/spring-boot/common-patterns",
+    "to": "/docs/integrations/spring-boot/common-patterns"
+  },
+  {
+    "from": "/docs/spring-boot/agentflow-integration",
+    "to": "/docs/integrations/spring-boot/agentflow-integration"
+  },
+  {
+    "from": "/docs/solutions/overview",
+    "to": "/docs/integrations/solutions/overview"
+  },
+  {
+    "from": "/docs/solutions/springboot-mysql-chat-memory",
+    "to": "/docs/integrations/solutions/springboot-mysql-chat-memory"
+  },
+  {
+    "from": "/docs/solutions/springboot-jdbc-agent-memory",
+    "to": "/docs/integrations/solutions/springboot-jdbc-agent-memory"
+  },
+  {
+    "from": "/docs/solutions/rag-ingestion-vector-store",
+    "to": "/docs/integrations/solutions/rag-ingestion-vector-store"
+  },
+  {
+    "from": "/docs/solutions/deepseek-stream-search-rag",
+    "to": "/docs/integrations/solutions/deepseek-stream-search-rag"
+  },
+  {
+    "from": "/docs/solutions/legal-assistant",
+    "to": "/docs/integrations/solutions/legal-assistant"
+  },
+  {
+    "from": "/docs/solutions/flowgram-mysql-taskstore",
+    "to": "/docs/integrations/solutions/flowgram-mysql-taskstore"
+  },
+  {
+    "from": "/docs/solutions/pinecone-vector-workflow",
+    "to": "/docs/integrations/solutions/pinecone-vector-workflow"
+  },
+  {
+    "from": "/docs/solutions/searxng-web-search",
+    "to": "/docs/integrations/solutions/searxng-web-search"
+  },
+  {
+    "from": "/docs/solutions/spi-dispatcher-connectionpool",
+    "to": "/docs/integrations/solutions/spi-dispatcher-connectionpool"
+  },
+  {
+    "from": "/docs/mcp/mysql-dynamic-datasource",
+    "to": "/docs/integrations/solutions/mysql-dynamic-datasource"
+  },
+  {
+    "from": "/docs/security/overview",
+    "to": "/docs/production/security"
+  },
+  {
+    "from": "/docs/operations/production-checklist",
+    "to": "/docs/production/production-checklist"
+  },
+  {
+    "from": "/docs/troubleshooting/overview",
+    "to": "/docs/production/troubleshooting"
+  },
+  {
+    "from": "/docs/migration/overview",
+    "to": "/docs/reference/migration"
+  },
+  {
+    "from": "/docs/agent/reference-core-classes",
+    "to": "/docs/reference/reference-core-classes"
+  },
+  {
+    "from": "/docs/core-sdk/architecture-and-module-map",
+    "to": "/docs/reference/maps/architecture-and-module-map"
+  },
+  {
+    "from": "/docs/core-sdk/package-map",
+    "to": "/docs/reference/maps/package-map"
+  },
+  {
+    "from": "/docs/start-here/architecture-at-a-glance",
+    "to": "/docs/reference/maps/architecture-at-a-glance"
+  },
+  {
+    "from": "/docs/start-here/documentation-map",
+    "to": "/docs/reference/maps/documentation-map"
+  },
+  {
+    "from": "/docs/comparison/overview",
+    "to": "/docs/reference/about/comparison"
+  },
+  {
+    "from": "/docs/core-sdk/strengths-and-differentiators",
+    "to": "/docs/reference/about/strengths-and-differentiators"
+  },
+  {
+    "from": "/docs/agent/sdk-roadmap",
+    "to": "/docs/reference/about/sdk-roadmap"
+  },
+  {
+    "from": "/docs/contributing",
+    "to": "/docs/reference/about/contributing"
+  },
+  {
+    "from": "/docs/faq",
+    "to": "/docs/reference/faq"
+  },
+  {
+    "from": "/docs/glossary",
+    "to": "/docs/reference/glossary"
+  },
+  {
+    "from": "/docs/reference/release-checklist",
+    "to": "/docs/reference/maintainers/release-checklist"
+  },
+  {
+    "from": "/docs/deploy/cloudflare-pages",
+    "to": "/docs/reference/maintainers/cloudflare-pages"
+  },
+  {
+    "from": "/docs/guides/blog-migration-map",
+    "to": "/docs/reference/maintainers/blog-migration-map"
+  },
+  {
+    "from": "/docs/agent/provider-config-examples",
+    "to": "/docs/products/coding-agent/provider-profiles"
+  }
+]

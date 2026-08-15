@@ -43,7 +43,7 @@ Two points to note:
 
 ## Provider capabilities are not fully symmetric
 
-What AI4J unifies is the entry point, the request model, and the engineering mental model — not wrapping every provider into an identical capability surface. Before actual use, confirm against the [Platform and Service Matrix](/docs/core-sdk/platform-service-matrix):
+What AI4J unifies is the entry point, the request model, and the engineering mental model — not wrapping every provider into an identical capability surface. Before actual use, confirm against the [Platform and Service Matrix](/docs/capabilities/models/platform-service-matrix):
 
 - The supported scope of Chat / Responses.
 - The supported scope of Embedding / Rerank.
@@ -61,7 +61,7 @@ The Spring Boot starter is responsible for configuration binding, auto-configura
 - Whether both the single-instance configuration and the `ai.platforms[]` multi-instance registry need to coexist.
 - Whether you need to customize `OkHttpClient`, `AiService`, `AiServiceRegistry`, or business-side Beans.
 
-We recommend starting from [Spring Boot Overview](/docs/spring-boot/overview) and [Configuration Reference](/docs/spring-boot/configuration-reference).
+We recommend starting from [Spring Boot Overview](/docs/integrations/spring-boot/overview) and [Configuration Reference](/docs/integrations/spring-boot/configuration-reference).
 
 ## Upgrade order
 
@@ -70,7 +70,7 @@ When using multiple AI4J modules at once, we recommend:
 1. Pin a single version with `ai4j-bom`.
 2. Upgrade `ai4j` and the minimal quickstart first.
 3. Then upgrade the starter, Agent, Coding Agent, or FlowGram.
-4. Cross-check against the [Production Checklist](/docs/operations/production-checklist) to review keys, timeouts, logging, tool allowlists, MCP configuration, and regression commands.
+4. Cross-check against the [Production Checklist](/docs/production/production-checklist) to review keys, timeouts, logging, tool allowlists, MCP configuration, and regression commands.
 
 ## Regression recommendations
 

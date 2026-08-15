@@ -455,4 +455,4 @@ If you care more about chat compatibility and the traditional message-sequence m
 1. [Model Client Selection](/docs/agent/model-client-selection)
 2. [Quickstart](/docs/agent/quickstart)
 3. [Architecture](/docs/agent/architecture)
-4. [Runtime Implementations](/docs/agent/runtime-implementations)
+4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)

@@ -158,7 +158,7 @@ P0-B has already added:
 - `AgentSession.compact(...)`
 - `AgentSessionSnapshot.compactResult`
 
-For usage details, see [Memory Compact Context Projector](/docs/agent/memory-compact-context).
+For usage details, see [Memory Compact Context Projector](/docs/agent/memory/memory-compact-context).
 
 ## 8. Relationship to the Coding Agent / CLI
 
@@ -197,4 +197,4 @@ P0-A is only the foundation of the runtime container. The full Agent SDK will ke
 5. CLI `/sandbox` experience
 6. Remote Agent Runner
 
-For the full roadmap, see [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap).
+For the full roadmap, see [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap).

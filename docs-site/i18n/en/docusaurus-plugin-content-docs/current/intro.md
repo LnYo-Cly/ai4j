@@ -20,13 +20,13 @@ Coding Agent, jump straight in from the feature map.
 
 | Goal | Recommended entry | What you get |
 | --- | --- | --- |
-| Send your first AI request in plain Java | [Quickstart for Java](/docs/start-here/quickstart-java) | Minimal deps, key config, validation, and your first model call |
-| Get a plain Java project working | [Quickstart for Java](/docs/start-here/quickstart-java) | Minimal deps, config, and your first snippet |
-| Integrate a Spring Boot app | [Quickstart for Spring Boot](/docs/start-here/quickstart-spring-boot) | The starter, config properties, and bean injection |
-| See the full capability surface | [Feature Map](/docs/start-here/feature-map) | Current AI4J capabilities, maturity, and reading paths |
-| Find the canonical doc routes | [Documentation Map](/docs/start-here/documentation-map) | Canonical main lines, legacy sources, and migration directions |
-| Pre-launch checks | [Production Checklist](/docs/operations/production-checklist) | Checks for versions, keys, tools, MCP, RAG, Agent, FlowGram |
-| Understand why AI4J exists | [Why AI4J](/docs/start-here/why-ai4j) | Positioning, fit, and differences from adjacent options |
+| Send your first AI request in plain Java | [Quickstart for Java](/docs/getting-started/quickstart-java) | Minimal deps, key config, validation, and your first model call |
+| Get a plain Java project working | [Quickstart for Java](/docs/getting-started/quickstart-java) | Minimal deps, config, and your first snippet |
+| Integrate a Spring Boot app | [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot) | The starter, config properties, and bean injection |
+| See the full capability surface | [Feature Map](/docs/getting-started/feature-map) | Current AI4J capabilities, maturity, and reading paths |
+| Find the canonical doc routes | [Documentation Map](/docs/reference/maps/documentation-map) | Canonical main lines, legacy sources, and migration directions |
+| Pre-launch checks | [Production Checklist](/docs/production/production-checklist) | Checks for versions, keys, tools, MCP, RAG, Agent, FlowGram |
+| Understand why AI4J exists | [Why AI4J](/docs/getting-started/why-ai4j) | Positioning, fit, and differences from adjacent options |
 
 ## Take what you need
 
@@ -50,13 +50,13 @@ first, then upgrading upward as your project needs.
 
 | Layer | Capabilities | Entry |
 | --- | --- | --- |
-| Core SDK | `Chat`, `Responses`, streaming, multimodal, image, audio, embedding, rerank | [Core SDK / Model Access](/docs/core-sdk/model-access/overview) |
-| Capability wiring | Function call, local tools, Skills, MCP | [Tools](/docs/core-sdk/tools/overview), [Skills](/docs/core-sdk/skills/overview), [MCP](/docs/mcp/overview) |
-| Data augmentation | Memory, search, RAG, VectorStore, ingestion, hybrid retrieval | [Search & RAG](/docs/core-sdk/search-and-rag/overview) |
-| App integration | Spring Boot starter, config governance, auto-configuration | [Spring Boot](/docs/spring-boot/overview) |
-| Upper runtimes | Agent, Coding Agent, FlowGram workflows | [Agent](/docs/agent/overview), [Coding Agent](/docs/coding-agent/overview), [FlowGram](/docs/flowgram/overview) |
-| Scenario solutions | Common combinations and repeatable integration paths | [Solutions](/docs/solutions/overview) |
-| Production readiness | Version compatibility, release artifacts, security, migration, troubleshooting | [Version Compatibility](/docs/reference/version-compatibility), [Security](/docs/security/overview), [Troubleshooting](/docs/troubleshooting/overview) |
+| Core SDK | `Chat`, `Responses`, streaming, multimodal, image, audio, embedding, rerank | [Core SDK / Model Access](/docs/capabilities/models/overview) |
+| Capability wiring | Function call, local tools, Skills, MCP | [Tools](/docs/capabilities/tools/overview), [Skills](/docs/capabilities/skills/overview), [MCP](/docs/capabilities/mcp/overview) |
+| Data augmentation | Memory, search, RAG, VectorStore, ingestion, hybrid retrieval | [Search & RAG](/docs/capabilities/rag/overview) |
+| App integration | Spring Boot starter, config governance, auto-configuration | [Spring Boot](/docs/integrations/spring-boot/overview) |
+| Upper runtimes | Agent, Coding Agent, FlowGram workflows | [Agent](/docs/agent/overview), [Coding Agent](/docs/products/coding-agent/overview), [FlowGram](/docs/products/flowgram/overview) |
+| Scenario solutions | Common combinations and repeatable integration paths | [Solutions](/docs/integrations/solutions/overview) |
+| Production readiness | Version compatibility, release artifacts, security, migration, troubleshooting | [Version Compatibility](/docs/reference/version-compatibility), [Security](/docs/production/security), [Troubleshooting](/docs/production/troubleshooting) |
 
 ## Three concepts, kept distinct
 
@@ -86,5 +86,5 @@ These modules exist so you can pull in only what you need right now, while leavi
 room to upgrade upward.
 
 Suggested next step: if you haven't run any code yet, start with the
-[Quickstart for Java](/docs/start-here/quickstart-java); if you'd rather first
-judge whether AI4J fits your project, read [Why AI4J](/docs/start-here/why-ai4j).
+[Quickstart for Java](/docs/getting-started/quickstart-java); if you'd rather first
+judge whether AI4J fits your project, read [Why AI4J](/docs/getting-started/why-ai4j).

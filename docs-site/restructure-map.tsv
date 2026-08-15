@@ -1,0 +1,182 @@
+old_path	section	subgroup	new_path	note
+intro.md	入门	-	intro.md
+start-here/choose-your-path.md	入门	-	getting-started/choose-your-path.md
+start-here/quickstart-java.md	入门	-	getting-started/quickstart-java.md
+start-here/quickstart-spring-boot.md	入门	-	getting-started/quickstart-spring-boot.md
+start-here/first-tool-call.md	入门	-	getting-started/first-tool-call.md
+start-here/feature-map.md	入门	-	getting-started/feature-map.md
+start-here/why-ai4j.md	入门	-	getting-started/why-ai4j.md
+start-here/programmatic-integration.md	入门	-	getting-started/programmatic-integration.md
+core-sdk/overview.md	核心能力	-	capabilities/overview.md	重写为"核心能力总览"
+core-sdk/service-entry-and-registry.md	核心能力	-	capabilities/service-entry.md
+start-here/openai-compatible-and-trovebox.md	核心能力	模型调用	capabilities/models/openai-compatible-and-trovebox.md
+core-sdk/model-access/overview.md	核心能力	模型接入	capabilities/models/overview.md
+core-sdk/model-access/chat.md	核心能力	模型接入	capabilities/models/chat.md
+core-sdk/model-access/responses.md	核心能力	模型接入	capabilities/models/responses.md
+core-sdk/model-access/chat-vs-responses.md	核心能力	模型接入	capabilities/models/chat-vs-responses.md
+core-sdk/model-access/messages.md	核心能力	模型接入	capabilities/models/messages.md
+core-sdk/model-access/streaming.md	核心能力	模型接入	capabilities/models/streaming.md
+core-sdk/model-access/multimodal.md	核心能力	模型接入	capabilities/models/multimodal.md
+core-sdk/model-access/request-and-response-conventions.md	核心能力	模型接入	capabilities/models/request-and-response-conventions.md
+core-sdk/platform-service-matrix.md	核心能力	模型接入	capabilities/models/platform-service-matrix.md
+core-sdk/image-generation.md	核心能力	媒体生成	capabilities/media/image-generation.md
+core-sdk/audio.md	核心能力	媒体生成	capabilities/media/audio.md
+core-sdk/realtime.md	核心能力	媒体生成	capabilities/media/realtime.md
+core-sdk/video-generation.md	核心能力	媒体生成	capabilities/media/video-generation.md
+core-sdk/music-generation.md	核心能力	媒体生成	capabilities/media/music-generation.md
+core-sdk/tools/overview.md	核心能力	工具	capabilities/tools/overview.md
+core-sdk/tools/function-calling.md	核心能力	工具	capabilities/tools/function-calling.md
+core-sdk/tools/annotation-based-tools.md	核心能力	工具	capabilities/tools/annotation-based-tools.md
+core-sdk/tools/tool-execution-model.md	核心能力	工具	capabilities/tools/tool-execution-model.md
+core-sdk/tools/tool-whitelist-and-security.md	核心能力	工具	capabilities/tools/tool-whitelist-and-security.md
+core-sdk/skills/overview.md	核心能力	技能	capabilities/skills/overview.md
+core-sdk/skills/discovery-and-loading.md	核心能力	技能	capabilities/skills/discovery-and-loading.md	与 loading-and-activation 合并候选
+core-sdk/skills/loading-and-activation.md	核心能力	技能	capabilities/skills/loading-and-activation.md	与 discovery-and-loading 合并候选
+core-sdk/skills/skill-vs-tool-vs-mcp.md	核心能力	技能	capabilities/skills/skill-vs-tool-vs-mcp.md
+core-sdk/memory/overview.md	核心能力	会话记忆	capabilities/chat-memory/overview.md
+core-sdk/memory/chat-memory.md	核心能力	会话记忆	capabilities/chat-memory/chat-memory.md
+core-sdk/memory/memory-and-tool-boundaries.md	核心能力	会话记忆	capabilities/chat-memory/memory-and-tool-boundaries.md
+core-sdk/search-and-rag/overview.md	核心能力	RAG	capabilities/rag/overview.md
+core-sdk/search-and-rag/online-search.md	核心能力	RAG	capabilities/rag/online-search.md
+core-sdk/search-and-rag/embedding.md	核心能力	RAG	capabilities/rag/embedding.md
+core-sdk/search-and-rag/query-planning.md	核心能力	RAG	capabilities/rag/query-planning.md
+core-sdk/search-and-rag/rerank.md	核心能力	RAG	capabilities/rag/rerank.md
+core-sdk/search-and-rag/vector-store-and-backends.md	核心能力	RAG	capabilities/rag/vector-store-and-backends.md
+core-sdk/search-and-rag/ingestion-pipeline.md	核心能力	RAG	capabilities/rag/ingestion-pipeline.md
+core-sdk/search-and-rag/chunking-strategies.md	核心能力	RAG	capabilities/rag/chunking-strategies.md
+core-sdk/search-and-rag/hybrid-retrieval.md	核心能力	RAG	capabilities/rag/hybrid-retrieval.md
+core-sdk/search-and-rag/citations-and-trace.md	核心能力	RAG	capabilities/rag/citations-and-trace.md
+core-sdk/search-and-rag/evaluation.md	核心能力	RAG	capabilities/rag/evaluation.md
+core-sdk/search-and-rag/llm-as-judge.md	核心能力	RAG	capabilities/rag/llm-as-judge.md
+mcp/overview.md	核心能力	MCP	capabilities/mcp/overview.md
+mcp/use-cases-and-paths.md	核心能力	MCP	capabilities/mcp/use-cases-and-paths.md
+core-sdk/mcp/protocol-capabilities.md	核心能力	MCP	capabilities/mcp/protocol-capabilities.md
+mcp/client-integration.md	核心能力	MCP	capabilities/mcp/client-integration.md
+mcp/transport-types.md	核心能力	MCP	capabilities/mcp/transport-types.md
+mcp/streamable-http.md	核心能力	MCP	capabilities/mcp/streamable-http.md
+mcp/gateway-management.md	核心能力	MCP	capabilities/mcp/gateway-management.md
+mcp/configuration-and-gateway-reference.md	核心能力	MCP	capabilities/mcp/configuration-and-gateway-reference.md
+mcp/third-party-mcp-integration.md	核心能力	MCP	capabilities/mcp/third-party-mcp-integration.md
+mcp/tool-exposure-semantics.md	核心能力	MCP	capabilities/mcp/tool-exposure-semantics.md
+mcp/build-your-mcp-server.md	核心能力	MCP	capabilities/mcp/build-your-mcp-server.md
+mcp/mcp-agent-end-to-end.md	核心能力	MCP	capabilities/mcp/mcp-agent-end-to-end.md
+agent/overview.md	Agent 开发	-	agent/overview.md
+agent/why-agent.md	Agent 开发	-	agent/why-agent.md
+agent/quickstart.md	Agent 开发	-	agent/quickstart.md
+start-here/agent-concepts.md	Agent 开发	-	agent/agent-concepts.md
+agent/use-cases-and-paths.md	Agent 开发	-	agent/use-cases-and-paths.md
+agent/architecture.md	Agent 开发	-	agent/architecture.md
+agent/session-runtime.md	Agent 开发	-	agent/session-runtime.md
+agent/tools-and-registry.md	Agent 开发	-	agent/tools-and-registry.md
+agent/skills.md	Agent 开发	-	agent/skills.md
+agent/system-prompt-vs-instructions.md	Agent 开发	-	agent/system-prompt-vs-instructions.md
+agent/agent-blueprint.md	Agent 开发	-	agent/agent-blueprint.md
+agent/model-client-selection.md	Agent 开发	-	agent/model-client-selection.md
+agent/provider-config-examples.md	Agent 开发	-	agent/provider-config-examples.md	疑似重定向存根,实施时核实
+agent/minimal-react-agent.md	Agent 开发	运行时	agent/runtimes/minimal-react-agent.md
+agent/runtime-implementations.md	Agent 开发	运行时	agent/runtimes/runtime-implementations.md
+agent/codeact-runtime.md	Agent 开发	运行时	agent/runtimes/codeact-runtime.md
+agent/codeact-custom-sandbox.md	Agent 开发	运行时	agent/runtimes/codeact-custom-sandbox.md
+agent/workflow-stategraph.md	Agent 开发	运行时	agent/runtimes/workflow-stategraph.md
+agent/memory-and-state.md	Agent 开发	记忆与压缩	agent/memory/memory-and-state.md
+agent/memory-compact-context.md	Agent 开发	记忆与压缩	agent/memory/memory-compact-context.md
+agent/context-window-management.md	Agent 开发	记忆与压缩	agent/memory/context-window-management.md
+agent/subagent-handoff-policy.md	Agent 开发	编排	agent/orchestration/subagent-handoff-policy.md
+agent/agent-teams.md	Agent 开发	编排	agent/orchestration/agent-teams.md
+agent/agent-teams-api-reference.md	Agent 开发	编排	agent/orchestration/agent-teams-api-reference.md
+agent/weather-workflow-cookbook.md	Agent 开发	编排	agent/orchestration/weather-workflow-cookbook.md
+agent/approval-permission-policy.md	Agent 开发	治理	agent/governance/approval-permission-policy.md
+agent/tool-interceptor.md	Agent 开发	治理	agent/governance/tool-interceptor.md
+agent/plugin-lifecycle-hooks.md	Agent 开发	治理	agent/governance/plugin-lifecycle-hooks.md
+agent/sandbox-spi.md	Agent 开发	治理	agent/governance/sandbox-spi.md
+agent/cubesandbox-provider.md	Agent 开发	治理	agent/governance/cubesandbox-provider.md
+agent/trace-observability.md	Agent 开发	可观测与互操作	agent/observability/trace-observability.md
+agent/replay-recovery-audit.md	Agent 开发	可观测与互操作	agent/observability/replay-recovery-audit.md
+agent/a2a.md	Agent 开发	可观测与互操作	agent/observability/a2a.md
+start-here/extend-ai4j.md	扩展	-	extending/extend-ai4j.md
+core-sdk/extension/overview.md	扩展	-	extending/overview.md
+core-sdk/extension/plugin-packages.md	扩展	插件系统	extending/plugins/plugin-packages.md
+core-sdk/extension/plugin-recipes.md	扩展	插件系统	extending/plugins/plugin-recipes.md
+core-sdk/extension/plugin-author-cookbook.md	扩展	插件系统	extending/plugins/plugin-author-cookbook.md
+core-sdk/extension/ask-user-plugin.md	扩展	插件系统	extending/plugins/ask-user-plugin.md
+core-sdk/extension/dynamic-workflow-plugin.md	扩展	插件系统	extending/plugins/dynamic-workflow-plugin.md
+core-sdk/extension/extension-spi.md	扩展	插件系统	extending/plugins/extension-spi.md
+core-sdk/extension/lifecycle-extensions.md	扩展	插件系统	extending/plugins/lifecycle-extensions.md
+core-sdk/extension/provider-extension.md	扩展	代码内扩展面	extending/code-level/provider-extension.md
+core-sdk/extension/model-extension.md	扩展	代码内扩展面	extending/code-level/model-extension.md
+core-sdk/extension/service-extension.md	扩展	代码内扩展面	extending/code-level/service-extension.md
+core-sdk/extension/spi-http-stack.md	扩展	代码内扩展面	extending/code-level/spi-http-stack.md
+coding-agent/overview.md	产品	Coding Agent	products/coding-agent/overview.md
+coding-agent/quickstart.md	产品	Coding Agent	products/coding-agent/quickstart.md
+coding-agent/install-and-release.md	产品	Coding Agent	products/coding-agent/install-and-release.md
+coding-agent/cli-and-tui.md	产品	Coding Agent	products/coding-agent/cli-and-tui.md
+coding-agent/provider-profiles.md	产品	Coding Agent	products/coding-agent/provider-profiles.md
+coding-agent/session-runtime.md	产品	Coding Agent	products/coding-agent/session-runtime.md
+coding-agent/tools-and-approvals.md	产品	Coding Agent	products/coding-agent/tools-and-approvals.md
+coding-agent/sandbox-routing.md	产品	Coding Agent	products/coding-agent/sandbox-routing.md
+coding-agent/skills.md	产品	Coding Agent	products/coding-agent/skills.md
+coding-agent/mcp-and-acp.md	产品	Coding Agent	products/coding-agent/mcp-and-acp.md
+coding-agent/command-reference.md	产品	Coding Agent	products/coding-agent/command-reference.md
+coding-agent/why-coding-agent.md	产品	Coding Agent	products/coding-agent/why-coding-agent.md
+coding-agent/architecture.md	产品	Coding Agent	products/coding-agent/architecture.md
+coding-agent/compact-and-checkpoint.md	产品	Coding Agent	products/coding-agent/compact-and-checkpoint.md
+coding-agent/configuration.md	产品	Coding Agent	products/coding-agent/configuration.md
+coding-agent/runtime-architecture.md	产品	Coding Agent	products/coding-agent/runtime-architecture.md
+coding-agent/prompt-assembly.md	产品	Coding Agent	products/coding-agent/prompt-assembly.md
+coding-agent/mcp-integration.md	产品	Coding Agent	products/coding-agent/mcp-integration.md
+coding-agent/acp-integration.md	产品	Coding Agent	products/coding-agent/acp-integration.md
+coding-agent/tui-customization.md	产品	Coding Agent	products/coding-agent/tui-customization.md
+coding-agent/lifecycle-hooks.md	产品	Coding Agent	products/coding-agent/lifecycle-hooks.md
+flowgram/overview.md	产品	FlowGram	products/flowgram/overview.md
+flowgram/quickstart.md	产品	FlowGram	products/flowgram/quickstart.md
+flowgram/use-cases-and-paths.md	产品	FlowGram	products/flowgram/use-cases-and-paths.md
+flowgram/frontend-backend-integration.md	产品	FlowGram	products/flowgram/frontend-backend-integration.md
+flowgram/api-and-runtime.md	产品	FlowGram	products/flowgram/api-and-runtime.md
+flowgram/built-in-nodes.md	产品	FlowGram	products/flowgram/built-in-nodes.md
+flowgram/custom-nodes.md	产品	FlowGram	products/flowgram/custom-nodes.md
+flowgram/agent-tool-knowledge-integration.md	产品	FlowGram	products/flowgram/agent-tool-knowledge-integration.md
+flowgram/why-flowgram.md	产品	FlowGram	products/flowgram/why-flowgram.md
+flowgram/architecture.md	产品	FlowGram	products/flowgram/architecture.md
+flowgram/runtime.md	产品	FlowGram	products/flowgram/runtime.md
+flowgram/workflow-execution-pipeline.md	产品	FlowGram	products/flowgram/workflow-execution-pipeline.md
+flowgram/custom-node-extension.md	产品	FlowGram	products/flowgram/custom-node-extension.md
+flowgram/frontend-custom-node-development.md	产品	FlowGram	products/flowgram/frontend-custom-node-development.md
+spring-boot/overview.md	集成	Spring Boot	integrations/spring-boot/overview.md
+spring-boot/quickstart.md	集成	Spring Boot	integrations/spring-boot/quickstart.md
+spring-boot/auto-configuration.md	集成	Spring Boot	integrations/spring-boot/auto-configuration.md
+spring-boot/configuration-reference.md	集成	Spring Boot	integrations/spring-boot/configuration-reference.md
+spring-boot/bean-extension.md	集成	Spring Boot	integrations/spring-boot/bean-extension.md
+spring-boot/common-patterns.md	集成	Spring Boot	integrations/spring-boot/common-patterns.md
+spring-boot/agentflow-integration.md	集成	Spring Boot	integrations/spring-boot/agentflow-integration.md
+solutions/overview.md	集成	实战方案	integrations/solutions/overview.md	重写为"实战方案总览"
+solutions/springboot-mysql-chat-memory.md	集成	实战方案	integrations/solutions/springboot-mysql-chat-memory.md
+solutions/springboot-jdbc-agent-memory.md	集成	实战方案	integrations/solutions/springboot-jdbc-agent-memory.md
+solutions/rag-ingestion-vector-store.md	集成	实战方案	integrations/solutions/rag-ingestion-vector-store.md
+solutions/deepseek-stream-search-rag.md	集成	实战方案	integrations/solutions/deepseek-stream-search-rag.md
+solutions/legal-assistant.md	集成	实战方案	integrations/solutions/legal-assistant.md
+solutions/flowgram-mysql-taskstore.md	集成	实战方案	integrations/solutions/flowgram-mysql-taskstore.md
+solutions/pinecone-vector-workflow.md	集成	实战方案	integrations/solutions/pinecone-vector-workflow.md
+solutions/searxng-web-search.md	集成	实战方案	integrations/solutions/searxng-web-search.md
+solutions/spi-dispatcher-connectionpool.md	集成	实战方案	integrations/solutions/spi-dispatcher-connectionpool.md
+mcp/mysql-dynamic-datasource.md	集成	实战方案	integrations/solutions/mysql-dynamic-datasource.md
+security/overview.md	生产	-	production/security.md
+operations/production-checklist.md	生产	-	production/production-checklist.md
+troubleshooting/overview.md	生产	-	production/troubleshooting.md
+reference/api.md	参考	API 与版本	reference/api.md
+reference/version-compatibility.md	参考	API 与版本	reference/version-compatibility.md
+reference/release-and-artifacts.md	参考	API 与版本	reference/release-and-artifacts.md
+migration/overview.md	参考	API 与版本	reference/migration.md
+agent/reference-core-classes.md	参考	API 与版本	reference/reference-core-classes.md
+core-sdk/architecture-and-module-map.md	参考	架构与地图	reference/maps/architecture-and-module-map.md
+core-sdk/package-map.md	参考	架构与地图	reference/maps/package-map.md
+start-here/architecture-at-a-glance.md	参考	架构与地图	reference/maps/architecture-at-a-glance.md
+start-here/documentation-map.md	参考	架构与地图	reference/maps/documentation-map.md	移动后必须重生成(描述旧结构)
+comparison/overview.md	参考	关于	reference/about/comparison.md
+core-sdk/strengths-and-differentiators.md	参考	关于	reference/about/strengths-and-differentiators.md
+agent/sdk-roadmap.md	参考	关于	reference/about/sdk-roadmap.md
+contributing.md	参考	关于	reference/about/contributing.md
+faq.md	参考	-	reference/faq.md
+glossary.md	参考	-	reference/glossary.md
+reference/release-checklist.md	参考	维护者	reference/maintainers/release-checklist.md
+deploy/cloudflare-pages.md	参考	维护者	reference/maintainers/cloudflare-pages.md
+guides/blog-migration-map.md	参考	维护者	reference/maintainers/blog-migration-map.md
