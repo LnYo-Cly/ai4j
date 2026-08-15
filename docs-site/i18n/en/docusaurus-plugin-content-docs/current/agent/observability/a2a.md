@@ -93,17 +93,39 @@ client.subscribeToTask("https://other-agent.example.com", taskId, event -> {
 });
 ```
 
-Wrap the client as a tool so your agent can call external agents:
+Wrap the client as a tool so your agent can call external agents. `A2ATool` is only the
+`ToolExecutor` — the model also needs a tool *definition* in the registry. Build a
+`Tool.Function` named whatever you like (here `ask_remote_agent`) with a single `message`
+parameter, and register it via `StaticToolRegistry`:
 
 ```java
 A2ATool a2a = new A2ATool("https://other-agent.example.com");
+
+Tool.Function fn = new Tool.Function();
+fn.setName("ask_remote_agent");
+fn.setDescription("Ask a remote A2A agent a question.");
+Tool.Function.Parameter param = new Tool.Function.Parameter();
+Map<String, Tool.Function.Property> props = new HashMap<>();
+Tool.Function.Property msgProp = new Tool.Function.Property();
+msgProp.setType("string");
+msgProp.setDescription("The message to send");
+props.put("message", msgProp);
+param.setProperties(props);
+param.setRequired(Collections.singletonList("message"));
+fn.setParameters(param);
+AgentToolRegistry registry = new StaticToolRegistry(
+        Collections.singletonList(new Tool("function", fn)));
+
 Agent agent = Agents.react()
         .modelClient(modelClient).model("glm-5.1")
-        .toolExecutor(a2a)
-        .toolRegistry(a2aRegistry)  // defines the ask_remote_agent tool
+        .toolExecutor(a2a)      // routes ask_remote_agent to the A2A endpoint
+        .toolRegistry(registry) // exposes the tool definition to the model
         .build();
-// agent can now call the external A2A agent as a tool
+// the agent can now call the external A2A agent as a tool
 ```
+
+The tool name is not hardcoded in `A2ATool` — it executes whatever call your registry
+advertises, extracts the `message` argument, and sends it via `sendTask`.
 
 ## A2A Server — expose your agent
 
@@ -135,17 +157,38 @@ when configured. The root endpoint supports `SendMessage`, `GetTask`, `ListTasks
 official SDK compatibility. The existing aliases keep their previous lower-case task-state
 contract.
 
-Push callbacks default to public HTTPS URLs only, revalidate that policy again immediately before
-delivery, and do not follow redirects. Local and private targets are rejected during URL validation.
-Callback tokens and `authentication.credentials` are write-only: create, get, and list responses
-never disclose them, while the server retains them only for callback delivery. A test-only or
-deployment-specific callback policy must be configured explicitly; high-risk deployments must also
-enforce destination restrictions at the network egress layer because DNS resolution cannot be made
-atomic with a JDK URL connection. A push config may include A2A `authentication` fields (`scheme`
-and `credentials`), which the server sends as the callback `Authorization` header.
-Callback delivery uses a separate bounded executor so slow callback receivers do not consume Agent
-execution slots. Each task accepts at most 32 push configurations; callers must delete stale
-configurations before adding more.
+### Server internals — how push delivery actually works
+
+The server's push policy in one sentence: **public HTTPS only, revalidated immediately before
+delivery, redirects not followed.** The mechanism behind each piece:
+
+- **Callback URL policy (SSRF protection).** Validation happens twice: once when the push
+  config is created, and **again immediately before each delivery** — the second check exists
+  because DNS can be repointed between creation and delivery. Public HTTPS only; local and
+  private targets are rejected; redirects are not followed (a redirect could bounce a public
+  URL to an internal one).
+- **Known residual gap (by design of the JDK).** DNS resolution and the actual URL connection
+  cannot be made atomic with `java.net.URL`/`HttpURLConnection` — a DNS rebinding race remains
+  theoretically open. High-risk deployments should additionally restrict egress destinations at
+  the network layer. This is documented rather than worked around.
+- **Delivery isolation.** Callbacks are delivered on a **separate bounded executor**, so a slow
+  or hanging callback receiver consumes callback slots, never Agent execution slots.
+- **Credential handling.** Callback tokens and `authentication.credentials` are write-only:
+  create/get/list never return them; the server keeps them solely to build the callback
+  `Authorization` header (`scheme` + `credentials` from the A2A `authentication` fields).
+- **Per-task cap.** Each task accepts at most **32** push configurations; adding more requires
+  deleting stale ones first.
+
+To run push against a local/test receiver (blocked by the public-HTTPS default), override the
+policy explicitly:
+
+```java
+A2AServer server = new A2AServer(agent, 0, "name", "desc", null)
+        .withPushNotificationUrlValidator(url -> url.startsWith("http://localhost:")); // test only!
+```
+
+`withPushNotificationUrlValidator(Predicate<String>)` replaces the default validator — the
+predicate receives the raw callback URL and returns whether delivery is allowed.
 
 ## Publish ai4j Skills to the AgentCard
 
@@ -199,6 +242,22 @@ open so peers can select the advertised scheme.
 The server intentionally does not implement JWT/OIDC token verification; use a terminating
 identity-aware gateway for those flows.
 :::
+
+## Current limitations
+
+What this implementation deliberately does **not** do:
+
+- **Task state is in-memory, not restart-durable.** Restarting the server process loses
+  running tasks and their push configurations. For durable sessions use the agent-level
+  session store (see [Session Runtime](/docs/agent/session-runtime)) and re-register
+  callbacks after restart.
+- **No JWT/OIDC verification.** Auth is API-key or Bearer shared-secret only. Terminate
+  identity-aware flows at a gateway in front of the server.
+- **DNS rebinding race is open at the JDK layer** (see Server internals). Compensate at the
+  network egress layer for high-risk deployments.
+- **Legacy aliases kept for compatibility.** `POST /tasks/send` and `POST /message:send`
+  still speak the older lower-case task-state contract; new integrations should use the
+  JSON-RPC surface.
 
 ## External Interoperability Regression
 
