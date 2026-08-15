@@ -68,7 +68,7 @@ Signals that you should no longer stay in ReAct are typically:
 
 Further reading:
 
-- [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+- [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 
 ## 3. `CodeAct`: what you need is an intermediate program, not more text links
 
@@ -97,8 +97,8 @@ But do not treat CodeAct as the default answer for every complex task. Its costs
 
 Further reading:
 
-- [CodeAct Runtime](/docs/agent/codeact-runtime)
-- [CodeAct custom sandbox](/docs/agent/codeact-custom-sandbox)
+- [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
+- [CodeAct custom sandbox](/docs/agent/runtimes/codeact-custom-sandbox)
 
 ## 4. `Workflow / StateGraph`: you need explicit nodes, not a model pretending to be a flowchart
 
@@ -130,8 +130,8 @@ Cases where jumping straight to Workflow is not advisable:
 
 Further reading:
 
-- [Workflow StateGraph](/docs/agent/workflow-stategraph)
-- [Weather workflow cookbook](/docs/agent/weather-workflow-cookbook)
+- [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
+- [Weather workflow cookbook](/docs/agent/orchestration/weather-workflow-cookbook)
 
 ## 5. `SubAgent`: the main Agent is still the only brain, it just starts delegating in a controlled way
 
@@ -150,7 +150,7 @@ If your system still has the shape of "one main Agent plus several specialized d
 
 Further reading:
 
-- [Subagent Handoff Policy](/docs/agent/subagent-handoff-policy)
+- [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
 
 ## 6. `Teams`: not "more agents", but a collaboration organization model
 
@@ -174,8 +174,8 @@ So you should not start with a Team just because "it might get complex later". S
 
 Further reading:
 
-- [Agent Teams](/docs/agent/agent-teams)
-- [Agent Teams API Reference](/docs/agent/agent-teams-api-reference)
+- [Agent Teams](/docs/agent/orchestration/agent-teams)
+- [Agent Teams API Reference](/docs/agent/orchestration/agent-teams-api-reference)
 
 ## 7. A more practical decision table
 
@@ -240,9 +240,9 @@ Not upgrading the whole system to a higher abstraction layer.
 
 ## 10. Recommended reading order
 
-1. [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+1. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 2. [Agent architecture overview](/docs/agent/architecture)
-3. [Runtime implementation deep dive](/docs/agent/runtime-implementations)
-4. [Workflow StateGraph](/docs/agent/workflow-stategraph)
-5. [SubAgent and Handoff Policy](/docs/agent/subagent-handoff-policy)
-6. [Agent Teams](/docs/agent/agent-teams)
+3. [Runtime implementation deep dive](/docs/agent/runtimes/runtime-implementations)
+4. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
+5. [SubAgent and Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
+6. [Agent Teams](/docs/agent/orchestration/agent-teams)

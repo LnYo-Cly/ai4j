@@ -43,7 +43,7 @@ AI4J 的 Java 模块仍按 Java 8 兼容设计。项目可以运行在更高版�
 
 ## Provider 能力不是完全对称
 
-AI4J 统一的是入口、请求模型和工程心智，不是把每个 provider 包装成完全一样的能力面。实际使用前应按 [Platform and Service Matrix](/docs/core-sdk/platform-service-matrix) 确认：
+AI4J 统一的是入口、请求模型和工程心智，不是把每个 provider 包装成完全一样的能力面。实际使用前应按 [Platform and Service Matrix](/docs/capabilities/models/platform-service-matrix) 确认：
 
 - Chat / Responses 支持范围。
 - Embedding / Rerank 支持范围。
@@ -61,7 +61,7 @@ Spring Boot starter 的职责是配置绑定、自动装配和 Bean 生命周期
 - 单实例配置和 `ai.platforms[]` 多实例注册表是否需要同时存在。
 - 是否需要自定义 `OkHttpClient`、`AiService`、`AiServiceRegistry` 或业务侧 Bean。
 
-推荐从 [Spring Boot Overview](/docs/spring-boot/overview) 和 [Configuration Reference](/docs/spring-boot/configuration-reference) 开始。
+推荐从 [Spring Boot Overview](/docs/integrations/spring-boot/overview) 和 [Configuration Reference](/docs/integrations/spring-boot/configuration-reference) 开始。
 
 ## 升级顺序
 
@@ -70,7 +70,7 @@ Spring Boot starter 的职责是配置绑定、自动装配和 Bean 生命周期
 1. 用 `ai4j-bom` 固定同一版本。
 2. 先升级 `ai4j` 和最小 quickstart。
 3. 再升级 starter、Agent、Coding Agent 或 FlowGram。
-4. 对照 [生产检查清单](/docs/operations/production-checklist) 复核密钥、超时、日志、工具白名单、MCP 配置和回归命令。
+4. 对照 [生产检查清单](/docs/production/production-checklist) 复核密钥、超时、日志、工具白名单、MCP 配置和回归命令。
 
 ## 回归建议
 

@@ -457,7 +457,7 @@ P1-B still does not directly generate an `AgentPermissionPolicy`. The Factory/ho
 - Require user approval
 - Allow only inside a sandbox
 
-For the underlying policy semantics, see [Agent Approval / Permission Policy](/docs/agent/approval-permission-policy).
+For the underlying policy semantics, see [Agent Approval / Permission Policy](/docs/agent/governance/approval-permission-policy).
 
 ## 10. Relationship to Sandbox
 

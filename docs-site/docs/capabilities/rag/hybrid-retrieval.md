@@ -1,0 +1,462 @@
+---
+title: Hybrid Retrieval
+description: 讲清 AI4J HybridRetriever 的本质是多检索器结果融合器而非固定 Dense+BM25 套餐：默认 RRF 按排名融合，用稳定 key 去重，融合后 score 语义变化以及无 getHybridRagService 便利入口的设计原因。
+tags: [concept]
+---
+
+# Hybrid Retrieval
+
+在 AI4J 里，`hybrid retrieval` 不是一个“神秘黑盒检索器”，而是一个非常具体的组合器：
+
+- 先让多个 `Retriever` 各自出结果
+- 再把这些结果做去重、融合、重排
+- 最后产出一份统一的 `List<RagHit>`
+
+这页要讲清的重点是：**AI4J 当前的 hybrid 本质上是检索结果融合，不是多阶段 agent。**
+
+## 1. 源码入口在哪里
+
+先看 6 个核心类：
+
+- `rag/HybridRetriever.java`
+- `rag/Retriever.java`
+- `rag/DenseRetriever.java`
+- `rag/Bm25Retriever.java`
+- `rag/RrfFusionStrategy.java`
+- `rag/RagHitSupport.java`
+
+如果只看文档名字，你很容易把 hybrid 理解成“Dense + BM25 的固定产品能力”。但从实现看，它其实只是：
+
+```java
+public class HybridRetriever implements Retriever
+```
+
+也就是说，它仍然服从普通 `Retriever` 契约。上层 `DefaultRagService` 并不关心它里面有几个子检索器，只把它当成一个检索实现来调用。
+
+## 2. 一次 hybrid 检索真实会经过什么链路
+
+`HybridRetriever.retrieve(query)` 当前执行顺序很清晰：
+
+1. 遍历构造时传入的 `retrievers`
+2. 每个子 `retriever` 各自执行 `retrieve(query)`
+3. 用 `RagHitSupport.prepareRetrievedHits(...)` 规范化命中结果
+4. 让 `FusionStrategy` 为每个命中位置计算融合贡献值
+5. 按稳定 key 合并同一命中
+6. 把融合分数写回 `RagHit`
+7. 按最终分数倒序排序
+8. 按 `query.topK` 裁剪结果
+
+如果你想抓主线，最该记住的是这一句：
+
+**HybridRetriever 不负责“找知识”，它负责“合并多个找知识的结果”。**
+
+## 3. 默认并不是“Dense + BM25 固定套餐”
+
+构造器是：
+
+```java
+new HybridRetriever(List<Retriever> retrievers)
+```
+
+默认只给你两件事：
+
+- 把一组 `Retriever` 组合起来
+- 如果你不指定融合策略，就用 `RrfFusionStrategy`
+
+它并不会强制要求：
+
+- 必须有 dense
+- 必须有 bm25
+- 必须一稠密一稀疏
+
+所以严格说，AI4J 的 hybrid 更准确的说法是：
+
+**多检索器结果融合器。**
+
+如果你只传了一个 `Retriever`，代码也能跑，只是这时“hybrid”在工程上就没有什么意义了。
+
+### 3.1 最短怎么用
+
+默认 RAG 是 dense embedding 检索：
+
+```java
+RagService rag = aiService.getRagService(
+        PlatformType.OPENAI,
+        vectorStore
+);
+```
+
+如果要 BM25，就直接给 `Bm25Retriever` 一份内存 corpus：
+
+```java
+Retriever bm25 = new Bm25Retriever(bm25Corpus);
+RagService rag = new DefaultRagService(bm25);
+```
+
+如果要 Dense + BM25 混合召回，就自己组一个 `HybridRetriever`：
+
+```java
+Retriever dense = new DenseRetriever(
+        aiService.getEmbeddingService(PlatformType.OPENAI),
+        vectorStore
+);
+
+Retriever bm25 = new Bm25Retriever(bm25Corpus);
+
+Retriever hybrid = new HybridRetriever(Arrays.asList(dense, bm25));
+RagService rag = new DefaultRagService(hybrid);
+```
+
+查询时仍然是普通 `rag.search(...)`：
+
+```java
+RagResult result = rag.search(RagQuery.builder()
+        .query("员工医疗报销多久内提交")
+        .dataset("hr-docs")
+        .embeddingModel("text-embedding-3-small")
+        .topK(8)
+        .finalTopK(4)
+        .includeTrace(true)
+        .build());
+```
+
+这三种写法的选择很简单：
+
+| 需求 | 用什么 |
+| --- | --- |
+| 语义相近、表达不固定 | `DenseRetriever` |
+| 专有名词、错误码、制度编号、API 名称 | `Bm25Retriever` |
+| 两种都重要 | `HybridRetriever(Arrays.asList(dense, bm25))` |
+
+:::note
+AI4J 现在没有 `getHybridRagService(...)` 便利入口。这样做是故意的：hybrid 需要你明确给出 BM25 corpus 和子检索器组合，先不把它藏进 `AiService`。
+:::
+
+### 3.2 和 Query Planning 一起用时
+
+如果再加 `RagQueryPlanner`：
+
+```java
+RagService rag = new DefaultRagService(
+        hybrid,
+        new NoopReranker(),
+        new DefaultRagContextAssembler(),
+        queryPlanner
+);
+```
+
+执行成本会变成：
+
+```text
+query variants × retrievers
+```
+
+例如 3 个 query variant、2 个 retriever，就是 6 次底层检索。召回质量需要时再开，不要默认开。
+
+### 3.3 子检索器失败时怎么降级
+
+`HybridRetriever` 是 best-effort 的：
+
+- 某一路子 `Retriever` 抛异常时，会跳过这一路
+- 只要至少一路子 `Retriever` 成功，就继续融合并返回成功结果
+- 如果所有非空子 `Retriever` 都失败，才抛出第一个异常
+
+所以 Dense + BM25 场景里，向量库短暂不可用不一定会让整次 RAG 检索失败；只要 BM25 路还能返回结果，上层 `rag.search(...)` 仍然可以继续工作。
+
+## 4. 融合算法：RRF / RSF / DBSF
+
+`FusionStrategy` 是融合策略的扩展点，内置三种实现，分两族：
+
+- **按排名融合（rank-based）**：`RrfFusionStrategy` —— 只看名次，不看原始分数
+- **按分数融合（score-based）**：`RsfFusionStrategy`、`DbsfFusionStrategy` —— 把原始分数归一到同一量纲再相加
+
+它们都实现同一个接口：
+
+```java
+public interface FusionStrategy {
+    List<Double> scoreContributions(List<RagHit> hits);
+}
+```
+
+`HybridRetriever` 为每个子检索器的结果列表调一次 `scoreContributions(...)`，把返回的贡献值累加到去重后的命中上。
+
+### 4.1 默认 RRF（按排名）
+
+默认构造会走：
+
+```java
+new RrfFusionStrategy()
+```
+
+`RrfFusionStrategy` 默认 `rankConstant = 60`，贡献公式实际上是：
+
+```java
+1.0 / (rankConstant + rank)
+```
+
+也就是典型的 Reciprocal Rank Fusion 思路。
+
+这个默认值有一个很重要的后果：
+
+**默认 hybrid 更看重“某命中在各检索器中的名次”，而不是原始分数绝对值。**
+
+这意味着：
+
+- 一个 dense 分数很高但排在第 8 的命中，不一定赢得过一个 bm25 第 1 名
+- 不同检索器之间不需要先把分数归一到同一量纲
+- 融合更稳，但会牺牲一部分“原始相似度幅度信息”
+
+### 4.2 RSF：相对分数归一（Relative Score Fusion）
+
+如果你希望保留更多原始 score 语义，用 `RsfFusionStrategy`：
+
+```java
+Retriever hybrid = new HybridRetriever(
+        Arrays.asList(dense, bm25),
+        new RsfFusionStrategy()
+);
+```
+
+它的做法是：对每个子检索器内部，把原始分数做 **min-max 归一**，映射到 `[0, 1]`：
+
+```java
+contribution = (rawScore - min) / (max - min)
+```
+
+- 该检索器里得分最高的命中拿到 1.0
+- 得分最低的拿到 0.0
+- 中间的按线性插值
+
+效果：不同检索器的分数被拉到同一尺度后再相加。dense 的 0.95 和 bm25 的 12.0 不再被名次吞掉，而是按各自分布的相对位置比较。
+
+### 4.3 DBSF：分布归一（Distribution-Based Score Fusion）
+
+`DbsfFusionStrategy` 走得更深一步，用 **z-score + sigmoid** 归一：
+
+```java
+zScore      = (rawScore - mean) / standardDeviation
+contribution = 1.0 / (1.0 + exp(-zScore))
+```
+
+```java
+Retriever hybrid = new HybridRetriever(
+        Arrays.asList(dense, bm25),
+        new DbsfFusionStrategy()
+);
+```
+
+- 先用均值和标准差把分数中心化
+- 再用 sigmoid 压到 `(0, 1)`
+
+相比 RSF，DBSF 对“个别极端高分”不那么敏感：一个离群的高分会把 RSF 的 min-max 拉偏（其他命中被压到接近 0），但 z-score + sigmoid 会把它收敛到接近 1，给其余命中留出区分度。
+
+### 4.4 兜底：没有分数或分数无区分度时退回按排名
+
+这是 score-based 两族最容易忽略的安全细节。
+
+`RsfFusionStrategy` 和 `DbsfFusionStrategy` 都继承自 `AbstractScoreFusionStrategy`。当某个子检索器的结果出现以下情况，它们**不会强行做归一**，而是退回 RRF 风格的按排名贡献：
+
+- `RagHit.score` 为 `null`
+- 整组分数没有方差（全部相等，`max - min ≈ 0`）
+
+退回的公式是：
+
+```java
+contribution = 1.0 / (rank)
+```
+
+:::note
+这意味着：如果你的某一路检索器没填 `score`（例如自定义 `Retriever` 忘了给分），RSF/DBSF 不会崩，而是静默退化成“按名次”。如果你以为开了 DBSF 就一定是分数融合，结果可能和 RRF 没区别——这时先检查子检索器是否真的吐了有区分度的 `score`。
+:::
+
+### 4.5 三种策略怎么选
+
+| 策略 | 看什么 | 适合场景 | 注意点 |
+| --- | --- | --- | --- |
+| `RrfFusionStrategy`（默认） | 名次 | 各检索器分数语义差异大、量纲不一致 | 丢掉原始分数幅度 |
+| `RsfFusionStrategy` | 原始分数相对位置 | 分数语义可比、想保留幅度信息 | 对离群高分敏感 |
+| `DbsfFusionStrategy` | 原始分数分布 | 分数分布有偏、有离群值 | 计算量略大，对极值更鲁棒 |
+
+切换策略不需要改 retriever，只换 `HybridRetriever` 第二个参数：
+
+```java
+// 默认 RRF
+new HybridRetriever(Arrays.asList(dense, bm25));
+
+// 自定义 RRF 的 rankConstant
+new HybridRetriever(Arrays.asList(dense, bm25), 40);
+
+// 换成分数融合
+new HybridRetriever(Arrays.asList(dense, bm25), new RsfFusionStrategy());
+new HybridRetriever(Arrays.asList(dense, bm25), new DbsfFusionStrategy());
+```
+
+到底哪个更好，没有普适答案——它取决于你的 embedding 模型、BM25 语料分布和召回集大小。建议用 [RAG Evaluation](/docs/capabilities/rag/evaluation) 的 NDCG 指标在同一批标注 query 上做 A/B 对比，而不是拍脑袋选。
+
+## 5. “同一个命中” 是怎么判定的
+
+这是 hybrid 实现里最容易被忽略、但最影响结果质量的地方。
+
+`HybridRetriever.keyOf(hit, fallbackIndex)` 的 key 优先级大致是：
+
+1. `hit.id`
+2. `documentId + chunkIndex`
+3. `sourcePath + chunkIndex`
+4. `sourceUri + chunkIndex`
+5. `sourceName + sectionTitle + chunkIndex`
+6. `content`
+7. fallback index
+
+这意味着 hybrid 的去重质量，非常依赖你前面 ingest 和检索阶段是否给了稳定标识。
+
+如果你的 `RagHit`：
+
+- 没有 `id`
+- `documentId` 不稳定
+- `chunkIndex` 每次切块都变
+- 或者不同来源只是内容碰巧相同
+
+那么融合结果就可能出现两种问题：
+
+- 本该合并的命中没有合并
+- 本不该合并的命中被误合并
+
+所以 hybrid 的质量，不只是算法问题，还是 **标识设计问题**。
+
+## 6. 融合后 `RagHit` 上哪些字段会变
+
+融合完成后，AI4J 会写回几组关键信息：
+
+- `retrieverSource = "hybrid"`
+- `retrievalScore = bestRetrievalScore`
+- `fusionScore = 累加后的融合分`
+- `score = fusionScore`
+- `scoreDetails = 每个子检索器的来源、排名、原始检索分、融合贡献`
+
+这里要特别注意 `score` 的语义。
+
+在 dense 检索时，`score` 更像向量检索分；在 rerank 后，`score` 又会被改成 rerank 分；而在 hybrid 结果里，`score` 已经变成融合后的有效分数。  
+所以看 `RagHit.score` 时，永远不要脱离阶段去理解。
+
+最稳的做法是同时看：
+
+- `retrievalScore`
+- `fusionScore`
+- `rerankScore`
+- `scoreDetails`
+
+## 7. Dense 和 BM25 在这条链里各自扮演什么角色
+
+`DenseRetriever` 的逻辑是：
+
+1. 用 `IEmbeddingService` 为 query 生成向量
+2. 调 `VectorStore.search(...)`
+3. 把返回的 `VectorSearchResult` 转成 `RagHit`
+
+它依赖：
+
+- `query.embeddingModel`
+- `query.dataset`
+- 向量库里的 metadata 质量
+
+`Bm25Retriever` 的逻辑则完全不同：
+
+1. 基于内存 `corpus` 建局部 BM25 索引
+2. 对 query 做分词
+3. 计算词频、逆文档频率、长度归一化分数
+4. 输出按 score 排序的命中
+
+它不依赖 embedding，也不依赖外部向量库。
+
+所以 hybrid 组合的真正价值不是“把两个流行名词拼起来”，而是把：
+
+- dense 的语义召回
+- sparse / bm25 的词项匹配能力
+
+放进同一条融合链。
+
+## 8. `topK` 到底在哪几层生效
+
+这个点很容易理解错。
+
+`query.topK` 在当前实现里至少会影响两层：
+
+1. 每个子 `Retriever` 自己返回多少结果
+2. `HybridRetriever` 融合后最终保留多少结果
+
+如果后面再交给 `DefaultRagService`，还会有第三层：
+
+3. `query.finalTopK` 在 rerank 之后再次裁剪
+
+所以当你觉得“hybrid 召回太少”时，不要只盯着一层看。可能是：
+
+- dense 子检索器先裁掉了
+- bm25 子检索器先裁掉了
+- hybrid 融合后又裁掉了
+- rerank 后 `finalTopK` 再裁了一次
+
+## 9. 当前实现没有做什么
+
+AI4J 这层 hybrid 很实用，但边界也很明确。它当前没有直接做：
+
+- 并行执行多个子检索器
+- 查询改写或查询扩展（这类检索前处理归到 `RagQueryPlanner`）
+- 重试、超时控制或熔断
+- 基于业务规则的二次过滤
+- rerank
+- context 拼装
+
+也就是说，它只解决“多路检索结果如何合并”，不解决“查询如何变聪明”。
+
+## 10. 最容易踩坑的 4 个点
+
+### 10.1 把默认 RRF 当成分数融合
+
+默认实现主要吃 rank，不是吃原始 score 幅度。不要误以为 dense 的 0.91 和 bm25 的 17.4 会被直接做数值比较。
+
+### 10.2 命中没有稳定 id
+
+没有稳定标识，hybrid 的去重质量会明显下降，`scoreDetails` 也会变得难解释。
+
+### 10.3 只看最终 `score`
+
+融合后的 `score` 已经不是底层检索分。排障时一定要把 `scoreDetails` 一起看。
+
+### 10.4 以为 hybrid 之后就不需要 rerank
+
+hybrid 解决的是“多源召回融合”，不是“面向 query 的最终相关性排序”。这两层不是互斥关系。
+
+## 11. 什么时候该扩展它
+
+如果你遇到下面这些情况，就应该考虑扩展而不是硬用默认值：
+
+- 不同检索器分数语义你想保留得更明显
+- 你有域内强规则，需要按 source 设权重
+- 你的命中 key 需要更稳定的业务主键
+- 你想让 hybrid 兼容不止 dense/bm25 两路
+
+扩展点主要有两个：
+
+- 自定义 `Retriever`
+- 自定义 `FusionStrategy`
+
+而不是去改 `DefaultRagService`。
+
+## 12. 这页最该记住的结论
+
+AI4J 当前的 hybrid retrieval，本质上是一个 **`Retriever` 级结果融合器**：
+
+- 它接收多个子检索器
+- 默认用 RRF 按排名贡献做融合
+- 用稳定 key 去重
+- 把融合后的分数和细节写回 `RagHit`
+
+理解这一点后，你就不会把 hybrid、rerank、context assembly、online search 误写成同一层能力。
+
+## 13. 继续阅读
+
+- [RAG Evaluation](/docs/capabilities/rag/evaluation)
+- [Query Planning](/docs/capabilities/rag/query-planning)
+- [Rerank](/docs/capabilities/rag/rerank)
+- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
+- [Vector Store and Backends](/docs/capabilities/rag/vector-store-and-backends)

@@ -42,7 +42,13 @@ jobs:
 
       - name: Verify no orphan doc directories
         run: |
-          for d in ai-basics getting-started core-sdk/chat core-sdk/responses agent/runtimes agent/orchestration; do
+          # 2026-08 IA restructure: canonical top-level dirs are
+          # getting-started / capabilities / agent / extending / products /
+          # integrations / production / reference. Everything below is a
+          # removed legacy tree that must not be reintroduced.
+          for d in ai-basics core-sdk start-here mcp coding-agent flowgram \
+                   spring-boot solutions comparison deploy guides security \
+                   operations migration troubleshooting; do
             test ! -d "docs/$d" \
               && echo "OK: docs/$d removed" \
               || { echo "FAIL: docs/$d still exists — orphan directories must not be reintroduced"; exit 1; }

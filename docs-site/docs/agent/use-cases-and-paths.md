@@ -68,7 +68,7 @@ tags: [concept]
 
 继续看：
 
-- [Minimal ReAct Agent](/docs/agent/minimal-react-agent)
+- [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 
 ## 3. `CodeAct`：你需要的是中间程序，而不是更多文字链路
 
@@ -97,8 +97,8 @@ tags: [concept]
 
 继续看：
 
-- [CodeAct Runtime](/docs/agent/codeact-runtime)
-- [CodeAct 自定义沙箱](/docs/agent/codeact-custom-sandbox)
+- [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
+- [CodeAct 自定义沙箱](/docs/agent/runtimes/codeact-custom-sandbox)
 
 ## 4. `Workflow / StateGraph`：你需要显式节点，不需要模型假装流程图
 
@@ -130,8 +130,8 @@ tags: [concept]
 
 继续看：
 
-- [Workflow StateGraph](/docs/agent/workflow-stategraph)
-- [天气工作流 Cookbook](/docs/agent/weather-workflow-cookbook)
+- [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
+- [天气工作流 Cookbook](/docs/agent/orchestration/weather-workflow-cookbook)
 
 ## 5. `SubAgent`：主 Agent 仍是唯一大脑，只是开始受控委派
 
@@ -150,7 +150,7 @@ tags: [concept]
 
 继续看：
 
-- [Subagent Handoff Policy](/docs/agent/subagent-handoff-policy)
+- [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
 
 ## 6. `Teams`：不是“更多 agent”，而是协作组织模型
 
@@ -174,8 +174,8 @@ Team 的本质变化是：
 
 继续看：
 
-- [Agent Teams](/docs/agent/agent-teams)
-- [Agent Teams API Reference](/docs/agent/agent-teams-api-reference)
+- [Agent Teams](/docs/agent/orchestration/agent-teams)
+- [Agent Teams API Reference](/docs/agent/orchestration/agent-teams-api-reference)
 
 ## 7. 一张更实用的决策表
 
@@ -240,9 +240,9 @@ ReAct 不是 demo 层，而是默认 runtime 语义。很多生产任务真正�
 
 ## 10. 推荐阅读顺序
 
-1. [最小 ReAct Agent](/docs/agent/minimal-react-agent)
+1. [最小 ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 2. [Agent 架构总览](/docs/agent/architecture)
-3. [Runtime 实现详解](/docs/agent/runtime-implementations)
-4. [Workflow StateGraph](/docs/agent/workflow-stategraph)
-5. [SubAgent 与 Handoff Policy](/docs/agent/subagent-handoff-policy)
-6. [Agent Teams](/docs/agent/agent-teams)
+3. [Runtime 实现详解](/docs/agent/runtimes/runtime-implementations)
+4. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
+5. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
+6. [Agent Teams](/docs/agent/orchestration/agent-teams)

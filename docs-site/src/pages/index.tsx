@@ -12,7 +12,7 @@ const quickRoutes = [
   {
     title: '开始调用模型',
     description: '从 Maven 依赖、配置和第一段 Java 调用开始。',
-    to: '/docs/start-here/quickstart-java',
+    to: '/docs/getting-started/quickstart-java',
   },
   {
     title: '接入 Agent',
@@ -27,7 +27,7 @@ const quickRoutes = [
   {
     title: '连接 MCP',
     description: '选择 transport，或从 Streamable HTTP 服务接入。',
-    to: '/docs/mcp/streamable-http',
+    to: '/docs/capabilities/mcp/streamable-http',
   },
   {
     title: '查 Java API',
@@ -49,7 +49,7 @@ function HomepageHeader() {
           <Link className="button button--secondary button--lg" to="/docs/intro">
             开始阅读文档
           </Link>
-          <Link className="button button--info button--lg margin-left--md" to="/docs/coding-agent/overview">
+          <Link className="button button--info button--lg margin-left--md" to="/docs/products/coding-agent/overview">
             查看 Coding Agent
           </Link>
         </div>

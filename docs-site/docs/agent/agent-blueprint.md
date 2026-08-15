@@ -457,7 +457,7 @@ P1-B 仍不直接生成 `AgentPermissionPolicy`。Factory/host 可以在后续�
 - 要求用户审批
 - 只允许在 sandbox 中执行
 
-底层策略语义见 [Agent Approval / Permission Policy](/docs/agent/approval-permission-policy)。
+底层策略语义见 [Agent Approval / Permission Policy](/docs/agent/governance/approval-permission-policy)。
 
 ## 10. 与 Sandbox 的关系
 

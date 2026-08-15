@@ -468,6 +468,6 @@ These all need to be picked up by higher-level modules.
 
 1. [Quickstart](/docs/agent/quickstart)
 2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory-and-state)
-4. [Runtime Implementations](/docs/agent/runtime-implementations)
-5. [Trace and observability](/docs/agent/trace-observability)
+3. [Memory and State](/docs/agent/memory/memory-and-state)
+4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+5. [Trace and observability](/docs/agent/observability/trace-observability)

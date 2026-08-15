@@ -78,7 +78,7 @@ Then business dependencies no longer repeat the version:
 
 The parent POM is the multi-module release entry point, but the root artifact should not, by default, be consumed as an SDK by business projects. When wiring a project, pull in only the modules you need.
 
-The release profile handles source, javadoc, GPG signing, and the Sonatype Central publishing configuration. For the full release procedure, see the [Release Checklist](/docs/reference/release-checklist). Before releasing, maintainers should confirm:
+The release profile handles source, javadoc, GPG signing, and the Sonatype Central publishing configuration. For the full release procedure, see the [Release Checklist](/docs/reference/maintainers/release-checklist). Before releasing, maintainers should confirm:
 
 - The version number has been updated consistently across the root POM and module POMs.
 - `ai4j-bom` includes all release modules that need to be aligned.
@@ -128,4 +128,4 @@ Coding Agent consumers usually also need `ai4j-coding` or `ai4j-cli`, depending 
 4. If the project uses the Spring Boot starter, check that the configuration properties still bind.
 5. If the project uses Coding Agent or FlowGram, check the host entry point and the task API.
 
-Once the upgrade is done, link the project's internal integration notes back to [Version Compatibility](/docs/reference/version-compatibility) and [Production Checklist](/docs/operations/production-checklist).
+Once the upgrade is done, link the project's internal integration notes back to [Version Compatibility](/docs/reference/version-compatibility) and [Production Checklist](/docs/production/production-checklist).

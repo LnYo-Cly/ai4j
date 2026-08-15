@@ -158,7 +158,7 @@ P0-B 已补上：
 - `AgentSession.compact(...)`
 - `AgentSessionSnapshot.compactResult`
 
-使用细节见 [Memory Compact Context Projector](/docs/agent/memory-compact-context)。
+使用细节见 [Memory Compact Context Projector](/docs/agent/memory/memory-compact-context)。
 
 ## 8. 与 Coding Agent / CLI 的关系
 
@@ -197,4 +197,4 @@ P0-A 只是运行态容器基础。完整 Agent SDK 还会继续推进：
 5. CLI `/sandbox` 体验
 6. 远端 Agent Runner
 
-完整路线见 [AI4J Agent SDK Roadmap](/docs/agent/sdk-roadmap)。
+完整路线见 [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)。

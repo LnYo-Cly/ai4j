@@ -15,7 +15,7 @@ AI4J's Agent integration follows the same split that makes Skills safe in local 
 - the application decides which Skills the current request is allowed to see;
 - the application continues to own authentication, tenant policy, tools, approvals, and UI.
 
-The Coding Agent has its own workspace integration. See [Coding Agent Skills](/docs/coding-agent/skills) when that is the runtime you are using.
+The Coding Agent has its own workspace integration. See [Coding Agent Skills](/docs/products/coding-agent/skills) when that is the runtime you are using.
 
 ## Start with the right integration
 
@@ -159,14 +159,14 @@ This separation is intentional. A reusable SDK cannot infer a tenant's authoriza
 - A file-based Skill is a method or instruction resource.
 - A Tool is an executable capability exposed by the host.
 - MCP is a protocol for connecting or publishing external capabilities.
-- `A2ASkill` describes an agent capability in an A2A AgentCard; it is not a local `SKILL.md` file. 用 `A2ASkillMapper` 可以把已授权的 ai4j `SkillDescriptor` 发布成 AgentCard 上的 A2A skill（见 [A2A — Publish ai4j Skills](/docs/agent/a2a#publish-ai4j-skills-to-the-agentcard)）。
+- `A2ASkill` describes an agent capability in an A2A AgentCard; it is not a local `SKILL.md` file. 用 `A2ASkillMapper` 可以把已授权的 ai4j `SkillDescriptor` 发布成 AgentCard 上的 A2A skill（见 [A2A — Publish ai4j Skills](/docs/agent/observability/a2a#publish-ai4j-skills-to-the-agentcard)）。
 
-Read [Skill vs Tool vs MCP](/docs/core-sdk/skills/skill-vs-tool-vs-mcp) for the Core distinction and [A2A](/docs/agent/a2a) for the AgentCard capability model.
+Read [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp) for the Core distinction and [A2A](/docs/agent/observability/a2a) for the AgentCard capability model.
 
 ## Next pages
 
-1. [Core Skills overview](/docs/core-sdk/skills/overview)
-2. [Discovery and loading](/docs/core-sdk/skills/discovery-and-loading)
-3. [Loading and activation](/docs/core-sdk/skills/loading-and-activation) — 三条加载路径与受限执行器
+1. [Core Skills overview](/docs/capabilities/skills/overview)
+2. [Discovery and loading](/docs/capabilities/skills/discovery-and-loading)
+3. [Loading and activation](/docs/capabilities/skills/loading-and-activation) — 三条加载路径与受限执行器
 4. [Tools and registry](/docs/agent/tools-and-registry)
-4. [Coding Agent Skills](/docs/coding-agent/skills)
+4. [Coding Agent Skills](/docs/products/coding-agent/skills)
