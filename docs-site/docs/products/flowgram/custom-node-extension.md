@@ -275,7 +275,7 @@ executor 抛出的异常不会只是打印日志，它会直接影响节点和�
 
 ## 12. 这一页和其它页面的边界
 
-- [Custom Nodes](/docs/products/flowgram/custom-nodes)
+- [自定义节点](/docs/products/flowgram/custom-nodes)
   讲前后端整体契约
 - [前端自定义节点开发](/docs/products/flowgram/frontend-custom-node-development)
   讲前端 registry、表单和 type map

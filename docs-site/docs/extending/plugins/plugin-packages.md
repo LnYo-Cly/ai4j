@@ -1,11 +1,10 @@
 ---
-title: Plugin Packages
+title: 插件包
 description: 讲清 AI4J plugin package：第三方 jar + ServiceLoader 发现 + ExtensionRegistry 三段式门禁 discover/enable/exposeTool，区分 tool/command/Skill/Prompt/Guardrail 资源进入方式，默认不自动暴露工具给模型。
 tags: [concept]
 ---
 
-# Plugin Packages
-
+# 插件包
 AI4J 的 plugin package 解决的是：**第三方开发者把工具、命令、Skill、Prompt、Guardrail 等运行时资源打包成一个普通 Java 依赖，使用者通过 classpath 引入后再检查、启用、授权和暴露**。
 
 它不是应用商店，也不是远程下载安装器。当前稳定路径是 Maven / Gradle 依赖 + `ServiceLoader` 发现 + `ExtensionRegistry` 安全门禁。
@@ -19,7 +18,7 @@ AI4J 现在有两类容易混淆的扩展：
 | Provider / model / service extension | 把新平台、新模型字段或新顶层服务接进核心 SDK | 修改核心工厂、配置和 starter 主链 | 显式代码接线 |
 | Plugin package | 把工具、命令、Skill、Prompt、Guardrail 等资源交给 runtime 使用 | 第三方 jar + `ServiceLoader` + 显式 enable/expose | 独立扩展 API |
 
-如果你要新增一个模型平台，仍然看 [Provider Extension](/docs/extending/code-level/provider-extension)。
+如果你要新增一个模型平台，仍然看 [Provider 扩展](/docs/extending/code-level/provider-extension)。
 如果你要给 agent 或 coding agent 增加一组可复用工具、提示词或规则，才看这一页。
 
 ## 2. 使用者路径
@@ -297,7 +296,7 @@ ai4j-cli extension init weather-ai4j-plugin \
   --name "Weather Pack"
 ```
 
-如果你是使用者，建议接着看 [Plugin Recipes](/docs/extending/plugins/plugin-recipes)，那里把 Java、Spring Boot、CLI 和多插件组合写成可复制接入路径。如果你是第三方插件作者，建议完整走一遍 [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)。那里按 scaffold、替换业务逻辑、校验、发布说明和常见错误组织，比本页更适合作为动手流程。
+如果你是使用者，建议接着看 [插件配方](/docs/extending/plugins/plugin-recipes)，那里把 Java、Spring Boot、CLI 和多插件组合写成可复制接入路径。如果你是第三方插件作者，建议完整走一遍 [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)。那里按 scaffold、替换业务逻辑、校验、发布说明和常见错误组织，比本页更适合作为动手流程。
 
 这个命令只写入一个不存在或空的本地目录。它不会把插件依赖安装到宿主应用，不会拉取远程插件，也不会启用插件。生成后目录结构类似：
 
@@ -515,8 +514,8 @@ AI4J 当前提供一个随 SDK 发布的样板插件，并维护一个独立仓�
 
 | Artifact | 发布边界 | Extension id | 能力 | 文档 |
 | --- | --- | --- | --- | --- |
-| `ai4j-plugin-ask-user` | ai4j-sdk reactor / BOM | `ask-user` | tool + command + Skill + Prompt | [Ask User Plugin](/docs/extending/plugins/ask-user-plugin) |
-| `ai4j-plugin-dynamic-workflow` | 独立仓库，单独发布 | `dynamic-workflow` | tool + command + Skill + Prompt | [Dynamic Workflow Plugin](/docs/extending/plugins/dynamic-workflow-plugin) |
+| `ai4j-plugin-ask-user` | ai4j-sdk reactor / BOM | `ask-user` | tool + command + Skill + Prompt | [Ask User 插件](/docs/extending/plugins/ask-user-plugin) |
+| `ai4j-plugin-dynamic-workflow` | 独立仓库，单独发布 | `dynamic-workflow` | tool + command + Skill + Prompt | [动态工作流插件](/docs/extending/plugins/dynamic-workflow-plugin) |
 
 这些样板的作用不是替代第三方插件，而是给插件作者一个可编译、可测试、可通过 `ServiceLoader` 发现的参考实现。它们展示的重点是：
 
@@ -570,10 +569,10 @@ AI4J 当前不维护远程插件市场。推荐做法是让插件作者用自己
 
 1. [Extension 总览](/docs/extending/overview)
 2. 本页：Plugin Packages
-3. [Plugin Recipes](/docs/extending/plugins/plugin-recipes)
-4. [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)
-5. [Dynamic Workflow Plugin](/docs/extending/plugins/dynamic-workflow-plugin)
-6. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
+3. [插件配方](/docs/extending/plugins/plugin-recipes)
+4. [Ask User 插件](/docs/extending/plugins/ask-user-plugin)
+5. [动态工作流插件](/docs/extending/plugins/dynamic-workflow-plugin)
+6. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
 7. [Tools](/docs/capabilities/tools/overview)
 8. [Agent Tools and Registry](/docs/agent/tools-and-registry)
 9. [Coding Agent Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)

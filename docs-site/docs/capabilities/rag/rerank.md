@@ -1,11 +1,10 @@
 ---
-title: Rerank
+title: 重排
 description: 讲清 AI4J rerank 层：它夹在 retrieval 与 context assembly 之间做排序修正，默认 NoopReranker 不远程重排，ModelReranker 靠 provider 返回 index 映射，finalTopK 在 rerank 之后裁剪，returnDocuments 可能改写命中内容。
 tags: [concept]
 ---
 
-# Rerank
-
+# 重排
 `rerank` 在 AI4J 里的位置很容易被写浅。  
 它既不是“第二个 retriever”，也不是“最后给模型的 prompt 优化器”，而是夹在 **retrieval** 和 **context assembly** 之间的一层排序修正。
 
@@ -295,6 +294,6 @@ AI4J 当前的 rerank，不是另一套检索框架，而是 `DefaultRagService`
 
 ## 13. 继续阅读
 
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-- [Embedding](/docs/capabilities/rag/embedding)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+- [嵌入](/docs/capabilities/rag/embedding)

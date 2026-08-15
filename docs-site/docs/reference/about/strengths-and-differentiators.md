@@ -1,11 +1,10 @@
 ---
-title: Strengths and Differentiators
+title: 优势与差异点
 description: 从能力统一、边界清晰、provider 非对称、向上演进路径等维度说明 AI4J 作为 Java AI 基座的差异点与适用场景。
 tags: [concept]
 ---
 
-# Strengths and Differentiators
-
+# 优势与差异点
 这一页不列功能，而是回答一个更重要的问题：
 
 > 如果你要向别人解释“AI4J 强在哪”，最值得强调的到底是什么？
@@ -128,7 +127,7 @@ AI4J 的亮点并不只是“功能多”，而是很多长期工程问题已经
 - `DaytonaSandboxProvider`（Daytona）
 - `CubeSandboxProvider`（CubeSandbox）
 
-Agent 需要执行 shell / 文件 / 项目命令时，可以按 spec 选择沙箱后端，而不是绑定到单一平台或自建容器。优势：执行隔离能力可替换、可移植。详见 [Agent Sandbox SPI](/docs/agent/governance/sandbox-spi)。
+Agent 需要执行 shell / 文件 / 项目命令时，可以按 spec 选择沙箱后端，而不是绑定到单一平台或自建容器。优势：执行隔离能力可替换、可移植。详见 [Agent 沙箱 SPI](/docs/agent/governance/sandbox-spi)。
 
 ### 7.3 纯 Java 8、无 Kotlin、单一 JSON 栈
 

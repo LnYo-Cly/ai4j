@@ -105,15 +105,15 @@ Coding Agent 的高风险面比普通 Agent 更大，因为它可能接触文件
 
 - [Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)
 - [Session Runtime](/docs/products/coding-agent/session-runtime)
-- [Security Overview](/docs/production/security)
+- [安全总览](/docs/production/security)
 
 ## 推荐阅读顺序
 
 ### 直接使用
 
-1. [Why Coding Agent](/docs/products/coding-agent/why-coding-agent)
+1. [为什么需要 Coding Agent](/docs/products/coding-agent/why-coding-agent)
 2. [Quickstart](/docs/products/coding-agent/quickstart)
-3. [Install and Release](/docs/products/coding-agent/install-and-release)
+3. [安装与发布](/docs/products/coding-agent/install-and-release)
 4. [CLI / TUI](/docs/products/coding-agent/cli-and-tui)
 5. [Provider Profiles](/docs/products/coding-agent/provider-profiles)
 6. [Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)
@@ -124,7 +124,7 @@ Coding Agent 的高风险面比普通 Agent 更大，因为它可能接触文件
 1. [Architecture](/docs/products/coding-agent/architecture)
 2. [Runtime Architecture](/docs/products/coding-agent/runtime-architecture)
 3. [Prompt Assembly](/docs/products/coding-agent/prompt-assembly)
-4. [MCP and ACP](/docs/products/coding-agent/mcp-and-acp)
+4. [MCP 与 ACP](/docs/products/coding-agent/mcp-and-acp)
 5. [Command Reference](/docs/products/coding-agent/command-reference)
 
 如果你要比较 Coding Agent 和 JS/TS 生态里的 agent SDK，看 [Comparison](/docs/reference/about/comparison)。

@@ -1,11 +1,10 @@
 ---
-title: RAG Ingestion Vector Store
+title: RAG 摄取与向量存储
 description: AI4J 的标准 RAG 工程基线方案，串联文档入库、embedding、向量存储与检索链，不绑定特定向量库品牌。
 tags: [concept]
 ---
 
-# RAG Ingestion Vector Store
-
+# RAG 摄取与向量存储
 这个方案回答的是：当你已经决定做 RAG，第一条标准工程路径应该是什么。
 
 ## 1. 适合什么场景
@@ -45,9 +44,9 @@ tags: [concept]
 
 这时继续看：
 
-- [Pinecone Vector Workflow](/docs/integrations/solutions/pinecone-vector-workflow)
-- [SearXNG Web Search](/docs/integrations/solutions/searxng-web-search)
-- [Legal Assistant](/docs/integrations/solutions/legal-assistant)
+- [Pinecone 向量工作流](/docs/integrations/solutions/pinecone-vector-workflow)
+- [SearXNG 联网搜索](/docs/integrations/solutions/searxng-web-search)
+- [法律助手](/docs/integrations/solutions/legal-assistant)
 
 ## 5. 先补哪些主线页
 

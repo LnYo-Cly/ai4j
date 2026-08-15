@@ -1,12 +1,11 @@
 ---
 sidebar_position: 11
-title: Sandbox Routing
+title: 沙箱路由
 description: 说明 ai4j-coding 如何把 Coding Agent 的 bash exec 路由到 live SandboxSession（P3 首切片），覆盖当前 API、未路由的工具、与审批的关系以及非敏感 sandbox 摘要的安全边界。
 tags: [integration]
 ---
 
-# Sandbox Routing
-
+# 沙箱路由
 这一页说明 `ai4j-coding` 如何把 Coding Agent 的执行型工具接到 `ai4j-agent` 的 Sandbox SPI。
 
 先说当前状态：**P3 首切片已经支持 `bash` 的 foreground `exec` 路由到 live `SandboxSession`**。这不是完整云端 Runner，也不是文件系统级隔离平台；它只是把一次性 shell 命令从本地 `LocalShellCommandExecutor` 切换到 `SandboxSession.execute(...)`。
@@ -147,7 +146,7 @@ mvn -pl ai4j-coding -am -DskipTests=false test
 
 ## 8. 继续阅读
 
-1. [Agent Sandbox SPI](/docs/agent/governance/sandbox-spi)
+1. [Agent 沙箱 SPI](/docs/agent/governance/sandbox-spi)
 2. [Tools 与审批机制](/docs/products/coding-agent/tools-and-approvals)
 3. [会话、流式与进程](/docs/products/coding-agent/session-runtime)
-4. [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)
+4. [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)

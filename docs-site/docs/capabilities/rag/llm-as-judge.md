@@ -1,13 +1,13 @@
 ---
 sidebar_position: 12
-title: LLM-as-Judge (Answer Quality)
+title: LLM-as-Judge（回答质量评判）
 description: "讲透 ai4j 的 RAG 回答质量评判层：RagJudge SPI、内置 ChatRagJudge 的三维评分协议（faithfulness/contextRelevance/answerRelevance，temperature 0、json_object、容错解析、分数钳制 [0,1]）、RagOnlineEvaluator 如何把评判写进 RagTrace，以及它与离线 RagEvaluator 检索指标的分工。"
 tags: [reference]
 ---
 
 # LLM-as-Judge（回答质量评判）
 
-[RAG Evaluation](/docs/capabilities/rag/evaluation) 里的 `RagEvaluator` 算的是**检索质量**——召回的相关 id 对不对。但召回准不代表回答好:一个 recall@K = 1.0 的系统,生成阶段仍可能跑题或幻觉。回答质量要用**评判层**(LLM-as-judge)来估。
+[RAG 评测](/docs/capabilities/rag/evaluation) 里的 `RagEvaluator` 算的是**检索质量**——召回的相关 id 对不对。但召回准不代表回答好:一个 recall@K = 1.0 的系统,生成阶段仍可能跑题或幻觉。回答质量要用**评判层**(LLM-as-judge)来估。
 
 这一层很小,但和检索指标不可互替。这页讲清它的 SPI、内置实现的固定协议、评判结果去哪了、以及它和离线指标的边界。
 
@@ -87,7 +87,7 @@ RagJudgeEvaluation evaluation = evaluator.evaluate(ragResult, answer);
 result.getTrace().setJudgeEvaluation(evaluation);
 ```
 
-所以回答质量的分数跟着 trace 走,后续在 [Citations and Trace](/docs/capabilities/rag/citations-and-trace) 里能取到。这让"检索的引用"和"回答质量的评判"挂在同一条 trace 上,审计和 UI 展示能一起拿。
+所以回答质量的分数跟着 trace 走,后续在 [引用与 Trace](/docs/capabilities/rag/citations-and-trace) 里能取到。这让"检索的引用"和"回答质量的评判"挂在同一条 trace 上,审计和 UI 展示能一起拿。
 
 ## 6. 自定义 judge:实现 `RagJudge` SPI
 
@@ -134,6 +134,6 @@ RagOnlineEvaluator evaluator = new RagOnlineEvaluator(new MyPairwiseJudge());
 
 ## 9. 继续阅读
 
-- **离线检索指标**(recall/NDCG,与 judge 分工):[RAG Evaluation](/docs/capabilities/rag/evaluation)
-- **评判结果随 trace 走**:[Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-- **检索本身怎么做**:[Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
+- **离线检索指标**(recall/NDCG,与 judge 分工):[RAG 评测](/docs/capabilities/rag/evaluation)
+- **评判结果随 trace 走**:[引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+- **检索本身怎么做**:[混合检索](/docs/capabilities/rag/hybrid-retrieval)

@@ -1,11 +1,10 @@
 ---
-title: Agent Quickstart
+title: Agent 快速开始
 description: 用最小但真实的链路帮你跑通第一条 Agent 主线：AgentBuilder 默认装配、ReActRuntime step loop、AgentModelClient 协议适配、AgentMemory 回灌与 AgentResult 收口。
 tags: [how-to]
 ---
 
-# Agent Quickstart
-
+# Agent 快速开始
 这页的目标不是展示“最短 demo”，而是帮你先跑通一条最小但真实的 Agent 主链。
 
 所谓真实，是指这条链里至少要经过：
@@ -355,7 +354,7 @@ quickstart 的使命是帮你先把入口打通，不是承载全部复杂度。
 ## 11. 下一步读什么
 
 1. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
-2. [Model Client Selection](/docs/agent/model-client-selection)
-3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Memory and State](/docs/agent/memory/memory-and-state)
-5. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+2. [模型客户端选型](/docs/agent/model-client-selection)
+3. [工具与注册表](/docs/agent/tools-and-registry)
+4. [记忆与状态](/docs/agent/memory/memory-and-state)
+5. [运行时实现](/docs/agent/runtimes/runtime-implementations)

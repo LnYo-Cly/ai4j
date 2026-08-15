@@ -1,12 +1,11 @@
 ---
 sidebar_position: 14
-title: Contribute to AI4J
+title: AI4J 贡献指南
 description: How to contribute to AI4J — reporting issues, proposing changes, running docs-site local checks and Java module tests, and following the security disclosure policy.
 tags: [how-to]
 ---
 
-# Contribute to AI4J
-
+# AI4J 贡献指南
 This page is the documentation entry point for contributors. The repository's [full contribution guide](https://github.com/LnYo-Cly/ai4j/blob/main/CONTRIBUTING.md) is authoritative for source changes and pull requests.
 
 ## Choose a path

@@ -1,11 +1,10 @@
 ---
-title: Quickstart for Java
+title: Java 快速开始
 description: 普通 Java / Maven 项目接入 AI4J 的最短路径：从依赖、环境变量到第一条同步 Chat 请求，给出可复制的 Configuration→AiService→IChatService 闭环代码与成功标准。
 tags: [how-to]
 ---
 
-# Quickstart for Java
-
+# Java 快速开始
 这页是普通 Java / Maven 项目的正式最短接入路径。它从依赖、密钥到第一条模型调用给出一个完整的最小闭环。
 
 本页对应的主模块是：
@@ -189,10 +188,10 @@ openAiConfig.setApiHost("https://codex.trovebox.online/");
 
 ## 11. 跑通之后
 
-- 想接入 Spring Boot：看 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+- 想接入 Spring Boot：看 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 - 想接 TroveBox 或其他中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/capabilities/models/openai-compatible-and-trovebox)
 - 想理解 `Chat` 细节：看 [Core SDK / Model Access / Chat](/docs/capabilities/models/chat)
-- 想让模型调用本地函数：看 [First Tool Call](/docs/getting-started/first-tool-call)
-- 想继续看完整能力：看 [Feature Map](/docs/getting-started/feature-map)
+- 想让模型调用本地函数：看 [第一次工具调用](/docs/getting-started/first-tool-call)
+- 想继续看完整能力：看 [功能地图](/docs/getting-started/feature-map)
 
 → API Javadoc：[`AiService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/factory/AiService.html) · [`IChatService`](https://javadoc.io/doc/io.github.lnyo-cly/ai4j/2.4.2/io/github/lnyocly/ai4j/service/IChatService.html)

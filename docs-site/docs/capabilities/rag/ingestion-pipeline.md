@@ -1,11 +1,10 @@
 ---
-title: Ingestion Pipeline
+title: 摄取管线
 description: 讲清 AI4J IngestionPipeline 这条 RAG 入库编排层：source 加载、文本清洗、chunk、metadata 富化、批量 embedding 与 vector upsert 如何串成统一流水线，以及 documentId/contentHash 稳定性与可插拔扩展位点。
 tags: [concept]
 ---
 
-# Ingestion Pipeline
-
+# 摄取管线
 这页讲“文档如何进入知识库”。在 AI4J 里，`IngestionPipeline` 不是一个随手拼出来的 demo helper，而是一条明确的 RAG 入库编排层。
 
 如果你想真正看懂 AI4J 的 RAG 基座，这页必须讲透。因为它决定了：

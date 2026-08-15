@@ -374,5 +374,5 @@ skill 本身不会执行任何动作。真正执行仍然要靠：
 
 1. [Tools 与审批机制](/docs/products/coding-agent/tools-and-approvals)
 2. [MCP 对接](/docs/products/coding-agent/mcp-integration)
-3. [Why Coding Agent](/docs/products/coding-agent/why-coding-agent)
-4. [Coding Agent Architecture](/docs/products/coding-agent/architecture)
+3. [为什么需要 Coding Agent](/docs/products/coding-agent/why-coding-agent)
+4. [Coding Agent 架构](/docs/products/coding-agent/architecture)

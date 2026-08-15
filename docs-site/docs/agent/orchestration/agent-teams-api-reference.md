@@ -1,12 +1,11 @@
 ---
 sidebar_position: 15
-title: Agent Teams API Reference
+title: Agent 团队 API 参考
 description: "以源码视角导航 Agent Teams runtime：AgentTeamBuilder 字段如何映射到运行链、task board 状态机、team 工具面、持久化恢复与扩展点。"
 tags: [reference]
 ---
 
-# Agent Teams API Reference
-
+# Agent 团队 API 参考
 这页不是脚本导出的类表，而是 `ai4j-agent` Team runtime 的源码导航。
 
 如果你要做的事情是：
@@ -480,8 +479,8 @@ Team 工具返回的是 JSON 字符串，里面通常至少包含：
 
 ## 12. 继续阅读
 
-1. [Agent Teams](/docs/agent/orchestration/agent-teams)
+1. [Agent 团队](/docs/agent/orchestration/agent-teams)
 2. [Subagent Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-3. [Tools and Registry](/docs/agent/tools-and-registry)
-4. [Memory and State](/docs/agent/memory/memory-and-state)
+3. [工具与注册表](/docs/agent/tools-and-registry)
+4. [记忆与状态](/docs/agent/memory/memory-and-state)
 5. [Trace Observability](/docs/agent/observability/trace-observability)

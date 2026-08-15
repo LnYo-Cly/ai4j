@@ -1,11 +1,10 @@
 ---
-title: Ask User Plugin
+title: Ask User 插件
 description: 讲清 ai4j-plugin-ask-user 样板插件：它把 Agent 需要的人类确认表达成 host-mediated JSON envelope，贡献 ask_user tool 与 command/Skill/Prompt 资源，本身不打开 UI、不读 stdin、不阻塞，由宿主决定展示与恢复。
 tags: [integration]
 ---
 
-# Ask User Plugin
-
+# Ask User 插件
 `ai4j-plugin-ask-user` 是 AI4J 的官方样板插件。它展示一件事：**插件可以把 Agent 需要的人类确认或补充信息，表达成结构化请求，由宿主应用负责展示、收集答案和恢复执行**。
 
 它不是 UI 组件，也不会阻塞读取 stdin。它只贡献 tool、command、Skill 和 Prompt 资源。
@@ -289,4 +288,4 @@ mvn -pl ai4j-plugin-ask-user -am -DskipTests=false test
 
 ## 11. 继续组装
 
-如果你要把 `ask-user` 和其他第三方插件一起接入，继续看 [Plugin Recipes](/docs/extending/plugins/plugin-recipes)。那里给出了普通 Java、Spring Boot、CLI 检查和多插件组合的完整配置形态。
+如果你要把 `ask-user` 和其他第三方插件一起接入，继续看 [插件配方](/docs/extending/plugins/plugin-recipes)。那里给出了普通 Java、Spring Boot、CLI 检查和多插件组合的完整配置形态。

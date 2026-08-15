@@ -506,7 +506,7 @@ IllegalStateException: node not found: <id>
 - 只是单个 Agent 的工具循环
 - 只是想要更强工具编排，这通常先看 [CodeAct Runtime](/docs/agent/runtimes/codeact-runtime)
 - 只是要把一个能力委派给另一个 Agent，这通常先看 [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-- 需要任务板、角色和消息总线，这通常应该看 [Agent Teams](/docs/agent/orchestration/agent-teams)
+- 需要任务板、角色和消息总线，这通常应该看 [Agent 团队](/docs/agent/orchestration/agent-teams)
 
 ## 12. 推荐阅读源码顺序
 
@@ -522,7 +522,7 @@ IllegalStateException: node not found: <id>
 
 ## 13. 继续阅读
 
-1. [Agent Architecture](/docs/agent/architecture)
+1. [Agent 架构](/docs/agent/architecture)
 2. [Minimal ReAct Agent](/docs/agent/runtimes/minimal-react-agent)
 3. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-4. [Agent Teams](/docs/agent/orchestration/agent-teams)
+4. [Agent 团队](/docs/agent/orchestration/agent-teams)

@@ -1010,7 +1010,7 @@ classpath 发现（discovery）不会自动启用扩展。执行扩展命令或�
 sandbox 的凭证必须来自环境变量或本地配置，**不接受** slash 命令参数传入——避免在 shell 历史里泄露密钥。
 :::
 
-绑定 sandbox 后，`bash action=exec` 会路由到 `SandboxSession.execute(...)`，并在返回结果里带上 `executionEnvironment`、`sandboxSessionId`、`sandboxProviderId`。完整边界见 [Sandbox Routing](/docs/products/coding-agent/sandbox-routing)。
+绑定 sandbox 后，`bash action=exec` 会路由到 `SandboxSession.execute(...)`，并在返回结果里带上 `executionEnvironment`、`sandboxSessionId`、`sandboxProviderId`。完整边界见 [沙箱路由](/docs/products/coding-agent/sandbox-routing)。
 
 ### `/extension` / `/extensions`
 

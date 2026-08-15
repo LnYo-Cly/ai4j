@@ -84,7 +84,7 @@ Retriever hybrid = new HybridRetriever(Arrays.asList(denseRetriever, bm25Retriev
 RagService rag = new DefaultRagService(hybrid);
 ```
 
-详见 [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)。
+详见 [混合检索](/docs/capabilities/rag/hybrid-retrieval)。
 
 ## 4. 入库主线默认怎么跑
 
@@ -218,15 +218,15 @@ Agent 负责多步决策、工具使用、状态推进；RAG 负责给模型补�
 
 如果你想建立最稳的源码心智模型，建议按下面顺序读：
 
-1. [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)
-2. [Chunking Strategies](/docs/capabilities/rag/chunking-strategies)
-3. [Embedding](/docs/capabilities/rag/embedding)
-4. [Vector Store and Backends](/docs/capabilities/rag/vector-store-and-backends)
-5. [Query Planning](/docs/capabilities/rag/query-planning)
-6. [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
-7. [Rerank](/docs/capabilities/rag/rerank)
-8. [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-9. [Online Search](/docs/capabilities/rag/online-search)
+1. [摄取管线](/docs/capabilities/rag/ingestion-pipeline)
+2. [分块策略](/docs/capabilities/rag/chunking-strategies)
+3. [嵌入](/docs/capabilities/rag/embedding)
+4. [向量存储与后端](/docs/capabilities/rag/vector-store-and-backends)
+5. [查询规划](/docs/capabilities/rag/query-planning)
+6. [混合检索](/docs/capabilities/rag/hybrid-retrieval)
+7. [重排](/docs/capabilities/rag/rerank)
+8. [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+9. [联网搜索](/docs/capabilities/rag/online-search)
 
 这个顺序的核心逻辑是：
 

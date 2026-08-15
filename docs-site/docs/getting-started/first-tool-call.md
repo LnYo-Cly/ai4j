@@ -1,11 +1,10 @@
 ---
-title: First Tool Call
+title: 第一次工具调用
 description: 讲清 AI4J 里“第一次工具调用”的真正含义：本地 Function Call 的最短示例，以及 Function Call、Skill、MCP 为什么必须分开理解，并给出下一步专题树。
 tags: [concept]
 ---
 
-# First Tool Call
-
+# 第一次工具调用
 这一步的目标不是讲完全部工具体系，而是先让你知道：
 
 - AI4J 里的“第一次工具调用”到底在讲什么
@@ -111,4 +110,4 @@ ChatCompletionResponse resp = chatService.chatCompletion(req);
 
 如果这里的 first tool call 没有触发，优先回看：
 
-- [Troubleshooting](/docs/production/troubleshooting)
+- [排障指南](/docs/production/troubleshooting)

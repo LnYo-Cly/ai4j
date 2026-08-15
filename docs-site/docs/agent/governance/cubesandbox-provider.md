@@ -212,6 +212,6 @@ mvn -pl ai4j-agent -am -P live-provider-tests "-Dtest=CubeSandboxLiveProviderTes
 
 ## 10. 相关文档
 
-- [Agent Sandbox SPI](/docs/agent/governance/sandbox-spi)
+- [Agent 沙箱 SPI](/docs/agent/governance/sandbox-spi)
 - [Approval / Permission Policy](/docs/agent/governance/approval-permission-policy)
 - [Coding Agent Sandbox Routing](/docs/products/coding-agent/sandbox-routing)

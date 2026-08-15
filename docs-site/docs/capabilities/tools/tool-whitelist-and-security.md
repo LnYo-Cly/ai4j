@@ -1,11 +1,10 @@
 ---
-title: "Tool Whitelist and Security"
+title: 工具白名单与安全
 description: "讲清 AI4J 工具安全两层防线：请求级 functions/mcpServices 白名单与 BuiltInToolContext 工作区读写边界，剖析 bash 等高风险 built-in 与待补的审批沙箱治理。"
 tags: [concept]
 ---
 
-# Tool Whitelist and Security
-
+# 工具白名单与安全
 工具安全里最重要的原则不是“模型能不能调”，而是“默认让模型看见什么、让它能碰到什么”。
 
 AI4J 当前基座层采用的是两层防线：

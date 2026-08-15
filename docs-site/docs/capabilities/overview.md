@@ -34,7 +34,7 @@ Core SDK 解决的是：
 | 想做知识库或检索增强 | [Search & RAG](/docs/capabilities/rag/overview) | ingestion、chunk、embedding、vector、rerank、citation |
 | 想扩展 provider 或服务 | [Extension](/docs/extending/overview) | provider、model、service、HTTP stack 扩展方式 |
 
-如果你是第一次使用，先看 [Quickstart for Java](/docs/getting-started/quickstart-java)，再回到本页选择能力线。
+如果你是第一次使用，先看 [Java 快速开始](/docs/getting-started/quickstart-java)，再回到本页选择能力线。
 
 ## Core SDK 包含哪些能力
 
@@ -89,14 +89,14 @@ MCP 是协议化能力连接层。它既可以连接第三方 MCP server，也�
 
 上线前建议看：
 
-- [Version Compatibility](/docs/reference/version-compatibility)
-- [Security Overview](/docs/production/security)
-- [Production Checklist](/docs/production/production-checklist)
-- [Troubleshooting](/docs/production/troubleshooting)
+- [版本兼容性](/docs/reference/version-compatibility)
+- [安全总览](/docs/production/security)
+- [生产检查清单](/docs/production/production-checklist)
+- [排障指南](/docs/production/troubleshooting)
 
 ## 推荐阅读顺序
 
-1. [Service Entry and Registry](/docs/capabilities/service-entry)
+1. [服务入口与注册表](/docs/capabilities/service-entry)
 2. [Platform and Service Matrix](/docs/capabilities/models/platform-service-matrix)
 3. [Model Access](/docs/capabilities/models/overview)
 4. [Tools](/docs/capabilities/tools/overview)
@@ -106,4 +106,4 @@ MCP 是协议化能力连接层。它既可以连接第三方 MCP server，也�
 8. [Search & RAG](/docs/capabilities/rag/overview)
 9. [Extension](/docs/extending/overview)
 
-旧的 `ai-basics/`、`core-sdk/chat/`、`core-sdk/responses/`、`core-sdk/mcp/` 中仍有历史细节，但当前正式阅读路径以 sidebar 和 [Documentation Map](/docs/reference/maps/documentation-map) 为准。
+旧的 `ai-basics/`、`core-sdk/chat/`、`core-sdk/responses/`、`core-sdk/mcp/` 中仍有历史细节，但当前正式阅读路径以 sidebar 和 [文档地图](/docs/reference/maps/documentation-map) 为准。

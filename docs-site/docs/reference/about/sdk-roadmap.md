@@ -1,12 +1,11 @@
 ---
 sidebar_position: 4
-title: AI4J Agent SDK Roadmap
+title: AI4J Agent SDK 路线图
 description: ai4j-agent 技术路线图：从 P0 运行内核（Session/Memory/Compact/Plugin/Permission）到 P1 Blueprint YAML、P2 Sandbox SPI、P3 Coding 沙箱路由、P4 CLI 与 P5 远端 Runner 的分阶段演进。
 tags: [reference]
 ---
 
-# AI4J Agent SDK Roadmap
-
+# AI4J Agent SDK 路线图
 这一页说明 `ai4j-agent` 接下来要怎样从“可用的 Agent runtime”升级为更完整的 Java Agent SDK。
 
 先明确一个边界：这里是技术路线图，不代表所有能力都已经发布。当前已经存在的能力包括 `Agent`、`AgentBuilder`、`AgentRuntime`、`AgentSession`、memory、runtime、workflow、team、trace 等；下面的路线是后续要逐步补强的方向。
@@ -81,11 +80,11 @@ AgentSession =
 - `AgentBuilder.sessionStore(...)` 与 `Agent.resumeSession(...)`
 - 与现有 `Agent.run(...)` 兼容
 
-使用细节见 [Agent Session Runtime](/docs/agent/session-runtime)。
+使用细节见 [Agent 会话运行时](/docs/agent/session-runtime)。
 
 ### P0-B：Memory、Compact、Context Projector 分层
 
-P0-B 基础已经落地：`ContextBudget`、`ContextProjector`、`ContextReport`、`CompactPolicy`、`CompactResult`、`AgentSession.compact(...)` 和 session snapshot compact state。使用细节见 [Memory Compact Context Projector](/docs/agent/memory/memory-compact-context)。
+P0-B 基础已经落地：`ContextBudget`、`ContextProjector`、`ContextReport`、`CompactPolicy`、`CompactResult`、`AgentSession.compact(...)` 和 session snapshot compact state。使用细节见 [记忆压缩与上下文投影器](/docs/agent/memory/memory-compact-context)。
 
 这一层必须拆清楚三层：
 
@@ -121,7 +120,7 @@ Compact 结果应尽量结构化，不只是自然语言摘要。至少要保留
 
 插件不应该只贡献工具，还应该能参与 Agent 运行生命周期。
 
-P0-C 基础已经落地：`ai4j-extension-api` 增加 `io.github.lnyocly.ai4j.extension.lifecycle` 公共合同，`ai4j-agent` 在 ReAct/Base runtime、CodeAct runtime 和 `AgentSession.compact(...)` 中触发观察型 Hook。使用细节见 [Plugin Lifecycle Hooks](/docs/agent/governance/plugin-lifecycle-hooks)。
+P0-C 基础已经落地：`ai4j-extension-api` 增加 `io.github.lnyocly.ai4j.extension.lifecycle` 公共合同，`ai4j-agent` 在 ReAct/Base runtime、CodeAct runtime 和 `AgentSession.compact(...)` 中触发观察型 Hook。使用细节见 [插件生命周期钩子](/docs/agent/governance/plugin-lifecycle-hooks)。
 
 当前支持：
 
@@ -151,7 +150,7 @@ P0-D 基础已经落地：`ai4j-agent` 增加 `io.github.lnyocly.ai4j.agent.perm
   -> delegate ToolExecutor 或 TOOL_ERROR
 ```
 
-使用细节见 [Agent Approval / Permission Policy](/docs/agent/governance/approval-permission-policy)。
+使用细节见 [Agent 审批与权限策略](/docs/agent/governance/approval-permission-policy)。
 
 边界必须说清楚：
 
@@ -239,7 +238,7 @@ P1 的目标不是做一个完整低代码平台，而是先提供：
 - fixture tests
 - `AgentFactory`：由宿主显式提供 `AgentModelClient` 等依赖后，把 Blueprint 转成 `AgentBuilder` / `Agent`
 
-P1-A/P1-B/P1-C 基础已经落地：`io.github.lnyocly.ai4j.agent.blueprint` 包提供 `AgentBlueprint`、`AgentBlueprintLoader`、`AgentBlueprintValidator`、`AgentBlueprintValidationReport`、`AgentFactory`、`AgentFactoryContext` 和 YAML / Factory deterministic tests；`ai4j-cli` 提供 `ai4j-cli run <agent.yaml> --input <task>`，让用户可以从终端直接运行单 Agent Blueprint。使用细节见 [Agent Blueprint YAML](/docs/agent/agent-blueprint)。
+P1-A/P1-B/P1-C 基础已经落地：`io.github.lnyocly.ai4j.agent.blueprint` 包提供 `AgentBlueprint`、`AgentBlueprintLoader`、`AgentBlueprintValidator`、`AgentBlueprintValidationReport`、`AgentFactory`、`AgentFactoryContext` 和 YAML / Factory deterministic tests；`ai4j-cli` 提供 `ai4j-cli run <agent.yaml> --input <task>`，让用户可以从终端直接运行单 Agent Blueprint。使用细节见 [Agent 蓝图 YAML](/docs/agent/agent-blueprint)。
 
 Team Blueprint、Workflow Blueprint、FlowGram 导出可以后置。
 
@@ -267,7 +266,7 @@ P2-A 已落地最小合同，P2-B 已补上 `AgentSessionSandboxBinding`，让 s
 - `SandboxEvent` / `SandboxEventType`
 - `SandboxStatus`
 
-使用细节见 [Agent Sandbox SPI](/docs/agent/governance/sandbox-spi)。
+使用细节见 [Agent 沙箱 SPI](/docs/agent/governance/sandbox-spi)。
 
 原则：
 

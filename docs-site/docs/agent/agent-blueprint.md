@@ -1,12 +1,11 @@
 ---
 sidebar_position: 9
-title: Agent Blueprint YAML
+title: Agent 蓝图 YAML
 description: "用声明式 YAML 描述单 Agent 的模型、指令、工具、memory、compact、sandbox 与 workflow 参数，支持加载、校验与模板化，并由宿主提供依赖后创建可运行 Agent。"
 tags: [reference]
 ---
 
-# Agent Blueprint YAML
-
+# Agent 蓝图 YAML
 `AgentBlueprint` 是 `ai4j-agent` 的声明式单 Agent 配置模型。它解决的问题是：
 
 > 当 Java API 能动态组装 Agent 之后，如何让一个 Agent 的模型、指令、插件、工具、memory、compact、sandbox 开关和 workflow 参数可以被保存、分享、模板化和校验？
@@ -457,7 +456,7 @@ P1-B 仍不直接生成 `AgentPermissionPolicy`。Factory/host 可以在后续�
 - 要求用户审批
 - 只允许在 sandbox 中执行
 
-底层策略语义见 [Agent Approval / Permission Policy](/docs/agent/governance/approval-permission-policy)。
+底层策略语义见 [Agent 审批与权限策略](/docs/agent/governance/approval-permission-policy)。
 
 ## 10. 与 Sandbox 的关系
 

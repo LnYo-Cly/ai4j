@@ -1,11 +1,10 @@
 ---
-title: DeepSeek Stream Search RAG
+title: DeepSeek 流式搜索 RAG 方案
 description: 组合流式输出、公网搜索与私域 RAG 的回答链方案，讲解职责分层、引用证据策略与升级判断。
 tags: [concept]
 ---
 
-# DeepSeek Stream Search RAG
-
+# DeepSeek 流式搜索 RAG 方案
 这个方案关注的不是单一能力，而是“流式输出 + 联网搜索 + 私域 RAG”三者的组合链路。
 
 ## 1. 适合什么场景
@@ -41,14 +40,14 @@ tags: [concept]
 
 如果你只有一种需求：
 
-- 只做私域知识库：先看 [RAG Ingestion Vector Store](/docs/integrations/solutions/rag-ingestion-vector-store)
-- 只做公网搜索增强：先看 [SearXNG Web Search](/docs/integrations/solutions/searxng-web-search)
+- 只做私域知识库：先看 [RAG 摄取与向量存储](/docs/integrations/solutions/rag-ingestion-vector-store)
+- 只做公网搜索增强：先看 [SearXNG 联网搜索](/docs/integrations/solutions/searxng-web-search)
 
 ## 5. 先补哪些主线页
 
 1. [Core SDK / Search & RAG](/docs/capabilities/rag/overview)
 2. [Core SDK / Model Access](/docs/capabilities/models/overview)
-3. [SearXNG Web Search](/docs/integrations/solutions/searxng-web-search)
+3. [SearXNG 联网搜索](/docs/integrations/solutions/searxng-web-search)
 
 ## 6. 继续看实现细节
 

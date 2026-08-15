@@ -442,6 +442,6 @@ exec error
 ## 13. 继续阅读
 
 1. [CodeAct Custom Sandbox](/docs/agent/runtimes/codeact-custom-sandbox)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
-4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
+4. [运行时实现](/docs/agent/runtimes/runtime-implementations)

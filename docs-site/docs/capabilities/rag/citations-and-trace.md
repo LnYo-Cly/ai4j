@@ -1,11 +1,10 @@
 ---
-title: Citations and Trace
+title: 引用与 Trace
 description: 区分 AI4J 的 citation 与 trace 两条链：citation 由 DefaultRagContextAssembler 基于最终命中生成，trace 记录检索与 rerank 中间状态，generation usage 与 judge 分数需上层显式回填。
 tags: [concept]
 ---
 
-# Citations and Trace
-
+# 引用与 Trace
 AI4J 这一章里，`citation` 和 `trace` 很容易被一起写成“可解释性能力”。
 这个说法不算错，但太粗。源码里这两者其实解决的是两件不同的事：
 
@@ -382,6 +381,6 @@ AI4J 当前的 citation 和 trace 不是同一件事：
 
 ## 15. 继续阅读
 
-- [Chunking Strategies](/docs/capabilities/rag/chunking-strategies)
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
-- [Rerank](/docs/capabilities/rag/rerank)
+- [分块策略](/docs/capabilities/rag/chunking-strategies)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
+- [重排](/docs/capabilities/rag/rerank)

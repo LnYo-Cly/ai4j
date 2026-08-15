@@ -1,11 +1,10 @@
 ---
-title: "Annotation-based Tools"
+title: 注解式工具
 description: "深入 @FunctionCall、@FunctionRequest、@FunctionParameter 三注解如何把 Java 类型绑定为 provider tool schema，详解 ToolUtil 生成链、类型映射规则与真实约束。"
 tags: [concept]
 ---
 
-# Annotation-based Tools
-
+# 注解式工具
 AI4J 推荐注解式工具，不是因为“代码更短”，而是因为它把 Java 类型、字段说明和 provider tool schema 绑定到了同一条生成链上。
 
 如果这一页只停留在“三个注解怎么写”，会漏掉两个真正重要的点：
@@ -247,7 +246,7 @@ public class WeatherMcpService {
 | 暴露名 | `@FunctionCall(name)` 原样 | 由 `generateApiFunctionName(service, tool)` 生成（仅保留字母/数字/下划线/连字符，最长 64，必要时加 `tool_` 前缀） |
 | 扫描入口 | `ToolUtil.scanFunctionTools()` | `ToolUtil.scanMcpTools()` |
 
-两套注解最终都会被 `ToolUtil` 扫描、缓存，并投影成统一的 `Tool.Function` 视图进入请求白名单（见 [Tool Execution Model](/docs/capabilities/tools/tool-execution-model)）。完整的 transport 启停、网关治理、远端/本地投影语义属于 MCP 协议层，见 [构建 MCP 服务](/docs/capabilities/mcp/build-your-mcp-server)。
+两套注解最终都会被 `ToolUtil` 扫描、缓存，并投影成统一的 `Tool.Function` 视图进入请求白名单（见 [工具执行模型](/docs/capabilities/tools/tool-execution-model)）。完整的 transport 启停、网关治理、远端/本地投影语义属于 MCP 协议层，见 [构建 MCP 服务](/docs/capabilities/mcp/build-your-mcp-server)。
 
 ## 10. 最稳的设计建议
 

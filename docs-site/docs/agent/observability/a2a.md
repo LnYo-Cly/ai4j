@@ -1,12 +1,11 @@
 ---
 sidebar_position: 12
-title: A2A Protocol (Agent-to-Agent)
+title: A2A 协议 (Agent-to-Agent)
 description: "Discover agents, exchange JSON-RPC tasks, stream SSE updates, and expose your ai4j agent as an A2A service with optional auth — JDK stdlib only."
 tags: [integration]
 ---
 
-# A2A Protocol (Agent-to-Agent)
-
+# A2A 协议 (Agent-to-Agent)
 ai4j provides a Java 8-compatible A2A integration surface for agent discovery, JSON-RPC task
 exchange, task lifecycle, SSE streaming, push-notification configuration, Skills metadata, and
 standard API-key or Bearer authentication. An ai4j agent can call an A2A endpoint as a client or
@@ -217,7 +216,7 @@ predicate receives the raw callback URL and returns whether delivery is allowed.
 
 ## Publish ai4j Skills to the AgentCard
 
-`A2ASkill` describes a capability in an A2A AgentCard; an ai4j `SkillDescriptor` describes a local `SKILL.md` Skill (see [Agent Skills](/docs/agent/skills)). They are different models, so the SDK ships a small bridge — `io.github.lnyocly.ai4j.agent.a2a.A2ASkillMapper` — that publishes your resolved ai4j Skills as A2A skills on the server's card.
+`A2ASkill` describes a capability in an A2A AgentCard; an ai4j `SkillDescriptor` describes a local `SKILL.md` Skill (see [Agent 技能](/docs/agent/skills)). They are different models, so the SDK ships a small bridge — `io.github.lnyocly.ai4j.agent.a2a.A2ASkillMapper` — that publishes your resolved ai4j Skills as A2A skills on the server's card.
 
 `A2ASkillMapper` is a final utility class with three static entry points:
 
@@ -293,6 +292,6 @@ none are committed or required by default CI.
 
 ## Where this fits
 
-- **Interception hooks** (control what the agent does): [Interception Hooks](/docs/agent/governance/tool-interceptor).
+- **Interception hooks** (control what the agent does): [拦截钩子](/docs/agent/governance/tool-interceptor).
 - **Sandbox SPI** (isolate tool execution): [Sandbox SPI](/docs/agent/governance/sandbox-spi).
 - **Session + compaction** (manage long sessions): [Memory & Compact](/docs/agent/memory/memory-compact-context).

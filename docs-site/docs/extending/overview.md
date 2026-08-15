@@ -95,7 +95,7 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 插件作者和使用者可以用 `ExtensionValidator` 或 `ai4j-cli extension validate <id>|--all` 做本地校验。校验会调用插件 `apply(...)` 收集运行时贡献，只报告 manifest、runtime resource、tool schema 和 classpath 资源问题，不会暴露工具给模型，也不会执行 command。接入前还可以用 `ai4j-cli extension plan <id> --enable ... --strict` 查看本次计划启用、授权和暴露后的 activation state；recipe 固定后，用 `ai4j-cli extension check <id> --enable ... --strict` 作为 CI 或发布前门禁。`check` 会在 validation 失败或显式请求的资源没有 active 时返回非零，但不会强制启用未请求资源。
 
-官方 `ai4j-plugin-ask-user` 是第一个随 SDK 发布的样板插件，展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope；独立仓库 `ai4j-plugin-dynamic-workflow` 展示如何把动态工作流请求表达成同样受宿主管控的 plugin envelope。已经准备接入插件时，优先看 [Plugin Recipes](/docs/extending/plugins/plugin-recipes)，它把依赖、检查、启用、授权、暴露和 Spring Boot / CLI 配置串成可复制配方。
+官方 `ai4j-plugin-ask-user` 是第一个随 SDK 发布的样板插件，展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope；独立仓库 `ai4j-plugin-dynamic-workflow` 展示如何把动态工作流请求表达成同样受宿主管控的 plugin envelope。已经准备接入插件时，优先看 [插件配方](/docs/extending/plugins/plugin-recipes)，它把依赖、检查、启用、授权、暴露和 Spring Boot / CLI 配置串成可复制配方。
 
 #### 3.1 插件能力清单（六种）
 
@@ -112,7 +112,7 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 前五种能力覆盖“插件贡献什么资源”。`LIFECYCLE` 是第六种，覆盖的是另一类需求：**插件想在 agent 执行的关键节点（会话开始结束、每轮前后、模型请求前后、工具调用前后、上下文压缩前后）收到通知**，而不是贡献工具或资源。它解决的是观察/遥测/审计类扩展，而不是新增能力。
 
-声明 `LIFECYCLE` 后，插件在 `apply(...)` 里通过 `context.lifecycle().register(hook)` 注册 `AgentLifecycleHook`，agent 运行时会通过 `AgentLifecycleHookDispatcher` 把 `AgentLifecycleEvent` 分发给每个 hook。详见 [Lifecycle Extensions](/docs/extending/plugins/lifecycle-extensions)。
+声明 `LIFECYCLE` 后，插件在 `apply(...)` 里通过 `context.lifecycle().register(hook)` 注册 `AgentLifecycleHook`，agent 运行时会通过 `AgentLifecycleHookDispatcher` 把 `AgentLifecycleEvent` 分发给每个 hook。详见 [生命周期扩展](/docs/extending/plugins/lifecycle-extensions)。
 
 #### 3.2 插件 SPI 的稳定性矩阵
 
@@ -164,7 +164,7 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 
 `Ai4jExtension` 也通过 `ServiceLoader` 发现，但它服务的是插件包资源注册，不会自动改变 provider 工厂分发。
 
-插件发现本身也有一层小 SPI：`ExtensionLoader` 接口（默认实现是 `@Internal` 的 `ServiceLoaderExtensionLoader`）。`ExtensionRegistry.discover()` 默认走 ServiceLoader，但你可以传一个自定义 `ExtensionLoader` 实现非 ServiceLoader 发现（例如固定列表、运行时扫描）。读取插件 jar 内的 Skill / Prompt 文本资源时，公共助手 `ExtensionResourceResolver` 会按“插件 classloader → TCCL → resolver classloader”的顺序解析，并把解析约束在插件自己的 classloader 上，避免同名资源被别的 jar 串读。这两者属于运行时接线细节，详见 [Extension SPI Internals](/docs/extending/plugins/extension-spi)。
+插件发现本身也有一层小 SPI：`ExtensionLoader` 接口（默认实现是 `@Internal` 的 `ServiceLoaderExtensionLoader`）。`ExtensionRegistry.discover()` 默认走 ServiceLoader，但你可以传一个自定义 `ExtensionLoader` 实现非 ServiceLoader 发现（例如固定列表、运行时扫描）。读取插件 jar 内的 Skill / Prompt 文本资源时，公共助手 `ExtensionResourceResolver` 会按“插件 classloader → TCCL → resolver classloader”的顺序解析，并把解析约束在插件自己的 classloader 上，避免同名资源被别的 jar 串读。这两者属于运行时接线细节，详见 [扩展 SPI 内部机制](/docs/extending/plugins/extension-spi)。
 
 ## 5. 扩展决策顺序
 
@@ -208,17 +208,17 @@ Spring Boot starter 在 `AiConfigAutoConfiguration.initOkHttp()` 里通过 `Serv
 
 ## 8. 推荐阅读顺序
 
-1. [Provider Extension](/docs/extending/code-level/provider-extension)
-2. [Model Extension](/docs/extending/code-level/model-extension)
-3. [Service Extension](/docs/extending/code-level/service-extension)
-4. [SPI HTTP Stack](/docs/extending/code-level/spi-http-stack)
-5. [Plugin Packages](/docs/extending/plugins/plugin-packages)
-6. [Plugin Recipes](/docs/extending/plugins/plugin-recipes)
-7. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
-8. [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)
-9. [Dynamic Workflow Plugin](/docs/extending/plugins/dynamic-workflow-plugin)
-10. [Lifecycle Extensions](/docs/extending/plugins/lifecycle-extensions)
-11. [Extension SPI Internals](/docs/extending/plugins/extension-spi)
+1. [Provider 扩展](/docs/extending/code-level/provider-extension)
+2. [模型扩展](/docs/extending/code-level/model-extension)
+3. [服务扩展](/docs/extending/code-level/service-extension)
+4. [SPI HTTP 栈](/docs/extending/code-level/spi-http-stack)
+5. [插件包](/docs/extending/plugins/plugin-packages)
+6. [插件配方](/docs/extending/plugins/plugin-recipes)
+7. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
+8. [Ask User 插件](/docs/extending/plugins/ask-user-plugin)
+9. [动态工作流插件](/docs/extending/plugins/dynamic-workflow-plugin)
+10. [生命周期扩展](/docs/extending/plugins/lifecycle-extensions)
+11. [扩展 SPI 内部机制](/docs/extending/plugins/extension-spi)
 
 ## 9. 这一页的结论
 

@@ -195,7 +195,7 @@ config.withProtocolProfile(McpProtocolProfile.LEGACY_2025_03_26);
 ```
 
 :::note AUTO 不是万能识别
-AUTO 不是万能识别：认证失败、可识别的现代 JSON-RPC error、或无效发现响应都不会降级。`http` 类型别名会归一化成 `streamable_http` 并保留这个 profile 语义；deprecated HTTP+SSE 则必须显式使用 `sse`。完整差异和升级路线见 [Streamable HTTP](/docs/capabilities/mcp/streamable-http)。
+AUTO 不是万能识别：认证失败、可识别的现代 JSON-RPC error、或无效发现响应都不会降级。`http` 类型别名会归一化成 `streamable_http` 并保留这个 profile 语义；deprecated HTTP+SSE 则必须显式使用 `sse`。完整差异和升级路线见 [Streamable HTTP 传输](/docs/capabilities/mcp/streamable-http)。
 :::
 
 ### 5.5 为什么它通常是生产优先选项

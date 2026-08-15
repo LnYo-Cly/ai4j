@@ -1,12 +1,11 @@
 ---
 sidebar_position: 4
-title: Feature Map
+title: 功能地图
 description: AI4J 功能地图：用成熟度标记（stable/advanced/preview/experimental）列出每个能力的状态、所属模块、适合场景与继续阅读入口，帮助按需取用最小模块。
 tags: [reference]
 ---
 
-# Feature Map
-
+# 功能地图
 这页是 AI4J 的功能地图。它不替代每个专题页，只负责告诉你：
 
 - 当前有哪些能力。
@@ -27,13 +26,13 @@ tags: [reference]
 
 | 能力 | 状态 | 模块 | 适合你在什么时候用 | 从这里开始 |
 | --- | --- | --- | --- | --- |
-| Java 首次调用 | `stable` | `ai4j` | 第一次接入，想用最短路径跑通一条模型请求 | [Quickstart for Java](/docs/getting-started/quickstart-java) |
-| 普通 Java 快速开始 | `stable` | `ai4j` | 想先验证依赖、配置和一次模型调用 | [Quickstart for Java](/docs/getting-started/quickstart-java) |
-| Spring Boot 快速开始 | `stable` | `ai4j-spring-boot-starter` | 已有 Spring Boot 项目，希望用配置和 Bean 接入 | [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot) |
+| Java 首次调用 | `stable` | `ai4j` | 第一次接入，想用最短路径跑通一条模型请求 | [Java 快速开始](/docs/getting-started/quickstart-java) |
+| 普通 Java 快速开始 | `stable` | `ai4j` | 想先验证依赖、配置和一次模型调用 | [Java 快速开始](/docs/getting-started/quickstart-java) |
+| Spring Boot 快速开始 | `stable` | `ai4j-spring-boot-starter` | 已有 Spring Boot 项目，希望用配置和 Bean 接入 | [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot) |
 | Chat 调用语义 | `stable` | `ai4j` | 已跑通首次调用，想理解消息模型和调用细节 | [Model Access / Chat](/docs/capabilities/models/chat) |
-| 第一次工具调用 | `stable` | `ai4j` | 想让模型调用本地函数或工具 | [First Tool Call](/docs/getting-started/first-tool-call) |
-| 路径选择 | `stable` | docs | 不确定该走 SDK、Spring、Agent 还是 FlowGram | [Choose Your Path](/docs/getting-started/choose-your-path) |
-| 文档地图 | `stable` | docs | 想确认 canonical 主线和旧路径去向 | [Documentation Map](/docs/reference/maps/documentation-map) |
+| 第一次工具调用 | `stable` | `ai4j` | 想让模型调用本地函数或工具 | [第一次工具调用](/docs/getting-started/first-tool-call) |
+| 路径选择 | `stable` | docs | 不确定该走 SDK、Spring、Agent 还是 FlowGram | [入门路径选择](/docs/getting-started/choose-your-path) |
+| 文档地图 | `stable` | docs | 想确认 canonical 主线和旧路径去向 | [文档地图](/docs/reference/maps/documentation-map) |
 
 ## 按模块取用
 
@@ -57,10 +56,10 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
 | --- | --- | --- | --- | --- |
 | Model Access | `stable` | `ai4j` | 统一模型接入主线 | [Overview](/docs/capabilities/models/overview) |
-| Chat | `stable` | `ai4j` | 对话式模型调用 | [Chat](/docs/capabilities/models/chat) |
-| Responses | `stable` | `ai4j` | 面向 Responses 风格的统一调用 | [Responses](/docs/capabilities/models/responses) |
-| Streaming | `stable` | `ai4j` | 流式输出、增量结果和前端展示 | [Streaming](/docs/capabilities/models/streaming) |
-| Multimodal | `advanced` | `ai4j` | 文本、图像等多模态输入输出 | [Multimodal](/docs/capabilities/models/multimodal) |
+| Chat | `stable` | `ai4j` | 对话式模型调用 | [Chat 主线](/docs/capabilities/models/chat) |
+| Responses | `stable` | `ai4j` | 面向 Responses 风格的统一调用 | [Responses 主线](/docs/capabilities/models/responses) |
+| Streaming | `stable` | `ai4j` | 流式输出、增量结果和前端展示 | [流式语义](/docs/capabilities/models/streaming) |
+| Multimodal | `advanced` | `ai4j` | 文本、图像等多模态输入输出 | [多模态](/docs/capabilities/models/multimodal) |
 | Tools / Function Call | `stable` | `ai4j` | 本地函数声明、执行和安全边界 | [Tools](/docs/capabilities/tools/overview) |
 | Skills | `advanced` | `ai4j` | 给模型按需读取说明、模板和工作流资产 | [Skills](/docs/capabilities/skills/overview) |
 
@@ -69,9 +68,9 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
 | --- | --- | --- | --- | --- |
 | Search & RAG | `advanced` | `ai4j` | 从外部知识中检索、增强回答和保留引用线索 | [Overview](/docs/capabilities/rag/overview) |
-| Ingestion Pipeline | `advanced` | `ai4j` | 文档入库、切分和索引前处理 | [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline) |
-| Hybrid Retrieval | `advanced` | `ai4j` | 组合关键词、向量和其他召回策略 | [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval) |
-| Rerank | `advanced` | `ai4j` | 对候选结果重排，提高检索质量 | [Rerank](/docs/capabilities/rag/rerank) |
+| Ingestion Pipeline | `advanced` | `ai4j` | 文档入库、切分和索引前处理 | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
+| Hybrid Retrieval | `advanced` | `ai4j` | 组合关键词、向量和其他召回策略 | [混合检索](/docs/capabilities/rag/hybrid-retrieval) |
+| Rerank | `advanced` | `ai4j` | 对候选结果重排，提高检索质量 | [重排](/docs/capabilities/rag/rerank) |
 | MCP | `advanced` | `ai4j` | 通过协议接入外部工具、服务和能力网关 | [MCP Overview](/docs/capabilities/mcp/overview) |
 | MCP Client Integration | `advanced` | `ai4j` | 在客户端侧连接和使用 MCP 能力 | [Client Integration](/docs/capabilities/mcp/client-integration) |
 
@@ -80,9 +79,9 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | 能力 | 状态 | 模块 | 适合场景 | 从这里开始 |
 | --- | --- | --- | --- | --- |
 | Spring Boot Starter | `stable` | `ai4j-spring-boot-starter` | Spring 应用配置化接入、自动装配和 Bean 扩展 | [Spring Boot Overview](/docs/integrations/spring-boot/overview) |
-| Agent Runtime | `preview` | `ai4j-agent` | 需要 memory、state、tool registry、workflow 或 team orchestration | [Agent Overview](/docs/agent/overview) |
-| Agent Quickstart | `preview` | `ai4j-agent` | 想先跑一个最小 Agent | [Agent Quickstart](/docs/agent/quickstart) |
-| Agent Teams | `preview` | `ai4j-agent` | 多 agent 协作和分工编排 | [Agent Teams](/docs/agent/orchestration/agent-teams) |
+| Agent Runtime | `preview` | `ai4j-agent` | 需要 memory、state、tool registry、workflow 或 team orchestration | [Agent 总览](/docs/agent/overview) |
+| Agent Quickstart | `preview` | `ai4j-agent` | 想先跑一个最小 Agent | [Agent 快速开始](/docs/agent/quickstart) |
+| Agent Teams | `preview` | `ai4j-agent` | 多 agent 协作和分工编排 | [Agent 团队](/docs/agent/orchestration/agent-teams) |
 | Coding Agent | `preview` | `ai4j-coding`、`ai4j-cli` | 面向本地代码仓的任务执行、workspace 工具和 CLI/TUI | [Coding Agent Overview](/docs/products/coding-agent/overview) |
 | Coding Agent Quickstart | `preview` | `ai4j-coding`、`ai4j-cli` | 想体验本地 Coding Agent 产品入口 | [Coding Agent Quickstart](/docs/products/coding-agent/quickstart) |
 | FlowGram | `preview` | `ai4j-flowgram-spring-boot-starter` | 可视化工作流平台后端、节点运行和 trace bridge | [FlowGram Overview](/docs/products/flowgram/overview) |
@@ -93,12 +92,12 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
 | --- | --- | --- | --- | --- |
-| Version Compatibility | `stable` | docs | Java、Maven、模块和 provider 能力边界 | [Version Compatibility](/docs/reference/version-compatibility) |
-| Release and Artifacts | `stable` | docs | Maven artifact、BOM、模块引入顺序 | [Release and Artifacts](/docs/reference/release-and-artifacts) |
-| Security | `stable` | docs | 密钥、Tool、MCP、RAG、Agent、FlowGram 安全边界 | [Security Overview](/docs/production/security) |
-| Production Checklist | `stable` | docs | 上线前配置、权限、观测和回归检查 | [Production Checklist](/docs/production/production-checklist) |
-| Migration | `stable` | docs | 旧路径、旧示例和旧 API 心智迁移 | [Migration Guide](/docs/reference/migration) |
-| Troubleshooting | `stable` | docs | provider、Tool、MCP、RAG、Agent、FlowGram 排障入口 | [Troubleshooting](/docs/production/troubleshooting) |
+| Version Compatibility | `stable` | docs | Java、Maven、模块和 provider 能力边界 | [版本兼容性](/docs/reference/version-compatibility) |
+| Release and Artifacts | `stable` | docs | Maven artifact、BOM、模块引入顺序 | [发布与制品](/docs/reference/release-and-artifacts) |
+| Security | `stable` | docs | 密钥、Tool、MCP、RAG、Agent、FlowGram 安全边界 | [安全总览](/docs/production/security) |
+| Production Checklist | `stable` | docs | 上线前配置、权限、观测和回归检查 | [生产检查清单](/docs/production/production-checklist) |
+| Migration | `stable` | docs | 旧路径、旧示例和旧 API 心智迁移 | [迁移指南](/docs/reference/migration) |
+| Troubleshooting | `stable` | docs | provider、Tool、MCP、RAG、Agent、FlowGram 排障入口 | [排障指南](/docs/production/troubleshooting) |
 | Comparison | `stable` | docs | 与 Spring AI、LangChain4j、AgentScope Java、Pi Agent 的选型边界 | [Comparison](/docs/reference/about/comparison) |
 
 ## 还没有独立页的集成
@@ -122,10 +121,10 @@ AgentFlow 或其他外部平台，应先按能力归类阅读：
 
 第一次接入建议走：
 
-1. [Why AI4J](/docs/getting-started/why-ai4j)
-2. [Quickstart for Java](/docs/getting-started/quickstart-java)
-3. [Quickstart for Java](/docs/getting-started/quickstart-java) 或 [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
+1. [为什么选 AI4J](/docs/getting-started/why-ai4j)
+2. [Java 快速开始](/docs/getting-started/quickstart-java)
+3. [Java 快速开始](/docs/getting-started/quickstart-java) 或 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 4. [Core SDK / Model Access / Chat](/docs/capabilities/models/chat)
-5. [First Tool Call](/docs/getting-started/first-tool-call)
+5. [第一次工具调用](/docs/getting-started/first-tool-call)
 6. 按需进入 [Core SDK](/docs/capabilities/overview)、[Spring Boot](/docs/integrations/spring-boot/overview)、[Agent](/docs/agent/overview) 或 [FlowGram](/docs/products/flowgram/overview)
-7. 上线前检查 [Production Checklist](/docs/production/production-checklist) 和 [Security](/docs/production/security)
+7. 上线前检查 [生产检查清单](/docs/production/production-checklist) 和 [Security](/docs/production/security)

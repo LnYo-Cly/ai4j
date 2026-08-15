@@ -1,11 +1,10 @@
 ---
-title: Streaming
+title: 流式语义
 description: 讲解 Chat 与 Responses 两条流式主线的聚合模型：SseListener 与 ResponseSseListener 维护的状态、tool call 聚合与终止条件差异。
 tags: [concept]
 ---
 
-# Streaming
-
+# 流式语义
 这一页只讲流式语义。
 
 在 AI4J 里，“streaming” 不是一个统一的 token 输出概念，而是三条不同主线各自对应的消费模型：

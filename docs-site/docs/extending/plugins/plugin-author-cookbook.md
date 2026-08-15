@@ -1,11 +1,10 @@
 ---
-title: Plugin Author Cookbook
+title: 插件作者实战指南
 description: 面向第三方插件作者的动手指南：用 CLI 生成最小插件项目，稳定 manifest 与公共 ID 命名规则，写结构化 tool input schema，把 apply() 保持为轻量注册函数，完成 manifest/资源/schema 校验与发布前声明。
 tags: [how-to]
 ---
 
-# Plugin Author Cookbook
-
+# 插件作者实战指南
 这一页面向第三方插件作者：你想把一组工具、命令、Skill、Prompt 或 Guardrail 打成一个普通 Java jar，让使用者通过 Maven / Gradle 引入，再由宿主显式启用和暴露。
 
 先明确边界：AI4J 插件不是远程 marketplace，不会替使用者自动改 `pom.xml`，也不会在运行时热加载未知 jar。作者负责发布普通 Java 包；使用者负责把包放进 classpath；宿主应用负责 `discover -> enable -> exposeTool`。
@@ -311,7 +310,7 @@ ai:
 
 ## 8. 下一步阅读
 
-1. [Plugin Packages](/docs/extending/plugins/plugin-packages)
-2. [Ask User Plugin](/docs/extending/plugins/ask-user-plugin)
+1. [插件包](/docs/extending/plugins/plugin-packages)
+2. [Ask User 插件](/docs/extending/plugins/ask-user-plugin)
 3. [Agent Tools and Registry](/docs/agent/tools-and-registry)
 4. [Coding Agent Tools and Approvals](/docs/products/coding-agent/tools-and-approvals)

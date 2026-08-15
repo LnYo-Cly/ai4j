@@ -428,7 +428,7 @@ ACP 下，则是：
 
 返回结果会带上 `executionEnvironment`、`sandboxSessionId`、`sandboxProviderId`，方便 CLI/TUI、日志或上层宿主展示“这次命令到底在哪执行”。
 
-注意：这不等于所有工具都已经远端化。`read_file`、`write_file`、`apply_patch`、后台进程、browser、git/project run 等仍需要后续切片逐步接入。完整边界见 [Sandbox Routing](/docs/products/coding-agent/sandbox-routing)。
+注意：这不等于所有工具都已经远端化。`read_file`、`write_file`、`apply_patch`、后台进程、browser、git/project run 等仍需要后续切片逐步接入。完整边界见 [沙箱路由](/docs/products/coding-agent/sandbox-routing)。
 
 ## 15. 当前最稳的扩展位置在哪里
 
@@ -488,7 +488,7 @@ AI4J 当前的 Coding Agent tools 机制，不是“8 个函数 + 一个确认�
 
 1. [会话、流式与进程](/docs/products/coding-agent/session-runtime)
 2. [Compact 与 Checkpoint 机制](/docs/products/coding-agent/compact-and-checkpoint)
-3. [Sandbox Routing](/docs/products/coding-agent/sandbox-routing)
+3. [沙箱路由](/docs/products/coding-agent/sandbox-routing)
 4. [生命周期钩子与工作区信任](/docs/products/coding-agent/lifecycle-hooks)
 5. [Runtime 架构](/docs/products/coding-agent/runtime-architecture)
 

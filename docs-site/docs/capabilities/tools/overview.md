@@ -83,7 +83,7 @@ tags: [concept]
 
 ### 3.5 第三方扩展插件（SPI）
 
-上述四类都是基座内置来源。若要让**第三方 jar** 也注入工具（或命令、Skill、Prompt、Guardrail），走的是扩展 SPI——`ServiceLoader` 发现 + `ExtensionRegistry` 的 `discover/enable/exposeTool` 三段式门禁，**默认不自动把插件工具暴露给模型**。这条注入路径与本章的注解/白名单机制互补，详见 [Plugin Packages](/docs/extending/plugins/plugin-packages)。
+上述四类都是基座内置来源。若要让**第三方 jar** 也注入工具（或命令、Skill、Prompt、Guardrail），走的是扩展 SPI——`ServiceLoader` 发现 + `ExtensionRegistry` 的 `discover/enable/exposeTool` 三段式门禁，**默认不自动把插件工具暴露给模型**。这条注入路径与本章的注解/白名单机制互补，详见 [插件包](/docs/extending/plugins/plugin-packages)。
 
 ## 4. 一条最重要的主线
 
@@ -187,28 +187,28 @@ Core SDK 负责：
 
 重点看：
 
-- [Function Calling](/docs/capabilities/tools/function-calling)
-- [Annotation-based Tools](/docs/capabilities/tools/annotation-based-tools)
+- [函数调用](/docs/capabilities/tools/function-calling)
+- [注解式工具](/docs/capabilities/tools/annotation-based-tools)
 
 ### 想理解模型返回 tool call 后怎么执行
 
 重点看：
 
-- [Tool Execution Model](/docs/capabilities/tools/tool-execution-model)
+- [工具执行模型](/docs/capabilities/tools/tool-execution-model)
 
 ### 关心暴露边界和宿主安全
 
 重点看：
 
-- [Tool Whitelist and Security](/docs/capabilities/tools/tool-whitelist-and-security)
+- [工具白名单与安全](/docs/capabilities/tools/tool-whitelist-and-security)
 
 ## 11. 推荐阅读顺序
 
-1. [Function Calling](/docs/capabilities/tools/function-calling)
-2. [Annotation-based Tools](/docs/capabilities/tools/annotation-based-tools)
-3. [Tool Execution Model](/docs/capabilities/tools/tool-execution-model)
-4. [Tool Whitelist and Security](/docs/capabilities/tools/tool-whitelist-and-security)
-5. [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)
+1. [函数调用](/docs/capabilities/tools/function-calling)
+2. [注解式工具](/docs/capabilities/tools/annotation-based-tools)
+3. [工具执行模型](/docs/capabilities/tools/tool-execution-model)
+4. [工具白名单与安全](/docs/capabilities/tools/tool-whitelist-and-security)
+5. [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)
 
 ## 12. 这页最该记住的结论
 

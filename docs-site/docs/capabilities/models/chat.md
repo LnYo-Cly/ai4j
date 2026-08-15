@@ -1,11 +1,10 @@
 ---
-title: Chat
+title: Chat 主线
 description: 解析 AI4J Chat 主线的请求对象、自动 tool loop、passThroughToolCalls、SseListener 流式聚合和多模态接入等运行时行为。
 tags: [concept]
 ---
 
-# Chat
-
+# Chat 主线
 `Chat` 是 AI4J 当前最成熟、provider 覆盖最广、也最容易先跑通的一条模型访问主线。
 
 但它不是“老接口兼容层”。从实现看，`Chat` 已经同时承载了：
@@ -209,7 +208,7 @@ public static class GetOrderStatus implements Function<GetOrderStatus.Request, S
 }
 ```
 
-这里 `@FunctionCall` / `@FunctionRequest` / `@FunctionParameter` 三注解 + 反射会自动把 Java 类型生成 provider 的 JSON Schema（`String`→`string`、`enum`→`string+enum`、`Integer`→`integer`…），你不用手写 schema。`required`、复杂类型边界、`strict` 模式详见 [Annotation-based Tools](/docs/capabilities/tools/annotation-based-tools)。
+这里 `@FunctionCall` / `@FunctionRequest` / `@FunctionParameter` 三注解 + 反射会自动把 Java 类型生成 provider 的 JSON Schema（`String`→`string`、`enum`→`string+enum`、`Integer`→`integer`…），你不用手写 schema。`required`、复杂类型边界、`strict` 模式详见 [注解式工具](/docs/capabilities/tools/annotation-based-tools)。
 
 调用时用 `functions(...)` 按 name 注册，其余交给 SDK：
 

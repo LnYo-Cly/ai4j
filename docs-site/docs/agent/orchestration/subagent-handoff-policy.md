@@ -579,6 +579,6 @@ Agent parent = Agents.react()
 
 ## 17. 继续阅读
 
-1. [Tools and Registry](/docs/agent/tools-and-registry)
-2. [Agent Teams](/docs/agent/orchestration/agent-teams)
+1. [工具与注册表](/docs/agent/tools-and-registry)
+2. [Agent 团队](/docs/agent/orchestration/agent-teams)
 3. [Trace 与可观测性](/docs/agent/observability/trace-observability)

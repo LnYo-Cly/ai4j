@@ -1,11 +1,10 @@
 ---
-title: Responses
+title: Responses 主线
 description: 解析 AI4J Responses 主线的 ResponseRequest 语义、工具解析基座、payload 构建、流式事件聚合与 runtime 友好的运行模型。
 tags: [concept]
 ---
 
-# Responses
-
+# Responses 主线
 `Responses` 是 AI4J 当前更现代、更结构化的一条模型访问主线。
 
 它和 `Chat` 最大的差异，不是字段名从 `messages` 变成 `input`，而是 **它把模型输出首先当成事件和 item 流，而不是单条 assistant message**。

@@ -367,4 +367,4 @@ $report = Invoke-RestMethod -Method Get -Uri ("http://127.0.0.1:18080/flowgram/t
 2. [Runtime](/docs/products/flowgram/runtime)
 3. [Flowgram API 与运行时](/docs/products/flowgram/api-and-runtime)
 4. [前端工作流如何在后端执行](/docs/products/flowgram/workflow-execution-pipeline)
-5. [Built-in Nodes](/docs/products/flowgram/built-in-nodes)
+5. [内置节点](/docs/products/flowgram/built-in-nodes)

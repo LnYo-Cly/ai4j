@@ -1,11 +1,10 @@
 ---
-title: Online Search
+title: 联网搜索
 description: 讲清 AI4J Online Search 的真实定位：它不是统一检索框架，而是包裹 IChatService 的联网搜索增强层，用最后一条消息做 query 调 SearXNG，把结果 JSON 直接拼进用户 prompt，并会原地改写请求。
 tags: [concept]
 ---
 
-# Online Search
-
+# 联网搜索
 AI4J 当前的 `online search` 不是一套通用检索框架，也不是把网页抓取结果自动接进 `Retriever` 体系。  
 从源码看，它其实是一个更具体的东西：
 
@@ -270,5 +269,5 @@ AI4J 当前的 Online Search，本质上是一个 `IChatService` 级的联网搜
 ## 12. 继续阅读
 
 - [Search and RAG 总览](/docs/capabilities/rag/overview)
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)

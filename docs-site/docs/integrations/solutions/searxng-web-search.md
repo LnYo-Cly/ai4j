@@ -1,11 +1,10 @@
 ---
-title: SearXNG Web Search
+title: SearXNG 联网搜索
 description: 给回答链补上公网实时搜索能力的增强方案，讲解 SearXNG 配置、与 RAG 的边界及降级策略。
 tags: [integration]
 ---
 
-# SearXNG Web Search
-
+# SearXNG 联网搜索
 这个方案解决的是“如何给回答链补上一条公网实时搜索能力”，而不是替代私域知识库。
 
 ## 1. 适合什么场景
@@ -46,7 +45,7 @@ tags: [integration]
 
 1. [Core SDK / Search & RAG](/docs/capabilities/rag/overview)
 2. [Core SDK / Extension](/docs/extending/overview)
-3. [DeepSeek Stream Search RAG](/docs/integrations/solutions/deepseek-stream-search-rag)
+3. [DeepSeek 流式搜索 RAG 方案](/docs/integrations/solutions/deepseek-stream-search-rag)
 
 ## 6. 继续看实现细节
 

@@ -465,6 +465,6 @@ compact 真正难的地方不是“生成摘要”，而是“摘要生成后还
 ## 12. 推荐连读
 
 1. [会话、流式与进程](/docs/products/coding-agent/session-runtime)
-2. [Coding Agent Architecture](/docs/products/coding-agent/architecture)
+2. [Coding Agent 架构](/docs/products/coding-agent/architecture)
 3. [配置体系](/docs/products/coding-agent/configuration)
 4. [命令参考](/docs/products/coding-agent/command-reference)

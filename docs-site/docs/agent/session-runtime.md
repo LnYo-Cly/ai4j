@@ -1,12 +1,11 @@
 ---
 sidebar_position: 5
-title: Agent Session Runtime
+title: Agent 会话运行时
 description: 讲解 AgentSession 长程运行态容器：sessionId、独立 memory、event log、snapshot/restore 与 AgentSessionStore，以及它与 memory/compact、Coding Agent/CLI 的边界和生产实现建议。
 tags: [concept]
 ---
 
-# Agent Session Runtime
-
+# Agent 会话运行时
 `AgentSession` 是 `ai4j-agent` 的长程运行态入口。它不是另一个模型客户端，也不是 CLI 会话的替代品，而是把一次 Agent 任务的状态收拢到一个可保存、可恢复、可观测的容器里。
 
 ## 1. 它解决什么问题
@@ -158,7 +157,7 @@ P0-B 已补上：
 - `AgentSession.compact(...)`
 - `AgentSessionSnapshot.compactResult`
 
-使用细节见 [Memory Compact Context Projector](/docs/agent/memory/memory-compact-context)。
+使用细节见 [记忆压缩与上下文投影器](/docs/agent/memory/memory-compact-context)。
 
 ## 8. 与 Coding Agent / CLI 的关系
 
@@ -197,4 +196,4 @@ P0-A 只是运行态容器基础。完整 Agent SDK 还会继续推进：
 5. CLI `/sandbox` 体验
 6. 远端 Agent Runner
 
-完整路线见 [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)。
+完整路线见 [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)。

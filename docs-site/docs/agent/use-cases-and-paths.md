@@ -174,8 +174,8 @@ Team 的本质变化是：
 
 继续看：
 
-- [Agent Teams](/docs/agent/orchestration/agent-teams)
-- [Agent Teams API Reference](/docs/agent/orchestration/agent-teams-api-reference)
+- [Agent 团队](/docs/agent/orchestration/agent-teams)
+- [Agent 团队 API 参考](/docs/agent/orchestration/agent-teams-api-reference)
 
 ## 7. 一张更实用的决策表
 
@@ -245,4 +245,4 @@ ReAct 不是 demo 层，而是默认 runtime 语义。很多生产任务真正�
 3. [Runtime 实现详解](/docs/agent/runtimes/runtime-implementations)
 4. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
 5. [SubAgent 与 Handoff Policy](/docs/agent/orchestration/subagent-handoff-policy)
-6. [Agent Teams](/docs/agent/orchestration/agent-teams)
+6. [Agent 团队](/docs/agent/orchestration/agent-teams)

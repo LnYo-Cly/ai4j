@@ -1,12 +1,11 @@
 ---
 sidebar_position: 2
-title: System Prompt vs Instructions
+title: 系统提示词与指令
 description: 厘清 ai4j-agent 里 systemPrompt 与 instructions 的源码语义：两者都是 AgentContext 配置、每步重复进入模型，但在 Chat 与 Responses 路径映射不同，CodeAct 下更需分层。
 tags: [concept]
 ---
 
-# System Prompt vs Instructions
-
+# 系统提示词与指令
 这一页讲的不是泛泛的 prompt engineering，而是 AI4J Agent 里这两个字段在源码中的真实语义。
 
 如果这里理解错了，后面会连带把这些事情一起理解错：
@@ -454,7 +453,7 @@ Agent agent = Agents.react()
 
 ## 13. 继续阅读
 
-1. [Model Client Selection](/docs/agent/model-client-selection)
+1. [模型客户端选型](/docs/agent/model-client-selection)
 2. [Quickstart](/docs/agent/quickstart)
 3. [Architecture](/docs/agent/architecture)
-4. [Runtime Implementations](/docs/agent/runtimes/runtime-implementations)
+4. [运行时实现](/docs/agent/runtimes/runtime-implementations)

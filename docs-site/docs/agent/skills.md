@@ -1,12 +1,11 @@
 ---
 sidebar_position: 8
-title: Agent Skills
+title: Agent 技能
 description: "Explains ai4j-agent Skills: how the SDK discovers and scopes SKILL.md, the workspace-safe vs user-home roots, request-scoped AgentSkillResolver for tenants, and why Skills never bypass tool authorization."
 tags: [how-to]
 ---
 
-# Agent Skills
-
+# Agent 技能
 A Skill is a reusable instruction asset. It tells an Agent how to approach a class of work; it does not grant a tool, data access, or an approval bypass.
 
 AI4J's Agent integration follows the same split that makes Skills safe in local and service hosts:
@@ -161,7 +160,7 @@ This separation is intentional. A reusable SDK cannot infer a tenant's authoriza
 - MCP is a protocol for connecting or publishing external capabilities.
 - `A2ASkill` describes an agent capability in an A2A AgentCard; it is not a local `SKILL.md` file. 用 `A2ASkillMapper` 可以把已授权的 ai4j `SkillDescriptor` 发布成 AgentCard 上的 A2A skill（见 [A2A — Publish ai4j Skills](/docs/agent/observability/a2a#publish-ai4j-skills-to-the-agentcard)）。
 
-Read [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp) for the Core distinction and [A2A](/docs/agent/observability/a2a) for the AgentCard capability model.
+Read [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp) for the Core distinction and [A2A](/docs/agent/observability/a2a) for the AgentCard capability model.
 
 ## Next pages
 

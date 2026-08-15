@@ -1,12 +1,11 @@
 ---
 sidebar_position: 10
-title: Replay, Recovery & Audit
+title: 重放、恢复与审计
 description: "ai4j-agent 事件流上的四层生产能力逐个讲透：节点 I/O 捕获与重放（IoCaptureAgentListener/NodeReplayer/NodeIoRecord）、resume-cache 故障恢复（ResumeCache/ResumableModelClient/ResumableToolExecutor，内容寻址、副作用不重放）、持久化 session store、以及 SHA-256 哈希链防篡改审计（HashChainedEventLog）。"
 tags: [reference]
 ---
 
-# Replay, Recovery & Audit
-
+# 重放、恢复与审计
 `ai4j-agent` 在 runtime 事件流上叠了四层**可选的生产能力**。它们都是**消费者/装饰器**，不改 runtime——复用 runtime 本来就发的事件（`MODEL_REQUEST`/`MODEL_RESPONSE`/`MODEL_REASONING`/`MODEL_RETRY`/`TOOL_CALL`/`TOOL_RESULT`/`STEP_END`）。需要哪层就接哪层。
 
 | 能力 | 主要类 | 解决什么 |

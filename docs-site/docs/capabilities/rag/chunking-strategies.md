@@ -1,11 +1,10 @@
 ---
-title: Chunking Strategies
+title: 分块策略
 description: 讲清 AI4J 默认 RecursiveTextChunker 的真实行为与边界：它只填充 documentId/content/chunkIndex，不自动生成 chunkId、页码或章节元数据，以及 chunk 边界稳定性如何决定后续检索去重与引用质量。
 tags: [concept]
 ---
 
-# Chunking Strategies
-
+# 分块策略
 很多 RAG 文档会把 `chunking` 写成“把长文切成几段”。  
 在 AI4J 里，这样写太轻了。因为从源码看，chunking 决定的不只是文本长度，还决定：
 
@@ -257,6 +256,6 @@ AI4J 当前默认 chunking 的本质是：
 
 ## 12. 继续阅读
 
-- [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)
-- [Citations and Trace](/docs/capabilities/rag/citations-and-trace)
-- [Vector Store and Backends](/docs/capabilities/rag/vector-store-and-backends)
+- [摄取管线](/docs/capabilities/rag/ingestion-pipeline)
+- [引用与 Trace](/docs/capabilities/rag/citations-and-trace)
+- [向量存储与后端](/docs/capabilities/rag/vector-store-and-backends)

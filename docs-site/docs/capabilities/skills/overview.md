@@ -154,7 +154,7 @@ skill 不负责：
 这四层一起构成的，才是当前 AI4J 的 skill 体系。
 
 :::note 第三方 Skill 也可以走扩展 SPI
-除内置的 `.ai4j/skills` 目录发现外，第三方 jar 同样能通过扩展 SPI（`ServiceLoader` + `ExtensionRegistry`）把 Skill 作为资源注入，门禁规则与 Tool/Prompt 一致，默认不自动暴露。见 [Plugin Packages](/docs/extending/plugins/plugin-packages)。
+除内置的 `.ai4j/skills` 目录发现外，第三方 jar 同样能通过扩展 SPI（`ServiceLoader` + `ExtensionRegistry`）把 Skill 作为资源注入，门禁规则与 Tool/Prompt 一致，默认不自动暴露。见 [插件包](/docs/extending/plugins/plugin-packages)。
 :::
 
 ## 7. 典型工作流是什么
@@ -258,7 +258,7 @@ AI4J 的设计重点是：
 ## 11. 推荐阅读顺序
 
 1. [Discovery and Loading](/docs/capabilities/skills/discovery)
-2. [Skill vs Tool vs MCP](/docs/capabilities/skills/skill-vs-tool-vs-mcp)
+2. [Skill、Tool 与 MCP 对比](/docs/capabilities/skills/skill-vs-tool-vs-mcp)
 3. [Coding Agent / Skills](/docs/products/coding-agent/skills)
 
 ## 12. 这页最该记住的结论

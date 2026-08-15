@@ -1,11 +1,10 @@
 ---
-title: Context Window Management
+title: 上下文窗口管理
 description: 讲清 ai4j 的上下文窗口管理机制：ContextBudget 设预算（maxItems/maxApproxChars/pinnedPrefixItems），DefaultContextProjector 按"保留头部 + 尾部"策略投影，ContextReport 报告丢弃诊断。这是 Compaction 之前的第一道闸，负责"选哪些进窗口"，而 Compaction 负责"怎么压缩"。
 tags: [concept]
 ---
 
-# Context Window Management
-
+# 上下文窗口管理
 > **上下文窗口管理 = 决定哪些历史条目进入模型的上下文窗口。** 它是 Compaction 之前的第一道闸：Projection 负责"选哪些进"，Compaction 负责"怎么压缩还太大的"。
 
 ## 为什么需要管

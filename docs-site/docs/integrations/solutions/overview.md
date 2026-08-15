@@ -8,7 +8,7 @@ tags: [concept]
 
 `Solutions` 是 AI4J 的场景组合入口。它不重新定义 SDK 能力，而是把 Core SDK、Spring Boot、RAG、MCP、Agent、FlowGram 等能力按常见问题组合成可复制路径。
 
-如果你还没理解基础概念，先看 [Start Here](/docs/intro) 和 [Feature Map](/docs/getting-started/feature-map)。如果你已经知道要解决什么业务问题，再从本章选方案。
+如果你还没理解基础概念，先看 [Start Here](/docs/intro) 和 [功能地图](/docs/getting-started/feature-map)。如果你已经知道要解决什么业务问题，再从本章选方案。
 
 ## 一句话定位
 
@@ -24,13 +24,13 @@ Solutions 解决的是：
 | --- | --- | --- |
 | 多轮聊天并持久化会话 | [Spring Boot + MySQL Chat Memory](/docs/integrations/solutions/springboot-mysql-chat-memory) | Spring Boot、Chat Memory、MySQL |
 | 持久化 Agent 会话 | [Spring Boot + JDBC Agent Memory](/docs/integrations/solutions/springboot-jdbc-agent-memory) | Spring Boot、Agent、JDBC Memory |
-| 搭建 RAG 入库和检索流水线 | [RAG Ingestion Vector Store](/docs/integrations/solutions/rag-ingestion-vector-store) | Ingestion、Embedding、Vector Store、Retrieval |
-| 使用 Pinecone | [Pinecone Vector Workflow](/docs/integrations/solutions/pinecone-vector-workflow) | Vector Store、Pinecone、RAG |
-| 接入联网搜索 | [SearXNG Web Search](/docs/integrations/solutions/searxng-web-search) | Online Search、SearXNG |
-| 组合流式输出、搜索和 RAG | [DeepSeek Stream Search RAG](/docs/integrations/solutions/deepseek-stream-search-rag) | Streaming、Search、RAG |
-| 做高证据要求问答 | [Legal Assistant](/docs/integrations/solutions/legal-assistant) | RAG、Citation、Trace |
+| 搭建 RAG 入库和检索流水线 | [RAG 摄取与向量存储](/docs/integrations/solutions/rag-ingestion-vector-store) | Ingestion、Embedding、Vector Store、Retrieval |
+| 使用 Pinecone | [Pinecone 向量工作流](/docs/integrations/solutions/pinecone-vector-workflow) | Vector Store、Pinecone、RAG |
+| 接入联网搜索 | [SearXNG 联网搜索](/docs/integrations/solutions/searxng-web-search) | Online Search、SearXNG |
+| 组合流式输出、搜索和 RAG | [DeepSeek 流式搜索 RAG 方案](/docs/integrations/solutions/deepseek-stream-search-rag) | Streaming、Search、RAG |
+| 做高证据要求问答 | [法律助手](/docs/integrations/solutions/legal-assistant) | RAG、Citation、Trace |
 | 持久化 FlowGram task | [FlowGram MySQL Task Store](/docs/integrations/solutions/flowgram-mysql-taskstore) | FlowGram、Task Store、MySQL |
-| 调整 HTTP 并发和连接池 | [SPI Dispatcher ConnectionPool](/docs/integrations/solutions/spi-dispatcher-connectionpool) | HTTP Stack、SPI、OkHttp |
+| 调整 HTTP 并发和连接池 | [SPI 调度器与连接池](/docs/integrations/solutions/spi-dispatcher-connectionpool) | HTTP Stack、SPI、OkHttp |
 
 ## 怎么读方案页
 
@@ -66,6 +66,6 @@ Solutions 解决的是：
 | 多步推理、workflow、trace | [Agent](/docs/agent/overview) |
 | 本地代码仓任务、CLI、ACP | [Coding Agent](/docs/products/coding-agent/overview) |
 | 可视化工作流后端 | [FlowGram](/docs/products/flowgram/overview) |
-| 版本、安全、生产检查和排障 | [Production Checklist](/docs/production/production-checklist) |
+| 版本、安全、生产检查和排障 | [生产检查清单](/docs/production/production-checklist) |
 
 如果一个方案页没有把这些路径讲清楚，它就还没有达到本章应有的质量。

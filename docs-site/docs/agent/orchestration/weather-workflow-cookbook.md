@@ -277,6 +277,6 @@ WorkflowAgent runner = new WorkflowAgent(workflow, weatherAgent.newSession());
 ## 12. 继续阅读
 
 1. [Workflow StateGraph](/docs/agent/runtimes/workflow-stategraph)
-2. [Tools and Registry](/docs/agent/tools-and-registry)
-3. [Memory and State](/docs/agent/memory/memory-and-state)
-4. [Model Client Selection](/docs/agent/model-client-selection)
+2. [工具与注册表](/docs/agent/tools-and-registry)
+3. [记忆与状态](/docs/agent/memory/memory-and-state)
+4. [模型客户端选型](/docs/agent/model-client-selection)

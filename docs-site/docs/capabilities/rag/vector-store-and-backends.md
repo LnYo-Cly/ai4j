@@ -1,11 +1,10 @@
 ---
-title: Vector Store and Backends
+title: 向量存储与后端
 description: 讲清 AI4J VectorStore 统一契约如何收口 Pinecone/Qdrant/Milvus/PgVector/Redis 五个后端：dataset 是硬边界，capabilities() 显式暴露 returnStoredVector/metadataLookup 差异，统一调用但不抹平存储现实。
 tags: [concept]
 ---
 
-# Vector Store and Backends
-
+# 向量存储与后端
 AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / Redis”，信息密度其实很低。
 真正重要的是：**它怎样用统一 `VectorStore` 契约把不同后端收口，同时又不假装这些后端完全等价。**
 
@@ -261,6 +260,6 @@ AI4J 当前的向量存储层，本质上是：
 
 ## 11. 继续阅读
 
-- [Embedding](/docs/capabilities/rag/embedding)
-- [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)
-- [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval)
+- [嵌入](/docs/capabilities/rag/embedding)
+- [摄取管线](/docs/capabilities/rag/ingestion-pipeline)
+- [混合检索](/docs/capabilities/rag/hybrid-retrieval)
