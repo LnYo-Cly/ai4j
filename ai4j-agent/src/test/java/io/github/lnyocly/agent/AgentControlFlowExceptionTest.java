@@ -86,6 +86,34 @@ public class AgentControlFlowExceptionTest {
     }
 
     @Test
+    public void interruptedToolCallLeavesPairedToolResultInMemory() throws Exception {
+        // #262: 宿主中断后历史必须保留配对 tool_result，否则 anthropic_messages 恢复回合 400。
+        InMemoryAgentMemory memory = new InMemoryAgentMemory();
+        ToolExecutor askUser = call -> {
+            throw new AgentHostInputException("ask_user", Map.of("question", "画幅？"));
+        };
+        AgentContext context = AgentContext.builder()
+                .modelClient(new AskThenFallbackModelClient())
+                .toolExecutor(askUser)
+                .memory(memory)
+                .options(AgentOptions.builder().maxSteps(4).build())
+                .model("test-model")
+                .build();
+
+        try {
+            new ReActRuntime().run(context, AgentRequest.builder().input("hi").build());
+            Assert.fail("expected AgentHostInputException");
+        } catch (AgentHostInputException expected) {
+            // ignore
+        }
+        String items = String.valueOf(memory.getItems());
+        Assert.assertTrue("memory must contain the synthetic tool_result",
+                items.contains("HOST_INPUT_REQUIRED"));
+        Assert.assertTrue("memory must reference the interrupted callId",
+                items.contains("call_1"));
+    }
+
+    @Test
     public void approvalExceptionPropagatesAndStopsLoop() throws Exception {
         AskThenFallbackModelClient modelClient = new AskThenFallbackModelClient();
         ToolExecutor approval = call -> {
