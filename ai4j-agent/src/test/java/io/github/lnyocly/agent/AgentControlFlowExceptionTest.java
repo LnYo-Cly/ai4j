@@ -24,8 +24,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +71,7 @@ public class AgentControlFlowExceptionTest {
     public void hostInputExceptionPropagatesAndStopsLoop() throws Exception {
         AskThenFallbackModelClient modelClient = new AskThenFallbackModelClient();
         ToolExecutor askUser = call -> {
-            throw new AgentHostInputException("ask_user", Map.of("question", "画幅？"));
+            throw new AgentHostInputException("ask_user", Collections.singletonMap("question", "画幅？"));
         };
 
         try {
@@ -90,7 +89,7 @@ public class AgentControlFlowExceptionTest {
         // #262: 宿主中断后历史必须保留配对 tool_result，否则 anthropic_messages 恢复回合 400。
         InMemoryAgentMemory memory = new InMemoryAgentMemory();
         ToolExecutor askUser = call -> {
-            throw new AgentHostInputException("ask_user", Map.of("question", "画幅？"));
+            throw new AgentHostInputException("ask_user", Collections.singletonMap("question", "画幅？"));
         };
         AgentContext context = AgentContext.builder()
                 .modelClient(new AskThenFallbackModelClient())
@@ -162,7 +161,7 @@ public class AgentControlFlowExceptionTest {
             return "9:16 竖屏";
         };
         HostInputToolExecutor executor = new HostInputToolExecutor(
-                call -> "delegated", channel, Set.of("ask_user"));
+                call -> "delegated", channel, Collections.singleton("ask_user"));
 
         AgentResult result = new ReActRuntime().run(
                 contextWith(client, executor), AgentRequest.builder().input("hi").build());
@@ -178,7 +177,7 @@ public class AgentControlFlowExceptionTest {
             throw new TimeoutException("10 分钟未作答");
         };
         HostInputToolExecutor executor = new HostInputToolExecutor(
-                call -> "delegated", timeoutChannel, Set.of("ask_user"));
+                call -> "delegated", timeoutChannel, Collections.singleton("ask_user"));
         AgentToolCall call = AgentToolCall.builder()
                 .callId("call_1").name("ask_user").arguments("{}").type("function").build();
 
@@ -189,7 +188,7 @@ public class AgentControlFlowExceptionTest {
     public void nonHostToolsDelegateUntouched() throws Exception {
         AgentHostInputChannel channel = (call, request) -> "should not be used";
         HostInputToolExecutor executor = new HostInputToolExecutor(
-                call -> "delegated", channel, Set.of("ask_user"));
+                call -> "delegated", channel, Collections.singleton("ask_user"));
         AgentToolCall other = AgentToolCall.builder()
                 .callId("call_2").name("read_file").arguments("{}").type("function").build();
 
