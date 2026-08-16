@@ -273,11 +273,23 @@ public class AgentTraceListener implements AgentListener {
             }
         } else if (payload instanceof AgentToolResult) {
             AgentToolResult result = (AgentToolResult) payload;
+            if (result.isFailed()) {
+                status = TraceSpanStatus.ERROR;
+                error = firstNonBlank(result.getError(), result.getOutput(), event.getMessage());
+            }
             if (config.isRecordToolOutput()) {
                 putAttribute(span, "output", safeValue(result.getOutput()));
+                if (result.getError() != null) {
+                    putAttribute(span, "error", safeValue(result.getError()));
+                }
             }
         } else if (config.isRecordToolOutput()) {
             putAttribute(span, "output", safeValue(event.getMessage()));
+            // 启发式：事件 message 以 TOOL_ERROR 开头时也标失败
+            if (event.getMessage() != null && event.getMessage().startsWith("TOOL_ERROR")) {
+                status = TraceSpanStatus.ERROR;
+                error = event.getMessage();
+            }
         }
         finishSpan(span, status, error);
     }
@@ -287,6 +299,7 @@ public class AgentTraceListener implements AgentListener {
             putAttribute(rootSpan, "finalOutput", safeValue(event.getMessage()));
         }
         mergeAttributes(rootSpan, attributesFromEvent(event));
+        // #264: root 已 ERROR 时不降级为 OK（例如 ERROR 后再收到收尾事件）
         finishSpan(rootSpan, TraceSpanStatus.OK, null);
     }
 
@@ -868,9 +881,22 @@ public class AgentTraceListener implements AgentListener {
         if (span == null) {
             return;
         }
+        // #264: 已结束的 span 不重复导出；ERROR 不被后续 OK 覆盖，OK 可被 ERROR 升级（极少见）
+        if (span.getEndTime() > 0) {
+            if (span.getStatus() == TraceSpanStatus.ERROR) {
+                return;
+            }
+            if (status != TraceSpanStatus.ERROR) {
+                return;
+            }
+        }
         span.setStatus(status == null ? TraceSpanStatus.OK : status);
         span.setEndTime(System.currentTimeMillis());
-        span.setError(error);
+        if (error != null) {
+            span.setError(error);
+        } else if (status != TraceSpanStatus.ERROR) {
+            span.setError(null);
+        }
         if (config.isRecordMetrics()) {
             TraceMetrics metrics = span.getMetrics();
             if (metrics == null) {

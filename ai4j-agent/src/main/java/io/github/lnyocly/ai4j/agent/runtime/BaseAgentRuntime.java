@@ -225,6 +225,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .name(call.getName())
                         .callId(call.getCallId())
                         .output(output)
+                        .ok(Boolean.FALSE)
+                        .error(validationError)
                         .build();
                 toolResults.add(toolResult);
                 memory.addToolOutput(call.getCallId(), output);
@@ -720,12 +722,16 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                                    String turnId) throws Exception {
         String output = executeTool(context, call, step, listener, runId, sessionId, turnId);
         Object trace = toolTrace(context);
-        return AgentToolResult.builder()
+        AgentToolResult.AgentToolResultBuilder builder = AgentToolResult.builder()
                 .name(call.getName())
                 .callId(call.getCallId())
                 .output(output)
-                .trace(trace)
-                .build();
+                .trace(trace);
+        // #264: 运行时 TOOL_ERROR 输出带上 ok=false，供 AgentTraceListener 标 ERROR
+        if (output != null && output.startsWith("TOOL_ERROR")) {
+            builder.ok(Boolean.FALSE).error(output);
+        }
+        return builder.build();
     }
 
     /** Returns the executor's last sub-trace (if it is a TraceableToolExecutor), else null. */

@@ -244,6 +244,76 @@ public class AgentTraceListenerTest {
         Assert.assertNull(runSpan.getMetrics().getCurrency());
     }
 
+    @Test
+    public void test_tool_result_ok_false_marks_error_span() {
+        // #264
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        AgentTraceListener listener = new AgentTraceListener(exporter);
+
+        listener.onEvent(event(AgentEventType.STEP_START, 0, null, null));
+        AgentToolCall call = AgentToolCall.builder().name("broken").callId("tool_err").arguments("{}").build();
+        listener.onEvent(event(AgentEventType.TOOL_CALL, 0, call.getName(), call));
+        listener.onEvent(event(AgentEventType.TOOL_RESULT, 0, "TOOL_ERROR: boom", AgentToolResult.builder()
+                .name("broken")
+                .callId("tool_err")
+                .output("TOOL_ERROR: boom")
+                .ok(Boolean.FALSE)
+                .error("boom")
+                .build()));
+        listener.onEvent(event(AgentEventType.FINAL_OUTPUT, 0, "done", null));
+        listener.onEvent(event(AgentEventType.STEP_END, 0, null, null));
+
+        TraceSpan tool = findSpan(exporter.getSpans(), TraceSpanType.TOOL);
+        Assert.assertNotNull(tool);
+        Assert.assertEquals(TraceSpanStatus.ERROR, tool.getStatus());
+        Assert.assertEquals("boom", tool.getError());
+    }
+
+    @Test
+    public void test_tool_error_output_prefix_marks_error_without_ok_flag() {
+        // #264 兼容：只填 output=TOOL_ERROR... 也算失败
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        AgentTraceListener listener = new AgentTraceListener(exporter);
+
+        listener.onEvent(event(AgentEventType.STEP_START, 0, null, null));
+        AgentToolCall call = AgentToolCall.builder().name("broken").callId("tool_err2").arguments("{}").build();
+        listener.onEvent(event(AgentEventType.TOOL_CALL, 0, call.getName(), call));
+        listener.onEvent(event(AgentEventType.TOOL_RESULT, 0, "TOOL_ERROR: {\"error\":\"x\"}", AgentToolResult.builder()
+                .name("broken")
+                .callId("tool_err2")
+                .output("TOOL_ERROR: {\"error\":\"x\"}")
+                .build()));
+
+        TraceSpan tool = findSpan(exporter.getSpans(), TraceSpanType.TOOL);
+        Assert.assertNotNull(tool);
+        Assert.assertEquals(TraceSpanStatus.ERROR, tool.getStatus());
+        Assert.assertTrue(tool.getError().startsWith("TOOL_ERROR"));
+    }
+
+    @Test
+    public void test_error_event_root_not_downgraded_by_final_output() {
+        // #264
+        InMemoryTraceExporter exporter = new InMemoryTraceExporter();
+        AgentTraceListener listener = new AgentTraceListener(exporter);
+
+        listener.onEvent(event(AgentEventType.STEP_START, 0, null, null));
+        listener.onEvent(event(AgentEventType.ERROR, 0, "LLM exploded", null));
+        // 若实现错误地再 finish OK，exporter 会多一条或 status 被盖掉
+        listener.onEvent(event(AgentEventType.FINAL_OUTPUT, 0, "should not clear error", null));
+
+        TraceSpan run = findSpan(exporter.getSpans(), TraceSpanType.RUN);
+        Assert.assertNotNull(run);
+        Assert.assertEquals(TraceSpanStatus.ERROR, run.getStatus());
+        Assert.assertEquals("LLM exploded", run.getError());
+        int runExports = 0;
+        for (TraceSpan span : exporter.getSpans()) {
+            if (span.getType() == TraceSpanType.RUN) {
+                runExports++;
+            }
+        }
+        Assert.assertEquals(1, runExports);
+    }
+
     private TraceSpan findSpan(List<TraceSpan> spans, TraceSpanType type) {
         for (TraceSpan span : spans) {
             if (span != null && span.getType() == type) {
