@@ -30,6 +30,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
 import io.github.lnyocly.ai4j.agent.skill.AgentSkillRuntimeSupport;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
+import io.github.lnyocly.ai4j.agent.control.AgentControlFlowException;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
@@ -557,6 +558,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throw interruptedException;
         } catch (HandoffPolicyException handoffPolicyException) {
             throw handoffPolicyException;
+        } catch (AgentControlFlowException controlFlowException) {
+            // #262: 宿主介入（审批/用户输入）必须中断循环并抛给调用方，禁止降级为 TOOL_ERROR。
+            throw controlFlowException;
         } catch (Exception ex) {
             return buildToolErrorOutput(callToRun, ex);
         } finally {
