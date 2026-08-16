@@ -30,6 +30,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
 import io.github.lnyocly.ai4j.agent.skill.AgentSkillRuntimeSupport;
 import io.github.lnyocly.ai4j.agent.compact.CompactPolicy;
+import io.github.lnyocly.ai4j.agent.control.AgentControlFlowException;
 import io.github.lnyocly.ai4j.agent.compact.CompactResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
@@ -231,9 +232,21 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
 
             boolean parallelExecution = Boolean.TRUE.equals(context.getParallelToolCalls()) && validatedCalls.size() > 1;
-            List<AgentToolResult> executed = parallelExecution
-                    ? executeToolCallsInParallel(context, validatedCalls, step, listener, runId, sessionId, turnId)
-                    : executeToolCallsSequential(context, validatedCalls, step, listener, runId, sessionId, turnId);
+            List<AgentToolResult> executed;
+            try {
+                executed = parallelExecution
+                        ? executeToolCallsInParallel(context, validatedCalls, step, listener, runId, sessionId, turnId)
+                        : executeToolCallsSequential(context, validatedCalls, step, listener, runId, sessionId, turnId);
+            } catch (AgentControlFlowException controlFlow) {
+                // #262: 宿主介入中断——已进历史的 tool_use 必须有配对 tool_result，
+                // 否则 anthropic_messages 等协议在恢复回合时按 invalid params 400 拒绝。
+                for (AgentToolCall unmatchedCall : validatedCalls) {
+                    memory.addToolOutput(unmatchedCall.getCallId(),
+                            "HOST_INPUT_REQUIRED: tool execution interrupted for host mediation; "
+                                    + "the conversation continues with a follow-up host/user message.");
+                }
+                throw controlFlow;
+            }
             throwIfInterrupted();
 
             for (int i = 0; i < validatedCalls.size(); i++) {
@@ -557,6 +570,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throw interruptedException;
         } catch (HandoffPolicyException handoffPolicyException) {
             throw handoffPolicyException;
+        } catch (AgentControlFlowException controlFlowException) {
+            // #262: 宿主介入（审批/用户输入）必须中断循环并抛给调用方，禁止降级为 TOOL_ERROR。
+            throw controlFlowException;
         } catch (Exception ex) {
             return buildToolErrorOutput(callToRun, ex);
         } finally {
