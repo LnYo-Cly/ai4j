@@ -20,7 +20,8 @@ public class GrokVideoServiceTest {
     @Test
     public void test_create_posts_json_to_videos_generations() throws Exception {
         MockWebServer server = new MockWebServer();
-        server.enqueue(OpenAiVideoServiceTest.jsonResponse("{\"request_id\":\"req-1\",\"id\":\"req-1\",\"status\":\"queued\"}"));
+        // Live gateway shape (verified 2026-08-19): create returns ONLY request_id.
+        server.enqueue(OpenAiVideoServiceTest.jsonResponse("{\"request_id\":\"video_zoobap6\"}"));
         server.start();
         try {
             GrokVideoService service = new GrokVideoService(OpenAiVideoServiceTest.configuration(server));
@@ -37,7 +38,9 @@ public class GrokVideoServiceTest {
                     .referenceImages(references)
                     .build());
 
-            Assert.assertEquals("req-1", response.getId());
+            Assert.assertNull(response.getId());
+            Assert.assertEquals("video_zoobap6", response.getRequestId());
+            Assert.assertEquals("video_zoobap6", response.getTaskId());
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertNotNull(request);
@@ -55,6 +58,27 @@ public class GrokVideoServiceTest {
             Assert.assertEquals(1, refs.size());
             Assert.assertEquals("https://cdn.example/ref-1.png", refs.getString(0));
             Assert.assertNull(body.getString("seconds"));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void test_retrieve_surfaces_task_failure_returned_with_http_200() throws Exception {
+        MockWebServer server = new MockWebServer();
+        // Live gateway shape (verified 2026-08-19): failures come back as HTTP 200 + error body.
+        server.enqueue(OpenAiVideoServiceTest.jsonResponse(
+                "{\"error\":{\"code\":\"internal_error\",\"message\":\"Console 媒体上游返回 429: Free usage quota exceeded\"},\"status\":\"failed\"}"));
+        server.start();
+        try {
+            GrokVideoService service = new GrokVideoService(OpenAiVideoServiceTest.configuration(server));
+            VideoResponse response = service.retrieve("video_zoobap6");
+
+            Assert.assertEquals("failed", response.getStatus());
+            Assert.assertNull(response.getVideoUrl());
+            Assert.assertNotNull(response.getError());
+            Assert.assertEquals("internal_error", response.getError().getCode());
+            Assert.assertTrue(response.getErrorMessage().contains("429"));
         } finally {
             server.shutdown();
         }
