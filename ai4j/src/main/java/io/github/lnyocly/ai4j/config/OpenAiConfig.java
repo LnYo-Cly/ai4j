@@ -24,6 +24,11 @@ public class OpenAiConfig {
     private String imageGenerationUrl = "v1/images/generations";
     private String responsesUrl = "v1/responses";
     private String videoUrl = "v1/videos";
+    /**
+     * Path used to create a video task. Kept separate from {@link #videoUrl} because some
+     * gateways create at {@code v1/videos/generations} while still polling {@code v1/videos/{id}}.
+     */
+    private String videoCreateUrl = "v1/videos";
 
 }
 

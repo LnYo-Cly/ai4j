@@ -11,10 +11,17 @@ import lombok.NonNull;
 
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Request for OpenAI-compatible video creation.
+ * Vendor-neutral request for creating a video task.
+ *
+ * <p>The fields below are the minimal intersection shared by the first-party video APIs
+ * we target. Each {@code IVideoService} implementation maps them onto its own dialect
+ * (for example {@code durationSeconds} becomes {@code seconds} on OpenAI and
+ * {@code duration} on the Grok gateway). Vendor-only parameters go through
+ * {@link #extraFields} and are merged verbatim into the request body.
  */
 @Data
 @AllArgsConstructor
@@ -26,16 +33,46 @@ public class VideoCreateRequest {
     @NonNull
     private String model;
 
-    @NonNull
     private String prompt;
 
+    /** Neutral duration in seconds. Preferred over the legacy {@link #seconds} field. */
+    private Integer durationSeconds;
+
+    /** Neutral aspect ratio such as {@code 16:9}. */
+    private String aspectRatio;
+
+    /** Neutral resolution such as {@code 720p} or {@code 1080p}. */
+    private String resolution;
+
+    /** Optional first-frame / driving image reference (URL or data URL). */
+    private String inputImage;
+
+    /** Optional additional reference images (URL or data URL). */
+    private List<String> referenceImages;
+
+    /** Legacy OpenAI duration field. Used only when {@link #durationSeconds} is null. */
     private Object seconds;
+
+    /** Legacy OpenAI pixel size such as {@code 1280x720}. */
     private String size;
+
+    /** Overrides the implementation's default create path, e.g. {@code v1/videos/generations}. */
+    @JsonIgnore
+    private String createPath;
+
+    /**
+     * Wire format for the create call. Defaults to JSON; multipart is only kept for legacy
+     * relay gateways and is deprecated.
+     */
+    @JsonIgnore
+    @Builder.Default
+    private VideoBodyMode bodyMode = VideoBodyMode.JSON;
 
     @JsonIgnore
     @Builder.Default
     private Map<String, Object> extraFields = new LinkedHashMap<String, Object>();
 
+    /** Only usable with {@link VideoBodyMode#MULTIPART}. */
     @JsonIgnore
     @Builder.Default
     private Map<String, File> fileFields = new LinkedHashMap<String, File>();
