@@ -10,7 +10,11 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * OpenAI-compatible video task response.
+ * Vendor-neutral video task response.
+ *
+ * <p>Task ids arrive under different names: OpenAI returns {@code id} while the Grok
+ * gateway returns {@code request_id}. Both are captured and {@link #getTaskId()} returns
+ * whichever is present so callers never have to branch per vendor.
  */
 @Data
 @AllArgsConstructor
@@ -19,6 +23,11 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VideoResponse {
     private String id;
+
+    /** Grok gateway task id ({@code POST v1/videos/generations} returns only this field). */
+    @JsonProperty("request_id")
+    private String requestId;
+
     private String object;
     private String status;
     private String model;
@@ -32,5 +41,30 @@ public class VideoResponse {
     @JsonProperty("created_at")
     private Long createdAt;
 
+    /** Present when the provider reports a task-level failure (HTTP may still be 200). */
+    private VideoError error;
+
     private Map<String, Object> raw;
+
+    /** Task id regardless of vendor field naming. */
+    public String getTaskId() {
+        return id != null && !id.isEmpty() ? id : requestId;
+    }
+
+    /** Provider error message, or {@code null} when the task carries no error. */
+    public String getErrorMessage() {
+        return error == null ? null : error.getMessage();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class VideoError {
+        private String code;
+        private String message;
+        private String type;
+        private String param;
+    }
 }

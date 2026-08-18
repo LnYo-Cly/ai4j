@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.platform.openai.video;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
+import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoBodyMode;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -23,18 +24,18 @@ import java.util.concurrent.TimeUnit;
 public class OpenAiVideoServiceTest {
 
     @Test
-    public void test_create_video_uses_multipart_videos_endpoint() throws Exception {
+    public void test_create_video_posts_json_to_videos_endpoint() throws Exception {
         MockWebServer server = new MockWebServer();
         server.enqueue(jsonResponse("{\"id\":\"video-1\",\"object\":\"video\",\"status\":\"queued\",\"created_at\":1764240518}"));
         server.start();
         try {
             OpenAiVideoService service = new OpenAiVideoService(configuration(server));
             Map<String, Object> extraFields = new LinkedHashMap<String, Object>();
-            extraFields.put("enable_upsample", "true");
+            extraFields.put("enable_upsample", true);
             VideoResponse response = service.create(VideoCreateRequest.builder()
                     .model("veo3.1")
                     .prompt("飞上天")
-                    .seconds(8)
+                    .durationSeconds(8)
                     .size("1280x720")
                     .extraFields(extraFields)
                     .build());
@@ -47,13 +48,59 @@ public class OpenAiVideoServiceTest {
             Assert.assertNotNull(request);
             Assert.assertEquals("/v1/videos", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
+            Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
+            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
+            Assert.assertEquals("veo3.1", body.getString("model"));
+            Assert.assertEquals("飞上天", body.getString("prompt"));
+            Assert.assertEquals(Integer.valueOf(8), body.getInteger("seconds"));
+            Assert.assertEquals("1280x720", body.getString("size"));
+            Assert.assertEquals(Boolean.TRUE, body.getBoolean("enable_upsample"));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void test_create_video_multipart_is_opt_in_for_legacy_relays() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(jsonResponse("{\"id\":\"video-1\",\"object\":\"video\",\"status\":\"queued\"}"));
+        server.start();
+        try {
+            OpenAiVideoService service = new OpenAiVideoService(configuration(server));
+            service.create(VideoCreateRequest.builder()
+                    .model("veo3.1")
+                    .prompt("飞上天")
+                    .seconds(8)
+                    .bodyMode(VideoBodyMode.MULTIPART)
+                    .build());
+
+            RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+            Assert.assertNotNull(request);
+            Assert.assertEquals("/v1/videos", request.getPath());
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("multipart/form-data"));
             String body = request.getBody().readUtf8();
             Assert.assertTrue(body.contains("name=\"model\""));
             Assert.assertTrue(body.contains("veo3.1"));
-            Assert.assertTrue(body.contains("name=\"prompt\""));
-            Assert.assertTrue(body.contains("飞上天"));
-            Assert.assertTrue(body.contains("name=\"enable_upsample\""));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void test_create_video_honours_create_path_override() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(jsonResponse("{\"id\":\"video-1\",\"status\":\"queued\"}"));
+        server.start();
+        try {
+            OpenAiVideoService service = new OpenAiVideoService(configuration(server));
+            service.create(VideoCreateRequest.builder()
+                    .model("veo3.1")
+                    .prompt("飞上天")
+                    .createPath("v1/videos/generations")
+                    .build());
+
+            RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+            Assert.assertEquals("/v1/videos/generations", request.getPath());
         } finally {
             server.shutdown();
         }
@@ -120,11 +167,12 @@ public class OpenAiVideoServiceTest {
         }
     }
 
-    private static Configuration configuration(MockWebServer server) {
+    public static Configuration configuration(MockWebServer server) {
         OpenAiConfig openAiConfig = new OpenAiConfig();
         openAiConfig.setApiHost(server.url("/").toString());
         openAiConfig.setApiKey("test-key");
         openAiConfig.setVideoUrl("v1/videos");
+        openAiConfig.setVideoCreateUrl("v1/videos");
 
         Configuration configuration = new Configuration();
         configuration.setOpenAiConfig(openAiConfig);
@@ -132,7 +180,7 @@ public class OpenAiVideoServiceTest {
         return configuration;
     }
 
-    private static MockResponse jsonResponse(String body) {
+    public static MockResponse jsonResponse(String body) {
         return new MockResponse()
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")

@@ -24,6 +24,7 @@ import io.github.lnyocly.ai4j.platform.openai.embedding.OpenAiEmbeddingService;
 import io.github.lnyocly.ai4j.platform.openai.image.OpenAiImageService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
+import io.github.lnyocly.ai4j.platform.grok.video.GrokVideoService;
 import io.github.lnyocly.ai4j.platform.suno.music.SunoMusicService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
@@ -227,6 +228,8 @@ public class AiService {
         switch (platform) {
             case OPENAI:
                 return new OpenAiVideoService(configuration);
+            case GROK:
+                return new GrokVideoService(configuration);
             default:
                 throw new IllegalArgumentException("No video service for platform: " + platform);
         }
