@@ -9,9 +9,7 @@ import java.util.Map;
 /**
  * OpenAI-compatible video service ({@code POST v1/videos}, {@code GET v1/videos/{id}}).
  *
- * <p>The create call sends {@code application/json}. Gateways that still require
- * {@code multipart/form-data} must opt in explicitly via
- * {@link io.github.lnyocly.ai4j.platform.openai.video.entity.VideoBodyMode#MULTIPART}.
+ * <p>The create call sends {@code application/json}, matching the first-party API.
  */
 public class OpenAiVideoService extends AbstractVideoService {
 

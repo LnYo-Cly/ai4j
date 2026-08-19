@@ -6,19 +6,16 @@ import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
-import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoBodyMode;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.IVideoService;
 import okhttp3.MediaType;
-import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +34,6 @@ import java.util.Map;
 public abstract class AbstractVideoService implements IVideoService {
 
     protected static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
-    private static final MediaType OCTET_STREAM_MEDIA_TYPE = MediaType.get("application/octet-stream");
 
     protected final OpenAiConfig openAiConfig;
     protected final OkHttpClient okHttpClient;
@@ -59,7 +55,7 @@ public abstract class AbstractVideoService implements IVideoService {
         String path = request.getCreatePath() != null && !request.getCreatePath().isEmpty()
                 ? request.getCreatePath()
                 : defaultCreatePath();
-        Request.Builder requestBuilder = authorizedRequest(baseUrl, apiKey, path).post(buildBody(request));
+        Request.Builder requestBuilder = authorizedRequest(baseUrl, apiKey, path).post(jsonBody(request));
         applyHeaders(requestBuilder, request);
         return executeJson(requestBuilder.build());
     }
@@ -118,12 +114,6 @@ public abstract class AbstractVideoService implements IVideoService {
         return remix(null, null, id, prompt);
     }
 
-    private RequestBody buildBody(VideoCreateRequest request) throws Exception {
-        boolean multipart = request.getBodyMode() == VideoBodyMode.MULTIPART
-                || (request.getFileFields() != null && !request.getFileFields().isEmpty());
-        return multipart ? multipartBody(request) : jsonBody(request);
-    }
-
     private RequestBody jsonBody(VideoCreateRequest request) throws Exception {
         Map<String, Object> body = toJsonBody(request);
         if (request.getExtraFields() != null) {
@@ -134,35 +124,6 @@ public abstract class AbstractVideoService implements IVideoService {
             }
         }
         return RequestBody.create(mapper.writeValueAsString(body), JSON_MEDIA_TYPE);
-    }
-
-    /**
-     * Legacy relay gateways that only accept {@code multipart/form-data}.
-     *
-     * @deprecated first-party video APIs use JSON; this path exists only until the
-     * remaining relay integrations are retired.
-     */
-    @Deprecated
-    private RequestBody multipartBody(VideoCreateRequest request) {
-        MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
-        for (Map.Entry<String, Object> entry : toJsonBody(request).entrySet()) {
-            addFormDataPart(builder, entry.getKey(), entry.getValue());
-        }
-        if (request.getExtraFields() != null) {
-            for (Map.Entry<String, Object> entry : request.getExtraFields().entrySet()) {
-                addFormDataPart(builder, entry.getKey(), entry.getValue());
-            }
-        }
-        if (request.getFileFields() != null) {
-            for (Map.Entry<String, File> entry : request.getFileFields().entrySet()) {
-                File file = entry.getValue();
-                if (file != null) {
-                    builder.addFormDataPart(entry.getKey(), file.getName(),
-                            RequestBody.create(file, OCTET_STREAM_MEDIA_TYPE));
-                }
-            }
-        }
-        return builder.build();
     }
 
     protected static void putIfPresent(Map<String, Object> body, String name, Object value) {
@@ -207,11 +168,6 @@ public abstract class AbstractVideoService implements IVideoService {
         }
     }
 
-    private void addFormDataPart(MultipartBody.Builder builder, String name, Object value) {
-        if (name != null && value != null) {
-            builder.addFormDataPart(name, String.valueOf(value));
-        }
-    }
 
     private String resolveBaseUrl(String baseUrl) {
         return (baseUrl == null || "".equals(baseUrl)) ? openAiConfig.getApiHost() : baseUrl;
