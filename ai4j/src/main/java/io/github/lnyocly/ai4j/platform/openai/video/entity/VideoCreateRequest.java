@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
-import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,22 +59,9 @@ public class VideoCreateRequest {
     @JsonIgnore
     private String createPath;
 
-    /**
-     * Wire format for the create call. Defaults to JSON; multipart is only kept for legacy
-     * relay gateways and is deprecated.
-     */
-    @JsonIgnore
-    @Builder.Default
-    private VideoBodyMode bodyMode = VideoBodyMode.JSON;
-
     @JsonIgnore
     @Builder.Default
     private Map<String, Object> extraFields = new LinkedHashMap<String, Object>();
-
-    /** Only usable with {@link VideoBodyMode#MULTIPART}. */
-    @JsonIgnore
-    @Builder.Default
-    private Map<String, File> fileFields = new LinkedHashMap<String, File>();
 
     @JsonIgnore
     @Builder.Default

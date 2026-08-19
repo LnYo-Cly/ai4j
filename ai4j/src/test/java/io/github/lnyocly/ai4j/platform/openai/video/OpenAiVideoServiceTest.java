@@ -3,7 +3,6 @@ package io.github.lnyocly.ai4j.platform.openai.video;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
-import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoBodyMode;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -61,26 +60,25 @@ public class OpenAiVideoServiceTest {
     }
 
     @Test
-    public void test_create_video_multipart_is_opt_in_for_legacy_relays() throws Exception {
+    public void test_create_video_passes_vendor_extra_fields_in_json() throws Exception {
         MockWebServer server = new MockWebServer();
         server.enqueue(jsonResponse("{\"id\":\"video-1\",\"object\":\"video\",\"status\":\"queued\"}"));
         server.start();
         try {
             OpenAiVideoService service = new OpenAiVideoService(configuration(server));
+            Map<String, Object> extraFields = new LinkedHashMap<String, Object>();
+            extraFields.put("first_frame_image", "https://cdn.example/first.png");
             service.create(VideoCreateRequest.builder()
                     .model("veo3.1")
                     .prompt("飞上天")
-                    .seconds(8)
-                    .bodyMode(VideoBodyMode.MULTIPART)
+                    .extraFields(extraFields)
                     .build());
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertNotNull(request);
-            Assert.assertEquals("/v1/videos", request.getPath());
-            Assert.assertTrue(request.getHeader("Content-Type").startsWith("multipart/form-data"));
-            String body = request.getBody().readUtf8();
-            Assert.assertTrue(body.contains("name=\"model\""));
-            Assert.assertTrue(body.contains("veo3.1"));
+            Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
+            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
+            Assert.assertEquals("https://cdn.example/first.png", body.getString("first_frame_image"));
         } finally {
             server.shutdown();
         }
