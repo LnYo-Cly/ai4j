@@ -50,6 +50,19 @@ public class VideoCreateRequest {
     /** Optional additional reference images (URL or data URL). */
     private List<String> referenceImages;
 
+    /**
+     * Typed references (image / video / audio with a role). Dialects that accept multimodal
+     * references use this; {@link #inputImage} and {@link #referenceImages} remain the simple
+     * path for dialects that only take frames.
+     */
+    private List<VideoReference> references;
+
+    /** Whether the model should generate a synchronized audio track, when it supports one. */
+    private Boolean generateAudio;
+
+    /** Whether the provider should burn in a watermark, when it supports the option. */
+    private Boolean watermark;
+
     /** Legacy OpenAI duration field. Used only when {@link #durationSeconds} is null. */
     private Object seconds;
 
