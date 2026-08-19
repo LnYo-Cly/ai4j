@@ -38,6 +38,12 @@ public class VideoResponse {
     @JsonProperty("video_url")
     private String videoUrl;
 
+    /** Ark returns the finished asset under {@code content.video_url}. */
+    private VideoContent content;
+
+    /** Token accounting, when the provider reports it. */
+    private Map<String, Object> usage;
+
     @JsonProperty("created_at")
     private Long createdAt;
 
@@ -45,6 +51,12 @@ public class VideoResponse {
     private VideoError error;
 
     private Map<String, Object> raw;
+
+    /** Result URL regardless of whether the dialect nests it under {@code content}. */
+    public String resolveVideoUrl() {
+        if (videoUrl != null && !videoUrl.isEmpty()) return videoUrl;
+        return content == null ? null : content.getVideoUrl();
+    }
 
     /** Task id regardless of vendor field naming. */
     public String getTaskId() {
@@ -54,6 +66,16 @@ public class VideoResponse {
     /** Provider error message, or {@code null} when the task carries no error. */
     public String getErrorMessage() {
         return error == null ? null : error.getMessage();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class VideoContent {
+        @JsonProperty("video_url")
+        private String videoUrl;
     }
 
     @Data

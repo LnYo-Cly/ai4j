@@ -54,6 +54,15 @@ public abstract class AbstractVideoService implements IVideoService {
     /** Maps the neutral request onto this dialect's JSON body. */
     protected abstract Map<String, Object> toJsonBody(VideoCreateRequest request);
 
+    /**
+     * Collection that owns the created task, used by retrieve / content / remix. Defaults to
+     * the OpenAI {@code videoUrl}; dialects whose task lives elsewhere (Ark keeps create and
+     * retrieve on the same {@code .../tasks} collection) override this.
+     */
+    protected String taskResourcePath() {
+        return openAiConfig.getVideoUrl();
+    }
+
     @Override
     public VideoResponse create(String baseUrl, String apiKey, VideoCreateRequest request) throws Exception {
         String path = request.getCreatePath() != null && !request.getCreatePath().isEmpty()
@@ -71,7 +80,7 @@ public abstract class AbstractVideoService implements IVideoService {
 
     @Override
     public VideoResponse retrieve(String baseUrl, String apiKey, String id) throws Exception {
-        Request request = authorizedRequest(baseUrl, apiKey, openAiConfig.getVideoUrl(), encodePathSegment(id))
+        Request request = authorizedRequest(baseUrl, apiKey, taskResourcePath(), encodePathSegment(id))
                 .get()
                 .build();
         return executeJson(request);
@@ -84,7 +93,7 @@ public abstract class AbstractVideoService implements IVideoService {
 
     @Override
     public InputStream content(String baseUrl, String apiKey, String id) throws Exception {
-        Request request = authorizedRequest(baseUrl, apiKey, openAiConfig.getVideoUrl(), encodePathSegment(id), "content")
+        Request request = authorizedRequest(baseUrl, apiKey, taskResourcePath(), encodePathSegment(id), "content")
                 .get()
                 .build();
         Response response = okHttpClient.newCall(request).execute();
@@ -107,7 +116,7 @@ public abstract class AbstractVideoService implements IVideoService {
     public VideoResponse remix(String baseUrl, String apiKey, String id, String prompt) throws Exception {
         Map<String, String> body = new LinkedHashMap<String, String>();
         body.put("prompt", prompt);
-        Request request = authorizedRequest(baseUrl, apiKey, openAiConfig.getVideoUrl(), encodePathSegment(id), "remix")
+        Request request = authorizedRequest(baseUrl, apiKey, taskResourcePath(), encodePathSegment(id), "remix")
                 .post(RequestBody.create(mapper.writeValueAsString(body), JSON_MEDIA_TYPE))
                 .build();
         return executeJson(request);
