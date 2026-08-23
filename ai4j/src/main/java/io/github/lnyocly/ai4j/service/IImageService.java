@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service;
 
+import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageEdit;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGeneration;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGenerationResponse;
 import io.github.lnyocly.ai4j.listener.ImageSseListener;
@@ -12,6 +13,24 @@ import io.github.lnyocly.ai4j.listener.ImageSseListener;
 public interface IImageService {
 
     ImageGenerationResponse generate(String baseUrl, String apiKey, ImageGeneration imageGeneration) throws Exception;
+
+    /**
+     * 图片编辑（图生图）：POST /v1/images/edits。请求体复用 ImageGeneration，
+     * 参考图通过 image 字段传入（URL 或 base64 字符串数组，平台扩展 JSON 形态）。
+     * 局部重绘：extraBody("mask", urlOrBase64) 同规则传入（仅 edits 端点支持，
+     * generations+image 的方式 C 不支持 mask；实测 chat2api JSON mask 可用）。
+     */
+    default ImageGenerationResponse edit(String baseUrl, String apiKey, ImageGeneration imageGeneration) throws Exception {
+        throw new UnsupportedOperationException("image edit is not supported by this platform service");
+    }
+
+    /**
+     * 图片编辑（图生图）：POST /v1/images/edits，multipart/form-data 形态
+     * （OpenAI 官方标准，文件字节直传）。JSON 形态见 {@link #edit(String, String, ImageGeneration)}。
+     */
+    default ImageGenerationResponse edit(String baseUrl, String apiKey, ImageEdit imageEdit) throws Exception {
+        throw new UnsupportedOperationException("image edit (multipart) is not supported by this platform service");
+    }
 
     ImageGenerationResponse generate(ImageGeneration imageGeneration) throws Exception;
 

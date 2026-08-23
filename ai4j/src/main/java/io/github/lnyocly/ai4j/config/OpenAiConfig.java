@@ -22,6 +22,12 @@ public class OpenAiConfig {
     private String translationUrl = "v1/audio/translations";
     private String realtimeUrl = "v1/realtime";
     private String imageGenerationUrl = "v1/images/generations";
+
+    /**
+     * 图片编辑端点（图生图/编辑）。OpenAI 标准为 multipart；JSON 形态（image 传
+     * URL/base64 数组）为兼容网关通用扩展（chat2api/skyengine 等）。
+     */
+    private String imageEditUrl = "v1/images/edits";
     private String responsesUrl = "v1/responses";
     private String videoUrl = "v1/videos";
     /**
