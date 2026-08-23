@@ -70,6 +70,36 @@ public class OpenAiImageService implements IImageService {
         }
     }
 
+    /**
+     * 图片编辑（图生图）：POST /v1/images/edits，JSON 形态（image 字段 =
+     * URL/base64 字符串数组，网关通用扩展）。与 generate 同构，仅端点不同。
+     */
+    @Override
+    public ImageGenerationResponse edit(String baseUrl, String apiKey, ImageGeneration imageGeneration) throws Exception {
+        if (baseUrl == null || "".equals(baseUrl)) {
+            baseUrl = openAiConfig.getApiHost();
+        }
+        if (apiKey == null || "".equals(apiKey)) {
+            apiKey = openAiConfig.getApiKey();
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        String requestString = mapper.writeValueAsString(imageGeneration);
+
+        Request request = new Request.Builder()
+                .header("Authorization", "Bearer " + apiKey)
+                .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getImageEditUrl()))
+                .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
+                .build();
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return mapper.readValue(response.body().string(), ImageGenerationResponse.class);
+            }
+            throw HttpErrorDecoder.decode(response);
+        }
+    }
+
     @Override
     public ImageGenerationResponse generate(ImageGeneration imageGeneration) throws Exception {
         return this.generate(null, null, imageGeneration);
