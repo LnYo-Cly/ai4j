@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service;
 
+import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageEdit;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGeneration;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGenerationResponse;
 import io.github.lnyocly.ai4j.listener.ImageSseListener;
@@ -19,6 +20,14 @@ public interface IImageService {
      */
     default ImageGenerationResponse edit(String baseUrl, String apiKey, ImageGeneration imageGeneration) throws Exception {
         throw new UnsupportedOperationException("image edit is not supported by this platform service");
+    }
+
+    /**
+     * 图片编辑（图生图）：POST /v1/images/edits，multipart/form-data 形态
+     * （OpenAI 官方标准，文件字节直传）。JSON 形态见 {@link #edit(String, String, ImageGeneration)}。
+     */
+    default ImageGenerationResponse edit(String baseUrl, String apiKey, ImageEdit imageEdit) throws Exception {
+        throw new UnsupportedOperationException("image edit (multipart) is not supported by this platform service");
     }
 
     ImageGenerationResponse generate(ImageGeneration imageGeneration) throws Exception;

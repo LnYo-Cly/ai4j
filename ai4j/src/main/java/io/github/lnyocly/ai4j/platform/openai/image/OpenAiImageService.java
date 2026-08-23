@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.listener.ImageSseListener;
+import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageEdit;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGeneration;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageGenerationResponse;
 import io.github.lnyocly.ai4j.platform.openai.image.entity.ImageStreamEvent;
@@ -92,6 +93,53 @@ public class OpenAiImageService implements IImageService {
                 .post(RequestBody.create(requestString, JSON_MEDIA_TYPE))
                 .build();
 
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return mapper.readValue(response.body().string(), ImageGenerationResponse.class);
+            }
+            throw HttpErrorDecoder.decode(response);
+        }
+    }
+
+    /**
+     * 图片编辑（图生图）：POST /v1/images/edits，multipart/form-data 形态
+     * （OpenAI 官方标准：文件字节直传，不依赖网关回源）。参考图同名 image 字段可重复。
+     */
+    @Override
+    public ImageGenerationResponse edit(String baseUrl, String apiKey, ImageEdit imageEdit) throws Exception {
+        if (baseUrl == null || "".equals(baseUrl)) {
+            baseUrl = openAiConfig.getApiHost();
+        }
+        if (apiKey == null || "".equals(apiKey)) {
+            apiKey = openAiConfig.getApiKey();
+        }
+
+        okhttp3.MultipartBody.Builder body = new okhttp3.MultipartBody.Builder()
+                .setType(okhttp3.MultipartBody.FORM)
+                .addFormDataPart("model", imageEdit.getModel())
+                .addFormDataPart("prompt", imageEdit.getPrompt());
+        if (imageEdit.getN() != null) body.addFormDataPart("n", String.valueOf(imageEdit.getN()));
+        if (imageEdit.getSize() != null) body.addFormDataPart("size", imageEdit.getSize());
+        if (imageEdit.getQuality() != null) body.addFormDataPart("quality", imageEdit.getQuality());
+        if (imageEdit.getOutputFormat() != null) body.addFormDataPart("output_format", imageEdit.getOutputFormat());
+        if (imageEdit.getResponseFormat() != null) body.addFormDataPart("response_format", imageEdit.getResponseFormat());
+        for (ImageEdit.ImagePart image : imageEdit.getImages()) {
+            MediaType mediaType = MediaType.get(image.getContentType() == null ? "application/octet-stream" : image.getContentType());
+            body.addFormDataPart("image", image.getFilename(), RequestBody.create(image.getData(), mediaType));
+        }
+        if (imageEdit.getMask() != null) {
+            ImageEdit.ImagePart mask = imageEdit.getMask();
+            MediaType maskType = MediaType.get(mask.getContentType() == null ? "image/png" : mask.getContentType());
+            body.addFormDataPart("mask", mask.getFilename(), RequestBody.create(mask.getData(), maskType));
+        }
+
+        Request request = new Request.Builder()
+                .header("Authorization", "Bearer " + apiKey)
+                .url(UrlUtils.concatUrl(baseUrl, openAiConfig.getImageEditUrl()))
+                .post(body.build())
+                .build();
+
+        ObjectMapper mapper = new ObjectMapper();
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), ImageGenerationResponse.class);
