@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.audio;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.Ai4jException;
@@ -85,6 +86,47 @@ public class OpenAiAudioService implements IAudioService {
     @Override
     public InputStream textToSpeech(TextToSpeech textToSpeech) {
         return this.textToSpeech(null, null, textToSpeech);
+    }
+
+    /**
+     * response_format=url 形态：网关不回音频流而是回 JSON（含音频下载 URL），
+     * 零样本克隆（prompt_audio_url + IndexTTS 系模型）多走此形态。
+     * 宽容提取 url / audio_url / data.url / data.audio_url，提取失败抛出携带响应片段的异常。
+     */
+    @Override
+    public String textToSpeechUrl(String baseUrl, String apiKey, TextToSpeech textToSpeech) {
+        Request request = buildAuthorizedRequest(
+                baseUrl,
+                apiKey,
+                openAiConfig.getSpeechUrl(),
+                RequestBody.create(JSON.toJSONString(textToSpeech), JSON_MEDIA_TYPE)
+        );
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw HttpErrorDecoder.decode(response);
+            }
+            ResponseBody responseBody = response.body();
+            String payload = responseBody == null ? "" : responseBody.string();
+            JSONObject root = JSON.parseObject(payload);
+            String url = firstNonBlank(
+                    root == null ? null : root.getString("url"),
+                    root == null ? null : root.getString("audio_url"),
+                    root == null || root.getJSONObject("data") == null ? null : root.getJSONObject("data").getString("url"),
+                    root == null || root.getJSONObject("data") == null ? null : root.getJSONObject("data").getString("audio_url")
+            );
+            if (url == null || url.isEmpty()) {
+                throw new AiClientException(response.code(),
+                        "speech url response missing audio url: " + truncate(payload));
+            }
+            return url;
+        } catch (IOException e) {
+            throw new Ai4jException("OpenAI speech request failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String textToSpeechUrl(TextToSpeech textToSpeech) {
+        return this.textToSpeechUrl(null, null, textToSpeech);
     }
 
     @Override
@@ -179,6 +221,22 @@ public class OpenAiAudioService implements IAudioService {
         if (response != null) {
             response.close();
         }
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static String truncate(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.length() <= 300 ? value : value.substring(0, 300);
     }
 
     /**

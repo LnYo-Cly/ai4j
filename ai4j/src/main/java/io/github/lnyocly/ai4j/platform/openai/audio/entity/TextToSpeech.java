@@ -53,4 +53,12 @@ public class TextToSpeech {
      */
     @Builder.Default
     private Double speed = 1.0d;
+
+    /**
+     * 零样本语音克隆：参考音频的公网 URL（网关扩展字段，OpenAI 官方无此参数）。
+     * 提供后按参考音色合成；chatfire 网关配合 IndexTTS-1.5 / F5-TTS /
+     * Step-Audio-TTS-3B / CosyVoice2 等克隆模型使用。
+     */
+    @JsonProperty("prompt_audio_url")
+    private String promptAudioUrl;
 }
