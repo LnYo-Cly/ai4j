@@ -18,7 +18,7 @@ public class OkHttpConfig {
     private HttpLoggingInterceptor.Level log = HttpLoggingInterceptor.Level.HEADERS;
     private int connectTimeout = 300;
     private int writeTimeout = 300;
-    private int readTimeout = 300;
+    private int readTimeout = 600;
     private int proxyPort = 10809;
     private String proxyHost = "";
 
