@@ -230,6 +230,8 @@ public class AiService {
                 return new OpenAiVideoService(configuration);
             case GROK:
                 return new GrokVideoService(configuration);
+            case MINIMAX:
+                return new io.github.lnyocly.ai4j.platform.minimax.video.MinimaxVideoService(configuration);
             default:
                 throw new IllegalArgumentException("No video service for platform: " + platform);
         }
