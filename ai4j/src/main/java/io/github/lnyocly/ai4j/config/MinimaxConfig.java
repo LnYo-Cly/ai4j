@@ -23,4 +23,19 @@ public class MinimaxConfig {
     private String apiHost = "https://api.minimaxi.com/";
     private String apiKey = "";
     private String chatCompletionUrl = "v1/chat/completions";
+
+    /**
+     * Hailuo 视频网关。视频 API 与 chat 网关不同域（私有协议 {@code api.minimax.chat}，
+     * 非 OpenAI 兼容），故独立配置 host；为空时回退 {@link #apiHost}。
+     */
+    private String videoApiHost = "https://api.minimax.chat";
+
+    /** 视频网关 key（api.minimax.chat 平台 key）。为空时回退 {@link #apiKey}。 */
+    private String videoApiKey = "";
+
+    private String videoCreateUrl = "v1/video_generation";
+
+    private String videoQueryUrl = "v1/query/video_generation";
+
+    private String fileRetrieveUrl = "v1/files/retrieve";
 }
