@@ -49,10 +49,9 @@ VideoResponse response = videoService.create(request);
 - `seconds` —— 时长
 - `size` —— 分辨率
 
-除核心字段外，请求对象还预留了三组透传通道，用于承接不同网关的差异化参数：
+除核心字段外，请求对象还预留了两组透传通道，用于承接不同网关的差异化参数：
 
 - `extraFields` —— 额外的表单字段（如 `enable_upsample`）
-- `fileFields` —— 参考图/参考视频等文件字段
 - `headers` —— 自定义请求头
 
 ```java
@@ -166,7 +165,7 @@ if ("completed".equalsIgnoreCase(latest.getStatus())) {
 
 ### 8.3 网关差异字段
 
-不同 OpenAI 兼容网关可能有各自的额外参数。优先用 `extraFields` / `fileFields` / `headers` 透传，不要为此改动请求对象的核心字段定义。
+不同 OpenAI 兼容网关可能有各自的额外参数。优先用 `extraFields` / `headers` 透传，不要为此改动请求对象的核心字段定义。
 
 ## 9. 这一页的结论
 
