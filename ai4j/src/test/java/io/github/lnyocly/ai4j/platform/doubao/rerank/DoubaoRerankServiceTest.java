@@ -43,7 +43,11 @@ public class DoubaoRerankServiceTest {
                     "images/generations",
                     "responses",
                     "http://127.0.0.1:" + server.getAddress().getPort(),
-                    "api/knowledge/service/rerank"
+                    "api/knowledge/service/rerank",
+                    "",
+                    "",
+                    "api/v3/contents/generations/tasks",
+                    "api/v3/contents/generations/tasks"
             ));
 
             DoubaoRerankService service = new DoubaoRerankService(configuration);
