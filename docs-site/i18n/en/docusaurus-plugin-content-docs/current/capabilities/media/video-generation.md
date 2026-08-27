@@ -49,10 +49,9 @@ VideoResponse response = videoService.create(request);
 - `seconds` —— duration
 - `size` —— resolution
 
-Beyond the core fields, the request object reserves three passthrough channels to carry parameters that differ across gateways:
+Beyond the core fields, the request object reserves two passthrough channels to carry parameters that differ across gateways:
 
 - `extraFields` —— additional form fields (e.g. `enable_upsample`)
-- `fileFields` —— file fields such as reference images / reference videos
 - `headers` —— custom request headers
 
 ```java
@@ -166,7 +165,7 @@ if ("completed".equalsIgnoreCase(latest.getStatus())) {
 
 ### 8.3 Gateway-specific fields
 
-Different OpenAI-compatible gateways may have their own extra parameters. Prefer to pass them through `extraFields` / `fileFields` / `headers`; do not modify the core field definitions of the request object for this purpose.
+Different OpenAI-compatible gateways may have their own extra parameters. Prefer to pass them through `extraFields` / `headers`; do not modify the core field definitions of the request object for this purpose.
 
 ## 9. Takeaways for this page
 
