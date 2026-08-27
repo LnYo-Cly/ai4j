@@ -127,6 +127,41 @@ public class SeedanceVideoServiceTest {
     }
 
     @Test
+    public void test_create_maps_reference_video_and_audio_content_items() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(jsonResponse("{\"id\":\"cgt-11\",\"status\":\"queued\"}"));
+        server.start();
+        try {
+            SeedanceVideoService service = new SeedanceVideoService(configuration(server));
+            Map<String, Object> extra = new LinkedHashMap<String, Object>();
+            extra.put("reference_video_urls", java.util.Arrays.asList("https://cdn.example/ref.mp4", "asset://v-1"));
+            extra.put("reference_audio_urls", java.util.Collections.singletonList("https://cdn.example/voice.mp3"));
+            service.create(VideoCreateRequest.builder()
+                    .model("seedance-2.5")
+                    .prompt("p")
+                    .extraFields(extra)
+                    .build());
+
+            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            Assert.assertFalse(body.containsKey("reference_video_urls"));
+            Assert.assertFalse(body.containsKey("reference_audio_urls"));
+            JSONArray content = body.getJSONArray("content");
+            Assert.assertEquals(4, content.size());
+            JSONObject video = content.getJSONObject(1);
+            Assert.assertEquals("video_url", video.getString("type"));
+            Assert.assertEquals("https://cdn.example/ref.mp4", video.getJSONObject("video_url").getString("url"));
+            Assert.assertEquals("reference_video", video.getString("role"));
+            Assert.assertEquals("asset://v-1", content.getJSONObject(2).getJSONObject("video_url").getString("url"));
+            JSONObject audio = content.getJSONObject(3);
+            Assert.assertEquals("audio_url", audio.getString("type"));
+            Assert.assertEquals("https://cdn.example/voice.mp3", audio.getJSONObject("audio_url").getString("url"));
+            Assert.assertEquals("reference_audio", audio.getString("role"));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
     public void test_create_falls_back_to_legacy_seconds_for_duration() throws Exception {
         MockWebServer server = new MockWebServer();
         server.enqueue(jsonResponse("{\"id\":\"cgt-4\",\"status\":\"queued\"}"));
@@ -166,6 +201,8 @@ public class SeedanceVideoServiceTest {
         MockWebServer server = new MockWebServer();
         server.enqueue(jsonResponse("{\"id\":\"cgt-6\",\"status\":\"queued\"}"));
         server.enqueue(jsonResponse("{\"id\":\"cgt-6\",\"status\":\"processing\"}"));
+        server.enqueue(jsonResponse("{\"id\":\"cgt-6\",\"status\":\"running\"}"));
+        server.enqueue(jsonResponse("{\"id\":\"cgt-6\",\"status\":\"expired\"}"));
         server.start();
         try {
             SeedanceVideoService service = new SeedanceVideoService(configuration(server));
@@ -173,6 +210,10 @@ public class SeedanceVideoServiceTest {
             VideoResponse processing = service.retrieve("cgt-6");
             Assert.assertEquals("RUNNING", processing.getStatus());
             Assert.assertNull(processing.getVideoUrl());
+            // 官方文档用 running，网关实测用 processing，两者都归一为 RUNNING
+            Assert.assertEquals("RUNNING", service.retrieve("cgt-6").getStatus());
+            // expired（执行超时）归一为 FAILED
+            Assert.assertEquals("FAILED", service.retrieve("cgt-6").getStatus());
         } finally {
             server.shutdown();
         }
@@ -196,6 +237,24 @@ public class SeedanceVideoServiceTest {
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/api/v3/contents/generations/tasks/cgt-7", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void test_retrieve_succeeded_extracts_last_frame_url() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(jsonResponse(
+                "{\"id\":\"cgt-12\",\"status\":\"succeeded\",\"content\":{\"video_url\":\"https://ark.example.com/output.mp4\",\"last_frame_url\":\"https://ark.example.com/last.png\"}}"));
+        server.start();
+        try {
+            SeedanceVideoService service = new SeedanceVideoService(configuration(server));
+            VideoResponse response = service.retrieve("cgt-12");
+
+            Assert.assertEquals("SUCCEEDED", response.getStatus());
+            Assert.assertEquals("https://ark.example.com/output.mp4", response.getVideoUrl());
+            Assert.assertEquals("https://ark.example.com/last.png", response.getLastFrameUrl());
         } finally {
             server.shutdown();
         }
