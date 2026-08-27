@@ -38,6 +38,10 @@ public class VideoResponse {
     @JsonProperty("video_url")
     private String videoUrl;
 
+    /** Seedance return_last_frame=true 时返回的尾帧图 URL（其他厂商为 null）。 */
+    @JsonProperty("last_frame_url")
+    private String lastFrameUrl;
+
     @JsonProperty("created_at")
     private Long createdAt;
 

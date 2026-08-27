@@ -36,12 +36,16 @@ import java.util.Map;
  * <p>流程：POST {@code api/v3/contents/generations/tasks} 建任务 → 轮询
  * GET 同路径 {@code /{task_id}} 直到 succeeded，取 {@code content.video_url}。
  *
- * <p>模型版本差异（1.5 / 2.0 / 2.5）只是可选参数与 image role 的增减——last_frame、
- * reference_image、generate_audio、seed 由调用方按模型能力放进请求，本服务不做版本分支。
+ * <p>模型版本差异（1.5 / 2.0 / 2.5）只是可选参数与 role 类型的增减——SDK 是透传层，
+ * 不校验模型能力，参数由调用方按模型按需传（generate_audio/seed/camera_fixed 等经
+ * extraFields 顶层透传）。role 互斥（first_frame/last_frame/reference_image）同样由调用方保证。
  */
 public class SeedanceVideoService implements IVideoService {
 
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+    /** 消费为 content 数组项、不透传到顶层的 extraFields 键。 */
+    private static final java.util.Set<String> CONTENT_EXTRA_KEYS = new java.util.HashSet<String>(
+            java.util.Arrays.asList("last_frame_url", "reference_video_urls", "reference_audio_urls"));
     /** chat 网关 {@link DoubaoConfig#getApiHost()} 默认已含 /api/v3/ 段，直接回退会和路径拼重，故回退到 Ark 根。 */
     private static final String ARK_ROOT = "https://ark.cn-beijing.volces.com/";
 
@@ -137,8 +141,8 @@ public class SeedanceVideoService implements IVideoService {
         putIfPresent(body, "ratio", request.getAspectRatio());
         if (request.getExtraFields() != null) {
             for (Map.Entry<String, Object> entry : request.getExtraFields().entrySet()) {
-                // last_frame_url 已在 content 数组里以 role=last_frame 消费，不进顶层
-                if (entry.getValue() != null && !"last_frame_url".equals(entry.getKey())) {
+                // last_frame_url / reference_video_urls / reference_audio_urls 已在 content 数组里消费，不进顶层
+                if (entry.getValue() != null && !CONTENT_EXTRA_KEYS.contains(entry.getKey())) {
                     body.put(entry.getKey(), entry.getValue());
                 }
             }
@@ -146,7 +150,11 @@ public class SeedanceVideoService implements IVideoService {
         return body;
     }
 
-    /** content 数组：text 在前，随后 first_frame / reference_image / last_frame 图片项。 */
+    /**
+     * content 数组：text 在前，随后 first_frame / reference_image / last_frame 图片项、
+     * reference_video 视频项、reference_audio 音频项。draft_task 样片任务暂无 extraFields 约定，
+     * 需要时再加。
+     */
     private List<Object> toContent(VideoCreateRequest request) {
         List<Object> content = new ArrayList<Object>();
         if (request.getPrompt() != null) {
@@ -156,26 +164,48 @@ public class SeedanceVideoService implements IVideoService {
             content.add(text);
         }
         if (request.getInputImage() != null) {
-            content.add(imageItem(request.getInputImage(), "first_frame"));
+            content.add(mediaItem("image_url", request.getInputImage(), "first_frame"));
         }
         if (request.getReferenceImages() != null) {
             for (String image : request.getReferenceImages()) {
-                content.add(imageItem(image, "reference_image"));
+                content.add(mediaItem("image_url", image, "reference_image"));
             }
         }
-        Object lastFrame = request.getExtraFields() == null ? null : request.getExtraFields().get("last_frame_url");
-        if (lastFrame instanceof String && !((String) lastFrame).isEmpty()) {
-            content.add(imageItem((String) lastFrame, "last_frame"));
-        }
+        Map<String, Object> extra = request.getExtraFields();
+        addUrlItems(content, "image_url", "last_frame", stringExtra(extra, "last_frame_url"));
+        addUrlItems(content, "video_url", "reference_video", stringExtras(extra, "reference_video_urls"));
+        addUrlItems(content, "audio_url", "reference_audio", stringExtras(extra, "reference_audio_urls"));
         return content;
     }
 
-    private static Map<String, Object> imageItem(String url, String role) {
+    private static Map<String, Object> mediaItem(String type, String url, String role) {
         Map<String, Object> item = new LinkedHashMap<String, Object>();
-        item.put("type", "image_url");
-        item.put("image_url", Collections.singletonMap("url", url));
+        item.put("type", type);
+        item.put(type, Collections.singletonMap("url", url));
         item.put("role", role);
         return item;
+    }
+
+    private static void addUrlItems(List<Object> content, String type, String role, List<String> urls) {
+        if (urls == null) {
+            return;
+        }
+        for (String url : urls) {
+            content.add(mediaItem(type, url, role));
+        }
+    }
+
+    private static List<String> stringExtra(Map<String, Object> extra, String key) {
+        Object value = extra == null ? null : extra.get(key);
+        return value instanceof String && !((String) value).isEmpty()
+                ? Collections.singletonList((String) value) : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> stringExtras(Map<String, Object> extra, String key) {
+        Object value = extra == null ? null : extra.get(key);
+        return value instanceof List && !((List<Object>) value).isEmpty()
+                ? (List<String>) value : null;
     }
 
     private VideoResponse toVideoResponse(SeedanceVideoResponse seedance) {
@@ -185,6 +215,7 @@ public class SeedanceVideoService implements IVideoService {
         response.setModel(seedance.getModel());
         if (seedance.getContent() != null) {
             response.setVideoUrl(seedance.getContent().getVideoUrl());
+            response.setLastFrameUrl(seedance.getContent().getLastFrameUrl());
         }
         response.setRaw(mapper.convertValue(seedance, new TypeReference<Map<String, Object>>() { }));
         if (seedance.getError() != null) {
@@ -196,7 +227,7 @@ public class SeedanceVideoService implements IVideoService {
         return response;
     }
 
-    /** queued → SUBMITTED，processing → RUNNING，succeeded → SUCCEEDED，failed → FAILED。 */
+    /** queued → SUBMITTED，processing/running → RUNNING，succeeded → SUCCEEDED，failed/expired → FAILED。 */
     private String mapStatus(String status) {
         if (status == null) {
             return null;
@@ -205,10 +236,12 @@ public class SeedanceVideoService implements IVideoService {
             case "queued":
                 return "SUBMITTED";
             case "processing":
+            case "running":
                 return "RUNNING";
             case "succeeded":
                 return "SUCCEEDED";
             case "failed":
+            case "expired":
                 return "FAILED";
             default:
                 return status.toUpperCase(java.util.Locale.ROOT);

@@ -46,6 +46,10 @@ public class SeedanceVideoResponse {
     public static class Content {
         @JsonProperty("video_url")
         private String videoUrl;
+
+        /** return_last_frame=true 时返回的尾帧图 URL。 */
+        @JsonProperty("last_frame_url")
+        private String lastFrameUrl;
     }
 
     @Data
