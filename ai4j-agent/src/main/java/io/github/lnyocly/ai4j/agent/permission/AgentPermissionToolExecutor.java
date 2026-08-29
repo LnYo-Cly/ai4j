@@ -1,13 +1,17 @@
 package io.github.lnyocly.ai4j.agent.permission;
 
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 
 /**
  * Tool executor wrapper that evaluates an {@link AgentPermissionPolicy} before
  * delegating to the real executor.
  */
-public class AgentPermissionToolExecutor implements ToolExecutor {
+public class AgentPermissionToolExecutor implements AsyncToolExecutor {
 
     private final ToolExecutor delegate;
     private final AgentPermissionPolicy policy;
@@ -33,6 +37,20 @@ public class AgentPermissionToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
+        AgentToolExecution execution = start(call);
+        AgentToolResult result = execution == null ? null : execution.await();
+        return result == null ? null : result.getOutput();
+    }
+
+    @Override
+    public AgentToolExecution start(AgentToolCall call) throws Exception {
+        evaluate(call);
+        return AsyncToolExecutors.start(delegate, call);
+    }
+
+    private void evaluate(AgentToolCall call) throws Exception {
+        boolean approvalGranted = call != null && call.hasMetadataValue(
+                AgentToolCall.METADATA_KEY_HARNESS_APPROVAL_GRANTED, Boolean.TRUE);
         AgentPermissionRequest request = AgentPermissionRequest.builder()
                 .toolCall(call)
                 .environment(environment)
@@ -42,7 +60,10 @@ public class AgentPermissionToolExecutor implements ToolExecutor {
             decision = AgentPermissionDecision.deny("permission policy returned no decision");
         }
         if (decision.getType() == AgentPermissionDecisionType.ALLOW) {
-            return delegate.execute(call);
+            return;
+        }
+        if (decision.getType() == AgentPermissionDecisionType.REQUIRE_APPROVAL && approvalGranted) {
+            return;
         }
         if (decision.getType() == AgentPermissionDecisionType.REQUIRE_APPROVAL) {
             throw new AgentApprovalRequiredException(buildMessage("Tool requires approval", request, decision), request, decision);

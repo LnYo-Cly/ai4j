@@ -1,6 +1,9 @@
 package io.github.lnyocly.ai4j.agent.extension;
 
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.extension.ExtensionException;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
@@ -13,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ExtensionGuardrailToolExecutor implements ToolExecutor {
+public class ExtensionGuardrailToolExecutor implements AsyncToolExecutor {
 
     public static final String ACTION_TOOL_EXECUTE = "tool.execute";
 
@@ -34,6 +37,12 @@ public class ExtensionGuardrailToolExecutor implements ToolExecutor {
     public String execute(AgentToolCall call) throws Exception {
         evaluate(call);
         return delegate.execute(call);
+    }
+
+    @Override
+    public AgentToolExecution start(AgentToolCall call) throws Exception {
+        evaluate(call);
+        return AsyncToolExecutors.start(delegate, call);
     }
 
     private void evaluate(AgentToolCall call) {

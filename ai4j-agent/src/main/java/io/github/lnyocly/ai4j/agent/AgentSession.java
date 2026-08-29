@@ -114,6 +114,12 @@ public class AgentSession {
         return this;
     }
 
+    /** Replaces an asynchronous tool's pending result in the session memory. */
+    public boolean replaceToolOutput(String callId, String output) {
+        return context != null && context.getMemory() != null
+                && context.getMemory().replaceToolOutput(callId, output);
+    }
+
     public Object getMetadata(String key) {
         return metadata.getAttribute(key);
     }
@@ -264,7 +270,7 @@ public class AgentSession {
         if (metadata != null && metadata.getSessionId() != null) {
             metadataMap.put(AgentRequest.METADATA_KEY_SESSION_ID, metadata.getSessionId());
         }
-        metadataMap.put(AgentRequest.METADATA_KEY_RUN_ID, runId);
+        metadataMap.put(AgentRequest.METADATA_KEY_RUN_ID, this.runId);
         if (turnId != null) {
             metadataMap.put(AgentRequest.METADATA_KEY_TURN_ID, turnId);
         }

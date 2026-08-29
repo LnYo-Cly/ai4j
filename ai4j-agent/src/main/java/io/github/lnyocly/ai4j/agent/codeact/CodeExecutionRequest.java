@@ -21,4 +21,7 @@ public class CodeExecutionRequest {
     private String user;
 
     private Long timeoutMs;
+
+    /** Runtime call id that owns tool calls made from this CodeAct program. */
+    private String parentCallId;
 }

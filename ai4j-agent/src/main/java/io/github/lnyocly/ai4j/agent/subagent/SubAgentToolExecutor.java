@@ -5,6 +5,11 @@ import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.runtime.AgentToolExecutionScope;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 
 import java.util.LinkedHashMap;
@@ -23,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SubAgentToolExecutor implements ToolExecutor {
+public class SubAgentToolExecutor implements AsyncToolExecutor {
 
     private static final AtomicInteger HANDOFF_THREAD_INDEX = new AtomicInteger(1);
     private static final ExecutorService HANDOFF_EXECUTOR = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -66,6 +71,34 @@ public class SubAgentToolExecutor implements ToolExecutor {
             throw new IllegalStateException("toolExecutor is required for non-subagent tool: " + toolName);
         }
         return delegate.execute(call);
+    }
+
+    /**
+     * Sub-agent registry calls are currently synchronous, so their existing
+     * handoff behavior remains unchanged. A non-subagent delegate may already
+     * expose a pending operation; preserve that state instead of forcing the
+     * delegate through its blocking compatibility method.
+     */
+    @Override
+    public AgentToolExecution start(AgentToolCall call) throws Exception {
+        if (call == null) {
+            return AgentToolExecution.completed(AgentToolResult.builder()
+                    .status(AgentToolExecutionStatus.COMPLETED)
+                    .build());
+        }
+        String toolName = call.getName();
+        if (subAgentRegistry != null && subAgentRegistry.supports(toolName)) {
+            return AgentToolExecution.completed(AgentToolResult.builder()
+                    .name(toolName)
+                    .callId(call.getCallId())
+                    .output(execute(call))
+                    .status(AgentToolExecutionStatus.COMPLETED)
+                    .build());
+        }
+        if (delegate == null) {
+            throw new IllegalStateException("toolExecutor is required for non-subagent tool: " + toolName);
+        }
+        return AsyncToolExecutors.start(delegate, call);
     }
 
     private String executeSubAgent(AgentToolCall call, String toolName) throws Exception {

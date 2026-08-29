@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.coding.loop;
 
+import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
@@ -170,6 +171,30 @@ public class CodingAgentLoopController {
         boolean toolError = hasToolError(result);
         boolean explicitQuestion = policy.isStopOnExplicitQuestion() && looksLikeQuestion(outputText);
         boolean candidateContinue = shouldContinue(policy, result, compactApplied, outputText);
+
+        // Structured runtime status is authoritative. Text heuristics must not
+        // auto-follow a durable wait or a lower-level execution boundary.
+        if (result != null && AgentExecutionStatus.WAITING.equals(result.getExecutionStatus())) {
+            return stopDecision(turnNumber, CodingStopReason.NEEDS_USER_INPUT,
+                    "Stopped because a tool is waiting for durable external completion.")
+                    .toBuilder()
+                    .compactApplied(compactApplied)
+                    .build();
+        }
+        if (result != null && AgentExecutionStatus.FAILED.equals(result.getExecutionStatus())) {
+            return stopDecision(turnNumber, CodingStopReason.ERROR,
+                    "Stopped because the Agent slice failed.")
+                    .toBuilder()
+                    .compactApplied(compactApplied)
+                    .build();
+        }
+        if (result != null && AgentExecutionStatus.CONTINUATION_REQUIRED.equals(result.getExecutionStatus())) {
+            return stopDecision(turnNumber, CodingStopReason.CONTINUATION_REQUIRED,
+                    "Stopped at the Agent slice boundary; the Harness can resume the coding session.")
+                    .toBuilder()
+                    .compactApplied(compactApplied)
+                    .build();
+        }
 
         if (approvalBlocked && policy.isStopOnApprovalBlock()) {
             return stopDecision(turnNumber, CodingStopReason.BLOCKED_BY_APPROVAL, "Stopped because tool approval was rejected.")
@@ -389,7 +414,15 @@ public class CodingAgentLoopController {
                 .autoContinued(autoFollowUps > 0)
                 .autoFollowUpCount(autoFollowUps)
                 .lastCompactApplied(decision != null && decision.isCompactApplied())
+                .executionStatus(effectiveStatus(lastResult))
+                .operationId(lastResult == null ? null : lastResult.getOperationId())
+                .waitId(lastResult == null ? null : lastResult.getWaitId())
                 .build();
+    }
+
+    private AgentExecutionStatus effectiveStatus(CodingAgentResult result) {
+        return result == null || result.getExecutionStatus() == null
+                ? AgentExecutionStatus.COMPLETED : result.getExecutionStatus();
     }
 
     private boolean hasApprovalBlockedResult(CodingAgentResult result) {

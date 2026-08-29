@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
@@ -583,6 +584,9 @@ public class CodingAgentBuilder {
     private static ToolExecutor decorate(String toolName, ToolExecutor executor, ToolExecutorDecorator decorator) {
         if (decorator == null || executor == null) {
             return executor;
+        }
+        if (executor instanceof AsyncToolExecutor) {
+            return decorator.decorateAsync(toolName, (AsyncToolExecutor) executor);
         }
         return decorator.decorate(toolName, executor);
     }
