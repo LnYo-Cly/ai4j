@@ -204,11 +204,6 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
     private AgentToolExecution inputWait(AgentToolCall call,
                                          AgentHostInputException cause,
                                          String invocationId) {
-        Map<String, Object> payload = new LinkedHashMap<String, Object>();
-        payload.put("toolName", call.getName());
-        payload.put("callId", call.getCallId());
-        payload.put("arguments", call.getArguments());
-        payload.put("request", cause.getRequest());
         WaitRecord wait = ensureToolWait(call, null, WaitType.USER_INPUT);
         context.getGateway().markToolInvocationWaiting(invocationId, null,
                 wait.getWaitId(), context.getActor());

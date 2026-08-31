@@ -119,7 +119,6 @@ public final class FileHarnessStore implements HarnessStore {
                 snapshot = HarnessState.empty(harnessId);
             }
         }
-        long snapshotVersion = snapshot.getVersion();
         HarnessState latest = snapshot;
         boolean recoveredJournalState = false;
         if (Files.exists(journalFile)) {

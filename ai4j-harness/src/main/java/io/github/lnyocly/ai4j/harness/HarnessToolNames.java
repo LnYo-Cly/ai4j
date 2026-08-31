@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.harness;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -33,7 +34,7 @@ public final class HarnessToolNames {
     }
 
     public static List<String> all() {
-        return ORDERED;
+        return Collections.unmodifiableList(new ArrayList<String>(ORDERED));
     }
 
     public static Set<String> asSet() {
