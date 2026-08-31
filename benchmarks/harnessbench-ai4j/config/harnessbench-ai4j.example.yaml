@@ -1,0 +1,34 @@
+# HarnessBench model-config entries for the ai4j bridge.
+#
+# Copy the `models:` entries below into the HarnessBench checkout's
+# config/harness.yaml (or point HARNESSBENCH_HARNESS_CONFIG at this file),
+# replacing <ABS-PATH-TO-REPO> with this repository's absolute path.
+# The adapter is the stock `generic_cli`; the bridge shell script receives
+# all context through HARNESSBENCH_* environment variables.
+#
+# Provider configuration travels through the environment of the shell that
+# runs HarnessBench (generic_cli copies os.environ into the adapter env);
+# the model_config `env` key is NOT forwarded by generic_cli:
+#   AI4J_BENCH_API_KEY   provider API key (required for live runs; never commit)
+#   AI4J_BENCH_BASE_URL  optional OpenAI-compatible base URL
+#   AI4J_BENCH_MODEL     model id for the agent (default gpt-4o-mini)
+#
+# Protocol smoke without credentials:
+#   export AI4J_BENCH_SCRIPT=/path/to/scenario.json (see tests/scenarios/)
+
+models:
+  ai4j-harness:
+    adapter: generic_cli
+    command: bash
+    args:
+      - "<ABS-PATH-TO-REPO>/benchmarks/harnessbench-ai4j/bin/ai4j-bridge-harness.sh"
+    session_prefix: harnessbench-ai4j
+    timeout_sec: 900
+
+  ai4j-bare:
+    adapter: generic_cli
+    command: bash
+    args:
+      - "<ABS-PATH-TO-REPO>/benchmarks/harnessbench-ai4j/bin/ai4j-bridge-bare.sh"
+    session_prefix: harnessbench-ai4j-bare
+    timeout_sec: 900

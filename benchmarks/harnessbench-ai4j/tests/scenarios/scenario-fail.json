@@ -1,0 +1,9 @@
+{
+  "comment": "Provider-level failure: the bridge must exit non-zero with status FAILED.",
+  "steps": [
+    {
+      "type": "fail",
+      "text": "scripted provider failure"
+    }
+  ]
+}
