@@ -13,8 +13,8 @@ TOOL="${1:?tool required}"
 PROMPT_FILE="${2:?prompt_file required}"
 SESSION_ID="${3:?session_id required}"
 
-MODEL="${AGENT_ROUND_MODEL:-gpt-5.6-luna}"
-THINKING="${AGENT_ROUND_THINKING:-high}"
+MODEL="${AGENT_ROUND_MODEL:-gpt-5.6-terra}"
+THINKING="${AGENT_ROUND_THINKING:-medium}"
 SANDBOX_DIR="$(cd "$(dirname "$PROMPT_FILE")" && pwd)"
 HERMES_BIN="${HERMES_BIN:-C:/Users/1/AppData/Local/hermes/bin/hermes.exe}"
 
