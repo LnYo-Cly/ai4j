@@ -14,6 +14,7 @@ import java.util.Set;
 public final class BuiltInTools {
 
     public static final String BASH = "bash";
+    public static final String BASH_PROCESS = "bash_process";
     public static final String READ_FILE = "read_file";
     public static final String WRITE_FILE = "write_file";
     public static final String APPLY_PATCH = "apply_patch";
@@ -23,7 +24,7 @@ public final class BuiltInTools {
     public static final String UPDATE_AGENTS_MD = "update_agents_md";
 
     private static final Set<String> CODING_TOOL_NAMES = Collections.unmodifiableSet(
-            new LinkedHashSet<String>(Arrays.asList(BASH, READ_FILE, WRITE_FILE, APPLY_PATCH, GLOB, GREP, EDIT, UPDATE_AGENTS_MD))
+            new LinkedHashSet<String>(Arrays.asList(BASH, BASH_PROCESS, READ_FILE, WRITE_FILE, APPLY_PATCH, GLOB, GREP, EDIT, UPDATE_AGENTS_MD))
     );
 
     private static final Set<String> READ_ONLY_CODING_TOOL_NAMES = Collections.unmodifiableSet(
@@ -32,6 +33,7 @@ public final class BuiltInTools {
 
     private static final List<Tool> CODING_TOOLS = Collections.unmodifiableList(Arrays.asList(
             bashTool(),
+            bashProcessTool(),
             readFileTool(),
             writeFileTool(),
             applyPatchTool(),
@@ -60,17 +62,29 @@ public final class BuiltInTools {
 
     public static Tool bashTool() {
         Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
-        properties.put("action", property("string", "bash action to perform.", Arrays.asList("exec", "start", "status", "logs", "write", "stop", "list")));
-        properties.put("command", property("string", "Command string to execute. Use exec for self-terminating commands; use start for interactive or long-running commands."));
+        properties.put("command", property("string", "Command string to execute. Must be non-interactive and exit by itself; use bash_process for long-running or interactive processes."));
         properties.put("cwd", property("string", "Relative working directory inside the workspace."));
-        properties.put("timeoutMs", property("integer", "Execution timeout in milliseconds for exec."));
-        properties.put("processId", property("string", "Background process identifier."));
-        properties.put("offset", property("integer", "Log cursor offset."));
-        properties.put("limit", property("integer", "Maximum log characters to return."));
-        properties.put("input", property("string", "Text written to stdin for a background process started with action=start."));
+        properties.put("timeoutMs", property("integer", "Execution timeout in milliseconds."));
         return tool(
                 BASH,
-                "Execute non-interactive shell commands or manage interactive/background shell processes inside the workspace.",
+                "Execute a non-interactive shell command that exits by itself.",
+                properties,
+                Collections.singletonList("command")
+        );
+    }
+
+    public static Tool bashProcessTool() {
+        Map<String, Tool.Function.Property> properties = new LinkedHashMap<String, Tool.Function.Property>();
+        properties.put("action", property("string", "Process action to perform.", Arrays.asList("start", "status", "logs", "write", "stop", "list")));
+        properties.put("command", property("string", "Command string to start (action=start)."));
+        properties.put("cwd", property("string", "Relative working directory inside the workspace (action=start)."));
+        properties.put("processId", property("string", "Background process identifier."));
+        properties.put("input", property("string", "Text written to the process stdin (action=write)."));
+        properties.put("offset", property("integer", "Log cursor offset (action=logs)."));
+        properties.put("limit", property("integer", "Maximum log characters to return (action=logs)."));
+        return tool(
+                BASH_PROCESS,
+                "Manage interactive or long-running background shell processes: start one that waits for stdin, opens a REPL, starts a server, tails logs, or keeps running; then inspect status, read logs, write stdin, or stop it.",
                 properties,
                 Collections.singletonList("action")
         );
@@ -227,6 +241,9 @@ public final class BuiltInTools {
         }
         if (BASH.equals(name)) {
             return bashTool();
+        }
+        if (BASH_PROCESS.equals(name)) {
+            return bashProcessTool();
         }
         if (GLOB.equals(name)) {
             return globTool();

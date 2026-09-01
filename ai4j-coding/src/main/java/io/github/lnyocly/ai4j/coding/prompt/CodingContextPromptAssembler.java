@@ -36,8 +36,7 @@ public final class CodingContextPromptAssembler {
         if (!isBlank(workspaceContext.getDescription())) {
             builder.append("Workspace description: ").append(workspaceContext.getDescription()).append("\n");
         }
-        builder.append("Tool selection: read_file before changing a file; write_file for whole files; edit for precise replacements; apply_patch for multi-file structured diffs; bash for search, git, build, test, and processes; update_agents_md to persist project conventions and decisions.\n");
-        builder.append("bash timing: use action=exec only for non-interactive commands that exit by themselves. If a command may wait for stdin, open a REPL, start a server, tail logs, or keep running, use action=start, then action=logs/status/write/stop.\n");
+        builder.append("Tool selection: read_file before changing a file; write_file for whole files; edit for precise replacements; apply_patch for multi-file structured diffs; bash for self-terminating commands (search, git, build, test); bash_process to start and manage interactive or long-running processes; update_agents_md to persist project conventions and decisions.\n");
         builder.append("apply_patch grammar: *** Begin Patch, then *** Add File:/*** Update File:/*** Delete File:, end with *** End Patch.\n");
         builder.append(ShellCommandSupport.buildShellUsageGuidance()).append("\n");
         if (!workspaceContext.isAllowOutsideWorkspace()) {
