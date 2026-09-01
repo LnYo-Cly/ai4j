@@ -1,0 +1,47 @@
+{
+  "completionClaim": "在不改动生产运行语义的前提下，为 ai4j 建立 HarnessBench 2.0 评测适配：独立 benchmarks/harnessbench-ai4j/ 目录承载 Java bridge（复用官方 generic_cli adapter，HARNESSBENCH_* env 驱动，每轮独立 JVM），harness 模式经 CodingAgentHarness 文件持久化实现跨轮/跨进程续跑并按 session 绑定既有 runtime Task（不预注册 bench task_id），bare 模式提供 transcript-replay 对照组；每轮导出从磁盘 store 读回的 harness_audit.json 状态投影与 execution_trace.json 时间线，配套 audit/check_audit.py 不变量检查器与 docs/COVERAGE.md 八类任务×五证据通道归属矩阵；协议回归（无模型凭据依赖）6 场景 25 断言全绿。另修复 ai4j-harness 三处既有 SpotBugs 违规（行为保持清理），解除 kernel 基线对所有后续 PR 的 CI 阻塞。",
+  "deliverables": [
+    "benchmarks/harnessbench-ai4j/java/io/github/lnyocly/ai4j/harnessbench/HarnessBenchBridge.java",
+    "benchmarks/harnessbench-ai4j/bin/ai4j-bridge.sh",
+    "benchmarks/harnessbench-ai4j/bin/ai4j-bridge-harness.sh",
+    "benchmarks/harnessbench-ai4j/bin/ai4j-bridge-bare.sh",
+    "benchmarks/harnessbench-ai4j/audit/check_audit.py",
+    "benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh",
+    "benchmarks/harnessbench-ai4j/tests/scenarios",
+    "benchmarks/harnessbench-ai4j/config/harnessbench-ai4j.example.yaml",
+    "benchmarks/harnessbench-ai4j/README.md",
+    "benchmarks/harnessbench-ai4j/docs/COVERAGE.md",
+    "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/FileHarnessStore.java",
+    "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessToolExecutor.java",
+    "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessToolNames.java"
+  ],
+  "outputs": [
+    "协议回归 receipts: benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh → 25 passed, 0 failed（两次独立运行）",
+    "定向回归: mvn -pl ai4j-harness -DskipTests=false test → Tests run: 50, Failures: 0, Errors: 0",
+    "SpotBugs: mvn -pl ai4j-harness compile spotbugs:check → BugInstance size is 0",
+    "PR #276 CI（https://github.com/LnYo-Cly/ai4j/actions/runs/33424016463）: quality-gates pass、module-tests 全矩阵 pass（ai4j-agent/JDK8/windows 的 A2AServerTest 为既有抖动已 rerun）、package-smoke/check-size pass",
+    "HA ledger: fact F-B95C0363、dec_D602AE747A0B31515BD01C19EE、dec_E063A39CDEA01E614D514CE4E3"
+  ],
+  "verificationNotes": [
+    "协议回归 25/25：动态Task创建、跨进程续跑（round2 新进程复活 round1 runtime-task-a）、有界切片 checkpoint 持久化+恢复、异步工具 WAITING 持久开等待、provider 失败退出码 1、bare 对照诚实报告无持久化状态",
+    "ai4j-harness 模块测试 50/50 绿（改动后复跑）",
+    "spotbugs:check 0 findings（3 处修复后）",
+    "diff 面核验：相对声明 base b748f6f3 仅 2 提交 18 文件，全部位于 benchmarks/ 与 ai4j-harness 三处清理",
+    "wrapper 脚本烟测：ai4j-bridge-harness.sh 输出合法 JSON 结果行且审计文件落盘",
+    "PR #276 CI 矩阵绿后以 --ci passed 收口"
+  ],
+  "knownGaps": [
+    "真实模型跑分未执行：需 AI4J_BENCH_API_KEY（环境 blocker，非跳过声明）；README/COVERAGE 已给出 ai4j-harness/ai4j-bare 配置与运行命令",
+    "Docker 隔离任务路径未跑：bridge 与其他 CLI adapter 同为 host 运行",
+    "SIGKILL-mid-write 恢复注入未在本任务面执行：每次 bridge 启动实际经过 store 的 journal replay（readRecovered），但硬杀注入归 FileHarnessStore 模块测试所有",
+    "UNKNOWN/CANCELLED 退出码 2 路径未被脚本场景触发（代码审查与 exitCode 单元逻辑核验，未做成场景断言）",
+    "UNKNOWN-not-blindly-retried 在模块套件中无直接 owner，COVERAGE.md 已如实标注"
+  ],
+  "residualRisks": [
+    "generic_cli 不转发 model_config 的 env 键，benchmark 配置必须经运行 shell 环境传递——已在 README/COVERAGE 标注，误配会以缺失变量显式失败",
+    "bare 模式 transcript-replay 是弱对照：只证明结果差异，不是第二套实现",
+    "prompt 轮次解析依赖 prompt-round{N}.txt 命名；上游若改名需显式设 AI4J_BENCH_ROUND",
+    "HarnessBench upstream checkout 无版本 pin，升级可能漂移 adapter 契约（generic_cli 契约面小，风险低）"
+  ],
+  "commitSha": "2712ebfd7ad36d02a05d85748206d7e9a6892223"
+}

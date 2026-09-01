@@ -1,0 +1,26 @@
+{
+  "verdict": "approved",
+  "reason": "All four checks passed. [1] bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh ended with 'protocol regression: 25 passed, 0 failed' and kept work root /tmp/ai4j-harnessbench-test-rL6pZ2 (Windows: C:\\Users\\1\\AppData\\Local\\Temp\\ai4j-harnessbench-test-rL6pZ2). [2] git diff b748f6f3..HEAD --name-only listed only paths under benchmarks/ or ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/, with exactly the three harness files FileHarnessStore.java, HarnessToolExecutor.java, HarnessToolNames.java. [3] python benchmarks/harnessbench-ai4j/audit/check_audit.py <sandbox>/s1 --expect-status COMPLETED exited 0 with summary '4 passed, 7 not exercised, 0 failed'. [4] README.md and docs/COVERAGE.md document the same protocol-test and audit commands that were run; no command drift observed.",
+  "evidenceChecked": [
+    {
+      "check": 1,
+      "command": "bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh",
+      "observed": "protocol regression: 25 passed, 0 failed; work root kept for inspection: /tmp/ai4j-harnessbench-test-rL6pZ2"
+    },
+    {
+      "check": 2,
+      "command": "git diff b748f6f3..HEAD --name-only",
+      "observed": "only benchmarks/ and ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/ (FileHarnessStore.java, HarnessToolExecutor.java, HarnessToolNames.java)"
+    },
+    {
+      "check": 3,
+      "command": "python benchmarks/harnessbench-ai4j/audit/check_audit.py C:\\Users\\1\\AppData\\Local\\Temp\\ai4j-harnessbench-test-rL6pZ2\\s1 --expect-status COMPLETED",
+      "observed": "exit 0; summary line: 4 passed, 7 not exercised, 0 failed"
+    },
+    {
+      "check": 4,
+      "command": "read benchmarks/harnessbench-ai4j/README.md and benchmarks/harnessbench-ai4j/docs/COVERAGE.md",
+      "observed": "documented protocol regression and audit commands match the commands actually run; no drift"
+    }
+  ]
+}

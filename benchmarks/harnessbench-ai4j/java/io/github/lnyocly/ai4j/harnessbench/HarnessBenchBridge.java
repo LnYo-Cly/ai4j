@@ -207,6 +207,11 @@ public final class HarnessBenchBridge {
             case DONE:
             case CANCELLED:
                 return null; // terminal: let the round start fresh
+            case IN_REVIEW:
+                // Governance state: the kernel refuses new executions here.
+                // Continue the round session-scoped instead of bypassing the
+                // review; the IN_REVIEW task stays visible in the audit.
+                return null;
             default:
                 return task.getTaskId();
         }
@@ -219,13 +224,16 @@ public final class HarnessBenchBridge {
                 .model(cfg.model)
                 .workspaceContext(WorkspaceContext.builder()
                         .rootPath(cfg.workspace.toString())
-                        .build())
-                .codingOptions(CodingAgentOptions.builder()
-                        .includeBuiltInTools(false)
                         .build());
         if (tools != null) {
+            // Scripted scenario: the scenario owns the single benchmark tool.
+            builder.codingOptions(CodingAgentOptions.builder()
+                    .includeBuiltInTools(false)
+                    .build());
             builder.toolRegistry(tools.registry).toolExecutor(tools.executor);
         }
+        // Live runs keep the coding agent's built-in tools (read/write/bash
+        // and friends) so the model can actually operate on the workspace.
         return builder.build();
     }
 
