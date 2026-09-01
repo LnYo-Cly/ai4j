@@ -81,7 +81,7 @@ public final class BuiltInTools {
         properties.put("path", property("string", "File path to write. Relative paths resolve from the workspace root; absolute paths are allowed."));
         properties.put("content", property("string", "Full text content to write."));
         properties.put("mode", property("string", "Write mode.", Arrays.asList("create", "overwrite", "append")));
-        return tool(
+        return strictTool(
                 WRITE_FILE,
                 "Create, overwrite, or append a text file.",
                 properties,
@@ -134,7 +134,7 @@ public final class BuiltInTools {
         properties.put("old_string", property("string", "Exact text to find in the file. Must match exactly including whitespace and indentation."));
         properties.put("new_string", property("string", "Replacement text."));
         properties.put("replaceAll", property("boolean", "Replace all occurrences. By default only a single unique match is allowed."));
-        return tool(
+        return strictTool(
                 EDIT,
                 "Perform exact string replacements in a file. The old_string must match uniquely unless replaceAll is true.",
                 properties,
@@ -187,6 +187,23 @@ public final class BuiltInTools {
                              List<String> required) {
         Tool.Function.Parameter parameter = new Tool.Function.Parameter("object", properties, required);
         Tool.Function function = new Tool.Function(name, description, parameter);
+        return new Tool("function", function);
+    }
+
+    /**
+     * Strict-mode variant for tools whose parameters are all genuinely
+     * required: the provider then guarantees tool calls conform to the schema.
+     * (OpenAI strict mode additionally requires every property in
+     * {@code required} and {@code additionalProperties:false};
+     * {@link Tool.Function.Parameter#enforceStrictSchema()} fixes both.)
+     */
+    private static Tool strictTool(String name,
+                                   String description,
+                                   Map<String, Tool.Function.Property> properties,
+                                   List<String> required) {
+        Tool.Function.Parameter parameter = new Tool.Function.Parameter("object", properties, required)
+                .enforceStrictSchema();
+        Tool.Function function = new Tool.Function(name, description, parameter, Boolean.TRUE);
         return new Tool("function", function);
     }
 
