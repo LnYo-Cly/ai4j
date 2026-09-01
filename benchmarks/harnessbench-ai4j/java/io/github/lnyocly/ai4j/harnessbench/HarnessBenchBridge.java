@@ -158,7 +158,8 @@ public final class HarnessBenchBridge {
                         .sessionId(cfg.sessionId)
                         .idempotencyKey(idempotencyKey)
                         .input(prompt)
-                        .budget(HarnessRunBudget.builder().maxSteps(cfg.maxSteps).build())
+                        .budget(HarnessRunBudget.builder().maxSteps(cfg.maxSteps)
+                                .maxWallTimeMillis(cfg.wallMillis).build())
                         .build();
             } else {
                 request = HarnessRunRequest.builder()
@@ -225,6 +226,9 @@ public final class HarnessBenchBridge {
                 .workspaceContext(WorkspaceContext.builder()
                         .rootPath(cfg.workspace.toString())
                         .build());
+        if (cfg.reasoning != null) {
+            builder.reasoning(cfg.reasoning);
+        }
         if (tools != null) {
             // Scripted scenario: the scenario owns the single benchmark tool.
             builder.codingOptions(CodingAgentOptions.builder()
@@ -757,11 +761,14 @@ public final class HarnessBenchBridge {
         final String apiKey;
         final String baseUrl;
         final String model;
+        final String reasoning;
+        final long wallMillis;
         final Path scriptPath;
 
         BridgeConfig(String mode, boolean autoResume, int maxSteps, Path workspace, Path stateDir,
                      Path auditDir, String sessionId, String benchTaskId, String modelId, int round,
-                     Path promptFile, String apiKey, String baseUrl, String model, Path scriptPath) {
+                     Path promptFile, String apiKey, String baseUrl, String model, String reasoning,
+                     long wallMillis, Path scriptPath) {
             this.mode = mode;
             this.autoResume = autoResume;
             this.maxSteps = maxSteps;
@@ -776,6 +783,8 @@ public final class HarnessBenchBridge {
             this.apiKey = apiKey;
             this.baseUrl = baseUrl;
             this.model = model;
+            this.reasoning = reasoning;
+            this.wallMillis = wallMillis;
             this.scriptPath = scriptPath;
         }
 
@@ -794,7 +803,7 @@ public final class HarnessBenchBridge {
             return new BridgeConfig(
                     envVal(env, "AI4J_BENCH_MODE", "harness"),
                     Boolean.parseBoolean(envVal(env, "AI4J_BENCH_AUTO_RESUME", "true")),
-                    Integer.parseInt(envVal(env, "AI4J_BENCH_MAX_STEPS", "24")),
+                    Integer.parseInt(envVal(env, "AI4J_BENCH_MAX_STEPS", "32")),
                     Paths.get(workspace),
                     stateDir,
                     Paths.get(envVal(env, "AI4J_BENCH_AUDIT_DIR",
@@ -807,6 +816,8 @@ public final class HarnessBenchBridge {
                     env.get("AI4J_BENCH_API_KEY"),
                     env.get("AI4J_BENCH_BASE_URL"),
                     envVal(env, "AI4J_BENCH_MODEL", "gpt-4o-mini"),
+                    env.get("AI4J_BENCH_REASONING"),
+                    Long.parseLong(envVal(env, "AI4J_BENCH_WALL_SECONDS", "900")) * 1000L,
                     env.get("AI4J_BENCH_SCRIPT") == null ? null : Paths.get(env.get("AI4J_BENCH_SCRIPT")));
         }
     }

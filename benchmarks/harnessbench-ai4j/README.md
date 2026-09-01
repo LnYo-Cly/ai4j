@@ -98,3 +98,21 @@ LLM-rubric quality signals, and which Harness-internal guarantees (durable
 state, cross-process recovery, idempotent redelivery, approval gates,
 UNKNOWN/cancel handling) require the audit exports and the ai4j-harness module
 test suite.
+
+## 实测对照（2026-09-01，gpt-5.6-terra / reasoning medium / 同网关同 key）
+
+优先任务 × 五臂（各臂裸配置：codex `--yolo` 无 skill、opencode `--pure`、pi `--no-skills --no-extensions`、hermes oneshot）：
+
+| 臂 | 001 | 057 | 058 | 059 | 105 | 106 | 多轮均值 | 轮次稳定率 |
+|---|---|---|---|---|---|---|---|---|
+| **ai4j-harness** | 1.00 | 0.81 | **1.00** | **1.00** | **0.72** | **0.64** | **0.834** | 100% |
+| codex CLI | 1.00 | 0.88 | 0.30* | 0.24* | 0.22* | 0.47 | 0.421 | 50% |
+| hermes | 1.00 | 0.73 | **1.00** | **1.00** | 0.22 | 0.51 | 0.692 | 100% |
+| opencode | 1.00 | 0.81 | **1.00** | **1.00** | 0.56 | 0.47 | 0.767 | 100% |
+| pi | 1.00 | 1.00 | 0.00* | **1.00** | 0.70 | 0.61 | 0.662 | 83% |
+
+\* 该轮 agent 进程非零退出（模型自述未完成），分数仍计入。n=1/格，注意方差。
+
+观察：ai4j-harness 多轮均值第一；在治理语义重的 105/106 与跨轮状态 058 上居首；
+057 由 pi 领先（1.00）。reasoning 等级经 SDK `ChatModelClient` 的
+`reasoning→reasoning_effort` 映射显式下发（medium），与各臂对齐。
