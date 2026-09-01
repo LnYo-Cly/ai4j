@@ -323,7 +323,50 @@ public final class HarnessBenchBridge {
                 .writeTimeout(120, TimeUnit.SECONDS)
                 .build());
         IChatService chatService = new OpenAiChatService(configuration);
-        return new ChatModelClient(chatService);
+        // Match the retry opportunity the stock agent CLIs have internally:
+        // gateways flake with transient 5xx; retry those, not real failures.
+        return new RetryingModelClient(new ChatModelClient(chatService), 3);
+    }
+
+    /** Retries transient provider failures with backoff; surfaces the last error. */
+    private static final class RetryingModelClient implements AgentModelClient {
+        private final AgentModelClient delegate;
+        private final int maxAttempts;
+
+        RetryingModelClient(AgentModelClient delegate, int maxAttempts) {
+            this.delegate = delegate;
+            this.maxAttempts = maxAttempts;
+        }
+
+        private static boolean isTransient(Throwable t) {
+            String m = String.valueOf(t);
+            return m.contains("temporarily unavailable")
+                    || m.contains("Upstream service")
+                    || m.contains("502") || m.contains("503") || m.contains("504")
+                    || m.contains("timeout") || m.contains("Timeout");
+        }
+
+        @Override
+        public AgentModelResult create(AgentPrompt prompt) throws Exception {
+            Exception last = null;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    return delegate.create(prompt);
+                } catch (Exception e) {
+                    if (!isTransient(e) || attempt == maxAttempts) {
+                        throw e;
+                    }
+                    last = e;
+                    Thread.sleep(attempt * 5_000L);
+                }
+            }
+            throw last;
+        }
+
+        @Override
+        public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) throws Exception {
+            return create(prompt);
+        }
     }
 
     private static String require(String value, String name) {
