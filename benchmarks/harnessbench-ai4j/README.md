@@ -132,6 +132,12 @@ test suite.
 | 060-task-cancellation-cleanup | 1.00 | — | |
 | 061-periodic-status-rollup | 1.00 | — | |
 | 103-policy-update-replan-diff | 0.60 | original_plan(0.5)、revised_plan(0.0) | oracle 只认顶层 `decisions/plan_items/items` 数组且要求 item 级 workstream 字段，prompt 未规定 schema；模型按 workstreams 分组嵌套 decisions（提示词的合理读法）→ item 级检查全灭。benchmark 侧 schema 缺口，非 SDK 缺陷 |
+
+**103 schema 缺口因果验证（本地诊断，非官方分数）**：仅给 prompt_round1/2 补上
+"top-level `decisions` 扁平数组 + 每个 decision 自带 workstream/region" 的显式 schema
+（oracle 未动），同模型同臂复跑 **0.60 → 0.98**（original_plan 0.5→1.0、revised_plan
+0.0→1.0）。证实该失分纯属 prompt↔oracle 约定不一致；已按此素材向上游
+（Qihoo360/harness-bench）报告。补丁后的分数不与官方矩阵可比。
 | 104-async-ops-window-rollup | 0.80 | state(0.55) | 模型把被忽略的 UP-LATE/UP-OLD 也记入 `seen_update_ids`；oracle 要求与合法集严格相等。语义分歧（"观察到" vs "计为有效"） |
 
 6 任务均值 **0.881**（本类最高批次）；adapter 6/6 成功，轮次完成率 100%（含 339s/488s/588s
