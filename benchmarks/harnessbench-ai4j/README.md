@@ -120,3 +120,21 @@ test suite.
 059 跨 4+ 次运行全满分，轮次完成率 100%（codex 50%）。单样本 0.867 属高方差侧；
 106 方差最大（0.63–0.85），057 的失分项（state_scores/skip_audit）为模型输出
 形状的采样方差（oracle 要求 dict+status 字段），非框架缺陷。
+
+## Long-running 类扩展覆盖（2026-09-02，ai4j-harness 臂，同模型同配置）
+
+此前未实测的 6 个 Long-running 类任务各跑 1 次 live：
+
+| 任务 | combined | 失分项 | 归因 |
+|---|---|---|---|
+| 007-session-memory | 1.00 | — | |
+| 014-task-decomposition | 0.89 | progress_tracking | progress.md 只写 start→done，无 pending 生命周期标记（oracle 查 4 态词汇）；输出习惯差异 |
+| 060-task-cancellation-cleanup | 1.00 | — | |
+| 061-periodic-status-rollup | 1.00 | — | |
+| 103-policy-update-replan-diff | 0.60 | original_plan(0.5)、revised_plan(0.0) | oracle 只认顶层 `decisions/plan_items/items` 数组且要求 item 级 workstream 字段，prompt 未规定 schema；模型按 workstreams 分组嵌套 decisions（提示词的合理读法）→ item 级检查全灭。benchmark 侧 schema 缺口，非 SDK 缺陷 |
+| 104-async-ops-window-rollup | 0.80 | state(0.55) | 模型把被忽略的 UP-LATE/UP-OLD 也记入 `seen_update_ids`；oracle 要求与合法集严格相等。语义分歧（"观察到" vs "计为有效"） |
+
+6 任务均值 **0.881**（本类最高批次）；adapter 6/6 成功，轮次完成率 100%（含 339s/488s/588s
+长轮，均在 900s 墙钟预算内，无截断）。Long-running 类 11 任务累计（含 057–059/105/106
+中位数）：均值约 0.860。本批 6 任务未发现 SDK 缺陷，失分全部为模型输出形状或
+oracle 语义严格性差异。
