@@ -179,10 +179,33 @@ Long-running 类 11 任务累计（含 057–059/105/106
 中位数）：均值约 0.860。本批 6 任务未发现 SDK 缺陷，失分全部为模型输出形状或
 oracle 语义严格性差异。
 
+## 跨类通用性批次（2026-09-03，ai4j-harness 臂，每类 2 个代表）
+
+Software/Workspace/Knowledge/Data 四类各 2 代表、基线 prompt、单样本（Workspace 的
+078 需要 cloudflared 公网隧道环境前置，环境阻塞，以 020 替补）：
+
+| 类 | 任务 | combined | 失分项（全部为模型内容级错误）|
+|---|---|---|---|
+| Software | 016-code-repair-pytest | 0.70 | 误改不该动的测试文件（hash 校验）|
+| Software | 009-git-pr-merge | 1.00 | — |
+| Workspace | 002-exec | 1.00 | — |
+| Workspace | 020-archive-checksum | 1.00 | — |
+| Knowledge | 015-security-injection-defense | 0.70 | 隔离区文件命名/多余文件 |
+| Knowledge | 036-citation-consistency-audit | 0.78 | errors_csv 一处 |
+| Data | 051-sql-query-report | 0.69 | 误改输入 fixtures、区域/日期边界谓词 |
+| Data | 049-excel-like-cleaning | 1.00 | — |
+
+均值 **0.859**；adapter 8/8 成功、零硬失败；`audit/check_audit.py` 内变量
+（动态任务创建、round 连续性、checkpoint 一致性、幂等保留等）**8/8 通过**。
+结合 Long-running 类 11/11：内核不变量已在 **5 个任务域**采样成立——
+"通用执行架构"在有限采样边界内立住；**"优势"主张仍由长时类对照承载**
+（单轮任务不触发 durability 差异化机制，本批与对照臂预期差距收窄属预期）。
+
 ## 覆盖范围（对全部 106 任务）
 
-HarnessBench 共 8 类 106 任务。当前官方实测 12 个：Long-running 类 **11/11 全覆盖**
-（含五臂对照与方差复核），另有 Workspace 类 001。**其余 7 类（Software 22、
-Workspace 14、Data 14、Knowledge 13、Office 12、Vertical 12、SRE 7）尚未实测**——
-本 README 的五臂对照结论仅在 Long-running 类内成立，外推到其他类需补测
-（每类 1–2 个代表任务即可获得该类的首轮信号）。
+HarnessBench 共 8 类 106 任务。当前官方实测 **20 个次**（去重 19 任务）：
+Long-running 类 **11/11 全覆盖**（含五臂对照与方差复核）、Software/Workspace/
+Knowledge/Data 各 2 代表、另有 001。**Office 12、Vertical 12、SRE 7 尚未实测**——
+本 README 的跨臂对照结论仅在 Long-running 类内成立；跨类单臂不变量结论覆盖上述
+5 域。Office/Vertical 以长文档综合为主（考模型多于考框架）、SRE 为运维推理，
+需要时每类 1–2 代表即可补齐。
