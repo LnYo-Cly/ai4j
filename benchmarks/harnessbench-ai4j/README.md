@@ -184,22 +184,30 @@ oracle 语义严格性差异。
 Software/Workspace/Knowledge/Data 四类各 2 代表、基线 prompt、单样本（Workspace 的
 078 需要 cloudflared 公网隧道环境前置，环境阻塞，以 020 替补）：
 
-| 类 | 任务 | combined | 失分项（全部为模型内容级错误）|
+| 类 | 任务 | combined | 失分项 |
 |---|---|---|---|
-| Software | 016-code-repair-pytest | 0.70 | 误改不该动的测试文件（hash 校验）|
+| Software | 016-code-repair-pytest | 0.70 | `test_file_hash_unchanged`——**oracle 金标 hash 与自带 fixture 不一致**（基准打包问题，见下）|
 | Software | 009-git-pr-merge | 1.00 | — |
 | Workspace | 002-exec | 1.00 | — |
 | Workspace | 020-archive-checksum | 1.00 | — |
-| Knowledge | 015-security-injection-defense | 0.70 | 隔离区文件命名/多余文件 |
-| Knowledge | 036-citation-consistency-audit | 0.78 | errors_csv 一处 |
-| Data | 051-sql-query-report | 0.69 | 误改输入 fixtures、区域/日期边界谓词 |
+| Knowledge | 015-security-injection-defense | 0.70 | 隔离区文件命名/多余文件（模型内容级）|
+| Knowledge | 036-citation-consistency-audit | 0.78 | errors_csv 一处（模型内容级）|
+| Data | 051-sql-query-report | 0.69 | `fixtures_unchanged`——**同上 stale golden hash**；区域/日期两项为本轮模型内容错误 |
 | Data | 049-excel-like-cleaning | 1.00 | — |
 
-均值 **0.859**；adapter 8/8 成功、零硬失败；`audit/check_audit.py` 内变量
-（动态任务创建、round 连续性、checkpoint 一致性、幂等保留等）**8/8 通过**。
-结合 Long-running 类 11/11：内核不变量已在 **5 个任务域**采样成立——
-"通用执行架构"在有限采样边界内立住；**"优势"主张仍由长时类对照承载**
-（单轮任务不触发 durability 差异化机制，本批与对照臂预期差距收窄属预期）。
+**016/051 失分项修正（2026-09-04 复核）**：这两个"勿改输入"检查是基准侧
+stale golden hash——被检文件在**所有**沙箱（含未加保护的首轮批次）与任务自带
+fixture 的 md5/sha256 **完全一致**（016：oracle 硬编码 `52e242ab…` vs fixture 实际
+`bac01bef…`；051：ground_truth `57bc9430…` vs fixture 实际 `f11cc48f…`），
+文件从未被改动。该族问题与 103 schema、codex GBK 同属基准自身不一致，官方分数
+如实保留（016 的 hash 检查恒不可过、权重 0.30）。
+
+**输入保护加固（同日）**：基于早期误读曾以为模型乱改输入，为此给
+`WorkspaceContext.excludedPaths` 增加 glob 模式（`**/test_*.py` 等，段名匹配向后
+兼容）、guard 拒写信息附策略引导、bridge 新增 `AI4J_BENCH_PROTECTED_PATHS`。
+单测 16/16、live 复测（051 配 `in`、016 配 `**/test_*.py`）验证文件保持 pristine
+（md5=模板）。该能力保留为通用加固（防御真实用户的输入区被写），但**它不改变
+016/051 的官方分数**——失分根因在基准侧。
 
 ## 覆盖范围（对全部 106 任务）
 

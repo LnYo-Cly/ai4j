@@ -162,11 +162,16 @@ public final class WorkspacePathGuard {
 
     /**
      * Reject writes inside directories listed in {@link WorkspaceContext#getExcludedPaths()}.
+     * The message doubles as model guidance: excluded entries are the caller's
+     * write policy (defaults like {@code .git}, or declared inputs/tests), so the
+     * model is told to redirect instead of retrying.
      */
     static void rejectExcluded(Path canonical, WorkspaceContext workspaceContext, String originalPath) {
         if (workspaceContext.isExcluded(canonical)) {
             throw new IllegalArgumentException(
-                    "Write to excluded path is blocked: " + originalPath);
+                    "Write to excluded path is blocked by workspace write policy: " + originalPath
+                            + ". This location is protected (task input, tests, or system area) —"
+                            + " do not modify it; produce outputs elsewhere per the task instructions.");
         }
     }
 

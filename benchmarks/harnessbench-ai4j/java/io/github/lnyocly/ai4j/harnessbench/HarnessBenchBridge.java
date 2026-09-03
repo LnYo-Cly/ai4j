@@ -220,12 +220,25 @@ public final class HarnessBenchBridge {
 
     private static CodingAgent buildCodingAgent(BridgeConfig cfg) {
         ToolSupport tools = ToolSupport.fromConfig(cfg);
+        WorkspaceContext.WorkspaceContextBuilder workspace = WorkspaceContext.builder()
+                .rootPath(cfg.workspace.toString());
+        // Caller write policy: protected path globs from the environment are
+        // appended to the workspace excluded paths so write/patch tools reject
+        // them with guidance (e.g. the task contract's "do not modify inputs").
+        String protectedPaths = System.getenv("AI4J_BENCH_PROTECTED_PATHS");
+        if (protectedPaths != null && !protectedPaths.trim().isEmpty()) {
+            List<String> patterns = new ArrayList<>(WorkspaceContext.defaultExcludedPaths());
+            for (String pattern : protectedPaths.split(",")) {
+                if (!pattern.trim().isEmpty()) {
+                    patterns.add(pattern.trim());
+                }
+            }
+            workspace.excludedPaths(patterns);
+        }
         CodingAgentBuilder builder = CodingAgents.builder()
                 .modelClient(modelClient(cfg))
                 .model(cfg.model)
-                .workspaceContext(WorkspaceContext.builder()
-                        .rootPath(cfg.workspace.toString())
-                        .build());
+                .workspaceContext(workspace.build());
         if (cfg.reasoning != null) {
             builder.reasoning(cfg.reasoning);
         }
