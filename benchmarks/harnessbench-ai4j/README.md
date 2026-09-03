@@ -136,8 +136,9 @@ test suite.
 **103 schema 缺口因果验证（本地诊断，非官方分数）**：仅给 prompt_round1/2 补上
 "top-level `decisions` 扁平数组 + 每个 decision 自带 workstream/region" 的显式 schema
 （oracle 未动），同模型同臂复跑 **0.60 → 0.98**（original_plan 0.5→1.0、revised_plan
-0.0→1.0）。证实该失分纯属 prompt↔oracle 约定不一致；已按此素材向上游
-（Qihoo360/harness-bench）报告。补丁后的分数不与官方矩阵可比。
+0.0→1.0）。证实该失分纯属模型输出形状与 oracle 隐性契约的采样交互——是否属
+出题方有意设计无从外部判断，本仓库将其记为已知评测特性并如实计分（103=0.60），
+不改动基准、不据此提分，本地补丁仅用于诊断且已还原。补丁后的分数不与官方矩阵可比。
 
 ## Long-running 类五臂对照（2026-09-02，全部基线 prompt，无任何臂注入 schema 提示）
 
@@ -161,8 +162,8 @@ test suite.
   异常）, 失败（文件写错目录）]。两臂 103 分布完全重叠，单样本排名在此类任务上是噪声。
 - 真实框架级信号（durability 主场）：codex 007=0.25（跨轮会话丢失 memory_secret，
   其余四臂全 1.00）；hermes 104=0.10（out/ 全空崩溃）。ai4j 本批 0 硬失败。
-- 环境注记：codex 臂在 Windows 需 `PYTHONUTF8=1`（上游 adapter 以系统 GBK 读
-  session JSONL，遇非 ASCII 崩溃——上游 Windows bug #2，与 Defender stat 竞态同族）。
+- 环境注记：codex 臂在 Windows 需 `PYTHONUTF8=1`（adapter 在中文 locale 下以系统
+  GBK 默认编码读 session JSONL，遇非 ASCII 崩溃；`PYTHONUTF8=1` 后 6/6 通过）。
 | 104-async-ops-window-rollup | 0.80 | state(0.55) | 模型把被忽略的 UP-LATE/UP-OLD 也记入 `seen_update_ids`；oracle 要求与合法集严格相等。语义分歧（"观察到" vs "计为有效"） |
 
 6 任务均值 **0.881**（本类最高批次）；adapter 6/6 成功，轮次完成率 100%（含 339s/488s/588s
