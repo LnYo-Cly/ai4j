@@ -131,14 +131,20 @@ test suite.
 | 014-task-decomposition | 0.89 | progress_tracking | progress.md 只写 start→done，无 pending 生命周期标记（oracle 查 4 态词汇）；输出习惯差异 |
 | 060-task-cancellation-cleanup | 1.00 | — | |
 | 061-periodic-status-rollup | 1.00 | — | |
-| 103-policy-update-replan-diff | 0.60 | original_plan(0.5)、revised_plan(0.0) | oracle 只认顶层 `decisions/plan_items/items` 数组且要求 item 级 workstream 字段，prompt 未规定 schema；模型按 workstreams 分组嵌套 decisions（提示词的合理读法）→ item 级检查全灭。benchmark 侧 schema 缺口，非 SDK 缺陷 |
+| 103-policy-update-replan-diff | 0.60 | original_plan(0.5)、revised_plan(0.0) | oracle 只认顶层 `decisions/plan_items/items` 数组且要求 item 级 workstream 字段，prompt 未规定 schema；模型按 workstreams 分组嵌套 decisions（提示词的合理读法）→ item 级检查全灭。模型输出形状与 oracle 隐性契约的采样交互，非 SDK 缺陷 |
+| 104-async-ops-window-rollup | 0.80 | state(0.55) | 模型把被忽略的 UP-LATE/UP-OLD 也记入 `seen_update_ids`；oracle 要求与合法集严格相等。语义分歧（"观察到" vs "计为有效"） |
 
-**103 schema 缺口因果验证（本地诊断，非官方分数）**：仅给 prompt_round1/2 补上
+6 任务均值 **0.881**（本类最高批次）；adapter 6/6 成功，轮次完成率 100%（含 339s/488s/588s
+长轮，均在 900s 墙钟预算内，无截断）。
+
+**103 形状敏感性因果与分布（本地诊断 + 扩展采样）**：仅给 prompt_round1/2 补上
 "top-level `decisions` 扁平数组 + 每个 decision 自带 workstream/region" 的显式 schema
-（oracle 未动），同模型同臂复跑 **0.60 → 0.98**（original_plan 0.5→1.0、revised_plan
-0.0→1.0）。证实该失分纯属模型输出形状与 oracle 隐性契约的采样交互——是否属
-出题方有意设计无从外部判断，本仓库将其记为已知评测特性并如实计分（103=0.60），
-不改动基准、不据此提分，本地补丁仅用于诊断且已还原。补丁后的分数不与官方矩阵可比。
+（oracle 未动），同模型同臂复跑 **0.60 → 0.98**——证实 0.60 的失分是输出形状与
+oracle 隐性契约的交互，非能力缺陷。基线 prompt 下扩展采样 n=6（2026-09-03）：
+**5 扁平 / 1 嵌套（扁平率 83%，与 pi/hermes 一致）**，分数 [0.60, 0.88, 0.92, 0.98,
+1.0, 1.0]，**中位 0.98**——官方记录的 0.60 是分布左尾的单次抽样。是否属出题方
+有意设计无从外部判断，本仓库将其记为已知评测特性并如实计分，不改动基准、
+不据此提分，本地补丁仅用于诊断且已还原；补丁后分数不与官方矩阵可比。
 
 ## Long-running 类五臂对照（2026-09-02，全部基线 prompt，无任何臂注入 schema 提示）
 
@@ -168,9 +174,15 @@ test suite.
   其余四臂全 1.00）；hermes 104=0.10（out/ 全空崩溃）。ai4j 本批 0 硬失败。
 - 环境注记：codex 臂在 Windows 需 `PYTHONUTF8=1`（adapter 在中文 locale 下以系统
   GBK 默认编码读 session JSONL，遇非 ASCII 崩溃；`PYTHONUTF8=1` 后 6/6 通过）。
-| 104-async-ops-window-rollup | 0.80 | state(0.55) | 模型把被忽略的 UP-LATE/UP-OLD 也记入 `seen_update_ids`；oracle 要求与合法集严格相等。语义分歧（"观察到" vs "计为有效"） |
 
-6 任务均值 **0.881**（本类最高批次）；adapter 6/6 成功，轮次完成率 100%（含 339s/488s/588s
-长轮，均在 900s 墙钟预算内，无截断）。Long-running 类 11 任务累计（含 057–059/105/106
+Long-running 类 11 任务累计（含 057–059/105/106
 中位数）：均值约 0.860。本批 6 任务未发现 SDK 缺陷，失分全部为模型输出形状或
 oracle 语义严格性差异。
+
+## 覆盖范围（对全部 106 任务）
+
+HarnessBench 共 8 类 106 任务。当前官方实测 12 个：Long-running 类 **11/11 全覆盖**
+（含五臂对照与方差复核），另有 Workspace 类 001。**其余 7 类（Software 22、
+Workspace 14、Data 14、Knowledge 13、Office 12、Vertical 12、SRE 7）尚未实测**——
+本 README 的五臂对照结论仅在 Long-running 类内成立，外推到其他类需补测
+（每类 1–2 个代表任务即可获得该类的首轮信号）。
