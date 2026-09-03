@@ -18,6 +18,12 @@ public class AgentRequest {
     public static final String METADATA_KEY_TURN_ID = "turnId";
     public static final String METADATA_KEY_SESSION_ID = "sessionId";
     public static final String METADATA_KEY_EVENT_ID = "eventId";
+    /** Stable Harness scope selected by the host for one execution. */
+    public static final String METADATA_KEY_HARNESS_SCOPE = "harnessScope";
+    /** Durable Harness execution identity injected into an Agent request. */
+    public static final String METADATA_KEY_HARNESS_EXECUTION_ID = "harnessExecutionId";
+    /** Durable Harness Task identity injected when the execution is Task-bound. */
+    public static final String METADATA_KEY_HARNESS_TASK_ID = "harnessTaskId";
 
     private Object input;
 

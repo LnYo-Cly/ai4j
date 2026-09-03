@@ -78,3 +78,10 @@ javadoc-ai4j.log
 !AGENTS.md
 .harness/
 harness/
+
+# The ai4j-harness module uses a package named "harness"; keep its source
+# and tests trackable even though the private HA ledger is also named harness.
+!/ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/
+!/ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/**
+!/ai4j-harness/src/test/java/io/github/lnyocly/ai4j/harness/
+!/ai4j-harness/src/test/java/io/github/lnyocly/ai4j/harness/**

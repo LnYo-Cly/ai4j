@@ -1,0 +1,20 @@
+{
+  "comment": "Bounded slice: one tool call then the step budget ends the slice; a checkpoint must persist so a later process can resume.",
+  "tool": {
+    "name": "bench_tool",
+    "description": "deterministic benchmark tool",
+    "output": "bench-tool-ok"
+  },
+  "steps": [
+    {
+      "type": "tool",
+      "name": "bench_tool",
+      "callId": "call-slice-1",
+      "arguments": "{}"
+    },
+    {
+      "type": "text",
+      "text": "slice finished"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "comment": "Async tool never completes: the round must end WAITING with a durable open wait record.",
+  "tool": {
+    "name": "bench_tool",
+    "description": "async benchmark tool",
+    "async": true
+  },
+  "steps": [
+    {
+      "type": "tool",
+      "name": "bench_tool",
+      "callId": "call-async-1",
+      "arguments": "{}"
+    },
+    {
+      "type": "text",
+      "text": "should not be reached while the operation is pending"
+    }
+  ]
+}

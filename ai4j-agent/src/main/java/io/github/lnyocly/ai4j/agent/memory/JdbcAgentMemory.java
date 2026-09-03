@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class JdbcAgentMemory implements AgentMemory {
 
@@ -129,6 +130,31 @@ public class JdbcAgentMemory implements AgentMemory {
         List<Object> items = copyItems(snapshot.getItems());
         items.add(AgentInputItem.functionCallOutput(callId, output));
         replaceSnapshot(applyCompressor(MemorySnapshot.from(items, snapshot.getSummary())));
+    }
+
+    @Override
+    public synchronized boolean replaceToolOutput(String callId, String output) {
+        if (callId == null) {
+            return false;
+        }
+        MemorySnapshot snapshot = loadSnapshot();
+        List<Object> items = copyItems(snapshot.getItems());
+        for (Object item : items) {
+            if (!(item instanceof Map)) {
+                continue;
+            }
+            Map<?, ?> candidate = (Map<?, ?>) item;
+            if (!"function_call_output".equals(String.valueOf(candidate.get("type")))
+                    || !callId.equals(String.valueOf(candidate.get("call_id")))) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> mutable = (Map<String, Object>) item;
+            mutable.put("output", output);
+            replaceSnapshot(applyCompressor(MemorySnapshot.from(items, snapshot.getSummary())));
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -1,6 +1,10 @@
 package io.github.lnyocly.ai4j.agent.codeact;
 
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +17,8 @@ import javax.script.SimpleScriptContext;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -69,7 +75,8 @@ public class NashornCodeExecutor implements CodeExecutor {
         context.setWriter(stdout);
         context.setErrorWriter(stderr);
         Bindings bindings = engine.createBindings();
-        bindings.put("__toolBridge", new ToolBridge(request.getToolExecutor(), request.getUser()));
+        ToolBridge toolBridge = new ToolBridge(request.getToolExecutor(), request.getUser(), request.getParentCallId());
+        bindings.put("__toolBridge", toolBridge);
         context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
         String script = buildPrelude(request.getToolNames()) + "\n" + wrapCode(request.getCode());
@@ -86,6 +93,10 @@ public class NashornCodeExecutor implements CodeExecutor {
             });
 
             Object value = future.get(timeout, TimeUnit.MILLISECONDS);
+            CodeExecutionResult pending = toolBridge.pendingResult(stdout.toString());
+            if (pending != null) {
+                return pending;
+            }
             Object resultValue = bindings.get("__codeact_result");
             if (resultValue == null) {
                 resultValue = value;
@@ -98,11 +109,19 @@ public class NashornCodeExecutor implements CodeExecutor {
                     .error(error)
                     .build();
         } catch (TimeoutException e) {
+            CodeExecutionResult pending = toolBridge.pendingResult(stdout.toString());
+            if (pending != null) {
+                return pending;
+            }
             return CodeExecutionResult.builder()
                     .stdout(stdout.toString())
                     .error("code execution timeout")
                     .build();
         } catch (ExecutionException e) {
+            CodeExecutionResult pending = toolBridge.pendingResult(stdout.toString());
+            if (pending != null) {
+                return pending;
+            }
             Throwable cause = e.getCause() == null ? e : e.getCause();
             log.warn("Nashorn execution failed", cause);
             return CodeExecutionResult.builder()
@@ -110,6 +129,10 @@ public class NashornCodeExecutor implements CodeExecutor {
                     .error(String.valueOf(cause.getMessage()))
                     .build();
         } catch (Throwable t) {
+            CodeExecutionResult pending = toolBridge.pendingResult(stdout.toString());
+            if (pending != null) {
+                return pending;
+            }
             log.warn("Nashorn execution failed", t);
             return CodeExecutionResult.builder()
                     .stdout(stdout.toString())
@@ -231,10 +254,14 @@ public class NashornCodeExecutor implements CodeExecutor {
     public static class ToolBridge {
         private final ToolExecutor toolExecutor;
         private final String user;
+        private final String parentCallId;
+        private int invocation;
+        private AgentToolResult pendingResult;
 
-        private ToolBridge(ToolExecutor toolExecutor, String user) {
+        private ToolBridge(ToolExecutor toolExecutor, String user, String parentCallId) {
             this.toolExecutor = toolExecutor;
             this.user = user;
+            this.parentCallId = parentCallId;
         }
 
         public String call(String name, String arguments) throws Exception {
@@ -245,8 +272,64 @@ public class NashornCodeExecutor implements CodeExecutor {
             AgentToolCall call = AgentToolCall.builder()
                     .name(resolveName(name))
                     .arguments(payload)
+                    .callId(nextCallId())
+                    .metadata(parentMetadata())
                     .build();
-            return toolExecutor.execute(call);
+            AgentToolExecution execution = AsyncToolExecutors.start(toolExecutor, call);
+            if (execution == null) {
+                return null;
+            }
+            if (execution.isPending()) {
+                pendingResult = normalize(call, execution.getInitialResult());
+                throw new CodeActPendingToolException(call.getCallId());
+            }
+            AgentToolResult result = execution.await();
+            return result == null ? null : result.getOutput();
+        }
+
+        private AgentToolResult normalize(AgentToolCall call, AgentToolResult source) {
+            AgentToolResult result = source == null ? new AgentToolResult() : source;
+            if (result.getName() == null) {
+                result.setName(call.getName());
+            }
+            if (result.getCallId() == null) {
+                result.setCallId(call.getCallId());
+            }
+            if (result.getStatus() == null) {
+                result.setStatus(AgentToolExecutionStatus.WAITING);
+            }
+            return result;
+        }
+
+        private CodeExecutionResult pendingResult(String stdout) {
+            if (pendingResult == null) {
+                return null;
+            }
+            return CodeExecutionResult.builder()
+                    .stdout(stdout)
+                    .result(pendingResult.getOutput())
+                    .error(pendingResult.getError())
+                    .status(AgentToolExecutionStatus.WAITING)
+                    .operationId(pendingResult.getOperationId())
+                    .waitId(pendingResult.getWaitId())
+                    .pendingToolCallId(pendingResult.getCallId())
+                    .parentCallId(parentCallId)
+                    .build();
+        }
+
+        private String nextCallId() {
+            String suffix = String.valueOf(invocation++);
+            return parentCallId == null || parentCallId.trim().isEmpty()
+                    ? "codeact_tool_" + suffix
+                    : parentCallId + ":tool:" + suffix;
+        }
+
+        private Map<String, Object> parentMetadata() {
+            Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+            if (parentCallId != null && !parentCallId.trim().isEmpty()) {
+                metadata.put(AgentToolCall.METADATA_KEY_PARENT_CALL_ID, parentCallId);
+            }
+            return metadata;
         }
 
         private String resolveName(String name) {

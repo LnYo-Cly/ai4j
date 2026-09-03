@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.agent.runtime;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.AgentContext;
+import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
@@ -20,6 +21,8 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicyException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCallSanitizer;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
@@ -39,10 +42,13 @@ import io.github.lnyocly.ai4j.agent.tool.TraceableToolExecutor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,16 +57,33 @@ import java.util.concurrent.TimeoutException;
 
 public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.AgentRuntime {
 
-    private volatile boolean cancelled = false;
-    private volatile Thread runningThread = null;
+    private final Set<Thread> runningThreads = Collections.newSetFromMap(
+            new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<Thread> cancelledThreads = Collections.newSetFromMap(
+            new ConcurrentHashMap<Thread, Boolean>());
 
     @Override
     public void cancel() {
-        cancelled = true;
-        Thread t = runningThread;
-        if (t != null) {
-            t.interrupt();
+        for (Thread thread : runningThreads) {
+            if (thread != null) {
+                cancelledThreads.add(thread);
+                thread.interrupt();
+            }
         }
+    }
+
+    /** Marks the current invocation as independently cancellable. */
+    protected final void beginRun() {
+        Thread current = Thread.currentThread();
+        cancelledThreads.remove(current);
+        runningThreads.add(current);
+    }
+
+    /** Clears only the current invocation's lifecycle state. */
+    protected final void finishRun() {
+        Thread current = Thread.currentThread();
+        runningThreads.remove(current);
+        cancelledThreads.remove(current);
     }
 
     protected String runtimeName() {
@@ -76,7 +99,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         try {
             return runInternal(context, request, null);
         } finally {
-            runningThread = null;
+            finishRun();
         }
     }
 
@@ -85,7 +108,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         try {
             runInternal(context, request, listener);
         } finally {
-            runningThread = null;
+            finishRun();
         }
     }
 
@@ -94,7 +117,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         try {
             return runInternal(context, request, listener);
         } finally {
-            runningThread = null;
+            finishRun();
         }
     }
 
@@ -104,8 +127,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         int maxSteps = options == null ? AgentOptions.DEFAULT_MAX_STEPS : options.getMaxSteps();
         long wallClockTimeoutMs = options == null ? AgentOptions.DEFAULT_WALL_CLOCK_TIMEOUT_MS : options.getWallClockTimeoutMillis();
         long maxTokenBudget = options == null ? AgentOptions.UNLIMITED_TOKEN_BUDGET : options.getMaxTokenBudget();
-        cancelled = false;
-        runningThread = Thread.currentThread();
+        beginRun();
         long startTime = System.currentTimeMillis();
         boolean stream = listener != null && options != null && options.isStream();
         String sessionId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_SESSION_ID));
@@ -145,6 +167,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                 .turnId(turnId)
                                 .outputText("PROMPT_BLOCKED: " + reason)
                                 .steps(0)
+                                .executionStatus(AgentExecutionStatus.COMPLETED)
                                 .build();
                     case MODIFY:
                         effectiveInput = decision.getModifiedInput();
@@ -166,9 +189,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
         while (!stepLimited || step < maxSteps) {
             throwIfInterrupted();
-            if (cancelled) {
-                throw new InterruptedException("Agent run cancelled");
-            }
+            throwIfCancelled();
             if (wallClockTimeoutMs > 0 && System.currentTimeMillis() - startTime >= wallClockTimeoutMs) {
                 throw new TimeoutException("Agent run exceeded wall-clock timeout of " + wallClockTimeoutMs + " ms");
             }
@@ -207,7 +228,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
                         .toolCalls(toolCalls)
                         .toolResults(toolResults)
-                        .steps(step + 1);
+                        .steps(step + 1)
+                        .executionStatus(AgentExecutionStatus.COMPLETED);
                 return usage.applyTo(result, context).build();
             }
 
@@ -261,6 +283,22 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
             dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
             publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
+            AgentToolResult waitingResult = firstWaiting(executed);
+            if (waitingResult != null) {
+                AgentResult.AgentResultBuilder waiting = AgentResult.builder()
+                        .runId(runId)
+                        .sessionId(sessionId)
+                        .turnId(turnId)
+                        .outputText(modelResult == null ? "" : modelResult.getOutputText())
+                        .rawResponse(modelResult == null ? null : modelResult.getRawResponse())
+                        .toolCalls(toolCalls)
+                        .toolResults(toolResults)
+                        .steps(step + 1)
+                        .executionStatus(AgentExecutionStatus.WAITING)
+                        .operationId(waitingResult.getOperationId())
+                        .waitId(waitingResult.getWaitId());
+                return usage.applyTo(waiting, context).build();
+            }
             step += 1;
         }
 
@@ -273,8 +311,21 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .rawResponse(lastResult == null ? null : lastResult.getRawResponse())
                 .toolCalls(toolCalls)
                 .toolResults(toolResults)
-                .steps(step);
+                .steps(step)
+                .executionStatus(AgentExecutionStatus.CONTINUATION_REQUIRED);
         return usage.applyTo(result, context).build();
+    }
+
+    private AgentToolResult firstWaiting(List<AgentToolResult> results) {
+        if (results == null) {
+            return null;
+        }
+        for (AgentToolResult result : results) {
+            if (result != null && result.isWaiting()) {
+                return result;
+            }
+        }
+        return null;
     }
 
     /**
@@ -310,9 +361,16 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         }
     }
 
-    private void throwIfInterrupted() throws InterruptedException {
+    protected final void throwIfInterrupted() throws InterruptedException {
         if (Thread.currentThread().isInterrupted()) {
             throw new InterruptedException("Agent run interrupted");
+        }
+    }
+
+    protected final void throwIfCancelled() throws InterruptedException {
+        throwIfInterrupted();
+        if (cancelledThreads.contains(Thread.currentThread())) {
+            throw new InterruptedException("Agent run cancelled");
         }
     }
 
@@ -336,6 +394,8 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                     .name(trimToNull(call.getName()) == null ? "tool" : call.getName().trim())
                     .arguments(call.getArguments())
                     .type(call.getType())
+                    .metadata(call.getMetadata() == null
+                            ? null : new LinkedHashMap<String, Object>(call.getMetadata()))
                     .build());
             index++;
         }
@@ -521,6 +581,22 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                  String runId,
                                  String sessionId,
                                  String turnId) throws Exception {
+        AgentToolResult result = executeToolResult(context, call, step, listener, runId, sessionId, turnId);
+        return result == null ? null : result.getOutput();
+    }
+
+    /**
+     * Executes a tool while preserving structured asynchronous state. The
+     * legacy string method above remains the compatibility surface used by
+     * older custom runtimes.
+     */
+    protected AgentToolResult executeToolResult(AgentContext context,
+                                                AgentToolCall call,
+                                                Integer step,
+                                                AgentListener listener,
+                                                String runId,
+                                                String sessionId,
+                                                String turnId) throws Exception {
         ToolExecutor executor = context.getToolExecutor();
         if (executor == null) {
             throw new IllegalStateException("toolExecutor is required");
@@ -534,12 +610,12 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
             switch (decision.getType()) {
                 case BLOCK:
-                    return buildBlockedOutput(call, decision.getReason());
+                    return result(call, buildBlockedOutput(call, decision.getReason()), AgentToolExecutionStatus.FAILED);
                 case MODIFY:
                     effectiveCall = decision.getModifiedCall();
                     break;
                 case ROUTE_TO:
-                    return routeToSandbox(context, call, decision);
+                    return result(call, routeToSandbox(context, call, decision), AgentToolExecutionStatus.COMPLETED);
                 case ALLOW:
                 default:
                     break;
@@ -548,25 +624,26 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         final AgentToolCall callToRun = effectiveCall;
         try {
             dispatchLifecycle(context, AgentLifecycleEventType.BEFORE_TOOL_CALL, step == null ? 0 : step, callToRun == null ? null : callToRun.getName(), callToRun);
-            String output = AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
+            AgentToolResult toolResult = AgentToolExecutionScope.runWithEmitter(new AgentToolExecutionScope.EventEmitter() {
                 @Override
                 public void emit(AgentEventType type, String message, Object payload) {
                     publish(context, listener, type, step == null ? 0 : step, message, payload, runId, sessionId, turnId);
                 }
-            }, new AgentToolExecutionScope.ScopeCallable<String>() {
+            }, new AgentToolExecutionScope.ScopeCallable<AgentToolResult>() {
                 @Override
-                public String call() throws Exception {
-                    return executor.execute(callToRun);
+                public AgentToolResult call() throws Exception {
+                    return executeToolInvocation(executor, callToRun);
                 }
             });
+            toolResult = normalizeToolResult(callToRun, toolResult);
             // PostToolUse interception: a hook may veto the result (e.g. output leaked a secret).
             if (interceptor != null) {
-                ToolCallDecision after = interceptor.afterToolCall(callToRun, output, context);
+                ToolCallDecision after = interceptor.afterToolCall(callToRun, toolResult.getOutput(), context);
                 if (after != null && after.getType() == ToolCallDecision.Type.BLOCK) {
-                    return buildBlockedOutput(callToRun, after.getReason());
+                    return result(callToRun, buildBlockedOutput(callToRun, after.getReason()), AgentToolExecutionStatus.FAILED);
                 }
             }
-            return output;
+            return toolResult;
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
             throw interruptedException;
@@ -576,10 +653,55 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             // #262: 宿主介入（审批/用户输入）必须中断循环并抛给调用方，禁止降级为 TOOL_ERROR。
             throw controlFlowException;
         } catch (Exception ex) {
-            return buildToolErrorOutput(callToRun, ex);
+            return result(callToRun, buildToolErrorOutput(callToRun, ex), AgentToolExecutionStatus.FAILED);
         } finally {
             dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TOOL_CALL, step == null ? 0 : step, callToRun == null ? null : callToRun.getName(), callToRun);
         }
+    }
+
+    private AgentToolResult executeToolInvocation(ToolExecutor executor,
+                                                  AgentToolCall call) throws Exception {
+        if (executor instanceof io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor) {
+            AgentToolExecution execution = ((io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor) executor).start(call);
+            if (execution == null) {
+                return result(call, null, AgentToolExecutionStatus.COMPLETED);
+            }
+            AgentToolResult initial = execution.isPending()
+                    ? execution.getInitialResult()
+                    : execution.await();
+            return normalizeToolResult(call, initial);
+        }
+        return result(call, executor.execute(call), AgentToolExecutionStatus.COMPLETED);
+    }
+
+    private AgentToolResult normalizeToolResult(AgentToolCall call, AgentToolResult source) {
+        AgentToolResult result = source == null ? new AgentToolResult() : source;
+        if (result.getName() == null && call != null) {
+            result.setName(call.getName());
+        }
+        if (result.getCallId() == null && call != null) {
+            result.setCallId(call.getCallId());
+        }
+        if (result.getStatus() == null) {
+            result.setStatus(result.getOutput() != null && result.getOutput().startsWith("TOOL_ERROR")
+                    ? AgentToolExecutionStatus.FAILED
+                    : AgentToolExecutionStatus.COMPLETED);
+        }
+        if (result.isFailed() && result.getOk() == null) {
+            result.setOk(Boolean.FALSE);
+        }
+        return result;
+    }
+
+    private AgentToolResult result(AgentToolCall call, String output, AgentToolExecutionStatus status) {
+        return AgentToolResult.builder()
+                .name(call == null ? null : call.getName())
+                .callId(call == null ? null : call.getCallId())
+                .output(output)
+                .status(status)
+                .ok(AgentToolExecutionStatus.FAILED.equals(status) ? Boolean.FALSE : null)
+                .error(AgentToolExecutionStatus.FAILED.equals(status) ? output : null)
+                .build();
     }
 
     protected String buildBlockedOutput(AgentToolCall call, String reason) {
@@ -720,18 +842,23 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                                    String runId,
                                                    String sessionId,
                                                    String turnId) throws Exception {
-        String output = executeTool(context, call, step, listener, runId, sessionId, turnId);
+        AgentToolResult toolResult = executeToolResult(context, call, step, listener, runId, sessionId, turnId);
         Object trace = toolTrace(context);
-        AgentToolResult.AgentToolResultBuilder builder = AgentToolResult.builder()
-                .name(call.getName())
-                .callId(call.getCallId())
-                .output(output)
-                .trace(trace);
-        // #264: 运行时 TOOL_ERROR 输出带上 ok=false，供 AgentTraceListener 标 ERROR
-        if (output != null && output.startsWith("TOOL_ERROR")) {
-            builder.ok(Boolean.FALSE).error(output);
+        if (toolResult == null) {
+            toolResult = result(call, null, AgentToolExecutionStatus.COMPLETED);
         }
-        return builder.build();
+        toolResult.setName(call.getName());
+        toolResult.setCallId(call.getCallId());
+        if (trace != null) {
+            toolResult.setTrace(trace);
+        }
+        // #264: 运行时 TOOL_ERROR 输出带上 ok=false，供 AgentTraceListener 标 ERROR
+        if (toolResult.getOutput() != null && toolResult.getOutput().startsWith("TOOL_ERROR")) {
+            toolResult.setOk(Boolean.FALSE);
+            toolResult.setError(toolResult.getOutput());
+            toolResult.setStatus(AgentToolExecutionStatus.FAILED);
+        }
+        return toolResult;
     }
 
     /** Returns the executor's last sub-trace (if it is a TraceableToolExecutor), else null. */

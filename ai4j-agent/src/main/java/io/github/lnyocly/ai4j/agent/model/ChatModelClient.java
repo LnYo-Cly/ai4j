@@ -129,6 +129,10 @@ public class ChatModelClient implements AgentModelClient {
             builder.toolChoice((String) prompt.getToolChoice());
         }
 
+        if (prompt.getReasoning() instanceof String) {
+            builder.reasoningEffort((String) prompt.getReasoning());
+        }
+
         List<Tool> tools = convertTools(prompt.getTools());
         if (!tools.isEmpty()) {
             builder.tools(tools);

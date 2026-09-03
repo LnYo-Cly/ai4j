@@ -333,32 +333,39 @@ public class CodeCommandTest {
                 "Review repository changes safely."
         ), StandardCharsets.UTF_8);
 
-        ByteArrayInputStream input = new ByteArrayInputStream(
-                ("/skills\n"
-                        + "/exit\n").getBytes(StandardCharsets.UTF_8)
-        );
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        String originalUserHome = System.getProperty("user.home");
+        System.setProperty("user.home", workspace.resolve("isolated-home").toString());
+        try {
 
-        CodeCommand command = new CodeCommand(
-                new FakeCodingCliAgentFactory(),
-                Collections.<String, String>emptyMap(),
-                new Properties(),
-                workspace
-        );
+            ByteArrayInputStream input = new ByteArrayInputStream(
+                    ("/skills\n"
+                            + "/exit\n").getBytes(StandardCharsets.UTF_8)
+            );
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
 
-        int exitCode = command.run(
-                Arrays.asList("--model", "fake-model", "--workspace", workspace.toString()),
-                new StreamsTerminalIO(input, out, err)
-        );
+            CodeCommand command = new CodeCommand(
+                    new FakeCodingCliAgentFactory(),
+                    Collections.<String, String>emptyMap(),
+                    new Properties(),
+                    workspace
+            );
 
-        String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
-        Assert.assertEquals(0, exitCode);
-        Assert.assertTrue(output.contains("skills:"));
-        Assert.assertTrue(output.contains("count=1"));
-        Assert.assertTrue(output.contains("repo-review"));
-        Assert.assertTrue(output.contains("source=workspace"));
-        Assert.assertTrue(output.contains("Review repository changes safely."));
+            int exitCode = command.run(
+                    Arrays.asList("--model", "fake-model", "--workspace", workspace.toString()),
+                    new StreamsTerminalIO(input, out, err)
+            );
+
+            String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
+            Assert.assertEquals(0, exitCode);
+            Assert.assertTrue(output.contains("skills:"));
+            Assert.assertTrue(output.contains("count=1"));
+            Assert.assertTrue(output.contains("repo-review"));
+            Assert.assertTrue(output.contains("source=workspace"));
+            Assert.assertTrue(output.contains("Review repository changes safely."));
+        } finally {
+            restoreProperty("user.home", originalUserHome);
+        }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.coding;
 
 import io.github.lnyocly.ai4j.agent.AgentResult;
+import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.coding.loop.CodingStopReason;
@@ -72,6 +73,15 @@ public class CodingAgentResult {
 
     private String currency;
 
+    /** Structured status propagated from the underlying Agent slice. */
+    private AgentExecutionStatus executionStatus;
+
+    /** Stable operation identity when a coding tool is waiting asynchronously. */
+    private String operationId;
+
+    /** Stable wait identity used by the Harness host to resume this slice. */
+    private String waitId;
+
     public CodingAgentResult(String runId,
                               String sessionId,
                               String turnId,
@@ -132,6 +142,9 @@ public class CodingAgentResult {
                 .outputCost(result.getOutputCost())
                 .totalCost(result.getTotalCost())
                 .currency(result.getCurrency())
+                .executionStatus(result.getExecutionStatus())
+                .operationId(result.getOperationId())
+                .waitId(result.getWaitId())
                 .build();
     }
 }

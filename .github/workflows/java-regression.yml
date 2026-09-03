@@ -51,7 +51,7 @@ jobs:
           CHANGED_FILES="$(git diff --name-only "$BASE" "$HEAD")"
           printf '%s\n' "$CHANGED_FILES"
 
-          if printf '%s\n' "$CHANGED_FILES" | grep -Eq '^(pom\.xml|ai4j-extension-api/|ai4j-plugin-ask-user/|ai4j/|ai4j-agent/|ai4j-coding/|ai4j-cli/|ai4j-spring-boot-starter/|ai4j-flowgram-spring-boot-starter/|ai4j-flowgram-demo/|ai4j-bom/|\.github/workflows/java-regression\.yml$)'; then
+          if printf '%s\n' "$CHANGED_FILES" | grep -Eq '^(pom\.xml|ai4j-extension-api/|ai4j-plugin-ask-user/|ai4j/|ai4j-agent/|ai4j-harness/|ai4j-coding/|ai4j-cli/|ai4j-spring-boot-starter/|ai4j-flowgram-spring-boot-starter/|ai4j-flowgram-demo/|ai4j-bom/|\.github/workflows/java-regression\.yml$)'; then
             echo "java=true" >> "$GITHUB_OUTPUT"
           else
             echo "java=false" >> "$GITHUB_OUTPUT"
@@ -125,6 +125,7 @@ jobs:
           - ai4j-plugin-ask-user
           - ai4j
           - ai4j-agent
+          - ai4j-harness
           - ai4j-coding
           - ai4j-cli
           - ai4j-spring-boot-starter
