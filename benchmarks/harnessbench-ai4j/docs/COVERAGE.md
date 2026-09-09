@@ -65,6 +65,26 @@ Priority multi-round tasks for the harness 对照组: `057-interruption-resume`,
   store's journal replay (`readRecovered`), but a hard-kill injection is owned
   by `FileHarnessStore` tests, not by the benchmark surface.
 
+## Score reporting contract
+
+Use `report/aggregate_metrics.py` with a sanitized raw run-record JSON file
+for every new live batch. The report keeps five independent descriptive
+metrics, each with its observed count:
+
+- **Quality**: mean official-oracle or rubric score when a score is present.
+- **Completion**: proportion of records marked `completed`.
+- **Process failure**: proportion of observed process exit codes that are
+  non-zero.
+- **Timeout**: proportion of records explicitly marked `timedOut`.
+- **Harness invariant pass**: proportion of records with an explicitly
+  observed passing audit result.
+
+An unobserved optional field is absent from its denominator rather than being
+counted as a pass. The generated `byTask` and `byCategory` sections expose the
+sample count, so a single run remains visibly distinct from repeated samples.
+Office, Vertical, and SRE have no current raw records and must be reported as
+not sampled, not as zero-quality categories.
+
 ## Residual risks
 
 - generic_cli forwards `os.environ` + proxy env only; benchmark configuration
