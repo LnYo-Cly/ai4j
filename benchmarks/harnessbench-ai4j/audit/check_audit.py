@@ -172,14 +172,26 @@ def check(audit: dict, expect_status: str | None, report: Report) -> None:
     else:
         report.skip("tool-invocation-uniqueness", "no tool invocations")
 
-    # UNKNOWN handling: if the final status is UNKNOWN the store must show a
-    # non-retried execution so the operator reconciles instead of blind retry.
+    # UNKNOWN handling: preserve the ambiguous execution and reject any later
+    # execution for the same task/session. A mere UNKNOWN record is not enough.
     if str(audit.get("status")).upper() == "UNKNOWN":
         unknown_execs = [e for e in executions if str(e.get("status")).upper() == "UNKNOWN"]
         if not unknown_execs:
             report.fail("unknown-preserved", "bridge reported UNKNOWN but store has no UNKNOWN execution")
         else:
-            report.ok("unknown-preserved", "UNKNOWN execution kept for reconciliation")
+            retry = []
+            for unknown in unknown_execs:
+                unknown_time = max(int(unknown.get("updatedAtEpochMs") or 0), int(unknown.get("finishedAtEpochMs") or 0), int(unknown.get("createdAtEpochMs") or 0))
+                for candidate in executions:
+                    if candidate is unknown or candidate.get("taskId") != unknown.get("taskId") or candidate.get("sessionId") != unknown.get("sessionId"):
+                        continue
+                    candidate_time = max(int(candidate.get("createdAtEpochMs") or 0), int(candidate.get("startedAtEpochMs") or 0), int(candidate.get("updatedAtEpochMs") or 0))
+                    if candidate_time > unknown_time or candidate.get("attempt", 0) > unknown.get("attempt", 0):
+                        retry.append(candidate.get("executionId"))
+            if retry:
+                report.fail("unknown-preserved", f"UNKNOWN execution followed by retry: {retry}")
+            else:
+                report.ok("unknown-preserved", "UNKNOWN execution kept for reconciliation without retry")
     else:
         report.skip("unknown-preserved", "status is not UNKNOWN")
 

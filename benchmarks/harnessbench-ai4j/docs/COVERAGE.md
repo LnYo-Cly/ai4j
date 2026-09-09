@@ -50,7 +50,7 @@ Priority multi-round tasks for the harness 对照组: `057-interruption-resume`,
 | Bare control: no durable state, transcript replay only | ✔ scenario 6 | ✔ honest `not exercised` | – |
 | Duplicate delivery idempotency, late-result isolation | – | key-count exported; behavior owned by module suite | `HarnessGatewayInvariantTest` (idempotency + atomic waits), `AgentHarnessTest` (late async completion) |
 | Approval/submission gates block completion | – | checked when gates present (`gate-before-complete`) | `AgentHarnessTest.approvalWaitIsDurable...` |
-| UNKNOWN not blindly retried | – | checked when present (`unknown-preserved`); no direct module-suite owner yet | – |
+| UNKNOWN not blindly retried | – | checked when present (`unknown-preserved` rejects a later task/session execution); no direct module-suite owner yet | – |
 | Cancel does not reopen after late async result | – | – | `AgentHarnessTest.cancelledTaskQuarantinesLateAsyncCompletion...` |
 | Lease fencing / worker handoff | – | – | module suite only |
 

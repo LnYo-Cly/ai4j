@@ -641,6 +641,10 @@ public final class HarnessBenchBridge {
                     o.put("status", String.valueOf(r.getStatus()));
                     o.put("attempt", r.getAttempt());
                     o.put("checkpointId", r.getCheckpointId());
+                    o.put("createdAtEpochMs", r.getCreatedAtEpochMs());
+                    o.put("startedAtEpochMs", r.getStartedAtEpochMs());
+                    o.put("finishedAtEpochMs", r.getFinishedAtEpochMs());
+                    o.put("updatedAtEpochMs", r.getUpdatedAtEpochMs());
                     return o;
                 }
             }));
