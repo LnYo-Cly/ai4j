@@ -987,6 +987,37 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return recordEvidence(spec, defaultActor);
     }
 
+    /** Persist one detached host acceptance result with execution/submission lineage. */
+    public AcceptanceRecord recordAcceptance(final AcceptanceRecord record) {
+        if (record == null || record.getAcceptanceId() == null || record.getExecutionId() == null
+                || record.getCheckId() == null || record.getStatus() == null) {
+            throw new HarnessValidationException("acceptance record requires id, execution, check and status");
+        }
+        return write(new StateCommand<AcceptanceRecord>() {
+            @Override public AcceptanceRecord apply(HarnessState state) {
+                ExecutionRecord execution = state.getExecutions().get(record.getExecutionId());
+                if (execution == null) throw new HarnessValidationException("acceptance execution not found: " + record.getExecutionId());
+                if (record.getTaskId() != null && !safeEquals(record.getTaskId(), execution.getTaskId()))
+                    throw new HarnessConflictException("acceptance task does not match execution");
+                AcceptanceRecord stored = record.copy();
+                stored.setTaskId(execution.getTaskId());
+                stored.setEvaluatedAtEpochMs(stored.getEvaluatedAtEpochMs() == 0 ? now() : stored.getEvaluatedAtEpochMs());
+                state.getAcceptances().put(stored.getAcceptanceId(), stored);
+                addEvent(state, "acceptance.recorded", stored.getAcceptanceId(), defaultActor,
+                        mapOf("executionId", stored.getExecutionId(), "submissionId", stored.getSubmissionId(), "status", stored.getStatus().name()));
+                return stored.copy();
+            }
+        });
+    }
+
+    public List<AcceptanceRecord> listAcceptances(String executionId) {
+        List<AcceptanceRecord> result = new ArrayList<AcceptanceRecord>();
+        for (AcceptanceRecord record : getState().getAcceptances().values()) {
+            if (record != null && (executionId == null || safeEquals(executionId, record.getExecutionId()))) result.add(record.copy());
+        }
+        return result;
+    }
+
     public EvidenceRecord recordEvidence(HarnessEvidenceSpec spec, HarnessActor actor) {
         if (spec == null) throw new HarnessValidationException("evidence specification is required");
         final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);

@@ -52,6 +52,8 @@ public class HarnessState {
     @Builder.Default
     private Map<String, GateRecord> gates = new LinkedHashMap<String, GateRecord>();
     @Builder.Default
+    private Map<String, AcceptanceRecord> acceptances = new LinkedHashMap<String, AcceptanceRecord>();
+    @Builder.Default
     private Map<String, SubmissionRecord> submissions = new LinkedHashMap<String, SubmissionRecord>();
     @Builder.Default
     private Map<String, ReviewRecord> reviews = new LinkedHashMap<String, ReviewRecord>();
@@ -95,6 +97,7 @@ public class HarnessState {
         if (wakeups == null) wakeups = new LinkedHashMap<String, WakeupRecord>();
         if (leases == null) leases = new LinkedHashMap<String, LeaseRecord>();
         if (gates == null) gates = new LinkedHashMap<String, GateRecord>();
+        if (acceptances == null) acceptances = new LinkedHashMap<String, AcceptanceRecord>();
         if (submissions == null) submissions = new LinkedHashMap<String, SubmissionRecord>();
         if (reviews == null) reviews = new LinkedHashMap<String, ReviewRecord>();
         if (sessions == null) sessions = new LinkedHashMap<String, AgentSessionSnapshot>();
