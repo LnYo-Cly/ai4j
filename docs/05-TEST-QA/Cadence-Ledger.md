@@ -122,3 +122,5 @@
 2026-09-13 integration regression: `mvn -pl ai4j-coding -am -Dtest=CodingAgentLoopControllerTest,CodingAgentHarnessTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` passed 13 tests. Ordinary CodingAgent auto-continues a finite Agent step budget; Harness uses one coding turn per durable execution slice.
 
 2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.
+
+HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh`: local scripted 40-call executions detect hidden default step caps without provider credentials. Preserve explicit bounded-slice behavior and independent wall-time enforcement.

@@ -151,24 +151,15 @@ public final class HarnessBenchBridge {
             String prompt = readPrompt(cfg);
             String idempotencyKey = cfg.benchTaskId + "-r" + cfg.round;
             String taskId = resolveSessionTaskId(harness, cfg.sessionId);
-            HarnessRunRequest request;
-            if (cfg.maxSteps > 0) {
-                request = HarnessRunRequest.builder()
-                        .taskId(taskId)
-                        .sessionId(cfg.sessionId)
-                        .idempotencyKey(idempotencyKey)
-                        .input(prompt)
-                        .budget(HarnessRunBudget.builder().maxSteps(cfg.maxSteps)
-                                .maxWallTimeMillis(cfg.wallMillis).build())
-                        .build();
-            } else {
-                request = HarnessRunRequest.builder()
-                        .taskId(taskId)
-                        .sessionId(cfg.sessionId)
-                        .idempotencyKey(idempotencyKey)
-                        .input(prompt)
-                        .build();
-            }
+            // A zero step budget is unlimited, independently of the wall-clock budget.
+            HarnessRunRequest request = HarnessRunRequest.builder()
+                    .taskId(taskId)
+                    .sessionId(cfg.sessionId)
+                    .idempotencyKey(idempotencyKey)
+                    .input(prompt)
+                    .budget(HarnessRunBudget.builder().maxSteps(cfg.maxSteps)
+                            .maxWallTimeMillis(cfg.wallMillis).build())
+                    .build();
             result = harness.run(request);
         } finally {
             harness.close();
@@ -265,7 +256,8 @@ public final class HarnessBenchBridge {
             context = AgentContext.builder()
                     .modelClient(modelClient(cfg))
                     .memory(new InMemoryAgentMemory())
-                    .options(AgentOptions.builder().maxSteps(cfg.maxSteps > 0 ? cfg.maxSteps : 24).build())
+                    .options(AgentOptions.builder().maxSteps(cfg.maxSteps)
+                            .wallClockTimeoutMillis(cfg.wallMillis).build())
                     .model(cfg.model)
                     .toolRegistry(tools.registry)
                     .toolExecutor(tools.executor)
@@ -274,7 +266,8 @@ public final class HarnessBenchBridge {
             context = AgentContext.builder()
                     .modelClient(modelClient(cfg))
                     .memory(new InMemoryAgentMemory())
-                    .options(AgentOptions.builder().maxSteps(cfg.maxSteps > 0 ? cfg.maxSteps : 24).build())
+                    .options(AgentOptions.builder().maxSteps(cfg.maxSteps)
+                            .wallClockTimeoutMillis(cfg.wallMillis).build())
                     .model(cfg.model)
                     .build();
         }
@@ -820,7 +813,7 @@ public final class HarnessBenchBridge {
             return new BridgeConfig(
                     envVal(env, "AI4J_BENCH_MODE", "harness"),
                     Boolean.parseBoolean(envVal(env, "AI4J_BENCH_AUTO_RESUME", "true")),
-                    Integer.parseInt(envVal(env, "AI4J_BENCH_MAX_STEPS", "32")),
+                    Integer.parseInt(envVal(env, "AI4J_BENCH_MAX_STEPS", "0")),
                     Paths.get(workspace),
                     stateDir,
                     Paths.get(envVal(env, "AI4J_BENCH_AUDIT_DIR",
