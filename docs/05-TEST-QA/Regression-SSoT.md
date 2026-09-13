@@ -82,3 +82,5 @@ HarnessBench metric-report regression: `python -m unittest discover -s benchmark
 2026-09-13 integration regression: `mvn -pl ai4j-coding -am -Dtest=CodingAgentLoopControllerTest,CodingAgentHarnessTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` passed 13 tests. Ordinary CodingAgent auto-continues a finite Agent step budget; Harness uses one coding turn per durable execution slice.
 
 2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.
+
+HarnessBench unlimited-step regression: `bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh` covers 40 tool calls followed by completion in a single execution, for Harness and Bare with both unset and explicit-zero step budgets. Explicit finite-slice coverage remains. Wall-clock budgets apply independently of step budgets.
