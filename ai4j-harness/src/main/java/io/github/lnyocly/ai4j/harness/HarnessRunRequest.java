@@ -15,6 +15,7 @@ public class HarnessRunRequest {
 
     private String taskId;
     private String executionId;
+    private String parentExecutionId;
     private String scopeKey;
     private String sessionId;
     private String idempotencyKey;

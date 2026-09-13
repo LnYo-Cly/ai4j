@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class ExecutionRecord {
 
     private String executionId;
+    /** Optional repair/continuation parent. Null for a root execution. */
+    private String parentExecutionId;
     private String taskId;
     private String scopeKey;
     private String sessionId;

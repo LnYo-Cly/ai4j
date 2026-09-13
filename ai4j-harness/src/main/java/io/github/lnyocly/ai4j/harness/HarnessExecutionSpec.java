@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class HarnessExecutionSpec {
 
     private String executionId;
+    private String parentExecutionId;
     private String taskId;
     private String scopeKey;
     private String sessionId;

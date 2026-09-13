@@ -240,6 +240,7 @@ public final class AgentHarness implements AutoCloseable {
         }
         return gateway.createExecution(HarnessExecutionSpec.builder()
                 .taskId(trimToNull(request.getTaskId()))
+                .parentExecutionId(trimToNull(request.getParentExecutionId()))
                 .scopeKey(trimToNull(request.getScopeKey()))
                 .sessionId(sessionId)
                 .runId(runId)

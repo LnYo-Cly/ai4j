@@ -1437,6 +1437,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 int attempt = nextAttempt(state, executionTaskId);
                 ExecutionRecord execution = ExecutionRecord.builder()
                         .executionId(executionId)
+                        .parentExecutionId(trimToNull(spec.getParentExecutionId()))
                         .taskId(executionTaskId)
                         .scopeKey(executionScope)
                         .sessionId(trimToNull(spec.getSessionId()))
