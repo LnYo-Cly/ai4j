@@ -93,6 +93,7 @@
         <module>ai4j</module>
         <module>ai4j-document-tika</module>
         <module>ai4j-agent</module>
+        <module>ai4j-harness</module>
         <module>ai4j-coding</module>
         <module>ai4j-cli</module>
         <module>ai4j-spring-boot-starter</module>

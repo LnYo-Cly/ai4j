@@ -2,6 +2,10 @@ package io.github.lnyocly.ai4j.agent.codeact;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
@@ -15,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -136,7 +141,7 @@ public class GraalVmCodeExecutor implements CodeExecutor {
         ByteArrayOutputStream stdoutBytes = new ByteArrayOutputStream();
         ByteArrayOutputStream stderrBytes = new ByteArrayOutputStream();
         ToolExecutor toolExecutor = request.getToolExecutor();
-        ToolBridge toolBridge = new ToolBridge(toolExecutor, request.getUser());
+        ToolBridge toolBridge = new ToolBridge(toolExecutor, request.getUser(), request.getParentCallId());
 
         ProxyExecutable callTool = new ProxyExecutable() {
             @Override
@@ -204,6 +209,11 @@ public class GraalVmCodeExecutor implements CodeExecutor {
             });
 
             Value value = future.get(timeout, TimeUnit.MILLISECONDS);
+            CodeExecutionResult pending = toolBridge.pendingResult(
+                    new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8));
+            if (pending != null) {
+                return pending;
+            }
             Value fallback = context.getBindings("python").getMember("__codeact_result");
             String resolved = resolveValue(fallback);
             if (resolved == null) {
@@ -220,11 +230,21 @@ public class GraalVmCodeExecutor implements CodeExecutor {
         } catch (IllegalArgumentException e) {
             return null;
         } catch (TimeoutException e) {
+            CodeExecutionResult pending = toolBridge.pendingResult(
+                    new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8));
+            if (pending != null) {
+                return pending;
+            }
             return CodeExecutionResult.builder()
                     .stdout(new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8))
                     .error("code execution timeout")
                     .build();
         } catch (ExecutionException e) {
+            CodeExecutionResult pending = toolBridge.pendingResult(
+                    new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8));
+            if (pending != null) {
+                return pending;
+            }
             Throwable cause = e.getCause() == null ? e : e.getCause();
             log.warn("GraalPy execution failed", cause);
             return CodeExecutionResult.builder()
@@ -232,6 +252,11 @@ public class GraalVmCodeExecutor implements CodeExecutor {
                     .error(String.valueOf(cause.getMessage()))
                     .build();
         } catch (Throwable t) {
+            CodeExecutionResult pending = toolBridge.pendingResult(
+                    new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8));
+            if (pending != null) {
+                return pending;
+            }
             log.warn("GraalPy execution failed", t);
             return CodeExecutionResult.builder()
                     .stdout(new String(stdoutBytes.toByteArray(), StandardCharsets.UTF_8))
@@ -307,10 +332,14 @@ public class GraalVmCodeExecutor implements CodeExecutor {
     private static class ToolBridge {
         private final ToolExecutor toolExecutor;
         private final String user;
+        private final String parentCallId;
+        private int invocation;
+        private AgentToolResult pendingResult;
 
-        private ToolBridge(ToolExecutor toolExecutor, String user) {
+        private ToolBridge(ToolExecutor toolExecutor, String user, String parentCallId) {
             this.toolExecutor = toolExecutor;
             this.user = user;
+            this.parentCallId = parentCallId;
         }
 
         @HostAccess.Export
@@ -329,8 +358,64 @@ public class GraalVmCodeExecutor implements CodeExecutor {
             AgentToolCall call = AgentToolCall.builder()
                     .name(resolveName(name))
                     .arguments(arguments)
+                    .callId(nextCallId())
+                    .metadata(parentMetadata())
                     .build();
-            return toolExecutor.execute(call);
+            AgentToolExecution execution = AsyncToolExecutors.start(toolExecutor, call);
+            if (execution == null) {
+                return null;
+            }
+            if (execution.isPending()) {
+                pendingResult = normalize(call, execution.getInitialResult());
+                throw new CodeActPendingToolException(call.getCallId());
+            }
+            AgentToolResult result = execution.await();
+            return result == null ? null : result.getOutput();
+        }
+
+        private AgentToolResult normalize(AgentToolCall call, AgentToolResult source) {
+            AgentToolResult result = source == null ? new AgentToolResult() : source;
+            if (result.getName() == null) {
+                result.setName(call.getName());
+            }
+            if (result.getCallId() == null) {
+                result.setCallId(call.getCallId());
+            }
+            if (result.getStatus() == null) {
+                result.setStatus(AgentToolExecutionStatus.WAITING);
+            }
+            return result;
+        }
+
+        private CodeExecutionResult pendingResult(String stdout) {
+            if (pendingResult == null) {
+                return null;
+            }
+            return CodeExecutionResult.builder()
+                    .stdout(stdout)
+                    .result(pendingResult.getOutput())
+                    .error(pendingResult.getError())
+                    .status(AgentToolExecutionStatus.WAITING)
+                    .operationId(pendingResult.getOperationId())
+                    .waitId(pendingResult.getWaitId())
+                    .pendingToolCallId(pendingResult.getCallId())
+                    .parentCallId(parentCallId)
+                    .build();
+        }
+
+        private String nextCallId() {
+            String suffix = String.valueOf(invocation++);
+            return parentCallId == null || parentCallId.trim().isEmpty()
+                    ? "codeact_tool_" + suffix
+                    : parentCallId + ":tool:" + suffix;
+        }
+
+        private Map<String, Object> parentMetadata() {
+            Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+            if (parentCallId != null && !parentCallId.trim().isEmpty()) {
+                metadata.put(AgentToolCall.METADATA_KEY_PARENT_CALL_ID, parentCallId);
+            }
+            return metadata;
         }
 
         private String resolveName(String name) {

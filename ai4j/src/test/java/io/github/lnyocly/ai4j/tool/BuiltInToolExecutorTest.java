@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.tool;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -126,6 +127,27 @@ public class BuiltInToolExecutorTest {
         Assert.assertFalse(context.isRestrictReadToAllowedRoots());
         Assert.assertEquals(100, context.getDefaultReadMaxChars());
         Assert.assertEquals(200L, context.getDefaultCommandTimeoutMs());
+    }
+
+    @Test
+    public void bashToolsDeclareSplitExecAndProcessSurfaces() {
+        // bash is exec-only: no action property, command required.
+        Tool.Function bash = BuiltInTools.bashTool().getFunction();
+        Assert.assertEquals("bash", bash.getName());
+        Assert.assertFalse(bash.getParameters().getProperties().containsKey("action"));
+        Assert.assertEquals(Collections.singletonList("command"), bash.getParameters().getRequired());
+
+        // bash_process carries the process-management action enum.
+        Tool.Function process = BuiltInTools.bashProcessTool().getFunction();
+        Assert.assertEquals("bash_process", process.getName());
+        Assert.assertTrue(process.getParameters().getProperties().containsKey("action"));
+        Assert.assertEquals(Collections.singletonList("action"), process.getParameters().getRequired());
+        Assert.assertTrue(process.getParameters().getProperties().get("action").getEnumValues()
+                .containsAll(java.util.Arrays.asList("start", "status", "logs", "write", "stop", "list")));
+
+        // The built-in registry exposes both; bash_process is not read-only.
+        Assert.assertTrue(BuiltInTools.allCodingToolNames().contains(BuiltInTools.BASH_PROCESS));
+        Assert.assertFalse(BuiltInTools.readOnlyCodingToolNames().contains(BuiltInTools.BASH_PROCESS));
     }
 
     private static boolean isWindows() {

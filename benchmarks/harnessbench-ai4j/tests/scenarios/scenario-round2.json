@@ -1,0 +1,9 @@
+{
+  "comment": "Second round in a fresh JVM for the same session; the model just finishes.",
+  "steps": [
+    {
+      "type": "text",
+      "text": "round two completed with persisted context"
+    }
+  ]
+}

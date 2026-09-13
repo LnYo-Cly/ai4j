@@ -65,7 +65,7 @@ public class SkillsIChatServiceTest {
         String systemPrompt = Skills.appendAvailableSkillsPrompt("Base prompt.", discovery.getSkills());
         Assert.assertTrue(systemPrompt.contains("<available_skills>"));
         Assert.assertTrue(systemPrompt.contains(skillFile.toAbsolutePath().normalize().toString()));
-        Assert.assertEquals(8, BuiltInTools.codingTools().size());
+        Assert.assertEquals(9, BuiltInTools.codingTools().size());
     }
 
     @Test

@@ -7,6 +7,7 @@ import java.util.Set;
 public final class CodingToolNames {
 
     public static final String BASH = BuiltInTools.BASH;
+    public static final String BASH_PROCESS = BuiltInTools.BASH_PROCESS;
     public static final String READ_FILE = BuiltInTools.READ_FILE;
     public static final String WRITE_FILE = BuiltInTools.WRITE_FILE;
     public static final String APPLY_PATCH = BuiltInTools.APPLY_PATCH;

@@ -174,6 +174,64 @@ public class WorkspacePathGuardTest {
         assertEquals(outside.toAbsolutePath().normalize(), resolved);
     }
 
+    @Test
+    public void shouldExcludePlainSegmentAnywhereInTree() throws Exception {
+        Path root = newWorkspace("plain-segment");
+        WorkspaceContext context = WorkspaceContext.builder()
+                .rootPath(root.toString())
+                .excludedPaths(java.util.Arrays.asList("in"))
+                .build();
+        assertTrue(context.isExcluded(root.resolve("in").resolve("data.json")));
+        assertTrue(context.isExcluded(root.resolve("nested").resolve("in").resolve("x.txt")));
+        assertTrue(context.isExcluded(root.resolve("in")));
+        assertTrue("plain segment must not leak into non-matching paths",
+                !context.isExcluded(root.resolve("out").resolve("result.json")));
+    }
+
+    @Test
+    public void shouldExcludeGlobPatternAtAnyDepth() throws Exception {
+        Path root = newWorkspace("glob-tests");
+        WorkspaceContext context = WorkspaceContext.builder()
+                .rootPath(root.toString())
+                .excludedPaths(java.util.Arrays.asList("**/test_*.py"))
+                .build();
+        assertTrue(context.isExcluded(root.resolve("in/app/test_config.py")));
+        assertTrue(context.isExcluded(root.resolve("tests/test_user.py")));
+        assertTrue(context.isExcluded(root.resolve("test_config.py")));
+        assertTrue("source files must stay writable",
+                !context.isExcluded(root.resolve("in/app/config_manager.py")));
+    }
+
+    @Test
+    public void shouldExcludeDirectoryContentsGlob() throws Exception {
+        Path root = newWorkspace("glob-dir");
+        WorkspaceContext context = WorkspaceContext.builder()
+                .rootPath(root.toString())
+                .excludedPaths(java.util.Arrays.asList("in/**"))
+                .build();
+        assertTrue(context.isExcluded(root.resolve("in").resolve("data.json")));
+        assertTrue(context.isExcluded(root.resolve("in").resolve("nested").resolve("x.txt")));
+        assertTrue("the directory entry itself stays writable-irrelevant but unmatched",
+                !context.isExcluded(root.resolve("in")));
+        assertTrue(!context.isExcluded(root.resolve("out").resolve("r.json")));
+    }
+
+    @Test
+    public void shouldRejectWriteIntoGlobProtectedInput() throws Exception {
+        Path root = newWorkspace("glob-reject");
+        WorkspaceContext context = WorkspaceContext.builder()
+                .rootPath(root.toString())
+                .excludedPaths(java.util.Arrays.asList("**/test_*.py"))
+                .build();
+        try {
+            WorkspacePathGuard.resolveForWrite(context, "in/app/test_config.py");
+            fail("Expected IllegalArgumentException for glob-protected path");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("workspace write policy"));
+            assertTrue(expected.getMessage().contains("do not modify"));
+        }
+    }
+
     private Path newWorkspace(String name) throws Exception {
         return temporaryFolder.newFolder("workspace-" + name).toPath();
     }
