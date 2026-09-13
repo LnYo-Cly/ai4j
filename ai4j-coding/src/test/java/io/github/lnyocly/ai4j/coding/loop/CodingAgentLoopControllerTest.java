@@ -74,6 +74,25 @@ public class CodingAgentLoopControllerTest {
     }
 
     @Test
+    public void shouldAutoContinueAfterRuntimeStepBudget() throws Exception {
+        InspectableQueueModelClient modelClient = new InspectableQueueModelClient();
+        modelClient.enqueue(toolCallResult(STUB_TOOL, "budget-call"));
+        modelClient.enqueue(assistantResult("Completed the requested change.", 1L, 1L));
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient).model("test")
+                .workspaceContext(WorkspaceContext.builder().rootPath(temporaryFolder.newFolder().toString()).build())
+                .codingOptions(defaultOptions())
+                .agentOptions(io.github.lnyocly.ai4j.agent.AgentOptions.builder().maxSteps(1).build())
+                .toolRegistry(singleToolRegistry(STUB_TOOL)).toolExecutor(okToolExecutor()).build();
+        try (CodingSession session = agent.newSession()) {
+            CodingAgentResult result = session.run("Implement the requested change.");
+            assertEquals(CodingStopReason.COMPLETED, result.getStopReason());
+            assertEquals(2, result.getTurns());
+            assertTrue(result.isAutoContinued());
+        }
+    }
+
+    @Test
     public void shouldKeepLegacyCodingAgentResultConstructor() {
         CodingAgentResult result = new CodingAgentResult(
                 "run", "session", "turn", "output", null, null, null,

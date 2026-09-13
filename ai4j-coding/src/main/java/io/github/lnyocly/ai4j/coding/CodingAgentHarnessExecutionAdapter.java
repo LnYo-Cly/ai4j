@@ -291,10 +291,10 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
             Map<String, Object> metadata = request == null || request.getMetadata() == null
                     ? new LinkedHashMap<String, Object>()
                     : new LinkedHashMap<String, Object>(request.getMetadata());
-            CodingAgentResult result = codingSession.run(CodingAgentRequest.builder()
+            CodingAgentResult result = codingSession.runSingleTurn(CodingAgentRequest.builder()
                     .input(input)
                     .metadata(metadata)
-                    .build());
+                    .build(), null);
             AgentExecutionStatus status = result == null || result.getExecutionStatus() == null
                     ? AgentExecutionStatus.FAILED : result.getExecutionStatus();
             String error = AgentExecutionStatus.FAILED.equals(status)

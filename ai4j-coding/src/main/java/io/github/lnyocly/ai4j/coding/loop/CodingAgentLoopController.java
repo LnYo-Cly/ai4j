@@ -188,7 +188,8 @@ public class CodingAgentLoopController {
                     .compactApplied(compactApplied)
                     .build();
         }
-        if (result != null && AgentExecutionStatus.CONTINUATION_REQUIRED.equals(result.getExecutionStatus())) {
+        if (result != null && AgentExecutionStatus.CONTINUATION_REQUIRED.equals(result.getExecutionStatus())
+                && !policy.isAutoContinueEnabled()) {
             return stopDecision(turnNumber, CodingStopReason.CONTINUATION_REQUIRED,
                     "Stopped at the Agent slice boundary; the Harness can resume the coding session.")
                     .toBuilder()
@@ -259,6 +260,9 @@ public class CodingAgentLoopController {
                                    String outputText) {
         if (!policy.isAutoContinueEnabled()) {
             return false;
+        }
+        if (result != null && AgentExecutionStatus.CONTINUATION_REQUIRED.equals(result.getExecutionStatus())) {
+            return true;
         }
         if (looksLikeCompleted(outputText)) {
             return false;
