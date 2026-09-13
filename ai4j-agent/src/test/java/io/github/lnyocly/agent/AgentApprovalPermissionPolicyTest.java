@@ -65,6 +65,24 @@ public class AgentApprovalPermissionPolicyTest {
     }
 
     @Test
+    public void harnessApprovalCannotOverrideDenyPolicy() throws Exception {
+        CountingToolExecutor delegate = new CountingToolExecutor();
+        AgentPermissionToolExecutor executor = new AgentPermissionToolExecutor(
+                delegate,
+                AgentPermissionPolicies.denyTools(Collections.singleton("bash"), "shell is forbidden"),
+                AgentExecutionEnvironment.LOCAL);
+
+        try {
+            executor.execute(call("bash").withMetadata(
+                    AgentToolCall.METADATA_KEY_HARNESS_APPROVAL_GRANTED, Boolean.TRUE));
+            Assert.fail("Harness approval must not override an explicit DENY policy");
+        } catch (AgentPermissionException expected) {
+            Assert.assertTrue(expected.getMessage().contains("shell is forbidden"));
+        }
+        Assert.assertEquals(0, delegate.count);
+    }
+
+    @Test
     public void shouldBlockApprovalRequiredToolBeforeDelegateRuns() throws Exception {
         CountingToolExecutor delegate = new CountingToolExecutor();
         AgentPermissionToolExecutor executor = new AgentPermissionToolExecutor(

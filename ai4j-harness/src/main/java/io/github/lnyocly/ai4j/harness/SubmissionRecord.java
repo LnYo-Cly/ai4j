@@ -1,0 +1,40 @@
+package io.github.lnyocly.ai4j.harness;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class SubmissionRecord {
+
+    private String submissionId;
+    private String taskId;
+    private String executionId;
+    private HarnessActor submitter;
+    private String completionClaim;
+    private String verificationNotes;
+    private long createdAtEpochMs;
+
+    @Builder.Default
+    private List<String> deliverables = new ArrayList<String>();
+
+    @Builder.Default
+    private List<String> evidenceIds = new ArrayList<String>();
+
+    @Builder.Default
+    private List<String> knownGaps = new ArrayList<String>();
+
+    @Builder.Default
+    private List<String> residualRisks = new ArrayList<String>();
+
+    public SubmissionRecord copy() {
+        return HarnessJson.copy(this, SubmissionRecord.class);
+    }
+}

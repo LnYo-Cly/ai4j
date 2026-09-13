@@ -6,12 +6,17 @@ import io.github.lnyocly.ai4j.agent.team.AgentTeamControl;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskState;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AgentTeamToolExecutor implements ToolExecutor {
+public class AgentTeamToolExecutor implements AsyncToolExecutor {
 
     private final AgentTeamControl control;
     private final String memberId;
@@ -73,6 +78,29 @@ public class AgentTeamToolExecutor implements ToolExecutor {
             return handleHeartbeatTask(args);
         }
         throw new IllegalStateException("unsupported team tool: " + toolName);
+    }
+
+    /** Team-control operations are local and synchronous; preserve pending
+     * results from the application delegate for all other tools. */
+    @Override
+    public AgentToolExecution start(AgentToolCall call) throws Exception {
+        if (call == null) {
+            return AgentToolExecution.completed(AgentToolResult.builder()
+                    .status(AgentToolExecutionStatus.COMPLETED)
+                    .build());
+        }
+        if (AgentTeamToolRegistry.supports(call.getName())) {
+            return AgentToolExecution.completed(AgentToolResult.builder()
+                    .name(call.getName())
+                    .callId(call.getCallId())
+                    .output(execute(call))
+                    .status(AgentToolExecutionStatus.COMPLETED)
+                    .build());
+        }
+        if (delegate == null) {
+            throw new IllegalStateException("toolExecutor is required for non-team tool: " + call.getName());
+        }
+        return AsyncToolExecutors.start(delegate, call);
     }
 
     private String handleSendMessage(JSONObject args) {

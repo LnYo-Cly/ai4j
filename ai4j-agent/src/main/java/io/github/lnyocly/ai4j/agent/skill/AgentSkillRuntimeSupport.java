@@ -10,6 +10,9 @@ import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -399,6 +402,7 @@ public final class AgentSkillRuntimeSupport {
                 .arguments(call.getArguments())
                 .callId(call.getCallId())
                 .type(call.getType())
+                .metadata(call.getMetadata() == null ? null : new LinkedHashMap<String, Object>(call.getMetadata()))
                 .build();
     }
 
@@ -485,7 +489,7 @@ public final class AgentSkillRuntimeSupport {
     }
 
     /** Maps the public fallback name back before guardrail and permission evaluation. */
-    private static final class SkillToolAliasExecutor implements ToolExecutor {
+    private static final class SkillToolAliasExecutor implements AsyncToolExecutor {
 
         private final String alias;
         private final ToolExecutor delegate;
@@ -501,6 +505,14 @@ public final class AgentSkillRuntimeSupport {
                 throw new IllegalArgumentException("Unsupported Skill tool: " + (call == null ? null : call.getName()));
             }
             return delegate.execute(canonicalSkillReaderCall(call, alias));
+        }
+
+        @Override
+        public AgentToolExecution start(AgentToolCall call) throws Exception {
+            if (call == null || !alias.equals(call.getName())) {
+                throw new IllegalArgumentException("Unsupported Skill tool: " + (call == null ? null : call.getName()));
+            }
+            return AsyncToolExecutors.start(delegate, canonicalSkillReaderCall(call, alias));
         }
     }
 
@@ -531,6 +543,11 @@ public final class AgentSkillRuntimeSupport {
         @Override
         public void addToolOutput(String callId, String output) {
             delegate.addToolOutput(callId, output);
+        }
+
+        @Override
+        public boolean replaceToolOutput(String callId, String output) {
+            return delegate.replaceToolOutput(callId, output);
         }
 
         @Override

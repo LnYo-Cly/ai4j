@@ -1,0 +1,9 @@
+{
+  "comment": "Bare mode: text-only answer per round; continuity comes from transcript replay only.",
+  "steps": [
+    {
+      "type": "text",
+      "text": "bare round done"
+    }
+  ]
+}

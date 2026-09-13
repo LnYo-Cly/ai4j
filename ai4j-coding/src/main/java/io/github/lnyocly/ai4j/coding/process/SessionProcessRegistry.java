@@ -329,9 +329,11 @@ public class SessionProcessRegistry implements AutoCloseable {
                 }
                 return;
             }
+            killDescendants(false);
             process.destroy();
             try {
                 if (!process.waitFor(graceMs, TimeUnit.MILLISECONDS)) {
+                    killDescendants(true);
                     process.destroyForcibly();
                     process.waitFor(graceMs, TimeUnit.MILLISECONDS);
                 }
@@ -352,6 +354,37 @@ public class SessionProcessRegistry implements AutoCloseable {
                 return (Long) process.getClass().getMethod("pid").invoke(process);
             } catch (Exception ignored) {
                 return null;
+            }
+        }
+
+        /**
+         * Kills child processes of the wrapped process before killing it.
+         * Commands run through a shell wrapper ({@code cmd.exe /c} on Windows,
+         * {@code sh -lc} elsewhere), so the real workload is usually a
+         * grandchild; killing only the direct child orphans it and it keeps
+         * running (e.g. a listening server port). Uses
+         * {@code Process.descendants()} reflectively so the module still
+         * compiles and runs on Java 8, where the fallback is the historical
+         * direct-child-only behaviour.
+         */
+        private void killDescendants(boolean forcibly) {
+            try {
+                // Route both calls through public interface classes: reflecting
+                // on implementation classes (ReferencePipeline, ProcessHandleImpl)
+                // is rejected by module access on JDK 9+.
+                Class<?> processHandle = Class.forName("java.lang.ProcessHandle");
+                String killMethod = forcibly ? "destroyForcibly" : "destroy";
+                Object stream = Process.class.getMethod("descendants").invoke(process);
+                java.util.function.Consumer<Object> killer = handle -> {
+                    try {
+                        processHandle.getMethod(killMethod).invoke(handle);
+                    } catch (Throwable ignored) {
+                    }
+                };
+                ((java.util.stream.Stream<?>) stream).forEach(killer);
+            } catch (Throwable ignored) {
+                // Java 8 runtime: ProcessHandle does not exist; caller still
+                // kills the direct child as before.
             }
         }
     }

@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.cli.acp;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.cli.ApprovalMode;
 import io.github.lnyocly.ai4j.cli.runtime.CliToolApprovalDecorator;
@@ -60,6 +62,22 @@ public class AcpToolApprovalDecorator implements ToolExecutorDecorator {
                     requestApproval(toolName, call);
                 }
                 return delegate.execute(call);
+            }
+        };
+    }
+
+    @Override
+    public ToolExecutor decorateAsync(final String toolName, final AsyncToolExecutor delegate) {
+        if (delegate == null || approvalMode == ApprovalMode.AUTO) {
+            return delegate;
+        }
+        return new AsyncToolExecutor() {
+            @Override
+            public AgentToolExecution start(AgentToolCall call) throws Exception {
+                if (requiresApproval(toolName, call)) {
+                    requestApproval(toolName, call);
+                }
+                return delegate.start(call);
             }
         };
     }

@@ -59,6 +59,15 @@ public class AgentResult {
 
     private String currency;
 
+    /** Optional structured status for bounded or asynchronous runs. */
+    private AgentExecutionStatus executionStatus;
+
+    /** Stable operation identity when the run is waiting on asynchronous work. */
+    private String operationId;
+
+    /** Stable wait identity when the host must resume this run later. */
+    private String waitId;
+
     /** Compatibility constructor retained for the pre-cache-accounting result shape. */
     public AgentResult(String runId,
                        String sessionId,

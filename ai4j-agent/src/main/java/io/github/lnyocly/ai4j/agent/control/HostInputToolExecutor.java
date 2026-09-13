@@ -2,6 +2,11 @@ package io.github.lnyocly.ai4j.agent.control;
 
 import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 
 import java.util.Collections;
@@ -16,7 +21,7 @@ import java.util.concurrent.TimeoutException;
  * <p>组装示例：{@code builder.toolExecutor(new HostInputToolExecutor(baseExecutor,
  * channel, Set.of("ask_user")))}。
  */
-public class HostInputToolExecutor implements ToolExecutor {
+public class HostInputToolExecutor implements AsyncToolExecutor {
 
     private final ToolExecutor delegate;
     private final AgentHostInputChannel channel;
@@ -43,6 +48,25 @@ public class HostInputToolExecutor implements ToolExecutor {
             return "HOST_INPUT_TIMEOUT: " + (timeoutException.getMessage() == null
                     ? "user did not answer in time" : timeoutException.getMessage());
         }
+    }
+
+    /**
+     * Preserve asynchronous semantics for ordinary tools routed through this
+     * host-input boundary. The configured input channel remains deliberately
+     * blocking; applications that need durable user waits should use a tool
+     * that raises {@link AgentHostInputException} instead.
+     */
+    @Override
+    public AgentToolExecution start(AgentToolCall call) throws Exception {
+        if (call == null || call.getName() == null || !hostInputTools.contains(call.getName())) {
+            return AsyncToolExecutors.start(delegate, call);
+        }
+        return AgentToolExecution.completed(AgentToolResult.builder()
+                .name(call.getName())
+                .callId(call.getCallId())
+                .output(execute(call))
+                .status(AgentToolExecutionStatus.COMPLETED)
+                .build());
     }
 
     private static Map<String, Object> parseRequest(String arguments) {

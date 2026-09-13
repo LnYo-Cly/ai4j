@@ -10,6 +10,15 @@ public interface AgentMemory {
 
     void addToolOutput(String callId, String output);
 
+    /**
+     * Replaces the result for an already-recorded tool call when a durable
+     * asynchronous operation completes. Legacy memories may return false and
+     * keep their historical append-only behavior.
+     */
+    default boolean replaceToolOutput(String callId, String output) {
+        return false;
+    }
+
     List<Object> getItems();
 
     String getSummary();

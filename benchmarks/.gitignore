@@ -1,0 +1,5 @@
+benchmarks/*.json.process
+closeout-packet.json
+submission-packet.json
+review-*.json
+__pycache__/

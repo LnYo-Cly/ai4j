@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
@@ -58,6 +59,7 @@ import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -445,8 +447,10 @@ public class CodingAgentBuilder {
                 decorate(CodingToolNames.WRITE_FILE, new WriteFileToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.APPLY_PATCH),
                 decorate(CodingToolNames.APPLY_PATCH, new ApplyPatchToolExecutor(workspaceContext), decorator)));
-        routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.BASH),
-                decorate(CodingToolNames.BASH, new BashToolExecutor(workspaceContext, resolvedOptions, processRegistry, shellCommandExecutor), decorator)));
+        routes.add(RoutingToolExecutor.route(new HashSet<String>(Arrays.asList(
+                        CodingToolNames.BASH, CodingToolNames.BASH_PROCESS)),
+                decorate(CodingToolNames.BASH,
+                        new BashToolExecutor(workspaceContext, resolvedOptions, processRegistry, shellCommandExecutor), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.GLOB),
                 decorate(CodingToolNames.GLOB, new GlobToolExecutor(workspaceContext), decorator)));
         routes.add(RoutingToolExecutor.route(Collections.singleton(CodingToolNames.GREP),
@@ -583,6 +587,9 @@ public class CodingAgentBuilder {
     private static ToolExecutor decorate(String toolName, ToolExecutor executor, ToolExecutorDecorator decorator) {
         if (decorator == null || executor == null) {
             return executor;
+        }
+        if (executor instanceof AsyncToolExecutor) {
+            return decorator.decorateAsync(toolName, (AsyncToolExecutor) executor);
         }
         return decorator.decorate(toolName, executor);
     }

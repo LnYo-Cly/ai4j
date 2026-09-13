@@ -1,0 +1,15 @@
+{
+  "comment": "Round 1 creates a task at runtime through the harness management tool, then finishes.",
+  "steps": [
+    {
+      "type": "tool",
+      "name": "harness_task_manage",
+      "callId": "call-create-1",
+      "arguments": "{\"operation\":\"create\",\"taskId\":\"runtime-task-a\",\"title\":\"Discovered work\",\"goal\":\"Handle the benchmark input\"}"
+    },
+    {
+      "type": "text",
+      "text": "task created and round completed"
+    }
+  ]
+}

@@ -36,13 +36,8 @@ public final class CodingContextPromptAssembler {
         if (!isBlank(workspaceContext.getDescription())) {
             builder.append("Workspace description: ").append(workspaceContext.getDescription()).append("\n");
         }
-        builder.append("Available built-in tools: bash, read_file, write_file, apply_patch, glob, grep, edit, update_agents_md.\n");
-        builder.append("Use bash for search, git, build, test, and process management. Use read_file before making changes. Use write_file for full-file create/overwrite/append operations, especially for new files. Use apply_patch for structured diffs. Use glob to find files by name pattern (**/*.java). Use grep to search file contents by regex. Use edit for precise string replacements in existing files. Use update_agents_md to persist project conventions and decisions.\n");
-        builder.append("Tool-call rules: only call a tool when you have a complete payload. ")
-                .append("For bash, always send a JSON object like {\"action\":\"exec\",\"command\":\"...\"} and never omit command for exec/start. ")
-                .append("Use bash action=exec only for non-interactive commands that will exit by themselves. If a command may wait for stdin, open a REPL, start a server, tail logs, or keep running, use bash action=start and then bash action=logs/status/write/stop. ")
-                .append("For read_file, include path. For write_file, include path and content, plus optional mode=create|overwrite|append. Relative paths resolve from the workspace root and absolute paths are allowed. For apply_patch, include patch.\n");
-        builder.append("apply_patch must use the exact grammar: *** Begin Patch, then *** Add File:/*** Update File:/*** Delete File:, and end with *** End Patch.\n");
+        builder.append("Tool selection: read_file before changing a file; write_file for whole files; edit for precise replacements; apply_patch for multi-file structured diffs; bash for self-terminating commands (search, git, build, test); bash_process to start and manage interactive or long-running processes; update_agents_md to persist project conventions and decisions.\n");
+        builder.append("apply_patch grammar: *** Begin Patch, then *** Add File:/*** Update File:/*** Delete File:, end with *** End Patch.\n");
         builder.append(ShellCommandSupport.buildShellUsageGuidance()).append("\n");
         if (!workspaceContext.isAllowOutsideWorkspace()) {
             builder.append("Do not rely on files outside the workspace root unless the user explicitly allows it.\n");
