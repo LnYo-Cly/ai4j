@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /** Immutable-in-practice durable snapshot of one host acceptance evaluation. */
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data @Builder(toBuilder = true) @NoArgsConstructor @AllArgsConstructor
 public class AcceptanceRecord {
     private String acceptanceId;
     private String taskId;

@@ -43,4 +43,22 @@ public class HarnessAcceptanceCoordinatorTest {
             Assert.assertNotNull(submission);
         } finally { gateway.close(); }
     }
+
+    @Test public void bindsPreSubmissionPassWithoutMutatingCandidate() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-bind");
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+            AcceptanceRecord candidate = gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("candidate")
+                    .taskId(task.getTaskId()).executionId(execution.getExecutionId()).checkId("check")
+                    .status(HarnessAcceptanceStatus.PASS).build());
+            SubmissionRecord submission = gateway.submitTask(task.getTaskId(), execution.getExecutionId(),
+                    HarnessSubmissionSpec.builder().completionClaim("done").build());
+            AcceptanceRecord bound = gateway.bindAcceptanceToSubmission(candidate.getAcceptanceId(), submission.getSubmissionId());
+            Assert.assertNull(gateway.getState().getAcceptances().get(candidate.getAcceptanceId()).getSubmissionId());
+            Assert.assertEquals(submission.getSubmissionId(), bound.getSubmissionId());
+        } finally { gateway.close(); }
+    }
 }

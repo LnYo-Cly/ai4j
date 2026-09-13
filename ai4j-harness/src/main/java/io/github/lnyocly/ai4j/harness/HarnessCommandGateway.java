@@ -1026,6 +1026,23 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Appends a submission-bound confirmation for an earlier execution acceptance.
+     * This closes the natural two-phase flow where evidence is produced before a
+     * submission id exists; the original candidate record is never mutated.
+     */
+    public AcceptanceRecord bindAcceptanceToSubmission(final String acceptanceId,
+                                                       final String submissionId) {
+        final AcceptanceRecord source = getState().getAcceptances().get(acceptanceId);
+        if (source == null) throw new HarnessValidationException("acceptance not found: " + acceptanceId);
+        if (source.getStatus() != HarnessAcceptanceStatus.PASS) {
+            throw new HarnessConflictException("only a PASS acceptance can be bound to a submission");
+        }
+        return recordAcceptance(source.toBuilder()
+                .acceptanceId("acc_" + UUID.randomUUID().toString().replace("-", ""))
+                .submissionId(submissionId).evaluatedAtEpochMs(now()).build());
+    }
+
     public EvidenceRecord recordEvidence(HarnessEvidenceSpec spec, HarnessActor actor) {
         if (spec == null) throw new HarnessValidationException("evidence specification is required");
         final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
