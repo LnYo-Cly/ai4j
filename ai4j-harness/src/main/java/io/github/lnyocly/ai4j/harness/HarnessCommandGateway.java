@@ -1108,6 +1108,35 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return submitTask(taskId, executionId, spec, defaultActor);
     }
 
+    /**
+     * Creates a submission from the latest PASS acceptance for the execution.
+     * The acceptance and its evidence must already be durable; no result is
+     * inferred from a model claim or from a different execution.
+     */
+    public SubmissionRecord submitTaskWithAcceptance(String taskId, String executionId,
+                                                      String acceptanceId,
+                                                      HarnessSubmissionSpec spec,
+                                                      HarnessActor actor) {
+        String taskKey = requireText(taskId, "task id");
+        String executionKey = requireText(executionId, "execution id");
+        AcceptanceRecord acceptance = getState().getAcceptances().get(requireText(acceptanceId, "acceptance id"));
+        if (acceptance == null || acceptance.getStatus() != HarnessAcceptanceStatus.PASS
+                || !taskKey.equals(acceptance.getTaskId()) || !executionKey.equals(acceptance.getExecutionId())) {
+            throw new HarnessConflictException("PASS acceptance does not belong to current task and execution");
+        }
+        List<String> evidenceIds = new ArrayList<String>();
+        for (EvidenceRecord evidence : getState().getEvidence().values()) {
+            if (evidence != null && executionKey.equals(evidence.getExecutionId())
+                    && acceptanceId.equals(evidence.getContentRef())) evidenceIds.add(evidence.getEvidenceId());
+        }
+        if (evidenceIds.isEmpty()) throw new HarnessConflictException("PASS acceptance has no durable evidence");
+        HarnessSubmissionSpec base = spec == null ? HarnessSubmissionSpec.builder().build() : spec;
+        SubmissionRecord submission = submitTask(taskKey, executionKey, base.toBuilder()
+                .evidenceIds(evidenceIds).build(), actor);
+        bindAcceptanceToSubmission(acceptanceId, submission.getSubmissionId());
+        return submission;
+    }
+
     public SubmissionRecord submitTask(String taskId,
                                         String executionId,
                                         HarnessSubmissionSpec spec,

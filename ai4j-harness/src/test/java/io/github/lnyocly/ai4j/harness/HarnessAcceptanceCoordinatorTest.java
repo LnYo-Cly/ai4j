@@ -61,4 +61,25 @@ public class HarnessAcceptanceCoordinatorTest {
             Assert.assertEquals(submission.getSubmissionId(), bound.getSubmissionId());
         } finally { gateway.close(); }
     }
+
+    @Test public void submitTaskWithAcceptanceCarriesOnlyCurrentAcceptanceEvidence() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-submit");
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+            HarnessAcceptanceEvaluation evaluation = HarnessAcceptanceCoordinator.evaluate(gateway,
+                    c -> HarnessAcceptanceResult.builder().checkId("check").status(HarnessAcceptanceStatus.PASS).summary("ok").build(),
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId()).build());
+            SubmissionRecord submission = gateway.submitTaskWithAcceptance(task.getTaskId(), execution.getExecutionId(),
+                    evaluation.getAcceptance().getAcceptanceId(), HarnessSubmissionSpec.builder().completionClaim("done").build(), HarnessActor.agent("agent"));
+            Assert.assertEquals(1, submission.getEvidenceIds().size());
+            boolean bound = false;
+            for (AcceptanceRecord record : gateway.listAcceptances(execution.getExecutionId())) {
+                bound |= submission.getSubmissionId().equals(record.getSubmissionId());
+            }
+            Assert.assertTrue(bound);
+        } finally { gateway.close(); }
+    }
 }
