@@ -702,6 +702,7 @@ public class HarnessCommandGatewayTest {
                                 : GateResult.fail(getName(), "evidence is required");
                     }
                 })
+                .requiresCompletionEvidence(false)
                 .build();
         HarnessCommandGateway gateway = new HarnessCommandGateway(
                 new FileHarnessStore(FileHarnessConfig.builder().directory(directory).build()),

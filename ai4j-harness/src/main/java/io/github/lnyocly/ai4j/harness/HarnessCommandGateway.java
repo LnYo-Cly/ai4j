@@ -1311,6 +1311,19 @@ public final class HarnessCommandGateway implements AutoCloseable {
                     throw new HarnessConflictException("completion evidence is missing or not bound to current execution: " + evidenceId);
                 }
             }
+            boolean accepted = false;
+            for (AcceptanceRecord acceptance : state.getAcceptances().values()) {
+                if (acceptance != null && HarnessAcceptanceStatus.PASS == acceptance.getStatus()
+                        && id.equals(acceptance.getTaskId())
+                        && executionId.equals(acceptance.getExecutionId())
+                        && submissionKey.equals(acceptance.getSubmissionId())) {
+                    accepted = true;
+                    break;
+                }
+            }
+            if (!accepted) {
+                throw new HarnessConflictException("a PASS acceptance record for the current submission is required");
+            }
         }
         return submission;
     }
