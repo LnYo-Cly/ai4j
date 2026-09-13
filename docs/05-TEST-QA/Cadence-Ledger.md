@@ -120,3 +120,5 @@
 2026-09-13 HarnessBench metric reporting: run the report unittest suite for raw-run schema or aggregation changes. Added null/invalid-type process-exit regression alongside five-metric and missing-value coverage. No new live benchmark score is claimed.
 
 2026-09-13 integration regression: `mvn -pl ai4j-coding -am -Dtest=CodingAgentLoopControllerTest,CodingAgentHarnessTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` passed 13 tests. Ordinary CodingAgent auto-continues a finite Agent step budget; Harness uses one coding turn per durable execution slice.
+
+2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.

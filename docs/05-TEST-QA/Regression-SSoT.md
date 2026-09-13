@@ -80,3 +80,5 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 HarnessBench metric-report regression: `python -m unittest discover -s benchmarks/harnessbench-ai4j/report -p "test_*.py"`. Required when changing raw-run loading or metric aggregation; covers independent denominators, null measurements, and invalid exit-code types.
 
 2026-09-13 integration regression: `mvn -pl ai4j-coding -am -Dtest=CodingAgentLoopControllerTest,CodingAgentHarnessTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` passed 13 tests. Ordinary CodingAgent auto-continues a finite Agent step budget; Harness uses one coding turn per durable execution slice.
+
+2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.

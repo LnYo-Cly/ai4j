@@ -1978,7 +1978,8 @@ public class CodeCommandTest {
             int exitCode = future.get(5, TimeUnit.SECONDS);
             String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertEquals(0, exitCode);
-            Assert.assertTrue(rendered.contains("Conversation interrupted by user."));
+            Assert.assertTrue("Missing cancellation notice in: " + rendered,
+                    rendered.contains("Conversation interrupted by user."));
             Assert.assertFalse(rendered.contains("Slow hello done."));
             Assert.assertEquals(2, handler.getReadLineCalls());
         } finally {
@@ -2067,7 +2068,8 @@ public class CodeCommandTest {
             String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertEquals(0, exitCode);
             Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
-            Assert.assertTrue(rendered.contains("Conversation interrupted by user."));
+            Assert.assertTrue("Missing cancellation notice in: " + rendered,
+                    rendered.contains("Conversation interrupted by user."));
             Assert.assertFalse(rendered.contains("slow chat stream completed"));
             Assert.assertEquals(2, handler.getReadLineCalls());
         } finally {
