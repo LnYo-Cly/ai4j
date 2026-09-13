@@ -128,6 +128,12 @@ public final class AgentHarness implements AutoCloseable {
         return gateway;
     }
 
+    /** Runs a host-owned acceptance check and persists its result for this Harness. */
+    public HarnessAcceptanceEvaluation evaluateAcceptance(HarnessAcceptanceEvaluator evaluator,
+                                                          HarnessAcceptanceContext context) {
+        return HarnessAcceptanceCoordinator.evaluate(gateway, evaluator, context);
+    }
+
     public HarnessContract getContract() {
         return contract;
     }

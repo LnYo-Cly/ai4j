@@ -999,6 +999,14 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 if (execution == null) throw new HarnessValidationException("acceptance execution not found: " + record.getExecutionId());
                 if (record.getTaskId() != null && !safeEquals(record.getTaskId(), execution.getTaskId()))
                     throw new HarnessConflictException("acceptance task does not match execution");
+                if (record.getSubmissionId() != null) {
+                    SubmissionRecord submission = state.getSubmissions().get(record.getSubmissionId());
+                    if (submission == null) throw new HarnessValidationException("acceptance submission not found: " + record.getSubmissionId());
+                    if (!safeEquals(submission.getExecutionId(), record.getExecutionId())
+                            || !safeEquals(submission.getTaskId(), execution.getTaskId())) {
+                        throw new HarnessConflictException("acceptance submission does not match execution");
+                    }
+                }
                 AcceptanceRecord stored = record.copy();
                 stored.setTaskId(execution.getTaskId());
                 stored.setEvaluatedAtEpochMs(stored.getEvaluatedAtEpochMs() == 0 ? now() : stored.getEvaluatedAtEpochMs());
