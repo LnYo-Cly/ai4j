@@ -1038,6 +1038,19 @@ public final class HarnessCommandGateway implements AutoCloseable {
         if (source.getStatus() != HarnessAcceptanceStatus.PASS) {
             throw new HarnessConflictException("only a PASS acceptance can be bound to a submission");
         }
+        SubmissionRecord submission = getState().getSubmissions().get(submissionId);
+        if (submission == null) throw new HarnessValidationException("submission not found: " + submissionId);
+        if (!safeEquals(source.getTaskId(), submission.getTaskId())
+                || !safeEquals(source.getExecutionId(), submission.getExecutionId())) {
+            throw new HarnessConflictException("acceptance and submission lineage must match");
+        }
+        for (AcceptanceRecord existing : getState().getAcceptances().values()) {
+            if (existing != null && safeEquals(existing.getSubmissionId(), submissionId)
+                    && safeEquals(existing.getCheckId(), source.getCheckId())
+                    && safeEquals(existing.getSummary(), source.getSummary())) {
+                return existing.copy();
+            }
+        }
         return recordAcceptance(source.toBuilder()
                 .acceptanceId("acc_" + UUID.randomUUID().toString().replace("-", ""))
                 .submissionId(submissionId).evaluatedAtEpochMs(now()).build());
