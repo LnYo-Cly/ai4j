@@ -1,5 +1,7 @@
 import importlib.util
 import unittest
+import json
+import tempfile
 from pathlib import Path
 
 
@@ -35,3 +37,29 @@ class AggregateMetricsTest(unittest.TestCase):
         self.assertIsNone(report["overall"]["quality"]["mean"])
         self.assertEqual(0, report["overall"]["timeout"]["observed"])
         self.assertIsNone(report["overall"]["timeout"]["rate"])
+
+
+class InputContractTest(unittest.TestCase):
+    def load(self, **values):
+        row = dict(taskId="001", category="Software", arm="ai4j-harness", sampleId="a", completed=True)
+        row.update(values)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "runs.json"
+            path.write_text(json.dumps([row]), encoding="utf-8")
+            return aggregate_metrics.load_runs(path)
+
+    def test_null_optional_measurements_are_unobserved(self):
+        rows = self.load(processExitCode=None, qualityScore=None, timedOut=None, invariantPassed=None)
+        report = aggregate_metrics.aggregate(rows, "ai4j-harness")["overall"]
+        for key in ("processFailure", "quality", "timeout", "invariantPass"):
+            self.assertEqual(0, report[key]["observed"])
+        self.assertIsNone(report["processFailure"]["rate"])
+
+    def test_invalid_exit_code_types_are_rejected(self):
+        for value in ("0", False, 0.0, [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "processExitCode"):
+                self.load(processExitCode=value)
+
+    def test_integer_exit_codes_preserve_failure_rate(self):
+        rows = self.load(processExitCode=0) + self.load(processExitCode=2)
+        self.assertEqual({"observed": 2, "rate": 0.5}, aggregate_metrics.summarize(rows)["processFailure"])

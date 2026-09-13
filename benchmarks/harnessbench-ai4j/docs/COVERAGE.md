@@ -94,3 +94,6 @@ not sampled, not as zero-quality categories.
   it shows outcome deltas of harness mode, not a second implementation.
 - `prompt-round{N}.txt` naming is parsed for the round number; if the runner
   changes its naming scheme, `AI4J_BENCH_ROUND` must be set explicitly.
+
+Optional measurement fields set to JSON `null` are treated as unobserved.
+`processExitCode` must otherwise be an integer; strings, booleans, and fractions are rejected.

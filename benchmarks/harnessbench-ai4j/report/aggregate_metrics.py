@@ -37,7 +37,12 @@ def load_runs(path: Path) -> list[dict[str, Any]]:
             raise ValueError("run %d missing required fields: %s" % (index, ", ".join(missing)))
         if not isinstance(run["completed"], bool):
             raise ValueError("run %d completed must be boolean" % index)
-        if "qualityScore" in run and not 0 <= run["qualityScore"] <= 1:
+        for key in ("qualityScore", "processExitCode", *OPTIONAL_BOOL):
+            if key in run and run[key] is None:
+                del run[key]
+        if "processExitCode" in run and type(run["processExitCode"]) is not int:
+            raise ValueError("run %d processExitCode must be an integer or null" % index)
+        if "qualityScore" in run and (type(run["qualityScore"]) not in (int, float) or not 0 <= run["qualityScore"] <= 1):
             raise ValueError("run %d qualityScore must be in [0, 1]" % index)
         for key in OPTIONAL_BOOL:
             if key in run and not isinstance(run[key], bool):

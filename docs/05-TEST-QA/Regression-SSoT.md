@@ -76,3 +76,5 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 - 🟡 mapped_or_partial
 - 🔴 fail
 - ⏸ paused
+
+HarnessBench metric-report regression: `python -m unittest discover -s benchmarks/harnessbench-ai4j/report -p "test_*.py"`. Required when changing raw-run loading or metric aggregation; covers independent denominators, null measurements, and invalid exit-code types.

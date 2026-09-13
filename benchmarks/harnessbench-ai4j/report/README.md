@@ -30,3 +30,6 @@ Interpret `quality.mean` only as a descriptive point estimate for the emitted
 records. Use `byTask` sample counts to distinguish repeated samples from a
 single run, and report categories with no records as not sampled rather than
 as zero quality.
+
+Optional measurement fields set to JSON `null` are treated as unobserved.
+`processExitCode` must otherwise be an integer; strings, booleans, and fractions are rejected.
