@@ -43,7 +43,7 @@ then export the provider configuration in the shell that runs HarnessBench:
 | `AI4J_BENCH_API_KEY` | provider API key (**required for live runs; keep out of git**) |
 | `AI4J_BENCH_BASE_URL` | optional OpenAI-compatible base URL |
 | `AI4J_BENCH_MODEL` | model id passed to the agent (default `gpt-4o-mini`) |
-| `AI4J_BENCH_MAX_STEPS` | per-round step budget (default 24) |
+| `AI4J_BENCH_MAX_STEPS` | optional per-round step budget; unset or `0` means unlimited (default). Positive values are reserved for explicit bounded-slice scenarios. |
 | `AI4J_BENCH_AUTO_RESUME` | continue continuation slices inside one round (default `true`) |
 | `AI4J_BENCH_STATE_DIR` | durable state dir (default `<sandbox>/ai4j-state`) |
 | `AI4J_BENCH_AUDIT_DIR` | audit artifact dir (default `<sandbox>/ai4j-audit`) |

@@ -177,6 +177,33 @@ else
 fi
 
 echo
+# Unset and explicit-zero budgets must exceed both historical 32/24-step caps.
+LONG_SCENARIO="$WORK/scenario-long.json"
+python -c "import json,sys;json.dump({'tool':{'name':'bench_tool','output':'ok'},'steps':[{'type':'tool','name':'bench_tool','callId':'long-'+str(i),'arguments':'{}'} for i in range(40)]+[{'type':'text','text':'all 40 tool steps completed'}]},open(sys.argv[1],'w',encoding='utf-8'))" "$(W "$LONG_SCENARIO")"
+for MODE in harness bare; do
+    for BUDGET in default zero; do
+        S7="$WORK/s7-$MODE-$BUDGET"
+        setup_env "$S7" "sess-long-$MODE-$BUDGET" "unlimited-step-regression"
+        export AI4J_BENCH_MODE="$MODE"
+        export AI4J_BENCH_AUTO_RESUME="false"
+        if [ "$BUDGET" = zero ]; then
+            export AI4J_BENCH_MAX_STEPS=0
+        else
+            unset AI4J_BENCH_MAX_STEPS
+        fi
+        OUT=$(run_round "$LONG_SCENARIO" 1 "finish all 40 tool steps in one execution")
+        CODE=$?
+        echo "-- scenario: unlimited $MODE $BUDGET (exit=$CODE)"
+        expect "unlimited exit 0" "0" "$CODE"
+        EXPECTED="COMPLETED"
+        [ "$MODE" = bare ] && EXPECTED="BARE_COMPLETED"
+        expect "unlimited terminal status" "$EXPECTED" "$(echo "$OUT" | status_of)"
+        FINISH=$(python -c "import json,sys;d=json.load(open(sys.argv[1],encoding='utf-8'));print(d.get('outputPreview'))" "$(W "$S7/ai4j-audit/execution_trace.json")")
+        expect "all 40 calls reached final response" "all 40 tool steps completed" "$FINISH"
+    done
+done
+unset AI4J_BENCH_MODE AI4J_BENCH_AUTO_RESUME AI4J_BENCH_MAX_STEPS
+
 echo "protocol regression: $PASS passed, $FAIL failed"
 echo "work root kept for inspection: $WORK"
 [ "$FAIL" = "0" ]
