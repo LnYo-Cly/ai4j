@@ -1269,6 +1269,18 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 && !hasApprovedReview(state, submission.getSubmissionId())) {
             throw new HarnessValidationException("an approved review is required before completion");
         }
+        if (contract.requiresCompletionEvidence(task, submission)) {
+            if (submission.getEvidenceIds() == null || submission.getEvidenceIds().isEmpty()) {
+                throw new HarnessValidationException("completion evidence is required for governed task");
+            }
+            for (String evidenceId : submission.getEvidenceIds()) {
+                EvidenceRecord evidence = state.getEvidence().get(evidenceId);
+                if (evidence == null || !id.equals(evidence.getTaskId())
+                        || !executionId.equals(evidence.getExecutionId())) {
+                    throw new HarnessConflictException("completion evidence is missing or not bound to current execution: " + evidenceId);
+                }
+            }
+        }
         return submission;
     }
 

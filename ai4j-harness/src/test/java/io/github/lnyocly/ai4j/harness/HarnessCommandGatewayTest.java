@@ -714,6 +714,7 @@ public class HarnessCommandGatewayTest {
         EvidenceRecord evidence = gateway.recordEvidence(HarnessEvidenceSpec.builder()
                 .evidenceId("evidence-review")
                 .taskId(task.getTaskId())
+                .executionId(execution.getExecutionId())
                 .kind("test")
                 .summary("review evidence")
                 .build(), HarnessActor.agent("agent-a"));
@@ -780,6 +781,7 @@ public class HarnessCommandGatewayTest {
         final java.util.concurrent.atomic.AtomicBoolean changeEvidence =
                 new java.util.concurrent.atomic.AtomicBoolean(true);
         HarnessContract contract = new HarnessContract() {
+            @Override public boolean requiresCompletionEvidence(TaskRecord task, SubmissionRecord submission) { return false; }
             @Override
             public java.util.List<HarnessGate> completionGates() {
                 return java.util.Collections.singletonList(new HarnessGate() {
@@ -911,7 +913,7 @@ public class HarnessCommandGatewayTest {
                 new FileHarnessStore(FileHarnessConfig.builder()
                         .directory(directory.resolve(harnessId))
                         .harnessId(harnessId)
-                        .build()), HarnessContract.builder().build(), HarnessActor.agent("test-agent"));
+                        .build()), HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("test-agent"));
     }
 
     private void finishTask(HarnessCommandGateway gateway, String taskId) {

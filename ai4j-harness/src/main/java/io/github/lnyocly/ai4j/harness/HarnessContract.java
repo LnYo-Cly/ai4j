@@ -35,6 +35,11 @@ public interface HarnessContract {
         return true;
     }
 
+    /** Governed Task completion requires evidence bound to the current submission by default. */
+    default boolean requiresCompletionEvidence(TaskRecord task, SubmissionRecord submission) {
+        return true;
+    }
+
     default List<HarnessGate> completionGates() {
         return Collections.emptyList();
     }
@@ -101,6 +106,7 @@ public interface HarnessContract {
         private final Set<String> approvalRequiredTools = new LinkedHashSet<String>();
         private final List<HarnessGate> completionGates = new ArrayList<HarnessGate>();
         private boolean approvedReviewRequired = true;
+        private boolean completionEvidenceRequired = true;
         private boolean allowSystemApproval = true;
         private boolean allowSystemCompletion = true;
         private boolean allowSystemReconciliation = true;
@@ -131,6 +137,11 @@ public interface HarnessContract {
             return this;
         }
 
+        public Builder requiresCompletionEvidence(boolean value) {
+            completionEvidenceRequired = value;
+            return this;
+        }
+
         public Builder allowSystemApproval(boolean value) {
             allowSystemApproval = value;
             return this;
@@ -151,6 +162,7 @@ public interface HarnessContract {
             final Set<String> approvalTools = new LinkedHashSet<String>(approvalRequiredTools);
             final List<HarnessGate> gates = new ArrayList<HarnessGate>(completionGates);
             final boolean reviewRequired = approvedReviewRequired;
+            final boolean evidenceRequired = completionEvidenceRequired;
             final boolean systemApproval = allowSystemApproval;
             final boolean systemCompletion = allowSystemCompletion;
             final boolean systemReconciliation = allowSystemReconciliation;
@@ -174,6 +186,12 @@ public interface HarnessContract {
                 public boolean requiresApprovedReview(TaskRecord task,
                                                       SubmissionRecord submission) {
                     return reviewRequired;
+                }
+
+                @Override
+                public boolean requiresCompletionEvidence(TaskRecord task,
+                                                           SubmissionRecord submission) {
+                    return evidenceRequired;
                 }
 
                 @Override
