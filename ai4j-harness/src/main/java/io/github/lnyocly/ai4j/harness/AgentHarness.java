@@ -54,6 +54,8 @@ public final class AgentHarness implements AutoCloseable {
     private final String workerId;
     private final boolean autoResume;
     private final HarnessRunListener listener;
+    private final HarnessAcceptanceEvaluator acceptanceEvaluator;
+    private final HarnessAcceptanceContextFactory acceptanceContextFactory;
     private final ScheduledExecutorService heartbeatExecutor;
     private final ExecutorService continuationExecutor;
     private final ReentrantLock[] executionLocks;
@@ -85,6 +87,8 @@ public final class AgentHarness implements AutoCloseable {
                 : builder.workerId.trim();
         this.autoResume = builder.autoResume;
         this.listener = builder.listener;
+        this.acceptanceEvaluator = builder.acceptanceEvaluator;
+        this.acceptanceContextFactory = builder.acceptanceContextFactory;
         this.gateway = new HarnessCommandGateway(store, contract, actor);
         this.heartbeatExecutor = Executors.newScheduledThreadPool(1);
         this.continuationExecutor = Executors.newCachedThreadPool();
@@ -468,6 +472,14 @@ public final class AgentHarness implements AutoCloseable {
                 exposedOutput, persisted.getWaitId(), persisted.getOperationId(), errorText);
         Object adapterResult = adapterExecution == null ? null : adapterExecution.getResult();
         completed.setAdapterResult(adapterResult);
+        if (acceptanceEvaluator != null && ExecutionStatus.SUCCEEDED.equals(persisted.getStatus())) {
+            HarnessAcceptanceContext context = acceptanceContextFactory == null
+                    ? HarnessAcceptanceContext.builder().taskId(persisted.getTaskId())
+                    .executionId(persisted.getExecutionId()).sessionId(persisted.getSessionId())
+                    .artifacts(checkpointState).build()
+                    : acceptanceContextFactory.create(executionContext, adapterExecution, persisted);
+            completed.setAcceptanceEvaluation(evaluateAcceptance(acceptanceEvaluator, context));
+        }
         if (adapterResult instanceof AgentResult) {
             completed.setAgentResult((AgentResult) adapterResult);
         }
@@ -1144,6 +1156,8 @@ public final class AgentHarness implements AutoCloseable {
         private String workerId;
         private boolean autoResume = true;
         private HarnessRunListener listener;
+        private HarnessAcceptanceEvaluator acceptanceEvaluator;
+        private HarnessAcceptanceContextFactory acceptanceContextFactory;
 
         public Builder agent(Agent value) { this.agent = value; return this; }
         public Builder executionAdapter(HarnessExecutionAdapter value) { this.executionAdapter = value; return this; }
@@ -1154,6 +1168,10 @@ public final class AgentHarness implements AutoCloseable {
         public Builder workerId(String value) { this.workerId = value; return this; }
         public Builder autoResume(boolean value) { this.autoResume = value; return this; }
         public Builder listener(HarnessRunListener value) { this.listener = value; return this; }
+
+        public Builder acceptanceEvaluator(HarnessAcceptanceEvaluator value) { this.acceptanceEvaluator = value; return this; }
+
+        public Builder acceptanceContextFactory(HarnessAcceptanceContextFactory value) { this.acceptanceContextFactory = value; return this; }
 
         public AgentHarness build() { return new AgentHarness(this); }
     }

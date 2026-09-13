@@ -24,4 +24,5 @@ public class HarnessRunResult {
     private String waitId;
     private String operationId;
     private String error;
+    private HarnessAcceptanceEvaluation acceptanceEvaluation;
 }
