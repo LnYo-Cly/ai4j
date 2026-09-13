@@ -1166,52 +1166,23 @@ public final class HarnessCommandGateway implements AutoCloseable {
         final String id = requireText(taskId, "task id");
         final String submissionKey = requireText(submissionId, "submission id");
         final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
+        // Gates receive the entire state, so any accepted mutation invalidates their snapshot.
+        // Evaluate outside store.update: a slow host check must not hold the writer lock.
+        final HarnessState snapshot = getState();
+        final long evaluatedVersion = snapshot.getVersion();
+        SubmissionRecord candidate = validateCompletion(snapshot, id, submissionKey, effectiveActor);
+        final List<GateResult> gateResults = contract.evaluateCompletion(
+                requireTask(snapshot, id), candidate, snapshot);
         final CompletionFailure failure = new CompletionFailure();
         TaskRecord result = write(new StateCommand<TaskRecord>() {
             @Override
             public TaskRecord apply(HarnessState state) {
+                SubmissionRecord submission = validateCompletion(state, id, submissionKey, effectiveActor);
+                if (state.getVersion() != evaluatedVersion) {
+                    throw new HarnessConflictException("Harness state changed during completion evaluation; retry completion");
+                }
                 TaskRecord task = requireTask(state, id);
-                SubmissionRecord submission = state.getSubmissions().get(submissionKey);
-                if (submission == null) {
-                    throw new HarnessValidationException("submission not found: " + submissionKey);
-                }
-                if (!id.equals(submission.getTaskId())) {
-                    throw new HarnessValidationException("submission does not belong to task: " + id);
-                }
-                if (!submissionKey.equals(task.getSubmissionId())) {
-                    throw new HarnessConflictException("submission is no longer the current task submission: "
-                            + submissionKey);
-                }
-                String executionId = trimToNull(submission.getExecutionId());
-                if (executionId == null) {
-                    throw new HarnessValidationException("submission must reference an execution before completion");
-                }
-                ExecutionRecord execution = state.getExecutions().get(executionId);
-                if (execution == null) {
-                    throw new HarnessValidationException("submission execution not found: " + executionId);
-                }
-                if (!id.equals(execution.getTaskId())) {
-                    throw new HarnessValidationException("submission execution does not belong to task: " + id);
-                }
-                assertCurrentTaskExecution(task, executionId);
-                assertSameScope(task.getScopeKey(), execution.getScopeKey(),
-                        "submission and execution scopes must match");
-                if (!ExecutionStatus.SUCCEEDED.equals(execution.getStatus())) {
-                    throw new HarnessConflictException("submission execution must be SUCCEEDED before completion: "
-                            + executionId);
-                }
-                if (!dependenciesSatisfied(state, id)) {
-                    throw new HarnessConflictException("task dependencies are not complete: " + id);
-                }
-                if (!contract.mayComplete(effectiveActor, submission)) {
-                    throw new HarnessValidationException("actor is not allowed to complete this task");
-                }
-                if (contract.requiresApprovedReview(task, submission)
-                        && !hasApprovedReview(state, submission.getSubmissionId())) {
-                    failure.reason = "an approved review is required before completion";
-                    return task.copy();
-                }
-                List<GateResult> gateResults = contract.evaluateCompletion(task, submission, state);
+                String executionId = submission.getExecutionId();
                 boolean passed = gateResults != null && !gateResults.isEmpty();
                 String failedReason = null;
                 if (gateResults != null) {
@@ -1227,6 +1198,8 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         state.getGates().put(gateId, GateRecord.builder()
                                 .gateId(gateId)
                                 .taskId(id)
+                                .executionId(executionId)
+                                .submissionId(submissionKey)
                                 .name(gateName)
                                 .status(gateResult != null && gateResult.isPassed() ? GateStatus.PASS : GateStatus.FAIL)
                                 .reason(gateResult == null ? "gate returned no result" : gateResult.getReason())
@@ -1252,6 +1225,51 @@ public final class HarnessCommandGateway implements AutoCloseable {
             throw new HarnessValidationException(failure.reason);
         }
         return result;
+    }
+
+    private SubmissionRecord validateCompletion(HarnessState state, String id,
+                                                String submissionKey, HarnessActor effectiveActor) {
+        TaskRecord task = requireTask(state, id);
+        SubmissionRecord submission = state.getSubmissions().get(submissionKey);
+        if (submission == null) {
+            throw new HarnessValidationException("submission not found: " + submissionKey);
+        }
+        if (!id.equals(submission.getTaskId())) {
+            throw new HarnessValidationException("submission does not belong to task: " + id);
+        }
+        if (!submissionKey.equals(task.getSubmissionId())) {
+            throw new HarnessConflictException("submission is no longer the current task submission: "
+                    + submissionKey);
+        }
+        String executionId = trimToNull(submission.getExecutionId());
+        if (executionId == null) {
+            throw new HarnessValidationException("submission must reference an execution before completion");
+        }
+        ExecutionRecord execution = state.getExecutions().get(executionId);
+        if (execution == null) {
+            throw new HarnessValidationException("submission execution not found: " + executionId);
+        }
+        if (!id.equals(execution.getTaskId())) {
+            throw new HarnessValidationException("submission execution does not belong to task: " + id);
+        }
+        assertCurrentTaskExecution(task, executionId);
+        assertSameScope(task.getScopeKey(), execution.getScopeKey(),
+                "submission and execution scopes must match");
+        if (!ExecutionStatus.SUCCEEDED.equals(execution.getStatus())) {
+            throw new HarnessConflictException("submission execution must be SUCCEEDED before completion: "
+                    + executionId);
+        }
+        if (!dependenciesSatisfied(state, id)) {
+            throw new HarnessConflictException("task dependencies are not complete: " + id);
+        }
+        if (!contract.mayComplete(effectiveActor, submission)) {
+            throw new HarnessValidationException("actor is not allowed to complete this task");
+        }
+        if (contract.requiresApprovedReview(task, submission)
+                && !hasApprovedReview(state, submission.getSubmissionId())) {
+            throw new HarnessValidationException("an approved review is required before completion");
+        }
+        return submission;
     }
 
     public ExecutionRecord createExecution(HarnessExecutionSpec spec) {
