@@ -989,10 +989,16 @@ public final class HarnessCommandGateway implements AutoCloseable {
 
     /** Persist one detached host acceptance result with execution/submission lineage. */
     public AcceptanceRecord recordAcceptance(final AcceptanceRecord record) {
+        return recordAcceptance(record, defaultActor);
+    }
+
+    /** Persist an acceptance result with explicit evaluator/event attribution. */
+    public AcceptanceRecord recordAcceptance(final AcceptanceRecord record, HarnessActor actor) {
         if (record == null || record.getAcceptanceId() == null || record.getExecutionId() == null
                 || record.getCheckId() == null || record.getStatus() == null) {
             throw new HarnessValidationException("acceptance record requires id, execution, check and status");
         }
+        final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
         return write(new StateCommand<AcceptanceRecord>() {
             @Override public AcceptanceRecord apply(HarnessState state) {
                 ExecutionRecord execution = state.getExecutions().get(record.getExecutionId());
@@ -1011,7 +1017,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 stored.setTaskId(execution.getTaskId());
                 stored.setEvaluatedAtEpochMs(stored.getEvaluatedAtEpochMs() == 0 ? now() : stored.getEvaluatedAtEpochMs());
                 state.getAcceptances().put(stored.getAcceptanceId(), stored);
-                addEvent(state, "acceptance.recorded", stored.getAcceptanceId(), defaultActor,
+                addEvent(state, "acceptance.recorded", stored.getAcceptanceId(), effectiveActor,
                         mapOf("executionId", stored.getExecutionId(), "submissionId", stored.getSubmissionId(), "status", stored.getStatus().name()));
                 return stored.copy();
             }

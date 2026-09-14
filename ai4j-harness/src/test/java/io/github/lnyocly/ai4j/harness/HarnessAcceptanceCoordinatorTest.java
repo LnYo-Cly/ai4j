@@ -4,6 +4,61 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class HarnessAcceptanceCoordinatorTest {
+    @Test public void acceptanceStoresEvaluatorProvenanceSeparatelyFromActorProvenance() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-provenance");
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("harness"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+            HarnessAcceptanceEvaluator evaluator = new HarnessAcceptanceEvaluator() {
+                @Override public HarnessAcceptanceResult evaluate(HarnessAcceptanceContext context) {
+                    return HarnessAcceptanceResult.builder().checkId("artifact").status(HarnessAcceptanceStatus.PASS)
+                            .summary("verified").build();
+                }
+                @Override public String getEvaluatorId() { return "fixture-evaluator"; }
+                @Override public String getEvaluatorVersion() { return "2026.09"; }
+                @Override public String getCheckVersion(String checkId) { return "artifact-v2"; }
+            };
+            HarnessAcceptanceEvaluation evaluation = HarnessAcceptanceCoordinator.evaluate(gateway, evaluator,
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId())
+                            .contextSnapshotRef("snapshot-7")
+                            .artifacts(java.util.Collections.<String, Object>singletonMap("result", "opaque"))
+                            .requirements(java.util.Collections.<String, Object>singletonMap("required", true)).build(),
+                    HarnessActor.human("verifier"));
+            AcceptanceRecord stored = evaluation.getAcceptance();
+            Assert.assertEquals("fixture-evaluator", stored.getAcceptanceProvenance().getEvaluatorId());
+            Assert.assertEquals("2026.09", stored.getAcceptanceProvenance().getEvaluatorVersion());
+            Assert.assertEquals("artifact-v2", stored.getAcceptanceProvenance().getCheckVersion());
+            Assert.assertEquals("snapshot-7", stored.getAcceptanceProvenance().getContextSnapshotRef());
+            Assert.assertEquals(1, stored.getAcceptanceProvenance().getArtifactCount());
+            Assert.assertEquals(1, stored.getAcceptanceProvenance().getRequirementCount());
+            Assert.assertEquals("human", stored.getProvenance().getActor().getKind());
+            Assert.assertEquals("verifier", stored.getProvenance().getActor().getId());
+            gateway.close();
+            gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                    HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("harness"));
+            AcceptanceRecord restored = gateway.listAcceptances(execution.getExecutionId()).get(0);
+            Assert.assertEquals("fixture-evaluator", restored.getAcceptanceProvenance().getEvaluatorId());
+            Assert.assertEquals("artifact-v2", restored.getAcceptanceProvenance().getCheckVersion());
+        } finally { gateway.close(); }
+    }
+
+    @Test public void invalidEvaluatorResultIsPersistedAsErrorInsteadOfBreakingTheRun() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-invalid-result");
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+            HarnessAcceptanceEvaluation evaluation = HarnessAcceptanceCoordinator.evaluate(gateway,
+                    context -> HarnessAcceptanceResult.builder().checkId("broken").summary("no status").build(),
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId()).build());
+            Assert.assertEquals(HarnessAcceptanceStatus.ERROR, evaluation.getResult().getStatus());
+            Assert.assertEquals("broken", evaluation.getAcceptance().getCheckId());
+            Assert.assertNull(evaluation.getEvidence());
+        } finally { gateway.close(); }
+    }
     @Test public void acceptanceAndRepairLineageSurviveFileStoreRestart() throws Exception {
         java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-restart");
         HarnessCommandGateway first = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()), HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));

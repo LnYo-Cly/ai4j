@@ -51,6 +51,7 @@ public final class AgentHarness implements AutoCloseable {
     private final HarnessCommandGateway gateway;
     private final HarnessContract contract;
     private final HarnessActor actor;
+    private final HarnessActor acceptanceActor;
     private final String workerId;
     private final boolean autoResume;
     private final HarnessRunListener listener;
@@ -82,6 +83,7 @@ public final class AgentHarness implements AutoCloseable {
         }
         this.contract = builder.contract == null ? HarnessContract.builder().build() : builder.contract;
         this.actor = builder.actor == null ? HarnessActor.agent("ai4j-agent") : builder.actor;
+        this.acceptanceActor = builder.acceptanceActor == null ? this.actor : builder.acceptanceActor;
         this.workerId = builder.workerId == null || builder.workerId.trim().isEmpty()
                 ? DEFAULT_WORKER_PREFIX + UUID.randomUUID().toString().replace("-", "")
                 : builder.workerId.trim();
@@ -135,7 +137,14 @@ public final class AgentHarness implements AutoCloseable {
     /** Runs a host-owned acceptance check and persists its result for this Harness. */
     public HarnessAcceptanceEvaluation evaluateAcceptance(HarnessAcceptanceEvaluator evaluator,
                                                           HarnessAcceptanceContext context) {
-        return HarnessAcceptanceCoordinator.evaluate(gateway, evaluator, context);
+        return evaluateAcceptance(evaluator, context, acceptanceActor);
+    }
+
+    /** Runs an acceptance check with an explicit evaluator/event actor. */
+    public HarnessAcceptanceEvaluation evaluateAcceptance(HarnessAcceptanceEvaluator evaluator,
+                                                          HarnessAcceptanceContext context,
+                                                          HarnessActor evaluatorActor) {
+        return HarnessAcceptanceCoordinator.evaluate(gateway, evaluator, context, evaluatorActor);
     }
 
     public HarnessContract getContract() {
@@ -588,7 +597,7 @@ public final class AgentHarness implements AutoCloseable {
                     .executionId(persisted.getExecutionId()).sessionId(persisted.getSessionId())
                     .artifacts(checkpointState).build()
                     : acceptanceContextFactory.create(executionContext, adapterExecution, persisted);
-            completed.setAcceptanceEvaluation(evaluateAcceptance(acceptanceEvaluator, context));
+            completed.setAcceptanceEvaluation(evaluateAcceptance(acceptanceEvaluator, context, acceptanceActor));
         }
         if (adapterResult instanceof AgentResult) {
             completed.setAgentResult((AgentResult) adapterResult);
@@ -1280,6 +1289,7 @@ public final class AgentHarness implements AutoCloseable {
         private HarnessPersistence persistence;
         private HarnessContract contract;
         private HarnessActor actor;
+        private HarnessActor acceptanceActor;
         private String workerId;
         private boolean autoResume = true;
         private HarnessRunListener listener;
@@ -1292,6 +1302,7 @@ public final class AgentHarness implements AutoCloseable {
         public Builder persistence(HarnessPersistence value) { this.persistence = value; return this; }
         public Builder contract(HarnessContract value) { this.contract = value; return this; }
         public Builder actor(HarnessActor value) { this.actor = value; return this; }
+        public Builder acceptanceActor(HarnessActor value) { this.acceptanceActor = value; return this; }
         public Builder workerId(String value) { this.workerId = value; return this; }
         public Builder autoResume(boolean value) { this.autoResume = value; return this; }
         public Builder listener(HarnessRunListener value) { this.listener = value; return this; }

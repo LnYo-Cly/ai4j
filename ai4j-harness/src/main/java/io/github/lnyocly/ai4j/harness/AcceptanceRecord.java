@@ -18,6 +18,22 @@ public class AcceptanceRecord {
     private String findingsJson;
     private long evaluatedAtEpochMs;
     private HarnessProvenance provenance;
+    private HarnessAcceptanceProvenance acceptanceProvenance;
+
+    /** Preserves the constructor signature from before evaluator provenance. */
+    public AcceptanceRecord(String acceptanceId,
+                            String taskId,
+                            String executionId,
+                            String submissionId,
+                            String checkId,
+                            HarnessAcceptanceStatus status,
+                            String summary,
+                            String findingsJson,
+                            long evaluatedAtEpochMs,
+                            HarnessProvenance provenance) {
+        this(acceptanceId, taskId, executionId, submissionId, checkId, status, summary,
+                findingsJson, evaluatedAtEpochMs, provenance, null);
+    }
 
     public AcceptanceRecord copy() { return HarnessJson.copy(this, AcceptanceRecord.class); }
 }

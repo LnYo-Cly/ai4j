@@ -853,6 +853,91 @@ public class AgentHarnessTest {
         harness.close();
     }
 
+    @Test
+    public void configuredAcceptanceEvaluatorRunsAfterSuccessfulGenericAdapter() {
+        final AtomicInteger evaluatorCalls = new AtomicInteger();
+        final AtomicReference<HarnessAcceptanceContext> capturedContext = new AtomicReference<HarnessAcceptanceContext>();
+        AgentHarness harness = AgentHarness.builder()
+                .executionAdapter(new OutcomeHarnessAdapter(AgentExecutionStatus.COMPLETED, "adapter output"))
+                .persistence(HarnessPersistence.file(directory.resolve("acceptance-integration")))
+                .acceptanceActor(HarnessActor.human("acceptance-service"))
+                .acceptanceContextFactory((executionContext, execution, persisted) -> HarnessAcceptanceContext.builder()
+                        .executionId(persisted.getExecutionId()).sessionId(persisted.getSessionId())
+                        .contextSnapshotRef("adapter-snapshot")
+                        .artifacts(Collections.<String, Object>singletonMap("output", execution.getOutputText()))
+                        .build())
+                .acceptanceEvaluator(new HarnessAcceptanceEvaluator() {
+                    @Override public HarnessAcceptanceResult evaluate(HarnessAcceptanceContext context) {
+                        evaluatorCalls.incrementAndGet();
+                        capturedContext.set(context);
+                        return HarnessAcceptanceResult.builder().checkId("adapter-result")
+                                .status(HarnessAcceptanceStatus.PASS).summary("adapter accepted").build();
+                    }
+                    @Override public String getEvaluatorId() { return "adapter-check"; }
+                    @Override public String getEvaluatorVersion() { return "v1"; }
+                })
+                .autoResume(false).build();
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder().input("adapter input").build());
+        Assert.assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        Assert.assertEquals(1, evaluatorCalls.get());
+        Assert.assertEquals("adapter-snapshot", capturedContext.get().getContextSnapshotRef());
+        Assert.assertNotNull(result.getAcceptanceEvaluation());
+        Assert.assertEquals(HarnessAcceptanceStatus.PASS, result.getAcceptanceEvaluation().getResult().getStatus());
+        Assert.assertNotNull(result.getAcceptanceEvaluation().getEvidence());
+        Assert.assertEquals("acceptance-service",
+                result.getAcceptanceEvaluation().getAcceptance().getProvenance().getActor().getId());
+        Assert.assertEquals("adapter-check",
+                result.getAcceptanceEvaluation().getAcceptance().getAcceptanceProvenance().getEvaluatorId());
+        harness.close();
+    }
+
+    @Test
+    public void evaluatorFailureIsRecordedWithoutChangingSuccessfulExecutionStatus() {
+        final AtomicInteger evaluatorCalls = new AtomicInteger();
+        AgentHarness harness = AgentHarness.builder()
+                .executionAdapter(new OutcomeHarnessAdapter(AgentExecutionStatus.COMPLETED, "completed"))
+                .persistence(HarnessPersistence.file(directory.resolve("acceptance-error")))
+                .acceptanceEvaluator(context -> {
+                    evaluatorCalls.incrementAndGet();
+                    throw new IllegalStateException("validator unavailable");
+                })
+                .autoResume(false).build();
+        HarnessRunResult result = harness.run("input");
+        Assert.assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        Assert.assertEquals(1, evaluatorCalls.get());
+        Assert.assertEquals(HarnessAcceptanceStatus.ERROR, result.getAcceptanceEvaluation().getResult().getStatus());
+        Assert.assertNull(result.getAcceptanceEvaluation().getEvidence());
+        Assert.assertEquals(1, harness.getGateway().listAcceptances(result.getExecution().getExecutionId()).size());
+        harness.close();
+    }
+
+    @Test
+    public void evaluatorDoesNotRunForFailedOrWaitingAdapterOutcomes() {
+        final AtomicInteger evaluatorCalls = new AtomicInteger();
+        HarnessAcceptanceEvaluator evaluator = context -> {
+            evaluatorCalls.incrementAndGet();
+            return HarnessAcceptanceResult.builder().checkId("unexpected").status(HarnessAcceptanceStatus.PASS).build();
+        };
+        AgentHarness failedHarness = AgentHarness.builder()
+                .executionAdapter(new OutcomeHarnessAdapter(AgentExecutionStatus.FAILED, "failed"))
+                .persistence(HarnessPersistence.file(directory.resolve("acceptance-failed")))
+                .acceptanceEvaluator(evaluator).autoResume(false).build();
+        HarnessRunResult failed = failedHarness.run("input");
+        Assert.assertEquals(HarnessRunStatus.FAILED, failed.getStatus());
+        Assert.assertNull(failed.getAcceptanceEvaluation());
+        failedHarness.close();
+
+        AgentHarness waitingHarness = AgentHarness.builder()
+                .executionAdapter(new OutcomeHarnessAdapter(AgentExecutionStatus.WAITING, "waiting"))
+                .persistence(HarnessPersistence.file(directory.resolve("acceptance-waiting")))
+                .acceptanceEvaluator(evaluator).autoResume(false).build();
+        HarnessRunResult waiting = waitingHarness.run("input");
+        Assert.assertEquals(HarnessRunStatus.WAITING, waiting.getStatus());
+        Assert.assertNull(waiting.getAcceptanceEvaluation());
+        Assert.assertEquals(0, evaluatorCalls.get());
+        waitingHarness.close();
+    }
+
     private AgentHarness harness(Agent agent, String name) {
         return AgentHarness.builder()
                 .agent(agent)
@@ -911,6 +996,41 @@ public class AgentHarnessTest {
                                                      WaitRecord wait,
                                                      Object input) {
             return HarnessAdapterDelivery.builder().replacedPendingResult(true).state(state).build();
+        }
+    }
+
+    private static final class OutcomeHarnessAdapter implements HarnessExecutionAdapter {
+        private final AgentExecutionStatus status;
+        private final String output;
+
+        private OutcomeHarnessAdapter(AgentExecutionStatus status, String output) {
+            this.status = status;
+            this.output = output;
+        }
+
+        @Override public String getAdapterType() { return "test-outcome"; }
+
+        @Override
+        public HarnessExecutionAdapterSession open(HarnessExecutionContext context,
+                                                   HarnessRunBudget budget,
+                                                   HarnessAdapterState previousState) {
+            return new HarnessExecutionAdapterSession() {
+                @Override
+                public HarnessAdapterExecution run(AgentRequest request) {
+                    return HarnessAdapterExecution.builder().status(status).outputText(output).build();
+                }
+
+                @Override public HarnessAdapterState snapshot() {
+                    return HarnessAdapterState.builder().adapterType("test-outcome").build();
+                }
+            };
+        }
+
+        @Override
+        public HarnessAdapterDelivery applyDelivery(HarnessAdapterState state,
+                                                     WaitRecord wait,
+                                                     Object input) {
+            return HarnessAdapterDelivery.builder().state(state).replacedPendingResult(false).build();
         }
     }
 

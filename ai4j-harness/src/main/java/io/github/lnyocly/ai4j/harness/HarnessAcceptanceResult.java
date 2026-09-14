@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Structured result; a model completion claim is never an acceptance result. */
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data @Builder(toBuilder = true) @NoArgsConstructor @AllArgsConstructor
 public class HarnessAcceptanceResult {
     private String checkId;
     private HarnessAcceptanceStatus status;
