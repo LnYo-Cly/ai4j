@@ -38,16 +38,47 @@ class Report:
         return 1 if self.failed else 0
 
 
+def projection_rows(state: dict, field: str, report: Report) -> list[dict]:
+    """Read a projected collection without allowing malformed JSON to crash the checker."""
+
+    if field not in state:
+        return []
+    raw = state[field]
+    if not isinstance(raw, list):
+        report.fail("projection-shape", f"state.{field} must be an array")
+        return []
+    rows: list[dict] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            report.fail("projection-shape", f"state.{field}[{index}] must be an object")
+        else:
+            rows.append(item)
+    return rows
+
+
 def load_audit(target: Path) -> tuple[dict, Path]:
     if target.is_dir():
         target = target / "ai4j-audit" / "harness_audit.json"
     if not target.is_file():
         raise SystemExit(f"audit file not found: {target}")
-    return json.loads(target.read_text(encoding="utf-8")), target
+    try:
+        value = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read audit file: {exc}") from exc
+    if not isinstance(value, dict):
+        raise SystemExit("audit file must contain a JSON object")
+    return value, target
 
 
 def check(audit: dict, expect_status: str | None, report: Report) -> None:
-    state = audit.get("state") or {}
+    raw_state = audit.get("state")
+    if raw_state is None:
+        state: dict = {}
+    elif isinstance(raw_state, dict):
+        state = raw_state
+    else:
+        report.fail("projection-shape", "audit.state must be an object")
+        return
 
     if audit.get("schema") != "ai4j-harness-audit/v1":
         report.fail("schema", f"unexpected schema {audit.get('schema')!r}")
@@ -65,13 +96,16 @@ def check(audit: dict, expect_status: str | None, report: Report) -> None:
         report.skip("durable-state", "bare mode has no harness state projection")
         return
 
-    tasks = state.get("tasks") or []
-    executions = state.get("executions") or []
-    checkpoints = state.get("checkpoints") or []
-    waits = state.get("waits") or []
-    wakeups = state.get("wakeups") or []
-    gates = state.get("gates") or []
-    tool_invocations = state.get("toolInvocations") or []
+    tasks = projection_rows(state, "tasks", report)
+    executions = projection_rows(state, "executions", report)
+    checkpoints = projection_rows(state, "checkpoints", report)
+    waits = projection_rows(state, "waits", report)
+    wakeups = projection_rows(state, "wakeups", report)
+    gates = projection_rows(state, "gates", report)
+    tool_invocations = projection_rows(state, "toolInvocations", report)
+    acceptances = projection_rows(state, "acceptances", report)
+    evidence = projection_rows(state, "evidence", report)
+    submissions = projection_rows(state, "submissions", report)
 
     # Dynamic task creation: the bridge never pre-creates a business Task from
     # the benchmark task id, so a harness-created task must not reuse it.
@@ -171,6 +205,76 @@ def check(audit: dict, expect_status: str | None, report: Report) -> None:
             report.ok("tool-invocation-uniqueness", f"{len(tool_invocations)} unique invocation(s)")
     else:
         report.skip("tool-invocation-uniqueness", "no tool invocations")
+
+    # Acceptance records are host-owned evidence.  They must point at a
+    # durable execution (and, when present, a matching Task/Submission), while
+    # a PASS must have the evidence record created by the coordinator.  This is
+    # intentionally separate from the official benchmark oracle score.
+    if acceptances:
+        execution_by_id = {e.get("executionId"): e for e in executions if isinstance(e, dict)}
+        submission_by_id = {s.get("submissionId"): s for s in submissions if isinstance(s, dict)}
+        evidence_rows = [e for e in evidence if isinstance(e, dict)]
+        acceptance_ids: set[str] = set()
+        for acceptance in acceptances:
+            if not isinstance(acceptance, dict):
+                report.fail("acceptance-lineage", "acceptance projection contains a non-object")
+                continue
+            acceptance_id = acceptance.get("acceptanceId")
+            if not acceptance_id or acceptance_id in acceptance_ids:
+                report.fail("acceptance-lineage", f"duplicate or missing acceptance id: {acceptance_id}")
+            acceptance_ids.add(acceptance_id)
+            status = str(acceptance.get("status") or "").upper()
+            if status not in {"PASS", "FAIL", "ERROR", "NOT_RUN"}:
+                report.fail("acceptance-lineage", f"acceptance {acceptance_id} has invalid status {status!r}")
+            execution = execution_by_id.get(acceptance.get("executionId"))
+            if execution is None:
+                report.fail("acceptance-lineage", f"acceptance {acceptance_id} references unknown execution")
+                continue
+            if acceptance.get("taskId") is not None and acceptance.get("taskId") != execution.get("taskId"):
+                report.fail("acceptance-lineage", f"acceptance {acceptance_id} task/execution mismatch")
+            submission_id = acceptance.get("submissionId")
+            if submission_id is not None:
+                submission = submission_by_id.get(submission_id)
+                if submission is None:
+                    report.fail("acceptance-lineage", f"acceptance {acceptance_id} references unknown submission")
+                elif (submission.get("executionId") != acceptance.get("executionId")
+                      or submission.get("taskId") != acceptance.get("taskId")):
+                    report.fail("acceptance-lineage", f"acceptance {acceptance_id} submission binding mismatch")
+            if status == "PASS":
+                matching_evidence = [
+                    row for row in evidence_rows
+                    if row.get("contentRef") == acceptance_id
+                    and row.get("executionId") == acceptance.get("executionId")
+                ]
+                if not matching_evidence:
+                    report.fail("acceptance-lineage", f"PASS acceptance {acceptance_id} has no durable evidence")
+            provenance = acceptance.get("acceptanceProvenance")
+            if provenance is not None:
+                if not isinstance(provenance, dict):
+                    report.fail("acceptance-provenance", f"acceptance {acceptance_id} provenance is not an object")
+                else:
+                    missing = [key for key in ("evaluatorId", "evaluatorVersion", "checkVersion")
+                               if not str(provenance.get(key) or "").strip()]
+                    if missing:
+                        report.fail("acceptance-provenance", f"acceptance {acceptance_id} missing {missing}")
+                    else:
+                        report.ok("acceptance-provenance", f"acceptance {acceptance_id} has evaluator metadata")
+        if not any(item.startswith("acceptance-lineage:") for item in report.failed):
+            report.ok("acceptance-lineage", f"{len(acceptances)} acceptance record(s) are lineage-bound")
+
+        lineage = audit.get("lineage")
+        if isinstance(lineage, dict):
+            lineage_ids = lineage.get("executionIds") or []
+            chain_acceptances = lineage.get("acceptances") or []
+            if not isinstance(lineage_ids, list) or not all(item in execution_by_id for item in lineage_ids):
+                report.fail("acceptance-lineage", "audit lineage contains an unknown execution")
+            if lineage.get("repairCount") != max(0, len(lineage_ids) - 1):
+                report.fail("acceptance-lineage", "audit lineage repairCount is inconsistent")
+            if lineage.get("acceptanceCount") != len(chain_acceptances):
+                report.fail("acceptance-lineage", "audit lineage acceptanceCount is inconsistent")
+    else:
+        report.skip("acceptance-lineage", "no acceptance records")
+        report.skip("acceptance-provenance", "no acceptance records")
 
     # UNKNOWN handling: preserve the ambiguous execution and reject any later
     # execution for the same task/session. A mere UNKNOWN record is not enough.
