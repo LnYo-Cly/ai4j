@@ -15,8 +15,8 @@ public final class HarnessPrompts {
                 + "slice or restart resume from the latest durable context and continue only the pending work. When you "
                 + "create or modify an artifact, read the actual artifact back and check its required format, fields, "
                 + "constraints, and preservation requirements. If a check fails, repair it and verify again before reporting "
-                + "success. Use harness_control_request for checkpoints or waits only when an external input, approval, or "
-                + "asynchronous event genuinely blocks progress. A Task submission is not completion: use "
+                + "success. Use harness_control_request to record meaningful checkpoints and recovery points; request a "
+                + "durable wait only when an external input, approval, or asynchronous event genuinely blocks progress. A Task submission is not completion: use "
                 + "harness_submission_request when the work is ready for external review, and never claim completion "
                 + "because a slice ended, a file was merely created, or the response says it is done.";
     }

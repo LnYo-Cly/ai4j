@@ -89,3 +89,5 @@ HarnessBench metric-report regression: `python -m unittest discover -s benchmark
 HarnessBench unlimited-step regression: `bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh` covers 40 tool calls followed by completion in a single execution, for Harness and Bare with both unset and explicit-zero step budgets. Explicit finite-slice coverage remains. Wall-clock budgets apply independently of step budgets.
 
 Harness prompt contract regression: `mvn -o -pl ai4j-harness -DskipTests=false test` includes `HarnessPromptsTest` for generic input discovery, durable resume, actual artifact read-back, repair-before-success, genuine external waits, and completion claims; the contract rejects benchmark-, provider-, and coding-specific wording.
+
+RG-013 current verification supersedes the earlier 75-test snapshot: the 2026-09-14 rerun passed 78 tests with 0 failures, 0 errors, and 0 skips, including the checkpoint-versus-wait prompt contract.

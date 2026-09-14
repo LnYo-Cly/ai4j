@@ -132,3 +132,5 @@ HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/te
 2026-09-14 Harness acceptance regression: `mvn -o -pl ai4j-harness -DskipTests=false test` passed 75 tests. Required multi-check aggregation, all-check submission binding, fail-closed completion, evaluator actor/version/check provenance, opaque context snapshot references, invalid evaluator result handling, and generic adapter evaluator trigger boundaries were covered. No live provider credential or benchmark score was used.
 
 2026-09-14 Harness prompt contract regression: `mvn -o -pl ai4j-harness -DskipTests=false test` passed 78 tests, including three `HarnessPromptsTest` checks. The shared guidance now covers generic input discovery, durable resume, actual artifact read-back, repair-before-success, and waits only for genuine external blockers; it contains no benchmark-, provider-, or coding-specific wording.
+
+2026-09-14 Harness prompt review correction: the guidance now distinguishes proactive checkpoints/recovery points from durable waits, which remain reserved for genuine external blockers; the focused 78-test regression still passes.

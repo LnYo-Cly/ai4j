@@ -14,7 +14,9 @@ public class HarnessPromptsTest {
         assertContains(instructions, "read the actual artifact back");
         assertContains(instructions, "required format, fields, constraints, and preservation requirements");
         assertContains(instructions, "repair it and verify again before reporting success");
-        assertContains(instructions, "external input, approval, or asynchronous event genuinely blocks progress");
+        assertContains(instructions, "record meaningful checkpoints and recovery points");
+        assertContains(instructions, "request a durable wait only when an external input, approval, or asynchronous event genuinely blocks progress");
+        Assert.assertFalse(instructions.contains("for checkpoints or waits only when"));
         assertContains(instructions, "never claim completion because a slice ended");
         assertContains(instructions, "a file was merely created");
         assertContains(instructions, "the response says it is done");
