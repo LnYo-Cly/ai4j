@@ -86,6 +86,20 @@ public class HarnessGatewayInvariantTest {
     }
 
     @Test
+    public void executionLineageIsReturnedFromRootToChild() {
+        HarnessCommandGateway gateway = gateway("lineage");
+        ExecutionRecord root = gateway.createExecution(HarnessExecutionSpec.builder().executionId("root").scopeKey("s").build());
+        ExecutionRecord claimed = gateway.claimExecution(root.getExecutionId(), "worker", 10000L);
+        gateway.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId("root").leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        ExecutionRecord child = gateway.createExecution(HarnessExecutionSpec.builder().executionId("child").scopeKey("s")
+                .parentExecutionId("root").build());
+        Assert.assertEquals(2, gateway.listExecutionLineage(child.getExecutionId()).size());
+        Assert.assertEquals("root", gateway.listExecutionLineage("child").get(0).getExecutionId());
+        gateway.close();
+    }
+
+    @Test
     public void legacyRawIdempotencyIsReadOnlyWithinMatchingTypeAndScope() {
         HarnessCommandGateway gateway = gateway("legacy-idempotency");
         TaskRecord legacyTask = gateway.createTask(HarnessTaskSpec.builder()

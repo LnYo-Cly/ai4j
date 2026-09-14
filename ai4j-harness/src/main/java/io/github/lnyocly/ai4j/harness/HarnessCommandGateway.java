@@ -1026,6 +1026,21 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return result;
     }
 
+    /** Returns the durable repair lineage from a root execution to the given execution. */
+    public List<ExecutionRecord> listExecutionLineage(String executionId) {
+        String currentId = requireText(executionId, "execution id");
+        List<ExecutionRecord> reverse = new ArrayList<ExecutionRecord>();
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        while (currentId != null && seen.add(currentId)) {
+            ExecutionRecord current = getState().getExecutions().get(currentId);
+            if (current == null) throw new HarnessValidationException("execution not found: " + currentId);
+            reverse.add(current.copy());
+            currentId = trimToNull(current.getParentExecutionId());
+        }
+        java.util.Collections.reverse(reverse);
+        return reverse;
+    }
+
     /**
      * Appends a submission-bound confirmation for an earlier execution acceptance.
      * This closes the natural two-phase flow where evidence is produced before a
