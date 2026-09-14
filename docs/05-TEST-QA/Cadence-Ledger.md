@@ -124,3 +124,5 @@
 2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.
 
 HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh`: local scripted 40-call executions detect hidden default step caps without provider credentials. Preserve explicit bounded-slice behavior and independent wall-time enforcement.
+
+2026-09-14 Harness repair protocol regression: `mvn -o -pl ai4j-harness -DskipTests=false test` passed 67 tests. Structured host decisions, acceptance references, repair idempotency, provider-neutral adapter execution, terminal parent validation, durable repair events, and execution/acceptance lineage were covered. No live provider credential or benchmark score was used.
