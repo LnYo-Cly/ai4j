@@ -715,6 +715,30 @@ public class AgentHarnessTest {
         Assert.assertEquals(0, result.getToolCalls().size());
     }
 
+    @Test
+    public void repairRejectsNonTerminalParentAndPreservesLineageForTerminalParent() {
+        AgentHarness harness = harness(newAgent(new ReActRuntime(), new QueueModelClient(textResult("repaired")),
+                new NoopToolExecutor(), StaticToolRegistry.empty(), AgentOptions.builder().maxSteps(2).build()), "repair");
+        TaskRecord task = createTask(harness, "repair-task");
+        ExecutionRecord parent = harness.getGateway().createExecution(HarnessExecutionSpec.builder()
+                .taskId(task.getTaskId()).sessionId("repair-session").build());
+        try {
+            harness.repair(parent.getExecutionId(), "fix");
+            Assert.fail("non-terminal parent must be rejected");
+        } catch (HarnessConflictException expected) {
+            Assert.assertTrue(expected.getMessage().contains("terminal"));
+        }
+        ExecutionRecord claimed = harness.getGateway().claimExecution(parent.getExecutionId(), "test-worker", 10000L);
+        ExecutionRecord completed = harness.getGateway().persistExecutionOutcome(HarnessExecutionOutcome.builder()
+                .executionId(claimed.getExecutionId()).leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED)
+                .error("needs repair").build());
+        HarnessRunResult result = harness.repair(completed.getExecutionId(), "fix");
+        Assert.assertEquals("repaired", result.getOutputText());
+        Assert.assertEquals(completed.getExecutionId(), result.getExecution().getParentExecutionId());
+        harness.close();
+    }
+
     private AgentHarness harness(Agent agent, String name) {
         return AgentHarness.builder()
                 .agent(agent)
