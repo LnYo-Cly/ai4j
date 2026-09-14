@@ -8,7 +8,11 @@ import lombok.Data;
 @Builder(toBuilder = true)
 public class AgentOptions {
 
-    public static final int DEFAULT_MAX_STEPS = 20;
+    /**
+     * A non-positive value means that the runtime has no implicit step cap.
+     * Callers that need a bounded invocation must provide a positive value.
+     */
+    public static final int DEFAULT_MAX_STEPS = 0;
     public static final long DEFAULT_WALL_CLOCK_TIMEOUT_MS = 300_000L;
     public static final long UNLIMITED_TOKEN_BUDGET = -1L;
 

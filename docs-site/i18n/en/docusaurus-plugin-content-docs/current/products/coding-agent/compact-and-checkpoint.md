@@ -379,8 +379,8 @@ The configurations most relevant to compact / outer loop are in `CodingAgentOpti
 | `toolResultMicroCompactMaxTokens` | How many tokens a single tool result must exceed to be compacted |
 | `autoCompactMaxConsecutiveFailures` | After how many consecutive auto-compact failures the breaker opens |
 | `autoContinueEnabled` | Whether the outer loop is allowed to auto-continue |
-| `maxAutoFollowUps` | Maximum number of auto-continue follow-ups |
-| `maxTotalTurns` | Maximum turns allowed for a single user task |
+| `maxAutoFollowUps` | Maximum number of auto-continue follow-ups; `0` means no implicit cap, while a positive value is an explicit budget |
+| `maxTotalTurns` | Maximum turns allowed for a single user task; `0` means no implicit cap, while a positive value is an explicit budget |
 | `continueAfterCompact` | Whether continuing the current task is allowed after compact |
 | `stopOnApprovalBlock` | Whether to stop on approval rejection |
 | `stopOnExplicitQuestion` | Whether to stop when the model explicitly asks the user a question |

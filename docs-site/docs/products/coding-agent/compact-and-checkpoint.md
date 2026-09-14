@@ -379,8 +379,8 @@ compact 真正难的地方不是“生成摘要”，而是“摘要生成后还
 | `toolResultMicroCompactMaxTokens` | 单条 tool result 超过多少 token 才压 |
 | `autoCompactMaxConsecutiveFailures` | 自动 compact 连续失败多少次后打开 breaker |
 | `autoContinueEnabled` | 是否允许 outer loop 自动继续 |
-| `maxAutoFollowUps` | 自动继续的最大 follow-up 次数 |
-| `maxTotalTurns` | 单个用户任务最多允许多少 turn |
+| `maxAutoFollowUps` | 自动继续的最大 follow-up 次数；`0` 表示不设置隐式上限，正数才是显式预算 |
+| `maxTotalTurns` | 单个用户任务最多允许多少 turn；`0` 表示不设置隐式上限，正数才是显式预算 |
 | `continueAfterCompact` | compact 之后是否允许继续当前任务 |
 | `stopOnApprovalBlock` | 审批拒绝时是否停住 |
 | `stopOnExplicitQuestion` | 模型显式向用户提问时是否停住 |

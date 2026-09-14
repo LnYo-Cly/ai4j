@@ -16,7 +16,8 @@ public class StateGraphWorkflow implements AgentWorkflow {
     private final List<StateTransition> transitions = new ArrayList<>();
     private final List<ConditionalEdges> conditionalEdges = new ArrayList<>();
     private String startNodeId;
-    private int maxSteps = 32;
+    /** Zero means that the workflow is not implicitly step-limited. */
+    private int maxSteps = 0;
 
     public StateGraphWorkflow addNode(String nodeId, AgentNode node) {
         if (nodeId == null || nodeId.trim().isEmpty() || node == null) {
@@ -93,7 +94,7 @@ public class StateGraphWorkflow implements AgentWorkflow {
         AgentResult lastResult = null;
         int steps = 0;
 
-        while (currentNodeId != null && steps < maxSteps) {
+        while (currentNodeId != null && (maxSteps <= 0 || steps < maxSteps)) {
             AgentNode node = nodes.get(currentNodeId);
             if (node == null) {
                 throw new IllegalStateException("node not found: " + currentNodeId);

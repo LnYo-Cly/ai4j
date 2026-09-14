@@ -134,3 +134,5 @@ HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/te
 2026-09-14 Harness prompt contract regression: `mvn -o -pl ai4j-harness -DskipTests=false test` passed 78 tests, including three `HarnessPromptsTest` checks. The shared guidance now covers generic input discovery, durable resume, actual artifact read-back, repair-before-success, and waits only for genuine external blockers; it contains no benchmark-, provider-, or coding-specific wording.
 
 2026-09-14 Harness prompt review correction: the guidance now distinguishes proactive checkpoints/recovery points from durable waits, which remain reserved for genuine external blockers; the focused 78-test regression still passes.
+
+2026-09-14 Agent loop default regression: generic AgentOptions and StateGraphWorkflow now default to the existing zero/unlimited sentinel, and CodingAgentOptions/CodingLoopPolicy no longer impose implicit follow-up or total-turn caps. Focused tests cover Agent execution beyond 20 steps, StateGraph execution beyond 32 nodes, Coding execution beyond 6 turns, and explicit positive limits. No provider credential or live benchmark score was used.

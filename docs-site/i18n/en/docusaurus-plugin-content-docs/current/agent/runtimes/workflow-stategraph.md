@@ -85,19 +85,20 @@ In other words:
 
 ### 1.5 `maxSteps` is only an infinite-loop fuse, not a success condition
 
-`StateGraphWorkflow` defaults to `maxSteps = 32`.
+`StateGraphWorkflow` defaults to `maxSteps = 0`, meaning there is no implicit
+step cap. A positive value supplied by the caller remains an explicit fuse.
 
 The while condition is:
 
 ```java
-while (currentNodeId != null && steps < maxSteps)
+while (currentNodeId != null && (maxSteps <= 0 || steps < maxSteps))
 ```
 
 Once the limit is reached, execution simply stops and returns the current `lastResult`; it does not throw a "step limit exceeded" exception.
 
 So its semantics are:
 
-- Prevent infinite loops
+- Prevent infinite loops only when the caller supplies a positive limit
 - But it does not judge "whether the business flow has truly completed" for you
 
 ## 2. Get the object relationships straight
@@ -232,7 +233,7 @@ The core flow is:
 1. Validate `startNodeId`
 2. `currentNodeId = startNodeId`
 3. `currentRequest = request`
-4. while `currentNodeId != null && steps < maxSteps`
+4. while `currentNodeId != null && (maxSteps <= 0 || steps < maxSteps)`
 5. Find the current node
 6. Write `currentNodeId` and `currentRequest` into `WorkflowContext`
 7. Execute the node

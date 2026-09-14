@@ -66,10 +66,12 @@ public class CodingAgentOptions {
     private boolean autoContinueEnabled = true;
 
     @Builder.Default
-    private int maxAutoFollowUps = 2;
+    /** Zero means that automatic follow-ups are not implicitly capped. */
+    private int maxAutoFollowUps = 0;
 
     @Builder.Default
-    private int maxTotalTurns = 6;
+    /** Zero means that total turns are not implicitly capped. */
+    private int maxTotalTurns = 0;
 
     @Builder.Default
     private boolean continueAfterCompact = true;
