@@ -98,5 +98,64 @@ public class HarnessAcceptanceCoordinatorTest {
             Assert.assertTrue(bound);
         } finally { gateway.close(); }
     }
+
+    @Test public void multiCheckSubmissionRequiresEveryDeclaredCheckToPass() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-required-checks");
+        HarnessContract contract = HarnessContract.builder()
+                .requiresApprovedReview(false)
+                .requiredAcceptanceCheck("behavior")
+                .requiredAcceptanceCheck("artifact")
+                .build();
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                contract, HarnessActor.agent("agent"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = successfulExecution(gateway, task.getTaskId());
+            HarnessAcceptanceEvaluation behavior = HarnessAcceptanceCoordinator.evaluate(gateway,
+                    c -> HarnessAcceptanceResult.builder().checkId("behavior").status(HarnessAcceptanceStatus.PASS).summary("ok").build(),
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId()).build());
+            HarnessAcceptanceEvaluation artifact = HarnessAcceptanceCoordinator.evaluate(gateway,
+                    c -> HarnessAcceptanceResult.builder().checkId("artifact").status(HarnessAcceptanceStatus.PASS).summary("ok").build(),
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId()).build());
+            SubmissionRecord submission = gateway.submitTaskWithAcceptances(task.getTaskId(), execution.getExecutionId(),
+                    java.util.Arrays.asList(behavior.getAcceptance().getAcceptanceId(), artifact.getAcceptance().getAcceptanceId()),
+                    HarnessSubmissionSpec.builder().completionClaim("all checks").build(), HarnessActor.agent("agent"));
+            Assert.assertEquals(2, submission.getEvidenceIds().size());
+            Assert.assertEquals(TaskStatus.DONE, gateway.completeTask(task.getTaskId(), submission.getSubmissionId(),
+                    HarnessActor.human("reviewer")).getStatus());
+        } finally { gateway.close(); }
+    }
+
+    @Test public void completionRejectsSubmissionMissingARequiredCheck() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-missing-check");
+        HarnessContract contract = HarnessContract.builder().requiresApprovedReview(false)
+                .requiredAcceptanceCheck("behavior").requiredAcceptanceCheck("artifact").build();
+        HarnessCommandGateway gateway = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()),
+                contract, HarnessActor.agent("agent"));
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("t").build());
+            ExecutionRecord execution = successfulExecution(gateway, task.getTaskId());
+            HarnessAcceptanceEvaluation behavior = HarnessAcceptanceCoordinator.evaluate(gateway,
+                    c -> HarnessAcceptanceResult.builder().checkId("behavior").status(HarnessAcceptanceStatus.PASS).build(),
+                    HarnessAcceptanceContext.builder().taskId(task.getTaskId()).executionId(execution.getExecutionId()).build());
+            SubmissionRecord submission = gateway.submitTaskWithAcceptance(task.getTaskId(), execution.getExecutionId(),
+                    behavior.getAcceptance().getAcceptanceId(), HarnessSubmissionSpec.builder().completionClaim("partial").build(),
+                    HarnessActor.agent("agent"));
+            try {
+                gateway.completeTask(task.getTaskId(), submission.getSubmissionId(), HarnessActor.human("reviewer"));
+                Assert.fail("completion must require every declared acceptance check");
+            } catch (HarnessConflictException expected) {
+                Assert.assertTrue(expected.getMessage().contains("artifact"));
+            }
+        } finally { gateway.close(); }
+    }
+
+    private ExecutionRecord successfulExecution(HarnessCommandGateway gateway, String taskId) {
+        ExecutionRecord created = gateway.createExecution(HarnessExecutionSpec.builder().taskId(taskId).build());
+        ExecutionRecord claimed = gateway.claimExecution(created.getExecutionId(), "worker", 10000L);
+        return gateway.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId(created.getExecutionId())
+                .leaseId(claimed.getLeaseId()).fencingToken(claimed.getFencingToken())
+                .status(ExecutionStatus.SUCCEEDED).outputText("ok").build());
+    }
 }
 

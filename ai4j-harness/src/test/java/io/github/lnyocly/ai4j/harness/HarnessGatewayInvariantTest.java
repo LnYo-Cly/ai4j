@@ -114,6 +114,36 @@ public class HarnessGatewayInvariantTest {
     }
 
     @Test
+    public void lineageSummaryFailsClosedForMissingRequiredChecksAndIgnoresInformationalChecks() {
+        HarnessContract contract = HarnessContract.builder()
+                .requiredAcceptanceCheck("behavior")
+                .requiredAcceptanceCheck("artifact")
+                .build();
+        HarnessCommandGateway gateway = new HarnessCommandGateway(
+                new FileHarnessStore(FileHarnessConfig.builder().directory(directory.resolve("required-checks")).build()),
+                contract, HarnessActor.agent("test-agent"));
+        TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().taskId("required-task").title("required").build());
+        ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("behavior-pass").executionId(execution.getExecutionId())
+                .checkId("behavior").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(1L).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("informational-fail").executionId(execution.getExecutionId())
+                .checkId("trace").status(HarnessAcceptanceStatus.FAIL).evaluatedAtEpochMs(2L).build());
+        HarnessLineageSummary missing = gateway.summarizeLineage(execution.getExecutionId());
+        Assert.assertEquals(HarnessAcceptanceStatus.NOT_RUN, missing.getAggregateAcceptanceStatus());
+        Assert.assertFalse(missing.isPassed());
+        Assert.assertTrue(missing.getMissingRequiredCheckIds().contains("artifact"));
+
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("artifact-pass").executionId(execution.getExecutionId())
+                .checkId("artifact").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(3L).build());
+        HarnessLineageSummary complete = gateway.summarizeLineage(execution.getExecutionId());
+        Assert.assertEquals(HarnessAcceptanceStatus.PASS, complete.getAggregateAcceptanceStatus());
+        Assert.assertTrue(complete.isPassed());
+        Assert.assertTrue(complete.getLatestAcceptancesByCheck().containsKey("trace"));
+        Assert.assertTrue(complete.getMissingRequiredCheckIds().isEmpty());
+        gateway.close();
+    }
+
+    @Test
     public void legacyRawIdempotencyIsReadOnlyWithinMatchingTypeAndScope() {
         HarnessCommandGateway gateway = gateway("legacy-idempotency");
         TaskRecord legacyTask = gateway.createTask(HarnessTaskSpec.builder()
