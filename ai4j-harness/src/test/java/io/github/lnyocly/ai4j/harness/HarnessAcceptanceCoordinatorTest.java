@@ -4,6 +4,22 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class HarnessAcceptanceCoordinatorTest {
+    @Test public void acceptanceAndRepairLineageSurviveFileStoreRestart() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-restart");
+        HarnessCommandGateway first = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()), HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));
+        TaskRecord task = first.createTask(HarnessTaskSpec.builder().title("t").build());
+        ExecutionRecord root = first.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).scopeKey("s").build());
+        ExecutionRecord claimed = first.claimExecution(root.getExecutionId(), "w", 10000L);
+        first.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId(root.getExecutionId()).leaseId(claimed.getLeaseId()).fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        first.recordAcceptance(AcceptanceRecord.builder().acceptanceId("restart-acc").executionId(root.getExecutionId()).checkId("check").status(HarnessAcceptanceStatus.FAIL).build());
+        first.close();
+        HarnessCommandGateway reopened = new HarnessCommandGateway(new FileHarnessStore(FileHarnessConfig.builder().directory(dir).build()), HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("agent"));
+        try {
+            ExecutionRecord child = reopened.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).scopeKey("s").parentExecutionId(root.getExecutionId()).build());
+            Assert.assertEquals(2, reopened.listExecutionLineage(child.getExecutionId()).size());
+            Assert.assertEquals("restart-acc", reopened.listAcceptanceLineage(child.getExecutionId()).get(0).getAcceptanceId());
+        } finally { reopened.close(); }
+    }
     @Test public void recordsFailureWithoutManufacturingEvidence() throws Exception {
         java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("acceptance-coordinator");
         HarnessCommandGateway gateway = new HarnessCommandGateway(
