@@ -49,12 +49,12 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     public HarnessExecutionAdapterSession open(HarnessExecutionContext executionContext,
                                                HarnessRunBudget budget,
                                                HarnessAdapterState previousState) {
-        AgentContext context = createContext(executionContext, budget);
         AgentSessionSnapshot snapshot = decodeSessionSnapshot(previousState);
         if (snapshot == null && executionContext.getSessionId() != null) {
             snapshot = executionContext.getGateway().getSessionSnapshot(
                     executionContext.getSessionId());
         }
+        AgentContext context = createContext(executionContext, budget, snapshot != null);
         AgentSession session = snapshot == null
                 ? agent.newSessionWithIdentity(executionContext.getSessionId(),
                         executionContext.getRunId(), context)
@@ -112,7 +112,8 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     }
 
     private AgentContext createContext(HarnessExecutionContext executionContext,
-                                       HarnessRunBudget budget) {
+                                       HarnessRunBudget budget,
+                                       boolean resumed) {
         AgentContext base = agent.getContext();
         if (base == null) {
             throw new IllegalStateException("agent context is required");
@@ -132,13 +133,17 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
             }
         }
         ToolExecutor businessExecutor = base.getToolExecutor();
+        String harnessPrompt = HarnessPrompts.instructions();
+        if (resumed) {
+            harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
+        }
         return base.toBuilder()
                 .toolRegistry(new HarnessToolRegistry(base.getToolRegistry()))
                 .toolExecutor(new HarnessToolExecutor(executionContext, businessExecutor))
                 .toolInterceptor(new HarnessToolInterceptor(base.getToolInterceptor()))
                 .options(optionsBuilder.build())
                 .sessionId(executionContext.getSessionId())
-                .systemPrompt(appendPrompt(base.getSystemPrompt(), HarnessPrompts.instructions()))
+                .systemPrompt(appendPrompt(base.getSystemPrompt(), harnessPrompt))
                 .build();
     }
 

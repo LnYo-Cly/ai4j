@@ -10,6 +10,10 @@ public class HarnessPromptsTest {
         String instructions = HarnessPrompts.instructions();
 
         assertContains(instructions, "inspect the workspace, existing input files, state, and available tools");
+        assertContains(instructions, "Treat every path or file named by the current task or input as an authorized workspace pointer");
+        assertContains(instructions, "use the configured read, list, or state tools to inspect it before asking");
+        assertContains(instructions, "A path alone is not a reason to ask the user to paste a file");
+        assertContains(instructions, "only after a tool reports that the item is missing, inaccessible, or unreadable");
         assertContains(instructions, "resume from the latest durable context");
         assertContains(instructions, "read the actual artifact back");
         assertContains(instructions, "required format, fields, constraints, and preservation requirements");
@@ -40,6 +44,28 @@ public class HarnessPromptsTest {
         assertContains(instructions, "Harness tools as persistence and governance rather than a substitute");
         assertContains(instructions, "A Task submission is not completion");
         assertContains(instructions, "harness_submission_request");
+    }
+
+    @Test
+    public void resumedInstructionsRequireToolFirstRecovery() {
+        String instructions = HarnessPrompts.resumedInstructions();
+
+        assertContains(instructions, "This is a resumed Harness execution");
+        assertContains(instructions, "Continue from the restored session, durable artifacts, prior tool results, and the current input");
+        assertContains(instructions, "Before asking for any named file or path, call the configured workspace inspection tool");
+        assertContains(instructions, "Do not ask for pasted contents merely because the input supplied a path");
+        assertContains(instructions, "missing, permission denied, or unreadable");
+        assertContains(instructions, "read the real file back and repair any format or constraint failure");
+    }
+
+    @Test
+    public void resumedInstructionsRemainProviderAndWorkKindNeutral() {
+        String instructions = HarnessPrompts.resumedInstructions().toLowerCase();
+
+        Assert.assertFalse(instructions.contains("coding agent"));
+        Assert.assertFalse(instructions.contains("harnessbench"));
+        Assert.assertFalse(instructions.contains("benchmark"));
+        Assert.assertFalse(instructions.contains("provider"));
     }
 
     private void assertContains(String value, String expected) {

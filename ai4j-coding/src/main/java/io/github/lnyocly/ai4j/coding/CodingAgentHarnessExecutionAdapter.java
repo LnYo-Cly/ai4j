@@ -72,7 +72,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
             throw new IllegalArgumentException("coding checkpoint session does not match execution session");
         }
         CodingSession session = codingAgent.newSession(sessionId, state);
-        applyHarnessOverlay(session, executionContext, budget);
+        applyHarnessOverlay(session, executionContext, budget, state != null);
         return new Session(executionContext, session);
     }
 
@@ -125,7 +125,8 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
 
     private void applyHarnessOverlay(CodingSession session,
                                      HarnessExecutionContext executionContext,
-                                     HarnessRunBudget budget) {
+                                     HarnessRunBudget budget,
+                                     boolean resumed) {
         if (session == null || session.getDelegate() == null
                 || session.getDelegate().getContext() == null) {
             throw new IllegalStateException("coding session context is required");
@@ -155,7 +156,11 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
         context.setToolInterceptor(new HarnessToolInterceptor(context.getToolInterceptor()));
         context.setOptions(optionsBuilder.build());
         context.setSessionId(session.getSessionId());
-        context.setSystemPrompt(appendPrompt(context.getSystemPrompt(), HarnessPrompts.instructions()));
+        String harnessPrompt = HarnessPrompts.instructions();
+        if (resumed) {
+            harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
+        }
+        context.setSystemPrompt(appendPrompt(context.getSystemPrompt(), harnessPrompt));
     }
 
     private CodingSessionState decodeState(HarnessAdapterState state) {

@@ -150,9 +150,10 @@ public class AgentHarnessTest {
         String executionId = slice.getExecution().getExecutionId();
         first.close();
 
+        QueueModelClient reopenedModel = new QueueModelClient(
+                textResult("coding task completed after restart"));
         AgentHarness reopened = AgentHarness.builder()
-                .agent(newAgent(new ReActRuntime(), new QueueModelClient(
-                                textResult("coding task completed after restart")),
+                .agent(newAgent(new ReActRuntime(), reopenedModel,
                         new NoopToolExecutor(), StaticToolRegistry.empty(),
                         AgentOptions.builder().maxSteps(4).build()))
                 .persistence(HarnessPersistence.file(persistenceDirectory))
@@ -165,6 +166,10 @@ public class AgentHarnessTest {
             Assert.assertEquals("coding-project-session", resumed.getExecution().getSessionId());
             Assert.assertEquals(TaskStatus.ACTIVE,
                     reopened.getGateway().getTask(task.getTaskId()).getStatus());
+            Assert.assertFalse(firstModel.getLastPrompt().getSystemPrompt()
+                    .contains("This is a resumed Harness execution"));
+            Assert.assertTrue(reopenedModel.getLastPrompt().getSystemPrompt()
+                    .contains("This is a resumed Harness execution"));
         } finally {
             reopened.close();
         }
@@ -1130,6 +1135,7 @@ public class AgentHarnessTest {
 
     private static class QueueModelClient implements AgentModelClient {
         private final Deque<AgentModelResult> results;
+        private final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
 
         private QueueModelClient(AgentModelResult... results) {
             this.results = new ArrayDeque<AgentModelResult>(Arrays.asList(results));
@@ -1137,6 +1143,7 @@ public class AgentHarnessTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return results.isEmpty() ? AgentModelResult.builder()
                     .outputText("no more model results")
                     .toolCalls(new ArrayList<AgentToolCall>())
@@ -1146,6 +1153,10 @@ public class AgentHarnessTest {
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
             return create(prompt);
+        }
+
+        private AgentPrompt getLastPrompt() {
+            return prompts.isEmpty() ? null : prompts.get(prompts.size() - 1);
         }
     }
 

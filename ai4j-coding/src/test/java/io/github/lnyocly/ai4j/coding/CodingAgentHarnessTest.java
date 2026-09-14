@@ -52,9 +52,10 @@ public class CodingAgentHarnessTest {
         Path harnessDirectory = temporaryFolder.newFolder("coding-harness").toPath();
         Path workspace = temporaryFolder.newFolder("coding-workspace").toPath();
 
-        CodingAgent firstAgent = codingAgent(new QueueModelClient(
+        QueueModelClient firstModel = new QueueModelClient(
                 toolCallResult("echo-call", "echo"),
-                textResult("completed after the new message")), new ToolExecutor() {
+                textResult("completed after the new message"));
+        CodingAgent firstAgent = codingAgent(firstModel, new ToolExecutor() {
             @Override
             public String execute(AgentToolCall call) {
                 return "echo-result";
@@ -90,10 +91,13 @@ public class CodingAgentHarnessTest {
         assertEquals("coding-project", nextMessage.getExecution().getSessionId());
         assertFalse(first.getExecution().getExecutionId()
                 .equals(nextMessage.getExecution().getExecutionId()));
+        assertFalse(firstModel.getFirstPrompt().getSystemPrompt()
+                .contains("This is a resumed Harness execution"));
         firstHarness.close();
 
-        CodingAgent reopenedAgent = codingAgent(new QueueModelClient(
-                textResult("completed after the harness reopened")), new ToolExecutor() {
+        QueueModelClient reopenedModel = new QueueModelClient(
+                textResult("completed after the harness reopened"));
+        CodingAgent reopenedAgent = codingAgent(reopenedModel, new ToolExecutor() {
             @Override
             public String execute(AgentToolCall call) {
                 return "echo-result";
@@ -109,6 +113,8 @@ public class CodingAgentHarnessTest {
             assertEquals(HarnessRunStatus.COMPLETED, resumed.getStatus());
             assertEquals("completed after the harness reopened", resumed.getOutputText());
             assertEquals("coding-project", resumed.getExecution().getSessionId());
+            assertTrue(reopenedModel.getLastPrompt().getSystemPrompt()
+                    .contains("This is a resumed Harness execution"));
         } finally {
             reopened.close();
         }
@@ -224,6 +230,7 @@ public class CodingAgentHarnessTest {
 
     private static final class QueueModelClient implements AgentModelClient {
         private final Deque<AgentModelResult> results;
+        private final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
 
         private QueueModelClient(AgentModelResult... results) {
             this.results = new ArrayDeque<AgentModelResult>(Arrays.asList(results));
@@ -231,6 +238,7 @@ public class CodingAgentHarnessTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return results.isEmpty() ? AgentModelResult.builder()
                     .outputText("unexpected model call")
                     .toolCalls(new ArrayList<AgentToolCall>())
@@ -240,6 +248,14 @@ public class CodingAgentHarnessTest {
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
             return create(prompt);
+        }
+
+        private AgentPrompt getLastPrompt() {
+            return prompts.isEmpty() ? null : prompts.get(prompts.size() - 1);
+        }
+
+        private AgentPrompt getFirstPrompt() {
+            return prompts.isEmpty() ? null : prompts.get(0);
         }
     }
 }
