@@ -1410,12 +1410,31 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 String existingId = idempotentId(state, IDEMPOTENCY_EXECUTION, executionScope,
                         spec.getIdempotencyKey());
                 if (existingId != null && state.getExecutions().get(existingId) != null) {
+                    if (!safeEquals(trimToNull(spec.getParentExecutionId()),
+                            state.getExecutions().get(existingId).getParentExecutionId())) {
+                        throw new HarnessConflictException("idempotency key belongs to a different execution parent");
+                    }
                     return state.getExecutions().get(existingId).copy();
                 }
                 if (state.getExecutions().containsKey(executionId)) {
                     throw new HarnessConflictException("execution already exists: " + executionId);
                 }
                 String executionTaskId = trimToNull(spec.getTaskId());
+                String parentId = trimToNull(spec.getParentExecutionId());
+                if (parentId != null) {
+                    ExecutionRecord parent = state.getExecutions().get(parentId);
+                    if (parent == null) {
+                        throw new HarnessValidationException("parent execution not found: " + parentId);
+                    }
+                    if (!safeEquals(executionTaskId, parent.getTaskId())
+                            || !safeEquals(executionScope, parent.getScopeKey())) {
+                        throw new HarnessConflictException("parent execution task and scope must match");
+                    }
+                    if (parent.getStatus() != ExecutionStatus.SUCCEEDED
+                            && parent.getStatus() != ExecutionStatus.FAILED) {
+                        throw new HarnessConflictException("parent execution must have succeeded or failed; resume or reconcile it first");
+                    }
+                }
                 if (executionTaskId != null) {
                     TaskRecord task = requireTask(state, executionTaskId);
                     if (TaskStatus.DONE.equals(task.getStatus()) || TaskStatus.CANCELLED.equals(task.getStatus())) {

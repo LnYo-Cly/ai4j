@@ -23,6 +23,18 @@ public class HarnessRunRequest {
     private AgentRequest agentRequest;
     private HarnessRunBudget budget;
 
+    /** Preserves the constructor signature from before parent execution lineage. */
+    public HarnessRunRequest(String taskId,
+            String executionId,
+            String scopeKey,
+            String sessionId,
+            String idempotencyKey,
+            Object input,
+            AgentRequest agentRequest,
+            HarnessRunBudget budget) {
+        this(taskId, executionId, null, scopeKey, sessionId, idempotencyKey, input, agentRequest, budget);
+    }
+
     public AgentRequest resolveAgentRequest() {
         if (agentRequest != null) {
             return agentRequest;

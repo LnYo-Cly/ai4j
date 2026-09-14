@@ -220,6 +220,9 @@ public final class AgentHarness implements AutoCloseable {
                                               AgentRequest agentRequest) {
         String requestedExecutionId = trimToNull(request.getExecutionId());
         if (requestedExecutionId != null) {
+            if (trimToNull(request.getParentExecutionId()) != null) {
+                throw new HarnessValidationException("executionId resumes an existing execution; parentExecutionId creates a new one");
+            }
             ExecutionRecord execution = gateway.getExecution(requestedExecutionId);
             if (execution == null) {
                 throw new HarnessValidationException("execution not found: " + requestedExecutionId);
