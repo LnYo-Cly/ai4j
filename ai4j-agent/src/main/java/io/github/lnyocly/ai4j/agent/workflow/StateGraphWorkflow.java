@@ -33,7 +33,7 @@ public class StateGraphWorkflow implements AgentWorkflow {
     }
 
     public StateGraphWorkflow maxSteps(int maxSteps) {
-        if (maxSteps > 0) {
+        if (maxSteps >= 0) {
             this.maxSteps = maxSteps;
         }
         return this;

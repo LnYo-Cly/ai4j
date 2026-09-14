@@ -57,6 +57,25 @@ public class AgentWorkflowTest {
         Assert.assertEquals("count=3", result.getOutputText());
     }
 
+    @Test
+    public void state_graph_zeroClearsAnExplicitLimit() throws Exception {
+        final AtomicInteger counter = new AtomicInteger();
+        StateGraphWorkflow workflow = new StateGraphWorkflow()
+                .addNode("loop", new CountingNode(counter))
+                .addNode("done", new StaticNode("done"))
+                .start("loop")
+                .maxSteps(3)
+                .maxSteps(0)
+                .addConditionalEdges("loop", (context, request, result) ->
+                        counter.get() < 40 ? "loop" : "done");
+
+        AgentResult result = workflow.run(new AgentSession(null, null),
+                AgentRequest.builder().input("start").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals(40, counter.get());
+    }
+
     private static class StaticNode implements AgentNode {
         private final String output;
 
