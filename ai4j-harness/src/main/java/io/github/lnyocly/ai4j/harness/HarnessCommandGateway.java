@@ -1041,6 +1041,21 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return reverse;
     }
 
+    /** Returns acceptance records attached to every execution in the lineage, root first. */
+    public List<AcceptanceRecord> listAcceptanceLineage(String executionId) {
+        List<AcceptanceRecord> result = new ArrayList<AcceptanceRecord>();
+        for (ExecutionRecord execution : listExecutionLineage(executionId)) {
+            result.addAll(listAcceptances(execution.getExecutionId()));
+        }
+        java.util.Collections.sort(result, new java.util.Comparator<AcceptanceRecord>() {
+            @Override public int compare(AcceptanceRecord left, AcceptanceRecord right) {
+                int byTime = Long.compare(left.getEvaluatedAtEpochMs(), right.getEvaluatedAtEpochMs());
+                return byTime != 0 ? byTime : String.valueOf(left.getAcceptanceId()).compareTo(String.valueOf(right.getAcceptanceId()));
+            }
+        });
+        return result;
+    }
+
     /**
      * Appends a submission-bound confirmation for an earlier execution acceptance.
      * This closes the natural two-phase flow where evidence is produced before a
