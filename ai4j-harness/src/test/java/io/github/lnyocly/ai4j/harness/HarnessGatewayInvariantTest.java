@@ -105,9 +105,9 @@ public class HarnessGatewayInvariantTest {
         ExecutionRecord root = gateway.createExecution(HarnessExecutionSpec.builder().executionId("root-a").scopeKey("s").build());
         ExecutionRecord claimed = gateway.claimExecution("root-a", "worker", 10000L);
         gateway.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId("root-a").leaseId(claimed.getLeaseId()).fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
-        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-root").executionId("root-a").status(HarnessAcceptanceStatus.FAIL).evaluatedAtEpochMs(1L).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-root").executionId("root-a").checkId("check").status(HarnessAcceptanceStatus.FAIL).evaluatedAtEpochMs(1L).build());
         ExecutionRecord child = gateway.createExecution(HarnessExecutionSpec.builder().executionId("child-a").scopeKey("s").parentExecutionId("root-a").build());
-        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-child").executionId("child-a").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(2L).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-child").executionId("child-a").checkId("check").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(2L).build());
         Assert.assertEquals("acc-root", gateway.listAcceptanceLineage(child.getExecutionId()).get(0).getAcceptanceId());
         Assert.assertEquals("acc-child", gateway.listAcceptanceLineage(child.getExecutionId()).get(1).getAcceptanceId());
         gateway.close();
