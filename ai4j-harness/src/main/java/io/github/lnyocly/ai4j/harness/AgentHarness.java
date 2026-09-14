@@ -160,6 +160,19 @@ public final class AgentHarness implements AutoCloseable {
         return run(HarnessRunRequest.builder().taskId(taskId).input(input).build());
     }
 
+    /** Creates and runs a new repair execution whose lineage points to a terminal parent. */
+    public HarnessRunResult repair(String parentExecutionId, Object input) {
+        String parentId = required(parentExecutionId, "parent execution id");
+        ExecutionRecord parent = gateway.getExecution(parentId);
+        if (parent == null) throw new HarnessValidationException("parent execution not found: " + parentId);
+        if (parent.getStatus() != ExecutionStatus.SUCCEEDED && parent.getStatus() != ExecutionStatus.FAILED) {
+            throw new HarnessConflictException("repair parent must be terminal: " + parentId);
+        }
+        return run(HarnessRunRequest.builder()
+                .taskId(parent.getTaskId()).scopeKey(parent.getScopeKey()).sessionId(parent.getSessionId())
+                .parentExecutionId(parentId).input(input).build());
+    }
+
     /** Resumes a READY execution; WAITING executions must first receive a wakeup. */
     public HarnessRunResult resume(String executionId) {
         return run(HarnessRunRequest.builder().executionId(executionId).build());
