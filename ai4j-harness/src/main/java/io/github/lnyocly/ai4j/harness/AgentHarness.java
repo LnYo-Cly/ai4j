@@ -160,17 +160,110 @@ public final class AgentHarness implements AutoCloseable {
         return run(HarnessRunRequest.builder().taskId(taskId).input(input).build());
     }
 
-    /** Creates and runs a new repair execution whose lineage points to a terminal parent. */
+    /**
+     * Backwards-compatible convenience form for an approved repair. Structured
+     * hosts should use {@link #repair(HarnessRepairRequest)} so the decision,
+     * reason and motivating acceptance are auditable.
+     */
     public HarnessRunResult repair(String parentExecutionId, Object input) {
-        String parentId = required(parentExecutionId, "parent execution id");
+        HarnessRepairResult result = repair(HarnessRepairRequest.builder()
+                .parentExecutionId(parentExecutionId)
+                .decision(HarnessRepairDecision.ALLOW)
+                .input(input)
+                .build());
+        return result.getRunResult();
+    }
+
+    /**
+     * Evaluates a host-owned repair decision and, only for {@code ALLOW},
+     * creates and runs one child execution. Raw input is never written to the
+     * ledger; durable events contain only bounded metadata and summaries.
+     */
+    public HarnessRepairResult repair(HarnessRepairRequest request) {
+        if (request == null) {
+            throw new HarnessValidationException("repair request is required");
+        }
+        String requestId = firstNonBlank(request.getRequestId(),
+                "repair_" + UUID.randomUUID().toString().replace("-", ""));
+        String parentId = required(request.getParentExecutionId(), "parent execution id");
+        if (request.getDecision() == null) {
+            throw new HarnessValidationException("repair decision is required");
+        }
         ExecutionRecord parent = gateway.getExecution(parentId);
-        if (parent == null) throw new HarnessValidationException("parent execution not found: " + parentId);
+        if (parent == null) {
+            throw new HarnessValidationException("parent execution not found: " + parentId);
+        }
+        AcceptanceRecord sourceAcceptance = null;
+        String acceptanceId = trimToNull(request.getAcceptanceId());
+        if (acceptanceId != null) {
+            sourceAcceptance = gateway.getState().getAcceptances().get(acceptanceId);
+            if (sourceAcceptance == null) {
+                throw new HarnessValidationException("repair acceptance not found: " + acceptanceId);
+            }
+            if (!parentId.equals(sourceAcceptance.getExecutionId())
+                    || !firstNonBlank(parent.getTaskId(), "").equals(firstNonBlank(sourceAcceptance.getTaskId(), ""))) {
+                throw new HarnessConflictException("repair acceptance must belong to the parent execution");
+            }
+        }
+
+        HarnessRepairDecision decision = request.getDecision();
+        if (decision != HarnessRepairDecision.ALLOW) {
+            HarnessRepairStatus status = decision == HarnessRepairDecision.WAITING_APPROVAL
+                    ? HarnessRepairStatus.WAITING_APPROVAL
+                    : decision == HarnessRepairDecision.CANCELLED
+                    ? HarnessRepairStatus.CANCELLED : HarnessRepairStatus.REJECTED;
+            String message = decision == HarnessRepairDecision.WAITING_APPROVAL
+                    ? "repair is awaiting host approval"
+                    : decision == HarnessRepairDecision.CANCELLED
+                    ? "repair cancelled by host" : "repair denied by host";
+            gateway.recordEvent("repair.decision", parentId, mapOf(
+                    "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                    "reason", request.getReason(), "repairHint", request.getRepairHint()), actor);
+            return HarnessRepairResult.builder()
+                    .requestId(requestId).status(status).decision(decision)
+                    .parentExecutionId(parentId).parentExecution(parent)
+                    .sourceAcceptance(sourceAcceptance).error(message).build();
+        }
+
         if (parent.getStatus() != ExecutionStatus.SUCCEEDED && parent.getStatus() != ExecutionStatus.FAILED) {
             throw new HarnessConflictException("repair parent must be terminal: " + parentId);
         }
-        return run(HarnessRunRequest.builder()
-                .taskId(parent.getTaskId()).scopeKey(parent.getScopeKey()).sessionId(parent.getSessionId())
-                .parentExecutionId(parentId).input(input).build());
+        gateway.recordEvent("repair.requested", parentId, mapOf(
+                "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                "reason", request.getReason(), "repairHint", request.getRepairHint(),
+                "inputSummary", inputSummary(request.getAgentRequest() == null
+                        ? request.getInput() : request.getAgentRequest().getInput())), actor);
+        String idempotencyKey = trimToNull(request.getIdempotencyKey());
+        if (idempotencyKey != null) {
+            idempotencyKey = "repair:" + idempotencyKey;
+        }
+        HarnessRunResult runResult;
+        try {
+            runResult = run(HarnessRunRequest.builder()
+                    .taskId(parent.getTaskId()).scopeKey(parent.getScopeKey()).sessionId(parent.getSessionId())
+                    .parentExecutionId(parentId).idempotencyKey(idempotencyKey)
+                    .input(request.getInput()).agentRequest(request.getAgentRequest())
+                    .budget(request.getBudget()).build());
+        } catch (RuntimeException failure) {
+            gateway.recordEvent("repair.failed", parentId, mapOf(
+                    "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                    "error", failure.getMessage()), actor);
+            throw failure;
+        }
+        ExecutionRecord child = runResult == null ? null : runResult.getExecution();
+        HarnessRepairStatus status = repairStatus(runResult);
+        int repairAttempt = child == null ? 0
+                : Math.max(0, gateway.listExecutionLineage(child.getExecutionId()).size() - 1);
+        gateway.recordEvent("repair.completed", child == null ? parentId : child.getExecutionId(), mapOf(
+                "requestId", requestId, "parentExecutionId", parentId,
+                "childExecutionId", child == null ? null : child.getExecutionId(),
+                "acceptanceId", acceptanceId, "status", status.name()), actor);
+        return HarnessRepairResult.builder()
+                .requestId(requestId).status(status).decision(decision)
+                .parentExecutionId(parentId).childExecutionId(child == null ? null : child.getExecutionId())
+                .repairAttempt(repairAttempt).parentExecution(parent).childExecution(child)
+                .sourceAcceptance(sourceAcceptance).runResult(runResult)
+                .error(runResult == null ? "repair execution returned no result" : runResult.getError()).build();
     }
 
     /** Resumes a READY execution; WAITING executions must first receive a wakeup. */
@@ -1105,6 +1198,23 @@ public final class AgentHarness implements AutoCloseable {
         if (status == ExecutionStatus.WAITING) return "Agent slice is waiting for a durable wakeup";
         if (status == ExecutionStatus.READY) return "Agent slice reached its boundary and can continue";
         return output == null ? "Agent slice completed" : "Agent slice completed: " + output;
+    }
+
+    private HarnessRepairStatus repairStatus(HarnessRunResult result) {
+        if (result == null || result.getStatus() == null) {
+            return HarnessRepairStatus.FAILED;
+        }
+        switch (result.getStatus()) {
+            case COMPLETED: return HarnessRepairStatus.COMPLETED;
+            case CONTINUATION_REQUIRED: return HarnessRepairStatus.CONTINUATION_REQUIRED;
+            case WAITING: return HarnessRepairStatus.WAITING;
+            case BLOCKED: return HarnessRepairStatus.BLOCKED;
+            case IN_REVIEW: return HarnessRepairStatus.IN_REVIEW;
+            case CANCELLED: return HarnessRepairStatus.CANCELLED;
+            case UNKNOWN: return HarnessRepairStatus.UNKNOWN;
+            case FAILED: return HarnessRepairStatus.FAILED;
+            default: return HarnessRepairStatus.FAILED;
+        }
     }
 
     private String inputSummary(Object input) {

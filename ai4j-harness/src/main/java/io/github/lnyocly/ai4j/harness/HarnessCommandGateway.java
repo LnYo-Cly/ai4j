@@ -1448,11 +1448,13 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 String existingId = idempotentId(state, IDEMPOTENCY_EXECUTION, executionScope,
                         spec.getIdempotencyKey());
                 if (existingId != null && state.getExecutions().get(existingId) != null) {
-                    if (!safeEquals(trimToNull(spec.getParentExecutionId()),
-                            state.getExecutions().get(existingId).getParentExecutionId())) {
-                        throw new HarnessConflictException("idempotency key belongs to a different execution parent");
+                    ExecutionRecord existing = state.getExecutions().get(existingId);
+                    if (!safeEquals(trimToNull(spec.getTaskId()), trimToNull(existing.getTaskId()))
+                            || !safeEquals(trimToNull(spec.getParentExecutionId()),
+                            trimToNull(existing.getParentExecutionId()))) {
+                        throw new HarnessConflictException("idempotency key belongs to a different execution task or parent");
                     }
-                    return state.getExecutions().get(existingId).copy();
+                    return existing.copy();
                 }
                 if (state.getExecutions().containsKey(executionId)) {
                     throw new HarnessConflictException("execution already exists: " + executionId);
@@ -1518,7 +1520,8 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 rememberIdempotency(state, IDEMPOTENCY_EXECUTION, executionScope,
                         spec.getIdempotencyKey(), executionId);
                 addEvent(state, "execution.created", executionId, effectiveActor, mapOf(
-                        "taskId", execution.getTaskId(), "attempt", attempt));
+                        "taskId", execution.getTaskId(), "attempt", attempt,
+                        "parentExecutionId", execution.getParentExecutionId()));
                 return execution.copy();
             }
         });

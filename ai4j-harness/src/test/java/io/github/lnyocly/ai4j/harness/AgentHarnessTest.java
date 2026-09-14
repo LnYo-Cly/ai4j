@@ -739,6 +739,120 @@ public class AgentHarnessTest {
         harness.close();
     }
 
+    @Test
+    public void structuredRepairRecordsDecisionAcceptanceAndBoundedOutcome() {
+        AgentHarness harness = harness(newAgent(new ReActRuntime(), new QueueModelClient(textResult("structured fix")),
+                new NoopToolExecutor(), StaticToolRegistry.empty(), AgentOptions.builder().maxSteps(2).build()), "structured-repair");
+        TaskRecord task = createTask(harness, "structured-repair-task");
+        ExecutionRecord parent = harness.getGateway().createExecution(HarnessExecutionSpec.builder()
+                .taskId(task.getTaskId()).sessionId("structured-session").build());
+        ExecutionRecord claimed = harness.getGateway().claimExecution(parent.getExecutionId(), "repair-worker", 10000L);
+        ExecutionRecord failed = harness.getGateway().persistExecutionOutcome(HarnessExecutionOutcome.builder()
+                .executionId(parent.getExecutionId()).leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED)
+                .error("needs a structured fix").build());
+        AcceptanceRecord acceptance = harness.getGateway().recordAcceptance(AcceptanceRecord.builder()
+                .acceptanceId("structured-failure").executionId(failed.getExecutionId()).checkId("behavior")
+                .status(HarnessAcceptanceStatus.FAIL).summary("behavior failed").build());
+
+        HarnessRepairResult repair = harness.repair(HarnessRepairRequest.builder()
+                .requestId("repair-request-1").parentExecutionId(failed.getExecutionId())
+                .acceptanceId(acceptance.getAcceptanceId()).reason("host retry")
+                .repairHint("rebuild the result").decision(HarnessRepairDecision.ALLOW)
+                .input("repair input").build());
+
+        Assert.assertEquals(HarnessRepairStatus.COMPLETED, repair.getStatus());
+        Assert.assertEquals("structured fix", repair.getRunResult().getOutputText());
+        Assert.assertEquals(failed.getExecutionId(), repair.getChildExecution().getParentExecutionId());
+        Assert.assertEquals(1, repair.getRepairAttempt());
+        Assert.assertEquals(acceptance.getAcceptanceId(), repair.getSourceAcceptance().getAcceptanceId());
+        boolean requested = false;
+        boolean completed = false;
+        for (HarnessEventRecord event : harness.getGateway().getState().getEvents()) {
+            if ("repair.requested".equals(event.getType())
+                    && "repair-request-1".equals(event.getPayload().get("requestId"))) requested = true;
+            if ("repair.completed".equals(event.getType())
+                    && repair.getChildExecution().getExecutionId().equals(event.getEntityId())) completed = true;
+        }
+        Assert.assertTrue(requested);
+        Assert.assertTrue(completed);
+        harness.close();
+    }
+
+    @Test
+    public void structuredRepairCanRecordHostDenialWithoutCreatingExecution() {
+        AgentHarness harness = harness(newAgent(new ReActRuntime(), new QueueModelClient(textResult("unused")),
+                new NoopToolExecutor(), StaticToolRegistry.empty(), AgentOptions.builder().maxSteps(2).build()), "denied-repair");
+        TaskRecord task = createTask(harness, "denied-repair-task");
+        ExecutionRecord parent = harness.getGateway().createExecution(HarnessExecutionSpec.builder()
+                .taskId(task.getTaskId()).build());
+        try {
+            harness.repair(HarnessRepairRequest.builder().parentExecutionId(parent.getExecutionId()).build());
+            Assert.fail("structured repair must require an explicit host decision");
+        } catch (HarnessValidationException expected) {
+            Assert.assertTrue(expected.getMessage().contains("decision"));
+        }
+        HarnessRepairResult result = harness.repair(HarnessRepairRequest.builder()
+                .requestId("repair-denied").parentExecutionId(parent.getExecutionId())
+                .decision(HarnessRepairDecision.DENY).reason("operator declined").build());
+        Assert.assertEquals(HarnessRepairStatus.REJECTED, result.getStatus());
+        Assert.assertNull(result.getChildExecution());
+        Assert.assertNull(result.getRunResult());
+        Assert.assertEquals(1, harness.getGateway().listExecutions().size());
+        HarnessRepairResult awaiting = harness.repair(HarnessRepairRequest.builder()
+                .parentExecutionId(parent.getExecutionId()).decision(HarnessRepairDecision.WAITING_APPROVAL).build());
+        HarnessRepairResult cancelled = harness.repair(HarnessRepairRequest.builder()
+                .parentExecutionId(parent.getExecutionId()).decision(HarnessRepairDecision.CANCELLED).build());
+        Assert.assertEquals(HarnessRepairStatus.WAITING_APPROVAL, awaiting.getStatus());
+        Assert.assertEquals(HarnessRepairStatus.CANCELLED, cancelled.getStatus());
+        Assert.assertEquals(1, harness.getGateway().listExecutions().size());
+        harness.close();
+    }
+
+    @Test
+    public void structuredRepairIsIdempotentWhenHostSuppliesAStableKey() {
+        AgentHarness harness = harness(newAgent(new ReActRuntime(), new QueueModelClient(textResult("once")),
+                new NoopToolExecutor(), StaticToolRegistry.empty(), AgentOptions.builder().maxSteps(2).build()), "idempotent-repair");
+        TaskRecord task = createTask(harness, "idempotent-repair-task");
+        ExecutionRecord parent = harness.getGateway().createExecution(HarnessExecutionSpec.builder()
+                .taskId(task.getTaskId()).build());
+        ExecutionRecord claimed = harness.getGateway().claimExecution(parent.getExecutionId(), "repair-worker", 10000L);
+        harness.getGateway().persistExecutionOutcome(HarnessExecutionOutcome.builder()
+                .executionId(parent.getExecutionId()).leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        HarnessRepairRequest request = HarnessRepairRequest.builder().parentExecutionId(parent.getExecutionId())
+                .requestId("stable-repair").idempotencyKey("same-repair")
+                .decision(HarnessRepairDecision.ALLOW).input("first input").build();
+        HarnessRepairResult first = harness.repair(request);
+        HarnessRepairResult replay = harness.repair(request.toBuilder().input("different input").build());
+        Assert.assertEquals(first.getChildExecutionId(), replay.getChildExecutionId());
+        Assert.assertEquals("once", replay.getRunResult().getOutputText());
+        Assert.assertEquals(2, harness.getGateway().listExecutions().size());
+        harness.close();
+    }
+
+    @Test
+    public void structuredRepairWorksWithAProviderNeutralAdapter() {
+        AgentHarness harness = AgentHarness.builder()
+                .executionAdapter(new EchoHarnessAdapter())
+                .persistence(HarnessPersistence.file(directory.resolve("adapter-repair")))
+                .autoResume(false).build();
+        TaskRecord task = createTask(harness, "adapter-repair-task");
+        ExecutionRecord parent = harness.getGateway().createExecution(HarnessExecutionSpec.builder()
+                .taskId(task.getTaskId()).build());
+        ExecutionRecord claimed = harness.getGateway().claimExecution(parent.getExecutionId(), "adapter-worker", 10000L);
+        harness.getGateway().persistExecutionOutcome(HarnessExecutionOutcome.builder()
+                .executionId(parent.getExecutionId()).leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        HarnessRepairResult result = harness.repair(HarnessRepairRequest.builder()
+                .parentExecutionId(parent.getExecutionId()).decision(HarnessRepairDecision.ALLOW)
+                .input("adapter input").build());
+        Assert.assertEquals(HarnessRepairStatus.COMPLETED, result.getStatus());
+        Assert.assertEquals("adapter input", result.getRunResult().getOutputText());
+        Assert.assertEquals(parent.getExecutionId(), result.getChildExecution().getParentExecutionId());
+        harness.close();
+    }
+
     private AgentHarness harness(Agent agent, String name) {
         return AgentHarness.builder()
                 .agent(agent)
@@ -761,6 +875,43 @@ public class AgentHarnessTest {
                 .model("test-model")
                 .build();
         return new Agent(runtime, context, InMemoryAgentMemory::new);
+    }
+
+    private static final class EchoHarnessAdapter implements HarnessExecutionAdapter {
+        @Override
+        public String getAdapterType() {
+            return "test-echo";
+        }
+
+        @Override
+        public HarnessExecutionAdapterSession open(HarnessExecutionContext context,
+                                                   HarnessRunBudget budget,
+                                                   HarnessAdapterState previousState) {
+            return new HarnessExecutionAdapterSession() {
+                @Override
+                public HarnessAdapterExecution run(AgentRequest request) {
+                    return HarnessAdapterExecution.builder()
+                            .status(AgentExecutionStatus.COMPLETED)
+                            .outputText(request == null ? null : String.valueOf(request.getInput()))
+                            .state(HarnessAdapterState.builder().adapterType("test-echo")
+                                    .sessionId(context.getSessionId()).build())
+                            .build();
+                }
+
+                @Override
+                public HarnessAdapterState snapshot() {
+                    return HarnessAdapterState.builder().adapterType("test-echo")
+                            .sessionId(context.getSessionId()).build();
+                }
+            };
+        }
+
+        @Override
+        public HarnessAdapterDelivery applyDelivery(HarnessAdapterState state,
+                                                     WaitRecord wait,
+                                                     Object input) {
+            return HarnessAdapterDelivery.builder().replacedPendingResult(true).state(state).build();
+        }
     }
 
     private TaskRecord createTask(AgentHarness harness, String taskId) {
