@@ -1056,6 +1056,14 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return result;
     }
 
+    public HarnessLineageSummary summarizeLineage(String executionId) {
+        List<ExecutionRecord> executions = listExecutionLineage(executionId);
+        List<AcceptanceRecord> acceptances = listAcceptanceLineage(executionId);
+        HarnessAcceptanceStatus status = acceptances.isEmpty() ? null : acceptances.get(acceptances.size() - 1).getStatus();
+        return new HarnessLineageSummary(executions, acceptances, Math.max(0, executions.size() - 1), status,
+                HarnessAcceptanceStatus.PASS == status);
+    }
+
     /**
      * Appends a submission-bound confirmation for an earlier execution acceptance.
      * This closes the natural two-phase flow where evidence is produced before a
