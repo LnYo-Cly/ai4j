@@ -22,7 +22,7 @@
         <test.groups></test.groups>
         <test.excludedGroups>${live.provider.test.category}</test.excludedGroups>
         <argLine></argLine>
-        <spotbugs.maxAllowedViolations>100</spotbugs.maxAllowedViolations>
+        <spotbugs.maxAllowedViolations>77</spotbugs.maxAllowedViolations>
     </properties>
     <licenses>
         <license>

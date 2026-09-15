@@ -20,6 +20,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class MilvusVectorStore implements VectorStore {
         applyCollectionScope(body, dataset);
         body.put("data", Collections.singletonList(request.getVector()));
         body.put("annsField", config.getVectorField());
-        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK());
+        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK());
         body.put("outputFields", config.getOutputFields());
         String filter = toFilterExpression(request.getFilter());
         if (filter != null) {
@@ -217,7 +218,8 @@ public class MilvusVectorStore implements VectorStore {
             if (!response.isSuccessful()) {
                 throw new IOException("Milvus request failed: " + response.message());
             }
-            String body = response.body() == null ? "{}" : response.body().string();
+            ResponseBody responseBody = response.body();
+            String body = responseBody == null ? "{}" : responseBody.string();
             return JSON.parseObject(body);
         }
     }

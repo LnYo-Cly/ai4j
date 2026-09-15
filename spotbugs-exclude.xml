@@ -23,4 +23,11 @@
     <Match>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
     </Match>
+    <!-- PgVectorStore 的 PreparedStatement SQL 必须拼接表名/列名等标识符（无法作为参数绑定），
+         所有拼接片段均经 identifier()/safeMetadataKey() 正则校验或 distanceOperator() 枚举白名单校验，
+         数据值一律通过 ? 绑定，故该告警在此类中为已知误报。 -->
+    <Match>
+        <Bug pattern="SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"/>
+        <Class name="io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore"/>
+    </Match>
 </FindBugsFilter>
