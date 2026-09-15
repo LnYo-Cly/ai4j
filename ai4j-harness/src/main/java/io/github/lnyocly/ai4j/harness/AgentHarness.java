@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.permission.AgentApprovalRequiredException;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 
@@ -73,7 +74,7 @@ public final class AgentHarness implements AutoCloseable {
         }
         this.agent = builder.agent;
         this.executionAdapter = builder.executionAdapter == null
-                ? new AgentHarnessExecutionAdapter(builder.agent) : builder.executionAdapter;
+                ? new AgentHarnessExecutionAdapter(builder.agent, builder.toolVisibility) : builder.executionAdapter;
         this.persistence = builder.persistence;
         this.store = builder.store == null
                 ? (builder.persistence == null ? null : builder.persistence.getStore())
@@ -1295,6 +1296,7 @@ public final class AgentHarness implements AutoCloseable {
         private HarnessRunListener listener;
         private HarnessAcceptanceEvaluator acceptanceEvaluator;
         private HarnessAcceptanceContextFactory acceptanceContextFactory;
+        private AgentToolVisibility toolVisibility;
 
         public Builder agent(Agent value) { this.agent = value; return this; }
         public Builder executionAdapter(HarnessExecutionAdapter value) { this.executionAdapter = value; return this; }
@@ -1306,6 +1308,9 @@ public final class AgentHarness implements AutoCloseable {
         public Builder workerId(String value) { this.workerId = value; return this; }
         public Builder autoResume(boolean value) { this.autoResume = value; return this; }
         public Builder listener(HarnessRunListener value) { this.listener = value; return this; }
+
+        /** Sets the model-facing tool view for the default Agent adapter. */
+        public Builder toolVisibility(AgentToolVisibility value) { this.toolVisibility = value; return this; }
 
         public Builder acceptanceEvaluator(HarnessAcceptanceEvaluator value) { this.acceptanceEvaluator = value; return this; }
 

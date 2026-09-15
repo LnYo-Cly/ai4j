@@ -5,6 +5,8 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.agent.permission.AgentApprovalRequiredException;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxResult;
@@ -13,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSandboxBinding;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.trace.TracePricing;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
@@ -45,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -93,6 +97,19 @@ public class CodingAgentBuilderTest {
     }
 
     @Test
+    public void shouldForwardModelToolVisibilityToDelegateAgent() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-visibility").toPath();
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(new QueueModelClient())
+                .model("visibility-model")
+                .workspaceContext(WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build())
+                .toolVisibility(AgentToolVisibility.named(Collections.singleton("read_file")))
+                .build();
+
+        assertNotNull(agent.getDelegate().getContext().getToolVisibility());
+    }
+
+    @Test
     public void shouldRunBuiltInCodingToolWithinAgentLoop() throws Exception {
         Path workspaceRoot = temporaryFolder.newFolder("workspace-agent").toPath();
         WorkspaceContext workspaceContext = WorkspaceContext.builder()
@@ -117,6 +134,7 @@ public class CodingAgentBuilderTest {
         CodingAgent agent = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspaceContext)
                 .build();
 
@@ -132,6 +150,114 @@ public class CodingAgentBuilderTest {
         assertEquals("done", result.getOutputText());
         assertEquals(1, result.getToolResults().size());
         assertTrue(result.getToolResults().get(0).getOutput().toLowerCase().contains("session-ready"));
+    }
+
+    @Test
+    public void shouldEnforceDefaultSafePermissionPolicyAtCodingSessionBoundary() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-safe-policy").toPath();
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo must-not-run\"}")
+                        .callId("safe-policy-call")
+                        .build()))
+                .rawResponse("safe-policy-tool-call")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("safe-policy-model")
+                .workspaceContext(WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build())
+                .build();
+
+        boolean approvalRequired = false;
+        try (CodingSession session = agent.newSession()) {
+            try {
+                session.run("Run the shell command.");
+            } catch (AgentApprovalRequiredException expected) {
+                approvalRequired = true;
+                assertTrue(expected.getMessage().contains(CodingToolNames.BASH));
+            }
+        }
+        assertTrue("default SAFE policy must remain active for rebuilt CodingSession executors",
+                approvalRequired);
+    }
+
+    @Test
+    public void shouldRouteReadWriteEditAndBashAcrossOneAgentLoop() throws Exception {
+        Path workspaceRoot = temporaryFolder.newFolder("workspace-agent-four-tools").toPath();
+        WorkspaceContext workspaceContext = WorkspaceContext.builder()
+                .rootPath(workspaceRoot.toString())
+                .description("JUnit four-tool workspace")
+                .build();
+
+        QueueModelClient modelClient = new QueueModelClient();
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.WRITE_FILE)
+                        .arguments("{\"path\":\"notes/stability.txt\",\"content\":\"alpha\\n\",\"mode\":\"overwrite\"}")
+                        .callId("four-tool-write")
+                        .build()))
+                .rawResponse("write")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.READ_FILE)
+                        .arguments("{\"path\":\"notes/stability.txt\"}")
+                        .callId("four-tool-read")
+                        .build()))
+                .rawResponse("read")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.EDIT)
+                        .arguments("{\"path\":\"notes/stability.txt\",\"old_string\":\"alpha\",\"new_string\":\"beta\"}")
+                        .callId("four-tool-edit")
+                        .build()))
+                .rawResponse("edit")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .toolCalls(Arrays.asList(AgentToolCall.builder()
+                        .name(CodingToolNames.BASH)
+                        .arguments("{\"action\":\"exec\",\"command\":\"echo stable-route\"}")
+                        .callId("four-tool-bash")
+                        .build()))
+                .rawResponse("bash")
+                .build());
+        modelClient.enqueue(AgentModelResult.builder()
+                .outputText("four tools completed")
+                .rawResponse("final")
+                .build());
+
+        CodingAgent agent = CodingAgents.builder()
+                .modelClient(modelClient)
+                .model("four-tool-model")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
+                .workspaceContext(workspaceContext)
+                .build();
+
+        CodingAgentResult result;
+        try (CodingSession session = agent.newSession()) {
+            result = session.run("Exercise the workspace tools in order.");
+        }
+
+        assertEquals("four tools completed", result.getOutputText());
+        assertEquals(4, result.getToolResults().size());
+        assertEquals(Arrays.asList(
+                        CodingToolNames.WRITE_FILE,
+                        CodingToolNames.READ_FILE,
+                        CodingToolNames.EDIT,
+                        CodingToolNames.BASH),
+                Arrays.asList(
+                        result.getToolResults().get(0).getName(),
+                        result.getToolResults().get(1).getName(),
+                        result.getToolResults().get(2).getName(),
+                        result.getToolResults().get(3).getName()));
+        assertTrue(result.getToolResults().get(1).getOutput().contains("alpha"));
+        assertTrue(result.getToolResults().get(3).getOutput().contains("stable-route"));
+        assertEquals("beta\n", new String(Files.readAllBytes(workspaceRoot.resolve("notes/stability.txt")),
+                StandardCharsets.UTF_8));
     }
 
     @Test
@@ -159,6 +285,7 @@ public class CodingAgentBuilderTest {
         CodingAgent agent = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspaceContext)
                 .build();
 
@@ -202,6 +329,7 @@ public class CodingAgentBuilderTest {
         CodingAgent agent = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspaceContext)
                 .build();
 
@@ -247,6 +375,7 @@ public class CodingAgentBuilderTest {
         CodingAgent agent = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspaceContext)
                 .extensions(registry)
                 .build();
@@ -301,6 +430,7 @@ public class CodingAgentBuilderTest {
         CodingAgent agent = CodingAgents.builder()
                 .modelClient(modelClient)
                 .model("glm-4.5-flash")
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspaceContext)
                 .sandbox(sandboxSession)
                 .build();

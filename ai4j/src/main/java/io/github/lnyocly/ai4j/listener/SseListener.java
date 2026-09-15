@@ -22,7 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @Author cly
@@ -93,13 +97,49 @@ public abstract class SseListener extends AbstractManagedStreamListener {
     @Getter
     private boolean usagePresent;
 
-    @Setter
     @Getter
     private List<ToolCall> toolCalls = new ArrayList<>();
 
-    @Setter
     @Getter
     private ToolCall toolCall;
+
+    /** Pending streamed calls keyed by provider call id, stream index, or a local anonymous key. */
+    private final Map<String, PendingToolCall> pendingToolCalls = new LinkedHashMap<>();
+    private int anonymousToolCallSequence;
+
+    /** Compatibility setter used by provider services to start a fresh tool-call response. */
+    public void setToolCalls(List<ToolCall> toolCalls) {
+        this.toolCalls = toolCalls == null ? new ArrayList<ToolCall>() : toolCalls;
+        if (this.toolCalls.isEmpty()) {
+            clearPendingToolCalls();
+        }
+    }
+
+    /** Compatibility setter used by provider services to clear the current streamed call. */
+    public void setToolCall(ToolCall toolCall) {
+        if (toolCall == null) {
+            clearPendingToolCalls();
+            return;
+        }
+        clearPendingToolCalls();
+        PendingToolCall pending = new PendingToolCall(copyToolCall(toolCall));
+        if (pending.call.getFunction() != null) {
+            pending.call.getFunction().setArguments("");
+        }
+        pending.arguments.append(safeToolArguments(toolCall));
+        pendingToolCalls.put(explicitToolCallKey(toolCall), pending);
+        syncCurrentToolCall();
+    }
+
+    private String explicitToolCallKey(ToolCall call) {
+        if (call != null && StrUtil.isNotBlank(call.getId())) {
+            return "id:" + call.getId();
+        }
+        if (call != null && call.getIndex() != null) {
+            return "index:" + call.getIndex();
+        }
+        return newAnonymousToolCallKey();
+    }
 
     /**
      * 最终的函数调用参数
@@ -120,6 +160,11 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
         if ("[DONE]".equalsIgnoreCase(data)) {
             // 整个对话结束，结束前将SSE最后一条“DONE”消息发送出去
+            boolean hadPendingToolCalls = !pendingToolCalls.isEmpty();
+            finalizePendingToolCalls();
+            if (hadPendingToolCalls) {
+                finishReason = "tool_calls";
+            }
             currStr = "";
             this.send();
 
@@ -157,7 +202,6 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return;
         }
         List<ToolCall> messageToolCalls = responseMessage.getToolCalls();
-        ToolCall firstMessageToolCall = firstToolCall(messageToolCalls);
 
         finishReason = choices.get(0).getFinishReason();
 
@@ -165,21 +209,18 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         if("stop".equals(finishReason)
                 && responseMessage.getContent()!=null
                 && "".equals(responseMessage.getContent().getText())
-                && !toolCalls.isEmpty()){
+                && (!toolCalls.isEmpty() || !pendingToolCalls.isEmpty() || !isEmpty(messageToolCalls))){
             finishReason = "tool_calls";
         }
 
 
         // tool_calls回答已经结束
         if("tool_calls".equals(finishReason)){
-            if (toolCall != null) {
-                consumeFragmentedToolCalls(messageToolCalls);
-                finalizeCurrentToolCall();
-            } else if (shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
+            if (pendingToolCalls.isEmpty() && shouldTreatAsCompleteToolCalls(responseMessage, messageToolCalls)) {
                 addCompleteToolCalls(messageToolCalls);
             } else {
                 consumeFragmentedToolCalls(messageToolCalls);
-                finalizeCurrentToolCall();
+                finalizePendingToolCalls();
             }
             return;
         }
@@ -268,13 +309,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         currData = "";
         currStr = "";
         currToolName = "";
-    }
-
-    private ToolCall firstToolCall(List<ToolCall> calls) {
-        if (isEmpty(calls)) {
-            return null;
-        }
-        return calls.get(0);
+        clearPendingToolCalls();
     }
 
     private String safeToolArguments(ToolCall call) {
@@ -333,57 +368,192 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         if (isEmpty(messageToolCalls)) {
             return;
         }
+        List<String> keysAtFrameStart = new ArrayList<String>(pendingToolCalls.keySet());
+        Set<String> usedKeysInFrame = new HashSet<String>();
         for (ToolCall currentToolCall : messageToolCalls) {
             if (currentToolCall == null || currentToolCall.getFunction() == null) {
                 continue;
             }
             String argumentsDelta = StrUtil.emptyIfNull(safeToolArguments(currentToolCall));
-            if (hasToolIdentity(currentToolCall)) {
-                if (toolCall == null) {
-                    startToolCall(currentToolCall, argumentsDelta);
-                } else if (isSameToolCall(toolCall, currentToolCall)) {
-                    mergeToolIdentity(toolCall, currentToolCall);
-                    argument.append(argumentsDelta);
-                } else {
-                    finalizeCurrentToolCall();
-                    startToolCall(currentToolCall, argumentsDelta);
-                }
-                if (showToolArgs) {
-                    this.currStr = argumentsDelta;
-                    this.send();
-                }
-                continue;
+            String key = resolveFragmentKey(currentToolCall, keysAtFrameStart,
+                    usedKeysInFrame, messageToolCalls.size());
+            PendingToolCall pending = pendingToolCalls.get(key);
+            if (pending == null) {
+                pending = new PendingToolCall(copyToolCall(currentToolCall));
+                pending.call.getFunction().setArguments("");
+                pendingToolCalls.put(key, pending);
+            } else {
+                mergeToolIdentity(pending.call, currentToolCall);
             }
-            if (toolCall != null) {
-                argument.append(argumentsDelta);
-                if (showToolArgs) {
-                    this.currStr = argumentsDelta;
-                    this.send();
-                }
+            pending.arguments.append(argumentsDelta);
+            usedKeysInFrame.add(key);
+            syncCurrentToolCall();
+            if (showToolArgs) {
+                this.currStr = argumentsDelta;
+                this.send();
             }
         }
     }
 
-    private void startToolCall(ToolCall currentToolCall, String argumentsDelta) {
-        toolCall = currentToolCall;
-        argument.setLength(0);
-        argument.append(StrUtil.emptyIfNull(argumentsDelta));
-        currToolName = safeToolName(currentToolCall);
+    private String resolveFragmentKey(ToolCall fragment,
+                                      List<String> keysAtFrameStart,
+                                      Set<String> usedKeysInFrame,
+                                      int frameSize) {
+        if (fragment != null && StrUtil.isNotBlank(fragment.getId())) {
+            String idKey = "id:" + fragment.getId();
+            if (pendingToolCalls.containsKey(idKey)) {
+                return idKey;
+            }
+            String existing = findPendingKeyById(fragment.getId());
+            return existing == null ? idKey : existing;
+        }
+        if (fragment != null && fragment.getIndex() != null) {
+            String indexKey = "index:" + fragment.getIndex();
+            if (pendingToolCalls.containsKey(indexKey)) {
+                return indexKey;
+            }
+            String existing = findPendingKeyByIndex(fragment.getIndex());
+            return existing == null ? indexKey : existing;
+        }
+        String name = safeToolName(fragment);
+        if (StrUtil.isNotBlank(name)) {
+            String existing = findPendingKeyByName(name, usedKeysInFrame);
+            if (existing != null) {
+                return existing;
+            }
+            return newAnonymousToolCallKey();
+        }
+        // A continuation frame is ordered the same way as the provider's pending
+        // calls. The first unused key is therefore the stable positional fallback;
+        // using a separate ordinal would skip keys already consumed in this frame.
+        String positional = findUnusedPositionalKey(keysAtFrameStart, usedKeysInFrame);
+        if (positional != null) {
+            return positional;
+        }
+        if (frameSize == 1) {
+            String only = findOnlyUnusedPendingKey(usedKeysInFrame);
+            if (only != null) {
+                return only;
+            }
+        }
+        return newAnonymousToolCallKey();
     }
 
-    private void finalizeCurrentToolCall() {
-        if (toolCall == null) {
+    private String findPendingKeyByName(String name, Set<String> usedKeysInFrame) {
+        for (Map.Entry<String, PendingToolCall> entry : pendingToolCalls.entrySet()) {
+            if (usedKeysInFrame.contains(entry.getKey())) {
+                continue;
+            }
+            if (name.equals(safeToolName(entry.getValue().call))) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private String findPendingKeyById(String id) {
+        for (Map.Entry<String, PendingToolCall> entry : pendingToolCalls.entrySet()) {
+            ToolCall call = entry.getValue() == null ? null : entry.getValue().call;
+            if (call != null && id.equals(call.getId())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private String findPendingKeyByIndex(Integer index) {
+        for (Map.Entry<String, PendingToolCall> entry : pendingToolCalls.entrySet()) {
+            ToolCall call = entry.getValue() == null ? null : entry.getValue().call;
+            if (call != null && index.equals(call.getIndex())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private String findUnusedPositionalKey(List<String> keysAtFrameStart,
+                                           Set<String> usedKeysInFrame) {
+        for (String key : keysAtFrameStart) {
+            if (usedKeysInFrame.contains(key)) {
+                continue;
+            }
+            return key;
+        }
+        return null;
+    }
+
+    private String findOnlyUnusedPendingKey(Set<String> usedKeysInFrame) {
+        String only = null;
+        for (String key : pendingToolCalls.keySet()) {
+            if (usedKeysInFrame.contains(key)) {
+                continue;
+            }
+            if (only != null) {
+                return null;
+            }
+            only = key;
+        }
+        return only;
+    }
+
+    private String newAnonymousToolCallKey() {
+        return "anonymous:" + anonymousToolCallSequence++;
+    }
+
+    private void finalizePendingToolCalls() {
+        if (pendingToolCalls.isEmpty()) {
+            syncCurrentToolCall();
+            return;
+        }
+        for (PendingToolCall pending : pendingToolCalls.values()) {
+            if (pending == null || pending.call == null || pending.call.getFunction() == null
+                    || !hasToolName(pending.call)) {
+                continue;
+            }
+            pending.call.getFunction().setArguments(pending.arguments.toString());
+            toolCalls.add(pending.call);
+        }
+        clearPendingToolCalls();
+    }
+
+    private void clearPendingToolCalls() {
+        pendingToolCalls.clear();
+        toolCall = null;
+        argument.setLength(0);
+        currToolName = "";
+    }
+
+    private void syncCurrentToolCall() {
+        if (pendingToolCalls.isEmpty()) {
+            toolCall = null;
             argument.setLength(0);
             currToolName = "";
             return;
         }
-        if (toolCall.getFunction() != null) {
-            toolCall.getFunction().setArguments(argument.toString());
+        PendingToolCall current = null;
+        for (PendingToolCall candidate : pendingToolCalls.values()) {
+            current = candidate;
         }
-        toolCalls.add(toolCall);
-        toolCall = null;
+        toolCall = current == null ? null : current.call;
         argument.setLength(0);
-        currToolName = "";
+        if (current != null) {
+            argument.append(current.arguments);
+            currToolName = safeToolName(current.call);
+        } else {
+            currToolName = "";
+        }
+    }
+
+    private ToolCall copyToolCall(ToolCall source) {
+        ToolCall.Function sourceFunction = source == null ? null : source.getFunction();
+        ToolCall.Function function = sourceFunction == null ? null
+                : new ToolCall.Function(sourceFunction.getName(), sourceFunction.getArguments());
+        ToolCall copy = new ToolCall(source == null ? null : source.getId(),
+                source == null ? null : source.getType(), function);
+        if (source != null) {
+            copy.setIndex(source.getIndex());
+        }
+        return copy;
     }
 
     private void mergeToolIdentity(ToolCall target, ToolCall source) {
@@ -396,6 +566,9 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         if (StrUtil.isBlank(target.getType()) && StrUtil.isNotBlank(source.getType())) {
             target.setType(source.getType());
         }
+        if (target.getIndex() == null && source.getIndex() != null) {
+            target.setIndex(source.getIndex());
+        }
         if (target.getFunction() == null || source.getFunction() == null) {
             return;
         }
@@ -404,29 +577,10 @@ public abstract class SseListener extends AbstractManagedStreamListener {
         }
     }
 
-    private boolean hasToolIdentity(ToolCall call) {
-        return call != null
-                && (StrUtil.isNotBlank(call.getId()) || hasToolName(call));
-    }
-
     private boolean hasToolName(ToolCall call) {
         return call != null
                 && call.getFunction() != null
                 && StrUtil.isNotBlank(call.getFunction().getName());
-    }
-
-    private boolean isSameToolCall(ToolCall left, ToolCall right) {
-        if (left == null || right == null) {
-            return false;
-        }
-        if (StrUtil.isNotBlank(left.getId()) && StrUtil.isNotBlank(right.getId())) {
-            return left.getId().equals(right.getId());
-        }
-        if (left.getFunction() == null || right.getFunction() == null) {
-            return false;
-        }
-        return StrUtil.isNotBlank(left.getFunction().getName())
-                && left.getFunction().getName().equals(right.getFunction().getName());
     }
 
     private boolean hasStructuredJsonObjectArguments(ToolCall call) {
@@ -439,6 +593,15 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             return node != null && node.isObject();
         } catch (Exception ignored) {
             return false;
+        }
+    }
+
+    private static final class PendingToolCall {
+        private final ToolCall call;
+        private final StringBuilder arguments = new StringBuilder();
+
+        private PendingToolCall(ToolCall call) {
+            this.call = call;
         }
     }
 

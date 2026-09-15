@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.coding.process;
 
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.coding.shell.ShellCommandSupport;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
@@ -34,9 +35,16 @@ public class SessionProcessRegistry implements AutoCloseable {
 
     public BashProcessInfo start(String command, String cwd) throws IOException {
         if (isBlank(command)) {
-            throw new IllegalArgumentException("command is required");
+            throw new AgentToolInputException("command is required");
         }
-        Path workingDirectory = workspaceContext.resolveWorkspacePath(cwd);
+        Path workingDirectory;
+        try {
+            workingDirectory = workspaceContext.resolveWorkspacePath(cwd);
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (IllegalArgumentException input) {
+            throw new AgentToolInputException("working directory is invalid: " + message(input), input);
+        }
         ProcessBuilder processBuilder = new ProcessBuilder(ShellCommandSupport.buildShellCommand(command));
         processBuilder.directory(workingDirectory.toFile());
         Process process = processBuilder.start();
@@ -65,7 +73,7 @@ public class SessionProcessRegistry implements AutoCloseable {
         if (restored != null) {
             return toProcessInfo(restored);
         }
-        throw new IllegalArgumentException("Unknown processId: " + processId);
+        throw new AgentToolInputException("Unknown processId: " + processId);
     }
 
     public List<BashProcessInfo> list() {
@@ -138,7 +146,7 @@ public class SessionProcessRegistry implements AutoCloseable {
         if (restored != null) {
             return restoredLogs(restored, offset, limit);
         }
-        throw new IllegalArgumentException("Unknown processId: " + processId);
+        throw new AgentToolInputException("Unknown processId: " + processId);
     }
 
     public int write(String processId, String input) throws IOException {
@@ -174,7 +182,7 @@ public class SessionProcessRegistry implements AutoCloseable {
         if (restoredSnapshots.containsKey(processId)) {
             throw new IllegalStateException("Process " + processId + " was restored as metadata only; live control is unavailable");
         }
-        throw new IllegalArgumentException("Unknown processId: " + processId);
+        throw new AgentToolInputException("Unknown processId: " + processId);
     }
 
     private BashProcessInfo toProcessInfo(StoredProcessSnapshot snapshot) {
@@ -212,6 +220,10 @@ public class SessionProcessRegistry implements AutoCloseable {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
     }
 
     private static class ManagedProcess {

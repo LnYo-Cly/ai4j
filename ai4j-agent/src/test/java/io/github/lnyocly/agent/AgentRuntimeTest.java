@@ -15,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AgentRuntimeTest {
@@ -233,6 +235,105 @@ public class AgentRuntimeTest {
         Assert.assertEquals(2, result.getToolCalls().size());
     }
 
+    @Test
+    public void test_tool_loop_executes_workspace_style_tools_and_pairs_next_turn_outputs() throws Exception {
+        Deque<AgentModelResult> queue = new ArrayDeque<>();
+        queue.add(resultWithToolCallAndMemory("read-call", "read_file", "{\"path\":\"a.txt\"}"));
+        queue.add(resultWithToolCallAndMemory("write-call", "write_file", "{\"path\":\"a.txt\",\"content\":\"ok\"}"));
+        queue.add(resultWithToolCallAndMemory("edit-call", "edit", "{\"path\":\"a.txt\",\"old_string\":\"o\",\"new_string\":\"k\"}"));
+        queue.add(resultWithToolCallAndMemory("bash-call", "bash", "{\"command\":\"echo ok\"}"));
+        queue.add(resultWithText("done"));
+
+        QueueModelClient modelClient = new QueueModelClient(queue);
+        CountingToolExecutor toolExecutor = new CountingToolExecutor();
+        AgentContext context = AgentContext.builder()
+                .modelClient(modelClient)
+                .toolExecutor(toolExecutor)
+                .memory(new InMemoryAgentMemory())
+                .options(AgentOptions.builder().maxSteps(0).build())
+                .model("test-model")
+                .build();
+
+        AgentResult result = new ReActRuntime().run(context,
+                AgentRequest.builder().input("inspect and update the workspace").build());
+
+        Assert.assertEquals("done", result.getOutputText());
+        Assert.assertEquals(Arrays.asList("read_file", "write_file", "edit", "bash"), toolExecutor.names);
+        Assert.assertEquals(5, modelClient.prompts.size());
+        for (int i = 0; i < 4; i++) {
+            String callId = result.getToolCalls().get(i).getCallId();
+            Assert.assertTrue("missing assistant tool call for " + callId,
+                    containsAssistantToolCall(modelClient.prompts.get(i + 1).getItems(), callId));
+            Assert.assertTrue("missing tool result for " + callId,
+                    containsToolOutput(modelClient.prompts.get(i + 1).getItems(), callId));
+        }
+    }
+
+    @Test
+    public void test_missing_call_id_is_reconciled_before_tool_output_is_added() throws Exception {
+        Deque<AgentModelResult> queue = new ArrayDeque<>();
+        queue.add(resultWithToolCallAndMemory(null, "echo", "{}"));
+        queue.add(resultWithText("done"));
+
+        QueueModelClient modelClient = new QueueModelClient(queue);
+        AgentContext context = AgentContext.builder()
+                .modelClient(modelClient)
+                .toolExecutor(new CountingToolExecutor())
+                .memory(new InMemoryAgentMemory())
+                .options(AgentOptions.builder().maxSteps(0).build())
+                .model("test-model")
+                .build();
+
+        AgentResult result = new ReActRuntime().run(context,
+                AgentRequest.builder().input("run echo").build());
+
+        Assert.assertEquals("tool_step_0_0", result.getToolCalls().get(0).getCallId());
+        Assert.assertTrue(containsAssistantToolCall(modelClient.prompts.get(1).getItems(), "tool_step_0_0"));
+        Assert.assertTrue(containsToolOutput(modelClient.prompts.get(1).getItems(), "tool_step_0_0"));
+    }
+
+    private boolean containsAssistantToolCall(List<Object> items, String callId) {
+        if (items == null) {
+            return false;
+        }
+        for (Object item : items) {
+            if (!(item instanceof Map)) {
+                continue;
+            }
+            Map<?, ?> map = (Map<?, ?>) item;
+            if (!"message".equals(map.get("type")) || !"assistant".equals(map.get("role"))) {
+                continue;
+            }
+            Object rawCalls = map.get("tool_calls");
+            if (!(rawCalls instanceof List)) {
+                continue;
+            }
+            for (Object rawCall : (List<?>) rawCalls) {
+                if (rawCall instanceof Map && callId.equals(((Map<?, ?>) rawCall).get("id"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean containsToolOutput(List<Object> items, String callId) {
+        if (items == null) {
+            return false;
+        }
+        for (Object item : items) {
+            if (!(item instanceof Map)) {
+                continue;
+            }
+            Map<?, ?> map = (Map<?, ?>) item;
+            if ("function_call_output".equals(map.get("type"))
+                    && callId.equals(map.get("call_id"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private AgentModelResult resultWithText(String text) {
         return AgentModelResult.builder()
                 .outputText(text)
@@ -254,8 +355,23 @@ public class AgentRuntimeTest {
                 .build();
     }
 
+    private AgentModelResult resultWithToolCallAndMemory(String callId, String name, String arguments) {
+        AgentToolCall call = AgentToolCall.builder()
+                .callId(callId)
+                .name(name)
+                .arguments(arguments)
+                .type("function")
+                .build();
+        return AgentModelResult.builder()
+                .toolCalls(Arrays.asList(call))
+                .memoryItems(Arrays.<Object>asList(
+                        AgentInputItem.assistantToolCallsMessage("", Arrays.asList(call))))
+                .build();
+    }
+
     private static class QueueModelClient implements AgentModelClient {
         private final Deque<AgentModelResult> queue;
+        private final List<AgentPrompt> prompts = new ArrayList<>();
 
         private QueueModelClient(Deque<AgentModelResult> queue) {
             this.queue = queue;
@@ -263,21 +379,25 @@ public class AgentRuntimeTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return queue.isEmpty() ? AgentModelResult.builder().build() : queue.poll();
         }
 
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+            prompts.add(prompt);
             return queue.isEmpty() ? AgentModelResult.builder().build() : queue.poll();
         }
     }
 
     private static class CountingToolExecutor implements ToolExecutor {
         private int count = 0;
+        private final List<String> names = new ArrayList<>();
 
         @Override
         public String execute(AgentToolCall call) {
             count += 1;
+            names.add(call == null ? null : call.getName());
             return "{\"ok\":true}";
         }
     }

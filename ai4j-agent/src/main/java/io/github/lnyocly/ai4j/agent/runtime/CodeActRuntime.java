@@ -172,7 +172,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                 execResult = codeExecutor.execute(CodeExecutionRequest.builder()
                         .language(message.language)
                         .code(message.code)
-                        .toolNames(extractToolNames(context.getToolRegistry() == null ? null : context.getToolRegistry().getTools()))
+                        .toolNames(extractToolNames(visibleTools(context)))
                         .toolExecutor(context.getToolExecutor())
                         .user(context.getUser())
                         .parentCallId(toolCall.getCallId())
@@ -324,7 +324,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                     .append("or use callTool(\"toolName\", args). ")
                     .append("If you see a CODE_RESULT message, use it to respond with type=final unless more tools are required. ");
         }
-        List<Object> tools = context.getToolRegistry() == null ? null : context.getToolRegistry().getTools();
+        List<Object> tools = visibleTools(context);
         String toolGuide = buildToolGuide(tools);
         if (!toolGuide.isEmpty()) {
             builder.append("Available tools: ").append(toolGuide);

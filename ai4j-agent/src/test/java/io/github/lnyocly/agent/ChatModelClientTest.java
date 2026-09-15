@@ -99,6 +99,52 @@ public class ChatModelClientTest {
     }
 
     @Test
+    public void test_stream_aggregates_interleaved_parallel_tool_calls() throws Exception {
+        ChatModelClient client = new ChatModelClient(new FakeInterleavedToolCallChatService());
+
+        AgentModelResult result = client.createStream(AgentPrompt.builder()
+                        .model("gpt-5-mini")
+                        .build(),
+                new AgentModelStreamListener() {
+                });
+
+        Assert.assertEquals(2, result.getToolCalls().size());
+        Assert.assertEquals("call_read", result.getToolCalls().get(0).getCallId());
+        Assert.assertEquals("read_file", result.getToolCalls().get(0).getName());
+        Assert.assertEquals("{\"path\":\"a.txt\"}", result.getToolCalls().get(0).getArguments());
+        Assert.assertEquals("call_write", result.getToolCalls().get(1).getCallId());
+        Assert.assertEquals("write_file", result.getToolCalls().get(1).getName());
+        Assert.assertEquals("{\"path\":\"b.txt\"}", result.getToolCalls().get(1).getArguments());
+    }
+
+    @Test
+    public void test_parallel_tool_calls_are_provider_default_unless_explicitly_set() throws Exception {
+        FakeChatService chatService = new FakeChatService();
+        ChatModelClient client = new ChatModelClient(chatService);
+
+        client.createStream(AgentPrompt.builder().model("gpt-5-mini").build(),
+                new AgentModelStreamListener() {
+                });
+        Assert.assertNull(chatService.lastStreamRequest.getParallelToolCalls());
+
+        client.createStream(AgentPrompt.builder()
+                        .model("gpt-5-mini")
+                        .parallelToolCalls(Boolean.FALSE)
+                        .build(),
+                new AgentModelStreamListener() {
+                });
+        Assert.assertEquals(Boolean.FALSE, chatService.lastStreamRequest.getParallelToolCalls());
+
+        client.createStream(AgentPrompt.builder()
+                        .model("gpt-5-mini")
+                        .parallelToolCalls(Boolean.TRUE)
+                        .build(),
+                new AgentModelStreamListener() {
+                });
+        Assert.assertEquals(Boolean.TRUE, chatService.lastStreamRequest.getParallelToolCalls());
+    }
+
+    @Test
     public void test_stream_propagates_stream_execution_options() throws Exception {
         FakeChatService chatService = new FakeChatService();
         ChatModelClient client = new ChatModelClient(chatService);
@@ -355,6 +401,41 @@ public class ChatModelClientTest {
                     "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"function\":{\"arguments\":\" for adding a hello endpoint demo app in this empty workspace.\"}}]},\"finish_reason\":null}]}");
             eventSourceListener.onEvent(null, null, null,
                     "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"function\":{\"arguments\":\"\\\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}");
+            eventSourceListener.onEvent(null, null, null, "[DONE]");
+            eventSourceListener.onClosed(null);
+        }
+
+        @Override
+        public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) {
+            throw new UnsupportedOperationException("not used");
+        }
+    }
+
+    private static class FakeInterleavedToolCallChatService implements IChatService {
+        @Override
+        public ChatCompletionResponse chatCompletion(String baseUrl, String apiKey, ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public ChatCompletionResponse chatCompletion(ChatCompletion chatCompletion) {
+            throw new UnsupportedOperationException("not used");
+        }
+
+        @Override
+        public void chatCompletionStream(String baseUrl, String apiKey, ChatCompletion chatCompletion, SseListener eventSourceListener) {
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{\"tool_calls\":["
+                            + "{\"id\":\"call_read\",\"type\":\"function\",\"function\":{\"name\":\"read_file\",\"arguments\":\"{\\\"path\\\":\\\"a\"}},"
+                            + "{\"id\":\"call_write\",\"type\":\"function\",\"function\":{\"name\":\"write_file\",\"arguments\":\"{\\\"path\\\":\\\"b\"}}"
+                            + "]},\"finish_reason\":null}]} ");
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{\"tool_calls\":["
+                            + "{\"id\":\"call_read\",\"function\":{\"arguments\":\".txt\\\"}\"}},"
+                            + "{\"id\":\"call_write\",\"function\":{\"arguments\":\".txt\\\"}\"}}"
+                            + "]},\"finish_reason\":null}]} ");
+            eventSourceListener.onEvent(null, null, null,
+                    "{\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]} ");
             eventSourceListener.onEvent(null, null, null, "[DONE]");
             eventSourceListener.onClosed(null);
         }

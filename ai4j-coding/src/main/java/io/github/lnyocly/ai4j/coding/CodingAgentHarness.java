@@ -10,6 +10,7 @@ import io.github.lnyocly.ai4j.harness.HarnessRunListener;
 import io.github.lnyocly.ai4j.harness.HarnessRunRequest;
 import io.github.lnyocly.ai4j.harness.HarnessRunResult;
 import io.github.lnyocly.ai4j.harness.HarnessStore;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 
 import javax.sql.DataSource;
 import java.nio.file.Path;
@@ -119,6 +120,7 @@ public final class CodingAgentHarness implements AutoCloseable {
         private String workerId;
         private boolean autoResume = true;
         private HarnessRunListener listener;
+        private AgentToolVisibility toolVisibility;
 
         public Builder codingAgent(CodingAgent value) {
             this.codingAgent = value;
@@ -160,12 +162,18 @@ public final class CodingAgentHarness implements AutoCloseable {
             return this;
         }
 
+        /** Sets the model-facing tool view while retaining the full executor. */
+        public Builder toolVisibility(AgentToolVisibility value) {
+            this.toolVisibility = value;
+            return this;
+        }
+
         public CodingAgentHarness build() {
             if (codingAgent == null) {
                 throw new IllegalStateException("codingAgent is required");
             }
             AgentHarness harness = AgentHarness.builder()
-                    .executionAdapter(new CodingAgentHarnessExecutionAdapter(codingAgent))
+                    .executionAdapter(new CodingAgentHarnessExecutionAdapter(codingAgent, toolVisibility))
                     .store(store)
                     .persistence(persistence)
                     .contract(contract)

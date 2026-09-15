@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.coding.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
@@ -10,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
@@ -27,21 +27,39 @@ public class WriteFileToolExecutor implements ToolExecutor {
         JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
         String path = safeTrim(arguments.getString("path"));
         if (isBlank(path)) {
-            throw new IllegalArgumentException("path is required");
+            throw invalid("write_file requires a non-empty path", null);
         }
-        String content = arguments.containsKey("content") && arguments.get("content") != null
-                ? arguments.getString("content")
-                : "";
+        if (!arguments.containsKey("content") || arguments.get("content") == null) {
+            throw invalid("write_file requires content", null);
+        }
+        if (!(arguments.get("content") instanceof String)) {
+            throw invalid("write_file content must be a string", null);
+        }
+        String content = arguments.getString("content");
         String mode = firstNonBlank(safeTrim(arguments.getString("mode")), "overwrite").toLowerCase(Locale.ROOT);
-        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
+        if (!"create".equals(mode) && !"overwrite".equals(mode) && !"append".equals(mode)) {
+            throw invalid("unsupported write mode: " + mode, null);
+        }
+        Path file;
+        try {
+            file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (IllegalArgumentException input) {
+            throw invalid("write_file path is invalid: " + message(input), input);
+        }
         if (Files.exists(file) && Files.isDirectory(file)) {
-            throw new IllegalArgumentException("Target is a directory: " + path);
+            throw invalid("Target is a directory: " + path, null);
         }
 
         boolean existed = Files.exists(file);
         boolean appended = false;
-        boolean created;
+        boolean created = false;
         byte[] bytes = content == null ? new byte[0] : content.getBytes(StandardCharsets.UTF_8);
+
+        if ("create".equals(mode) && existed) {
+            throw invalid("File already exists: " + path, null);
+        }
 
         Path parent = file.getParent();
         if (parent != null) {
@@ -49,9 +67,6 @@ public class WriteFileToolExecutor implements ToolExecutor {
         }
 
         if ("create".equals(mode)) {
-            if (existed) {
-                throw new IllegalArgumentException("File already exists: " + path);
-            }
             Files.write(file, bytes, new OpenOption[]{StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE});
             created = true;
         } else if ("overwrite".equals(mode)) {
@@ -61,8 +76,6 @@ public class WriteFileToolExecutor implements ToolExecutor {
             Files.write(file, bytes, new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.WRITE});
             created = !existed;
             appended = true;
-        } else {
-            throw new IllegalArgumentException("Unsupported write mode: " + mode);
         }
 
         JSONObject result = new JSONObject();
@@ -75,20 +88,21 @@ public class WriteFileToolExecutor implements ToolExecutor {
         return JSON.toJSONString(result);
     }
 
-    private Path resolvePath(String path) {
-        Path candidate = Paths.get(path);
-        if (candidate.isAbsolute()) {
-            return candidate.toAbsolutePath().normalize();
-        }
-        Path root = workspaceContext == null ? Paths.get(".").toAbsolutePath().normalize() : workspaceContext.getRoot();
-        return root.resolve(path).toAbsolutePath().normalize();
-    }
-
     private JSONObject parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
             return new JSONObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            JSONObject arguments = JSON.parseObject(rawArguments);
+            if (arguments == null) {
+                throw invalid("write_file arguments must be a JSON object", null);
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw invalid("write_file arguments must be valid JSON: " + message(parseFailure), parseFailure);
+        }
     }
 
     private String safeTrim(String value) {
@@ -109,5 +123,13 @@ public class WriteFileToolExecutor implements ToolExecutor {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private AgentToolInputException invalid(String message, Throwable cause) {
+        return cause == null ? new AgentToolInputException(message) : new AgentToolInputException(message, cause);
+    }
+
+    private String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
     }
 }

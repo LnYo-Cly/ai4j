@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.agent.AgentBuilder;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRuntime;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
@@ -14,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -56,10 +58,9 @@ import io.github.lnyocly.ai4j.coding.workspace.LocalWorkspaceFileService;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceFileService;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
-import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +75,10 @@ public class CodingAgentBuilder {
     private AgentOptions agentOptions;
     private CodingAgentOptions codingOptions;
     private AgentToolRegistry toolRegistry;
+    private AgentToolVisibility toolVisibility;
     private ToolExecutor toolExecutor;
+    private AgentPermissionPolicy permissionPolicy;
+    private boolean permissionPolicyExplicitlySet;
     private ToolInterceptor toolInterceptor;
     private PromptInterceptor promptInterceptor;
     private final List<AgentLifecycleHook> additionalLifecycleHooks = new ArrayList<AgentLifecycleHook>();
@@ -133,8 +137,36 @@ public class CodingAgentBuilder {
         return this;
     }
 
+    /**
+     * Sets the model-facing tool view while leaving CodingAgent's complete
+     * executor and permission boundary intact.
+     */
+    public CodingAgentBuilder toolVisibility(AgentToolVisibility toolVisibility) {
+        this.toolVisibility = toolVisibility;
+        return this;
+    }
+
+    /** Convenience form for exposing only the named registered tools. */
+    public CodingAgentBuilder visibleToolNames(Collection<String> names) {
+        this.toolVisibility = AgentToolVisibility.named(names);
+        return this;
+    }
+
     public CodingAgentBuilder toolExecutor(ToolExecutor toolExecutor) {
         this.toolExecutor = toolExecutor;
+        return this;
+    }
+
+    /**
+     * Sets the host-side permission policy for every CodingAgent session,
+     * including the built-in workspace tools. The default remains the
+     * AgentBuilder SAFE policy; automated hosts should opt into
+     * {@code AgentPermissionPolicies.allowAll()} only when their surrounding
+     * Harness or approval layer is the authoritative gate.
+     */
+    public CodingAgentBuilder permissionPolicy(AgentPermissionPolicy permissionPolicy) {
+        this.permissionPolicy = permissionPolicy;
+        this.permissionPolicyExplicitlySet = true;
         return this;
     }
 
@@ -357,6 +389,9 @@ public class CodingAgentBuilder {
         if (runtime != null) {
             delegate.runtime(runtime);
         }
+        if (permissionPolicyExplicitlySet) {
+            delegate.permissionPolicy(permissionPolicy);
+        }
         for (AgentLifecycleHook hook : additionalLifecycleHooks) {
             delegate.lifecycleHook(hook);
         }
@@ -368,6 +403,7 @@ public class CodingAgentBuilder {
                 .options(resolvedAgentOptions)
                 .pricingResolver(pricingResolver)
                 .toolRegistry(resolvedToolRegistry)
+                .toolVisibility(toolVisibility)
                 .toolExecutor(resolvedToolExecutor)
                 .toolInterceptor(toolInterceptor)
                 .promptInterceptor(promptInterceptor)
@@ -570,11 +606,9 @@ public class CodingAgentBuilder {
         }
         Set<String> toolNames = new HashSet<>();
         for (Object tool : registry.getTools()) {
-            if (tool instanceof Tool) {
-                Tool.Function function = ((Tool) tool).getFunction();
-                if (function != null && !isBlank(function.getName())) {
-                    toolNames.add(function.getName());
-                }
+            String name = AgentToolVisibility.toolName(tool);
+            if (!isBlank(name)) {
+                toolNames.add(name);
             }
         }
         return toolNames;

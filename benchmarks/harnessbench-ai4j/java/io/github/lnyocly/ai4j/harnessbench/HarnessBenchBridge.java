@@ -15,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
@@ -232,6 +233,11 @@ public final class HarnessBenchBridge {
         CodingAgentBuilder builder = CodingAgents.builder()
                 .modelClient(modelClient(cfg))
                 .model(cfg.model)
+                // HarnessBench is an automated, non-interactive benchmark. The
+                // HarnessToolExecutor remains the governance boundary; this
+                // explicit policy removes the SDK's interactive SAFE approval
+                // prompt so the compared agents have the same execution mode.
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspace.build());
         if (cfg.reasoning != null) {
             builder.reasoning(cfg.reasoning);

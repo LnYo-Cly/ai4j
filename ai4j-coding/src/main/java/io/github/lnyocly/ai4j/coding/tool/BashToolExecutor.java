@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.coding.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
 import io.github.lnyocly.ai4j.coding.process.BashProcessInfo;
@@ -56,10 +57,16 @@ public class BashToolExecutor implements ToolExecutor {
     @Override
     public String execute(AgentToolCall call) throws Exception {
         JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
+        boolean processTool = call != null && CodingToolNames.BASH_PROCESS.equals(call.getName());
         String action = arguments.getString("action");
         if (action == null || action.trim().isEmpty()) {
+            if (processTool) {
+                throw invalid("bash_process requires an action", null);
+            }
             action = "exec";
         }
+        action = action.trim().toLowerCase(java.util.Locale.ROOT);
+        validateAction(arguments, action, processTool);
         switch (action) {
             case "exec":
                 return exec(arguments);
@@ -76,7 +83,7 @@ public class BashToolExecutor implements ToolExecutor {
             case "list":
                 return list();
             default:
-                throw new IllegalArgumentException("Unsupported bash action: " + action);
+                throw invalid("Unsupported " + (processTool ? "bash_process" : "bash") + " action: " + action, null);
         }
     }
 
@@ -169,6 +176,46 @@ public class BashToolExecutor implements ToolExecutor {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
             return new JSONObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            JSONObject arguments = JSON.parseObject(rawArguments);
+            if (arguments == null) {
+                throw invalid("bash arguments must be a JSON object", null);
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw invalid("bash arguments must be valid JSON: " + message(parseFailure), parseFailure);
+        }
+    }
+
+    private void validateAction(JSONObject arguments, String action, boolean processTool) {
+        if (("exec".equals(action) || "start".equals(action))
+                && isBlank(arguments.getString("command"))) {
+            throw invalid("bash " + action + " requires a non-empty command", null);
+        }
+        if (("status".equals(action) || "logs".equals(action)
+                || "stop".equals(action) || "write".equals(action))
+                && isBlank(arguments.getString("processId"))) {
+            throw invalid("bash " + action + " requires a processId", null);
+        }
+        if (!"exec".equals(action) && !"start".equals(action)
+                && !"status".equals(action) && !"logs".equals(action)
+                && !"stop".equals(action) && !"write".equals(action)
+                && !"list".equals(action)) {
+            throw invalid("Unsupported " + (processTool ? "bash_process" : "bash") + " action: " + action, null);
+        }
+    }
+
+    private AgentToolInputException invalid(String message, Throwable cause) {
+        return cause == null ? new AgentToolInputException(message) : new AgentToolInputException(message, cause);
+    }
+
+    private String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

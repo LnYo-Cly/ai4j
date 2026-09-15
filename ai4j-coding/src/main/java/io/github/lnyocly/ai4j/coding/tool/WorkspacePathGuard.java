@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -53,13 +54,23 @@ public final class WorkspacePathGuard {
      */
     public static Path resolveForWrite(WorkspaceContext workspaceContext, String path) throws IOException {
         if (workspaceContext == null) {
-            throw new IllegalArgumentException("workspaceContext is required");
+            throw invalid("workspaceContext is required");
         }
-        Path resolved = workspaceContext.resolveWorkspacePath(path);
+        if (path == null || path.trim().isEmpty()) {
+            throw invalid("write path is required");
+        }
+        Path resolved;
+        try {
+            resolved = workspaceContext.resolveWorkspacePath(path);
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (IllegalArgumentException input) {
+            throw new AgentToolInputException("Write path is invalid: " + message(input), input);
+        }
         Path canonical = resolveSymlinks(resolved);
         // Re-check boundary after symlink resolution — a symlink may point outside the workspace.
         if (!workspaceContext.isAllowOutsideWorkspace() && !canonical.startsWith(workspaceContext.getRoot())) {
-            throw new IllegalArgumentException(
+            throw invalid(
                     "Resolved path escapes workspace root after symlink resolution: " + path
                             + " -> " + canonical);
         }
@@ -147,7 +158,7 @@ public final class WorkspacePathGuard {
         // .ssh and .aws anywhere in the path
         for (String part : parts) {
             if (BLACKLISTED_DIR_NAMES.contains(part)) {
-                throw new IllegalArgumentException(
+                throw invalid(
                         "Write to sensitive directory is blocked: " + originalPath);
             }
         }
@@ -155,7 +166,7 @@ public final class WorkspacePathGuard {
         int gitIndex = indexOfGit(parts);
         if (gitIndex >= 0 && gitIndex + 1 < parts.size()
                 && GIT_HOOKS_DIR_NAME.equalsIgnoreCase(parts.get(gitIndex + 1))) {
-            throw new IllegalArgumentException(
+            throw invalid(
                     "Write to .git/hooks is blocked (potential hook backdoor): " + originalPath);
         }
     }
@@ -168,7 +179,7 @@ public final class WorkspacePathGuard {
      */
     static void rejectExcluded(Path canonical, WorkspaceContext workspaceContext, String originalPath) {
         if (workspaceContext.isExcluded(canonical)) {
-            throw new IllegalArgumentException(
+            throw invalid(
                     "Write to excluded path is blocked by workspace write policy: " + originalPath
                             + ". This location is protected (task input, tests, or system area) —"
                             + " do not modify it; produce outputs elsewhere per the task instructions.");
@@ -204,5 +215,13 @@ public final class WorkspacePathGuard {
             }
         }
         return -1;
+    }
+
+    private static AgentToolInputException invalid(String message) {
+        return new AgentToolInputException(message);
+    }
+
+    private static String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
     }
 }
