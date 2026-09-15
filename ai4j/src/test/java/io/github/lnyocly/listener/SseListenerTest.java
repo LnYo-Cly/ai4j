@@ -9,6 +9,8 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SseListenerTest {
 
@@ -68,6 +70,7 @@ public class SseListenerTest {
     @Test
     public void shouldKeepInterleavedToolCallFragmentsPairedByCallId() {
         RecordingSseListener listener = new RecordingSseListener();
+        listener.setShowToolArgs(true);
 
         listener.onEvent(null, null, null,
                 "{\"choices\":[{\"delta\":{\"role\":\"assistant\",\"tool_calls\":["
@@ -89,6 +92,20 @@ public class SseListenerTest {
         Assert.assertEquals("call_write", listener.getToolCalls().get(1).getId());
         Assert.assertEquals("write_file", listener.getToolCalls().get(1).getFunction().getName());
         Assert.assertEquals("{\"path\":\"b.txt\"}", listener.getToolCalls().get(1).getFunction().getArguments());
+
+        Assert.assertEquals(4, listener.toolCallbackIds.size());
+        Assert.assertEquals("call_read", listener.toolCallbackIds.get(0));
+        Assert.assertEquals("read_file", listener.toolCallbackNames.get(0));
+        Assert.assertEquals("{\"path\":\"a", listener.toolCallbackArguments.get(0));
+        Assert.assertEquals("call_write", listener.toolCallbackIds.get(1));
+        Assert.assertEquals("write_file", listener.toolCallbackNames.get(1));
+        Assert.assertEquals("{\"path\":\"b", listener.toolCallbackArguments.get(1));
+        Assert.assertEquals("call_read", listener.toolCallbackIds.get(2));
+        Assert.assertEquals("read_file", listener.toolCallbackNames.get(2));
+        Assert.assertEquals(".txt\"}", listener.toolCallbackArguments.get(2));
+        Assert.assertEquals("call_write", listener.toolCallbackIds.get(3));
+        Assert.assertEquals("write_file", listener.toolCallbackNames.get(3));
+        Assert.assertEquals(".txt\"}", listener.toolCallbackArguments.get(3));
     }
 
     @Test
@@ -144,8 +161,17 @@ public class SseListenerTest {
     }
 
     private static final class RecordingSseListener extends SseListener {
+        private final List<String> toolCallbackIds = new ArrayList<String>();
+        private final List<String> toolCallbackNames = new ArrayList<String>();
+        private final List<String> toolCallbackArguments = new ArrayList<String>();
+
         @Override
         protected void send() {
+            if (getToolCall() != null && getCurrToolName() != null && !getCurrToolName().isEmpty()) {
+                toolCallbackIds.add(getToolCall().getId());
+                toolCallbackNames.add(getCurrToolName());
+                toolCallbackArguments.add(getCurrStr());
+            }
         }
     }
 }

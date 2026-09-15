@@ -387,7 +387,7 @@ public abstract class SseListener extends AbstractManagedStreamListener {
             }
             pending.arguments.append(argumentsDelta);
             usedKeysInFrame.add(key);
-            syncCurrentToolCall();
+            syncCurrentToolCall(pending);
             if (showToolArgs) {
                 this.currStr = argumentsDelta;
                 this.send();
@@ -525,15 +525,22 @@ public abstract class SseListener extends AbstractManagedStreamListener {
 
     private void syncCurrentToolCall() {
         if (pendingToolCalls.isEmpty()) {
-            toolCall = null;
-            argument.setLength(0);
-            currToolName = "";
+            syncCurrentToolCall(null);
             return;
         }
         PendingToolCall current = null;
         for (PendingToolCall candidate : pendingToolCalls.values()) {
             current = candidate;
         }
+        syncCurrentToolCall(current);
+    }
+
+    /**
+     * Updates the compatibility getters for a specific stream fragment. The
+     * callback path must use the fragment's resolved pending call because
+     * interleaved providers can have several pending calls at once.
+     */
+    private void syncCurrentToolCall(PendingToolCall current) {
         toolCall = current == null ? null : current.call;
         argument.setLength(0);
         if (current != null) {
