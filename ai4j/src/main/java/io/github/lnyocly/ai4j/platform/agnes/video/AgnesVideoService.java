@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -118,14 +119,15 @@ public class AgnesVideoService extends AbstractVideoService {
         }
         Response download = okHttpClient.newCall(
                 new Request.Builder().url(task.getVideoUrl()).get().build()).execute();
-        if (!download.isSuccessful() || download.body() == null) {
+        ResponseBody body = download.body();
+        if (!download.isSuccessful() || body == null) {
             try {
                 throw HttpErrorDecoder.decode(download);
             } finally {
                 download.close();
             }
         }
-        return new ResponseInputStream(download, download.body().byteStream());
+        return new ResponseInputStream(download, body.byteStream());
     }
 
     @Override
