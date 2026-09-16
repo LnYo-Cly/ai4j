@@ -46,8 +46,14 @@ public class VideoCreateRequest {
     /** Optional first-frame / driving image reference (URL or data URL). */
     private String inputImage;
 
+    /** Optional last-frame image for two-frame keyframe control (URL or data URL). */
+    private String lastFrame;
+
     /** Optional additional reference images (URL or data URL). */
     private List<String> referenceImages;
+
+    /** Optional reference audio clips (URL). Used by dialects that accept audio references. */
+    private List<String> referenceAudios;
 
     /** Legacy OpenAI duration field. Used only when {@link #durationSeconds} is null. */
     private Object seconds;
