@@ -781,6 +781,37 @@ public class AgentHarnessTest {
         }
         Assert.assertTrue(requested);
         Assert.assertTrue(completed);
+    }
+
+    @Test
+    public void heartbeatRenewsExecutionLeaseDuringLongSlices() {
+        AgentModelClient slowModel = new AgentModelClient() {
+            @Override
+            public AgentModelResult create(AgentPrompt prompt) {
+                try {
+                    Thread.sleep(1_500L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return textResult("slow slice finished");
+            }
+
+            @Override
+            public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+                return create(prompt);
+            }
+        };
+        AgentHarness harness = harness(newAgent(new ReActRuntime(), slowModel,
+                new NoopToolExecutor(), StaticToolRegistry.empty(),
+                AgentOptions.builder().maxSteps(4).build()), "heartbeat-renewal");
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder()
+                .sessionId("heartbeat-session")
+                .input("run a slice slower than the lease")
+                .budget(HarnessRunBudget.builder().leaseDurationMillis(300L).build())
+                .build());
+
+        Assert.assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        Assert.assertEquals("slow slice finished", result.getOutputText());
         harness.close();
     }
 
@@ -941,6 +972,64 @@ public class AgentHarnessTest {
         Assert.assertNull(waiting.getAcceptanceEvaluation());
         Assert.assertEquals(0, evaluatorCalls.get());
         waitingHarness.close();
+    }
+
+    @Test
+    public void heartbeatSurvivesTransientStoreError() {
+        AgentModelClient slowModel = new AgentModelClient() {
+            @Override
+            public AgentModelResult create(AgentPrompt prompt) {
+                try {
+                    Thread.sleep(3_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return textResult("slow slice finished");
+            }
+
+            @Override
+            public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+                return create(prompt);
+            }
+        };
+        HarnessPersistence persistence = HarnessPersistence.file(directory.resolve("heartbeat-error"));
+        final HarnessStore delegate = persistence.getStore();
+        final AtomicInteger updates = new AtomicInteger();
+        HarnessStore flaky = new HarnessStore() {
+            @Override
+            public HarnessState load() {
+                return delegate.load();
+            }
+
+            @Override
+            public HarnessState update(HarnessStateMutation mutation) {
+                if (updates.incrementAndGet() == 3) {
+                    throw new AssertionError("injected transient heartbeat failure");
+                }
+                return delegate.update(mutation);
+            }
+
+            @Override
+            public void close() {
+                delegate.close();
+            }
+        };
+        AgentHarness harness = AgentHarness.builder()
+                .agent(newAgent(new ReActRuntime(), slowModel,
+                        new NoopToolExecutor(), StaticToolRegistry.empty(),
+                        AgentOptions.builder().maxSteps(4).build()))
+                .store(flaky)
+                .autoResume(false)
+                .build();
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder()
+                .sessionId("heartbeat-error-session")
+                .input("run a slice whose first heartbeat fails with an Error")
+                .budget(HarnessRunBudget.builder().leaseDurationMillis(2_000L).build())
+                .build());
+
+        Assert.assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        Assert.assertEquals("slow slice finished", result.getOutputText());
+        harness.close();
     }
 
     private AgentHarness harness(Agent agent, String name) {

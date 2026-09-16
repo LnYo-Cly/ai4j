@@ -168,6 +168,49 @@ public class CodingAgentHarnessTest {
         harness.close();
     }
 
+    @Test
+    public void heartbeatRenewsLeaseDuringSlowCodingExecution() throws Exception {
+        Path harnessDirectory = temporaryFolder.newFolder("coding-heartbeat").toPath();
+        Path workspace = temporaryFolder.newFolder("coding-heartbeat-workspace").toPath();
+        AgentModelClient slowModel = new AgentModelClient() {
+            @Override
+            public AgentModelResult create(AgentPrompt prompt) {
+                try {
+                    Thread.sleep(1_500L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return textResult("slow coding slice finished");
+            }
+
+            @Override
+            public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+                return create(prompt);
+            }
+        };
+        CodingAgent agent = codingAgent(slowModel, new ToolExecutor() {
+            @Override
+            public String execute(AgentToolCall call) {
+                return "echo-result";
+            }
+        }, workspace);
+        CodingAgentHarness harness = CodingAgentHarness.builder()
+                .codingAgent(agent)
+                .persistence(HarnessPersistence.file(harnessDirectory))
+                .autoResume(false)
+                .build();
+
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder()
+                .sessionId("coding-heartbeat")
+                .input("run a slice slower than the lease")
+                .budget(HarnessRunBudget.builder().leaseDurationMillis(300L).build())
+                .build());
+
+        assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        assertEquals("slow coding slice finished", result.getOutputText());
+        harness.close();
+    }
+
     private CodingAgent codingAgent(AgentModelClient model,
                                     ToolExecutor executor,
                                     Path workspace) {

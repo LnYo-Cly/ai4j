@@ -684,9 +684,13 @@ public final class AgentHarness implements AutoCloseable {
                 try {
                     gateway.heartbeat(execution.getExecutionId(), execution.getLeaseId(),
                             execution.getFencingToken(), worker, duration);
-                } catch (RuntimeException ignored) {
-                    // The next durable operation will surface the fencing or
-                    // lease error and classify the execution as UNKNOWN.
+                } catch (Throwable ignored) {
+                    // Catching Throwable is deliberate: a fixed-rate task that
+                    // terminates abnormally is never rescheduled, so one
+                    // transient Error would silently stop every future lease
+                    // renewal. The next durable operation still surfaces the
+                    // fencing or lease error and classifies the execution as
+                    // UNKNOWN.
                 }
             }
         }, interval, interval, TimeUnit.MILLISECONDS);
