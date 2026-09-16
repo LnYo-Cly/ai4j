@@ -234,6 +234,8 @@ public class AiService {
                 return new io.github.lnyocly.ai4j.platform.minimax.video.MinimaxVideoService(configuration);
             case DOUBAO:
                 return new io.github.lnyocly.ai4j.platform.doubao.video.SeedanceVideoService(configuration);
+            case AGNES:
+                return new io.github.lnyocly.ai4j.platform.agnes.video.AgnesVideoService(configuration);
             default:
                 throw new IllegalArgumentException("No video service for platform: " + platform);
         }

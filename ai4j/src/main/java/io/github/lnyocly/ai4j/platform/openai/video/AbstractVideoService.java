@@ -67,10 +67,18 @@ public abstract class AbstractVideoService implements IVideoService {
 
     @Override
     public VideoResponse retrieve(String baseUrl, String apiKey, String id) throws Exception {
-        Request request = authorizedRequest(baseUrl, apiKey, openAiConfig.getVideoUrl(), encodePathSegment(id))
-                .get()
-                .build();
+        return retrieve(baseUrl, apiKey, id, null);
+    }
+
+    @Override
+    public VideoResponse retrieve(String baseUrl, String apiKey, String id, String model) throws Exception {
+        Request request = retrieveRequest(baseUrl, apiKey, id, model).get().build();
         return executeJson(request);
+    }
+
+    /** Polling request for this dialect; the default is {@code GET {videoUrl}/{id}}. */
+    protected Request.Builder retrieveRequest(String baseUrl, String apiKey, String id, String model) throws IOException {
+        return authorizedRequest(baseUrl, apiKey, openAiConfig.getVideoUrl(), encodePathSegment(id));
     }
 
     @Override
@@ -147,7 +155,7 @@ public abstract class AbstractVideoService implements IVideoService {
         }
     }
 
-    private Request.Builder authorizedRequest(String baseUrl, String apiKey, String... pathParts) {
+    protected Request.Builder authorizedRequest(String baseUrl, String apiKey, String... pathParts) {
         String[] parts = new String[pathParts.length + 1];
         parts[0] = resolveBaseUrl(baseUrl);
         System.arraycopy(pathParts, 0, parts, 1, pathParts.length);
@@ -156,7 +164,7 @@ public abstract class AbstractVideoService implements IVideoService {
                 .url(UrlUtils.concatUrl(parts));
     }
 
-    private VideoResponse executeJson(Request request) throws Exception {
+    protected VideoResponse executeJson(Request request) throws Exception {
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 String body = response.body().string();
@@ -168,15 +176,15 @@ public abstract class AbstractVideoService implements IVideoService {
         }
     }
 
-    private String resolveBaseUrl(String baseUrl) {
+    protected String resolveBaseUrl(String baseUrl) {
         return (baseUrl == null || "".equals(baseUrl)) ? openAiConfig.getApiHost() : baseUrl;
     }
 
-    private String resolveApiKey(String apiKey) {
+    protected String resolveApiKey(String apiKey) {
         return (apiKey == null || "".equals(apiKey)) ? openAiConfig.getApiKey() : apiKey;
     }
 
-    private String encodePathSegment(String value) throws IOException {
+    protected String encodePathSegment(String value) throws IOException {
         return URLEncoder.encode(value, "UTF-8").replace("+", "%20");
     }
 
