@@ -1723,6 +1723,12 @@ public class CodeCommandTest {
                 }
             });
 
+            long startDeadline = System.currentTimeMillis() + 5000L;
+            while (System.currentTimeMillis() < startDeadline && terminal.getReadLineCalls() < 1) {
+                Thread.sleep(20L);
+            }
+            Assert.assertEquals("first scripted prompt was never consumed", 1, terminal.getReadLineCalls());
+
             long deadline = System.currentTimeMillis() + 300L;
             while (System.currentTimeMillis() < deadline && terminal.getReadLineCalls() < 2) {
                 Thread.sleep(20L);
@@ -2026,8 +2032,9 @@ public class CodeCommandTest {
         );
         TuiInteractionState interactionState = new TuiInteractionState();
         CountDownLatch cancelled = new CountDownLatch(1);
+        CountDownLatch streamStarted = new CountDownLatch(1);
         CodingCliAgentFactory agentFactory = new CustomModelCodingCliAgentFactory(
-                new ChatModelClient(new BlockingChatService(cancelled))
+                new ChatModelClient(new BlockingChatService(cancelled, streamStarted))
         );
         CodingCliAgentFactory.PreparedCodingAgent prepared = agentFactory.prepare(options, terminalIO, interactionState);
         CodingCliSessionRunner runner = new CodingCliSessionRunner(
@@ -2062,6 +2069,7 @@ public class CodeCommandTest {
                 }
             }
             Assert.assertNotNull(turnId);
+            Assert.assertTrue("model stream never became active", streamStarted.await(5L, TimeUnit.SECONDS));
             invokePrivateMethod(runner, "interruptActiveMainBufferTurn", new Class<?>[]{String.class}, turnId);
 
             int exitCode = future.get(5, TimeUnit.SECONDS);
@@ -2230,9 +2238,11 @@ public class CodeCommandTest {
     private static final class BlockingChatService implements IChatService {
 
         private final CountDownLatch cancelled;
+        private final CountDownLatch streamStarted;
 
-        private BlockingChatService(CountDownLatch cancelled) {
+        private BlockingChatService(CountDownLatch cancelled, CountDownLatch streamStarted) {
             this.cancelled = cancelled;
+            this.streamStarted = streamStarted;
         }
 
         @Override
@@ -2267,6 +2277,7 @@ public class CodeCommandTest {
                     .message("OK")
                     .build());
 
+            streamStarted.countDown();
             if (!eventSourceListener.getCountDownLatch().await(5, TimeUnit.SECONDS)) {
                 throw new AssertionError("stream was not released");
             }
