@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +61,11 @@ public class PineconeService {
             }
 
             // {"upsertedCount":3}
-            return JSON.parseObject(response.body().string(), PineconeInsertResponse.class).getUpsertedCount();
+            PineconeInsertResponse insertResponse = JSON.parseObject(bodyString(response), PineconeInsertResponse.class);
+            if (insertResponse == null || insertResponse.getUpsertedCount() == null) {
+                throw new CommonException("Invalid insert response from Pinecone.");
+            }
+            return insertResponse.getUpsertedCount();
         } catch (Exception e) {
             log.error("OkHttpClient exception! {}", e.getMessage(), e);
             throw new CommonException("Failed to insert into Pinecone due to network error." + e.getMessage());
@@ -98,8 +103,7 @@ public class PineconeService {
                 throw new CommonException("Error querying Pinecone: " + response.message());
             }
 
-            String body = response.body().string();
-            return JSON.parseObject(body, PineconeQueryResponse.class);
+            return JSON.parseObject(bodyString(response), PineconeQueryResponse.class);
         } catch (IOException e) {
             log.error("OkHttpClient exception! {}", e.getMessage(), e);
             throw new CommonException("Failed to query Pinecone due to network error." + e.getMessage());
@@ -109,7 +113,13 @@ public class PineconeService {
     public String query(PineconeQuery pineconeQuery, String delimiter){
         PineconeQueryResponse queryResponse = this.query(pineconeQuery);
         if(delimiter == null) delimiter = "";
-        return queryResponse.getMatches().stream().map(match -> match.getMetadata().get(Constants.METADATA_KEY)).collect(Collectors.joining(delimiter));
+        if (queryResponse == null || queryResponse.getMatches() == null) {
+            return "";
+        }
+        return queryResponse.getMatches().stream()
+                .map(match -> match == null || match.getMetadata() == null ? null : match.getMetadata().get(Constants.METADATA_KEY))
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(delimiter));
     }
 
     public PineconeFetchResponse fetch(List<String> ids, String namespace) {
@@ -144,7 +154,7 @@ public class PineconeService {
                 log.error("Error fetching from Pinecone vector store: {}", response.message());
                 throw new CommonException("Error fetching from Pinecone: " + response.message());
             }
-            return JSON.parseObject(response.body().string(), PineconeFetchResponse.class);
+            return JSON.parseObject(bodyString(response), PineconeFetchResponse.class);
         } catch (IOException e) {
             log.error("OkHttpClient exception! {}", e.getMessage(), e);
             throw new CommonException("Failed to fetch from Pinecone due to network error." + e.getMessage());
@@ -193,6 +203,14 @@ public class PineconeService {
             finalcontents.add(map);
         }
         return finalcontents;
+    }
+
+    private String bodyString(Response response) throws IOException {
+        ResponseBody body = response.body();
+        if (body == null) {
+            throw new CommonException("Empty response body from Pinecone.");
+        }
+        return body.string();
     }
 
     private RequestBody jsonBody(Object payload) {

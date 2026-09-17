@@ -20,6 +20,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -94,7 +95,7 @@ public class QdrantVectorStore implements VectorStore {
 
         JSONObject body = new JSONObject();
         body.put("query", request.getVector());
-        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK());
+        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK());
         body.put("with_payload", request.getIncludeMetadata() == null ? Boolean.TRUE : request.getIncludeMetadata());
         body.put("with_vector", request.getIncludeVector() == null ? Boolean.FALSE : request.getIncludeVector());
         if (trimToNull(config.getVectorName()) != null) {
@@ -257,7 +258,8 @@ public class QdrantVectorStore implements VectorStore {
             if (!response.isSuccessful()) {
                 throw new IOException("Qdrant request failed: " + response.message());
             }
-            String body = response.body() == null ? "{}" : response.body().string();
+            ResponseBody responseBody = response.body();
+            String body = responseBody == null ? "{}" : responseBody.string();
             return JSON.parseObject(body);
         }
     }

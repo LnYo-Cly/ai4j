@@ -424,7 +424,8 @@ public final class Skills {
         if (parent == null) {
             return "skill";
         }
-        return parent.getFileName().toString();
+        Path fileName = parent.getFileName();
+        return fileName == null ? "skill" : fileName.toString();
     }
 
     private static boolean endsWithBlankLine(StringBuilder builder) {
