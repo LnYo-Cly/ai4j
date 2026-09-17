@@ -4139,7 +4139,6 @@ public class CodingCliSessionRunner {
 
     private void emitMainBufferError(String message) {
         mainBufferTurnPrinter.printBlock(codexStyleBlockFormatter.formatError(message));
-        System.err.println("DBG-EMIT done msg=" + message);
     }
 
     private String lastPathSegment(String value) {
@@ -4431,7 +4430,6 @@ public class CodingCliSessionRunner {
             }
         }
         boolean interrupted = isMainBufferTurnInterrupted(turnId);
-        System.err.println("DBG-CALLER turnId=" + turnId + " interrupted=" + interrupted + " failure=" + (failure[0] == null ? "null" : failure[0].getClass().getName()));
         if (interrupted) {
             try {
                 handleMainBufferTurnInterrupted(session, turnId);
@@ -4449,7 +4447,6 @@ public class CodingCliSessionRunner {
     }
 
     private void registerMainBufferTurn(String turnId, Thread worker) {
-        System.err.println("DBG-REGISTER turnId=" + turnId + " thread=" + worker);
         synchronized (mainBufferTurnInterruptLock) {
             activeMainBufferTurnId = turnId;
             activeMainBufferTurnThread = worker;
@@ -4476,14 +4473,11 @@ public class CodingCliSessionRunner {
             if (!sameTurnId(activeMainBufferTurnId, turnId)
                     || activeMainBufferTurnInterrupted
                     || activeMainBufferTurnThread == null) {
-                System.err.println("DBG-INTERRUPT miss turnId=" + turnId + " active=" + activeMainBufferTurnId
-                        + " flag=" + activeMainBufferTurnInterrupted + " thread=" + activeMainBufferTurnThread);
                 return false;
             }
             activeMainBufferTurnInterrupted = true;
             thread = activeMainBufferTurnThread;
         }
-        System.err.println("DBG-INTERRUPT hit turnId=" + turnId + " thread=" + thread);
         thread.interrupt();
         ChatModelClient.cancelActiveStream(thread);
         ResponsesModelClient.cancelActiveStream(thread);
@@ -4512,10 +4506,8 @@ public class CodingCliSessionRunner {
     }
 
     private void handleMainBufferTurnInterrupted(ManagedCodingSession session, String turnId) {
-        System.err.println("DBG-HANDLER enter turnId=" + turnId);
         synchronized (mainBufferTurnInterruptLock) {
             if (mainBufferTurnInterruptNoticeIssued) {
-                System.err.println("DBG-HANDLER skip issued");
                 return;
             }
         }

@@ -1982,8 +1982,9 @@ public class CodeCommandTest {
             invokePrivateMethod(runner, "interruptActiveMainBufferTurn", new Class<?>[]{String.class}, turnId);
 
             int exitCode = future.get(5, TimeUnit.SECONDS);
-            String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertEquals(0, exitCode);
+            awaitOutputContains(output, "Conversation interrupted by user.");
+            String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertTrue("Missing cancellation notice in: " + rendered,
                     rendered.contains("Conversation interrupted by user."));
             Assert.assertFalse(rendered.contains("Slow hello done."));
@@ -2073,10 +2074,12 @@ public class CodeCommandTest {
             Object interruptResult = invokePrivateMethod(runner, "interruptActiveMainBufferTurn", new Class<?>[]{String.class}, turnId);
 
             int exitCode = future.get(5, TimeUnit.SECONDS);
-            String rendered = output.toString(StandardCharsets.UTF_8.name());
-            System.err.println("DBG-RENDERED interruptResult=" + interruptResult + " turnId=" + turnId + " rendered=" + rendered.replace("\r", "\\r").replace("\n", "\\n"));
             Assert.assertEquals(0, exitCode);
             Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
+            // The capture terminal is an ExternalTerminal whose pump thread drains
+            // asynchronously; wait for the notice to reach the stream before asserting.
+            awaitOutputContains(output, "Conversation interrupted by user.");
+            String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertTrue("Missing cancellation notice (interruptResult=" + interruptResult + ", turnId=" + turnId + ") in: " + rendered,
                     rendered.contains("Conversation interrupted by user."));
             Assert.assertFalse(rendered.contains("slow chat stream completed"));
@@ -2554,6 +2557,16 @@ public class CodeCommandTest {
         Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(target, args);
+    }
+
+    private static void awaitOutputContains(ByteArrayOutputStream output, String expected) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            if (new String(output.toByteArray(), StandardCharsets.UTF_8).contains(expected)) {
+                return;
+            }
+            Thread.sleep(10L);
+        }
     }
 
     private static final class ScriptedLineReaderHandler implements InvocationHandler {
