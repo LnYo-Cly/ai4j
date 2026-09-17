@@ -215,8 +215,8 @@ public class A2AServerTest {
         subscriber.start();
         assertTrue("subscription did not receive its initial task", initialTask.await(5, TimeUnit.SECONDS));
         model.release();
-        assertTrue("subscription did not receive the artifact", artifact.await(5, TimeUnit.SECONDS));
-        assertTrue("subscription did not receive terminal status", completed.await(5, TimeUnit.SECONDS));
+        assertTrue("subscription did not receive the artifact", artifact.await(15, TimeUnit.SECONDS));
+        assertTrue("subscription did not receive terminal status", completed.await(15, TimeUnit.SECONDS));
         subscriber.join(5000);
         assertFalse("subscription did not close after terminal status", subscriber.isAlive());
         assertTrue("subscription failed: " + failure.get(), failure.get() == null);

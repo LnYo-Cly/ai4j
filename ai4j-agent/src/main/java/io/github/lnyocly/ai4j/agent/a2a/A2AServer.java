@@ -800,10 +800,14 @@ public class A2AServer implements AutoCloseable {
         boolean started = false;
         try {
             sink = openSse(exchange, requestId);
-            sink.send(standardTaskEvent(prepared.record), false);
-            if (!prepared.record.addSubscriber(sink)) {
-                sink.sendError(-32003, "Too many task subscribers");
-                return;
+            synchronized (prepared.record) {
+                // Send the initial Task snapshot and register under the record lock so
+                // updates published meanwhile cannot slip between the two.
+                sink.send(standardTaskEvent(prepared.record), false);
+                if (!prepared.record.addSubscriber(sink)) {
+                    sink.sendError(-32003, "Too many task subscribers");
+                    return;
+                }
             }
             startTask(prepared.record, prepared.message, true);
             started = true;
@@ -829,19 +833,20 @@ public class A2AServer implements AutoCloseable {
         A2ATaskRecord record = requiredTask(taskId);
         SseSink sink = openSse(exchange, requestId);
         try {
-            boolean terminalBeforeSubscribe = record.getState().isTerminal();
-            // A2A requires the first active-task subscription event to be a complete Task.
-            sink.send(standardTaskEvent(record), false);
-            if (!terminalBeforeSubscribe) {
-                if (!record.addSubscriber(sink)) {
+            boolean await;
+            synchronized (record) {
+                // A2A requires the first active-task subscription event to be a complete Task.
+                // Send it and register under the record lock so updates published meanwhile
+                // cannot slip between the snapshot and the subscription.
+                sink.send(standardTaskEvent(record), false);
+                await = !record.getState().isTerminal();
+                if (await && !record.addSubscriber(sink)) {
                     sink.sendError(-32003, "Too many task subscribers");
                     return;
                 }
-                if (record.getState().isTerminal()) {
-                    sink.send(standardTaskEvent(record), false);
-                } else {
-                    record.awaitTerminal();
-                }
+            }
+            if (await) {
+                record.awaitTerminal();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
