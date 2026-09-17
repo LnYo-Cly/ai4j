@@ -2074,6 +2074,7 @@ public class CodeCommandTest {
 
             int exitCode = future.get(5, TimeUnit.SECONDS);
             String rendered = output.toString(StandardCharsets.UTF_8.name());
+            System.err.println("DBG-RENDERED interruptResult=" + interruptResult + " turnId=" + turnId + " rendered=" + rendered.replace("\r", "\\r").replace("\n", "\\n"));
             Assert.assertEquals(0, exitCode);
             Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
             Assert.assertTrue("Missing cancellation notice (interruptResult=" + interruptResult + ", turnId=" + turnId + ") in: " + rendered,
