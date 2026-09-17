@@ -1,0 +1,5 @@
+decision_id,date,title,status,superseded_by
+DEC-2024-031,2024-05-28,"Launch discount pilot in region EMEA",active,
+DEC-2024-032,2024-05-29,"Freeze all pricing changes during pilot",superseded,DEC-2024-040
+DEC-2024-040,2024-06-10,"Allow pricing changes with compliance sign-off",active,
+DEC-2024-041,2024-06-11,"Defer mobile checkout A/B test to Q3",active,

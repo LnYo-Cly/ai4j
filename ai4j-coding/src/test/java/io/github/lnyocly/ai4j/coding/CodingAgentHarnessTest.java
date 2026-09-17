@@ -211,6 +211,35 @@ public class CodingAgentHarnessTest {
         harness.close();
     }
 
+    @Test
+    public void injectsFidelityContractIntoHarnessSystemPrompt() throws Exception {
+        Path harnessDirectory = temporaryFolder.newFolder("coding-fidelity").toPath();
+        Path workspace = temporaryFolder.newFolder("coding-fidelity-workspace").toPath();
+        QueueModelClient model = new QueueModelClient(textResult("done"));
+        CodingAgent agent = codingAgent(model, new ToolExecutor() {
+            @Override
+            public String execute(AgentToolCall call) {
+                return "echo-result";
+            }
+        }, workspace);
+        CodingAgentHarness harness = CodingAgentHarness.builder()
+                .codingAgent(agent)
+                .persistence(HarnessPersistence.file(harnessDirectory))
+                .autoResume(false)
+                .build();
+
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder()
+                .sessionId("coding-fidelity")
+                .input("summarize the ticket register")
+                .build());
+
+        assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        String systemPrompt = model.getLastPrompt().getSystemPrompt();
+        assertTrue(systemPrompt.contains("preserve the exact identifiers"));
+        assertTrue(systemPrompt.contains("semantically duplicate"));
+        harness.close();
+    }
+
     private CodingAgent codingAgent(AgentModelClient model,
                                     ToolExecutor executor,
                                     Path workspace) {

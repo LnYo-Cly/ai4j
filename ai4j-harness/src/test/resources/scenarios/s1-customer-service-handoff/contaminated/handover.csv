@@ -1,0 +1,4 @@
+escalation_id,status,action,owner,reason
+ESC-001,open,needs escalation,vip_success_manager,"vip billing dispute over invoice"
+ESC-002,open,needs escalation,shift_lead,"enterprise sso issue, sla breached"
+TK-2024-11890,open,watch,shift_lead,"routine account change"

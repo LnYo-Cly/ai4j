@@ -1,0 +1,6 @@
+ticket_id,action,approver_role,reason
+TK-2024-11831,escalate,vip_success_manager,"vip tier, 31h old, angry; double charge INV-90210"
+TK-2024-11842,monitor,shift_lead,"standard tier within sla; carrier tracking stall"
+TK-2024-11877,escalate,shift_lead,"enterprise tier 27h, sla breach 245min, frustrated"
+TK-2024-11890,monitor,shift_lead,"routine account change, within sla"
+TK-2024-11904,escalate,billing_ops_lead,"billing escalation; vip refund outstanding"

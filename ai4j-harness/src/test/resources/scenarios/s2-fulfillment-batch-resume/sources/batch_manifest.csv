@@ -1,0 +1,8 @@
+order_id,sku,qty,priority,state,last_error
+SO-88412,SKU-WH-0117,2,express,completed,
+SO-88413,SKU-WH-0422,1,standard,failed,PICK_TIMEOUT
+SO-88414,SKU-WH-0901,4,express,failed,STOCK_MISMATCH
+SO-88415,SKU-WH-0117,1,standard,pending,
+SO-88416,SKU-WH-0773,3,express,failed,PICK_TIMEOUT
+SO-88417,SKU-WH-0550,1,standard,completed,
+SO-88418,SKU-WH-0901,2,standard,pending,

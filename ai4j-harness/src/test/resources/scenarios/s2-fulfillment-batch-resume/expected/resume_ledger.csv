@@ -1,0 +1,8 @@
+order_id,ledger_status,note
+SO-88412,skipped_completed,"shipped before outage 03:40"
+SO-88413,retried,"transient PICK_TIMEOUT at 03:12"
+SO-88414,rejected_unrecoverable,"fatal STOCK_MISMATCH; exception queue"
+SO-88415,processed_new,"first attempt after resume"
+SO-88416,retried,"transient PICK_TIMEOUT at 03:31"
+SO-88417,skipped_completed,"shipped before outage 03:40"
+SO-88418,processed_new,"first attempt after resume"

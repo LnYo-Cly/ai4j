@@ -174,6 +174,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
         if (resumed) {
             harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
         }
+        harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.fidelity());
         context.setSystemPrompt(appendPrompt(context.getSystemPrompt(), harnessPrompt));
     }
 

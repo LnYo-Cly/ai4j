@@ -1,0 +1,3 @@
+ticket_id,action,approver_role,reason
+TK-2024-11710,monitor,shift_lead,"carrier delay, tracking stuck 48h"
+TK-2024-11755,close,shift_lead,"customer confirmed resolution"
