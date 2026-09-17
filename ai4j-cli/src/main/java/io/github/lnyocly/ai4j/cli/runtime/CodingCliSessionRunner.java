@@ -4510,7 +4510,6 @@ public class CodingCliSessionRunner {
             if (mainBufferTurnInterruptNoticeIssued) {
                 return;
             }
-            mainBufferTurnInterruptNoticeIssued = true;
         }
         // Cancellation is handled here; clear it before terminal I/O can observe it.
         Thread.interrupted();
@@ -4522,7 +4521,13 @@ public class CodingCliSessionRunner {
             ));
             renderTuiIfEnabled(session);
         } finally {
-            emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+            try {
+                emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+            } finally {
+                synchronized (mainBufferTurnInterruptLock) {
+                    mainBufferTurnInterruptNoticeIssued = true;
+                }
+            }
         }
     }
 

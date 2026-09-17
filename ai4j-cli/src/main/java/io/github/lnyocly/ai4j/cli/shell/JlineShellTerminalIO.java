@@ -895,6 +895,9 @@ public final class JlineShellTerminalIO implements TerminalIO {
                     status.suspend();
                     suspended = true;
                 }
+            } catch (Exception ignored) {
+            }
+            try {
                 Terminal terminal = terminal();
                 if (terminal != null) {
                     CliDisplayWidth.WrappedAnsi wrapped = CliDisplayWidth.wrapAnsi(
