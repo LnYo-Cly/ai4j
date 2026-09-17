@@ -280,8 +280,6 @@ public class McpToolAdapter {
             Tool.Function.Property items = new Tool.Function.Property();
             items.setType("object"); // Default to object type
             property.setItems(items);
-        } else if (Map.class.isAssignableFrom(paramType)) {
-            property.setType("object");
         } else {
             property.setType("object");
         }

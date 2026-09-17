@@ -77,7 +77,7 @@ public class PineconeVectorStore implements VectorStore {
         }
         PineconeQueryResponse response = pineconeService.query(PineconeQuery.builder()
                 .namespace(dataset)
-                .topK(request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK())
+                .topK(request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK())
                 .filter(stringifyMetadata(request.getFilter()))
                 .includeMetadata(request.getIncludeMetadata() == null ? Boolean.TRUE : request.getIncludeMetadata())
                 .includeValues(request.getIncludeVector() == null ? Boolean.FALSE : request.getIncludeVector())

@@ -27,6 +27,8 @@ import java.util.Map;
 
 public class PgVectorStore implements VectorStore {
 
+    private static final String[] DISTANCE_OPERATORS = {"<->", "<=>", "<#>", "<+>", "<~>", "<%>"};
+
     private final PgVectorConfig config;
 
     public PgVectorStore(Configuration configuration) {
@@ -105,7 +107,7 @@ public class PgVectorStore implements VectorStore {
                 .append(identifier(config.getIdColumn())).append(", ")
                 .append(identifier(config.getContentColumn())).append(", ")
                 .append(identifier(config.getMetadataColumn())).append("::text as metadata_json, ")
-                .append(identifier(config.getVectorColumn())).append(" ").append(config.getDistanceOperator()).append(" cast(? as vector) as distance ")
+                .append(identifier(config.getVectorColumn())).append(" ").append(distanceOperator()).append(" cast(? as vector) as distance ")
                 .append("from ").append(identifier(config.getTableName()))
                 .append(" where ").append(identifier(config.getDatasetColumn())).append(" = ?");
 
@@ -114,10 +116,10 @@ public class PgVectorStore implements VectorStore {
         parameters.add(dataset);
         appendMetadataFilters(sql, parameters, request.getFilter());
         sql.append(" order by ").append(identifier(config.getVectorColumn()))
-                .append(" ").append(config.getDistanceOperator()).append(" cast(? as vector)")
+                .append(" ").append(distanceOperator()).append(" cast(? as vector)")
                 .append(" limit ?");
         parameters.add(vectorLiteral(request.getVector()));
-        parameters.add(request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK());
+        parameters.add(request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK());
 
         List<VectorSearchResult> results = new ArrayList<VectorSearchResult>();
         try (Connection connection = connection();
@@ -293,6 +295,19 @@ public class PgVectorStore implements VectorStore {
         }
         builder.append("]");
         return builder.toString();
+    }
+
+    private String distanceOperator() {
+        String operator = trimToNull(config.getDistanceOperator());
+        if (operator == null) {
+            return "<=>";
+        }
+        for (String allowed : DISTANCE_OPERATORS) {
+            if (allowed.equals(operator)) {
+                return operator;
+            }
+        }
+        throw new IllegalArgumentException("Invalid distance operator: " + operator);
     }
 
     private String safeMetadataKey(String key) {

@@ -294,7 +294,7 @@ public class StreamableHttpTransport implements McpTransport {
             if (hasData) {
                 dispatchSseEvent(dataBuilder.toString());
             }
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             log.debug("处理SSE响应失败: {}", McpTransportSupport.safeMessage(e), e);
             if (messageHandler != null) {
                 messageHandler.onError(e);

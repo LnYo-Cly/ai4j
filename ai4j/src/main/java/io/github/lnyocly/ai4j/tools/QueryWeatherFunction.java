@@ -18,6 +18,9 @@ import java.util.function.Function;
 public class QueryWeatherFunction implements Function<QueryWeatherFunction.Request, String> {
     @Override
     public String apply(Request request) {
+        if (request == null || request.type == null) {
+            return "获取天气失败 当前天气未知";
+        }
         final String key = "S3zzVyAdJjEeB18Gw";
         // https://api.seniverse.com/v3/weather/hourly.json?key=your_api_key&location=beijing&start=0&hours=24
         // https://api.seniverse.com/v3/weather/daily.json?key=your_api_key&location=beijing&start=0&days=5
@@ -38,7 +41,8 @@ public class QueryWeatherFunction implements Function<QueryWeatherFunction.Reque
         try (Response response = client.newCall(http).execute()) {
             if (response.isSuccessful()) {
                 // 解析响应体
-                return response.body() != null ? response.body().string() : "";
+                ResponseBody body = response.body();
+                return body != null ? body.string() : "";
             } else {
                 return "获取天气失败 当前天气未知";
             }

@@ -901,6 +901,9 @@ public class CodingCliSessionRunner {
 
     private void runTurn(ManagedCodingSession session, String input, ActiveTuiTurn activeTurn, String turnId) throws Exception {
         if (isTurnInterrupted(turnId, activeTurn)) {
+            if (activeTurn == null && isMainBufferTurnInterrupted(turnId)) {
+                handleMainBufferTurnInterrupted(session, turnId);
+            }
             return;
         }
         beginTuiTurn(input);
@@ -4465,13 +4468,16 @@ public class CodingCliSessionRunner {
     private void handleMainBufferTurnInterrupted(ManagedCodingSession session, String turnId) {
         // Cancellation is handled here; clear it before terminal I/O can observe it.
         Thread.interrupted();
-        mainBufferTurnPrinter.clearTransient();
-        tuiLiveTurnState.onError(null, TURN_INTERRUPTED_MESSAGE);
-        appendEvent(session, SessionEventType.ERROR, turnId, null, TURN_INTERRUPTED_MESSAGE, payloadOf(
-                "error", TURN_INTERRUPTED_MESSAGE
-        ));
-        renderTuiIfEnabled(session);
-        emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+        try {
+            mainBufferTurnPrinter.clearTransient();
+            tuiLiveTurnState.onError(null, TURN_INTERRUPTED_MESSAGE);
+            appendEvent(session, SessionEventType.ERROR, turnId, null, TURN_INTERRUPTED_MESSAGE, payloadOf(
+                    "error", TURN_INTERRUPTED_MESSAGE
+            ));
+            renderTuiIfEnabled(session);
+        } finally {
+            emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+        }
     }
 
     private boolean hasActiveTuiTurn() {
