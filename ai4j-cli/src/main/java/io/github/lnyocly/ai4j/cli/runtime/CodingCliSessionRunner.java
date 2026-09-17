@@ -4133,7 +4133,6 @@ public class CodingCliSessionRunner {
 
     private void emitMainBufferError(String message) {
         mainBufferTurnPrinter.printBlock(codexStyleBlockFormatter.formatError(message));
-        System.err.println("[DBG] emit done msg=" + message);
     }
 
     private String lastPathSegment(String value) {
@@ -4362,8 +4361,6 @@ public class CodingCliSessionRunner {
                     runTurn(session, input, null, turnId);
                 } catch (Exception ex) {
                     failure[0] = ex;
-                } catch (Throwable t) {
-                    System.err.println("[DBG] worker died with throwable=" + t);
                 }
             }
         }, "ai4j-main-buffer-turn");
@@ -4401,7 +4398,6 @@ public class CodingCliSessionRunner {
             }
         }
         boolean interrupted = isMainBufferTurnInterrupted(turnId);
-        System.err.println("[DBG] post-join interrupted=" + interrupted + " failure=" + failure[0]);
         clearMainBufferTurnInterruptState(turnId);
         if (failure[0] != null && !interrupted) {
             throw failure[0];
@@ -4442,7 +4438,6 @@ public class CodingCliSessionRunner {
             activeMainBufferTurnInterrupted = true;
             thread = activeMainBufferTurnThread;
         }
-        System.err.println("[DBG] interrupt delivered tid=" + turnId);
         thread.interrupt();
         ChatModelClient.cancelActiveStream(thread);
         ResponsesModelClient.cancelActiveStream(thread);
@@ -4473,7 +4468,6 @@ public class CodingCliSessionRunner {
     private void handleMainBufferTurnInterrupted(ManagedCodingSession session, String turnId) {
         // Cancellation is handled here; clear it before terminal I/O can observe it.
         Thread.interrupted();
-        System.err.println("[DBG] handler enter tid=" + turnId);
         try {
             mainBufferTurnPrinter.clearTransient();
             tuiLiveTurnState.onError(null, TURN_INTERRUPTED_MESSAGE);
