@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 
 import java.util.LinkedHashMap;
@@ -28,12 +29,23 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     private static final String SESSION_SNAPSHOT = "agentSessionSnapshot";
 
     private final Agent agent;
+    private final AgentToolVisibility toolVisibility;
 
     public AgentHarnessExecutionAdapter(Agent agent) {
+        this(agent, null);
+    }
+
+    /**
+     * Creates an adapter with an optional model-facing tool view. The view is
+     * applied to the per-execution context; the Harness executor remains
+     * backed by the complete business registry.
+     */
+    public AgentHarnessExecutionAdapter(Agent agent, AgentToolVisibility toolVisibility) {
         if (agent == null) {
             throw new IllegalArgumentException("agent is required");
         }
         this.agent = agent;
+        this.toolVisibility = toolVisibility;
     }
 
     public Agent getAgent() {
@@ -49,12 +61,12 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     public HarnessExecutionAdapterSession open(HarnessExecutionContext executionContext,
                                                HarnessRunBudget budget,
                                                HarnessAdapterState previousState) {
-        AgentContext context = createContext(executionContext, budget);
         AgentSessionSnapshot snapshot = decodeSessionSnapshot(previousState);
         if (snapshot == null && executionContext.getSessionId() != null) {
             snapshot = executionContext.getGateway().getSessionSnapshot(
                     executionContext.getSessionId());
         }
+        AgentContext context = createContext(executionContext, budget, snapshot != null);
         AgentSession session = snapshot == null
                 ? agent.newSessionWithIdentity(executionContext.getSessionId(),
                         executionContext.getRunId(), context)
@@ -112,7 +124,8 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     }
 
     private AgentContext createContext(HarnessExecutionContext executionContext,
-                                       HarnessRunBudget budget) {
+                                       HarnessRunBudget budget,
+                                       boolean resumed) {
         AgentContext base = agent.getContext();
         if (base == null) {
             throw new IllegalStateException("agent context is required");
@@ -132,13 +145,18 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
             }
         }
         ToolExecutor businessExecutor = base.getToolExecutor();
+        String harnessPrompt = HarnessPrompts.instructions();
+        if (resumed) {
+            harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
+        }
         return base.toBuilder()
                 .toolRegistry(new HarnessToolRegistry(base.getToolRegistry()))
+                .toolVisibility(toolVisibility == null ? base.getToolVisibility() : toolVisibility)
                 .toolExecutor(new HarnessToolExecutor(executionContext, businessExecutor))
                 .toolInterceptor(new HarnessToolInterceptor(base.getToolInterceptor()))
                 .options(optionsBuilder.build())
                 .sessionId(executionContext.getSessionId())
-                .systemPrompt(appendPrompt(base.getSystemPrompt(), HarnessPrompts.instructions()))
+                .systemPrompt(appendPrompt(base.getSystemPrompt(), harnessPrompt))
                 .build();
     }
 

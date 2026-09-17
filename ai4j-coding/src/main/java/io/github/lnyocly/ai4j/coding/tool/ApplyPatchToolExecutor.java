@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.coding.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.patch.ApplyPatchFileChange;
 import io.github.lnyocly.ai4j.coding.patch.ApplyPatchResult;
@@ -39,7 +40,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
         JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
         String patch = arguments.getString("patch");
         if (patch == null || patch.trim().isEmpty()) {
-            throw new IllegalArgumentException("patch is required");
+            throw invalid("patch is required", null);
         }
         ApplyPatchResult result = apply(patch);
         return JSON.toJSONString(result);
@@ -48,13 +49,15 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
     private ApplyPatchResult apply(String patchText) throws IOException {
         List<String> lines = normalizeLines(patchText);
         if (lines.size() < 2 || !BEGIN_PATCH.equals(lines.get(0)) || !END_PATCH.equals(lines.get(lines.size() - 1))) {
-            throw new IllegalArgumentException("Invalid patch envelope");
+            throw invalid("Invalid patch envelope", null);
         }
 
         int index = 1;
         int operationsApplied = 0;
         Set<String> changedFiles = new LinkedHashSet<String>();
         List<ApplyPatchFileChange> fileChanges = new ArrayList<ApplyPatchFileChange>();
+        List<PatchOperation> operations = new ArrayList<PatchOperation>();
+        Set<Path> plannedPaths = new LinkedHashSet<Path>();
         while (index < lines.size() - 1) {
             String line = lines.get(index);
             PatchDirective directive = parseDirective(line);
@@ -63,35 +66,48 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                     index++;
                     continue;
                 }
-                throw new IllegalArgumentException("Unsupported patch line: " + line);
+                throw invalid("Unsupported patch line: " + line, null);
             }
             if ("add".equals(directive.operation)) {
                 String path = directive.path;
-                PatchOperation operation = applyAddFile(lines, index + 1, path);
+                PatchOperation operation = prepareAddFile(lines, index + 1, path);
+                ensureUniquePath(plannedPaths, operation);
                 index = operation.nextIndex;
                 operationsApplied++;
                 changedFiles.add(operation.fileChange.getPath());
                 fileChanges.add(operation.fileChange);
+                operations.add(operation);
                 continue;
             }
             if ("update".equals(directive.operation)) {
                 String path = directive.path;
-                PatchOperation operation = applyUpdateFile(lines, index + 1, path);
+                PatchOperation operation = prepareUpdateFile(lines, index + 1, path);
+                ensureUniquePath(plannedPaths, operation);
                 index = operation.nextIndex;
                 operationsApplied++;
                 changedFiles.add(operation.fileChange.getPath());
                 fileChanges.add(operation.fileChange);
+                operations.add(operation);
                 continue;
             }
             if ("delete".equals(directive.operation)) {
                 String path = directive.path;
-                PatchOperation operation = applyDeleteFile(path, index + 1);
+                PatchOperation operation = prepareDeleteFile(path, index + 1);
+                ensureUniquePath(plannedPaths, operation);
                 index = operation.nextIndex;
                 operationsApplied++;
                 changedFiles.add(operation.fileChange.getPath());
                 fileChanges.add(operation.fileChange);
+                operations.add(operation);
                 continue;
             }
+        }
+
+        // All parsing, path checks, hunk matching, and duplicate detection are
+        // complete before the first write/delete. Execution failures after this
+        // point are deliberately surfaced as unknown to durable hosts.
+        for (PatchOperation operation : operations) {
+            commit(operation);
         }
 
         return ApplyPatchResult.builder()
@@ -102,23 +118,37 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                 .build();
     }
 
-    private PatchOperation applyAddFile(List<String> lines, int startIndex, String path) throws IOException {
+    private void ensureUniquePath(Set<Path> plannedPaths, PatchOperation operation) {
+        if (operation == null || operation.file == null || plannedPaths.add(operation.file)) {
+            return;
+        }
+        throw invalid("Patch contains multiple operations for file: " + operation.file, null);
+    }
+
+    private void commit(PatchOperation operation) throws IOException {
+        if (operation.delete) {
+            Files.delete(operation.file);
+        } else {
+            writeFile(operation.file, operation.content);
+        }
+    }
+
+    private PatchOperation prepareAddFile(List<String> lines, int startIndex, String path) throws IOException {
         Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (Files.exists(file)) {
-            throw new IllegalArgumentException("File already exists: " + path);
+            throw invalid("File already exists: " + path, null);
         }
         List<String> contentLines = new ArrayList<String>();
         int index = startIndex;
         while (index < lines.size() - 1 && !lines.get(index).startsWith("*** ")) {
             String line = lines.get(index);
             if (!line.startsWith("+")) {
-                throw new IllegalArgumentException("Add file lines must start with '+': " + line);
+                throw invalid("Add file lines must start with '+': " + line, null);
             }
             contentLines.add(line.substring(1));
             index++;
         }
-        writeFile(file, joinLines(contentLines));
-        return new PatchOperation(index, ApplyPatchFileChange.builder()
+        return new PatchOperation(index, file, joinLines(contentLines), false, ApplyPatchFileChange.builder()
                 .path(normalizeRelativePath(path))
                 .operation("add")
                 .linesAdded(contentLines.size())
@@ -126,10 +156,10 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                 .build());
     }
 
-    private PatchOperation applyUpdateFile(List<String> lines, int startIndex, String path) throws IOException {
+    private PatchOperation prepareUpdateFile(List<String> lines, int startIndex, String path) throws IOException {
         Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (!Files.exists(file) || Files.isDirectory(file)) {
-            throw new IllegalArgumentException("File does not exist: " + path);
+            throw invalid("File does not exist: " + path, null);
         }
 
         List<String> body = new ArrayList<String>();
@@ -142,8 +172,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
         List<String> normalizedBody = normalizeUpdateBody(body);
         String original = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
         String updated = applyUpdateBody(original, normalizedBody, path);
-        writeFile(file, updated);
-        return new PatchOperation(index, ApplyPatchFileChange.builder()
+        return new PatchOperation(index, file, updated, false, ApplyPatchFileChange.builder()
                 .path(normalizeRelativePath(path))
                 .operation("update")
                 .linesAdded(countPrefixedLines(normalizedBody, '+'))
@@ -151,15 +180,14 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                 .build());
     }
 
-    private PatchOperation applyDeleteFile(String path, int startIndex) throws IOException {
+    private PatchOperation prepareDeleteFile(String path, int startIndex) throws IOException {
         Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
         if (!Files.exists(file) || Files.isDirectory(file)) {
-            throw new IllegalArgumentException("File does not exist: " + path);
+            throw invalid("File does not exist: " + path, null);
         }
         String original = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
         int removed = splitContentLines(original).size();
-        Files.delete(file);
-        return new PatchOperation(startIndex, ApplyPatchFileChange.builder()
+        return new PatchOperation(startIndex, file, null, true, ApplyPatchFileChange.builder()
                 .path(normalizeRelativePath(path))
                 .operation("delete")
                 .linesAdded(0)
@@ -177,7 +205,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
             List<String> anchor = resolveAnchor(hunk);
             int matchIndex = findAnchor(originalLines, cursor, anchor);
             if (matchIndex < 0) {
-                throw new IllegalArgumentException("Failed to locate patch hunk in file: " + path);
+                throw invalid("Failed to locate patch hunk in file: " + path, null);
             }
 
             appendRange(output, originalLines, cursor, matchIndex);
@@ -187,7 +215,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                     continue;
                 }
                 if (line.isEmpty()) {
-                    throw new IllegalArgumentException("Invalid empty patch line in update body");
+                    throw invalid("Invalid empty patch line in update body", null);
                 }
                 char prefix = line.charAt(0);
                 String content = line.substring(1);
@@ -205,7 +233,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                         output.add(content);
                         break;
                     default:
-                        throw new IllegalArgumentException("Unsupported update line: " + line);
+                        throw invalid("Unsupported update line: " + line, null);
                 }
             }
             cursor = current;
@@ -235,13 +263,13 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
                 current.add(" ");
                 continue;
             }
-            throw new IllegalArgumentException("Unsupported update body line: " + line);
+            throw invalid("Unsupported update body line: " + line, null);
         }
         if (!current.isEmpty()) {
             hunks.add(current);
         }
         if (hunks.isEmpty()) {
-            throw new IllegalArgumentException("Update file patch must contain at least one hunk");
+            throw invalid("Update file patch must contain at least one hunk", null);
         }
         return hunks;
     }
@@ -293,11 +321,11 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
 
     private void ensureMatch(List<String> originalLines, int current, String expected, String path) {
         if (current >= originalLines.size()) {
-            throw new IllegalArgumentException("Patch exceeds file length: " + path);
+            throw invalid("Patch exceeds file length: " + path, null);
         }
         String actual = originalLines.get(current);
         if (!actual.equals(expected)) {
-            throw new IllegalArgumentException("Patch context mismatch for file " + path + ": expected '" + expected + "' but found '" + actual + "'");
+            throw invalid("Patch context mismatch for file " + path + ": expected '" + expected + "' but found '" + actual + "'", null);
         }
     }
 
@@ -359,7 +387,17 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
             return new JSONObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            JSONObject arguments = JSON.parseObject(rawArguments);
+            if (arguments == null) {
+                throw invalid("apply_patch arguments must be a JSON object", null);
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw invalid("apply_patch arguments must be valid JSON: " + message(parseFailure), parseFailure);
+        }
     }
 
     private List<String> normalizeLines(String content) {
@@ -456,7 +494,7 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
         String rawPath = line.substring(directivePrefix.length()).trim();
         String normalized = normalizePatchPath(rawPath);
         if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Patch directive is missing a file path: " + line);
+            throw invalid("Patch directive is missing a file path: " + line, null);
         }
         return normalized;
     }
@@ -485,10 +523,20 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
     private static final class PatchOperation {
 
         private final int nextIndex;
+        private final Path file;
+        private final String content;
+        private final boolean delete;
         private final ApplyPatchFileChange fileChange;
 
-        private PatchOperation(int nextIndex, ApplyPatchFileChange fileChange) {
+        private PatchOperation(int nextIndex,
+                               Path file,
+                               String content,
+                               boolean delete,
+                               ApplyPatchFileChange fileChange) {
             this.nextIndex = nextIndex;
+            this.file = file;
+            this.content = content;
+            this.delete = delete;
             this.fileChange = fileChange;
         }
     }
@@ -502,5 +550,13 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
             this.operation = operation;
             this.path = path;
         }
+    }
+
+    private AgentToolInputException invalid(String message, Throwable cause) {
+        return cause == null ? new AgentToolInputException(message) : new AgentToolInputException(message, cause);
+    }
+
+    private String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
     }
 }

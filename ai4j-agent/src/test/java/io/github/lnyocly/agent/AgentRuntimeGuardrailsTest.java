@@ -1,6 +1,7 @@
 package io.github.lnyocly.agent;
 
 import io.github.lnyocly.ai4j.agent.AgentContext;
+import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
@@ -133,8 +134,8 @@ public class AgentRuntimeGuardrailsTest {
     }
 
     @Test
-    public void defaultMaxSteps_limits_infinite_tool_loop() throws Exception {
-        AgentModelClient loopingClient = new LoopingToolCallClient();
+    public void defaultMaxSteps_doesNotStopACompletedLongLoop() throws Exception {
+        AgentModelClient loopingClient = new FiniteToolCallClient(21);
         CountingToolExecutor executor = new CountingToolExecutor();
 
         AgentContext context = AgentContext.builder()
@@ -149,7 +150,32 @@ public class AgentRuntimeGuardrailsTest {
 
         AgentResult result = new ReActRuntime().run(context, AgentRequest.builder().input("loop").build());
 
-        Assert.assertEquals(AgentOptions.DEFAULT_MAX_STEPS, result.getSteps().intValue());
+        Assert.assertEquals(22, result.getSteps().intValue());
+        Assert.assertEquals(21, executor.count);
+        Assert.assertEquals(AgentExecutionStatus.COMPLETED, result.getExecutionStatus());
+    }
+
+    @Test
+    public void explicitMaxSteps_stillLimitsAnInfiniteToolLoop() throws Exception {
+        AgentModelClient loopingClient = new LoopingToolCallClient();
+        CountingToolExecutor executor = new CountingToolExecutor();
+
+        AgentContext context = AgentContext.builder()
+                .modelClient(loopingClient)
+                .toolExecutor(executor)
+                .memory(new InMemoryAgentMemory())
+                .options(AgentOptions.builder()
+                        .maxSteps(3)
+                        .wallClockTimeoutMillis(0L)
+                        .build())
+                .model("test-model")
+                .build();
+
+        AgentResult result = new ReActRuntime().run(context, AgentRequest.builder().input("loop").build());
+
+        Assert.assertEquals(3, result.getSteps().intValue());
+        Assert.assertEquals(3, executor.count);
+        Assert.assertEquals(AgentExecutionStatus.CONTINUATION_REQUIRED, result.getExecutionStatus());
     }
 
     // ---- helpers ----
@@ -165,6 +191,39 @@ public class AgentRuntimeGuardrailsTest {
                     .build());
             return AgentModelResult.builder()
                     .toolCalls(calls)
+                    .memoryItems(new ArrayList<Object>())
+                    .build();
+        }
+
+        @Override
+        public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+            return create(prompt);
+        }
+    }
+
+    private static class FiniteToolCallClient implements AgentModelClient {
+        private int remainingToolCalls;
+
+        FiniteToolCallClient(int toolCalls) {
+            this.remainingToolCalls = toolCalls;
+        }
+
+        @Override
+        public AgentModelResult create(AgentPrompt prompt) {
+            if (remainingToolCalls-- > 0) {
+                return AgentModelResult.builder()
+                        .toolCalls(Arrays.asList(AgentToolCall.builder()
+                                .callId("call_finite")
+                                .name("echo")
+                                .arguments("{}")
+                                .type("function_call")
+                                .build()))
+                        .memoryItems(new ArrayList<Object>())
+                        .build();
+            }
+            return AgentModelResult.builder()
+                    .outputText("done")
+                    .toolCalls(new ArrayList<AgentToolCall>())
                     .memoryItems(new ArrayList<Object>())
                     .build();
         }

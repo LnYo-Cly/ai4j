@@ -121,9 +121,10 @@ public class ChatModelClient implements AgentModelClient {
                 .maxCompletionTokens(prompt.getMaxOutputTokens())
                 .user(prompt.getUser());
 
-        if (prompt.getParallelToolCalls() != null) {
-            builder.parallelToolCalls(prompt.getParallelToolCalls());
-        }
+        // AgentPrompt uses null to mean "provider default". Calling the builder
+        // explicitly keeps ChatCompletion's standalone default from leaking into
+        // agent requests as an unintended `parallel_tool_calls: true`.
+        builder.parallelToolCalls(prompt.getParallelToolCalls());
 
         if (prompt.getToolChoice() instanceof String) {
             builder.toolChoice((String) prompt.getToolChoice());
@@ -225,14 +226,25 @@ public class ChatModelClient implements AgentModelClient {
             }
             @SuppressWarnings("unchecked")
             Map<String, Object> functionMap = (Map<String, Object>) functionValue;
-            toolCalls.add(new ToolCall(
+            ToolCall converted = new ToolCall(
                     valueAsString(rawMap.get("id")),
                     valueAsString(rawMap.get("type")),
                     new ToolCall.Function(
                             valueAsString(functionMap.get("name")),
                             valueAsString(functionMap.get("arguments"))
                     )
-            ));
+            );
+            Object rawIndex = rawMap.get("index");
+            if (rawIndex instanceof Number) {
+                converted.setIndex(((Number) rawIndex).intValue());
+            } else if (rawIndex != null) {
+                try {
+                    converted.setIndex(Integer.valueOf(String.valueOf(rawIndex)));
+                } catch (NumberFormatException ignored) {
+                    // Ignore provider-specific non-numeric indexes.
+                }
+            }
+            toolCalls.add(converted);
         }
         return toolCalls;
     }

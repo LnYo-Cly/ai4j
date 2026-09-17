@@ -86,6 +86,64 @@ public class HarnessGatewayInvariantTest {
     }
 
     @Test
+    public void executionLineageIsReturnedFromRootToChild() {
+        HarnessCommandGateway gateway = gateway("lineage");
+        ExecutionRecord root = gateway.createExecution(HarnessExecutionSpec.builder().executionId("root").scopeKey("s").build());
+        ExecutionRecord claimed = gateway.claimExecution(root.getExecutionId(), "worker", 10000L);
+        gateway.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId("root").leaseId(claimed.getLeaseId())
+                .fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        ExecutionRecord child = gateway.createExecution(HarnessExecutionSpec.builder().executionId("child").scopeKey("s")
+                .parentExecutionId("root").build());
+        Assert.assertEquals(2, gateway.listExecutionLineage(child.getExecutionId()).size());
+        Assert.assertEquals("root", gateway.listExecutionLineage("child").get(0).getExecutionId());
+        gateway.close();
+    }
+
+    @Test
+    public void acceptanceLineageAggregatesRootAndRepairExecutions() {
+        HarnessCommandGateway gateway = gateway("acceptance-lineage");
+        ExecutionRecord root = gateway.createExecution(HarnessExecutionSpec.builder().executionId("root-a").scopeKey("s").build());
+        ExecutionRecord claimed = gateway.claimExecution("root-a", "worker", 10000L);
+        gateway.persistExecutionOutcome(HarnessExecutionOutcome.builder().executionId("root-a").leaseId(claimed.getLeaseId()).fencingToken(claimed.getFencingToken()).status(ExecutionStatus.FAILED).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-root").executionId("root-a").checkId("check").status(HarnessAcceptanceStatus.FAIL).evaluatedAtEpochMs(1L).build());
+        ExecutionRecord child = gateway.createExecution(HarnessExecutionSpec.builder().executionId("child-a").scopeKey("s").parentExecutionId("root-a").build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("acc-child").executionId("child-a").checkId("check").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(2L).build());
+        Assert.assertEquals("acc-root", gateway.listAcceptanceLineage(child.getExecutionId()).get(0).getAcceptanceId());
+        Assert.assertEquals("acc-child", gateway.listAcceptanceLineage(child.getExecutionId()).get(1).getAcceptanceId());
+        gateway.close();
+    }
+
+    @Test
+    public void lineageSummaryFailsClosedForMissingRequiredChecksAndIgnoresInformationalChecks() {
+        HarnessContract contract = HarnessContract.builder()
+                .requiredAcceptanceCheck("behavior")
+                .requiredAcceptanceCheck("artifact")
+                .build();
+        HarnessCommandGateway gateway = new HarnessCommandGateway(
+                new FileHarnessStore(FileHarnessConfig.builder().directory(directory.resolve("required-checks")).build()),
+                contract, HarnessActor.agent("test-agent"));
+        TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().taskId("required-task").title("required").build());
+        ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder().taskId(task.getTaskId()).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("behavior-pass").executionId(execution.getExecutionId())
+                .checkId("behavior").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(1L).build());
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("informational-fail").executionId(execution.getExecutionId())
+                .checkId("trace").status(HarnessAcceptanceStatus.FAIL).evaluatedAtEpochMs(2L).build());
+        HarnessLineageSummary missing = gateway.summarizeLineage(execution.getExecutionId());
+        Assert.assertEquals(HarnessAcceptanceStatus.NOT_RUN, missing.getAggregateAcceptanceStatus());
+        Assert.assertFalse(missing.isPassed());
+        Assert.assertTrue(missing.getMissingRequiredCheckIds().contains("artifact"));
+
+        gateway.recordAcceptance(AcceptanceRecord.builder().acceptanceId("artifact-pass").executionId(execution.getExecutionId())
+                .checkId("artifact").status(HarnessAcceptanceStatus.PASS).evaluatedAtEpochMs(3L).build());
+        HarnessLineageSummary complete = gateway.summarizeLineage(execution.getExecutionId());
+        Assert.assertEquals(HarnessAcceptanceStatus.PASS, complete.getAggregateAcceptanceStatus());
+        Assert.assertTrue(complete.isPassed());
+        Assert.assertTrue(complete.getLatestAcceptancesByCheck().containsKey("trace"));
+        Assert.assertTrue(complete.getMissingRequiredCheckIds().isEmpty());
+        gateway.close();
+    }
+
+    @Test
     public void legacyRawIdempotencyIsReadOnlyWithinMatchingTypeAndScope() {
         HarnessCommandGateway gateway = gateway("legacy-idempotency");
         TaskRecord legacyTask = gateway.createTask(HarnessTaskSpec.builder()

@@ -683,6 +683,8 @@ public class HarnessCommandGatewayTest {
 
     @Test
     public void submissionReviewAndGateKeepAgentOutsideCompletionBoundary() {
+        final java.util.concurrent.atomic.AtomicBoolean verificationPassed =
+                new java.util.concurrent.atomic.AtomicBoolean(false);
         HarnessContract contract = HarnessContract.builder()
                 .completionGate(new HarnessGate() {
                     @Override
@@ -694,12 +696,13 @@ public class HarnessCommandGatewayTest {
                     public GateResult evaluate(TaskRecord task,
                                                 SubmissionRecord submission,
                                                 HarnessState state) {
-                        return submission != null && submission.getEvidenceIds() != null
+                        return verificationPassed.get() && submission != null && submission.getEvidenceIds() != null
                                 && !submission.getEvidenceIds().isEmpty()
                                 ? GateResult.pass(getName())
                                 : GateResult.fail(getName(), "evidence is required");
                     }
                 })
+                .requiresCompletionEvidence(false)
                 .build();
         HarnessCommandGateway gateway = new HarnessCommandGateway(
                 new FileHarnessStore(FileHarnessConfig.builder().directory(directory).build()),
@@ -712,6 +715,7 @@ public class HarnessCommandGatewayTest {
         EvidenceRecord evidence = gateway.recordEvidence(HarnessEvidenceSpec.builder()
                 .evidenceId("evidence-review")
                 .taskId(task.getTaskId())
+                .executionId(execution.getExecutionId())
                 .kind("test")
                 .summary("review evidence")
                 .build(), HarnessActor.agent("agent-a"));
@@ -738,11 +742,106 @@ public class HarnessCommandGatewayTest {
         } catch (HarnessValidationException expected) {
             Assert.assertTrue(expected.getMessage().contains("allowed"));
         }
+        try {
+            gateway.completeTask(task.getTaskId(), submission.getSubmissionId(),
+                    HarnessActor.human("reviewer"));
+            Assert.fail("failed verification must reject completion");
+        } catch (HarnessValidationException expected) {
+            Assert.assertTrue(expected.getMessage().contains("evidence is required"));
+        }
+        Assert.assertEquals(TaskStatus.IN_REVIEW, gateway.getTask(task.getTaskId()).getStatus());
+        verificationPassed.set(true);
         TaskRecord completed = gateway.completeTask(task.getTaskId(),
                 submission.getSubmissionId(), HarnessActor.human("reviewer"));
         Assert.assertEquals(TaskStatus.DONE, completed.getStatus());
         Assert.assertFalse(gateway.getState().getGates().isEmpty());
         gateway.close();
+        HarnessCommandGateway reopened = new HarnessCommandGateway(
+                new FileHarnessStore(FileHarnessConfig.builder().directory(directory).build()),
+                contract, HarnessActor.agent("agent-a"));
+        Assert.assertEquals(2, reopened.getState().getGates().size());
+        boolean failurePreserved = false;
+        boolean passPreserved = false;
+        for (GateRecord gate : reopened.getState().getGates().values()) {
+            Assert.assertEquals(task.getTaskId(), gate.getTaskId());
+            Assert.assertEquals(execution.getExecutionId(), gate.getExecutionId());
+            Assert.assertEquals(submission.getSubmissionId(), gate.getSubmissionId());
+            failurePreserved |= gate.getStatus() == GateStatus.FAIL;
+            passPreserved |= gate.getStatus() == GateStatus.PASS;
+        }
+        Assert.assertTrue(failurePreserved);
+        Assert.assertTrue(passPreserved);
+        reopened.close();
+    }
+
+    @Test
+    public void completionEvaluatesOutsideWriterLockAndRejectsChangedEvidence() throws Exception {
+        final HarnessCommandGateway[] holder = new HarnessCommandGateway[1];
+        final java.util.concurrent.ExecutorService writer =
+                java.util.concurrent.Executors.newSingleThreadExecutor();
+        final java.util.concurrent.atomic.AtomicBoolean changeEvidence =
+                new java.util.concurrent.atomic.AtomicBoolean(true);
+        HarnessContract contract = new HarnessContract() {
+            @Override public boolean requiresCompletionEvidence(TaskRecord task, SubmissionRecord submission) { return false; }
+            @Override
+            public java.util.List<HarnessGate> completionGates() {
+                return java.util.Collections.singletonList(new HarnessGate() {
+                    public String getName() { return "external-check"; }
+                    public GateResult evaluate(TaskRecord task, SubmissionRecord submission, HarnessState state) {
+                        if (changeEvidence.getAndSet(false)) {
+                            try {
+                                writer.submit(new Runnable() {
+                                    public void run() {
+                                        holder[0].recordEvidence(HarnessEvidenceSpec.builder()
+                                                .taskId(task.getTaskId())
+                                                .executionId(submission.getExecutionId())
+                                                .kind("test").summary("new evidence during validation").build());
+                                    }
+                                }).get(5, java.util.concurrent.TimeUnit.SECONDS);
+                            } catch (Exception error) {
+                                throw new IllegalStateException("writer blocked by gate", error);
+                            }
+                        }
+                        return GateResult.pass(getName());
+                    }
+                });
+            }
+        };
+        HarnessCommandGateway gateway = new HarnessCommandGateway(
+                new FileHarnessStore(FileHarnessConfig.builder().directory(directory).build()),
+                contract, HarnessActor.agent("agent-a"));
+        holder[0] = gateway;
+        try {
+            TaskRecord task = gateway.createTask(HarnessTaskSpec.builder().title("external gate").build());
+            ExecutionRecord execution = successfulExecution(gateway, task.getTaskId());
+            SubmissionRecord submission = gateway.submitTask(task.getTaskId(), execution.getExecutionId(),
+                    HarnessSubmissionSpec.builder().completionClaim("candidate").build());
+            gateway.reviewSubmission(submission.getSubmissionId(), ReviewVerdict.APPROVED,
+                    "reviewed", null, HarnessActor.human("reviewer"));
+            try {
+                gateway.completeTask(task.getTaskId(), submission.getSubmissionId(), HarnessActor.human("reviewer"));
+                Assert.fail("changed snapshot must not complete");
+            } catch (HarnessConflictException expected) {
+                Assert.assertTrue(expected.getMessage().contains("state changed"));
+            }
+            Assert.assertEquals(TaskStatus.IN_REVIEW, gateway.getTask(task.getTaskId()).getStatus());
+            Assert.assertTrue(gateway.getState().getGates().isEmpty());
+            Assert.assertEquals(TaskStatus.DONE, gateway.completeTask(task.getTaskId(),
+                    submission.getSubmissionId(), HarnessActor.human("reviewer")).getStatus());
+        } finally {
+            writer.shutdownNow();
+            gateway.close();
+        }
+    }
+
+    @Test
+    public void legacyGateRecordsRetainUnknownLineage() {
+        GateRecord legacy = new GateRecord("legacy-gate", "legacy-task", "check",
+                GateStatus.PASS, "passed", 1L);
+        GateRecord restored = HarnessJson.copy(legacy, GateRecord.class);
+        Assert.assertNull(restored.getExecutionId());
+        Assert.assertNull(restored.getSubmissionId());
+        Assert.assertEquals("legacy-gate", restored.getGateId());
     }
 
     @Test
@@ -815,7 +914,7 @@ public class HarnessCommandGatewayTest {
                 new FileHarnessStore(FileHarnessConfig.builder()
                         .directory(directory.resolve(harnessId))
                         .harnessId(harnessId)
-                        .build()), HarnessContract.builder().build(), HarnessActor.agent("test-agent"));
+                        .build()), HarnessContract.builder().requiresCompletionEvidence(false).build(), HarnessActor.agent("test-agent"));
     }
 
     private void finishTask(HarnessCommandGateway gateway, String taskId) {

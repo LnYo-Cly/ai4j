@@ -38,6 +38,21 @@ class AggregateMetricsTest(unittest.TestCase):
         self.assertEqual(0, report["overall"]["timeout"]["observed"])
         self.assertIsNone(report["overall"]["timeout"]["rate"])
 
+    def test_acceptance_oracle_and_repairs_are_separate_measurements(self):
+        report = aggregate_metrics.aggregate([
+            {"taskId": "057", "category": "Long-running", "arm": "ai4j-harness", "sampleId": "a",
+             "completed": True, "oracleScore": 1.0, "acceptanceStatus": "PASS", "repairCount": 2},
+            {"taskId": "058", "category": "Long-running", "arm": "ai4j-harness", "sampleId": "a",
+             "completed": False, "oracleScore": 0.4, "acceptance": {"status": "FAIL"}, "repairCount": 0},
+            {"taskId": "059", "category": "Long-running", "arm": "ai4j-harness", "sampleId": "a",
+             "completed": False},
+        ], "ai4j-harness")["overall"]
+        self.assertEqual({"observed": 2, "mean": 0.7}, report["oracle"])
+        self.assertEqual(2, report["acceptance"]["observed"])
+        self.assertEqual(1, report["acceptance"]["pass"])
+        self.assertEqual(1, report["acceptance"]["fail"])
+        self.assertEqual(0.5, report["acceptance"]["passRate"])
+        self.assertEqual({"observed": 2, "total": 2, "mean": 1.0}, report["repairs"])
 
 class InputContractTest(unittest.TestCase):
     def load(self, **values):
@@ -49,11 +64,17 @@ class InputContractTest(unittest.TestCase):
             return aggregate_metrics.load_runs(path)
 
     def test_null_optional_measurements_are_unobserved(self):
-        rows = self.load(processExitCode=None, qualityScore=None, timedOut=None, invariantPassed=None)
+        rows = self.load(processExitCode=None, qualityScore=None, oracleScore=None, repairCount=None,
+                         timedOut=None, invariantPassed=None)
         report = aggregate_metrics.aggregate(rows, "ai4j-harness")["overall"]
-        for key in ("processFailure", "quality", "timeout", "invariantPass"):
+        for key in ("processFailure", "quality", "oracle", "timeout", "invariantPass", "repairs"):
             self.assertEqual(0, report[key]["observed"])
         self.assertIsNone(report["processFailure"]["rate"])
+
+    def test_non_finite_scores_are_rejected(self):
+        for field in ("qualityScore", "oracleScore"):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, field):
+                self.load(**{field: float("nan")})
 
     def test_invalid_exit_code_types_are_rejected(self):
         for value in ("0", False, 0.0, [], {}):
@@ -63,3 +84,9 @@ class InputContractTest(unittest.TestCase):
     def test_integer_exit_codes_preserve_failure_rate(self):
         rows = self.load(processExitCode=0) + self.load(processExitCode=2)
         self.assertEqual({"observed": 2, "rate": 0.5}, aggregate_metrics.summarize(rows)["processFailure"])
+
+    def test_invalid_acceptance_status_and_repair_count_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "acceptanceStatus"):
+            self.load(acceptanceStatus="maybe")
+        with self.assertRaisesRegex(ValueError, "repairCount"):
+            self.load(repairCount=-1)

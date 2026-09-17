@@ -7,7 +7,8 @@ Usage:
 The input is a JSON array, or an object with a ``runs`` array. Each run must
 contain ``taskId``, ``category``, ``arm``, ``sampleId``, and ``completed``.
 Optional fields are ``qualityScore`` (0..1), ``processExitCode``, ``timedOut``,
-and ``invariantPassed``. Missing optional fields stay missing in the report;
+``invariantPassed``, ``oracleScore``, ``acceptanceStatus``, and ``repairCount``.
+Missing optional fields stay missing in the report;
 they are never silently counted as a pass.
 """
 
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -22,6 +24,7 @@ from typing import Any, Iterable
 
 REQUIRED = ("taskId", "category", "arm", "sampleId", "completed")
 OPTIONAL_BOOL = ("timedOut", "invariantPassed")
+ACCEPTANCE_STATUSES = ("PASS", "FAIL", "ERROR", "NOT_RUN")
 
 
 def load_runs(path: Path) -> list[dict[str, Any]]:
@@ -37,13 +40,30 @@ def load_runs(path: Path) -> list[dict[str, Any]]:
             raise ValueError("run %d missing required fields: %s" % (index, ", ".join(missing)))
         if not isinstance(run["completed"], bool):
             raise ValueError("run %d completed must be boolean" % index)
-        for key in ("qualityScore", "processExitCode", *OPTIONAL_BOOL):
+        for key in ("qualityScore", "processExitCode", "oracleScore", "repairCount", *OPTIONAL_BOOL):
             if key in run and run[key] is None:
                 del run[key]
+        # The post-run adapter emits a flat status, while accepting a nested
+        # ``acceptance: {status: ...}`` record keeps batch tooling ergonomic.
+        if "acceptanceStatus" not in run and isinstance(run.get("acceptance"), dict):
+            nested_status = run["acceptance"].get("status")
+            if nested_status is not None:
+                run["acceptanceStatus"] = nested_status
+        if "acceptanceStatus" in run and run["acceptanceStatus"] is None:
+            del run["acceptanceStatus"]
         if "processExitCode" in run and type(run["processExitCode"]) is not int:
             raise ValueError("run %d processExitCode must be an integer or null" % index)
-        if "qualityScore" in run and (type(run["qualityScore"]) not in (int, float) or not 0 <= run["qualityScore"] <= 1):
+        if "qualityScore" in run and (type(run["qualityScore"]) not in (int, float) or not math.isfinite(run["qualityScore"]) or not 0 <= run["qualityScore"] <= 1):
             raise ValueError("run %d qualityScore must be in [0, 1]" % index)
+        if "oracleScore" in run and (type(run["oracleScore"]) not in (int, float) or not math.isfinite(run["oracleScore"]) or not 0 <= run["oracleScore"] <= 1):
+            raise ValueError("run %d oracleScore must be in [0, 1]" % index)
+        if "acceptanceStatus" in run:
+            if not isinstance(run["acceptanceStatus"], str) or run["acceptanceStatus"].strip().upper() not in ACCEPTANCE_STATUSES:
+                raise ValueError("run %d acceptanceStatus must be one of %s" % (index, ", ".join(ACCEPTANCE_STATUSES)))
+            run["acceptanceStatus"] = run["acceptanceStatus"].strip().upper()
+        if "repairCount" in run:
+            if type(run["repairCount"]) is not int or run["repairCount"] < 0:
+                raise ValueError("run %d repairCount must be a non-negative integer" % index)
         for key in OPTIONAL_BOOL:
             if key in run and not isinstance(run[key], bool):
                 raise ValueError("run %d %s must be boolean" % (index, key))
@@ -55,10 +75,27 @@ def rate(rows: Iterable[dict[str, Any]], key: str, pass_value: Any) -> dict[str,
     return {"observed": len(observed), "rate": None if not observed else sum(row[key] == pass_value for row in observed) / len(observed)}
 
 
+def acceptance_status(row: dict[str, Any]) -> str | None:
+    raw = row.get("acceptanceStatus")
+    if raw is None and isinstance(row.get("acceptance"), dict):
+        raw = row["acceptance"].get("status")
+    if not isinstance(raw, str):
+        return None
+    normalized = raw.strip().upper()
+    return normalized if normalized in ACCEPTANCE_STATUSES else None
+
+
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     quality = [row["qualityScore"] for row in rows if "qualityScore" in row]
     process = [row for row in rows if "processExitCode" in row]
     process_failures = sum(row["processExitCode"] != 0 for row in process)
+    oracle_scores = [row["oracleScore"] for row in rows if "oracleScore" in row]
+    acceptance_pairs = [(row, acceptance_status(row)) for row in rows]
+    acceptance_rows = [(row, status) for row, status in acceptance_pairs if status is not None]
+    acceptance_counts = {
+        status: sum(value == status for _, value in acceptance_rows) for status in ACCEPTANCE_STATUSES
+    }
+    repairs = [row["repairCount"] for row in rows if "repairCount" in row]
     return {
         "runs": len(rows),
         "uniqueTasks": len({row["taskId"] for row in rows}),
@@ -67,6 +104,20 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "processFailure": {"observed": len(process), "rate": None if not process else process_failures / len(process)},
         "timeout": rate(rows, "timedOut", True),
         "invariantPass": rate(rows, "invariantPassed", True),
+        "oracle": {"observed": len(oracle_scores), "mean": None if not oracle_scores else sum(oracle_scores) / len(oracle_scores)},
+        "acceptance": {
+            "observed": len(acceptance_rows),
+            "pass": acceptance_counts["PASS"],
+            "fail": acceptance_counts["FAIL"],
+            "error": acceptance_counts["ERROR"],
+            "notRun": acceptance_counts["NOT_RUN"],
+            "passRate": None if not acceptance_rows else acceptance_counts["PASS"] / len(acceptance_rows),
+        },
+        "repairs": {
+            "observed": len(repairs),
+            "total": sum(repairs),
+            "mean": None if not repairs else sum(repairs) / len(repairs),
+        },
     }
 
 

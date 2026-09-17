@@ -6,6 +6,8 @@ import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionToolExecutor;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
@@ -145,6 +147,14 @@ public class CodingAgent {
                 handoffPolicy
         );
         mergedExecutor = CodingAgentBuilder.applyExtensionGuardrails(mergedExecutor, extensionTools);
+        AgentPermissionPolicy permissionPolicy = rawSession.getContext().getPermissionPolicy();
+        if (mergedExecutor != null && permissionPolicy != null) {
+            mergedExecutor = new AgentPermissionToolExecutor(
+                    mergedExecutor,
+                    permissionPolicy,
+                    rawSession.getContext().getExecutionEnvironment()
+            );
+        }
         String effectiveRunId = shouldRestoreRunId(effectiveSessionId, state) ? state.getRunId() : rawSession.getRunId();
         AgentSessionMetadata metadata = rawSession.getMetadata();
         metadata.setSessionId(effectiveSessionId);

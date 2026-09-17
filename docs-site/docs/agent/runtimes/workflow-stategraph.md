@@ -87,19 +87,19 @@ tags: [concept]
 
 ### 1.5 `maxSteps` 只是死循环保险丝，不是成功条件
 
-`StateGraphWorkflow` 默认 `maxSteps = 32`。
+`StateGraphWorkflow` 默认 `maxSteps = 0`，表示不设置隐式步数上限；只有调用方显式传入正数时才启用保险丝。
 
 while 条件是：
 
 ```java
-while (currentNodeId != null && steps < maxSteps)
+while (currentNodeId != null && (maxSteps <= 0 || steps < maxSteps))
 ```
 
 一旦达到上限，执行会直接停止并返回当前 `lastResult`，不会自动抛出“超步数”异常。
 
 所以它的语义是：
 
-- 防止无限循环
+- 只有显式传入正数时，才用来防止无限循环
 - 但不会替你判断“业务流程是否真正完成”
 
 ## 2. 对象关系先看清
@@ -234,7 +234,7 @@ nodeB.outputText -> nodeC.input
 1. 校验 `startNodeId`
 2. `currentNodeId = startNodeId`
 3. `currentRequest = request`
-4. while `currentNodeId != null && steps < maxSteps`
+4. while `currentNodeId != null && (maxSteps <= 0 || steps < maxSteps)`
 5. 找到当前 node
 6. 把 `currentNodeId`、`currentRequest` 写进 `WorkflowContext`
 7. 执行 node

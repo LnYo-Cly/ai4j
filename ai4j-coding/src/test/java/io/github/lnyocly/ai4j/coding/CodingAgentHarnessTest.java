@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.harness.HarnessAdapterState;
@@ -52,9 +53,10 @@ public class CodingAgentHarnessTest {
         Path harnessDirectory = temporaryFolder.newFolder("coding-harness").toPath();
         Path workspace = temporaryFolder.newFolder("coding-workspace").toPath();
 
-        CodingAgent firstAgent = codingAgent(new QueueModelClient(
+        QueueModelClient firstModel = new QueueModelClient(
                 toolCallResult("echo-call", "echo"),
-                textResult("completed after the new message")), new ToolExecutor() {
+                textResult("completed after the new message"));
+        CodingAgent firstAgent = codingAgent(firstModel, new ToolExecutor() {
             @Override
             public String execute(AgentToolCall call) {
                 return "echo-result";
@@ -90,10 +92,13 @@ public class CodingAgentHarnessTest {
         assertEquals("coding-project", nextMessage.getExecution().getSessionId());
         assertFalse(first.getExecution().getExecutionId()
                 .equals(nextMessage.getExecution().getExecutionId()));
+        assertFalse(firstModel.getFirstPrompt().getSystemPrompt()
+                .contains("This is a resumed Harness execution"));
         firstHarness.close();
 
-        CodingAgent reopenedAgent = codingAgent(new QueueModelClient(
-                textResult("completed after the harness reopened")), new ToolExecutor() {
+        QueueModelClient reopenedModel = new QueueModelClient(
+                textResult("completed after the harness reopened"));
+        CodingAgent reopenedAgent = codingAgent(reopenedModel, new ToolExecutor() {
             @Override
             public String execute(AgentToolCall call) {
                 return "echo-result";
@@ -109,6 +114,8 @@ public class CodingAgentHarnessTest {
             assertEquals(HarnessRunStatus.COMPLETED, resumed.getStatus());
             assertEquals("completed after the harness reopened", resumed.getOutputText());
             assertEquals("coding-project", resumed.getExecution().getSessionId());
+            assertTrue(reopenedModel.getLastPrompt().getSystemPrompt()
+                    .contains("This is a resumed Harness execution"));
         } finally {
             reopened.close();
         }
@@ -158,6 +165,49 @@ public class CodingAgentHarnessTest {
         HarnessRunResult resumed = harness.resume(waiting.getExecution().getExecutionId());
         assertEquals(HarnessRunStatus.COMPLETED, resumed.getStatus());
         assertEquals("async coding operation completed", resumed.getOutputText());
+        harness.close();
+    }
+
+    @Test
+    public void heartbeatRenewsLeaseDuringSlowCodingExecution() throws Exception {
+        Path harnessDirectory = temporaryFolder.newFolder("coding-heartbeat").toPath();
+        Path workspace = temporaryFolder.newFolder("coding-heartbeat-workspace").toPath();
+        AgentModelClient slowModel = new AgentModelClient() {
+            @Override
+            public AgentModelResult create(AgentPrompt prompt) {
+                try {
+                    Thread.sleep(1_500L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return textResult("slow coding slice finished");
+            }
+
+            @Override
+            public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
+                return create(prompt);
+            }
+        };
+        CodingAgent agent = codingAgent(slowModel, new ToolExecutor() {
+            @Override
+            public String execute(AgentToolCall call) {
+                return "echo-result";
+            }
+        }, workspace);
+        CodingAgentHarness harness = CodingAgentHarness.builder()
+                .codingAgent(agent)
+                .persistence(HarnessPersistence.file(harnessDirectory))
+                .autoResume(false)
+                .build();
+
+        HarnessRunResult result = harness.run(HarnessRunRequest.builder()
+                .sessionId("coding-heartbeat")
+                .input("run a slice slower than the lease")
+                .budget(HarnessRunBudget.builder().leaseDurationMillis(300L).build())
+                .build());
+
+        assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+        assertEquals("slow coding slice finished", result.getOutputText());
         harness.close();
     }
 
@@ -224,6 +274,7 @@ public class CodingAgentHarnessTest {
 
     private static final class QueueModelClient implements AgentModelClient {
         private final Deque<AgentModelResult> results;
+        private final List<AgentPrompt> prompts = new ArrayList<AgentPrompt>();
 
         private QueueModelClient(AgentModelResult... results) {
             this.results = new ArrayDeque<AgentModelResult>(Arrays.asList(results));
@@ -231,6 +282,7 @@ public class CodingAgentHarnessTest {
 
         @Override
         public AgentModelResult create(AgentPrompt prompt) {
+            prompts.add(prompt);
             return results.isEmpty() ? AgentModelResult.builder()
                     .outputText("unexpected model call")
                     .toolCalls(new ArrayList<AgentToolCall>())
@@ -240,6 +292,50 @@ public class CodingAgentHarnessTest {
         @Override
         public AgentModelResult createStream(AgentPrompt prompt, AgentModelStreamListener listener) {
             return create(prompt);
+        }
+
+        private AgentPrompt getLastPrompt() {
+            return prompts.isEmpty() ? null : prompts.get(prompts.size() - 1);
+        }
+
+        private AgentPrompt getFirstPrompt() {
+            return prompts.isEmpty() ? null : prompts.get(0);
+        }
+    }
+
+    @Test
+    public void harnessToolVisibilityHidesManagementToolsWithoutChangingBusinessExecutor() throws Exception {
+        Path harnessDirectory = temporaryFolder.newFolder("coding-visibility-harness").toPath();
+        Path workspace = temporaryFolder.newFolder("coding-visibility-workspace").toPath();
+        QueueModelClient model = new QueueModelClient(textResult("done"));
+        final int[] executions = new int[]{0};
+        CodingAgent agent = codingAgent(model, new ToolExecutor() {
+            @Override
+            public String execute(AgentToolCall call) {
+                executions[0]++;
+                return "business-result";
+            }
+        }, workspace);
+
+        CodingAgentHarness harness = CodingAgentHarness.builder()
+                .codingAgent(agent)
+                .toolVisibility(AgentToolVisibility.named(Collections.singleton("echo")))
+                .persistence(HarnessPersistence.file(harnessDirectory))
+                .autoResume(false)
+                .build();
+        try {
+            HarnessRunResult result = harness.run("inspect the workspace");
+            assertEquals(HarnessRunStatus.COMPLETED, result.getStatus());
+            assertEquals(0, executions[0]);
+            assertNotNull(model.getFirstPrompt());
+            assertEquals(1, model.getFirstPrompt().getTools().size());
+            assertEquals("echo", io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility
+                    .toolName(model.getFirstPrompt().getTools().get(0)));
+            assertTrue(model.getFirstPrompt().getTools().stream()
+                    .noneMatch(tool -> "harness_context_get".equals(
+                            io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility.toolName(tool))));
+        } finally {
+            harness.close();
         }
     }
 }

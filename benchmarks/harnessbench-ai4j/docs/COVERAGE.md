@@ -16,10 +16,14 @@ Evidence channels:
 - **Custom audit** — `audit/check_audit.py` over `harness_audit.json`
   (state projection read back from disk). Proves harness-internal invariants
   for a given run.
-- **Module suite** — `ai4j-harness` unit tests (50 tests) own the deep
+- **Post-run acceptance** — `acceptance/evaluate_acceptance.py` consumes the
+  official result plus the bridge audit and emits a separate
+  `harnessbench-acceptance/v1` artifact. It is an acceptance/provenance signal,
+  never a replacement for official scoring.
+- **Module suite** — `ai4j-harness` unit tests (75 tests) own the deep
   governance semantics the benchmark runner cannot reach (idempotent
   redelivery, UNKNOWN reconciliation, cancel/late-result isolation, lease
-  fencing).
+  fencing, multi-check acceptance, and repair lineage).
 
 ## Class coverage (official runner)
 
@@ -53,6 +57,7 @@ Priority multi-round tasks for the harness 对照组: `057-interruption-resume`,
 | UNKNOWN not blindly retried | – | checked when present (`unknown-preserved` rejects a later task/session execution); no direct module-suite owner yet | – |
 | Cancel does not reopen after late async result | – | – | `AgentHarnessTest.cancelledTaskQuarantinesLateAsyncCompletion...` |
 | Lease fencing / worker handoff | – | – | module suite only |
+| Acceptance checks, evaluator provenance, and execution/repair lineage | – | acceptance artifact + audit projection | `HarnessAcceptanceCoordinatorTest`, `HarnessAcceptanceProtocolTest`, repair tests |
 
 ## Not executed in this integration round
 
@@ -67,17 +72,23 @@ Priority multi-round tasks for the harness 对照组: `057-interruption-resume`,
 
 ## Score reporting contract
 
-Use `report/aggregate_metrics.py` with a sanitized raw run-record JSON file
-for every new live batch. The report keeps five independent descriptive
-metrics, each with its observed count:
+Use `acceptance/evaluate_acceptance.py` after each official run when a durable
+Harness audit is available, then use `report/aggregate_metrics.py` with a
+sanitized raw run-record JSON file for every new live batch. Official scoring
+is never rewritten. The report keeps independent descriptive metrics, each
+with its own observed count:
 
 - **Quality**: mean official-oracle or rubric score when a score is present.
+- **Oracle**: mean `oracleScore` when the official oracle emitted one.
 - **Completion**: proportion of records marked `completed`.
 - **Process failure**: proportion of observed process exit codes that are
   non-zero.
 - **Timeout**: proportion of records explicitly marked `timedOut`.
 - **Harness invariant pass**: proportion of records with an explicitly
   observed passing audit result.
+- **Acceptance**: counts and pass rate for explicit `PASS`/`FAIL`/`ERROR`/
+  `NOT_RUN` acceptance statuses.
+- **Repairs**: observed count, total, and mean of non-negative `repairCount`.
 
 An unobserved optional field is absent from its denominator rather than being
 counted as a pass. The generated `byTask` and `byCategory` sections expose the

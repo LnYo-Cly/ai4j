@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.permission.AgentApprovalRequiredException;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 
@@ -51,9 +52,12 @@ public final class AgentHarness implements AutoCloseable {
     private final HarnessCommandGateway gateway;
     private final HarnessContract contract;
     private final HarnessActor actor;
+    private final HarnessActor acceptanceActor;
     private final String workerId;
     private final boolean autoResume;
     private final HarnessRunListener listener;
+    private final HarnessAcceptanceEvaluator acceptanceEvaluator;
+    private final HarnessAcceptanceContextFactory acceptanceContextFactory;
     private final ScheduledExecutorService heartbeatExecutor;
     private final ExecutorService continuationExecutor;
     private final ReentrantLock[] executionLocks;
@@ -70,7 +74,7 @@ public final class AgentHarness implements AutoCloseable {
         }
         this.agent = builder.agent;
         this.executionAdapter = builder.executionAdapter == null
-                ? new AgentHarnessExecutionAdapter(builder.agent) : builder.executionAdapter;
+                ? new AgentHarnessExecutionAdapter(builder.agent, builder.toolVisibility) : builder.executionAdapter;
         this.persistence = builder.persistence;
         this.store = builder.store == null
                 ? (builder.persistence == null ? null : builder.persistence.getStore())
@@ -80,11 +84,14 @@ public final class AgentHarness implements AutoCloseable {
         }
         this.contract = builder.contract == null ? HarnessContract.builder().build() : builder.contract;
         this.actor = builder.actor == null ? HarnessActor.agent("ai4j-agent") : builder.actor;
+        this.acceptanceActor = builder.acceptanceActor == null ? this.actor : builder.acceptanceActor;
         this.workerId = builder.workerId == null || builder.workerId.trim().isEmpty()
                 ? DEFAULT_WORKER_PREFIX + UUID.randomUUID().toString().replace("-", "")
                 : builder.workerId.trim();
         this.autoResume = builder.autoResume;
         this.listener = builder.listener;
+        this.acceptanceEvaluator = builder.acceptanceEvaluator;
+        this.acceptanceContextFactory = builder.acceptanceContextFactory;
         this.gateway = new HarnessCommandGateway(store, contract, actor);
         this.heartbeatExecutor = Executors.newScheduledThreadPool(1);
         this.continuationExecutor = Executors.newCachedThreadPool();
@@ -128,6 +135,19 @@ public final class AgentHarness implements AutoCloseable {
         return gateway;
     }
 
+    /** Runs a host-owned acceptance check and persists its result for this Harness. */
+    public HarnessAcceptanceEvaluation evaluateAcceptance(HarnessAcceptanceEvaluator evaluator,
+                                                          HarnessAcceptanceContext context) {
+        return evaluateAcceptance(evaluator, context, acceptanceActor);
+    }
+
+    /** Runs an acceptance check with an explicit evaluator/event actor. */
+    public HarnessAcceptanceEvaluation evaluateAcceptance(HarnessAcceptanceEvaluator evaluator,
+                                                          HarnessAcceptanceContext context,
+                                                          HarnessActor evaluatorActor) {
+        return HarnessAcceptanceCoordinator.evaluate(gateway, evaluator, context, evaluatorActor);
+    }
+
     public HarnessContract getContract() {
         return contract;
     }
@@ -148,6 +168,112 @@ public final class AgentHarness implements AutoCloseable {
     /** Convenience entry point for an application that already has a Task id. */
     public HarnessRunResult runTask(String taskId, Object input) {
         return run(HarnessRunRequest.builder().taskId(taskId).input(input).build());
+    }
+
+    /**
+     * Backwards-compatible convenience form for an approved repair. Structured
+     * hosts should use {@link #repair(HarnessRepairRequest)} so the decision,
+     * reason and motivating acceptance are auditable.
+     */
+    public HarnessRunResult repair(String parentExecutionId, Object input) {
+        HarnessRepairResult result = repair(HarnessRepairRequest.builder()
+                .parentExecutionId(parentExecutionId)
+                .decision(HarnessRepairDecision.ALLOW)
+                .input(input)
+                .build());
+        return result.getRunResult();
+    }
+
+    /**
+     * Evaluates a host-owned repair decision and, only for {@code ALLOW},
+     * creates and runs one child execution. Raw input is never written to the
+     * ledger; durable events contain only bounded metadata and summaries.
+     */
+    public HarnessRepairResult repair(HarnessRepairRequest request) {
+        if (request == null) {
+            throw new HarnessValidationException("repair request is required");
+        }
+        String requestId = firstNonBlank(request.getRequestId(),
+                "repair_" + UUID.randomUUID().toString().replace("-", ""));
+        String parentId = required(request.getParentExecutionId(), "parent execution id");
+        if (request.getDecision() == null) {
+            throw new HarnessValidationException("repair decision is required");
+        }
+        ExecutionRecord parent = gateway.getExecution(parentId);
+        if (parent == null) {
+            throw new HarnessValidationException("parent execution not found: " + parentId);
+        }
+        AcceptanceRecord sourceAcceptance = null;
+        String acceptanceId = trimToNull(request.getAcceptanceId());
+        if (acceptanceId != null) {
+            sourceAcceptance = gateway.getState().getAcceptances().get(acceptanceId);
+            if (sourceAcceptance == null) {
+                throw new HarnessValidationException("repair acceptance not found: " + acceptanceId);
+            }
+            if (!parentId.equals(sourceAcceptance.getExecutionId())
+                    || !firstNonBlank(parent.getTaskId(), "").equals(firstNonBlank(sourceAcceptance.getTaskId(), ""))) {
+                throw new HarnessConflictException("repair acceptance must belong to the parent execution");
+            }
+        }
+
+        HarnessRepairDecision decision = request.getDecision();
+        if (decision != HarnessRepairDecision.ALLOW) {
+            HarnessRepairStatus status = decision == HarnessRepairDecision.WAITING_APPROVAL
+                    ? HarnessRepairStatus.WAITING_APPROVAL
+                    : decision == HarnessRepairDecision.CANCELLED
+                    ? HarnessRepairStatus.CANCELLED : HarnessRepairStatus.REJECTED;
+            String message = decision == HarnessRepairDecision.WAITING_APPROVAL
+                    ? "repair is awaiting host approval"
+                    : decision == HarnessRepairDecision.CANCELLED
+                    ? "repair cancelled by host" : "repair denied by host";
+            gateway.recordEvent("repair.decision", parentId, mapOf(
+                    "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                    "reason", request.getReason(), "repairHint", request.getRepairHint()), actor);
+            return HarnessRepairResult.builder()
+                    .requestId(requestId).status(status).decision(decision)
+                    .parentExecutionId(parentId).parentExecution(parent)
+                    .sourceAcceptance(sourceAcceptance).error(message).build();
+        }
+
+        if (parent.getStatus() != ExecutionStatus.SUCCEEDED && parent.getStatus() != ExecutionStatus.FAILED) {
+            throw new HarnessConflictException("repair parent must be terminal: " + parentId);
+        }
+        gateway.recordEvent("repair.requested", parentId, mapOf(
+                "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                "reason", request.getReason(), "repairHint", request.getRepairHint(),
+                "inputSummary", inputSummary(request.getAgentRequest() == null
+                        ? request.getInput() : request.getAgentRequest().getInput())), actor);
+        String idempotencyKey = trimToNull(request.getIdempotencyKey());
+        if (idempotencyKey != null) {
+            idempotencyKey = "repair:" + idempotencyKey;
+        }
+        HarnessRunResult runResult;
+        try {
+            runResult = run(HarnessRunRequest.builder()
+                    .taskId(parent.getTaskId()).scopeKey(parent.getScopeKey()).sessionId(parent.getSessionId())
+                    .parentExecutionId(parentId).idempotencyKey(idempotencyKey)
+                    .input(request.getInput()).agentRequest(request.getAgentRequest())
+                    .budget(request.getBudget()).build());
+        } catch (RuntimeException failure) {
+            gateway.recordEvent("repair.failed", parentId, mapOf(
+                    "requestId", requestId, "decision", decision.name(), "acceptanceId", acceptanceId,
+                    "error", failure.getMessage()), actor);
+            throw failure;
+        }
+        ExecutionRecord child = runResult == null ? null : runResult.getExecution();
+        HarnessRepairStatus status = repairStatus(runResult);
+        int repairAttempt = child == null ? 0
+                : Math.max(0, gateway.listExecutionLineage(child.getExecutionId()).size() - 1);
+        gateway.recordEvent("repair.completed", child == null ? parentId : child.getExecutionId(), mapOf(
+                "requestId", requestId, "parentExecutionId", parentId,
+                "childExecutionId", child == null ? null : child.getExecutionId(),
+                "acceptanceId", acceptanceId, "status", status.name()), actor);
+        return HarnessRepairResult.builder()
+                .requestId(requestId).status(status).decision(decision)
+                .parentExecutionId(parentId).childExecutionId(child == null ? null : child.getExecutionId())
+                .repairAttempt(repairAttempt).parentExecution(parent).childExecution(child)
+                .sourceAcceptance(sourceAcceptance).runResult(runResult)
+                .error(runResult == null ? "repair execution returned no result" : runResult.getError()).build();
     }
 
     /** Resumes a READY execution; WAITING executions must first receive a wakeup. */
@@ -210,6 +336,9 @@ public final class AgentHarness implements AutoCloseable {
                                               AgentRequest agentRequest) {
         String requestedExecutionId = trimToNull(request.getExecutionId());
         if (requestedExecutionId != null) {
+            if (trimToNull(request.getParentExecutionId()) != null) {
+                throw new HarnessValidationException("executionId resumes an existing execution; parentExecutionId creates a new one");
+            }
             ExecutionRecord execution = gateway.getExecution(requestedExecutionId);
             if (execution == null) {
                 throw new HarnessValidationException("execution not found: " + requestedExecutionId);
@@ -230,6 +359,7 @@ public final class AgentHarness implements AutoCloseable {
         }
         return gateway.createExecution(HarnessExecutionSpec.builder()
                 .taskId(trimToNull(request.getTaskId()))
+                .parentExecutionId(trimToNull(request.getParentExecutionId()))
                 .scopeKey(trimToNull(request.getScopeKey()))
                 .sessionId(sessionId)
                 .runId(runId)
@@ -462,6 +592,14 @@ public final class AgentHarness implements AutoCloseable {
                 exposedOutput, persisted.getWaitId(), persisted.getOperationId(), errorText);
         Object adapterResult = adapterExecution == null ? null : adapterExecution.getResult();
         completed.setAdapterResult(adapterResult);
+        if (acceptanceEvaluator != null && ExecutionStatus.SUCCEEDED.equals(persisted.getStatus())) {
+            HarnessAcceptanceContext context = acceptanceContextFactory == null
+                    ? HarnessAcceptanceContext.builder().taskId(persisted.getTaskId())
+                    .executionId(persisted.getExecutionId()).sessionId(persisted.getSessionId())
+                    .artifacts(checkpointState).build()
+                    : acceptanceContextFactory.create(executionContext, adapterExecution, persisted);
+            completed.setAcceptanceEvaluation(evaluateAcceptance(acceptanceEvaluator, context, acceptanceActor));
+        }
         if (adapterResult instanceof AgentResult) {
             completed.setAgentResult((AgentResult) adapterResult);
         }
@@ -546,9 +684,13 @@ public final class AgentHarness implements AutoCloseable {
                 try {
                     gateway.heartbeat(execution.getExecutionId(), execution.getLeaseId(),
                             execution.getFencingToken(), worker, duration);
-                } catch (RuntimeException ignored) {
-                    // The next durable operation will surface the fencing or
-                    // lease error and classify the execution as UNKNOWN.
+                } catch (Throwable ignored) {
+                    // Catching Throwable is deliberate: a fixed-rate task that
+                    // terminates abnormally is never rescheduled, so one
+                    // transient Error would silently stop every future lease
+                    // renewal. The next durable operation still surfaces the
+                    // fencing or lease error and classifies the execution as
+                    // UNKNOWN.
                 }
             }
         }, interval, interval, TimeUnit.MILLISECONDS);
@@ -1072,6 +1214,23 @@ public final class AgentHarness implements AutoCloseable {
         return output == null ? "Agent slice completed" : "Agent slice completed: " + output;
     }
 
+    private HarnessRepairStatus repairStatus(HarnessRunResult result) {
+        if (result == null || result.getStatus() == null) {
+            return HarnessRepairStatus.FAILED;
+        }
+        switch (result.getStatus()) {
+            case COMPLETED: return HarnessRepairStatus.COMPLETED;
+            case CONTINUATION_REQUIRED: return HarnessRepairStatus.CONTINUATION_REQUIRED;
+            case WAITING: return HarnessRepairStatus.WAITING;
+            case BLOCKED: return HarnessRepairStatus.BLOCKED;
+            case IN_REVIEW: return HarnessRepairStatus.IN_REVIEW;
+            case CANCELLED: return HarnessRepairStatus.CANCELLED;
+            case UNKNOWN: return HarnessRepairStatus.UNKNOWN;
+            case FAILED: return HarnessRepairStatus.FAILED;
+            default: return HarnessRepairStatus.FAILED;
+        }
+    }
+
     private String inputSummary(Object input) {
         if (input == null) return null;
         String value = String.valueOf(input);
@@ -1135,9 +1294,13 @@ public final class AgentHarness implements AutoCloseable {
         private HarnessPersistence persistence;
         private HarnessContract contract;
         private HarnessActor actor;
+        private HarnessActor acceptanceActor;
         private String workerId;
         private boolean autoResume = true;
         private HarnessRunListener listener;
+        private HarnessAcceptanceEvaluator acceptanceEvaluator;
+        private HarnessAcceptanceContextFactory acceptanceContextFactory;
+        private AgentToolVisibility toolVisibility;
 
         public Builder agent(Agent value) { this.agent = value; return this; }
         public Builder executionAdapter(HarnessExecutionAdapter value) { this.executionAdapter = value; return this; }
@@ -1145,9 +1308,17 @@ public final class AgentHarness implements AutoCloseable {
         public Builder persistence(HarnessPersistence value) { this.persistence = value; return this; }
         public Builder contract(HarnessContract value) { this.contract = value; return this; }
         public Builder actor(HarnessActor value) { this.actor = value; return this; }
+        public Builder acceptanceActor(HarnessActor value) { this.acceptanceActor = value; return this; }
         public Builder workerId(String value) { this.workerId = value; return this; }
         public Builder autoResume(boolean value) { this.autoResume = value; return this; }
         public Builder listener(HarnessRunListener value) { this.listener = value; return this; }
+
+        /** Sets the model-facing tool view for the default Agent adapter. */
+        public Builder toolVisibility(AgentToolVisibility value) { this.toolVisibility = value; return this; }
+
+        public Builder acceptanceEvaluator(HarnessAcceptanceEvaluator value) { this.acceptanceEvaluator = value; return this; }
+
+        public Builder acceptanceContextFactory(HarnessAcceptanceContextFactory value) { this.acceptanceContextFactory = value; return this; }
 
         public AgentHarness build() { return new AgentHarness(this); }
     }

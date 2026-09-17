@@ -35,6 +35,21 @@ public interface HarnessContract {
         return true;
     }
 
+    /** Governed Task completion requires evidence bound to the current submission by default. */
+    default boolean requiresCompletionEvidence(TaskRecord task, SubmissionRecord submission) {
+        return true;
+    }
+
+    /**
+     * Declares the acceptance checks that must pass for a governed
+     * submission. An empty set preserves the legacy single-PASS acceptance
+     * contract; once checks are declared, missing checks fail closed.
+     */
+    default Set<String> requiredAcceptanceChecks(TaskRecord task,
+                                                  SubmissionRecord submission) {
+        return Collections.emptySet();
+    }
+
     default List<HarnessGate> completionGates() {
         return Collections.emptyList();
     }
@@ -100,7 +115,9 @@ public interface HarnessContract {
         private final Set<String> taskRequiredTools = new LinkedHashSet<String>();
         private final Set<String> approvalRequiredTools = new LinkedHashSet<String>();
         private final List<HarnessGate> completionGates = new ArrayList<HarnessGate>();
+        private final Set<String> requiredAcceptanceChecks = new LinkedHashSet<String>();
         private boolean approvedReviewRequired = true;
+        private boolean completionEvidenceRequired = true;
         private boolean allowSystemApproval = true;
         private boolean allowSystemCompletion = true;
         private boolean allowSystemReconciliation = true;
@@ -131,6 +148,18 @@ public interface HarnessContract {
             return this;
         }
 
+        public Builder requiresCompletionEvidence(boolean value) {
+            completionEvidenceRequired = value;
+            return this;
+        }
+
+        public Builder requiredAcceptanceCheck(String checkId) {
+            if (checkId != null && !checkId.trim().isEmpty()) {
+                requiredAcceptanceChecks.add(checkId.trim());
+            }
+            return this;
+        }
+
         public Builder allowSystemApproval(boolean value) {
             allowSystemApproval = value;
             return this;
@@ -150,7 +179,9 @@ public interface HarnessContract {
             final Set<String> taskTools = new LinkedHashSet<String>(taskRequiredTools);
             final Set<String> approvalTools = new LinkedHashSet<String>(approvalRequiredTools);
             final List<HarnessGate> gates = new ArrayList<HarnessGate>(completionGates);
+            final Set<String> requiredChecks = new LinkedHashSet<String>(requiredAcceptanceChecks);
             final boolean reviewRequired = approvedReviewRequired;
+            final boolean evidenceRequired = completionEvidenceRequired;
             final boolean systemApproval = allowSystemApproval;
             final boolean systemCompletion = allowSystemCompletion;
             final boolean systemReconciliation = allowSystemReconciliation;
@@ -171,9 +202,21 @@ public interface HarnessContract {
                 }
 
                 @Override
+                public Set<String> requiredAcceptanceChecks(TaskRecord task,
+                                                             SubmissionRecord submission) {
+                    return new LinkedHashSet<String>(requiredChecks);
+                }
+
+                @Override
                 public boolean requiresApprovedReview(TaskRecord task,
                                                       SubmissionRecord submission) {
                     return reviewRequired;
+                }
+
+                @Override
+                public boolean requiresCompletionEvidence(TaskRecord task,
+                                                           SubmissionRecord submission) {
+                    return evidenceRequired;
                 }
 
                 @Override

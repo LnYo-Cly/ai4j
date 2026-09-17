@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.harness;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
@@ -18,6 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -169,6 +171,87 @@ public class HarnessToolExecutorTest {
         AgentToolResult replay = executor.start(call).await();
         Assert.assertEquals(AgentToolExecutionStatus.COMPLETED, replay.getStatus());
         Assert.assertEquals(1, calls.get());
+        gateway.close();
+    }
+
+    @Test
+    public void deterministicInputFailureIsDurablyFailedAndNotReplayed() throws Exception {
+        HarnessCommandGateway gateway = gateway("deterministic-input-failure");
+        ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder()
+                .executionId("execution-deterministic-input-failure")
+                .build());
+        AgentToolCall call = call("call-deterministic-input-failure", "invocation-deterministic-input-failure");
+        AtomicInteger calls = new AtomicInteger();
+        ToolExecutor delegate = ignored -> {
+            calls.incrementAndGet();
+            throw new AgentToolInputException("path is required");
+        };
+        HarnessToolExecutor executor = new HarnessToolExecutor(context(gateway, execution), delegate);
+
+        try {
+            executor.start(call);
+            Assert.fail("expected deterministic input failure");
+        } catch (AgentToolInputException expected) {
+            Assert.assertEquals("path is required", expected.getMessage());
+        }
+
+        ToolInvocationRecord record = gateway.getToolInvocation("invocation-deterministic-input-failure");
+        Assert.assertEquals(ToolInvocationStatus.FAILED, record.getStatus());
+        Assert.assertEquals("path is required", record.getError());
+        Assert.assertEquals(1, calls.get());
+
+        AgentToolResult replay = executor.start(call).await();
+        Assert.assertEquals(AgentToolExecutionStatus.FAILED, replay.getStatus());
+        Assert.assertEquals(1, calls.get());
+        gateway.close();
+    }
+
+    @Test
+    public void ordinaryIllegalArgumentFailureRemainsUnknownForReconciliation() throws Exception {
+        HarnessCommandGateway gateway = gateway("ordinary-illegal-argument");
+        ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder()
+                .executionId("execution-ordinary-illegal-argument")
+                .build());
+        AgentToolCall call = call("call-ordinary-illegal-argument", "invocation-ordinary-illegal-argument");
+        AtomicInteger calls = new AtomicInteger();
+        HarnessToolExecutor executor = new HarnessToolExecutor(context(gateway, execution), ignored -> {
+            calls.incrementAndGet();
+            throw new IllegalArgumentException("application rejected the input after evaluation");
+        });
+
+        try {
+            executor.start(call);
+            Assert.fail("expected application failure");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertEquals("application rejected the input after evaluation", expected.getMessage());
+        }
+
+        Assert.assertEquals(ToolInvocationStatus.UNKNOWN,
+                gateway.getToolInvocation("invocation-ordinary-illegal-argument").getStatus());
+        Assert.assertEquals(1, calls.get());
+        gateway.close();
+    }
+
+    @Test
+    public void wrappedDeterministicInputFailureIsClassifiedAsFailed() throws Exception {
+        HarnessCommandGateway gateway = gateway("wrapped-deterministic-input-failure");
+        ExecutionRecord execution = gateway.createExecution(HarnessExecutionSpec.builder()
+                .executionId("execution-wrapped-deterministic-input-failure")
+                .build());
+        AgentToolCall call = call("call-wrapped-deterministic-input-failure", "invocation-wrapped-deterministic-input-failure");
+        HarnessToolExecutor executor = new HarnessToolExecutor(context(gateway, execution), ignored -> {
+            throw new ExecutionException(new AgentToolInputException("invalid JSON arguments"));
+        });
+
+        try {
+            executor.start(call);
+            Assert.fail("expected wrapped deterministic input failure");
+        } catch (AgentToolInputException expected) {
+            Assert.assertEquals("invalid JSON arguments", expected.getMessage());
+        }
+
+        Assert.assertEquals(ToolInvocationStatus.FAILED,
+                gateway.getToolInvocation("invocation-wrapped-deterministic-input-failure").getStatus());
         gateway.close();
     }
 

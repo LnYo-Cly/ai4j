@@ -8,6 +8,7 @@ import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.harness.HarnessAdapterDelivery;
 import io.github.lnyocly.ai4j.harness.HarnessAdapterExecution;
@@ -43,12 +44,23 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
     public static final String CODING_SESSION_STATE = "codingSessionState";
 
     private final CodingAgent codingAgent;
+    private final AgentToolVisibility toolVisibility;
 
     public CodingAgentHarnessExecutionAdapter(CodingAgent codingAgent) {
+        this(codingAgent, null);
+    }
+
+    /**
+     * Creates an adapter with an optional model-facing tool view. It does not
+     * remove tools from the CodingAgent executor or its permission boundary.
+     */
+    public CodingAgentHarnessExecutionAdapter(CodingAgent codingAgent,
+                                               AgentToolVisibility toolVisibility) {
         if (codingAgent == null) {
             throw new IllegalArgumentException("codingAgent is required");
         }
         this.codingAgent = codingAgent;
+        this.toolVisibility = toolVisibility;
     }
 
     public CodingAgent getCodingAgent() {
@@ -72,7 +84,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
             throw new IllegalArgumentException("coding checkpoint session does not match execution session");
         }
         CodingSession session = codingAgent.newSession(sessionId, state);
-        applyHarnessOverlay(session, executionContext, budget);
+        applyHarnessOverlay(session, executionContext, budget, state != null);
         return new Session(executionContext, session);
     }
 
@@ -125,7 +137,8 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
 
     private void applyHarnessOverlay(CodingSession session,
                                      HarnessExecutionContext executionContext,
-                                     HarnessRunBudget budget) {
+                                     HarnessRunBudget budget,
+                                     boolean resumed) {
         if (session == null || session.getDelegate() == null
                 || session.getDelegate().getContext() == null) {
             throw new IllegalStateException("coding session context is required");
@@ -151,11 +164,17 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
         io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry businessRegistry = context.getToolRegistry();
         ToolExecutor businessExecutor = context.getToolExecutor();
         context.setToolRegistry(new HarnessToolRegistry(businessRegistry));
+        context.setToolVisibility(toolVisibility == null
+                ? context.getToolVisibility() : toolVisibility);
         context.setToolExecutor(new HarnessToolExecutor(executionContext, businessExecutor));
         context.setToolInterceptor(new HarnessToolInterceptor(context.getToolInterceptor()));
         context.setOptions(optionsBuilder.build());
         context.setSessionId(session.getSessionId());
-        context.setSystemPrompt(appendPrompt(context.getSystemPrompt(), HarnessPrompts.instructions()));
+        String harnessPrompt = HarnessPrompts.instructions();
+        if (resumed) {
+            harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
+        }
+        context.setSystemPrompt(appendPrompt(context.getSystemPrompt(), harnessPrompt));
     }
 
     private CodingSessionState decodeState(HarnessAdapterState state) {

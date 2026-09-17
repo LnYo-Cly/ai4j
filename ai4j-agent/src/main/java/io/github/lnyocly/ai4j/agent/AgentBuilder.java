@@ -33,6 +33,7 @@ import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentRegistry;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.CompositeToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.RoutingToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
@@ -57,13 +58,13 @@ import io.github.lnyocly.ai4j.agent.trace.TraceExporter;
 import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
-import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import okhttp3.OkHttpClient;
 
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -83,6 +84,7 @@ public class AgentBuilder {
     private AgentRuntime runtime;
     private AgentModelClient modelClient;
     private AgentToolRegistry toolRegistry;
+    private AgentToolVisibility toolVisibility;
     private ExtensionAgentTools extensionTools;
     private SubAgentRegistry subAgentRegistry;
     private HandoffPolicy handoffPolicy;
@@ -237,6 +239,22 @@ public class AgentBuilder {
 
     public AgentBuilder toolRegistry(AgentToolRegistry toolRegistry) {
         this.toolRegistry = toolRegistry;
+        return this;
+    }
+
+    /**
+     * Sets the model-facing tool view without changing host-side execution or
+     * permission routing. A null value preserves the historical all-tools
+     * behavior.
+     */
+    public AgentBuilder toolVisibility(AgentToolVisibility toolVisibility) {
+        this.toolVisibility = toolVisibility;
+        return this;
+    }
+
+    /** Convenience form for exposing only the named registered tools. */
+    public AgentBuilder visibleToolNames(Collection<String> names) {
+        this.toolVisibility = AgentToolVisibility.named(names);
         return this;
     }
 
@@ -602,6 +620,7 @@ public class AgentBuilder {
         AgentContext context = AgentContext.builder()
                 .modelClient(modelClient)
                 .toolRegistry(resolvedToolRegistry)
+                .toolVisibility(toolVisibility)
                 .toolExecutor(resolvedToolExecutor)
                 .toolInterceptor(toolInterceptor)
                 .promptInterceptor(promptInterceptor)
@@ -673,11 +692,9 @@ public class AgentBuilder {
             return names;
         }
         for (Object tool : tools) {
-            if (tool instanceof Tool) {
-                Tool.Function fn = ((Tool) tool).getFunction();
-                if (fn != null && fn.getName() != null) {
-                    names.add(fn.getName());
-                }
+            String name = AgentToolVisibility.toolName(tool);
+            if (name != null) {
+                names.add(name);
             }
         }
         return names;

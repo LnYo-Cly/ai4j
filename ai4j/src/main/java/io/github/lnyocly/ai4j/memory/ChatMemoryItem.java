@@ -262,7 +262,9 @@ public class ChatMemoryItem {
                         toolCall.getFunction().getArguments()
                 );
             }
-            copied.add(new ToolCall(toolCall.getId(), toolCall.getType(), copiedFunction));
+            ToolCall copiedCall = new ToolCall(toolCall.getId(), toolCall.getType(), copiedFunction);
+            copiedCall.setIndex(toolCall.getIndex());
+            copied.add(copiedCall);
         }
         return copied;
     }

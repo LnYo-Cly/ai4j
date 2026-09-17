@@ -15,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
@@ -30,6 +31,8 @@ import io.github.lnyocly.ai4j.coding.CodingAgents;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.harness.CheckpointRecord;
+import io.github.lnyocly.ai4j.harness.AcceptanceRecord;
+import io.github.lnyocly.ai4j.harness.EvidenceRecord;
 import io.github.lnyocly.ai4j.harness.ExecutionRecord;
 import io.github.lnyocly.ai4j.harness.FileHarnessConfig;
 import io.github.lnyocly.ai4j.harness.FileHarnessStore;
@@ -62,6 +65,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -229,6 +233,11 @@ public final class HarnessBenchBridge {
         CodingAgentBuilder builder = CodingAgents.builder()
                 .modelClient(modelClient(cfg))
                 .model(cfg.model)
+                // HarnessBench is an automated, non-interactive benchmark. The
+                // HarnessToolExecutor remains the governance boundary; this
+                // explicit policy removes the SDK's interactive SAFE approval
+                // prompt so the compared agents have the same execution mode.
+                .permissionPolicy(AgentPermissionPolicies.allowAll())
                 .workspaceContext(workspace.build());
         if (cfg.reasoning != null) {
             builder.reasoning(cfg.reasoning);
@@ -566,9 +575,17 @@ public final class HarnessBenchBridge {
             audit.put("modelId", cfg.modelId);
             audit.put("workspace", cfg.workspace.toString());
             audit.put("status", outcome.status);
+            audit.put("executionId", outcome.executionId);
+            audit.put("taskId", outcome.taskId);
+            audit.put("waitId", outcome.waitId);
             audit.put("error", outcome.error);
             audit.put("outputPreview", preview(outcome.outputText));
-            audit.put("state", projectState(cfg));
+            JSONObject projectedState = projectState(cfg);
+            audit.put("state", projectedState);
+            JSONObject lineage = projectLineage(projectedState, outcome.executionId);
+            audit.put("lineage", lineage);
+            audit.put("repairCount", lineage.getIntValue("repairCount"));
+            audit.put("acceptanceCount", lineage.getIntValue("acceptanceCount"));
             Path auditFile = auditDir.resolve("harness_audit.json");
             Files.write(auditFile, JSON.toJSONString(audit,
                     com.alibaba.fastjson2.JSONWriter.Feature.PrettyFormat).getBytes(StandardCharsets.UTF_8));
@@ -629,6 +646,7 @@ public final class HarnessBenchBridge {
                 public JSONObject apply(ExecutionRecord r) {
                     JSONObject o = new JSONObject();
                     o.put("executionId", r.getExecutionId());
+                    o.put("parentExecutionId", r.getParentExecutionId());
                     o.put("taskId", r.getTaskId());
                     o.put("sessionId", r.getSessionId());
                     o.put("status", String.valueOf(r.getStatus()));
@@ -696,6 +714,41 @@ public final class HarnessBenchBridge {
                     return o;
                 }
             }));
+            state.put("evidence", projectCollection(snapshot.getEvidence(), new RecordProjector<EvidenceRecord>() {
+                @Override
+                public JSONObject apply(EvidenceRecord r) {
+                    JSONObject o = new JSONObject();
+                    o.put("evidenceId", r.getEvidenceId());
+                    o.put("scopeKey", r.getScopeKey());
+                    o.put("taskId", r.getTaskId());
+                    o.put("executionId", r.getExecutionId());
+                    o.put("kind", r.getKind());
+                    o.put("location", r.getLocation());
+                    o.put("summary", r.getSummary());
+                    o.put("contentRef", r.getContentRef());
+                    o.put("createdAtEpochMs", r.getCreatedAtEpochMs());
+                    o.put("provenance", projectObject(r.getProvenance()));
+                    return o;
+                }
+            }));
+            state.put("acceptances", projectCollection(snapshot.getAcceptances(), new RecordProjector<AcceptanceRecord>() {
+                @Override
+                public JSONObject apply(AcceptanceRecord r) {
+                    JSONObject o = new JSONObject();
+                    o.put("acceptanceId", r.getAcceptanceId());
+                    o.put("taskId", r.getTaskId());
+                    o.put("executionId", r.getExecutionId());
+                    o.put("submissionId", r.getSubmissionId());
+                    o.put("checkId", r.getCheckId());
+                    o.put("status", r.getStatus() == null ? null : String.valueOf(r.getStatus()));
+                    o.put("summary", r.getSummary());
+                    o.put("findingsJson", preview(r.getFindingsJson()));
+                    o.put("evaluatedAtEpochMs", r.getEvaluatedAtEpochMs());
+                    o.put("provenance", projectObject(r.getProvenance()));
+                    o.put("acceptanceProvenance", projectObject(r.getAcceptanceProvenance()));
+                    return o;
+                }
+            }));
             state.put("reviews", projectCollection(snapshot.getReviews(), new RecordProjector<ReviewRecord>() {
                 @Override
                 public JSONObject apply(ReviewRecord r) {
@@ -729,6 +782,101 @@ public final class HarnessBenchBridge {
             store.close();
         }
         return state;
+    }
+
+    /**
+     * Projects only the execution/acceptance lineage for the round that just
+     * finished. The projection is derived from the freshly reopened store, so
+     * it remains useful after the bridge JVM has exited and never relies on an
+     * in-memory gateway object.
+     */
+    private static JSONObject projectLineage(JSONObject state, String executionId) {
+        JSONObject lineage = new JSONObject();
+        lineage.put("executionId", executionId);
+        lineage.put("executionIds", new JSONArray());
+        lineage.put("executions", new JSONArray());
+        lineage.put("acceptances", new JSONArray());
+        lineage.put("repairCount", 0);
+        lineage.put("acceptanceCount", 0);
+        lineage.put("latestAcceptanceStatus", null);
+        lineage.put("evaluatorProvenancePresent", false);
+        if (state == null || executionId == null) {
+            return lineage;
+        }
+
+        JSONArray storedExecutions = state.getJSONArray("executions");
+        Map<String, JSONObject> byId = new java.util.LinkedHashMap<String, JSONObject>();
+        if (storedExecutions != null) {
+            for (Object raw : storedExecutions) {
+                if (!(raw instanceof JSONObject)) continue;
+                JSONObject execution = (JSONObject) raw;
+                String id = execution.getString("executionId");
+                if (id != null) byId.put(id, execution);
+            }
+        }
+        List<JSONObject> chain = new ArrayList<JSONObject>();
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        String current = executionId;
+        while (current != null && seen.add(current)) {
+            JSONObject execution = byId.get(current);
+            if (execution == null) break;
+            chain.add(execution);
+            current = execution.getString("parentExecutionId");
+        }
+        Collections.reverse(chain);
+        JSONArray chainIds = new JSONArray();
+        JSONArray chainRecords = new JSONArray();
+        java.util.HashSet<String> chainIdSet = new java.util.HashSet<String>();
+        for (JSONObject execution : chain) {
+            String id = execution.getString("executionId");
+            chainIds.add(id);
+            chainRecords.add(execution);
+            if (id != null) chainIdSet.add(id);
+        }
+        lineage.put("executionIds", chainIds);
+        lineage.put("executions", chainRecords);
+        lineage.put("repairCount", Math.max(0, chain.size() - 1));
+
+        JSONArray storedAcceptances = state.getJSONArray("acceptances");
+        List<JSONObject> acceptanceList = new ArrayList<JSONObject>();
+        if (storedAcceptances != null) {
+            for (Object raw : storedAcceptances) {
+                if (!(raw instanceof JSONObject)) continue;
+                JSONObject acceptance = (JSONObject) raw;
+                if (!chainIdSet.contains(acceptance.getString("executionId"))) continue;
+                acceptanceList.add(acceptance);
+            }
+        }
+        Collections.sort(acceptanceList, new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject left, JSONObject right) {
+                long leftTime = left.getLongValue("evaluatedAtEpochMs");
+                long rightTime = right.getLongValue("evaluatedAtEpochMs");
+                if (leftTime != rightTime) {
+                    return leftTime < rightTime ? -1 : 1;
+                }
+                return String.valueOf(left.getString("acceptanceId"))
+                        .compareTo(String.valueOf(right.getString("acceptanceId")));
+            }
+        });
+        JSONArray acceptanceRecords = new JSONArray();
+        String latestStatus = null;
+        boolean evaluatorProvenancePresent = false;
+        for (JSONObject acceptance : acceptanceList) {
+            acceptanceRecords.add(acceptance);
+            latestStatus = acceptance.getString("status");
+            evaluatorProvenancePresent = evaluatorProvenancePresent
+                    || acceptance.getJSONObject("acceptanceProvenance") != null;
+        }
+        lineage.put("acceptances", acceptanceRecords);
+        lineage.put("acceptanceCount", acceptanceRecords.size());
+        lineage.put("latestAcceptanceStatus", latestStatus);
+        lineage.put("evaluatorProvenancePresent", evaluatorProvenancePresent);
+        return lineage;
+    }
+
+    private static JSONObject projectObject(Object value) {
+        return value == null ? null : JSON.parseObject(JSON.toJSONString(value));
     }
 
     private interface RecordProjector<T> {

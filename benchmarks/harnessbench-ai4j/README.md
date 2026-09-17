@@ -5,7 +5,7 @@ agent/harness benchmark) against the ai4j SDK in two modes:
 
 | Mode | What runs | What is durable |
 |------|-----------|-----------------|
-| `harness` (default) | `CodingAgentHarness` keyed by the bench session id | tasks, executions, checkpoints, waits/wakeups, gates, reviews, idempotency — file-backed store under the sandbox |
+| `harness` (default) | `CodingAgentHarness` keyed by the bench session id | tasks, executions, checkpoints, waits/wakeups, gates, reviews, evidence, acceptances, lineage, idempotency — file-backed store under the sandbox |
 | `bare` | plain `Agent` per round | JSONL transcript replay only (the honest control: no durable tasks, gates, or audit state) |
 
 The adapter is **generic_cli-only**: HarnessBench's stock `generic_cli` adapter
@@ -83,12 +83,38 @@ Each round writes two machine-readable files under the sandbox:
 `audit/check_audit.py <sandbox>` validates invariants over these exports:
 runtime (dynamic) task creation, execution→task references, round continuity
 across fresh JVMs, checkpoint↔execution consistency, wait/wakeup pairing,
-gate-before-complete, tool-invocation uniqueness, UNKNOWN-preserved-for-reconciliation.
+gate-before-complete, tool-invocation uniqueness, acceptance/evidence binding,
+repair lineage, and UNKNOWN-preserved-for-reconciliation.
 Capability-dependent checks report `not exercised` instead of passing vacuously.
 
 Exit codes: `0` round finished (COMPLETED / CONTINUATION_REQUIRED / WAITING /
 BLOCKED / IN_REVIEW), `1` failed, `2` UNKNOWN/CANCELLED (operators reconcile;
 the bridge never blindly retries).
+
+## Post-run acceptance (separate from benchmark scoring)
+
+The official HarnessBench runner remains the sole owner of `oracle_result`,
+`scoring`, and `combined_score`. After a run, the optional evaluator produces
+an independent acceptance artifact without reading task `ground_truth` or
+changing any official score:
+
+```bash
+python benchmarks/harnessbench-ai4j/acceptance/evaluate_acceptance.py \
+  results/057-interruption-resume.json \
+  --audit /path/to/sandbox/ai4j-audit/harness_audit.json \
+  --output results/057-interruption-resume.harness_acceptance.json
+```
+
+The artifact records official oracle checks, the durable Harness audit check,
+execution/repair and acceptance lineage, evaluator/check versions, opaque
+context snapshot references, and observed artifact/requirement counts.
+`PASS`, `FAIL`, `ERROR`, and `NOT_RUN` are independent of the numeric
+benchmark score. Bare-mode audits are informational `NOT_RUN`; use
+`--allow-missing-audit` only when the absence of a Harness projection is an
+explicitly accepted condition. Aggregate sanitized run records with
+`report/aggregate_metrics.py` to keep oracle quality, process reliability,
+Harness invariant pass rate, acceptance pass rate, and repair counts in
+separate denominators.
 
 ## What official runs prove vs. what they cannot
 
@@ -96,8 +122,8 @@ See [docs/COVERAGE.md](docs/COVERAGE.md) for the category matrix: which of the
 eight HarnessBench classes are covered by the official oracle, which only yield
 LLM-rubric quality signals, and which Harness-internal guarantees (durable
 state, cross-process recovery, idempotent redelivery, approval gates,
-UNKNOWN/cancel handling) require the audit exports and the ai4j-harness module
-test suite.
+UNKNOWN/cancel handling, acceptance provenance, and repair lineage) require
+the audit exports and the ai4j-harness module test suite.
 
 ## 实测对照（2026-09-01，gpt-5.6-terra / reasoning medium / 同网关同 key）
 

@@ -987,6 +987,146 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return recordEvidence(spec, defaultActor);
     }
 
+    /** Persist one detached host acceptance result with execution/submission lineage. */
+    public AcceptanceRecord recordAcceptance(final AcceptanceRecord record) {
+        return recordAcceptance(record, defaultActor);
+    }
+
+    /** Persist an acceptance result with explicit evaluator/event attribution. */
+    public AcceptanceRecord recordAcceptance(final AcceptanceRecord record, HarnessActor actor) {
+        if (record == null || record.getAcceptanceId() == null || record.getExecutionId() == null
+                || record.getCheckId() == null || record.getStatus() == null) {
+            throw new HarnessValidationException("acceptance record requires id, execution, check and status");
+        }
+        final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
+        return write(new StateCommand<AcceptanceRecord>() {
+            @Override public AcceptanceRecord apply(HarnessState state) {
+                ExecutionRecord execution = state.getExecutions().get(record.getExecutionId());
+                if (execution == null) throw new HarnessValidationException("acceptance execution not found: " + record.getExecutionId());
+                if (record.getTaskId() != null && !safeEquals(record.getTaskId(), execution.getTaskId()))
+                    throw new HarnessConflictException("acceptance task does not match execution");
+                if (record.getSubmissionId() != null) {
+                    SubmissionRecord submission = state.getSubmissions().get(record.getSubmissionId());
+                    if (submission == null) throw new HarnessValidationException("acceptance submission not found: " + record.getSubmissionId());
+                    if (!safeEquals(submission.getExecutionId(), record.getExecutionId())
+                            || !safeEquals(submission.getTaskId(), execution.getTaskId())) {
+                        throw new HarnessConflictException("acceptance submission does not match execution");
+                    }
+                }
+                AcceptanceRecord stored = record.copy();
+                stored.setTaskId(execution.getTaskId());
+                stored.setEvaluatedAtEpochMs(stored.getEvaluatedAtEpochMs() == 0 ? now() : stored.getEvaluatedAtEpochMs());
+                state.getAcceptances().put(stored.getAcceptanceId(), stored);
+                addEvent(state, "acceptance.recorded", stored.getAcceptanceId(), effectiveActor,
+                        mapOf("executionId", stored.getExecutionId(), "submissionId", stored.getSubmissionId(), "status", stored.getStatus().name()));
+                return stored.copy();
+            }
+        });
+    }
+
+    public List<AcceptanceRecord> listAcceptances(String executionId) {
+        List<AcceptanceRecord> result = new ArrayList<AcceptanceRecord>();
+        for (AcceptanceRecord record : getState().getAcceptances().values()) {
+            if (record != null && (executionId == null || safeEquals(executionId, record.getExecutionId()))) result.add(record.copy());
+        }
+        return result;
+    }
+
+    /** Returns the durable repair lineage from a root execution to the given execution. */
+    public List<ExecutionRecord> listExecutionLineage(String executionId) {
+        String currentId = requireText(executionId, "execution id");
+        return executionLineage(getState(), currentId);
+    }
+
+    private List<ExecutionRecord> executionLineage(HarnessState state, String executionId) {
+        String currentId = requireText(executionId, "execution id");
+        List<ExecutionRecord> reverse = new ArrayList<ExecutionRecord>();
+        java.util.HashSet<String> seen = new java.util.HashSet<String>();
+        while (currentId != null && seen.add(currentId)) {
+            ExecutionRecord current = state.getExecutions().get(currentId);
+            if (current == null) throw new HarnessValidationException("execution not found: " + currentId);
+            reverse.add(current.copy());
+            currentId = trimToNull(current.getParentExecutionId());
+        }
+        java.util.Collections.reverse(reverse);
+        return reverse;
+    }
+
+    /** Returns acceptance records attached to every execution in the lineage, root first. */
+    public List<AcceptanceRecord> listAcceptanceLineage(String executionId) {
+        HarnessState state = getState();
+        return acceptanceLineage(state, executionLineage(state, requireText(executionId, "execution id")));
+    }
+
+    private List<AcceptanceRecord> acceptanceLineage(HarnessState state,
+                                                     List<ExecutionRecord> executions) {
+        List<AcceptanceRecord> result = new ArrayList<AcceptanceRecord>();
+        for (ExecutionRecord execution : executions) {
+            for (AcceptanceRecord acceptance : state.getAcceptances().values()) {
+                if (acceptance != null && safeEquals(execution.getExecutionId(), acceptance.getExecutionId())) {
+                    result.add(acceptance.copy());
+                }
+            }
+        }
+        java.util.Collections.sort(result, new java.util.Comparator<AcceptanceRecord>() {
+            @Override public int compare(AcceptanceRecord left, AcceptanceRecord right) {
+                int byTime = Long.compare(left.getEvaluatedAtEpochMs(), right.getEvaluatedAtEpochMs());
+                return byTime != 0 ? byTime : String.valueOf(left.getAcceptanceId()).compareTo(String.valueOf(right.getAcceptanceId()));
+            }
+        });
+        return result;
+    }
+
+    public HarnessLineageSummary summarizeLineage(String executionId) {
+        HarnessState state = getState();
+        List<ExecutionRecord> executions = executionLineage(state, requireText(executionId, "execution id"));
+        List<AcceptanceRecord> acceptances = acceptanceLineage(state, executions);
+        AcceptanceRecord finalAcceptance = acceptances.isEmpty() ? null : acceptances.get(acceptances.size() - 1);
+        HarnessAcceptanceStatus finalStatus = finalAcceptance == null ? null : finalAcceptance.getStatus();
+        ExecutionRecord targetExecution = executions.get(executions.size() - 1);
+        TaskRecord task = targetExecution.getTaskId() == null ? null : state.getTasks().get(targetExecution.getTaskId());
+        SubmissionRecord submission = latestSubmissionForExecution(state, targetExecution.getExecutionId());
+        Set<String> required = normalizedChecks(contract.requiredAcceptanceChecks(task, submission));
+        Map<String, AcceptanceRecord> latestByCheck = latestAcceptanceByCheck(acceptances, submission);
+        Set<String> missing = new LinkedHashSet<String>(required);
+        missing.removeAll(latestByCheck.keySet());
+        HarnessAcceptanceStatus aggregate = aggregateAcceptanceStatus(required, latestByCheck, missing);
+        boolean requiredPassed = required.isEmpty()
+                ? HarnessAcceptanceStatus.PASS == finalStatus : HarnessAcceptanceStatus.PASS == aggregate;
+        return new HarnessLineageSummary(executions, acceptances, Math.max(0, executions.size() - 1), finalStatus,
+                aggregate, requiredPassed, latestByCheck, required, missing, requiredPassed);
+    }
+
+    /**
+     * Appends a submission-bound confirmation for an earlier execution acceptance.
+     * This closes the natural two-phase flow where evidence is produced before a
+     * submission id exists; the original candidate record is never mutated.
+     */
+    public AcceptanceRecord bindAcceptanceToSubmission(final String acceptanceId,
+                                                       final String submissionId) {
+        final AcceptanceRecord source = getState().getAcceptances().get(acceptanceId);
+        if (source == null) throw new HarnessValidationException("acceptance not found: " + acceptanceId);
+        if (source.getStatus() != HarnessAcceptanceStatus.PASS) {
+            throw new HarnessConflictException("only a PASS acceptance can be bound to a submission");
+        }
+        SubmissionRecord submission = getState().getSubmissions().get(submissionId);
+        if (submission == null) throw new HarnessValidationException("submission not found: " + submissionId);
+        if (!safeEquals(source.getTaskId(), submission.getTaskId())
+                || !safeEquals(source.getExecutionId(), submission.getExecutionId())) {
+            throw new HarnessConflictException("acceptance and submission lineage must match");
+        }
+        for (AcceptanceRecord existing : getState().getAcceptances().values()) {
+            if (existing != null && safeEquals(existing.getSubmissionId(), submissionId)
+                    && safeEquals(existing.getCheckId(), source.getCheckId())
+                    && safeEquals(existing.getSummary(), source.getSummary())) {
+                return existing.copy();
+            }
+        }
+        return recordAcceptance(source.toBuilder()
+                .acceptanceId("acc_" + UUID.randomUUID().toString().replace("-", ""))
+                .submissionId(submissionId).evaluatedAtEpochMs(now()).build());
+    }
+
     public EvidenceRecord recordEvidence(HarnessEvidenceSpec spec, HarnessActor actor) {
         if (spec == null) throw new HarnessValidationException("evidence specification is required");
         final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
@@ -1050,6 +1190,70 @@ public final class HarnessCommandGateway implements AutoCloseable {
                                         String executionId,
                                         HarnessSubmissionSpec spec) {
         return submitTask(taskId, executionId, spec, defaultActor);
+    }
+
+    /**
+     * Creates a submission from the latest PASS acceptance for the execution.
+     * The acceptance and its evidence must already be durable; no result is
+     * inferred from a model claim or from a different execution.
+     */
+    public SubmissionRecord submitTaskWithAcceptance(String taskId, String executionId,
+                                                      String acceptanceId,
+                                                      HarnessSubmissionSpec spec,
+                                                      HarnessActor actor) {
+        return submitTaskWithAcceptances(taskId, executionId,
+                Collections.singletonList(acceptanceId), spec, actor);
+    }
+
+    /**
+     * Creates one submission from several PASS acceptance checks and binds all
+     * of them to that submission. Validation is performed before the
+     * submission mutation so a malformed check cannot create a partial
+     * submission.
+     */
+    public SubmissionRecord submitTaskWithAcceptances(String taskId,
+                                                       String executionId,
+                                                       List<String> acceptanceIds,
+                                                       HarnessSubmissionSpec spec,
+                                                       HarnessActor actor) {
+        String taskKey = requireText(taskId, "task id");
+        String executionKey = requireText(executionId, "execution id");
+        if (acceptanceIds == null || acceptanceIds.isEmpty()) {
+            throw new HarnessValidationException("acceptance ids are required");
+        }
+        HarnessState state = getState();
+        Set<String> uniqueAcceptanceIds = new LinkedHashSet<String>();
+        Set<String> evidenceIds = new LinkedHashSet<String>();
+        for (String rawAcceptanceId : acceptanceIds) {
+            String acceptanceId = requireText(rawAcceptanceId, "acceptance id");
+            if (!uniqueAcceptanceIds.add(acceptanceId)) {
+                continue;
+            }
+            AcceptanceRecord acceptance = state.getAcceptances().get(acceptanceId);
+            if (acceptance == null || acceptance.getStatus() != HarnessAcceptanceStatus.PASS
+                    || !taskKey.equals(acceptance.getTaskId()) || !executionKey.equals(acceptance.getExecutionId())) {
+                throw new HarnessConflictException("PASS acceptance does not belong to current task and execution: "
+                        + acceptanceId);
+            }
+            boolean hasEvidence = false;
+            for (EvidenceRecord evidence : state.getEvidence().values()) {
+                if (evidence != null && executionKey.equals(evidence.getExecutionId())
+                        && acceptanceId.equals(evidence.getContentRef())) {
+                    evidenceIds.add(evidence.getEvidenceId());
+                    hasEvidence = true;
+                }
+            }
+            if (!hasEvidence) {
+                throw new HarnessConflictException("PASS acceptance has no durable evidence: " + acceptanceId);
+            }
+        }
+        HarnessSubmissionSpec base = spec == null ? HarnessSubmissionSpec.builder().build() : spec;
+        SubmissionRecord submission = submitTask(taskKey, executionKey, base.toBuilder()
+                .evidenceIds(new ArrayList<String>(evidenceIds)).build(), actor);
+        for (String acceptanceId : uniqueAcceptanceIds) {
+            bindAcceptanceToSubmission(acceptanceId, submission.getSubmissionId());
+        }
+        return submission;
     }
 
     public SubmissionRecord submitTask(String taskId,
@@ -1166,52 +1370,23 @@ public final class HarnessCommandGateway implements AutoCloseable {
         final String id = requireText(taskId, "task id");
         final String submissionKey = requireText(submissionId, "submission id");
         final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
+        // Gates receive the entire state, so any accepted mutation invalidates their snapshot.
+        // Evaluate outside store.update: a slow host check must not hold the writer lock.
+        final HarnessState snapshot = getState();
+        final long evaluatedVersion = snapshot.getVersion();
+        SubmissionRecord candidate = validateCompletion(snapshot, id, submissionKey, effectiveActor);
+        final List<GateResult> gateResults = contract.evaluateCompletion(
+                requireTask(snapshot, id), candidate, snapshot);
         final CompletionFailure failure = new CompletionFailure();
         TaskRecord result = write(new StateCommand<TaskRecord>() {
             @Override
             public TaskRecord apply(HarnessState state) {
+                SubmissionRecord submission = validateCompletion(state, id, submissionKey, effectiveActor);
+                if (state.getVersion() != evaluatedVersion) {
+                    throw new HarnessConflictException("Harness state changed during completion evaluation; retry completion");
+                }
                 TaskRecord task = requireTask(state, id);
-                SubmissionRecord submission = state.getSubmissions().get(submissionKey);
-                if (submission == null) {
-                    throw new HarnessValidationException("submission not found: " + submissionKey);
-                }
-                if (!id.equals(submission.getTaskId())) {
-                    throw new HarnessValidationException("submission does not belong to task: " + id);
-                }
-                if (!submissionKey.equals(task.getSubmissionId())) {
-                    throw new HarnessConflictException("submission is no longer the current task submission: "
-                            + submissionKey);
-                }
-                String executionId = trimToNull(submission.getExecutionId());
-                if (executionId == null) {
-                    throw new HarnessValidationException("submission must reference an execution before completion");
-                }
-                ExecutionRecord execution = state.getExecutions().get(executionId);
-                if (execution == null) {
-                    throw new HarnessValidationException("submission execution not found: " + executionId);
-                }
-                if (!id.equals(execution.getTaskId())) {
-                    throw new HarnessValidationException("submission execution does not belong to task: " + id);
-                }
-                assertCurrentTaskExecution(task, executionId);
-                assertSameScope(task.getScopeKey(), execution.getScopeKey(),
-                        "submission and execution scopes must match");
-                if (!ExecutionStatus.SUCCEEDED.equals(execution.getStatus())) {
-                    throw new HarnessConflictException("submission execution must be SUCCEEDED before completion: "
-                            + executionId);
-                }
-                if (!dependenciesSatisfied(state, id)) {
-                    throw new HarnessConflictException("task dependencies are not complete: " + id);
-                }
-                if (!contract.mayComplete(effectiveActor, submission)) {
-                    throw new HarnessValidationException("actor is not allowed to complete this task");
-                }
-                if (contract.requiresApprovedReview(task, submission)
-                        && !hasApprovedReview(state, submission.getSubmissionId())) {
-                    failure.reason = "an approved review is required before completion";
-                    return task.copy();
-                }
-                List<GateResult> gateResults = contract.evaluateCompletion(task, submission, state);
+                String executionId = submission.getExecutionId();
                 boolean passed = gateResults != null && !gateResults.isEmpty();
                 String failedReason = null;
                 if (gateResults != null) {
@@ -1227,6 +1402,8 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         state.getGates().put(gateId, GateRecord.builder()
                                 .gateId(gateId)
                                 .taskId(id)
+                                .executionId(executionId)
+                                .submissionId(submissionKey)
                                 .name(gateName)
                                 .status(gateResult != null && gateResult.isPassed() ? GateStatus.PASS : GateStatus.FAIL)
                                 .reason(gateResult == null ? "gate returned no result" : gateResult.getReason())
@@ -1254,6 +1431,101 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return result;
     }
 
+    private SubmissionRecord validateCompletion(HarnessState state, String id,
+                                                String submissionKey, HarnessActor effectiveActor) {
+        TaskRecord task = requireTask(state, id);
+        SubmissionRecord submission = state.getSubmissions().get(submissionKey);
+        if (submission == null) {
+            throw new HarnessValidationException("submission not found: " + submissionKey);
+        }
+        if (!id.equals(submission.getTaskId())) {
+            throw new HarnessValidationException("submission does not belong to task: " + id);
+        }
+        if (!submissionKey.equals(task.getSubmissionId())) {
+            throw new HarnessConflictException("submission is no longer the current task submission: "
+                    + submissionKey);
+        }
+        String executionId = trimToNull(submission.getExecutionId());
+        if (executionId == null) {
+            throw new HarnessValidationException("submission must reference an execution before completion");
+        }
+        ExecutionRecord execution = state.getExecutions().get(executionId);
+        if (execution == null) {
+            throw new HarnessValidationException("submission execution not found: " + executionId);
+        }
+        if (!id.equals(execution.getTaskId())) {
+            throw new HarnessValidationException("submission execution does not belong to task: " + id);
+        }
+        assertCurrentTaskExecution(task, executionId);
+        assertSameScope(task.getScopeKey(), execution.getScopeKey(),
+                "submission and execution scopes must match");
+        if (!ExecutionStatus.SUCCEEDED.equals(execution.getStatus())) {
+            throw new HarnessConflictException("submission execution must be SUCCEEDED before completion: "
+                    + executionId);
+        }
+        if (!dependenciesSatisfied(state, id)) {
+            throw new HarnessConflictException("task dependencies are not complete: " + id);
+        }
+        if (!contract.mayComplete(effectiveActor, submission)) {
+            throw new HarnessValidationException("actor is not allowed to complete this task");
+        }
+        if (contract.requiresApprovedReview(task, submission)
+                && !hasApprovedReview(state, submission.getSubmissionId())) {
+            throw new HarnessValidationException("an approved review is required before completion");
+        }
+        if (contract.requiresCompletionEvidence(task, submission)) {
+            if (submission.getEvidenceIds() == null || submission.getEvidenceIds().isEmpty()) {
+                throw new HarnessValidationException("completion evidence is required for governed task");
+            }
+            for (String evidenceId : submission.getEvidenceIds()) {
+                EvidenceRecord evidence = state.getEvidence().get(evidenceId);
+                if (evidence == null || !id.equals(evidence.getTaskId())
+                        || !executionId.equals(evidence.getExecutionId())) {
+                    throw new HarnessConflictException("completion evidence is missing or not bound to current execution: " + evidenceId);
+                }
+            }
+        }
+        validateRequiredAcceptances(state, task, submission, executionId);
+        return submission;
+    }
+
+    private void validateRequiredAcceptances(HarnessState state,
+                                             TaskRecord task,
+                                             SubmissionRecord submission,
+                                             String executionId) {
+        Set<String> requiredChecks = normalizedChecks(contract.requiredAcceptanceChecks(task, submission));
+        if (requiredChecks.isEmpty()) {
+            if (!contract.requiresCompletionEvidence(task, submission)) {
+                return;
+            }
+            for (AcceptanceRecord acceptance : state.getAcceptances().values()) {
+                if (acceptance != null && HarnessAcceptanceStatus.PASS == acceptance.getStatus()
+                        && safeEquals(task.getTaskId(), acceptance.getTaskId())
+                        && safeEquals(executionId, acceptance.getExecutionId())
+                        && safeEquals(submission.getSubmissionId(), acceptance.getSubmissionId())) {
+                    return;
+                }
+            }
+            throw new HarnessConflictException("a PASS acceptance record for the current submission is required");
+        }
+        for (String checkId : requiredChecks) {
+            boolean accepted = false;
+            for (AcceptanceRecord acceptance : state.getAcceptances().values()) {
+                if (acceptance != null && HarnessAcceptanceStatus.PASS == acceptance.getStatus()
+                        && checkId.equals(trimToNull(acceptance.getCheckId()))
+                        && safeEquals(task.getTaskId(), acceptance.getTaskId())
+                        && safeEquals(executionId, acceptance.getExecutionId())
+                        && safeEquals(submission.getSubmissionId(), acceptance.getSubmissionId())) {
+                    accepted = true;
+                    break;
+                }
+            }
+            if (!accepted) {
+                throw new HarnessConflictException("a PASS acceptance record for required check is missing: " + checkId);
+            }
+        }
+    }
+
     public ExecutionRecord createExecution(HarnessExecutionSpec spec) {
         return createExecution(spec, defaultActor);
     }
@@ -1269,12 +1541,33 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 String existingId = idempotentId(state, IDEMPOTENCY_EXECUTION, executionScope,
                         spec.getIdempotencyKey());
                 if (existingId != null && state.getExecutions().get(existingId) != null) {
-                    return state.getExecutions().get(existingId).copy();
+                    ExecutionRecord existing = state.getExecutions().get(existingId);
+                    if (!safeEquals(trimToNull(spec.getTaskId()), trimToNull(existing.getTaskId()))
+                            || !safeEquals(trimToNull(spec.getParentExecutionId()),
+                            trimToNull(existing.getParentExecutionId()))) {
+                        throw new HarnessConflictException("idempotency key belongs to a different execution task or parent");
+                    }
+                    return existing.copy();
                 }
                 if (state.getExecutions().containsKey(executionId)) {
                     throw new HarnessConflictException("execution already exists: " + executionId);
                 }
                 String executionTaskId = trimToNull(spec.getTaskId());
+                String parentId = trimToNull(spec.getParentExecutionId());
+                if (parentId != null) {
+                    ExecutionRecord parent = state.getExecutions().get(parentId);
+                    if (parent == null) {
+                        throw new HarnessValidationException("parent execution not found: " + parentId);
+                    }
+                    if (!safeEquals(executionTaskId, parent.getTaskId())
+                            || !safeEquals(executionScope, parent.getScopeKey())) {
+                        throw new HarnessConflictException("parent execution task and scope must match");
+                    }
+                    if (parent.getStatus() != ExecutionStatus.SUCCEEDED
+                            && parent.getStatus() != ExecutionStatus.FAILED) {
+                        throw new HarnessConflictException("parent execution must have succeeded or failed; resume or reconcile it first");
+                    }
+                }
                 if (executionTaskId != null) {
                     TaskRecord task = requireTask(state, executionTaskId);
                     if (TaskStatus.DONE.equals(task.getStatus()) || TaskStatus.CANCELLED.equals(task.getStatus())) {
@@ -1296,6 +1589,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 int attempt = nextAttempt(state, executionTaskId);
                 ExecutionRecord execution = ExecutionRecord.builder()
                         .executionId(executionId)
+                        .parentExecutionId(trimToNull(spec.getParentExecutionId()))
                         .taskId(executionTaskId)
                         .scopeKey(executionScope)
                         .sessionId(trimToNull(spec.getSessionId()))
@@ -1319,7 +1613,8 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 rememberIdempotency(state, IDEMPOTENCY_EXECUTION, executionScope,
                         spec.getIdempotencyKey(), executionId);
                 addEvent(state, "execution.created", executionId, effectiveActor, mapOf(
-                        "taskId", execution.getTaskId(), "attempt", attempt));
+                        "taskId", execution.getTaskId(), "attempt", attempt,
+                        "parentExecutionId", execution.getParentExecutionId()));
                 return execution.copy();
             }
         });
@@ -3055,6 +3350,108 @@ public final class HarnessCommandGateway implements AutoCloseable {
             return requestedRunId;
         }
         return sessionRunId == null ? valueOrGenerated(null, "run_") : sessionRunId;
+    }
+
+    private SubmissionRecord latestSubmissionForExecution(HarnessState state, String executionId) {
+        SubmissionRecord latest = null;
+        for (SubmissionRecord candidate : state.getSubmissions().values()) {
+            if (candidate == null || !safeEquals(executionId, candidate.getExecutionId())) {
+                continue;
+            }
+            if (latest == null || candidate.getCreatedAtEpochMs() > latest.getCreatedAtEpochMs()
+                    || (candidate.getCreatedAtEpochMs() == latest.getCreatedAtEpochMs()
+                    && String.valueOf(candidate.getSubmissionId()).compareTo(String.valueOf(latest.getSubmissionId())) > 0)) {
+                latest = candidate;
+            }
+        }
+        return latest;
+    }
+
+    private Set<String> normalizedChecks(Set<String> checks) {
+        Set<String> normalized = new LinkedHashSet<String>();
+        if (checks == null) {
+            return normalized;
+        }
+        for (String check : checks) {
+            String value = trimToNull(check);
+            if (value != null) {
+                normalized.add(value);
+            }
+        }
+        return normalized;
+    }
+
+    private Map<String, AcceptanceRecord> latestAcceptanceByCheck(List<AcceptanceRecord> acceptances,
+                                                                   SubmissionRecord currentSubmission) {
+        Map<String, AcceptanceRecord> latest = new LinkedHashMap<String, AcceptanceRecord>();
+        String currentSubmissionId = currentSubmission == null ? null : currentSubmission.getSubmissionId();
+        if (acceptances == null) {
+            return latest;
+        }
+        for (AcceptanceRecord candidate : acceptances) {
+            if (candidate == null) {
+                continue;
+            }
+            String checkId = trimToNull(candidate.getCheckId());
+            if (checkId == null) {
+                continue;
+            }
+            AcceptanceRecord existing = latest.get(checkId);
+            if (existing == null || preferredAcceptance(candidate, existing, currentSubmissionId)) {
+                latest.put(checkId, candidate.copy());
+            }
+        }
+        return latest;
+    }
+
+    private boolean preferredAcceptance(AcceptanceRecord candidate,
+                                        AcceptanceRecord existing,
+                                        String currentSubmissionId) {
+        int candidateRank = acceptanceRank(candidate, currentSubmissionId);
+        int existingRank = acceptanceRank(existing, currentSubmissionId);
+        if (candidateRank != existingRank) {
+            return candidateRank > existingRank;
+        }
+        if (candidate.getEvaluatedAtEpochMs() != existing.getEvaluatedAtEpochMs()) {
+            return candidate.getEvaluatedAtEpochMs() > existing.getEvaluatedAtEpochMs();
+        }
+        return String.valueOf(candidate.getAcceptanceId()).compareTo(String.valueOf(existing.getAcceptanceId())) > 0;
+    }
+
+    private int acceptanceRank(AcceptanceRecord acceptance, String currentSubmissionId) {
+        String submissionId = trimToNull(acceptance == null ? null : acceptance.getSubmissionId());
+        if (currentSubmissionId != null && currentSubmissionId.equals(submissionId)) {
+            return 3;
+        }
+        return submissionId == null ? 1 : 2;
+    }
+
+    private HarnessAcceptanceStatus aggregateAcceptanceStatus(Set<String> required,
+                                                              Map<String, AcceptanceRecord> latestByCheck,
+                                                              Set<String> missing) {
+        if (required == null || required.isEmpty()) {
+            return null;
+        }
+        boolean error = false;
+        boolean fail = false;
+        boolean notRun = missing != null && !missing.isEmpty();
+        for (String checkId : required) {
+            AcceptanceRecord acceptance = latestByCheck.get(checkId);
+            if (acceptance == null) {
+                continue;
+            }
+            if (HarnessAcceptanceStatus.ERROR == acceptance.getStatus()) {
+                error = true;
+            } else if (HarnessAcceptanceStatus.FAIL == acceptance.getStatus()) {
+                fail = true;
+            } else if (HarnessAcceptanceStatus.NOT_RUN == acceptance.getStatus()) {
+                notRun = true;
+            }
+        }
+        if (error) return HarnessAcceptanceStatus.ERROR;
+        if (fail) return HarnessAcceptanceStatus.FAIL;
+        if (notRun) return HarnessAcceptanceStatus.NOT_RUN;
+        return HarnessAcceptanceStatus.PASS;
     }
 
     private boolean hasApprovedReview(HarnessState state, String submissionId) {

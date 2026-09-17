@@ -11,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.permission.AgentExecutionEnvironment;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
@@ -33,6 +34,9 @@ public class AgentContext {
     private AgentModelClient modelClient;
 
     private AgentToolRegistry toolRegistry;
+
+    /** Model-facing tool view; null preserves the historical all-tools behavior. */
+    private AgentToolVisibility toolVisibility;
 
     private ToolExecutor toolExecutor;
 

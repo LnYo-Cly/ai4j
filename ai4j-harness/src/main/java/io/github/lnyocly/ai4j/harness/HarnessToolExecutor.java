@@ -6,6 +6,7 @@ import io.github.lnyocly.ai4j.agent.permission.AgentApprovalRequiredException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Mandatory execution boundary for a Harness-enabled Agent. It routes
@@ -47,7 +50,7 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
     public String execute(AgentToolCall call) throws Exception {
         AgentToolExecution execution = start(call);
         AgentToolResult result = execution == null ? null : execution.await();
-        return result == null ? null : result.getOutput();
+        return result == null || result.getOutput() == null ? "" : result.getOutput();
     }
 
     @Override
@@ -144,7 +147,15 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
             return approvalWait(call, approval, invocationId);
         } catch (AgentHostInputException input) {
             return inputWait(effectiveCall, input, invocationId);
+        } catch (AgentToolInputException input) {
+            completeDeterministicFailure(invocationId, input);
+            throw input;
         } catch (Exception failure) {
+            AgentToolInputException input = findInputFailure(failure);
+            if (input != null) {
+                completeDeterministicFailure(invocationId, input);
+                throw input;
+            }
             try {
                 context.getGateway().completeToolInvocation(invocationId,
                         ToolInvocationStatus.UNKNOWN, null, null, null,
@@ -155,6 +166,41 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
                 // later reconciliation can inspect the durable STARTED entry.
             }
             throw failure;
+        }
+    }
+
+    private AgentToolInputException findInputFailure(Throwable failure) {
+        Throwable current = failure;
+        while (current != null) {
+            if (current instanceof AgentToolInputException) {
+                return (AgentToolInputException) current;
+            }
+            if (current instanceof ExecutionException || current instanceof CompletionException) {
+                current = current.getCause();
+                continue;
+            }
+            break;
+        }
+        return null;
+    }
+
+    /**
+     * Records a caller-controlled validation failure as terminal. The marker
+     * is deliberately opt-in: arbitrary {@link IllegalArgumentException}s
+     * from application tools may be thrown after a side effect and therefore
+     * still require UNKNOWN reconciliation.
+     */
+    private void completeDeterministicFailure(String invocationId,
+                                               AgentToolInputException failure) {
+        try {
+            String message = failure.getMessage() == null
+                    ? failure.toString() : failure.getMessage();
+            context.getGateway().completeToolInvocation(invocationId,
+                    ToolInvocationStatus.FAILED, null, null, null, message,
+                    context.getActor());
+        } catch (RuntimeException ignored) {
+            // Preserve the original input failure if the audit write itself
+            // cannot be persisted. A later reconciliation can inspect STARTED.
         }
     }
 
@@ -295,7 +341,7 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
         String output;
         if (ToolInvocationStatus.SUCCEEDED.equals(invocation.getStatus())) {
             status = AgentToolExecutionStatus.COMPLETED;
-            output = invocation.getOutput();
+            output = invocation.getOutput() == null ? "" : invocation.getOutput();
         } else if (ToolInvocationStatus.WAITING.equals(invocation.getStatus())) {
             status = AgentToolExecutionStatus.WAITING;
             output = "HARNESS_TOOL_WAITING: invocationId=" + invocation.getInvocationId()
@@ -305,7 +351,9 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
             output = "HARNESS_TOOL_CANCELLED: invocationId=" + invocation.getInvocationId();
         } else if (ToolInvocationStatus.FAILED.equals(invocation.getStatus())) {
             status = AgentToolExecutionStatus.FAILED;
-            output = invocation.getOutput() == null ? invocation.getError() : invocation.getOutput();
+            output = invocation.getOutput() == null
+                    ? (invocation.getError() == null ? "" : invocation.getError())
+                    : invocation.getOutput();
         } else {
             status = AgentToolExecutionStatus.UNKNOWN;
             output = "HARNESS_TOOL_RECONCILIATION_REQUIRED: invocationId="
@@ -336,7 +384,7 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
         return AgentToolExecution.completed(AgentToolResult.builder()
                 .name(call.getName())
                 .callId(call.getCallId())
-                .output(output)
+                .output(output == null ? "" : output)
                 .status(AgentToolExecutionStatus.COMPLETED)
                 .build());
     }
@@ -359,6 +407,9 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
         }
         if (result.getCallId() == null) {
             result.setCallId(call.getCallId());
+        }
+        if (result.getOutput() == null) {
+            result.setOutput("");
         }
         if (result.getStatus() == null) {
             result.setStatus(AgentToolExecutionStatus.COMPLETED);

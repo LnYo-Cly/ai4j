@@ -39,7 +39,11 @@ import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.TraceableToolExecutor;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
+import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
+import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseItem;
+import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -210,11 +214,14 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 }
             }
 
-            if (modelResult != null && modelResult.getMemoryItems() != null) {
-                memory.addOutputItems(modelResult.getMemoryItems());
-            }
-
             List<AgentToolCall> calls = normalizeToolCalls(modelResult == null ? null : modelResult.getToolCalls(), step);
+            if (modelResult != null && modelResult.getMemoryItems() != null) {
+                // A provider may omit a call id (or return a protocol-specific item whose id
+                // is not copied into AgentToolCall). Normalize the call first, then align the
+                // provider memory item before it is persisted. Otherwise the next request can
+                // contain assistant id=null and function_call_output.call_id=synthetic-id.
+                memory.addOutputItems(alignMemoryItems(modelResult.getMemoryItems(), calls));
+            }
             if (calls == null || calls.isEmpty()) {
                 String outputText = modelResult == null ? "" : modelResult.getOutputText();
                 publish(context, listener, AgentEventType.FINAL_OUTPUT, step, outputText, modelResult == null ? null : modelResult.getRawResponse(), runId, sessionId, turnId);
@@ -249,6 +256,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                         .output(output)
                         .ok(Boolean.FALSE)
                         .error(validationError)
+                        .status(AgentToolExecutionStatus.FAILED)
                         .build();
                 toolResults.add(toolResult);
                 memory.addToolOutput(call.getCallId(), output);
@@ -391,7 +399,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             }
             normalized.add(AgentToolCall.builder()
                     .callId(callId)
-                    .name(trimToNull(call.getName()) == null ? "tool" : call.getName().trim())
+                    .name(trimToNull(call.getName()))
                     .arguments(call.getArguments())
                     .type(call.getType())
                     .metadata(call.getMetadata() == null
@@ -400,6 +408,186 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             index++;
         }
         return normalized;
+    }
+
+    /**
+     * Keeps the protocol-specific assistant item and the runtime's normalized calls on the same
+     * call-id. AgentModelClient implementations normally return maps, but ChatMessage and
+     * Responses ResponseItem values are also valid memory entries, so all three representations
+     * are aligned here without imposing one provider format on the generic runtime.
+     */
+    private List<Object> alignMemoryItems(List<Object> memoryItems, List<AgentToolCall> normalizedCalls) {
+        if (memoryItems == null || memoryItems.isEmpty()
+                || normalizedCalls == null || normalizedCalls.isEmpty()) {
+            return memoryItems;
+        }
+        ToolCallMatcher matcher = new ToolCallMatcher(normalizedCalls);
+        List<Object> aligned = new ArrayList<Object>(memoryItems.size());
+        for (Object item : memoryItems) {
+            if (item instanceof Map) {
+                aligned.add(alignMap((Map<?, ?>) item, matcher));
+            } else if (item instanceof ChatMessage) {
+                aligned.add(alignChatMessage((ChatMessage) item, matcher));
+            } else if (item instanceof ResponseItem) {
+                aligned.add(alignResponseItem((ResponseItem) item, matcher));
+            } else {
+                aligned.add(item);
+            }
+        }
+        return aligned;
+    }
+
+    private ChatMessage alignChatMessage(ChatMessage message, ToolCallMatcher matcher) {
+        if (message == null || message.getToolCalls() == null) {
+            return message;
+        }
+        for (ToolCall toolCall : message.getToolCalls()) {
+            if (toolCall == null) {
+                continue;
+            }
+            ToolCall.Function function = toolCall.getFunction();
+            AgentToolCall normalized = matcher.match(toolCall.getId(),
+                    function == null ? null : function.getName(),
+                    function == null ? null : function.getArguments());
+            if (normalized != null) {
+                toolCall.setId(normalized.getCallId());
+            }
+        }
+        return message;
+    }
+
+    private ResponseItem alignResponseItem(ResponseItem item, ToolCallMatcher matcher) {
+        if (item == null || !"function_call".equals(item.getType())) {
+            return item;
+        }
+        AgentToolCall normalized = matcher.match(item.getCallId(), item.getName(), item.getArguments());
+        if (normalized != null) {
+            item.setCallId(normalized.getCallId());
+        }
+        return item;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> alignMap(Map<?, ?> source, ToolCallMatcher matcher) {
+        Map<String, Object> copy = new LinkedHashMap<String, Object>();
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            if (entry.getKey() != null) {
+                copy.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+
+        Object rawToolCalls = source.get("tool_calls");
+        if (rawToolCalls instanceof List) {
+            List<Object> calls = new ArrayList<Object>();
+            for (Object rawCall : (List<Object>) rawToolCalls) {
+                if (!(rawCall instanceof Map)) {
+                    calls.add(rawCall);
+                    continue;
+                }
+                Map<?, ?> callMap = (Map<?, ?>) rawCall;
+                Map<String, Object> callCopy = new LinkedHashMap<String, Object>();
+                for (Map.Entry<?, ?> entry : callMap.entrySet()) {
+                    if (entry.getKey() != null) {
+                        callCopy.put(String.valueOf(entry.getKey()), entry.getValue());
+                    }
+                }
+                Map<?, ?> function = callMap.get("function") instanceof Map
+                        ? (Map<?, ?>) callMap.get("function") : null;
+                AgentToolCall normalized = matcher.match(
+                        stringValue(callMap.get("id")),
+                        stringValue(function == null ? callMap.get("name") : function.get("name")),
+                        stringValue(function == null ? callMap.get("arguments") : function.get("arguments")));
+                if (normalized != null) {
+                    callCopy.put("id", normalized.getCallId());
+                }
+                calls.add(callCopy);
+            }
+            copy.put("tool_calls", calls);
+        }
+
+        String type = stringValue(source.get("type"));
+        if ("function_call".equals(type)) {
+            AgentToolCall normalized = matcher.match(stringValue(source.get("call_id")),
+                    stringValue(source.get("name")), stringValue(source.get("arguments")));
+            if (normalized != null) {
+                copy.put("call_id", normalized.getCallId());
+            }
+        } else if ("tool_use".equals(type)) {
+            AgentToolCall normalized = matcher.match(stringValue(source.get("id")),
+                    stringValue(source.get("name")), stringValue(source.get("input")));
+            if (normalized != null) {
+                copy.put("id", normalized.getCallId());
+            }
+        }
+
+        Object rawContent = source.get("content");
+        if (rawContent instanceof List) {
+            List<Object> content = new ArrayList<Object>();
+            for (Object part : (List<Object>) rawContent) {
+                content.add(part instanceof Map ? alignMap((Map<?, ?>) part, matcher) : part);
+            }
+            copy.put("content", content);
+        }
+        return copy;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static final class ToolCallMatcher {
+        private final List<AgentToolCall> calls;
+        private final boolean[] matched;
+
+        private ToolCallMatcher(List<AgentToolCall> calls) {
+            this.calls = calls;
+            this.matched = new boolean[calls.size()];
+        }
+
+        private AgentToolCall match(String callId, String name, String arguments) {
+            String normalizedId = trim(callId);
+            if (normalizedId != null) {
+                for (int i = 0; i < calls.size(); i++) {
+                    AgentToolCall candidate = calls.get(i);
+                    if (!matched[i] && normalizedId.equals(trim(candidate.getCallId()))) {
+                        return use(i);
+                    }
+                }
+            }
+            String normalizedName = trim(name);
+            String normalizedArguments = trim(arguments);
+            if (normalizedName != null) {
+                for (int i = 0; i < calls.size(); i++) {
+                    AgentToolCall candidate = calls.get(i);
+                    if (matched[i] || !normalizedName.equals(trim(candidate.getName()))) {
+                        continue;
+                    }
+                    if (normalizedArguments == null
+                            || normalizedArguments.equals(trim(candidate.getArguments()))) {
+                        return use(i);
+                    }
+                }
+            }
+            for (int i = 0; i < calls.size(); i++) {
+                if (!matched[i]) {
+                    return use(i);
+                }
+            }
+            return null;
+        }
+
+        private AgentToolCall use(int index) {
+            matched[index] = true;
+            return calls.get(index);
+        }
+
+        private static String trim(String value) {
+            if (value == null) {
+                return null;
+            }
+            String trimmed = value.trim();
+            return trimmed.isEmpty() ? null : trimmed;
+        }
     }
 
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
@@ -428,7 +616,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         AgentOptions options = context.getOptions();
         String systemPrompt = mergeText(context.getSystemPrompt(), runtimeInstructions());
 
-        List<Object> tools = context.getToolRegistry() == null ? null : context.getToolRegistry().getTools();
+        List<Object> tools = visibleTools(context);
         List<Object> promptItems = projectItems(context, memory.getItems(), step, listener, runId, sessionId, turnId);
         AgentPrompt.AgentPromptBuilder builder = AgentPrompt.builder()
                 .model(context.getModel())
@@ -449,6 +637,20 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 .streamExecution(options == null ? null : options.getStreamExecution());
 
         return builder.build();
+    }
+
+    /**
+     * Returns the model-facing registry snapshot. The executor continues to
+     * use the full context registry; visibility is intentionally a request
+     * projection rather than an authorization mechanism.
+     */
+    protected List<Object> visibleTools(AgentContext context) {
+        if (context == null || context.getToolRegistry() == null) {
+            return null;
+        }
+        List<Object> registered = context.getToolRegistry().getTools();
+        AgentToolVisibility visibility = context.getToolVisibility();
+        return visibility == null ? registered : visibility.filter(registered);
     }
 
     protected List<Object> projectItems(AgentContext context, List<Object> items, int step, AgentListener listener) {
@@ -681,6 +883,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         }
         if (result.getCallId() == null && call != null) {
             result.setCallId(call.getCallId());
+        }
+        if (result.getOutput() == null) {
+            result.setOutput("");
         }
         if (result.getStatus() == null) {
             result.setStatus(result.getOutput() != null && result.getOutput().startsWith("TOOL_ERROR")

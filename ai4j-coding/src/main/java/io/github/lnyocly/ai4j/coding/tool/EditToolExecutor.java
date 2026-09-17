@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.coding.tool;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
@@ -25,7 +26,15 @@ public class EditToolExecutor implements ToolExecutor {
         JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
         String path = safeTrim(arguments.getString("path"));
         if (isBlank(path)) {
-            throw new IllegalArgumentException("path is required");
+            throw invalid("edit requires a non-empty path", null);
+        }
+        if (!arguments.containsKey("old_string") || arguments.get("old_string") == null
+                || !(arguments.get("old_string") instanceof String)) {
+            throw invalid("edit requires old_string as a string", null);
+        }
+        if (!arguments.containsKey("new_string") || arguments.get("new_string") == null
+                || !(arguments.get("new_string") instanceof String)) {
+            throw invalid("edit requires new_string as a string", null);
         }
         String oldString = arguments.containsKey("old_string") && arguments.get("old_string") != null
                 ? arguments.getString("old_string")
@@ -34,29 +43,40 @@ public class EditToolExecutor implements ToolExecutor {
                 ? arguments.getString("new_string")
                 : "";
         Boolean replaceAll = arguments.getBoolean("replaceAll");
+        if (arguments.containsKey("replaceAll") && arguments.get("replaceAll") != null
+                && !(arguments.get("replaceAll") instanceof Boolean)) {
+            throw invalid("edit replaceAll must be a boolean", null);
+        }
         boolean all = replaceAll != null && replaceAll;
 
         if (oldString.isEmpty()) {
-            throw new IllegalArgumentException("old_string is required and must not be empty");
+            throw invalid("old_string is required and must not be empty", null);
         }
         if (oldString.equals(newString)) {
-            throw new IllegalArgumentException("old_string and new_string are identical; nothing to change");
+            throw invalid("old_string and new_string are identical; nothing to change", null);
         }
 
-        Path file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
+        Path file;
+        try {
+            file = WorkspacePathGuard.resolveForWrite(workspaceContext, path);
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (IllegalArgumentException input) {
+            throw invalid("edit path is invalid: " + message(input), input);
+        }
         if (!Files.exists(file)) {
-            throw new IllegalArgumentException("File does not exist: " + path);
+            throw invalid("File does not exist: " + path, null);
         }
         if (Files.isDirectory(file)) {
-            throw new IllegalArgumentException("Target is a directory: " + path);
+            throw invalid("Target is a directory: " + path, null);
         }
 
         String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
 
         int occurrences = countOccurrences(content, oldString);
         if (occurrences == 0) {
-            throw new IllegalArgumentException(
-                    "old_string not found in file: " + path + ". Ensure whitespace and indentation match exactly.");
+            throw invalid(
+                    "old_string not found in file: " + path + ". Ensure whitespace and indentation match exactly.", null);
         }
 
         int replacements;
@@ -66,10 +86,10 @@ public class EditToolExecutor implements ToolExecutor {
             replacements = occurrences;
         } else {
             if (occurrences > 1) {
-                throw new IllegalArgumentException(
+                throw invalid(
                         "old_string is not unique — found " + occurrences
                                 + " occurrences in " + path
-                                + ". Provide more surrounding context to make it unique, or set replaceAll=true.");
+                                + ". Provide more surrounding context to make it unique, or set replaceAll=true.", null);
             }
             updated = content.replace(oldString, newString);
             replacements = 1;
@@ -103,7 +123,17 @@ public class EditToolExecutor implements ToolExecutor {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
             return new JSONObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            JSONObject arguments = JSON.parseObject(rawArguments);
+            if (arguments == null) {
+                throw invalid("edit arguments must be a JSON object", null);
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw invalid("edit arguments must be valid JSON: " + message(parseFailure), parseFailure);
+        }
     }
 
     private static String safeTrim(String value) {
@@ -112,5 +142,13 @@ public class EditToolExecutor implements ToolExecutor {
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private AgentToolInputException invalid(String message, Throwable cause) {
+        return cause == null ? new AgentToolInputException(message) : new AgentToolInputException(message, cause);
+    }
+
+    private String message(Throwable failure) {
+        return failure == null || failure.getMessage() == null ? "invalid input" : failure.getMessage();
     }
 }

@@ -24,9 +24,14 @@ esac
 # javac.exe needs Windows-style paths for the classpath under Git Bash/MSYS.
 REPO_ROOT_WIN="$(cygpath -w "$REPO_ROOT" 2>/dev/null || echo "$REPO_ROOT")"
 CLASSES_WIN="$(cygpath -w "$CLASSES" 2>/dev/null || echo "$CLASSES")"
+CODING_CLASSES_WIN="$(cygpath -w "$REPO_ROOT/ai4j-coding/target/classes" 2>/dev/null || echo "$REPO_ROOT/ai4j-coding/target/classes")"
+HARNESS_CLASSES_WIN="$(cygpath -w "$REPO_ROOT/ai4j-harness/target/classes" 2>/dev/null || echo "$REPO_ROOT/ai4j-harness/target/classes")"
+AGENT_CLASSES_WIN="$(cygpath -w "$REPO_ROOT/ai4j-agent/target/classes" 2>/dev/null || echo "$REPO_ROOT/ai4j-agent/target/classes")"
+CORE_CLASSES_WIN="$(cygpath -w "$REPO_ROOT/ai4j/target/classes" 2>/dev/null || echo "$REPO_ROOT/ai4j/target/classes")"
+EXTENSION_CLASSES_WIN="$(cygpath -w "$REPO_ROOT/ai4j-extension-api/target/classes" 2>/dev/null || echo "$REPO_ROOT/ai4j-extension-api/target/classes")"
 
 build_classpath() {
-    if [ ! -f "$CP_FILE" ]; then
+    if [ ! -s "$CP_FILE" ]; then
         mkdir -p "$TARGET"
         (cd "$REPO_ROOT" && mvn -q -pl ai4j-coding -am dependency:build-classpath \
             -Dmdep.outputFile="$CP_FILE")
@@ -42,7 +47,9 @@ compile_bridge() {
         stale=1
     fi
     if [ "$stale" = "1" ]; then
-        local full_cp="$REPO_ROOT_WIN/ai4j-coding/target/classes$CP_SEP$(cat "$CP_FILE")"
+        # Put reactor output before Maven's local SNAPSHOT jars so a bridge
+        # build always observes the source currently checked out.
+        local full_cp="$CODING_CLASSES_WIN$CP_SEP$HARNESS_CLASSES_WIN$CP_SEP$AGENT_CLASSES_WIN$CP_SEP$CORE_CLASSES_WIN$CP_SEP$EXTENSION_CLASSES_WIN$CP_SEP$(cat "$CP_FILE")"
         # Java 8 baseline: prefer --release 8 (JDK 9+), fall back on JDK 8.
         if ! javac --release 8 -encoding UTF-8 -cp "$full_cp" -d "$CLASSES" "$SRC" 2>/dev/null; then
             javac -source 8 -target 8 -encoding UTF-8 -cp "$full_cp" -d "$CLASSES" "$SRC"
@@ -59,8 +66,8 @@ case "${1:-run}" in
     run)
         build_classpath
         compile_bridge
-        # build-classpath lists dependencies only; add the coding module itself.
-        local_cp="$CLASSES_WIN$CP_SEP$REPO_ROOT_WIN/ai4j-coding/target/classes$CP_SEP$(cat "$CP_FILE")"
+        # build-classpath lists dependencies only; add current reactor modules.
+        local_cp="$CLASSES_WIN$CP_SEP$CODING_CLASSES_WIN$CP_SEP$HARNESS_CLASSES_WIN$CP_SEP$AGENT_CLASSES_WIN$CP_SEP$CORE_CLASSES_WIN$CP_SEP$EXTENSION_CLASSES_WIN$CP_SEP$(cat "$CP_FILE")"
         exec java -cp "$local_cp" "$MAIN_CLASS"
         ;;
     *)
