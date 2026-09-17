@@ -2076,7 +2076,7 @@ public class CodeCommandTest {
             String rendered = output.toString(StandardCharsets.UTF_8.name());
             Assert.assertEquals(0, exitCode);
             Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
-            Assert.assertTrue("Missing cancellation notice (interruptResult=" + interruptResult + ") in: " + rendered,
+            Assert.assertTrue("Missing cancellation notice (interruptResult=" + interruptResult + ", turnId=" + turnId + ") in: " + rendered,
                     rendered.contains("Conversation interrupted by user."));
             Assert.assertFalse(rendered.contains("slow chat stream completed"));
             Assert.assertEquals(2, handler.getReadLineCalls());

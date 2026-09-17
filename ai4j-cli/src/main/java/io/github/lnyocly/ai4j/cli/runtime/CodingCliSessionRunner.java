@@ -4431,7 +4431,7 @@ public class CodingCliSessionRunner {
             }
         }
         boolean interrupted = isMainBufferTurnInterrupted(turnId);
-        System.err.println("DBG-CALLER interrupted=" + interrupted + " failure=" + (failure[0] == null ? "null" : failure[0].getClass().getName()));
+        System.err.println("DBG-CALLER turnId=" + turnId + " interrupted=" + interrupted + " failure=" + (failure[0] == null ? "null" : failure[0].getClass().getName()));
         if (interrupted) {
             try {
                 handleMainBufferTurnInterrupted(session, turnId);
@@ -4449,6 +4449,7 @@ public class CodingCliSessionRunner {
     }
 
     private void registerMainBufferTurn(String turnId, Thread worker) {
+        System.err.println("DBG-REGISTER turnId=" + turnId + " thread=" + worker);
         synchronized (mainBufferTurnInterruptLock) {
             activeMainBufferTurnId = turnId;
             activeMainBufferTurnThread = worker;
