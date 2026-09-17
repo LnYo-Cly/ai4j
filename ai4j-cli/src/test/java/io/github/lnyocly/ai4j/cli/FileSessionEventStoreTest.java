@@ -54,4 +54,49 @@ public class FileSessionEventStoreTest {
         store.delete("session-alpha");
         assertTrue(store.list("session-alpha", 10, null).isEmpty());
     }
+
+    @Test
+    public void shouldTailEventsIncrementallyFromByteOffset() throws Exception {
+        Path eventDir = temporaryFolder.newFolder("session-events").toPath();
+        FileSessionEventStore store = new FileSessionEventStore(eventDir);
+
+        SessionEventTail missing = store.tailEvents("session-beta", 0L);
+        assertTrue(missing.getEvents().isEmpty());
+        assertEquals(0L, missing.getNextOffset());
+
+        store.append(SessionEvent.builder()
+                .sessionId("session-beta")
+                .type(SessionEventType.SESSION_CREATED)
+                .timestamp(100L)
+                .summary("created")
+                .build());
+        store.append(SessionEvent.builder()
+                .sessionId("session-beta")
+                .type(SessionEventType.USER_MESSAGE)
+                .timestamp(200L)
+                .summary("user")
+                .build());
+
+        SessionEventTail first = store.tailEvents("session-beta", 0L);
+        assertEquals(2, first.getEvents().size());
+        assertEquals(SessionEventType.SESSION_CREATED, first.getEvents().get(0).getType());
+        assertEquals(SessionEventType.USER_MESSAGE, first.getEvents().get(1).getType());
+        assertTrue(first.getNextOffset() > 0L);
+
+        SessionEventTail idle = store.tailEvents("session-beta", first.getNextOffset());
+        assertTrue(idle.getEvents().isEmpty());
+        assertEquals(first.getNextOffset(), idle.getNextOffset());
+
+        store.append(SessionEvent.builder()
+                .sessionId("session-beta")
+                .type(SessionEventType.ERROR)
+                .timestamp(300L)
+                .summary("err")
+                .build());
+
+        SessionEventTail delta = store.tailEvents("session-beta", first.getNextOffset());
+        assertEquals(1, delta.getEvents().size());
+        assertEquals(SessionEventType.ERROR, delta.getEvents().get(0).getType());
+        assertTrue(delta.getNextOffset() > first.getNextOffset());
+    }
 }

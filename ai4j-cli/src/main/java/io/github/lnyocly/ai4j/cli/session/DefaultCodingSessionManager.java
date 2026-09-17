@@ -260,6 +260,11 @@ public class DefaultCodingSessionManager implements CodingSessionManager {
                 .build();
     }
 
+    @Override
+    public SessionEventTail tailEvents(String sessionId, long byteOffset) throws IOException {
+        return eventStore.tailEvents(sessionId, byteOffset);
+    }
+
     private void rememberRunId(ManagedCodingSession session) {
         if (session == null || isBlank(session.getSessionId()) || isBlank(session.getRunId())) {
             return;

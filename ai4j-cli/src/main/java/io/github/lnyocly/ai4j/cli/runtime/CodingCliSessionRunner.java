@@ -35,6 +35,7 @@ import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxBinding;
 import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxCommand;
 import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxSessionResolver;
 import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
+import io.github.lnyocly.ai4j.cli.session.SessionEventTail;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
 import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
 
@@ -103,6 +104,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -149,6 +151,8 @@ public class CodingCliSessionRunner {
     private List<String> tuiTree = new ArrayList<String>();
     private List<String> tuiCommands = new ArrayList<String>();
     private List<SessionEvent> tuiEvents = new ArrayList<SessionEvent>();
+    private final Map<String, Long> tuiEventPositions = new HashMap<String, Long>();
+    private String tuiEventSessionId;
     private List<String> tuiReplay = new ArrayList<String>();
     private List<String> tuiTeamBoard = new ArrayList<String>();
     private String selectedPersistedTeamId;
@@ -2482,6 +2486,7 @@ public class CodingCliSessionRunner {
             }
             if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
                 setTuiCachedEvents(events);
+                tuiEventPositions.remove(session.getSessionId());
                 return;
             }
             if (events.isEmpty()) {
@@ -4164,7 +4169,23 @@ public class CodingCliSessionRunner {
             return;
         }
         try {
-            setTuiCachedEvents(sessionManager.listEvents(session.getSessionId(), null, null));
+            String sessionId = session.getSessionId();
+            Long position = sessionId.equals(tuiEventSessionId)
+                    ? tuiEventPositions.get(sessionId)
+                    : null;
+            tuiEventSessionId = sessionId;
+            SessionEventTail tail = sessionManager.tailEvents(sessionId, position == null ? 0L : position.longValue());
+            if (tail == null || tail.getNextOffset() < 0L) {
+                setTuiCachedEvents(tail == null ? null : tail.getEvents());
+                tuiEventPositions.remove(sessionId);
+                return;
+            }
+            tuiEventPositions.put(sessionId, tail.getNextOffset());
+            if (position == null || tail.getNextOffset() == 0L) {
+                setTuiCachedEvents(tail.getEvents());
+            } else if (tail.getEvents() != null && !tail.getEvents().isEmpty()) {
+                appendTuiCachedEvents(tail.getEvents());
+            }
         } catch (IOException ex) {
             terminal.errorln("Failed to refresh session events: " + ex.getMessage());
         }
@@ -4291,6 +4312,16 @@ public class CodingCliSessionRunner {
 
     private void setTuiCachedEvents(List<SessionEvent> events) {
         this.tuiEvents = events == null ? new ArrayList<SessionEvent>() : new ArrayList<SessionEvent>(events);
+    }
+
+    private void appendTuiCachedEvents(List<SessionEvent> events) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+        if (tuiEvents == null) {
+            tuiEvents = new ArrayList<SessionEvent>();
+        }
+        tuiEvents.addAll(events);
     }
 
     private void setTuiCachedReplay(List<String> replayLines) {
