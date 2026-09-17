@@ -262,10 +262,10 @@ public class RedisVectorStore implements VectorStore {
         IndexOptions options = IndexOptions.defaultOptions().setDefinition(definition);
         try {
             jedis.ftCreate(config.getIndexName(), options, schema);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             String message = e.getMessage() == null ? "" : e.getMessage();
             if (!message.contains("already exists")) {
-                throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
+                throw e;
             }
         }
         indexReady = true;

@@ -48,7 +48,7 @@ public class BuiltInToolContext {
     @Builder.Default
     private long processStopGraceMs = 1000L;
 
-    private transient BuiltInProcessRegistry processRegistry;
+    private transient volatile BuiltInProcessRegistry processRegistry;
 
     /**
      * Source-compatible constructor retained for callers compiled before restricted Skill reads.
