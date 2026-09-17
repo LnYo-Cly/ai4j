@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.coding.loop;
 
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
+import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.coding.CodingAgentRequest;
@@ -72,9 +73,11 @@ public class CodingAgentLoopController {
         int turns = 0;
         int autoFollowUps = 0;
         String continuationPrompt = null;
+        final boolean[] turnError = new boolean[]{false};
 
         while (true) {
             throwIfInterrupted();
+            turnError[0] = false;
             if (hasPositiveLimit(policy.getMaxTotalTurns()) && turns >= policy.getMaxTotalTurns()) {
                 CodingLoopDecision forcedStop = stopDecision(turns, CodingStopReason.MAX_TOTAL_TURNS_REACHED,
                         "Stopped after reaching the total turn limit.");
@@ -86,7 +89,8 @@ public class CodingAgentLoopController {
                         currencyMismatch ? null : currency, !currencyMismatch, turns, autoFollowUps, forcedStop);
             }
 
-            AgentListener effectiveListener = listener == null ? null : new StepOffsetAgentListener(listener, totalSteps);
+            AgentListener effectiveListener = listener == null ? null
+                    : new ErrorTrackingAgentListener(new StepOffsetAgentListener(listener, totalSteps), turnError);
             CodingAgentResult turnResult = stream
                     ? session.runSingleTurnStream(turnRequest(request, continuationPrompt), effectiveListener, continuationPrompt)
                     : session.runSingleTurn(turnRequest(request, continuationPrompt), continuationPrompt);
@@ -137,7 +141,8 @@ public class CodingAgentLoopController {
                     session.getLastAutoCompactResult(),
                     session.getLastAutoCompactError(),
                     turns,
-                    autoFollowUps
+                    autoFollowUps,
+                    turnError[0]
             );
             session.recordLoopDecision(decision);
 
@@ -164,7 +169,8 @@ public class CodingAgentLoopController {
                                       CodingSessionCompactResult compactResult,
                                       Exception compactError,
                                       int turnNumber,
-                                      int autoFollowUpsSoFar) {
+                                      int autoFollowUpsSoFar,
+                                      boolean turnError) {
         String outputText = result == null || result.getOutputText() == null ? "" : result.getOutputText().trim();
         boolean compactApplied = compactResult != null;
         boolean approvalBlocked = hasApprovalBlockedResult(result);
@@ -211,6 +217,14 @@ public class CodingAgentLoopController {
         }
         if (toolError && !looksLikeCompleted(outputText)) {
             return stopDecision(turnNumber, CodingStopReason.BLOCKED_BY_TOOL_ERROR, "Stopped because a tool failed and the task could not continue safely.")
+                    .toBuilder()
+                    .compactApplied(compactApplied)
+                    .build();
+        }
+        if (turnError && outputText.isEmpty()
+                && (result == null || result.getToolCalls() == null || result.getToolCalls().isEmpty())) {
+            return stopDecision(turnNumber, CodingStopReason.ERROR,
+                    "Stopped because the model reported an error before producing output.")
                     .toBuilder()
                     .compactApplied(compactApplied)
                     .build();
@@ -480,6 +494,27 @@ public class CodingAgentLoopController {
     private void throwIfInterrupted() throws InterruptedException {
         if (Thread.currentThread().isInterrupted()) {
             throw new InterruptedException("Coding agent loop interrupted");
+        }
+    }
+
+    private static final class ErrorTrackingAgentListener implements AgentListener {
+
+        private final AgentListener delegate;
+        private final boolean[] errorSeen;
+
+        private ErrorTrackingAgentListener(AgentListener delegate, boolean[] errorSeen) {
+            this.delegate = delegate;
+            this.errorSeen = errorSeen;
+        }
+
+        @Override
+        public void onEvent(AgentEvent event) {
+            if (event != null && AgentEventType.ERROR == event.getType() && errorSeen != null) {
+                errorSeen[0] = true;
+            }
+            if (delegate != null) {
+                delegate.onEvent(event);
+            }
         }
     }
 

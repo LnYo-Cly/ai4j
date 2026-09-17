@@ -84,3 +84,7 @@ HarnessBench metric-report regression: `python -m unittest discover -s benchmark
 2026-09-13 CLI cancellation integration: `CodeCommandTest` covers stream cancellation and visible user notice; clear the handled interrupt before terminal output.
 
 HarnessBench unlimited-step regression: `bash benchmarks/harnessbench-ai4j/tests/run_protocol_tests.sh` covers 40 tool calls followed by completion in a single execution, for Harness and Bare with both unset and explicit-zero step budgets. Explicit finite-slice coverage remains. Wall-clock budgets apply independently of step budgets.
+
+2026-09-17 coding-loop model-error stop: `mvn -pl ai4j-coding -Dtest=StreamErrorLoopReproTest -DskipTests=false test` (2 tests). A turn whose stream published an ERROR event and produced no output/tool calls now stops with `CodingStopReason.ERROR` instead of auto-continuing — including when `maxAutoFollowUps`/`maxTotalTurns` are configured `0` (unlimited).
+
+2026-09-17 CLI event-tail regression: `mvn -pl ai4j-cli -Dtest=FileSessionEventStoreTest -DskipTests=false test` covers byte-offset `tailEvents` (incremental, EOF-idle, missing-file). `CodingCliSessionRunner.refreshTuiEvents` now tails the session event file instead of reparsing all events per agent event; `SessionEventStore.tailEvents`/`CodingSessionManager.tailEvents` default to full-list fallback (`nextOffset=-1`) for non-file stores.

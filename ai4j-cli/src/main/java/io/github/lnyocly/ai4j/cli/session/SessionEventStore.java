@@ -12,6 +12,10 @@ public interface SessionEventStore {
 
     List<SessionEvent> list(String sessionId, Integer limit, Long offset) throws IOException;
 
+    default SessionEventTail tailEvents(String sessionId, long byteOffset) throws IOException {
+        return new SessionEventTail(list(sessionId, null, null), -1L);
+    }
+
     void delete(String sessionId) throws IOException;
 
     Path getDirectory();

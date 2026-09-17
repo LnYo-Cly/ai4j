@@ -36,6 +36,10 @@ public interface CodingSessionManager {
 
     List<SessionEvent> listEvents(String sessionId, Integer limit, Long offset) throws IOException;
 
+    default SessionEventTail tailEvents(String sessionId, long byteOffset) throws IOException {
+        return new SessionEventTail(listEvents(sessionId, null, null), -1L);
+    }
+
     Path getDirectory();
 }
 

@@ -31,10 +31,12 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 
 - Use `ha` (Harness Anything) for all new project-management work.
 - `harness/` is the active private HA ledger with its own nested Git repository. `.harness/` is generated projection/cache state. Neither belongs in code PRs; commit ledger changes inside `harness/` separately when they must be retained.
-- Before substantive work, run `ha doctor --json`, ensure the project has been initialized with `ha init --name ai4j-sdk`, and inspect `ha status --json` / `ha check --profile target-project --strict --json`.
+- Before substantive work, treat `ha capabilities --json` and the relevant `ha <domain> --help` output as the command authority. If this workspace is not initialized, run `ha init --repo-id ai4j-sdk --person-id <person-id> --display-name "<display-name>"`; then inspect `ha daemon status`, `ha agenda`, `ha agent list --json`, `ha squad list --json`, and `ha runtime instance list`.
+- The current thin CLI does not expose the historical `ha doctor --json`, `ha status --json`, or `ha check --profile target-project --strict --json` preflight commands. Do not copy those commands from older task records; use the live capabilities/help output instead.
 - HA writes require explicit actor attribution. Agents use `HARNESS_ACTOR=agent:<id>` or an explicit agent actor; humans use `ha --actor human:<id>`. Do not export a human actor for child processes. Configure `HARNESS_GIT_AUTHOR_NAME` and `HARNESS_GIT_AUTHOR_EMAIL` for local ledger commits.
 - The normal write path is the daemon-backed CLI. `HARNESS_DAEMON_MODE=direct` is only for bootstrap, recovery, or isolated tests, and must carry `HARNESS_DIRECT_WRITE_REASON=recovery|test`.
-- Complete work through the current HA lifecycle: claim an Execution, record progress/evidence, obtain a typed human review/consent when required, and run `ha task complete`. `ha task review` is legacy compatibility lint, not the approval gate.
+- Fable identities are installed from packages containing `agent.json` or `squad.json`: validate with `ha agent validate --source <dir>` or `ha squad validate --source <dir>`, install with `ha agent install --source <dir>` or `ha squad install --source <dir>`, then read back with `ha agent list --json` plus `ha agent inspect <id>` or `ha squad list --json` plus `ha squad inspect <id>`. Dispatch uses a declared identity plus a ready runtime instance; the instance is an execution resource, not the agent or squad identity.
+- Complete work through the current HA lifecycle: acquire an Execution lease, record progress/evidence, obtain a typed human review/consent when required, and run `ha task complete`. `ha task review` is legacy compatibility lint, not the approval gate.
 
 ## Hard Rules
 
@@ -141,7 +143,7 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 | Regression / smoke / verification work | `docs/11-REFERENCE/testing-standard.md` and `docs/05-TEST-QA/Regression-SSoT.md` |
 | Planning / task tracking / SSoT maintenance | `docs/11-REFERENCE/harness-anything-standard.md` and `AGENTS.md` |
 | Walkthrough closeout | `docs/11-REFERENCE/harness-anything-standard.md` and the HA task `closeout.md` |
-| Worktree setup / branch isolation / multi-agent coordination | `docs/11-REFERENCE/harness-anything-standard.md` and `ha worktree --help` |
+| Worktree setup / branch isolation / multi-agent coordination | `docs/11-REFERENCE/harness-anything-standard.md`, `ha capabilities --json`, and `git worktree --help` |
 
 ## Harness Files
 
@@ -163,13 +165,13 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 
 ## Execution Flow
 
-1. Run `ha doctor --json`, inspect `ha status --json`, and initialize/register the active HA workspace when needed.
-2. Create and claim an HA task before substantive editing; use `ha worktree create --task <id>` when isolation is needed.
+1. Run `ha capabilities --json`, inspect `ha daemon status` / `ha agenda`, and initialize/register the active HA workspace when needed.
+2. Create, pin, and start an HA task before substantive editing: use `ha task create`, `ha task pin <task-id>`, and `ha task start <task-id>`; use the repository-supported `git worktree` flow when isolation is needed.
 3. Record scope and meaningful progress with `ha task progress append`; promote durable observations to Facts and architectural choices to Decisions.
 4. Implement in the narrowest correct module boundary.
 5. Run targeted regression based on `docs/05-TEST-QA/Cadence-Ledger.md` and record command evidence in the HA task.
 6. Update the tracked Regression SSoT/Cadence Ledger if a fixed gate or evidence scope changes.
-7. Move the task to review, obtain typed human review/consent where required, and run `ha task complete <id>`.
+7. Submit the Execution, obtain typed independent review and owner consent, and run `ha task complete <id>`; use `ha task closeout` when a canonical closeout packet is available.
 8. Commit outer code/docs separately from the private `harness/` ledger; keep `.harness/` untracked and rebuildable.
 
 ## Review Focus
