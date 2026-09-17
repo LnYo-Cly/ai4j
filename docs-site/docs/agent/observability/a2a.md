@@ -16,6 +16,20 @@ be exposed as an A2A service. JDK stdlib only, no new dependency.
 > cancellation, push configuration, and standard security schemes have deterministic local
 > regression coverage. Task state is intentionally in-memory and is not restart-durable.
 
+## 实现机理全景图（交互式）
+
+下图把 `ai4j-agent` 的 `a2a` 包实现串成一条链路：左侧是 ai4j 的客户端角色（`Agent` → `A2ATool` → `A2AClient`），中间是外部 A2A 对端（任意实现的外部 Agent），右侧是 `A2AServer` 进程内的 `CardHandler`/`TaskHandler`/内存任务表/`workerExecutor`/SSE 扇出/push 投递。编号边 ①–④ 标出双向通信：ai4j 调用对端（①）、对端发现与调用本端（②③）、SSE 事件回到订阅方（④）。可点顶部「引导视图」按 发现与协商 → 任务执行 → 事件扇出 三段浏览，节点上的「来源」徽标对应 `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/` 下的真实源码位置。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/a2a-mechanism.html')}
+  title="ai4j A2A 实现机理交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
 ## 0. 先理解 A2A 是什么（它和 SubAgent/Teams 完全不同）
 
 A2A 是一个**跨实现的开放协议**，不是一个进程内的调用机制。理解它的关键在与前面两个能力的对比：
