@@ -1,6 +1,6 @@
 # Cadence Ledger - ai4j-sdk
 
-> Last updated: 2026-09-15
+> Last updated: 2026-09-17
 > Defines which regression gates should be revisited when each repository surface changes.
 > Historical rows may retain the exact pre-HA command used as evidence; new work must use HA.
 
@@ -123,6 +123,8 @@
 
 | SRB-082 | 2026-09-15 | interleaved streamed tool callback identity | bind `showToolArgs` compatibility callback state to the provider fragment's resolved pending call, preserving id/name/argument pairing under interleaved calls while retaining final aggregation behavior | RG-001 pass; RG-002 pass; RG-003 pass; RG-013 pass; RG-014 pass; RG-015 pass; RG-016 pass; RG-017 pass | `mvn -pl ai4j -Dtest=SseListenerTest -Dsurefire.failIfNoSpecifiedTests=false -DskipTests=false test` passed 8/0/0 after adding four interleaved callback tuple assertions; the complete affected coding reactor remained green with core 351 tests (1 existing optional skip), agent 407 (10 existing skips), Harness 83, and coding 146 (2 existing skips). No provider credential or live benchmark score was used. | SRB-083 after the next executable/docs-site surface change |
 | SRB-083 | 2026-09-16 | Harness lease-heartbeat suppression hardening | catch `Throwable` in `AgentHarness.scheduleHeartbeat` so one transient `Error` can never permanently suppress all future fixed-rate lease renewals | RG-013 pass | `mvn -pl ai4j-harness "-Dtest=AgentHarnessTest" "-Dsurefire.failIfNoSpecifiedTests=false" "-DskipTests=false" test` passed 19/0/0; new `heartbeatSurvivesTransientStoreError` injects an `AssertionError` into the first heartbeat store update and asserts subsequent renewals still land so the slice completes; `heartbeatRenewsExecutionLeaseDuringLongSlices` retains baseline renewal coverage. Live-path diagnosis evidence under `.tmp/hb-0916/` (failed raw run plus black-hole reproduction renewing every 20s); no provider credential committed. | SRB-084 after the next executable/docs-site surface change |
+
+| SRB-084 | 2026-09-17 | Harness artifact fidelity prompt and declarative contract gate | add shared `HarnessPrompts.fidelity()` fragment injected by Harness adapters and a domain-declared `ArtifactContract` evaluated by reusable `ArtifactContractGate` (existence, required fields, allowed-field whitelist, verbatim identifiers, source row coverage, controlled vocabulary, CSV/JSON parsing); add three synthetic business scenarios as deterministic internal-oracle fixtures | RG-013 pass; RG-003 pass | `mvn -pl ai4j-harness -am -DskipTests=false test` passed 100/0/0/0 including `ArtifactContractGateTest` 9/9 and `SyntheticScenarioContractTest` 6/6; `mvn -pl ai4j-harness,ai4j-coding -am "-Dtest=AgentHarnessTest,CodingAgentHarnessTest" "-Dsurefire.failIfNoSpecifiedTests=false" "-DskipTests=false" test` passed 32/0/0; no provider credential or live benchmark score was used | SRB-085 after the next executable/docs-site surface change |
 
 2026-09-13 HarnessBench metric reporting: run the report unittest suite for raw-run schema or aggregation changes. Added null/invalid-type process-exit regression alongside five-metric and missing-value coverage. No new live benchmark score is claimed.
 
