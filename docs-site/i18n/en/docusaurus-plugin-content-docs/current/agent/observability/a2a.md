@@ -17,6 +17,27 @@ be exposed as an A2A service. JDK stdlib only, no new dependency.
 > cancellation, push configuration, and standard security schemes have deterministic local
 > regression coverage. Task state is intentionally in-memory and is not restart-durable.
 
+## Implementation Mechanism (interactive diagram)
+
+The diagram below traces the `a2a` package implementation in `ai4j-agent` end to end: ai4j's client
+role on the left (`Agent` → `A2ATool` → `A2AClient`), an external A2A peer in the middle (any
+compliant agent implementation), and the `A2AServer` process on the right (`CardHandler` /
+`TaskHandler` / in-memory task table / `workerExecutor` / SSE fan-out / push delivery). The numbered
+edges ①–④ show the bidirectional communication: ai4j calling the peer (①), the peer discovering and
+invoking ai4j (②③), and SSE events returning to the subscriber (④). Use the guided views at the top
+to walk through discovery & negotiation → task execution → event fan-out; the "source" badge on each
+node maps to real code under `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/`.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/a2a-mechanism.html')}
+  title="ai4j A2A implementation mechanism — interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom and export included).
+
 ## 0. First understand what A2A is (it is completely different from SubAgent/Teams)
 
 A2A is a **cross-implementation open protocol**, not an in-process call mechanism. The key to understanding it is to contrast it with the previous two capabilities:
