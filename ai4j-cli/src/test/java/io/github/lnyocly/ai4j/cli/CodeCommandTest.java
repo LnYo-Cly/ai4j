@@ -2269,6 +2269,7 @@ public class CodeCommandTest {
                 @Override
                 public void cancel() {
                     cancelled.countDown();
+                    eventSourceListener.getCountDownLatch().countDown();
                 }
             }, new okhttp3.Response.Builder()
                     .request(new Request.Builder().url("http://localhost/test").build())

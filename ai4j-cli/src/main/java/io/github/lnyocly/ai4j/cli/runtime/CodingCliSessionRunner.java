@@ -175,6 +175,7 @@ public class CodingCliSessionRunner {
     private volatile Thread activeMainBufferTurnThread;
     private volatile String activeMainBufferTurnId;
     private volatile boolean activeMainBufferTurnInterrupted;
+    private volatile boolean mainBufferTurnInterruptNoticeIssued;
     private CodingRuntime bridgedRuntime;
     private CodingTaskSessionEventBridge codingTaskEventBridge;
 
@@ -904,7 +905,6 @@ public class CodingCliSessionRunner {
     }
 
     private void runTurn(ManagedCodingSession session, String input, ActiveTuiTurn activeTurn, String turnId) throws Exception {
-        System.err.println("[DBG-RUNTURN-ENTER] " + turnId + " interrupted=" + isTurnInterrupted(turnId, activeTurn));
         if (isTurnInterrupted(turnId, activeTurn)) {
             if (activeTurn == null && isMainBufferTurnInterrupted(turnId)) {
                 handleMainBufferTurnInterrupted(session, turnId);
@@ -947,7 +947,6 @@ public class CodingCliSessionRunner {
             printAutoCompactOutcome(session, turnId);
             renderTui(session);
         } catch (Exception ex) {
-            System.err.println("[DBG-RUNTURN-CATCH] " + turnId + " ex=" + ex.getClass().getName() + " interrupted=" + isMainBufferTurnInterrupted(turnId));
             if (activeTurn != null && activeTurn.isInterrupted()) {
                 return;
             }
@@ -4397,12 +4396,6 @@ public class CodingCliSessionRunner {
                 }
             }
         }, "ai4j-main-buffer-turn");
-        worker.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                System.err.println("[DBG-WORKER-DIED] " + turnId + " " + e.getClass().getName() + ": " + e.getMessage());
-            }
-        });
         registerMainBufferTurn(turnId, worker);
         JlineShellTerminalIO shellTerminal = terminal instanceof JlineShellTerminalIO
                 ? (JlineShellTerminalIO) terminal
@@ -4437,7 +4430,12 @@ public class CodingCliSessionRunner {
             }
         }
         boolean interrupted = isMainBufferTurnInterrupted(turnId);
-        System.err.println("[DBG-JOINED] " + turnId + " interrupted=" + interrupted + " failure=" + (failure[0] == null ? "none" : failure[0].getClass().getName()));
+        if (interrupted) {
+            try {
+                handleMainBufferTurnInterrupted(session, turnId);
+            } catch (Exception ignored) {
+            }
+        }
         clearMainBufferTurnInterruptState(turnId);
         if (failure[0] != null && !interrupted) {
             throw failure[0];
@@ -4453,6 +4451,7 @@ public class CodingCliSessionRunner {
             activeMainBufferTurnId = turnId;
             activeMainBufferTurnThread = worker;
             activeMainBufferTurnInterrupted = false;
+            mainBufferTurnInterruptNoticeIssued = false;
         }
     }
 
@@ -4464,6 +4463,7 @@ public class CodingCliSessionRunner {
             activeMainBufferTurnId = null;
             activeMainBufferTurnThread = null;
             activeMainBufferTurnInterrupted = false;
+            mainBufferTurnInterruptNoticeIssued = false;
         }
     }
 
@@ -4481,7 +4481,6 @@ public class CodingCliSessionRunner {
         thread.interrupt();
         ChatModelClient.cancelActiveStream(thread);
         ResponsesModelClient.cancelActiveStream(thread);
-        System.err.println("[DBG-INTERRUPT-ISSUED] " + turnId);
         return true;
     }
 
@@ -4507,8 +4506,13 @@ public class CodingCliSessionRunner {
     }
 
     private void handleMainBufferTurnInterrupted(ManagedCodingSession session, String turnId) {
+        synchronized (mainBufferTurnInterruptLock) {
+            if (mainBufferTurnInterruptNoticeIssued) {
+                return;
+            }
+            mainBufferTurnInterruptNoticeIssued = true;
+        }
         // Cancellation is handled here; clear it before terminal I/O can observe it.
-        System.err.println("[DBG-HANDLER] " + turnId + " on " + Thread.currentThread().getName());
         Thread.interrupted();
         try {
             mainBufferTurnPrinter.clearTransient();
