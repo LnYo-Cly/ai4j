@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.agent.AgentBuilder;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRuntime;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
+import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicies;
 import io.github.lnyocly.ai4j.agent.permission.AgentPermissionPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.HandoffPolicy;
 import io.github.lnyocly.ai4j.agent.subagent.StaticSubAgentRegistry;
@@ -162,7 +163,10 @@ public class CodingAgentBuilder {
      * including the built-in workspace tools. The default remains the
      * AgentBuilder SAFE policy; automated hosts should opt into
      * {@code AgentPermissionPolicies.allowAll()} only when their surrounding
-     * Harness or approval layer is the authoritative gate.
+     * Harness or approval layer is the authoritative gate. When a
+     * {@code CodingAgentOptions.toolExecutorDecorator} is installed and no
+     * explicit policy is set, the builder applies {@code allowAll()} so the
+     * decorator stays the authoritative gate.
      */
     public CodingAgentBuilder permissionPolicy(AgentPermissionPolicy permissionPolicy) {
         this.permissionPolicy = permissionPolicy;
@@ -391,6 +395,11 @@ public class CodingAgentBuilder {
         }
         if (permissionPolicyExplicitlySet) {
             delegate.permissionPolicy(permissionPolicy);
+        } else if (resolvedCodingOptions.getToolExecutorDecorator() != null) {
+            // A tool executor decorator is the host's authoritative tool-call
+            // gate (e.g. the CLI approval decorator). Opt out of the agent-level
+            // SAFE default so it does not double-gate or bypass that layer.
+            delegate.permissionPolicy(AgentPermissionPolicies.allowAll());
         }
         for (AgentLifecycleHook hook : additionalLifecycleHooks) {
             delegate.lifecycleHook(hook);
