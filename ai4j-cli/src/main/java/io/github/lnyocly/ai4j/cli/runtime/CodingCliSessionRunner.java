@@ -4523,10 +4523,12 @@ public class CodingCliSessionRunner {
         } finally {
             try {
                 emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
-            } finally {
                 synchronized (mainBufferTurnInterruptLock) {
                     mainBufferTurnInterruptNoticeIssued = true;
                 }
+            } catch (RuntimeException | Error ignored) {
+                // Leave the notice unclaimed so a later caller-side fallback
+                // can still try to surface the interruption message.
             }
         }
     }
