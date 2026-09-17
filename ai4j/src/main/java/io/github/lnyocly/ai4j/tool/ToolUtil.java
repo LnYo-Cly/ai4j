@@ -988,8 +988,6 @@ public class ToolUtil {
                 items.setType("object");
             }
             property.setItems(items);
-        } else if (Map.class.isAssignableFrom(fieldType)) {
-            property.setType("object");
         } else {
             property.setType("object");
         }

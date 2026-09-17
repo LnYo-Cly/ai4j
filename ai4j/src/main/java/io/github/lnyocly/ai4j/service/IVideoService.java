@@ -16,6 +16,14 @@ public interface IVideoService {
 
     VideoResponse retrieve(String baseUrl, String apiKey, String id) throws Exception;
 
+    /**
+     * Retrieve with the upstream model name. Some gateways (e.g. Agnes) require
+     * {@code model_name} on the polling query; the default ignores it.
+     */
+    default VideoResponse retrieve(String baseUrl, String apiKey, String id, String model) throws Exception {
+        return retrieve(baseUrl, apiKey, id);
+    }
+
     VideoResponse retrieve(String id) throws Exception;
 
     InputStream content(String baseUrl, String apiKey, String id) throws Exception;

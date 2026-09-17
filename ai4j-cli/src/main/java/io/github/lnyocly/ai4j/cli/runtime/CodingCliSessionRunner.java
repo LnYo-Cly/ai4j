@@ -35,6 +35,7 @@ import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxBinding;
 import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxCommand;
 import io.github.lnyocly.ai4j.cli.sandbox.CliSandboxSessionResolver;
 import io.github.lnyocly.ai4j.cli.session.CodingSessionManager;
+import io.github.lnyocly.ai4j.cli.session.SessionEventTail;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
 import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
 
@@ -103,6 +104,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -149,6 +151,8 @@ public class CodingCliSessionRunner {
     private List<String> tuiTree = new ArrayList<String>();
     private List<String> tuiCommands = new ArrayList<String>();
     private List<SessionEvent> tuiEvents = new ArrayList<SessionEvent>();
+    private final Map<String, Long> tuiEventPositions = new HashMap<String, Long>();
+    private String tuiEventSessionId;
     private List<String> tuiReplay = new ArrayList<String>();
     private List<String> tuiTeamBoard = new ArrayList<String>();
     private String selectedPersistedTeamId;
@@ -171,6 +175,7 @@ public class CodingCliSessionRunner {
     private volatile Thread activeMainBufferTurnThread;
     private volatile String activeMainBufferTurnId;
     private volatile boolean activeMainBufferTurnInterrupted;
+    private volatile boolean mainBufferTurnInterruptNoticeIssued;
     private CodingRuntime bridgedRuntime;
     private CodingTaskSessionEventBridge codingTaskEventBridge;
 
@@ -901,6 +906,9 @@ public class CodingCliSessionRunner {
 
     private void runTurn(ManagedCodingSession session, String input, ActiveTuiTurn activeTurn, String turnId) throws Exception {
         if (isTurnInterrupted(turnId, activeTurn)) {
+            if (activeTurn == null && isMainBufferTurnInterrupted(turnId)) {
+                handleMainBufferTurnInterrupted(session, turnId);
+            }
             return;
         }
         beginTuiTurn(input);
@@ -2479,6 +2487,7 @@ public class CodingCliSessionRunner {
             }
             if (options.getUiMode() == CliUiMode.TUI && !useMainBufferInteractiveShell()) {
                 setTuiCachedEvents(events);
+                tuiEventPositions.remove(session.getSessionId());
                 return;
             }
             if (events.isEmpty()) {
@@ -4161,7 +4170,23 @@ public class CodingCliSessionRunner {
             return;
         }
         try {
-            setTuiCachedEvents(sessionManager.listEvents(session.getSessionId(), null, null));
+            String sessionId = session.getSessionId();
+            Long position = sessionId.equals(tuiEventSessionId)
+                    ? tuiEventPositions.get(sessionId)
+                    : null;
+            tuiEventSessionId = sessionId;
+            SessionEventTail tail = sessionManager.tailEvents(sessionId, position == null ? 0L : position.longValue());
+            if (tail == null || tail.getNextOffset() < 0L) {
+                setTuiCachedEvents(tail == null ? null : tail.getEvents());
+                tuiEventPositions.remove(sessionId);
+                return;
+            }
+            tuiEventPositions.put(sessionId, tail.getNextOffset());
+            if (position == null || tail.getNextOffset() == 0L) {
+                setTuiCachedEvents(tail.getEvents());
+            } else if (tail.getEvents() != null && !tail.getEvents().isEmpty()) {
+                appendTuiCachedEvents(tail.getEvents());
+            }
         } catch (IOException ex) {
             terminal.errorln("Failed to refresh session events: " + ex.getMessage());
         }
@@ -4290,6 +4315,16 @@ public class CodingCliSessionRunner {
         this.tuiEvents = events == null ? new ArrayList<SessionEvent>() : new ArrayList<SessionEvent>(events);
     }
 
+    private void appendTuiCachedEvents(List<SessionEvent> events) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+        if (tuiEvents == null) {
+            tuiEvents = new ArrayList<SessionEvent>();
+        }
+        tuiEvents.addAll(events);
+    }
+
     private void setTuiCachedReplay(List<String> replayLines) {
         this.tuiReplay = replayLines == null ? new ArrayList<String>() : new ArrayList<String>(replayLines);
     }
@@ -4395,6 +4430,12 @@ public class CodingCliSessionRunner {
             }
         }
         boolean interrupted = isMainBufferTurnInterrupted(turnId);
+        if (interrupted) {
+            try {
+                handleMainBufferTurnInterrupted(session, turnId);
+            } catch (Exception ignored) {
+            }
+        }
         clearMainBufferTurnInterruptState(turnId);
         if (failure[0] != null && !interrupted) {
             throw failure[0];
@@ -4410,6 +4451,7 @@ public class CodingCliSessionRunner {
             activeMainBufferTurnId = turnId;
             activeMainBufferTurnThread = worker;
             activeMainBufferTurnInterrupted = false;
+            mainBufferTurnInterruptNoticeIssued = false;
         }
     }
 
@@ -4421,6 +4463,7 @@ public class CodingCliSessionRunner {
             activeMainBufferTurnId = null;
             activeMainBufferTurnThread = null;
             activeMainBufferTurnInterrupted = false;
+            mainBufferTurnInterruptNoticeIssued = false;
         }
     }
 
@@ -4463,15 +4506,31 @@ public class CodingCliSessionRunner {
     }
 
     private void handleMainBufferTurnInterrupted(ManagedCodingSession session, String turnId) {
+        synchronized (mainBufferTurnInterruptLock) {
+            if (mainBufferTurnInterruptNoticeIssued) {
+                return;
+            }
+        }
         // Cancellation is handled here; clear it before terminal I/O can observe it.
         Thread.interrupted();
-        mainBufferTurnPrinter.clearTransient();
-        tuiLiveTurnState.onError(null, TURN_INTERRUPTED_MESSAGE);
-        appendEvent(session, SessionEventType.ERROR, turnId, null, TURN_INTERRUPTED_MESSAGE, payloadOf(
-                "error", TURN_INTERRUPTED_MESSAGE
-        ));
-        renderTuiIfEnabled(session);
-        emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+        try {
+            mainBufferTurnPrinter.clearTransient();
+            tuiLiveTurnState.onError(null, TURN_INTERRUPTED_MESSAGE);
+            appendEvent(session, SessionEventType.ERROR, turnId, null, TURN_INTERRUPTED_MESSAGE, payloadOf(
+                    "error", TURN_INTERRUPTED_MESSAGE
+            ));
+            renderTuiIfEnabled(session);
+        } finally {
+            try {
+                emitMainBufferError(TURN_INTERRUPTED_MESSAGE);
+                synchronized (mainBufferTurnInterruptLock) {
+                    mainBufferTurnInterruptNoticeIssued = true;
+                }
+            } catch (RuntimeException | Error ignored) {
+                // Leave the notice unclaimed so a later caller-side fallback
+                // can still try to surface the interruption message.
+            }
+        }
     }
 
     private boolean hasActiveTuiTurn() {

@@ -166,9 +166,17 @@ public class SeedanceVideoService implements IVideoService {
         if (request.getInputImage() != null) {
             content.add(mediaItem("image_url", request.getInputImage(), "first_frame"));
         }
+        if (request.getLastFrame() != null) {
+            content.add(mediaItem("image_url", request.getLastFrame(), "last_frame"));
+        }
         if (request.getReferenceImages() != null) {
             for (String image : request.getReferenceImages()) {
                 content.add(mediaItem("image_url", image, "reference_image"));
+            }
+        }
+        if (request.getReferenceAudios() != null) {
+            for (String audio : request.getReferenceAudios()) {
+                content.add(mediaItem("audio_url", audio, "reference_audio"));
             }
         }
         Map<String, Object> extra = request.getExtraFields();

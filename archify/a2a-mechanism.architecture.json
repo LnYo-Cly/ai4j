@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ai4j A2A 实现机理（ai4j-agent · a2a 包）",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1050, 445],
+    "repository": {
+      "url": "https://github.com/LnYo-Cly/ai4j",
+      "provider": "github",
+      "revision": "9218cd651c0e91526517aa7413028fd8ec31258e"
+    },
+    "views": [
+      {
+        "id": "discovery",
+        "label": "发现与协商",
+        "focus": ["a2a_client", "external_peer", "card_handler", "task_handler"],
+        "note": "双向发现：ai4j 取对端 AgentCard；对端同样取本端 /.well-known/*。"
+      },
+      {
+        "id": "execution",
+        "label": "任务执行",
+        "focus": ["task_handler", "task_store", "worker", "agent_runtime"],
+        "note": "SendMessage 注册任务后交给 worker 线程跑 Agent 会话，状态写回任务表。"
+      },
+      {
+        "id": "fanout",
+        "label": "事件扇出",
+        "focus": ["task_store", "sse_fanout", "push_delivery", "webhook", "external_peer"],
+        "note": "同一事件流同时扇出到 SSE 订阅者与 push 回调，任务表仍是唯一事实源。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "host_agent", "type": "backend", "label": "宿主 Agent",
+      "sublabel": "ReAct / CodeAct",
+      "tag": "调用方", "pos": [30, 40], "size": [150, 55]
+    },
+    {
+      "id": "a2a_tool", "type": "backend", "label": "A2ATool",
+      "sublabel": "ToolExecutor 包装",
+      "tag": "a2a", "pos": [30, 135], "size": [150, 55],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2ATool.java" }
+      ]
+    },
+    {
+      "id": "a2a_client", "type": "backend", "label": "A2AClient",
+      "sublabel": "discover · send · SSE · push",
+      "tag": "a2a", "pos": [30, 225], "size": [150, 60],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AClient.java" }
+      ]
+    },
+    {
+      "id": "external_peer", "type": "external", "label": "外部 Agent（A2A 对端）",
+      "sublabel": "任意 A2A 实现 · 互为客户端/服务端",
+      "pos": [218, 158], "size": [152, 76]
+    },
+    {
+      "id": "card_handler", "type": "backend", "label": "CardHandler · AgentCard",
+      "sublabel": "GET /.well-known/* · 双卡缓存",
+      "tag": "无鉴权", "pos": [400, 40], "size": [190, 64],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 508, "end_line": 532 },
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/AgentCard.java" }
+      ]
+    },
+    {
+      "id": "task_handler", "type": "backend", "label": "TaskHandler · JSON-RPC",
+      "sublabel": "POST / · 鉴权 → 方法分发",
+      "tag": "鉴权入口", "pos": [410, 160], "size": [180, 72],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 534, "end_line": 695 }
+      ]
+    },
+    {
+      "id": "worker", "type": "backend", "label": "workerExecutor",
+      "sublabel": "≤32 线程 · 状态迁移",
+      "tag": "a2a", "pos": [630, 70], "size": [170, 62],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 722, "end_line": 765 }
+      ]
+    },
+    {
+      "id": "task_store", "type": "database", "label": "内存任务表 A2ATaskRecord",
+      "sublabel": "ConcurrentHashMap ≤1024",
+      "tag": "唯一事实源", "pos": [630, 160], "size": [170, 72],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 1272, "end_line": 1383 },
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/TaskState.java" }
+      ]
+    },
+    {
+      "id": "agent_runtime", "type": "backend", "label": "Agent / AgentSession",
+      "sublabel": "run / runStreamResult",
+      "tag": "ai4j 运行时", "pos": [830, 70], "size": [170, 62],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/Agent.java" },
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java" }
+      ]
+    },
+    {
+      "id": "sse_fanout", "type": "messagebus", "label": "SseSink 扇出",
+      "sublabel": "text/event-stream · ≤64",
+      "tag": "流式", "pos": [630, 290], "size": [170, 62],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 1397, "end_line": 1446 }
+      ]
+    },
+    {
+      "id": "push_delivery", "type": "messagebus", "label": "PushNotificationDelivery",
+      "sublabel": "≤16 线程 · 公网 HTTPS",
+      "tag": "推送", "pos": [830, 290], "size": [170, 62],
+      "sources": [
+        { "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/a2a/A2AServer.java", "line": 1203, "end_line": 1254 }
+      ]
+    },
+    {
+      "id": "webhook", "type": "external", "label": "外部回调端点（调用方所有）",
+      "sublabel": "HTTPS 回调 endpoint",
+      "pos": [830, 376], "size": [170, 50]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region", "label": "ai4j 进程 · 客户端角色",
+      "wraps": ["host_agent", "a2a_tool", "a2a_client"], "pad": 18
+    },
+    {
+      "kind": "region", "label": "ai4j 进程 · A2AServer 服务端角色（JDK HttpServer）",
+      "wraps": ["card_handler", "task_handler", "task_store", "worker", "agent_runtime", "sse_fanout", "push_delivery"], "pad": 20
+    },
+    {
+      "kind": "security-group", "label": "鉴权后内域（X-API-Key / Bearer）",
+      "wraps": ["task_store", "worker", "agent_runtime", "sse_fanout", "push_delivery"], "pad": 14
+    }
+  ],
+  "connections": [
+    { "from": "host_agent", "to": "a2a_tool", "label": "AgentToolCall → execute", "labelAt": [105, 115] },
+    { "from": "a2a_tool", "to": "a2a_client", "label": "sendTask(message)", "labelAt": [105, 207] },
+    { "from": "a2a_client", "to": "external_peer", "label": "① 调用对端", "variant": "emphasis", "labelAt": [255, 248] },
+    { "from": "external_peer", "to": "card_handler", "label": "② 对端发现本端：GET /.well-known/agent-card.json" },
+    { "from": "external_peer", "to": "task_handler", "label": "③ 对端调用本端：POST JSON-RPC", "variant": "emphasis", "labelAt": [390, 250] },
+    { "from": "task_handler", "to": "task_store", "label": "registerTask · Get/List/Cancel", "labelAt": [605, 245] },
+    { "from": "task_handler", "to": "worker", "label": "startTask", "labelAt": [620, 146] },
+    { "from": "worker", "to": "task_store", "label": "transition + artifact + latch", "labelAt": [740, 146] },
+    { "from": "worker", "to": "agent_runtime", "label": "run / runStreamResult", "labelAt": [885, 145] },
+    { "from": "task_store", "to": "sse_fanout", "label": "publish statusUpdate / artifactUpdate", "labelAt": [645, 270] },
+    { "from": "task_store", "to": "push_delivery", "label": "publish → 回调投递", "toSide": "top", "labelAt": [850, 265], "variant": "dashed" },
+    { "from": "sse_fanout", "to": "external_peer", "label": "④ SSE 回订阅方：data:{task|statusUpdate|artifactUpdate}", "fromSide": "bottom", "toSide": "bottom", "via": [[715, 400], [294, 400]], "labelAt": [470, 393], "variant": "dashed" },
+    { "from": "push_delivery", "to": "webhook", "label": "POST · X-A2A-Notification-Token", "labelAt": [965, 364], "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan", "title": "协议面与任务生命周期",
+      "items": [
+        "角色对称：A2AClient/A2ATool 调任意对端 Agent；A2AServer 同时被任意 A2A 客户端调用——同一 JSON-RPC 协议面",
+        "方法：SendMessage · SendStreamingMessage · GetTask · ListTasks · CancelTask · SubscribeToTask · PushConfig CRUD",
+        "发现 /.well-known/agent-card.json（回退 agent.json）；别名 /tasks/send · /message:send · /message/send 同步 run 不入任务表",
+        "TaskState：SUBMITTED→WORKING→{INPUT|AUTH_REQUIRED}→COMPLETED/FAILED/CANCELED/REJECTED；内存表 ≤1024，CancelTask→future.cancel(true)"
+      ]
+    },
+    {
+      "dot": "violet", "title": "事件扇出、推送与限额",
+      "items": [
+        "SSE：首帧完整 Task 快照（锁内注册防丢帧）→ statusUpdate / artifactUpdate；每任务 ≤64 订阅",
+        "Push ≤32 配置/任务：同事件体 POST，X-A2A-Notification-Token + AuthenticationInfo；回调默认仅公网 HTTPS（SSRF 防护）",
+        "线程池 HTTP 64 · worker 32 · callback 16；请求体 / SSE 事件 ≤1MB；A2ATool=远端 Agent→ToolExecutor；A2ASkillMapper→AgentCard.skills"
+      ]
+    }
+  ]
+}

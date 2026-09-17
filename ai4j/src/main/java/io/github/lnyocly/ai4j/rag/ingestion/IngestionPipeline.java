@@ -250,7 +250,7 @@ public class IngestionPipeline {
             if (chunk == null || isBlank(chunk.getContent())) {
                 continue;
             }
-            Integer chunkIndex = chunk.getChunkIndex() == null ? ordinal : chunk.getChunkIndex();
+            Integer chunkIndex = chunk.getChunkIndex() == null ? Integer.valueOf(ordinal) : chunk.getChunkIndex();
             normalized.add(RagChunk.builder()
                     .chunkId(firstNonBlank(chunk.getChunkId(), buildChunkId(document.getDocumentId(), chunkIndex)))
                     .documentId(firstNonBlank(chunk.getDocumentId(), document.getDocumentId()))
@@ -374,7 +374,7 @@ public class IngestionPipeline {
                 continue;
             }
             Integer index = object.getIndex();
-            indexed.put(index == null ? fallbackIndex : index, object.getEmbedding());
+            indexed.put(index == null ? Integer.valueOf(fallbackIndex) : index, object.getEmbedding());
             fallbackIndex++;
         }
         if (indexed.size() < expectedSize) {
