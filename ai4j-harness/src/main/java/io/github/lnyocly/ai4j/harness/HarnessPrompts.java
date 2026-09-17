@@ -26,6 +26,21 @@ public final class HarnessPrompts {
     }
 
     /**
+     * Output-fidelity contract shared by every Harness-governed agent, whatever
+     * its domain: artifacts derived from source materials must reuse the
+     * sources' own identifiers, field names, and controlled vocabulary rather
+     * than renaming, abbreviating, or restating them under new labels.
+     */
+    public static String fidelity() {
+        return "When producing structured output derived from source materials, preserve the exact identifiers, "
+                + "field names, and controlled vocabulary used in those sources. Reuse existing identifier values "
+                + "verbatim rather than inventing new ids; keep declared field and column names unchanged; use only "
+                + "status, category, and role terms that the source defines; and do not add semantically duplicate "
+                + "fields or columns that restate the same classification under another name. When a source lists "
+                + "enumerated values, roles, or codes, copy them exactly rather than paraphrasing.";
+    }
+
+    /**
      * Additional guidance for a session restored from a durable checkpoint.
      * This is deliberately separate so fresh sessions are not told that they
      * have prior state when they do not.

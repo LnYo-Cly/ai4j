@@ -1,0 +1,8 @@
+order_id,status,action,note
+SO-88412,done,skipped_completed,"already shipped"
+SO-88413,failed,retried,"timeout, retry queued"
+SO-88414,failed,rejected_unrecoverable,"stock mismatch"
+SO-88415,waiting,processed_new,"new attempt"
+SO-88416,failed,retried,"timeout, retry queued"
+SO-88417,done,skipped_completed,"already shipped"
+SO-88418,waiting,processed_new,"new attempt"

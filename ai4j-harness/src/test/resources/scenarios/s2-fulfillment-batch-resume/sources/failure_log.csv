@@ -1,0 +1,4 @@
+order_id,error_code,error_class,occurred_at
+SO-88413,PICK_TIMEOUT,transient,2024-06-15T03:12:44
+SO-88414,STOCK_MISMATCH,fatal,2024-06-15T03:18:02
+SO-88416,PICK_TIMEOUT,transient,2024-06-15T03:31:19

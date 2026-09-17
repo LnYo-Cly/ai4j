@@ -1,0 +1,6 @@
+ticket_id,customer_tier,category,opened_at,age_hours,last_reply_minutes,sentiment,subject
+TK-2024-11831,vip,billing,2024-06-14T09:12,31,180,angry,"Double charge on invoice INV-90210"
+TK-2024-11842,standard,shipping,2024-06-14T10:45,30,45,neutral,"Package shows delivered but missing"
+TK-2024-11877,enterprise,integration,2024-06-14T14:03,27,245,frustrated,"SSO login loop after IdP cert rotation"
+TK-2024-11890,standard,account,2024-06-15T08:20,9,30,calm,"Address change request"
+TK-2024-11904,vip,billing,2024-06-15T11:37,6,95,angry,"Refund promised last week not received"
