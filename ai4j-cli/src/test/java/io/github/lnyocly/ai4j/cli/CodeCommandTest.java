@@ -2074,6 +2074,9 @@ public class CodeCommandTest {
 
             int exitCode = future.get(5, TimeUnit.SECONDS);
             String rendered = output.toString(StandardCharsets.UTF_8.name());
+            System.err.println("===RENDERED-BEGIN===");
+            System.err.println(rendered);
+            System.err.println("===RENDERED-END===");
             Assert.assertEquals(0, exitCode);
             Assert.assertTrue(cancelled.await(1, TimeUnit.SECONDS));
             Assert.assertTrue("Missing cancellation notice in: " + rendered,
