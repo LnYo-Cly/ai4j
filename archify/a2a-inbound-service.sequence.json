@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ai4j 入站服务：外部项目如何调 A2AServer",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 560],
+    "views": [
+      {
+        "id": "card-and-auth",
+        "label": "取卡与鉴权",
+        "focus": ["external_client", "task_handler"],
+        "note": "外部调用方先取 AgentCard 对齐能力与认证，再 POST JSON-RPC。"
+      },
+      {
+        "id": "task-execution",
+        "label": "任务执行",
+        "focus": ["task_handler", "task_store", "worker"],
+        "note": "SendMessage 注册任务交 worker 线程执行本地 Agent 会话。"
+      },
+      {
+        "id": "observe-and-cancel",
+        "label": "观测与取消",
+        "focus": ["external_client", "task_handler", "task_store", "caller_webhook"],
+        "note": "SSE 订阅、push 回调、轮询、取消都是对同一任务记录的读通道。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "external_client", "type": "external", "label": "外部调用方", "sublabel": "任意 A2A 客户端" },
+    { "id": "task_handler", "type": "backend", "label": "TaskHandler", "sublabel": "POST / · 校验 · 鉴权" },
+    { "id": "task_store", "type": "database", "label": "任务注册表", "sublabel": "A2ATaskRecord · ≤1024" },
+    { "id": "worker", "type": "backend", "label": "Worker 执行器", "sublabel": "≤32 线程 · run" },
+    { "id": "caller_webhook", "type": "messagebus", "label": "调用方回调", "sublabel": "HTTPS webhook" }
+  ],
+  "segments": [
+    { "from": 158, "to": 360, "label": "取卡 · 认证 · 任务执行" },
+    { "from": 366, "to": 494, "label": "订阅 · 推送 · 取消" }
+  ],
+  "messages": [
+    { "from": "external_client", "to": "task_handler", "y": 180, "label": "GET /.well-known/agent-card.json（或 agent.json）", "variant": "default" },
+    { "from": "task_handler", "to": "external_client", "y": 208, "label": "AgentCard：标准卡 · streaming+push · 认证要求", "variant": "return" },
+    { "from": "external_client", "to": "task_handler", "y": 236, "label": "POST / · SendMessage{message, configuration} · 认证头", "variant": "emphasis" },
+    { "from": "task_handler", "to": "task_store", "y": 264, "label": "prepareTask → registerTask(taskId, contextId)", "variant": "default" },
+    { "from": "task_handler", "to": "worker", "y": 292, "label": "startTask → transition(WORKING)", "variant": "emphasis" },
+    { "from": "worker", "to": "task_store", "y": 320, "label": "appendArtifactText → transition(COMPLETED)", "variant": "default" },
+    { "from": "task_handler", "to": "external_client", "y": 348, "label": "result.task（未 returnImmediately 则阻塞至终态）", "variant": "return" },
+    { "from": "external_client", "to": "task_handler", "y": 376, "label": "SendStreamingMessage / SubscribeToTask（SSE）", "variant": "default" },
+    { "from": "task_handler", "to": "external_client", "y": 404, "label": "SSE：先 Task 快照再增量（锁内注册 · ≤64 订阅者）", "variant": "dashed" },
+    { "from": "external_client", "to": "task_handler", "y": 432, "label": "CreateTaskPushNotificationConfig {url, token}", "variant": "dashed" },
+    { "from": "task_store", "to": "caller_webhook", "y": 460, "label": "POST 事件 · token · Authorization（公网 HTTPS 校验）", "variant": "dashed" },
+    { "from": "external_client", "to": "task_handler", "y": 476, "label": "GetTask 轮询 · CancelTask → CANCELED + cancel(true)", "variant": "security" }
+  ],
+  "activations": [
+    { "participant": "task_handler", "from": 174, "to": 482, "type": "backend" },
+    { "participant": "task_store", "from": 258, "to": 466, "type": "database" },
+    { "participant": "worker", "from": 286, "to": 326, "type": "backend" },
+    { "participant": "caller_webhook", "from": 454, "to": 468, "type": "messagebus" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "入口校验链",
+      "items": [
+        "非 POST → 405；鉴权失败 → 401（A2AServer.java:538-548）",
+        "JSON 畸形 → -32700；jsonrpc≠\"2.0\" → -32600（:563-593）",
+        "A2A-Version 不符 → -32009；未知方法 → -32601（:597-619）"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "任务执行",
+      "items": [
+        "registerTask 锁内去重，任务容量 ≤1024（:1190-1200）",
+        "worker 池 ≤32，run / runStreamResult 驱动 AgentSession（:722-765）",
+        "MODEL_RESPONSE 事件逐条写入 artifact，终态不可逆（:737-758）"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "扇出与推送",
+      "items": [
+        "快照与订阅者注册在同一记录锁内完成，无丢帧窗口（:803-811）",
+        "每个流式响应同时发 SSE 订阅者与全部 push 配置（:1156-1170）",
+        "push 仅投公网 HTTPS 回调，5s 超时、不跟随重定向（:1216-1244）"
+      ]
+    }
+  ]
+}

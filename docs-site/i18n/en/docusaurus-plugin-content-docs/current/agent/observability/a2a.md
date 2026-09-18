@@ -38,6 +38,46 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom and export included).
 
+## How ai4j talks to external agents (sequence diagrams)
+
+The panorama above answers "what the internals look like"; the three sequence diagrams below answer "what the protocol conversation looks like": how ai4j as a client calls an external agent, how an external project calls ai4j's A2A service, and what a full cross-agent delegation chain looks like. All three share the same notation — solid arrows are request/response, dashed arrows are asynchronous events such as SSE and push, and red marks the cancellation path.
+
+### Outbound: ai4j calls an external agent
+
+`A2AClient` first fetches `GET /.well-known/agent-card.json` to discover the peer card (learning the JSON-RPC interface URL, skills, capabilities, and authentication requirements), then posts `SendMessage` to submit the task. There are three observation channels — `SendStreamingMessage`/`SubscribeToTask` opens an SSE stream, `CreateTaskPushNotificationConfig` lets the peer call back the caller's own webhook, and `GetTask`/`ListTasks` polling is the fallback. When the card does not advertise a standard JSON-RPC interface, the client falls back to the legacy `POST /tasks/send` path. Every request carries the `A2A-Version: 1.0` header plus `X-API-Key`/`Bearer` credentials.
+
+<iframe
+  src={useBaseUrl('/archify/a2a-outbound-call.html')}
+  title="Outbound sequence: ai4j calling an external A2A agent"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-outbound-call.html')} target="_blank" rel="noopener noreferrer">Open the outbound sequence diagram</a>
+
+### Inbound: an external project calls the ai4j A2A service
+
+An external A2A client likewise fetches `/.well-known/agent-card.json` to align capabilities and authentication, then posts `SendMessage` to `/`. `TaskHandler` runs a validation chain — non-POST → 405, bad credentials → 401, malformed JSON → -32700, `jsonrpc≠"2.0"` → -32600, mismatched `A2A-Version` → -32009 — then `registerTask` (capacity ≤1024) hands the work to `workerExecutor` (≤32 threads) running a local `AgentSession`. The peer can observe the same task via `SubscribeToTask` SSE (a full Task snapshot first, then increments), register push callbacks with `CreateTaskPushNotificationConfig` (delivered only to public HTTPS endpoints), poll with `GetTask`, or cancel with `CancelTask` (`future.cancel(true)` truly interrupts).
+
+<iframe
+  src={useBaseUrl('/archify/a2a-inbound-service.html')}
+  title="Inbound sequence: an external project calling the ai4j A2A service"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-inbound-service.html')} target="_blank" rel="noopener noreferrer">Open the inbound sequence diagram</a>
+
+### Chained collaboration: inbound + outbound in one process
+
+An ai4j process can be server and client at once: an external caller submits a task to `A2AServer`, and the local agent, mid-reasoning, delegates a subtask through `A2ATool` to a downstream external agent — an "other agent → my agent → another agent" chain. Two boundaries matter: **each hop owns an independent task** — the upstream `taskId`/`contextId` is not automatically propagated downstream (cross-hop correlation is the orchestrator's job); and **cancellation only applies to the local hop** — `CancelTask` interrupts the local session, so cancelling the downstream task requires the caller to send another `CancelTask` to that peer.
+
+<iframe
+  src={useBaseUrl('/archify/a2a-agent-mesh.html')}
+  title="Multi-agent chained collaboration sequence diagram"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-agent-mesh.html')} target="_blank" rel="noopener noreferrer">Open the chained collaboration diagram</a>
+
 ## 0. First understand what A2A is (it is completely different from SubAgent/Teams)
 
 A2A is a **cross-implementation open protocol**, not an in-process call mechanism. The key to understanding it is to contrast it with the previous two capabilities:
