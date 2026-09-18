@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "权限审批：AgentPermissionToolExecutor 判定链",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 534],
+    "views": [
+      {
+        "id": "allow",
+        "label": "ALLOW 直通",
+        "focus": ["model", "perm_exec", "policy", "delegate"],
+        "note": "ALLOW 决策直接放行到 delegate ToolExecutor。"
+      },
+      {
+        "id": "approval",
+        "label": "审批回路",
+        "focus": ["perm_exec", "host", "policy"],
+        "note": "REQUIRE_APPROVAL 且 call 元数据无 granted 标记时抛 AgentApprovalRequiredException；宿主审批层批准后重发带 granted=true 的调用。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "model", "type": "backend", "label": "AgentRuntime", "sublabel": "发起方" },
+    { "id": "perm_exec", "type": "security", "label": "权限执行器", "sublabel": "包装 delegate" },
+    { "id": "policy", "type": "security", "label": "权限策略", "sublabel": "evaluate 决策" },
+    { "id": "host", "type": "frontend", "label": "宿主审批层", "sublabel": "CLI/ACP 批准" },
+    { "id": "delegate", "type": "backend", "label": "ToolExecutor", "sublabel": "工具/MCP" }
+  ],
+  "messages": [
+    { "from": "model", "to": "perm_exec", "label": "tool_call（start/execute）", "y": 160 },
+    { "from": "perm_exec", "to": "policy", "label": "① evaluate（toolCall + 环境）", "y": 188 },
+    { "from": "policy", "to": "perm_exec", "label": "ALLOW → 直通", "variant": "dashed", "y": 216 },
+    { "from": "perm_exec", "to": "delegate", "label": "start(call)", "y": 244 },
+    { "from": "delegate", "to": "perm_exec", "label": "结果 → 回填模型", "variant": "dashed", "y": 272 },
+    { "from": "policy", "to": "perm_exec", "label": "或 REQUIRE_APPROVAL（无 granted）", "variant": "dashed", "y": 300 },
+    { "from": "perm_exec", "to": "host", "label": "抛 AgentApprovalRequiredException", "variant": "emphasis", "y": 328 },
+    { "from": "host", "to": "perm_exec", "label": "批准→重发 call+granted→再评估放行", "variant": "emphasis", "y": 356 },
+    { "from": "perm_exec", "to": "delegate", "label": "start(call) → 结果回填", "y": 384 },
+    { "from": "policy", "to": "perm_exec", "label": "或 DENY → 抛 AgentPermissionException", "variant": "dashed", "y": 412 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三种决策",
+      "items": [
+        "AgentPermissionDecisionType：ALLOW 直通 / DENY 抛 AgentPermissionException / REQUIRE_APPROVAL 视 granted 标记而定",
+        "policy 返回 null 按 DENY 处理（fail-closed）；决策基于 AgentPermissionRequest{toolCall, environment}"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "granted 元数据回路",
+      "items": [
+        "批准不落库：宿主在重发的 AgentToolCall.metadata 写 harness_approval_granted=true，executor 见标记即放行",
+        "environment 参与决策：LOCAL / SANDBOX / REMOTE_SANDBOX——同一工具在不同执行环境可有不同审批要求"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "内置策略工厂",
+      "items": [
+        "AgentPermissionPolicies：allowAll / denyAll / allowTools / denyTools / requireApprovalForTools；AgentBuilder 未显式设置时默认 SAFE",
+        "宿主自带审批层（如 CliToolApprovalDecorator）时 CodingAgentBuilder 默认 allowAll——审批责任上移给交互层"
+      ]
+    }
+  ]
+}

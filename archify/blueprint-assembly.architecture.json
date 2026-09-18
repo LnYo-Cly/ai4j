@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Blueprint 声明式装配：YAML → 校验 → AgentFactory → Agent",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "parse",
+        "label": "解析校验",
+        "focus": ["yaml", "loader", "dto", "validator", "report"],
+        "note": "P1-A：Loader 把 YAML 载入 DTO（白名单字段 + unknownFields），Validator 输出带 JSONPath 的 issues。"
+      },
+      {
+        "id": "assemble",
+        "label": "装配",
+        "focus": ["dto", "ctx", "factory", "report", "agent"],
+        "note": "P1-B：AgentFactory 复用 Validator 做闸门，依赖全部由宿主经 AgentFactoryContext 供给。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "yaml", "type": "database", "label": "blueprint.yaml", "sublabel": "version: ai4j.agent/v1", "pos": [30, 92.5], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprint.java" }] },
+    { "id": "loader", "type": "backend", "label": "AgentBlueprintLoader", "sublabel": "load(path/串/流)", "pos": [260, 90], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprintLoader.java" }] },
+    { "id": "dto", "type": "backend", "label": "AgentBlueprint", "sublabel": "11 顶层字段 DTO", "pos": [520, 90], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprint.java" }] },
+    { "id": "ctx", "type": "cloud", "label": "AgentFactoryContext", "sublabel": "宿主供给依赖", "pos": [780, 90], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentFactoryContext.java" }] },
+    { "id": "report", "type": "backend", "label": "ValidationReport", "sublabel": "issues + JSONPath", "pos": [30, 250], "size": [170, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprintValidationReport.java" }] },
+    { "id": "validator", "type": "security", "label": "AgentBlueprintValidator", "sublabel": "分项校验", "pos": [260, 250], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentBlueprintValidator.java" }] },
+    { "id": "factory", "type": "backend", "label": "AgentFactory", "sublabel": "create(bp, ctx)", "pos": [520, 250], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/blueprint/AgentFactory.java" }] },
+    { "id": "agent", "type": "backend", "label": "AgentBuilder → Agent", "sublabel": "builder.build()", "pos": [780, 380], "size": [190, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java" }] }
+  ],
+  "connections": [
+    { "from": "yaml", "to": "loader", "label": "① load", "labelAt": [230, 112] },
+    { "from": "loader", "to": "dto", "label": "② DTO", "labelAt": [485, 112] },
+    { "from": "ctx", "to": "factory", "label": "③ 宿主依赖", "fromSide": "bottom", "toSide": "right", "labelAt": [795, 240], "via": [[875, 282.5]] },
+    { "from": "dto", "to": "factory", "label": "④ create(bp,ctx)", "variant": "emphasis", "fromSide": "bottom", "labelAt": [665, 205] },
+    { "from": "factory", "to": "validator", "label": "⑤ validate()", "labelAt": [485, 275] },
+    { "from": "validator", "to": "report", "label": "⑥ issues", "labelAt": [230, 275] },
+    { "from": "report", "to": "factory", "label": "⑦ isValid? : AgentFactoryException", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "labelAt": [380, 395], "via": [[115, 360], [615, 360]] },
+    { "from": "factory", "to": "agent", "label": "⑧ 装配", "variant": "emphasis", "fromSide": "right", "toSide": "left", "labelAt": [830, 335], "via": [[760, 282.5], [760, 410]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "P1-A 文档模型与校验（不运行）",
+      "wraps": ["yaml", "loader", "dto", "validator", "report"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "P1-B 宿主装配",
+      "wraps": ["ctx", "factory", "agent"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "P1-A 只做文档",
+      "items": [
+        "Loader 白名单 11 个顶层字段（version/id/name/model/instructions/plugins/tools/session/sandbox/workflow/extensions），未知字段进 unknownFields",
+        "Validator 逐项校验：version 必须 ai4j.agent/v1、id 字符集、model/plugins/tools/session/sandbox/workflow——不创建也不运行任何 Agent"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "P1-B 宿主供给",
+      "items": [
+        "AgentFactoryContext 提供 modelClient 与各项 Supplier——Factory 不读 provider token、不解析本地 profile、不安装插件",
+        "sandbox.enabled 声明必须配合 ctx.allowSandboxDeclaration，否则抛 AgentFactoryException（不创建真实沙箱会话）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "校验闸门",
+      "items": [
+        "Factory 内部复用同一 Validator：report.isValid=false → AgentFactoryException(blueprint.validation.failed) 携带报告",
+        "每条 issue 带 JSONPath（如 $.version、$.tools[0].name）+ 错误码 + severity，便于定位非法声明"
+      ]
+    }
+  ]
+}

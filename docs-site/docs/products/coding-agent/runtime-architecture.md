@@ -18,6 +18,20 @@ tags: [concept]
 
 这页的目标不是列模块名，而是讲清楚：**每层真正持有什么状态，决定什么行为，以及它和相邻层的边界是什么。**
 
+## 实现机理图（交互式）
+
+下图把 Coding Agent 的双层循环画出来：外层 `CodingAgentLoopController` 做多轮驱动（run/runStream），内层 `runSingleTurn` 跑 ReAct，`CodingLoopPolicy` 决策继续或停止，`CodingContextPromptAssembler` 从 `WorkspaceContext` 组装提示词，`CodingSession` 聚合每轮结果与 token 消耗。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/coding-agent-loop.html')}
+  title="Coding Agent 双层循环 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/coding-agent-loop.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 先看最外层总装配入口
 
 CLI / TUI / ACP 当前真正的准备入口是：

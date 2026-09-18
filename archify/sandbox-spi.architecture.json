@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "沙箱 SPI：Provider → Session → 命令执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "provision",
+        "label": "会话供给",
+        "focus": ["spec", "provider", "impls", "session"],
+        "note": "SandboxSpec 描述需求，Provider.supports 判定能否满足，createSession 建立隔离会话。"
+      },
+      {
+        "id": "execute",
+        "label": "命令执行",
+        "focus": ["bash", "session", "result", "events"],
+        "note": "bash 工具把 ShellCommandRequest 翻译为 SandboxCommand 交给 session.execute；SandboxResult 回收 stdout/stderr/exitCode。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "spec", "type": "backend", "label": "SandboxSpec", "sublabel": "providerId/image/workspaceId", "pos": [30, 40], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/SandboxSpec.java" }] },
+    { "id": "provider", "type": "backend", "label": "SandboxProvider", "sublabel": "SPI · supports/createSession", "tag": "spi", "pos": [290, 40], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/SandboxProvider.java" }] },
+    { "id": "impls", "type": "cloud", "label": "云沙箱实现", "sublabel": "E2B · Daytona · CubeSandbox", "tag": "spi", "pos": [560, 40], "size": [220, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/e2b/E2BSandboxProvider.java" }] },
+    { "id": "bash", "type": "backend", "label": "bash 工具执行器", "sublabel": "SandboxShellCommandExecutor", "tag": "exec", "pos": [30, 172], "size": [160, 60],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/shell/SandboxShellCommandExecutor.java" }] },
+    { "id": "session", "type": "backend", "label": "SandboxSession", "sublabel": "execute/cancel/artifacts/close", "tag": "exec", "pos": [290, 170], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/SandboxSession.java" }] },
+    { "id": "coding_rt", "type": "backend", "label": "CodingSandboxRuntime", "sublabel": "session 薄包装", "tag": "exec", "pos": [30, 290], "size": [160, 60],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/sandbox/CodingSandboxRuntime.java" }] },
+    { "id": "result", "type": "backend", "label": "SandboxResult", "sublabel": "stdout/stderr/exitCode", "tag": "exec", "pos": [560, 170], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/SandboxResult.java" }] },
+    { "id": "events", "type": "messagebus", "label": "SandboxEvent", "sublabel": "会话与命令状态事件", "tag": "exec", "pos": [560, 290], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/sandbox/SandboxEvent.java" }] }
+  ],
+  "connections": [
+    { "from": "spec", "to": "provider", "label": "① supports(spec)", "labelAt": [240, 62] },
+    { "from": "provider", "to": "impls", "label": "② 三种实现", "labelAt": [520, 62] },
+    { "from": "provider", "to": "session", "label": "③ createSession", "variant": "emphasis", "labelAt": [445, 138] },
+    { "from": "bash", "to": "session", "label": "④ execute(SandboxCommand)", "variant": "emphasis", "labelAt": [240, 164] },
+    { "from": "session", "to": "result", "label": "⑤ 命令结果", "labelAt": [520, 195] },
+    { "from": "coding_rt", "to": "session", "label": "⑥ 持有 session", "variant": "dashed", "labelAt": [255, 258], "via": [[250, 320], [250, 202.5]] },
+    { "from": "session", "to": "events", "label": "⑦ 事件上报", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [520, 262], "via": [[385, 270], [655, 270]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "沙箱 SPI（ai4j-agent/sandbox）",
+      "wraps": ["spec", "provider", "impls", "session", "result", "events"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "ai4j-coding 消费侧",
+      "wraps": ["bash", "coding_rt"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "SPI 三方法",
+      "items": [
+        "getProviderId：稳定 ID，供配置/blueprint/插件清单引用；supports(spec)：能否满足该规格；createSession(spec)：建隔离会话",
+        "内置实现：E2B、Daytona、CubeSandbox——各带独立 Client/Config/Session；新增厂商只实现这一个接口"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "会话即隔离边界",
+      "items": [
+        "SandboxSession.execute(SandboxCommand)→SandboxResult{stdout/stderr/exitCode/timedOut}；cancel(commandId) 取消在跑命令",
+        "listArtifacts() 取回会话产物；close() 释放远端资源；SandboxStatus 反映会话生命周期"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "与权限/编码侧联动",
+      "items": [
+        "bash 工具经 SandboxShellCommandExecutor 把命令+工作目录+超时翻译为 SandboxCommand，并打 metadata{tool:bash, routing:ai4j-coding}",
+        "权限决策带执行环境：LOCAL / SANDBOX / REMOTE_SANDBOX——沙箱命令可与本地命令走不同审批策略"
+      ]
+    }
+  ]
+}

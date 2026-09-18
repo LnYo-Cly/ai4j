@@ -18,6 +18,20 @@ Looking at the current source, a complete run goes through at least 5 layers:
 
 The goal of this page is not to list module names, but to make clear: **what state each layer actually holds, what behavior it decides, and what its boundaries with adjacent layers are.**
 
+## Mechanism Diagram (Interactive)
+
+The diagram below shows the Coding Agent two-loop structure: the outer `CodingAgentLoopController` drives multi-turn runs (run/runStream), `runSingleTurn` executes inner ReAct turns, `CodingLoopPolicy` decides continue or stop, `CodingContextPromptAssembler` builds prompts from `WorkspaceContext`, and `CodingSession` aggregates per-turn results and token usage.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/coding-agent-loop.html')}
+  title="Coding Agent dual loop · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/coding-agent-loop.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Start with the outermost assembly entry point
 
 The real preparation entry point for CLI / TUI / ACP today is:

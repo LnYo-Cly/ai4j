@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Memory 与压缩策略：每步首的自动压缩管线",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "trigger",
+        "label": "触发时机",
+        "focus": ["runtime", "impls", "memory"],
+        "note": "每个 step 开头先 snapshot → shouldCompact？是则 compact→restore，否则原样继续——压缩失败不阻断 run。"
+      },
+      {
+        "id": "policies",
+        "label": "三种策略",
+        "focus": ["impls", "llm", "projector"],
+        "note": "LlmCompactPolicy 让模型写结构化摘要；StructuredSummary 按 ContextBudget 机械投影；Windowed 只保留尾部 N 条。"
+      },
+      {
+        "id": "prompt",
+        "label": "回填与消费",
+        "focus": ["memory", "prompt_ctx", "runtime"],
+        "note": "压缩后的 items+summary 才是 buildPrompt 的输入；事件 BEFORE/ON_COMPACT 与 MEMORY_COMPRESS 全程可观测。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "runtime", "type": "backend", "label": "AgentRuntime 步循环", "sublabel": "autoCompactIfNecessary", "pos": [30, 190], "size": [150, 70],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "memory", "type": "database", "label": "AgentMemory", "sublabel": "items + summary · snapshot/restore", "tag": "state", "pos": [240, 190], "size": [170, 70],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/AgentMemory.java" }] },
+    { "id": "prompt_ctx", "type": "backend", "label": "buildPrompt", "sublabel": "压缩后 items+summary → prompt", "tag": "model", "pos": [240, 330], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "impls", "type": "backend", "label": "CompactPolicy 策略", "sublabel": "Llm · StructuredSummary · Windowed", "tag": "compact", "pos": [520, 80], "size": [200, 110],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/compact/CompactPolicy.java" }] },
+    { "id": "llm", "type": "external", "label": "摘要模型", "sublabel": "LlmCompactPolicy 专用调用", "pos": [790, 60], "size": [170, 55] },
+    { "id": "projector", "type": "backend", "label": "ContextProjector", "sublabel": "ContextBudget 预算投影", "tag": "compact", "pos": [790, 160], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/DefaultContextProjector.java" }] },
+    { "id": "events", "type": "messagebus", "label": "事件/生命周期", "sublabel": "BEFORE/ON_COMPACT · MEMORY_COMPRESS", "pos": [790, 270], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/event/AgentEventType.java" }] }
+  ],
+  "connections": [
+    { "from": "runtime", "to": "impls", "label": "① 每步首 shouldCompact→compact", "variant": "emphasis", "labelAt": [350, 130] },
+    { "from": "impls", "to": "memory", "label": "② CompactResult→restore()", "variant": "emphasis", "labelAt": [460, 274] },
+    { "from": "impls", "to": "llm", "label": "摘要 JSON", "labelAt": [755, 100] },
+    { "from": "impls", "to": "projector", "label": "按预算投影", "labelAt": [755, 170] },
+    { "from": "runtime", "to": "memory", "label": "③ addInput/output", "labelAt": [225, 274] },
+    { "from": "memory", "to": "prompt_ctx", "label": "④ items+summary", "labelAt": [325, 300] },
+    { "from": "prompt_ctx", "to": "runtime", "label": "⑤ 下一步 prompt", "variant": "dashed", "labelAt": [190, 320], "toSide": "bottom", "via": [[105, 357.5], [105, 270]] },
+    { "from": "runtime", "to": "events", "label": "压缩事件扇出", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "labelAt": [500, 438], "via": [[105, 430], [875, 430]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "可插拔压缩实现（CompactPolicy SPI）",
+      "wraps": ["impls", "projector"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "触发与容错",
+      "items": [
+        "每个 step 开头 autoCompactIfNecessary：snapshot→shouldCompact→compact→memory.restore，再 buildPrompt（BaseAgentRuntime.java:200-202, 344-370）",
+        "压缩抛异常只记日志、用未压缩 memory 继续——绝不让压缩失败中断 run（:364-369）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "三种实现",
+      "items": [
+        "LlmCompactPolicy：保留最近 N 条，旧对话交给模型产出 {goal,completed,pending,decisions,errors,testResults,openQuestions} 结构化摘要",
+        "StructuredSummaryCompactPolicy：ContextProjector 按 ContextBudget 投影+机械拼接摘要；WindowedMemoryCompressor：只留尾部 maxItems 条"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "与 Coding 侧的关系",
+      "items": [
+        "CodingSessionCompactor 是会话级压缩（CodingAgent 外层），与本图的 step 内 CompactPolicy 是两层不同机制",
+        "CompactPolicyMemoryCompressor 把策略包装成 MemoryCompressor，手动/外部触发也走同一 CompactResult"
+      ]
+    }
+  ]
+}

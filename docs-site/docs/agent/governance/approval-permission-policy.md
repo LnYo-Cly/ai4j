@@ -12,6 +12,20 @@ tags: [concept]
 
 这不是一个真实沙箱，也不会创建 VM、容器或远端环境。它只是把工具执行前的权限判断固定成一个小而可测试的 Java API，供普通 Java Agent、后续 Blueprint、CLI/TUI 审批界面和 Sandbox SPI 复用。
 
+## 实现机理图（交互式）
+
+时序图把三种决策路径画清楚：`ALLOW` 直通执行；`REQUIRE_APPROVAL` 在无授权元数据时抛 `AgentApprovalRequiredException`，宿主批准后带 metadata 重发并再评估；`DENY` 抛 `AgentPermissionException` fail-closed。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/permission-approval.html')}
+  title="权限审批决策 · 交互式时序图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/permission-approval.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 什么时候需要它
 
 如果你的 Agent 具备工具调用能力，就应该思考这一层。

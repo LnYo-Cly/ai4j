@@ -22,6 +22,20 @@ If `ReActRuntime` owns the loop of a single Agent run, then the `workflow` packa
 
 It is conceptually similar to LangGraph, but the current implementation is noticeably lighter and its boundary is narrower.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below turns `StateGraphWorkflow` orchestration into a readable pipeline: `addNode` registers nodes, `start` picks the entry, `addConditionalEdges` route on context (back edges form loops), `addEdge` gives deterministic transitions, and shared node context flows through the whole run; source badges on nodes map to real files under `ai4j-agent`.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/workflow-stategraph.html')}
+  title="StateGraphWorkflow orchestration · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/workflow-stategraph.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Five key design decisions to grasp first
 
 ### 1.1 Workflow is an orchestration layer above Agents, not a runtime variant

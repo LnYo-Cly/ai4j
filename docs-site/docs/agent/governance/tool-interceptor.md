@@ -17,6 +17,20 @@ control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/a
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
 systems. The `routeTo` decision leverages ai4j's first-class Sandbox SPI (Daytona/E2B).
 
+## 实现机理图（交互式）
+
+下图把两条拦截链画到同一次调用上：`ToolInterceptor` 的 block/modify/routeTo 决策、`PromptInterceptor` 的提示词拦截、`ModelRequestHook` 的请求改写，以及 observe-only 的 `AgentLifecycleHook` 事件流——都由 `AgentHooks` 门面装配进 `AgentContext`。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/hooks-interceptors.html')}
+  title="拦截器与 Hook 链 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/hooks-interceptors.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## Quick start: the `hooks` facade (recommended)
 
 One entry point, every event, IDE-discoverable, compile-time typed. `AgentHooks` composes your

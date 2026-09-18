@@ -16,6 +16,20 @@ tags: [concept]
 - span 类型已经覆盖 model、tool、handoff、team task
 - 但它仍然是轻量实现，不等于完整 APM / distributed tracing 平台
 
+## 实现机理图（交互式）
+
+下图把事件到 span 的映射画出来：`AgentEventPublisher` 同步广播，`AgentTraceListener` 把事件建成 RUN>STEP>MODEL/TOOL 的 span 树，`TraceExporter` SPI 向五种实现扇出；listener 异常被吞掉，不影响 Agent 主流程。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/trace-observability.html')}
+  title="Trace 事件到 Span 扇出 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/trace-observability.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 先抓住 6 个关键设计决策
 
 ### 1.1 Trace 是事件投影，不是 runtime 内嵌数据结构

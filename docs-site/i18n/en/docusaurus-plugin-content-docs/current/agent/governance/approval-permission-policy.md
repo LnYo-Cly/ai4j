@@ -13,6 +13,20 @@ tags: [concept]
 
 This is not a real sandbox, nor does it create VMs, containers, or remote environments. It simply fixes the pre-execution permission check into a small, testable Java API, reused by regular Java Agents, later Blueprints, the CLI/TUI approval UI, and the Sandbox SPI.
 
+## Mechanism Diagram (Interactive)
+
+The sequence diagram draws the three decision paths: `ALLOW` passes straight through; `REQUIRE_APPROVAL` without granted metadata raises `AgentApprovalRequiredException` until the host resends the call with approval metadata for re-evaluation; `DENY` raises `AgentPermissionException` and fails closed.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/permission-approval.html')}
+  title="Permission approval decisions · interactive sequence diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/permission-approval.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. When you need it
 
 If your Agent has tool-calling capability, you should think about this layer.

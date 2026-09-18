@@ -17,6 +17,20 @@ P1-A provides the foundation: **Java DTO + YAML loader + validator + fixture tes
 `AgentFactory` still does not read the provider key, local profiles, the plugin directory, or a real sandbox. It only performs deterministic mapping; all sensitive configuration and external system connections are provided by the host application.
 :::
 
+## Mechanism Diagram (Interactive)
+
+The diagram below splits declarative assembly in two: P1-A `AgentBlueprintLoader`+`AgentBlueprintValidator` only models and validates YAML (issues carry JSONPaths) and never runs anything; P1-B `AgentFactory` builds an `Agent` from host-supplied `AgentFactoryContext` dependencies.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/blueprint-assembly.html')}
+  title="Blueprint declarative assembly · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/blueprint-assembly.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Suitable scenarios
 
 | Scenario | Suitable? |

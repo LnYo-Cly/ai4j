@@ -12,6 +12,20 @@ tags: [integration]
 
 P2-A 提供 Java 8 SPI 和数据模型；P2-B 把非敏感 sandbox 摘要绑定到 `AgentSession`；后续阶段陆续落地了三个官方真实 provider：Daytona（P2-C）、E2B（P2-D）和 CubeSandbox（PR #218）。你仍然可以把同一套 SPI 接到 Docker/K8s、公司内部 VM/microVM 或自己的远端执行平台。
 
+## 实现机理图（交互式）
+
+下图把 SPI 边界画出来：`SandboxProvider.supports/createSession` 负责选 provider 并开会话，`SandboxSession.execute/cancel/listArtifacts/close` 管执行生命周期，`SandboxShellCommandExecutor` 把 coding 侧 shell 调用适配成 `SandboxCommand`。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/sandbox-spi.html')}
+  title="Sandbox SPI 与执行生命周期 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/sandbox-spi.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 它不是什么
 
 Sandbox SPI 不是再加一个普通工具，也不是安全承诺。

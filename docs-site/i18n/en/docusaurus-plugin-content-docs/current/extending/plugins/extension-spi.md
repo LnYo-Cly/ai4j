@@ -10,6 +10,20 @@ This page covers two low-level wiring points in the plugin mechanism: **how plug
 
 If you are just writing an ordinary plugin, the [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook) is enough.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below covers the full extension lifecycle: ServiceLoader discovers `Ai4jExtension`, `manifest`+`apply(ctx)` performs registration, `ExtensionRegistry` separates enable from five explicit expose gates, `ExtensionContext` exposes five registries, and the host surface picks up tools, commands, Skills, and Prompts.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/plugin-extension.html')}
+  title="Plugin and extension system · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/plugin-extension.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Plugin discovery: `ExtensionLoader`
 
 ### 1.1 Default path

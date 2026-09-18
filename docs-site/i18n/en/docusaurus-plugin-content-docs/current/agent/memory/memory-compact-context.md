@@ -19,6 +19,20 @@ ModelContext    = what is actually sent to the model this turn
 
 The value of P0-B is that these three layers can be saved, projected, compacted, and diagnosed, rather than leaving developers to hard-truncate an ever-growing `List<Object>`.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below puts memory and compaction on one canvas: conversation items land in `AgentMemory`, `ContextProjector`+`ContextBudget` project a trimmed view for the current prompt without mutating the store, `MemoryCompactor` rewrites it when triggered, and `MEMORY_COMPRESS` events keep the whole path observable.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/memory-compaction.html')}
+  title="AgentMemory and compaction · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/memory-compaction.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Why this layer is needed
 
 A long-horizon agent keeps accumulating:

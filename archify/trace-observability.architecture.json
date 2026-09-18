@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "可观测：事件 → Span 树 → 导出器扇出",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "pipeline",
+        "label": "追踪管线",
+        "focus": ["runtime", "publisher", "trace_listener", "spans", "exporter", "impls"],
+        "note": "事件经 Publisher 广播；AgentTraceListener 维护 span 生命周期并交给 TraceExporter。"
+      },
+      {
+        "id": "span_tree",
+        "label": "Span 谱系",
+        "focus": ["spans"],
+        "note": "RUN 根 span 下挂 STEP；每步再挂 MODEL / TOOL / HANDOFF / TEAM_TASK / MEMORY / SANDBOX 子 span。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "runtime", "type": "backend", "label": "AgentRuntime", "sublabel": "事件源", "pos": [30, 60], "size": [160, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "publisher", "type": "messagebus", "label": "AgentEventPublisher", "sublabel": "广播 · 监听者异常自吞", "pos": [250, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/event/AgentEventPublisher.java" }] },
+    { "id": "trace_listener", "type": "backend", "label": "AgentTraceListener", "sublabel": "onEvent → span 生命周期", "tag": "trace", "pos": [30, 210], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/AgentTraceListener.java" }] },
+    { "id": "bridge", "type": "backend", "label": "AgentFlowTraceBridge", "sublabel": "事件 → FlowGram 任务", "pos": [30, 330], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/AgentFlowTraceBridge.java" }] },
+    { "id": "spans", "type": "database", "label": "TraceSpan 树", "sublabel": "RUN>STEP>MODEL/TOOL/…", "tag": "trace", "pos": [280, 210], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/TraceSpan.java" }] },
+    { "id": "exporter", "type": "backend", "label": "TraceExporter", "sublabel": "SPI · span 结束即导出", "tag": "trace", "pos": [540, 210], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/TraceExporter.java" }] },
+    { "id": "impls", "type": "cloud", "label": "导出实现", "sublabel": "Console/Jsonl/Langfuse/OTel", "tag": "trace", "pos": [780, 210], "size": [220, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/JsonlTraceExporter.java" }] },
+    { "id": "config", "type": "backend", "label": "TraceConfig", "sublabel": "Masker·Pricing·Metrics", "tag": "trace", "pos": [540, 330], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/trace/TraceConfig.java" }] }
+  ],
+  "connections": [
+    { "from": "runtime", "to": "publisher", "label": "① publish(event)", "labelAt": [220, 50] },
+    { "from": "publisher", "to": "trace_listener", "label": "② onEvent", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [240, 172], "via": [[340, 180], [120, 180]] },
+    { "from": "publisher", "to": "bridge", "label": "③ onEvent", "variant": "dashed", "fromSide": "bottom", "toSide": "left", "labelAt": [200, 140], "via": [[340, 150], [15, 150], [15, 362.5]] },
+    { "from": "trace_listener", "to": "spans", "label": "④ 事件→span", "variant": "emphasis", "labelAt": [245, 234] },
+    { "from": "spans", "to": "exporter", "label": "⑤ end→export", "labelAt": [500, 234] },
+    { "from": "exporter", "to": "impls", "label": "⑥ 五实现+Composite", "labelAt": [750, 200] },
+    { "from": "config", "to": "exporter", "label": "⑦ 配置", "variant": "dashed", "labelAt": [690, 305] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "追踪管线（trace 包）",
+      "wraps": ["trace_listener", "spans", "exporter", "impls", "config"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "事件到 Span 的映射",
+      "items": [
+        "RUN 根 span：一次 run；STEP：一轮循环步；MODEL：一次模型请求/响应；TOOL：一次工具执行（含 CodeAct 代码执行）",
+        "HANDOFF/TEAM_TASK/MEMORY/SANDBOX/AGENT_FLOW/FLOWGRAM_* 覆盖委派、团队任务、压缩、沙箱与 FlowGram 集成"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "扇出与隔离",
+      "items": [
+        "Publisher.publish 同步广播所有 AgentListener——单个 listener 抛异常被吞掉，不影响 Agent 执行",
+        "同一条事件总线还挂着：SessionEventLog/HashChainedEventLog（审计）、IoCapture（回放录制）、CLI/TUI 渲染"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "配置与成本",
+      "items": [
+        "TraceConfig 默认记录完整模型 IO 与工具参数/输出；TraceMasker 脱敏、TracePricing(+Resolver) 按价表折算成本、TraceMetrics 聚合指标",
+        "CompositeTraceExporter 多路扇出；JsonlTraceExporter 落行式 JSON 便于离线分析"
+      ]
+    }
+  ]
+}

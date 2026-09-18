@@ -16,6 +16,20 @@ P1-A 提供基础层：**Java DTO + YAML loader + validator + fixture tests**。
 `AgentFactory` 仍然不会读取 provider key、本地 profile、插件目录或真实 sandbox。它只做确定性映射，所有敏感配置和外部系统连接都由宿主应用提供。
 :::
 
+## 实现机理图（交互式）
+
+下图把声明式装配分成两段：P1-A `AgentBlueprintLoader`+`AgentBlueprintValidator` 只建模和校验 YAML（issues 带 JSONPath），不运行任何东西；P1-B `AgentFactory` 用宿主经 `AgentFactoryContext` 供给的依赖装配出 `Agent`。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/blueprint-assembly.html')}
+  title="Blueprint 声明式装配 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/blueprint-assembly.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 适合什么场景
 
 | 场景 | 是否适合 |

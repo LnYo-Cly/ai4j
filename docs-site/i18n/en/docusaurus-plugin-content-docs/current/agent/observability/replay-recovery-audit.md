@@ -16,6 +16,20 @@ tags: [reference]
 | Persistent session store | `FileAgentSessionStore`, `JdbcAgentSessionStore` | Survive cross-process restarts; long tasks can be resumed |
 | Tamper-evident audit | `HashChainedEventLog` | Prove the recorded activity was not altered after the fact |
 
+## Mechanism Diagram (Interactive)
+
+The diagram below separates persistence from recovery: snapshots, event logs, and IO capture write to `SessionStore`, `AgentSessionEventLog`, and `NodeIoRecord`; on resume, `ResumeCache`+`ResumableModelClient` skip completed calls while `NodeReplayer` drives live/mock replay.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/session-checkpoint-replay.html')}
+  title="Session persistence and replay recovery · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/session-checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 0. Key design decisions to grasp first
 
 These decisions run through all four layers. State them up front so each later section doesn't re-argue them.

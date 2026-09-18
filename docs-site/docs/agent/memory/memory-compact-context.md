@@ -18,6 +18,20 @@ ModelContext    = 本轮真正发给模型的上下文
 
 P0-B 的价值是让这三层可以被保存、投影、压缩和诊断，而不是让开发者只能在一个越来越长的 `List<Object>` 上硬裁剪。
 
+## 实现机理图（交互式）
+
+下图把 Memory 与压缩策略画到同一张图：对话条目进入 `AgentMemory`，`ContextProjector`+`ContextBudget` 对本轮 prompt 做投影裁剪而不改动本体，`MemoryCompactor` 在触发时压缩写回，`MEMORY_COMPRESS` 事件让全程可观测。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/memory-compaction.html')}
+  title="AgentMemory 与压缩策略 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/memory-compaction.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 为什么需要这一层
 
 长程 Agent 会不断积累：

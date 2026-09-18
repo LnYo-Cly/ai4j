@@ -16,6 +16,20 @@ If you only understand trace as "print a request log," you will miss the most im
 - Span types already cover model, tool, handoff, and team task.
 - But it is still a lightweight implementation, not a full APM / distributed tracing platform.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below maps events to spans: `AgentEventPublisher` broadcasts synchronously, `AgentTraceListener` builds the RUN>STEP>MODEL/TOOL span tree, and the `TraceExporter` SPI fans out to five implementations; listener failures are swallowed so agent runs keep going.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/trace-observability.html')}
+  title="Trace event-to-span fan-out · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/trace-observability.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. Six key design decisions to grasp first
 
 ### 1.1 Trace is an event projection, not a data structure embedded in the runtime
