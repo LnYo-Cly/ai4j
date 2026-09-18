@@ -102,6 +102,20 @@ SubAgent 最适合的场景是：
 - 你仍然想保留“主 Agent 决策”
 - 但某个能力已经复杂到不适合再写成普通工具函数
 
+## 2.1 委托链路时序图（交互式）
+
+下图把一次 SubAgent 调用展开成完整时序：主 Agent 模型发出 `tool_call` → `SubAgentToolExecutor` 按 `supports(toolName)` 分流（命中 `subagent_*` 走注册表，未命中走普通工具委托）→ `HANDOFF_START` 事件后过 `HandoffPolicy` 闸门（maxDepth/allow/deny/inputFilter）→ 注册表按 `NEW_SESSION` 或 `REUSE_SESSION` 拉起子 Agent 同步跑完自身循环 → 输出作为工具结果回填主循环，`HANDOFF_END` 收口；失败按 `maxRetries`/`timeoutMillis`/`onError` 重试或回退。可点顶部「引导视图」按 路由 → 策略与执行 → 回填 三段浏览。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/subagent-handoff.html')}
+  title="SubAgent 委托链路交互式时序图"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/subagent-handoff.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
 ## 3. `AgentBuilder` 是怎么把 SubAgent 装进去的
 
 SubAgent 真正进入系统，是在 `AgentBuilder.build()` 里。

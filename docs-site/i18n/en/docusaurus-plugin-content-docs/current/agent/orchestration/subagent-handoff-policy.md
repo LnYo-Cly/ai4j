@@ -102,6 +102,20 @@ SubAgent fits best when:
 - You still want to preserve "the main Agent makes the decisions"
 - But some capability has grown too complex to keep writing as a plain tool function
 
+## 2.1 Delegation Sequence (Interactive)
+
+The diagram below expands one SubAgent call into a full sequence: the lead Agent's model emits a `tool_call` → `SubAgentToolExecutor` routes by `supports(toolName)` (`subagent_*` hits the registry; anything else goes to the plain-tool delegate) → after `HANDOFF_START`, the `HandoffPolicy` gate runs (maxDepth/allow/deny/inputFilter) → the registry runs the target Agent synchronously in a `NEW_SESSION` or `REUSE_SESSION` → the output is written back as a tool result and `HANDOFF_END` closes the handoff; failures retry or fall back per `maxRetries`/`timeoutMillis`/`onError`. Use the guided views to browse Routing → Policy & execution → Result write-back.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/subagent-handoff.html')}
+  title="SubAgent delegation sequence — interactive diagram"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/subagent-handoff.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 3. How `AgentBuilder` wires SubAgent in
 
 SubAgent actually enters the system inside `AgentBuilder.build()`.

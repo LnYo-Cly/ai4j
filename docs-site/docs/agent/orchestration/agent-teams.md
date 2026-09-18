@@ -225,6 +225,20 @@ AgentResult synthesis = synthesizer.synthesize(objective, plan, dispatch.results
 - `synthesisResult`
 - `totalDurationMillis`
 
+## 2.7 协作内核全景图（交互式）
+
+下图把上面六个 Phase 的结构落成一张图：`AgentTeam` 协调器居中，向上经 `Planner` 拆出带依赖的任务图（①）、在 `TaskBoard` 上登记与认领（②），向右把拼装好的 prompt（角色+任务+上下文+近期消息）派给各成员 Agent（③），成员的 `task.result`/`task.error` 回到 lead（④）。注意图中两条**互相独立**的通道：成员与 `TaskBoard` 之间是任务状态协作（⑤ claim/release/heartbeat），成员与 `MessageBus` 之间才是消息通信（⑥ send/broadcast/read 信箱投递）——成员之间从不直接互调。全部收口后 `Synthesizer` 产出最终输出（⑦）。可点顶部「引导视图」按 规划与派发 → 双通道通信 → 汇总 三段浏览。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/agent-team-collaboration.html')}
+  title="Agent Team 协作内核交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-team-collaboration.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
 ## 3. Planner 子系统的真实容错方式
 
 `LlmAgentTeamPlanner` 的容错并不是“planner 出错也没关系”，而是更具体的一种策略。

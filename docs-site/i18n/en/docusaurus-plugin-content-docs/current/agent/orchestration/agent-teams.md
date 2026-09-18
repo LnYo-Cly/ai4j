@@ -226,6 +226,20 @@ Finally the Team assembles an `AgentTeamResult`, containing:
 - `synthesisResult`
 - `totalDurationMillis`
 
+## 2.7 Collaboration Kernel Overview (Interactive)
+
+The diagram below maps the six phases above onto one picture: the `AgentTeam` coordinator sits at the center — it asks the `Planner` to break the objective into a dependency-aware task graph (①), registers and claims work on the `TaskBoard` (②), and dispatches assembled prompts (role + task + context + recent messages) to member Agents (③); members' `task.result`/`task.error` flow back to the lead (④). Note the two **independent** channels: member↔`TaskBoard` is task-state coordination (⑤ claim/release/heartbeat), while member↔`MessageBus` is actual messaging (⑥ send/broadcast/read mailbox delivery) — members never call each other directly. Once everything closes out, the `Synthesizer` produces the final output (⑦). Use the guided views to browse Plan & dispatch → Dual-channel communication → Synthesis.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/agent-team-collaboration.html')}
+  title="Agent Team collaboration kernel — interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-team-collaboration.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 3. How the Planner subsystem actually tolerates failure
 
 `LlmAgentTeamPlanner`'s fault tolerance is not "it's fine if the planner errs"; it is a more specific strategy.

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Agent Team 协作内核：任务板 + 消息总线双通道",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "plan-dispatch",
+        "label": "规划与派发",
+        "focus": ["caller", "team", "planner", "board", "member_b", "member_a"],
+        "note": "Planner 拆目标为任务图；TaskBoard 管依赖与认领；协调器把拼装 prompt 派给成员。"
+      },
+      {
+        "id": "two-channels",
+        "label": "双通道通信",
+        "focus": ["member_a", "member_b", "board", "bus"],
+        "note": "任务状态走 TaskBoard（claim/release/heartbeat），消息走 MessageBus（send/broadcast/read）——成员间不直接互调。"
+      },
+      {
+        "id": "synthesize",
+        "label": "汇总",
+        "focus": ["team", "synth", "caller"],
+        "note": "成员结果回 lead 后由 Synthesizer 产出团队最终输出。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "caller", "type": "external", "label": "调用方宿主", "sublabel": "team.run(request)", "pos": [30, 207.5], "size": [140, 60] },
+    { "id": "team", "type": "backend", "label": "AgentTeam", "sublabel": "协调器 · 轮次派发 · 收口", "tag": "team", "pos": [220, 200], "size": [170, 75],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeam.java" }] },
+    { "id": "planner", "type": "backend", "label": "AgentTeamPlanner", "sublabel": "LlmAgentTeamPlanner", "tag": "team", "pos": [450, 45], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/LlmAgentTeamPlanner.java" }] },
+    { "id": "board", "type": "database", "label": "AgentTeamTaskBoard", "sublabel": "依赖 · 认领 · 状态机", "tag": "team", "pos": [680, 45], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamTaskBoard.java" }] },
+    { "id": "member_b", "type": "backend", "label": "成员 Agent B", "sublabel": "独立 session · team 工具", "tag": "member", "pos": [880, 125], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/tool/AgentTeamToolExecutor.java" }] },
+    { "id": "member_a", "type": "backend", "label": "成员 Agent A", "sublabel": "独立 session · team 工具", "tag": "member", "pos": [880, 265], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/tool/AgentTeamToolExecutor.java" }] },
+    { "id": "bus", "type": "messagebus", "label": "AgentTeamMessageBus", "sublabel": "InMemory / File · 信箱投递", "tag": "team", "pos": [680, 360], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/AgentTeamMessageBus.java" }] },
+    { "id": "synth", "type": "backend", "label": "AgentTeamSynthesizer", "sublabel": "LlmAgentTeamSynthesizer", "tag": "team", "pos": [450, 360], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/team/LlmAgentTeamSynthesizer.java" }] }
+  ],
+  "connections": [
+    { "from": "caller", "to": "team", "label": "run(目标) → AgentTeamResult", "labelAt": [195, 190] },
+    { "from": "team", "to": "planner", "label": "① plan→AgentTeamPlan", "labelAt": [340, 140] },
+    { "from": "team", "to": "board", "label": "② 登记·nextReadyTasks→claim", "labelAt": [555, 140] },
+    { "from": "team", "to": "member_b", "label": "③ 派发 prompt", "variant": "emphasis", "labelAt": [720, 185] },
+    { "from": "team", "to": "member_a", "label": "③ 派发 prompt", "variant": "emphasis", "labelAt": [720, 285] },
+    { "from": "member_a", "to": "team", "label": "④ task.result/error→lead", "variant": "dashed", "labelAt": [700, 330] },
+    { "from": "member_b", "to": "board", "label": "⑤ claim/release/heartbeat", "fromSide": "top", "labelAt": [1000, 92], "via": [[960, 110], [850, 110]] },
+    { "from": "member_a", "to": "bus", "label": "⑥ send/broadcast ↔ read", "variant": "dashed", "fromSide": "bottom", "labelAt": [905, 348], "via": [[960, 340], [850, 340]] },
+    { "from": "team", "to": "synth", "label": "⑦ synthesize→最终输出", "labelAt": [340, 320] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "AgentTeam 内核（协调器持有 Planner/TaskBoard/MessageBus/Synthesizer）",
+      "wraps": ["team", "planner", "board", "bus", "synth"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "成员 Agents（独立 session）",
+      "wraps": ["member_b", "member_a"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两条独立通道",
+      "items": [
+        "任务协作走 TaskBoard：claim/release/reassign/heartbeat/超时回收；消息走 MessageBus：direct/broadcast/read 信箱投递——成员间不直接互调（AgentTeam.java, AgentTeamTaskBoard.java）",
+        "team_send_message / team_broadcast / team_read_messages / team_*_task 是成员可调用的团队工具（agent/team/tool/）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "派发语义",
+      "items": [
+        "默认 maxRounds=64 轮调度；maxConcurrency 固定线程池并行派发；成员 prompt 拼装角色+任务ID+依赖+可选目标/上下文/近期消息",
+        "成功→completed+task.result 回 lead；失败→failed+task.error，continueOnMemberError 决定继续或中止"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "与 SubAgent 的本质区别",
+      "items": [
+        "Team 成员是对等协作者：Planner 分工、TaskBoard 认领、MessageBus 信箱通信——不是 lead→sub 的工具调用 RPC",
+        "状态可持久化：AgentTeamStateStore / FileAgentTeamMessageBus 支持恢复；TEAM_TASK_*/TEAM_MESSAGE 事件全程可观测"
+      ]
+    }
+  ]
+}
