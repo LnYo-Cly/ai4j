@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "插件扩展体系：发现 → 授权 → 装配进宿主",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "discover",
+        "label": "发现与契约",
+        "focus": ["jar", "loader", "ext", "ask_user"],
+        "note": "ServiceLoader 读 META-INF/services 拿到 Ai4jExtension；manifest 声明能力集与 permission。"
+      },
+      {
+        "id": "activate",
+        "label": "授权与装配",
+        "focus": ["registry", "plan", "ctx", "caps", "host"],
+        "note": "enable 开扩展、expose/allow 系列开资源；apply(ctx) 把能力注册进宿主，ActivationPlan 报告结果。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "jar", "type": "cloud", "label": "扩展 JAR", "sublabel": "META-INF/services + 资源", "pos": [30, 50], "size": [170, 60],
+      "sources": [{ "path": "ai4j-plugin-ask-user/src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension" }] },
+    { "id": "loader", "type": "backend", "label": "ExtensionLoader", "sublabel": "ServiceLoader 实现", "pos": [270, 50], "size": [190, 60],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ServiceLoaderExtensionLoader.java" }] },
+    { "id": "ask_user", "type": "backend", "label": "AskUserExtension", "sublabel": "官方示例插件", "pos": [560, 50], "size": [190, 60],
+      "sources": [{ "path": "ai4j-plugin-ask-user/src/main/java/io/github/lnyocly/ai4j/plugin/askuser/AskUserExtension.java" }] },
+    { "id": "ext", "type": "backend", "label": "Ai4jExtension", "sublabel": "manifest() + apply(ctx)", "tag": "contract", "pos": [790, 50], "size": [190, 60],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/Ai4jExtension.java" }] },
+    { "id": "registry", "type": "security", "label": "ExtensionRegistry", "sublabel": "discover/enable/expose/apply", "tag": "gate", "pos": [270, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionRegistry.java" }] },
+    { "id": "plan", "type": "backend", "label": "ActivationPlan", "sublabel": "逐项激活报告", "tag": "gate", "pos": [560, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionActivationPlan.java" }] },
+    { "id": "ctx", "type": "backend", "label": "ExtensionContext", "sublabel": "注入五类注册表", "tag": "gate", "pos": [790, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionContext.java" }] },
+    { "id": "caps", "type": "database", "label": "能力注册表", "sublabel": "tool/command/skill/prompt/guardrail", "tag": "gate", "pos": [560, 310], "size": [190, 65],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/command/CommandRegistry.java" }] },
+    { "id": "host", "type": "frontend", "label": "宿主面", "sublabel": "Agent 工具 · CLI 命令 · Skill", "pos": [270, 310], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java" }] }
+  ],
+  "connections": [
+    { "from": "jar", "to": "loader", "label": "① 服务发现", "labelAt": [235, 72] },
+    { "from": "loader", "to": "registry", "label": "② load→注册", "fromSide": "bottom", "toSide": "top", "labelAt": [425, 152], "via": [[365, 150]] },
+    { "from": "ask_user", "to": "ext", "label": "③ implements", "variant": "dashed", "labelAt": [770, 42] },
+    { "from": "ext", "to": "ctx", "label": "④ apply(ctx)", "variant": "emphasis", "labelAt": [940, 152] },
+    { "from": "registry", "to": "plan", "label": "⑤ apply→plan", "variant": "emphasis", "labelAt": [510, 215] },
+    { "from": "plan", "to": "ctx", "label": "⑥ 激活项", "labelAt": [770, 180] },
+    { "from": "ctx", "to": "caps", "label": "⑦ 注册能力", "variant": "emphasis", "fromSide": "bottom", "toSide": "right", "labelAt": [895, 300], "via": [[885, 342.5]] },
+    { "from": "caps", "to": "host", "label": "⑧ 显式 expose 后可用", "variant": "security", "labelAt": [510, 389] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ai4j-extension-api（轻量契约模块）",
+      "wraps": ["loader", "ext", "registry", "plan", "ctx", "caps"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "宿主装配面",
+      "wraps": ["host"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两道显式闸门",
+      "items": [
+        "enable(extensionId)：整个扩展默认不启用，发现≠生效；requireKnownExtension 拒绝未知 ID",
+        "exposeTool/allowCommand/allowSkill/allowPrompt/allowGuardrail：能力逐项再授权——扩展声明了不等于宿主放行"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "五类能力注册表",
+      "items": [
+        "ExtensionContext 暴露 tools()/commands()/skills()/prompts()/guardrails()——apply 里各取所注册表",
+        "ask-user 示例一次注册全四类：ask_user 工具 + ask-user 命令 + SKILL.md + prompt 模板（同名 ID 体系）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Manifest 即契约",
+      "items": [
+        "id/name/version/vendor + capability 集合 + permission + configPrefix——宿主按清单决定展示与配额",
+        "ActivationPlan/InspectionSnapshot/RuntimeSnapshot 三层回读：激活项、静态检查、运行时状态都可观测"
+      ]
+    }
+  ]
+}

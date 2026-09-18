@@ -15,6 +15,20 @@ tags: [reference]
 | 持久化 session store | `FileAgentSessionStore`、`JdbcAgentSessionStore` | 跨进程重启存活，长任务可续 |
 | 防篡改审计 | `HashChainedEventLog` | 证明记录下来的活动事后没被改动 |
 
+## 实现机理图（交互式）
+
+下图把持久化与恢复分成两条通道：快照、事件日志、IO 捕获分别写入 `SessionStore`、`AgentSessionEventLog`、`NodeIoRecord`；恢复时 `ResumeCache`+`ResumableModelClient` 跳过已完成调用，`NodeReplayer` 负责 live/mock 两种回放。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/session-checkpoint-replay.html')}
+  title="Session 持久化与 Replay 恢复 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/session-checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 0. 先抓住几个关键设计决策
 
 这些决策贯穿四层，先讲清，后面每节就不再重复辩护。

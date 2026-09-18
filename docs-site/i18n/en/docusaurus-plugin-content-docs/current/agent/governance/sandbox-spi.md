@@ -13,6 +13,20 @@ tags: [integration]
 
 P2-A delivers the Java 8 SPI and data model; P2-B binds a non-sensitive sandbox summary to `AgentSession`; later phases shipped three official real providers: Daytona (P2-C), E2B (P2-D), and CubeSandbox (PR #218). You can still wire the same SPI to Docker/K8s, an in-house VM/microVM, or your own remote execution platform.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below draws the SPI boundary: `SandboxProvider.supports/createSession` picks a provider and opens a session, `SandboxSession.execute/cancel/listArtifacts/close` owns the execution lifecycle, and `SandboxShellCommandExecutor` adapts coding-side shell calls into `SandboxCommand`.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/sandbox-spi.html')}
+  title="Sandbox SPI and execution lifecycle · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/sandbox-spi.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 1. What it is not
 
 The Sandbox SPI is not just another ordinary tool, nor is it a security promise.

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Coding Agent：外循环 + Workspace 提示词组装",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "loop",
+        "label": "外循环",
+        "focus": ["caller", "loop_ctrl", "session", "react", "policy", "decision", "result"],
+        "note": "LoopController 每轮调 runSingleTurn；decide 依据输出模式/compact/错误/上限给 continue 或 stopReason。"
+      },
+      {
+        "id": "prompt",
+        "label": "提示词组装",
+        "focus": ["assembler", "ws", "stores", "session"],
+        "note": "WorkspaceContext 提供 root/工具指引/skills/AGENTS.md，mergeSystemPrompt 并入系统提示词。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "caller", "type": "frontend", "label": "CLI / 宿主", "sublabel": "run / runStream", "pos": [30, 60], "size": [160, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentBuilder.java" }] },
+    { "id": "loop_ctrl", "type": "backend", "label": "LoopController", "sublabel": "外循环：多轮 turn", "tag": "loop", "pos": [240, 60], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/loop/CodingAgentLoopController.java" }] },
+    { "id": "session", "type": "backend", "label": "CodingSession", "sublabel": "runSingleTurn(Stream)", "tag": "loop", "pos": [480, 60], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingSession.java" }] },
+    { "id": "react", "type": "backend", "label": "AgentSession/ReAct", "sublabel": "内层模型+工具循环", "tag": "loop", "pos": [720, 60], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java" }] },
+    { "id": "policy", "type": "backend", "label": "CodingLoopPolicy", "sublabel": "auto-continue 参数", "tag": "loop", "pos": [240, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/loop/CodingLoopPolicy.java" }] },
+    { "id": "decision", "type": "security", "label": "CodingLoopDecision", "sublabel": "continue / stopReason", "tag": "loop", "pos": [500, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/loop/CodingLoopDecision.java" }] },
+    { "id": "assembler", "type": "backend", "label": "PromptAssembler", "sublabel": "mergeSystemPrompt", "tag": "prompt", "pos": [720, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/prompt/CodingContextPromptAssembler.java" }] },
+    { "id": "result", "type": "backend", "label": "CodingAgentResult", "sublabel": "聚合 tokens/cost/decision", "tag": "loop", "pos": [240, 320], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentResult.java" }] },
+    { "id": "ws", "type": "database", "label": "WorkspaceContext", "sublabel": "root/skills/AGENTS.md", "tag": "prompt", "pos": [480, 320], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/workspace/WorkspaceContext.java" }] },
+    { "id": "stores", "type": "database", "label": "工作区存储", "sublabel": "AgentsMdStore·FileService", "tag": "prompt", "pos": [720, 320], "size": [190, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/workspace/AgentsMdStore.java" }] }
+  ],
+  "connections": [
+    { "from": "caller", "to": "loop_ctrl", "label": "① 调用", "labelAt": [205, 40] },
+    { "from": "loop_ctrl", "to": "session", "label": "② runSingleTurn", "variant": "emphasis", "labelAt": [455, 50] },
+    { "from": "session", "to": "react", "label": "③ 内层 ReAct", "labelAt": [695, 50] },
+    { "from": "policy", "to": "decision", "label": "④ decide 输入", "labelAt": [465, 150] },
+    { "from": "loop_ctrl", "to": "decision", "label": "⑤ decide", "variant": "emphasis", "fromSide": "bottom", "toSide": "left", "labelAt": [400, 176], "via": [[335, 160], [470, 160], [470, 222.5]] },
+    { "from": "decision", "to": "session", "label": "⑥ continuationPrompt→下一轮", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelAt": [560, 150], "via": [[595, 160], [575, 160]] },
+    { "from": "assembler", "to": "session", "label": "⑦ mergeSystemPrompt", "variant": "emphasis", "labelAt": [720, 160] },
+    { "from": "ws", "to": "assembler", "label": "⑧ buildWorkspacePrompt", "fromSide": "top", "toSide": "bottom", "labelAt": [690, 282], "via": [[575, 290], [815, 290]] },
+    { "from": "stores", "to": "ws", "label": "⑨ 富化", "labelAt": [695, 404] },
+    { "from": "loop_ctrl", "to": "result", "label": "⑩ 聚合输出", "fromSide": "left", "toSide": "left", "labelAt": [190, 250], "via": [[215, 92.5], [215, 352.5]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "外循环（多轮自治）",
+      "wraps": ["loop_ctrl", "policy", "decision", "result"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Workspace 提示词来源",
+      "wraps": ["assembler", "ws", "stores"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "外循环判定",
+      "items": [
+        "每轮：throwIfInterrupted → maxTotalTurns 检查 → runSingleTurn → 累加 tokens/cost/toolCalls → decide → continue 则带 continuationPrompt 进下一轮",
+        "输出文本模式驱动：QUESTION_PATTERN 停等用户输入、COMPLETION_PATTERN 判完成、CONTINUE_PATTERN 自动续跑（受 maxAutoFollowUps 限）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "stopReason 谱系",
+      "items": [
+        "BLOCKED_BY_APPROVAL / BLOCKED_BY_TOOL_ERROR：审批拒绝或工具错误且 stopOnApprovalBlock 时停；turnError 经 ErrorTrackingAgentListener 捕获",
+        "MAX_TOTAL_TURNS_REACHED 硬上限、CONTINUATION_REQUIRED、INTERRUPTED、ERROR——decision 记入 session.recordLoopDecision"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Workspace 提示词",
+      "items": [
+        "buildWorkspacePrompt：root 路径 + 工具选择指引（read/write/edit/apply_patch/bash/bash_process/update_agents_md）+ apply_patch 语法 + shell 用法",
+        "Skills/Prompts 索引 + AGENTS.md 正文（<agents_md> 包裹）并入；allowOutsideWorkspace=false 时明确不依赖工作区外文件"
+      ]
+    }
+  ]
+}

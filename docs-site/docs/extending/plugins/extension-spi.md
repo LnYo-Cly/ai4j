@@ -9,6 +9,20 @@ tags: [reference]
 
 如果你只是写一个普通插件，看 [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook) 就够了。
 
+## 实现机理图（交互式）
+
+下图把扩展生命周期画全：ServiceLoader 发现 `Ai4jExtension`，`manifest`+`apply(ctx)` 执行注册，`ExtensionRegistry` 把 enable 与五类显式 expose 门分开，`ExtensionContext` 暴露五张注册表，最终汇入宿主的工具/命令/Skill/Prompt 面。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/plugin-extension.html')}
+  title="插件扩展体系 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/plugin-extension.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 插件发现：`ExtensionLoader`
 
 ### 1.1 默认路径

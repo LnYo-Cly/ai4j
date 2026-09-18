@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Hook 与拦截器链：可改写的拦截 + 只读观察",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "intercept",
+        "label": "拦截链",
+        "focus": ["input", "prompt_int", "runtime", "tool_int", "executor", "sandbox"],
+        "note": "PromptInterceptor 前置改写输入；ToolInterceptor 的 ToolCallDecision 决定放行/阻断/改写/路由沙箱。"
+      },
+      {
+        "id": "observe",
+        "label": "观察侧",
+        "focus": ["runtime", "lifecycle", "hooks"],
+        "note": "AgentLifecycleHook 经 dispatcher 广播，fire-and-forget，全部 handler 都会执行。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "input", "type": "frontend", "label": "用户输入", "sublabel": "raw input", "pos": [30, 205], "size": [140, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/PromptInterceptor.java" }] },
+    { "id": "prompt_int", "type": "security", "label": "PromptInterceptor", "sublabel": "beforePrompt → 决策", "tag": "intercept", "pos": [230, 200], "size": [160, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/PromptInterceptor.java" }] },
+    { "id": "runtime", "type": "backend", "label": "AgentRuntime", "sublabel": "ReAct 步循环", "pos": [450, 200], "size": [160, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "tool_int", "type": "security", "label": "ToolInterceptor", "sublabel": "before/afterToolCall", "tag": "intercept", "pos": [680, 200], "size": [160, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/ToolInterceptor.java" }] },
+    { "id": "executor", "type": "backend", "label": "ToolExecutor", "sublabel": "工具/MCP 实执行", "pos": [900, 200], "size": [150, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java" }] },
+    { "id": "model_hook", "type": "security", "label": "ModelRequestHook", "sublabel": "beforeModelRequest", "tag": "intercept", "pos": [450, 70], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/ModelRequestHook.java" }] },
+    { "id": "llm", "type": "cloud", "label": "LLM", "sublabel": "AgentModelClient", "pos": [680, 70], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentModelClient.java" }] },
+    { "id": "sandbox", "type": "cloud", "label": "沙箱执行", "sublabel": "routeTo → Sandbox SPI", "tag": "intercept", "pos": [900, 320], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/ToolCallDecision.java" }] },
+    { "id": "lifecycle", "type": "messagebus", "label": "LifecycleDispatcher", "sublabel": "按事件类型广播", "tag": "observe", "pos": [230, 330], "size": [180, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/lifecycle/AgentLifecycleHookDispatcher.java" }] },
+    { "id": "hooks", "type": "backend", "label": "AgentLifecycleHook", "sublabel": "observe-only 列表", "tag": "observe", "pos": [450, 330], "size": [160, 60],
+      "sources": [{ "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/lifecycle/AgentLifecycleHook.java" }] },
+    { "id": "facade", "type": "backend", "label": "AgentHooks", "sublabel": "命名式门面 · applyTo", "pos": [30, 330], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/AgentHooks.java" }] }
+  ],
+  "connections": [
+    { "from": "input", "to": "prompt_int", "label": "① beforePrompt", "labelAt": [200, 182] },
+    { "from": "prompt_int", "to": "runtime", "label": "② 放行/改写", "labelAt": [420, 182] },
+    { "from": "runtime", "to": "model_hook", "label": "③ beforeModelRequest", "variant": "emphasis", "labelAt": [505, 148] },
+    { "from": "model_hook", "to": "llm", "label": "④ 改写后 prompt", "labelAt": [645, 60] },
+    { "from": "runtime", "to": "tool_int", "label": "⑤ tool_call", "variant": "emphasis", "labelAt": [645, 182] },
+    { "from": "tool_int", "to": "executor", "label": "⑥ allow/modify→执行", "labelAt": [870, 182] },
+    { "from": "tool_int", "to": "sandbox", "label": "⑦ routeTo→沙箱", "variant": "security", "fromSide": "bottom", "toSide": "left", "labelAt": [825, 298], "via": [[760, 350]] },
+    { "from": "executor", "to": "tool_int", "label": "⑧ output→afterToolCall", "variant": "dashed", "fromSide": "top", "toSide": "top", "labelAt": [870, 150], "via": [[975, 168], [760, 168]] },
+    { "from": "runtime", "to": "lifecycle", "label": "⑨ 生命周期事件", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [400, 300], "via": [[530, 310], [320, 310]] },
+    { "from": "lifecycle", "to": "hooks", "label": "dispatch", "labelAt": [430, 410] },
+    { "from": "facade", "to": "prompt_int", "label": "applyTo 装配", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelAt": [60, 310], "via": [[110, 290], [310, 290]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "拦截链（决策能改变行为）",
+      "wraps": ["prompt_int", "tool_int", "model_hook", "sandbox"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "观察链（fire-and-forget）",
+      "wraps": ["lifecycle", "hooks"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "ToolCallDecision 四种裁决",
+      "items": [
+        "allow() 放行 / block(reason) 否决——原因作为工具结果回喂模型（Claude Code 式 exit-code-2 语义）",
+        "modify(call) 改写名称/参数后执行 / routeTo(sandbox) 把这次调用改派到 Daytona/E2B 沙箱执行"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "拦截 vs 观察",
+      "items": [
+        "拦截器（Tool/Prompt/ModelRequest）返回决策：首个非 allow 生效，能改写输入、prompt 或工具调用",
+        "AgentLifecycleHook.onEvent 只读：dispatcher 按 AgentLifecycleEventType 广播，所有 handler 都会跑，异常记为 AgentLifecycleHookError"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "AgentHooks 门面",
+      "items": [
+        "preToolUse/postToolUse/userPromptSubmit/beforeModelRequest + 按事件类型的 observe——命名注册、编译期安全",
+        "applyTo 把各槽位组合进 builder 的单拦截器位；pre/post 合成同一个 ToolInterceptor，两者可并存"
+      ]
+    }
+  ]
+}

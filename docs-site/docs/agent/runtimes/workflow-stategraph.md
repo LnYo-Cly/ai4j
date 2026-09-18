@@ -22,6 +22,20 @@ tags: [concept]
 
 它和 LangGraph 在概念上相似，但当前实现明显更轻，边界也更窄。
 
+## 实现机理图（交互式）
+
+下图把 `StateGraphWorkflow` 的编排机制画成一条可读流水线：`addNode` 注册节点、`start` 选定入口、`addConditionalEdges` 按上下文路由（回边构成循环）、`addEdge` 做确定性流转，节点共享上下文贯穿整个 run；节点上的源码徽章可定位到 `ai4j-agent` 下的真实文件。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/workflow-stategraph.html')}
+  title="StateGraphWorkflow 状态图编排 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/workflow-stategraph.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 先抓住 5 个关键设计决策
 
 ### 1.1 Workflow 是 Agent 之上的编排层，不是 runtime 变体

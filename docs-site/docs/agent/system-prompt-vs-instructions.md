@@ -15,6 +15,20 @@ tags: [concept]
 - 为什么 trace 里看到的 `systemPrompt` 和你写进去的字符串不完全一样
 - 为什么 `newSession()` 后 prompt 规则没有变
 
+## 实现机理图（交互式）
+
+下图把 `buildPrompt` 流水线画全：`systemPrompt` 与 `runtimeInstructions` 合并，`ContextProjector`+`ContextBudget` 对 memory items 做投影裁剪，`ToolVisibility` 过滤出 visibleTools，装配成 `AgentPrompt` 后先过 `ModelRequestHook` 再进 `ModelClient`。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/prompt-context-projection.html')}
+  title="buildPrompt 组装与上下文投影 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/prompt-context-projection.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
+
 ## 1. 先抓住 6 个关键设计决策
 
 ### 1.1 这两个字段都不是“当前轮临时文本”，而是 AgentContext 的一部分

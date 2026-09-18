@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Session 持久化 · 审计链 · 断点续跑与回放",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "persist",
+        "label": "快照持久化",
+        "focus": ["session", "store", "impls"],
+        "note": "AgentSessionStore.save/load 以 AgentSessionSnapshot 为载体重建会话；InMemory/File/JDBC 三后端。"
+      },
+      {
+        "id": "audit",
+        "label": "审计事件链",
+        "focus": ["runtime", "event_log"],
+        "note": "HashChainedEventLog 用 sha256 前向链记录每个事件，verifyChain 能检出篡改/删除/乱序。"
+      },
+      {
+        "id": "replay",
+        "label": "录制续跑与回放",
+        "focus": ["capture", "resume_cache", "resumable", "replayer"],
+        "note": "IoCapture 录制每个节点的输入输出；ResumeCache 让续跑跳过已完成调用；NodeReplayer 支持 live 真调与 mock 确定性回放。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "runtime", "type": "backend", "label": "AgentRuntime", "sublabel": "事件源 · MODEL/TOOL 调用", "pos": [30, 60], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "capture", "type": "backend", "label": "IoCapture 录制", "sublabel": "IoCaptureAgentListener + Sink", "tag": "replay", "pos": [30, 170], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/replay/IoCaptureAgentListener.java" }] },
+    { "id": "session", "type": "backend", "label": "AgentSession", "sublabel": "上下文 · memory · 状态", "pos": [200, 335], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java" }] },
+    { "id": "event_log", "type": "messagebus", "label": "AgentSessionEventLog", "sublabel": "HashChainedEventLog · sha256 链", "tag": "audit", "pos": [280, 55], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/HashChainedEventLog.java" }] },
+    { "id": "store", "type": "backend", "label": "AgentSessionStore", "sublabel": "save · load · delete · list", "tag": "persist", "pos": [280, 205], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/AgentSessionStore.java" }] },
+    { "id": "impls", "type": "database", "label": "存储后端", "sublabel": "InMemory / File / JDBC", "tag": "persist", "pos": [540, 205], "size": [170, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/FileAgentSessionStore.java" }] },
+    { "id": "resume_cache", "type": "database", "label": "ResumeCache", "sublabel": "prompt/tool 键 → 已完成结果", "tag": "replay", "pos": [540, 335], "size": [170, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/replay/ResumeCache.java" }] },
+    { "id": "resumable", "type": "backend", "label": "Resumable 包装", "sublabel": "ModelClient · ToolExecutor", "tag": "replay", "pos": [800, 335], "size": [170, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/replay/ResumableModelClient.java" }] },
+    { "id": "replayer", "type": "backend", "label": "NodeReplayer", "sublabel": "live 真调 / mock 确定性", "tag": "replay", "pos": [790, 55], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/replay/NodeReplayer.java" }] }
+  ],
+  "connections": [
+    { "from": "runtime", "to": "event_log", "label": "① 事件 append", "labelAt": [215, 82] },
+    { "from": "runtime", "to": "capture", "label": "② IO 捕获（listener）", "variant": "emphasis", "labelAt": [170, 145] },
+    { "from": "session", "to": "store", "label": "③ snapshot save/load", "variant": "emphasis", "toSide": "bottom", "labelAt": [280, 312], "via": [[190, 365], [190, 300], [370, 300]] },
+    { "from": "store", "to": "impls", "label": "三后端", "labelAt": [500, 230] },
+    { "from": "capture", "to": "resume_cache", "label": "NodeIoRecord 落盘", "toSide": "bottom", "labelAt": [390, 442], "via": [[160, 200], [160, 430], [625, 430]] },
+    { "from": "resumable", "to": "resume_cache", "label": "④ 命中→跳过调用", "variant": "emphasis", "labelAt": [755, 382] },
+    { "from": "resume_cache", "to": "replayer", "label": "⑤ 记录→live/mock", "variant": "dashed", "toSide": "bottom", "labelAt": [800, 150], "via": [[745, 367.5], [745, 140], [880, 140]] },
+    { "from": "replayer", "to": "runtime", "label": "live 重放真实调用", "variant": "dashed", "fromSide": "top", "toSide": "top", "labelAt": [480, 18], "via": [[880, 30], [105, 30]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "持久化层（snapshot 为唯一恢复载体）",
+      "wraps": ["store", "impls"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "续跑包装与缓存",
+      "wraps": ["resume_cache", "resumable"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "快照即 checkpoint",
+      "items": [
+        "AgentSessionStore.save/load/delete/listSessionIds——以 AgentSessionSnapshot 为载体整体存取（AgentSessionStore.java:8-16）",
+        "InMemoryAgentSessionStore / FileAgentSessionStore / JdbcAgentSessionStore 三后端；Coding 侧另有 CodingSessionCheckpoint 格式化器"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "哈希链审计",
+      "items": [
+        "HashChainedEventLog：hash=sha256(prevHash|canonical(event)) 前向链接；verifyChain 从 genesis 重算定位首个不一致 link",
+        "实现 AgentSessionEventLog + AgentListener 双面，可原位替换 InMemoryAgentSessionEventLog 获得可审计能力"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "续跑与回放的区别",
+      "items": [
+        "续跑（crash-resume）：ResumableModelClient/ToolExecutor 先查 ResumeCache，命中即返回已完成结果——跳过已执行节点",
+        "回放（replay）：NodeReplayer.replayModelLive 真调模型重跑；replayModelMock 用捕获输出确定性重现，不发请求"
+      ]
+    }
+  ]
+}

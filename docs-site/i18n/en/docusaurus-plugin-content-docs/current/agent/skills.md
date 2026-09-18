@@ -17,6 +17,20 @@ AI4J's Agent integration follows the same split that makes Skills safe in local 
 
 The Coding Agent has its own workspace integration. See [Coding Agent Skills](/docs/products/coding-agent/skills) when that is the runtime you are using.
 
+## Mechanism Diagram (Interactive)
+
+The diagram below splits Skills into assembly and runtime: resolver→scope→`Skills.discover` performs discovery, `apply` writes automatic skills into systemPrompt and selected ones into OverlayMemory, and the `read_skill_file` tool stays bounded by allowedReadRoots.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/skill-mechanism.html')}
+  title="Skill discovery and activation · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/skill-mechanism.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## Start with the right integration
 
 For a local developer Agent, use the workspace convenience method:

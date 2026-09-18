@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Skill 机制：作用域解析 → 发现 → 渐进式激活",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "scope",
+        "label": "作用域与发现",
+        "focus": ["request", "resolver", "scope", "skills_core", "support"],
+        "note": "Resolver 把一次请求解析为 AgentSkillScope；Skills.discover 按根目录扫描 SKILL.md。"
+      },
+      {
+        "id": "activate",
+        "label": "激活两通道",
+        "focus": ["support", "prompt_path", "read_tool"],
+        "note": "automatic 进 systemPrompt 索引 + read_skill_file 渐进读取；selected 经 OverlayMemory 直接注入。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "request", "type": "frontend", "label": "AgentRequest", "sublabel": "selectedSkills 可指定", "pos": [30, 60], "size": [160, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentRequest.java" }] },
+    { "id": "resolver", "type": "backend", "label": "AgentSkillResolver", "sublabel": "宿主所有 · 每次 run 解析", "pos": [240, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/skill/AgentSkillResolver.java" }] },
+    { "id": "scope", "type": "backend", "label": "AgentSkillScope", "sublabel": "roots/enabled/provided", "pos": [470, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/skill/AgentSkillScope.java" }] },
+    { "id": "skills_core", "type": "backend", "label": "Skills（core）", "sublabel": "discover/discoverDefault", "pos": [720, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/skill/Skills.java" }] },
+    { "id": "support", "type": "backend", "label": "SkillRuntimeSupport", "sublabel": "apply(ctx) 装配", "tag": "activate", "pos": [240, 220], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/skill/AgentSkillRuntimeSupport.java" }] },
+    { "id": "prompt_path", "type": "backend", "label": "提示词投影", "sublabel": "systemPrompt+OverlayMemory", "tag": "activate", "pos": [720, 220], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/skill/AgentSkillRuntimeSupport.java" }] },
+    { "id": "read_tool", "type": "security", "label": "read_skill_file 工具", "sublabel": "限定 allowedReadRoots", "tag": "activate", "pos": [720, 330], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/skill/SkillReadFileToolExecutor.java" }] },
+    { "id": "ws", "type": "backend", "label": "WorkspaceContext", "sublabel": "CodingSkillDiscovery 富化", "pos": [30, 340], "size": [180, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/skill/CodingSkillDiscovery.java" }] }
+  ],
+  "connections": [
+    { "from": "request", "to": "resolver", "label": "① resolve(request)", "labelAt": [215, 50] },
+    { "from": "resolver", "to": "scope", "label": "② scope", "labelAt": [445, 50] },
+    { "from": "scope", "to": "skills_core", "label": "③ roots+enabled", "labelAt": [685, 50] },
+    { "from": "support", "to": "skills_core", "label": "④ discover→结果", "variant": "emphasis", "fromSide": "top", "toSide": "bottom", "labelAt": [560, 150], "via": [[330, 140], [810, 140]] },
+    { "from": "support", "to": "prompt_path", "label": "⑤ 注入提示词", "variant": "emphasis", "labelAt": [560, 244] },
+    { "from": "support", "to": "read_tool", "label": "⑥ 注册工具+roots", "variant": "emphasis", "fromSide": "bottom", "toSide": "left", "labelAt": [500, 340], "via": [[330, 362.5]] },
+    { "from": "ws", "to": "read_tool", "label": "⑦ 发现产物", "variant": "dashed", "toSide": "bottom", "labelAt": [560, 440], "via": [[460, 372.5], [460, 432], [810, 432]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "装配时（每次 run 一次快照）",
+      "wraps": ["support", "prompt_path", "read_tool"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Scope 决定可见性",
+      "items": [
+        "forWorkspace 预置 .ai4j/skills + .agents/skills；includeDefaultSkillRoots=false 默认不带进程级根——服务端租户不会意外暴露全局 Skill",
+        "enabledSkillNames 过滤 discovered；providedSkills 代码直供与磁盘发现按名合并去重"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "两条激活通道",
+      "items": [
+        "automatic（可模型调用且未 disableModelInvocation）：appendAvailableSkillsPrompt 把 Skill 索引写进 systemPrompt，模型经 read_skill_file 按需读正文",
+        "selected（request.selectedSkills 显式指定）：SkillPromptOverlayMemory 包一层 memory 直接注入完整内容——≤48KB/12K 字符截断"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "读取被限定在 Skill 根",
+      "items": [
+        "createSkillToolContext(skillRoots) 生成 BuiltInToolContext，read_skill_file 只能读 Skill 目录内文件",
+        "工具名冲突时注册别名并加装 toolInterceptor 改写调用名；无函数工具能力的 runtime 只保留 selected 通道",
+        "Coding 侧 CodingSkillDiscovery.discoverDefault(root, dirs) 把 allowedReadRoots + availableSkills 写回 WorkspaceContext"
+      ]
+    }
+  ]
+}

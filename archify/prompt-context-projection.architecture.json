@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "提示词组装与上下文投影：buildPrompt 流水线",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "assemble",
+        "label": "组装",
+        "focus": ["ctx", "memory", "registry", "build", "prompt", "hook", "llm"],
+        "note": "buildPrompt 合并 systemPrompt+runtimeInstructions、投影 items、可见工具与采样参数成 AgentPrompt。"
+      },
+      {
+        "id": "project",
+        "label": "投影",
+        "focus": ["memory", "budget", "projector", "report"],
+        "note": "ContextProjector 按 ContextBudget 裁剪 memory items：maxItems/字符上限/钉住前缀/工具结果微压缩，产出 ContextReport。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "ctx", "type": "backend", "label": "AgentContext", "sublabel": "systemPrompt/instructions/参数", "pos": [30, 50], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentContext.java" }] },
+    { "id": "memory", "type": "database", "label": "AgentMemory.items", "sublabel": "对话+工具输出历史", "pos": [30, 190], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/AgentMemory.java" }] },
+    { "id": "registry", "type": "backend", "label": "ToolRegistry", "sublabel": "+ ToolVisibility.filter", "pos": [30, 330], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/AgentToolRegistry.java" }] },
+    { "id": "projector", "type": "security", "label": "ContextProjector", "sublabel": "Default / TypeAware", "tag": "project", "pos": [280, 190], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/DefaultContextProjector.java" }] },
+    { "id": "budget", "type": "backend", "label": "ContextBudget", "sublabel": "四档裁剪参数", "tag": "project", "pos": [280, 320], "size": [190, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/ContextBudget.java" }] },
+    { "id": "build", "type": "backend", "label": "buildPrompt", "sublabel": "BaseAgentRuntime", "pos": [540, 140], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "prompt", "type": "backend", "label": "AgentPrompt", "sublabel": "model/items/tools/…", "pos": [780, 140], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentPrompt.java" }] },
+    { "id": "report", "type": "backend", "label": "ContextReport", "sublabel": "→ MEMORY_COMPRESS 事件", "tag": "project", "pos": [540, 320], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/context/ContextReport.java" }] },
+    { "id": "hook", "type": "security", "label": "ModelRequestHook", "sublabel": "beforeModelRequest", "pos": [780, 270], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/interceptor/ModelRequestHook.java" }] },
+    { "id": "llm", "type": "cloud", "label": "ModelClient → LLM", "sublabel": "executeModel", "pos": [780, 385], "size": [180, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentModelClient.java" }] }
+  ],
+  "connections": [
+    { "from": "ctx", "to": "build", "label": "① prompt+参数", "labelAt": [420, 100], "via": [[450, 80], [450, 172.5]] },
+    { "from": "memory", "to": "projector", "label": "② items", "toSide": "top", "labelAt": [240, 212], "via": [[240, 220], [240, 160], [375, 160]] },
+    { "from": "budget", "to": "projector", "label": "③ 裁剪参数", "labelAt": [440, 290] },
+    { "from": "projector", "to": "build", "label": "④ 投影后 items", "variant": "emphasis", "labelAt": [580, 240], "via": [[505, 222.5], [505, 172.5]] },
+    { "from": "registry", "to": "build", "label": "⑤ visibleTools", "fromSide": "left", "toSide": "top", "labelAt": [320, 30], "via": [[15, 360], [15, 40], [630, 40]] },
+    { "from": "build", "to": "prompt", "label": "⑥ 装配字段", "variant": "emphasis", "labelAt": [750, 164] },
+    { "from": "prompt", "to": "hook", "label": "⑦ hook 改写", "labelAt": [930, 240] },
+    { "from": "hook", "to": "llm", "label": "⑧ 最终 prompt", "variant": "emphasis", "labelAt": [930, 362] },
+    { "from": "projector", "to": "report", "label": "⑨ Report→事件", "variant": "dashed", "fromSide": "left", "toSide": "bottom", "labelAt": [490, 412], "via": [[265, 222.5], [265, 400], [630, 400]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "投影子系统（context 包）",
+      "wraps": ["projector", "budget", "report"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "ContextBudget 四档",
+      "items": [
+        "maxItems：保留 pinnedPrefixItems 前缀 + 尾部若干，中间丢弃；maxApproxChars：按估算字符数再裁一刀",
+        "maxRecentToolResults（Tier-1 微压缩）：老 tool 输出变占位符，保留结构去掉体积；trimOldReasoning（Tier-2）：裁历史推理"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "投影 ≠ 删除",
+      "items": [
+        "projector.project 只作用于本次 prompt 的 items 视图——memory 本体不动，下一轮原始历史仍在",
+        "ContextReport 记录 source/projected/dropped 计数与触发的限制，经 MEMORY_COMPRESS 事件可观测"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "组装次序（源码序）",
+      "items": [
+        "systemPrompt = mergeText(context.systemPrompt, runtimeInstructions)；instructions 独立字段进 prompt",
+        "visibleTools = registry 经 AgentToolVisibility.filter——是请求投影而非授权；最后 ModelRequestHook 还能整体改写"
+      ]
+    }
+  ]
+}

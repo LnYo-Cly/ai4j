@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Workflow 编排：StateGraph 图路由与 Sequential 线性链",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "graph-loop",
+        "label": "图执行循环",
+        "focus": ["engine", "node_exec", "router", "context"],
+        "note": "执行当前节点 → lastResult 写回 → resolveNext 决定下一节点，直到返回 null 或耗尽 maxSteps。"
+      },
+      {
+        "id": "routing",
+        "label": "路由优先级",
+        "focus": ["engine", "router"],
+        "note": "conditionalEdges（StateRouter + routeMap）先匹配，落空再 transitions（StateCondition），都无则图结束。"
+      },
+      {
+        "id": "node-kinds",
+        "label": "节点与变体",
+        "focus": ["node_exec", "agent_session", "sequential"],
+        "note": "RuntimeAgentNode 复用 Agent session 的完整 ReAct 循环；SequentialWorkflow 是无分支线性变体。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "caller", "type": "external", "label": "调用方宿主", "sublabel": "workflow.run(session, req)", "pos": [30, 215], "size": [140, 55] },
+    { "id": "builder_api", "type": "backend", "label": "构建 API", "sublabel": "addNode·addEdge·condEdges·start", "tag": "api", "pos": [30, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/StateGraphWorkflow.java" }] },
+    { "id": "engine", "type": "backend", "label": "StateGraphWorkflow", "sublabel": "executeGraph 循环 · resolveNext", "tag": "engine", "pos": [260, 190], "size": [180, 75],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/StateGraphWorkflow.java" }] },
+    { "id": "context", "type": "database", "label": "WorkflowContext", "sublabel": "共享 k/v · session · lastResult", "tag": "state", "pos": [260, 330], "size": [180, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/WorkflowContext.java" }] },
+    { "id": "node_exec", "type": "backend", "label": "AgentNode", "sublabel": "RuntimeAgentNode · 自定义节点", "tag": "node", "pos": [560, 60], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/RuntimeAgentNode.java" }] },
+    { "id": "agent_session", "type": "backend", "label": "Agent Session", "sublabel": "复用完整 ReAct 循环", "pos": [800, 62], "size": [160, 55] },
+    { "id": "router", "type": "backend", "label": "resolveNext 路由", "sublabel": "StateRouter · routeMap · Condition", "tag": "engine", "pos": [560, 190], "size": [170, 75],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/StateGraphWorkflow.java" }] },
+    { "id": "next_node", "type": "backend", "label": "下一节点 / 结束", "sublabel": "nodeId 循环 · null 终止", "pos": [800, 200], "size": [160, 55] },
+    { "id": "sequential", "type": "backend", "label": "SequentialWorkflow", "sublabel": "线性链变体（无分支）", "tag": "engine", "pos": [560, 340], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/workflow/SequentialWorkflow.java" }] }
+  ],
+  "connections": [
+    { "from": "caller", "to": "engine", "label": "run / runStream", "variant": "emphasis", "labelAt": [195, 284] },
+    { "from": "builder_api", "to": "engine", "label": "图定义（节点+边+起点）", "labelAt": [230, 140] },
+    { "from": "engine", "to": "node_exec", "label": "① execute/Stream → AgentResult", "variant": "emphasis", "labelAt": [500, 150] },
+    { "from": "node_exec", "to": "agent_session", "label": "session.run(request)", "labelAt": [765, 131] },
+    { "from": "engine", "to": "router", "label": "② resolveNext", "labelAt": [500, 246] },
+    { "from": "router", "to": "next_node", "label": "③ nodeId / null 结束", "variant": "emphasis", "labelAt": [775, 186] },
+    { "from": "engine", "to": "context", "label": "④ currentNodeId·lastResult 读写", "variant": "dashed", "labelAt": [350, 300] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "workflow 编排层（复用 Agent session，非独立运行时）",
+      "wraps": ["engine", "context", "node_exec", "router", "sequential"],
+      "pad": 16
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两种编排风格",
+      "items": [
+        "SequentialWorkflow：addNode 线性链，依次执行；StateGraphWorkflow：节点+固定边+条件边的图，可循环（StateGraphWorkflow.java:96-120）",
+        "maxSteps=0 不限步数；图在 resolveNext 返回 null 时终止，lastResult 即最终输出"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "路由优先级",
+      "items": [
+        "先匹配 conditionalEdges：StateRouter.route(ctx,req,res) → routeMap 映射到 nodeId；全部落空才走 transitions（:122-149）",
+        "固定边可带 StateCondition.matches 守卫；outputText 自动成为下一节点的 input"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "节点复用 Agent",
+      "items": [
+        "RuntimeAgentNode.execute → session.run(request)：节点就是完整 Agent 循环（模型+工具+memory），不是简化调用（RuntimeAgentNode.java:14-24）",
+        "WorkflowContext 跨节点共享 k/v 与 session；流式节点实现 WorkflowResultAware 才能拿到 lastResult"
+      ]
+    }
+  ]
+}

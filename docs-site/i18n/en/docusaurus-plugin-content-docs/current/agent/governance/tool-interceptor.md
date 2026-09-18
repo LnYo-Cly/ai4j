@@ -18,6 +18,20 @@ control-flow interfaces plus the existing observe-only [lifecycle hooks](/docs/a
 This is the layer library users need to build policy, safety, or prompt-shaping into their own agent
 systems. The `routeTo` decision leverages ai4j's first-class Sandbox SPI (Daytona/E2B).
 
+## Mechanism Diagram (Interactive)
+
+The diagram below puts both interception chains on one call path: `ToolInterceptor` block/modify/routeTo decisions, `PromptInterceptor` prompt vetoes, `ModelRequestHook` request rewrites, and the observe-only `AgentLifecycleHook` event stream — all wired into `AgentContext` through the `AgentHooks` facade.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/hooks-interceptors.html')}
+  title="Interceptors and hook chain · interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/hooks-interceptors.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## Quick start: the `hooks` facade (recommended)
 
 One entry point, every event, IDE-discoverable, compile-time typed. `AgentHooks` composes your
