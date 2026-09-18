@@ -142,6 +142,20 @@ Agents
 | `AgentMemory` | 状态源 |
 | `AgentEventPublisher` | 运行事件总线 |
 
+## 2.1 运行机理全景图（交互式）
+
+下图把上面的对象关系落成一次 `run` 的真实链路：`AgentBuilder` 装配 → `newSession()` 持有 context 与 memory → `AgentRuntime` 的 ReAct 步循环驱动 `AgentModelClient` 与 LLM 往返（①–③），命中 `tool_calls` 时经 `ToolExecutor` 执行宿主工具并回写 `AgentMemory`（④⑤⑦），全程向 `AgentEventPublisher` 扇出 STEP/MODEL/TOOL/HANDOFF 事件（⑧），memory 再下沉到 `SessionStore` 持久化。可点顶部「引导视图」按 装配与入参 → ReAct 步循环 → 事件扇出 三段浏览，节点上的「来源」徽标对应 `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/` 下的真实源码位置。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/agent-core-runtime.html')}
+  title="ai4j 基础 Agent 运行机理交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-core-runtime.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
 ## 3. 构建阶段到底做了什么
 
 理解架构，最值得直接读的第一个类还是 `AgentBuilder`。

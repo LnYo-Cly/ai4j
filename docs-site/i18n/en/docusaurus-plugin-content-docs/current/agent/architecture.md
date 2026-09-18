@@ -141,6 +141,20 @@ The most critical responsibilities are:
 | `AgentMemory` | State source |
 | `AgentEventPublisher` | Runtime event bus |
 
+## 2.1 Runtime Mechanism Overview (Interactive)
+
+The diagram below turns the object relationships above into the real path of a single `run`: `AgentBuilder` assembles → `newSession()` holds context and memory → the `AgentRuntime` ReAct step loop drives `AgentModelClient`↔LLM rounds (①–③); when `tool_calls` appear, `ToolExecutor` runs host tools and writes results back into `AgentMemory` (④⑤⑦); STEP/MODEL/TOOL/HANDOFF events fan out to `AgentEventPublisher` throughout (⑧), and memory sinks into `SessionStore` for persistence. Use the guided views at the top to browse Assembly → ReAct step loop → Event fan-out; the source badges on nodes map to real files under `ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/`.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/agent-core-runtime.html')}
+  title="ai4j core Agent runtime mechanism — interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-core-runtime.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
+
 ## 3. What the build phase actually does
 
 To understand the architecture, the first class worth reading directly is still `AgentBuilder`.

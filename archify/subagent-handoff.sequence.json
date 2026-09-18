@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "SubAgent 委托：模型工具调用如何路由到子 Agent",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 480],
+    "views": [
+      {
+        "id": "route",
+        "label": "路由",
+        "focus": ["lead_agent", "subagent_exec", "registry", "tool_delegate"],
+        "note": "SubAgentToolExecutor 按 toolName 分流：subagent_* 走注册表，普通工具走委托执行器。"
+      },
+      {
+        "id": "policy",
+        "label": "策略与执行",
+        "focus": ["subagent_exec", "events", "registry", "sub_agent"],
+        "note": "HANDOFF_START 后做 maxDepth/allow/deny/inputFilter 检查，子 Agent 在新会话或复用会话中同步运行。"
+      },
+      {
+        "id": "result",
+        "label": "回填",
+        "focus": ["sub_agent", "subagent_exec", "lead_agent"],
+        "note": "子 Agent 输出作为工具结果回填主 Agent 循环；失败按 onError 重试或回退。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "lead_agent", "type": "backend", "label": "主 Agent", "sublabel": "BaseAgentRuntime" },
+    { "id": "subagent_exec", "type": "backend", "label": "SubAgent 执行器", "sublabel": "SubAgentToolExecutor" },
+    { "id": "registry", "type": "backend", "label": "SubAgent 注册表", "sublabel": "StaticSubAgentRegistry" },
+    { "id": "sub_agent", "type": "backend", "label": "子 Agent", "sublabel": "独立 session" },
+    { "id": "events", "type": "messagebus", "label": "事件总线", "sublabel": "AgentEventPublisher" },
+    { "id": "tool_delegate", "type": "backend", "label": "普通工具", "sublabel": "ToolExecutor 委托" }
+  ],
+  "segments": [
+    { "from": 150, "to": 236, "label": "工具路由 · 策略检查" },
+    { "from": 240, "to": 392, "label": "子 Agent 执行 · 结果回填" }
+  ],
+  "messages": [
+    { "from": "lead_agent", "to": "subagent_exec", "y": 160, "label": "execute(call)：模型发出 tool_call", "variant": "emphasis" },
+    { "from": "subagent_exec", "to": "registry", "y": 188, "label": "supports(toolName)？命中 subagent_*", "variant": "default" },
+    { "from": "subagent_exec", "to": "tool_delegate", "y": 216, "label": "未命中 → delegate.execute(call) 走普通工具", "variant": "dashed" },
+    { "from": "subagent_exec", "to": "events", "y": 244, "label": "HANDOFF_START · depth+1 · policy 检查通过", "variant": "security" },
+    { "from": "subagent_exec", "to": "registry", "y": 272, "label": "run(task, context) → 目标 Agent", "variant": "emphasis" },
+    { "from": "registry", "to": "sub_agent", "y": 300, "label": "NEW_SESSION 或 REUSE_SESSION 会话", "variant": "default" },
+    { "from": "sub_agent", "to": "subagent_exec", "y": 328, "label": "子 Agent 同步跑完循环 → AgentResult output", "variant": "return" },
+    { "from": "subagent_exec", "to": "events", "y": 356, "label": "HANDOFF_END · completed / failed", "variant": "security" },
+    { "from": "subagent_exec", "to": "lead_agent", "y": 384, "label": "工具结果回填 → 主循环继续", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "subagent_exec", "from": 154, "to": 390, "type": "backend" },
+    { "participant": "registry", "from": 182, "to": 334, "type": "backend" },
+    { "participant": "tool_delegate", "from": 210, "to": 222, "type": "backend" },
+    { "participant": "sub_agent", "from": 294, "to": 322, "type": "backend" },
+    { "participant": "events", "from": 238, "to": 362, "type": "messagebus" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "工具即子 Agent",
+      "items": [
+        "StaticSubAgentRegistry 把每个 SubAgentDefinition 暴露成工具：默认 toolName=subagent_<名>，参数 {task*, context}（StaticSubAgentRegistry.java:156-191）",
+        "SubAgentToolExecutor 按 supports(toolName) 分流；普通调用转给配置的主执行器（SubAgentToolExecutor.java:67-101）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "HandoffPolicy 闸门",
+      "items": [
+        "maxDepth(默认1)/allowedTools/deniedTools/inputFilter 先检后行；onDenied/onError 默认 FAIL，可配 FALLBACK 回退主执行器（HandoffPolicy.java:19-49）",
+        "maxRetries+timeoutMillis 控制重试与超时；每次 handoff 发 HANDOFF_START/END 事件（SubAgentToolExecutor.java:110-152）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "会话边界",
+      "items": [
+        "SubAgentSessionMode：NEW_SESSION 每次新建；REUSE_SESSION 按 toolName 复用同一会话（StaticSubAgentRegistry.java:131-163）",
+        "子 Agent 同步阻塞返回 output；会话不共享——这是内部工具委托，不是 A2A 外部协议"
+      ]
+    }
+  ]
+}

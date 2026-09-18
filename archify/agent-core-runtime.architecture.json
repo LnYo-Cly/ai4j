@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ai4j 基础 Agent 机理（ai4j-agent · run 循环）",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480], "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "assembly",
+        "label": "装配与入参",
+        "focus": ["caller", "agent_builder", "agent_session", "runtime"],
+        "note": "AgentBuilder 装配组件，newSession() 持有上下文与 memory，run/runStreamResult 交给 runtime。"
+      },
+      {
+        "id": "step-loop",
+        "label": "ReAct 步循环",
+        "focus": ["runtime", "model_client", "llm", "tool_executor", "host_tools", "memory"],
+        "note": "每步：compact→prompt→model→有 tool_calls 则执行并回写 memory，无则 FINAL_OUTPUT 退出。"
+      },
+      {
+        "id": "observability",
+        "label": "事件扇出",
+        "focus": ["runtime", "event_publisher", "observers"],
+        "note": "STEP/MODEL/TOOL/HANDOFF/TEAM/MEMORY_COMPRESS/FINAL_OUTPUT 事件同时进监听器与 trace。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "caller", "type": "external", "label": "调用方宿主", "sublabel": "CLI · Spring · 任意宿主", "pos": [30, 40], "size": [150, 55] },
+    { "id": "agent_builder", "type": "backend", "label": "AgentBuilder / Agents", "sublabel": "装配 · 策略 · 默认值", "tag": "agent", "pos": [30, 140], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentBuilder.java" }] },
+    { "id": "agent_session", "type": "backend", "label": "AgentSession", "sublabel": "context · memory · run 入口", "tag": "agent", "pos": [30, 250], "size": [150, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java" }] },
+    { "id": "runtime", "type": "backend", "label": "AgentRuntime", "sublabel": "BaseAgentRuntime · ReAct 循环", "tag": "runtime", "pos": [270, 130], "size": [170, 70],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java" }] },
+    { "id": "model_client", "type": "backend", "label": "AgentModelClient", "sublabel": "Chat / Responses 适配", "tag": "model", "pos": [520, 60], "size": [160, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/model/AgentModelClient.java" }] },
+    { "id": "llm", "type": "external", "label": "LLM 提供方", "sublabel": "OpenAI · Doubao · 任意 provider", "pos": [760, 60], "size": [160, 55] },
+    { "id": "tool_executor", "type": "backend", "label": "ToolExecutor · Registry", "sublabel": "校验 · 并/串行执行", "tag": "tool", "pos": [520, 190], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/tool/ToolExecutor.java" }] },
+    { "id": "host_tools", "type": "external", "label": "宿主工具面", "sublabel": "函数 · MCP · SubAgent · A2A", "pos": [760, 190], "size": [160, 55] },
+    { "id": "memory", "type": "database", "label": "AgentMemory", "sublabel": "输入/输出/工具结果 · compact", "tag": "state", "pos": [270, 300], "size": [170, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/AgentMemory.java" }] },
+    { "id": "event_publisher", "type": "messagebus", "label": "AgentEventPublisher", "sublabel": "12 类事件 · AgentListener", "tag": "event", "pos": [520, 300], "size": [160, 60],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/event/AgentEventPublisher.java" }] },
+    { "id": "observers", "type": "external", "label": "观测方", "sublabel": "监听器 · traceExporter · UI", "pos": [760, 300], "size": [160, 55] },
+    { "id": "session_store", "type": "database", "label": "SessionStore · EventLog", "sublabel": "InMemory / File / JDBC · 链式校验", "tag": "state", "pos": [270, 395], "size": [170, 55],
+      "sources": [{ "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/AgentSessionStore.java" }] }
+  ],
+  "connections": [
+    { "from": "caller", "to": "agent_builder", "label": "Agents.react().build()", "labelAt": [105, 115] },
+    { "from": "agent_builder", "to": "agent_session", "label": "newSession()", "labelAt": [105, 225] },
+    { "from": "agent_session", "to": "runtime", "label": "run / runStreamResult", "variant": "emphasis", "labelAt": [195, 324] },
+    { "from": "runtime", "to": "model_client", "label": "① buildPrompt → executeModel", "labelAt": [455, 126] },
+    { "from": "model_client", "to": "llm", "label": "② chat / responses", "variant": "emphasis", "labelAt": [720, 129] },
+    { "from": "llm", "to": "model_client", "label": "③ text + tool_calls", "variant": "dashed", "labelAt": [720, 150], "toSide": "right" },
+    { "from": "runtime", "to": "tool_executor", "label": "④ TOOL_CALL→execute", "labelAt": [415, 214] },
+    { "from": "tool_executor", "to": "host_tools", "label": "⑤ 函数 / MCP / subagent", "labelAt": [720, 264] },
+    { "from": "runtime", "to": "memory", "label": "⑦ addInput / outputItems / toolOutput", "labelAt": [355, 240] },
+    { "from": "runtime", "to": "event_publisher", "label": "⑧ STEP/TOOL/HANDOFF 事件", "variant": "dashed", "labelAt": [575, 272] },
+    { "from": "event_publisher", "to": "observers", "label": "订阅 + traceExporter", "variant": "dashed", "labelAt": [720, 374] },
+    { "from": "memory", "to": "session_store", "label": "snapshot / 持久化", "variant": "dashed", "labelAt": [355, 380] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "ai4j 进程（Java 8 · 无外部框架依赖）",
+      "wraps": ["agent_builder", "agent_session", "runtime", "model_client", "tool_executor", "memory", "event_publisher", "session_store"],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "状态与记忆（memory 为唯一事实源）",
+      "wraps": ["memory", "session_store"],
+      "pad": 12
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "ReAct 步循环",
+      "items": [
+        "while step < maxSteps：compact → prompt → model → 有 tool_calls 执行、无则 FINAL_OUTPUT 退出（BaseAgentRuntime.java:194-324）",
+        "步数耗尽返回 CONTINUATION_REQUIRED；工具返回 waitId/operationId 时返回 WAITING 可续跑（:294-323）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "工具执行与配对",
+      "items": [
+        "AgentToolCallSanitizer 先校验；parallelToolCalls=true 且 >1 个调用时并行，否则串行（:243-271）",
+        "每个 tool_use 必须配对 tool_result——宿主中断（AgentControlFlowException）也会补齐占位结果（:272-280）"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "事件与可观测",
+      "items": [
+        "12 类事件：STEP_*、MODEL_*、TOOL_*、HANDOFF_*、TEAM_*、MEMORY_COMPRESS、FINAL_OUTPUT",
+        "AgentListener 订阅 + traceExporter 全量 span（RUN/STEP/MODEL/TOOL）"
+      ]
+    }
+  ]
+}
