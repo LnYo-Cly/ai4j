@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ai4j 出站调用：A2AClient 如何调外部 Agent",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 560],
+    "views": [
+      {
+        "id": "discover-negotiate",
+        "label": "发现与协商",
+        "focus": ["a2a_client", "external_agent"],
+        "note": "先取对端 AgentCard，再按其声明的 JSON-RPC 接口与认证方式对齐请求。"
+      },
+      {
+        "id": "send-and-observe",
+        "label": "发送与观测",
+        "focus": ["a2a_client", "external_agent", "caller_webhook"],
+        "note": "SendMessage 阻塞/立即返回二选一；SSE 订阅与 push 回调是两条观测通道。"
+      },
+      {
+        "id": "tool-roundtrip",
+        "label": "工具回填",
+        "focus": ["host_agent", "a2a_tool", "a2a_client"],
+        "note": "A2ATool 把远端响应文本作为工具结果回填，宿主 Agent 继续推理。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "host_agent", "type": "backend", "label": "宿主 Agent", "sublabel": "ReAct · CodeAct" },
+    { "id": "a2a_tool", "type": "backend", "label": "A2ATool", "sublabel": "ToolExecutor 包装" },
+    { "id": "a2a_client", "type": "backend", "label": "A2AClient", "sublabel": "JSON-RPC · SSE · push" },
+    { "id": "external_agent", "type": "external", "label": "外部 Agent", "sublabel": "任意 A2A 服务端" },
+    { "id": "caller_webhook", "type": "messagebus", "label": "调用方回调", "sublabel": "HTTPS webhook" }
+  ],
+  "segments": [
+    { "from": 158, "to": 416, "label": "发现 · 发送 · 订阅 · 推送" },
+    { "from": 420, "to": 494, "label": "管理与回填" }
+  ],
+  "messages": [
+    { "from": "host_agent", "to": "a2a_tool", "y": 180, "label": "工具调用 {message}", "variant": "emphasis" },
+    { "from": "a2a_tool", "to": "a2a_client", "y": 208, "label": "sendTask(agentUrl, message)", "variant": "default" },
+    { "from": "a2a_client", "to": "external_agent", "y": 236, "label": "GET /.well-known/agent-card.json（回退 agent.json）", "variant": "default" },
+    { "from": "external_agent", "to": "a2a_client", "y": 264, "label": "AgentCard：skills · capabilities · interfaces · auth", "variant": "return" },
+    { "from": "a2a_client", "to": "external_agent", "y": 292, "label": "POST SendMessage · JSON-RPC 2.0 · A2A-Version:1.0 · 认证头", "variant": "emphasis" },
+    { "from": "external_agent", "to": "a2a_client", "y": 320, "label": "result.task（阻塞至终态 或 returnImmediately）", "variant": "return" },
+    { "from": "a2a_client", "to": "external_agent", "y": 348, "label": "SendStreamingMessage / SubscribeToTask（SSE）", "variant": "default" },
+    { "from": "external_agent", "to": "a2a_client", "y": 376, "label": "SSE：task 快照 + statusUpdate / artifactUpdate", "variant": "dashed" },
+    { "from": "a2a_client", "to": "external_agent", "y": 404, "label": "CreateTaskPushNotificationConfig {url, token}", "variant": "dashed" },
+    { "from": "external_agent", "to": "caller_webhook", "y": 432, "label": "POST 任务事件 · X-A2A-Notification-Token", "variant": "dashed" },
+    { "from": "a2a_client", "to": "external_agent", "y": 460, "label": "GetTask / ListTasks 轮询 · CancelTask 取消", "variant": "security" },
+    { "from": "a2a_client", "to": "a2a_tool", "y": 476, "label": "response text → 回填工具结果", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "a2a_tool", "from": 174, "to": 482, "type": "backend" },
+    { "participant": "a2a_client", "from": 202, "to": 482, "type": "backend" },
+    { "participant": "external_agent", "from": 230, "to": 466, "type": "external" },
+    { "participant": "caller_webhook", "from": 426, "to": 440, "type": "messagebus" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "双协议自适应",
+      "items": [
+        "优先 PascalCase 标准方法：SendMessage / GetTask / CancelTask（A2AClient.java:106-128）",
+        "未声明标准接口时回退 POST /tasks/send；discover 先试 agent-card.json 再回退 agent.json（:77-94）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "三条观测通道",
+      "items": [
+        "SendStreamingMessage / SubscribeToTask 开 SSE 流（:178-190）",
+        "CreateTaskPushNotificationConfig 注册 webhook 回调；GetTask / ListTasks 轮询兜底（:110-150）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "认证与协议版本",
+      "items": [
+        "每个请求携带 A2A-Version: 1.0 头（:33-34）",
+        "X-API-Key 或 Bearer 按对端卡片 authentication 对齐；SSE 单事件 ≤1MB（:591-628, :344-384）"
+      ]
+    }
+  ]
+}

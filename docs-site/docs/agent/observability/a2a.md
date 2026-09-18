@@ -30,6 +30,46 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
 
+## 与外部 Agent 如何交互（时序图）
+
+全景图回答的是「内部结构长什么样」，下面三张时序图回答的是「协议上怎么对话」：ai4j 作为客户端怎么调外部 Agent、外部项目怎么调 ai4j 的 A2A 服务、以及一次跨 Agent 的链式委托完整长什么样。三张图共用同一套记号——实线是请求/响应，虚线是 SSE 与 push 这类异步事件，红色是取消路径。
+
+### 出站：ai4j 调外部 Agent
+
+`A2AClient` 先 `GET /.well-known/agent-card.json` 发现对端卡片（拿到 JSON-RPC 接口地址、skills、capabilities 与认证要求），再 `POST SendMessage` 提交任务；观测有三条通道——`SendStreamingMessage`/`SubscribeToTask` 开 SSE 流、`CreateTaskPushNotificationConfig` 让对端回调调用方自己的 webhook、`GetTask`/`ListTasks` 轮询兜底。对端卡片未声明标准 JSON-RPC 接口时自动回退 `POST /tasks/send` 旧路径。每个请求携带 `A2A-Version: 1.0` 头与 `X-API-Key`/`Bearer` 认证。
+
+<iframe
+  src={useBaseUrl('/archify/a2a-outbound-call.html')}
+  title="ai4j 出站调用外部 A2A Agent 时序图"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-outbound-call.html')} target="_blank" rel="noopener noreferrer">在新窗口打开出站时序图</a>
+
+### 入站：外部项目调 ai4j 的 A2A 服务
+
+外部 A2A 客户端同样先取 `/.well-known/agent-card.json` 对齐能力与认证，再 `POST /` 发 `SendMessage`。`TaskHandler` 的处理链是：非 POST → 405、鉴权失败 → 401、JSON 畸形 → -32700、`jsonrpc≠"2.0"` → -32600、`A2A-Version` 不符 → -32009，然后 `registerTask`（容量 ≤1024）交给 `workerExecutor`（≤32 线程）跑本地 `AgentSession`。对端观测同一任务可以：`SubscribeToTask` 挂 SSE（先收完整 Task 快照再收增量）、`CreateTaskPushNotificationConfig` 注册 push（仅投递公网 HTTPS 回调）、`GetTask` 轮询、或 `CancelTask` 取消（`future.cancel(true)` 真中断）。
+
+<iframe
+  src={useBaseUrl('/archify/a2a-inbound-service.html')}
+  title="外部项目调用 ai4j A2A 服务时序图"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-inbound-service.html')} target="_blank" rel="noopener noreferrer">在新窗口打开入站时序图</a>
+
+### 链式协作：入站 + 出站同进程
+
+ai4j 进程可以同时充当服务端与客户端：外部调用方把任务发给 `A2AServer`，本地 Agent 推理中经 `A2ATool` 把子任务委托给下游外部 Agent——一次「别人的 Agent → 我的 Agent → 另一个 Agent」的链式协作。要注意两条边界：**每跳任务相互独立**，上游 `taskId`/`contextId` 不会自动透传到下游（跨跳关联由编排层负责）；**取消只作用于本跳**，`CancelTask` 中断本地会话，下游任务要取消得由调用方对下游再发一次。
+
+<iframe
+  src={useBaseUrl('/archify/a2a-agent-mesh.html')}
+  title="多 Agent 链式协作时序图"
+  style={{width: '100%', height: 780, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-agent-mesh.html')} target="_blank" rel="noopener noreferrer">在新窗口打开链式协作时序图</a>
+
 ## 0. 先理解 A2A 是什么（它和 SubAgent/Teams 完全不同）
 
 A2A 是一个**跨实现的开放协议**，不是一个进程内的调用机制。理解它的关键在与前面两个能力的对比：

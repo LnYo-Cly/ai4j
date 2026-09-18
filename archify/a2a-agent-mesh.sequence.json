@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "多 Agent 协作：入站服务 + 出站委托同进程链式执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 560],
+    "views": [
+      {
+        "id": "inbound-hop",
+        "label": "入站这一跳",
+        "focus": ["caller", "a2a_server", "local_agent"],
+        "note": "外部调用方把 ai4j 当普通 A2A 服务端：取卡、发任务、等终态。"
+      },
+      {
+        "id": "delegation-hop",
+        "label": "出站委托",
+        "focus": ["local_agent", "a2a_client", "downstream"],
+        "note": "本地 Agent 推理中决定调用下游外部 Agent，经 A2ATool 出站。"
+      },
+      {
+        "id": "observe-cancel",
+        "label": "观测与取消",
+        "focus": ["caller", "a2a_server", "local_agent"],
+        "note": "订阅/取消只作用于本跳任务；下游任务需各跳自行管理。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "caller", "type": "external", "label": "外部调用方", "sublabel": "上游 A2A 客户端" },
+    { "id": "a2a_server", "type": "backend", "label": "A2AServer", "sublabel": "入站 · TaskHandler" },
+    { "id": "local_agent", "type": "backend", "label": "本地 Agent", "sublabel": "AgentSession 推理" },
+    { "id": "a2a_client", "type": "backend", "label": "A2AClient", "sublabel": "出站 · 经 A2ATool" },
+    { "id": "downstream", "type": "external", "label": "下游 Agent", "sublabel": "另一 A2A 服务" }
+  ],
+  "segments": [
+    { "from": 158, "to": 250, "label": "入站：取卡与发任务" },
+    { "from": 258, "to": 418, "label": "推理 + 出站委托" },
+    { "from": 426, "to": 494, "label": "结果 · 订阅 · 取消" }
+  ],
+  "messages": [
+    { "from": "caller", "to": "a2a_server", "y": 180, "label": "GET /.well-known/agent-card.json", "variant": "default" },
+    { "from": "a2a_server", "to": "caller", "y": 208, "label": "AgentCard（本端技能与认证要求）", "variant": "return" },
+    { "from": "caller", "to": "a2a_server", "y": 236, "label": "POST SendMessage{message, contextId}", "variant": "emphasis" },
+    { "from": "a2a_server", "to": "local_agent", "y": 264, "label": "worker 线程：newSession().run(message)", "variant": "emphasis" },
+    { "from": "local_agent", "to": "a2a_client", "y": 292, "label": "模型决策 → A2ATool 工具调用 {message}", "variant": "default" },
+    { "from": "a2a_client", "to": "downstream", "y": 320, "label": "discover → SendMessage（独立的下游任务）", "variant": "default" },
+    { "from": "downstream", "to": "a2a_client", "y": 348, "label": "result.task / SSE 事件", "variant": "return" },
+    { "from": "a2a_client", "to": "local_agent", "y": 376, "label": "工具结果文本回填", "variant": "return" },
+    { "from": "local_agent", "to": "a2a_server", "y": 404, "label": "AgentResult → transition(COMPLETED)", "variant": "default" },
+    { "from": "a2a_server", "to": "caller", "y": 432, "label": "result.task（COMPLETED + artifacts）", "variant": "return" },
+    { "from": "caller", "to": "a2a_server", "y": 460, "label": "SubscribeToTask / CancelTask → 本跳 cancel(true)", "variant": "security" }
+  ],
+  "activations": [
+    { "participant": "a2a_server", "from": 174, "to": 478, "type": "backend" },
+    { "participant": "local_agent", "from": 258, "to": 478, "type": "backend" },
+    { "participant": "a2a_client", "from": 286, "to": 382, "type": "backend" },
+    { "participant": "downstream", "from": 314, "to": 354, "type": "external" }
+  ],
+  "cards": [
+    {
+      "dot": "slate",
+      "title": "任务边界",
+      "items": [
+        "每跳任务独立：上游 taskId / contextId 不透传到下游；A2ATool 只转发 message 文本（A2ATool.java:37-40）",
+        "跨跳关联由编排层负责，协议本身无分布式事务"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "同进程双角色",
+      "items": [
+        "A2AServer（入站）与 A2AClient（出站）互不依赖，可同进程共存",
+        "入站跑 workerExecutor（≤32）、出站走 client 自身连接；上游只见本端终态"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "中断传播",
+      "items": [
+        "CancelTask 只取消本跳（future.cancel(true) :784-794）；下游取消需再发一次",
+        "COMPLETED / FAILED / CANCELED 终态不可逆（TaskState.java:116-126）"
+      ]
+    }
+  ]
+}
