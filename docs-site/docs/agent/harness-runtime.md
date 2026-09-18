@@ -12,6 +12,17 @@ tags: [concept, harness]
 
 > `Agent` 负责一次切片内的思考和执行，`Harness` 负责跨请求、跨进程、跨时间的工作状态、恢复和治理。
 
+## Harness 外循环机理图
+
+交互式架构图：AgentHarness 作为包裹 Agent 的持久化外循环——每次 `run` 只执行一段有界切片（claim 租约 → adapter.open → session.run → 状态映射 → persistOutcome），Agent 的 ReAct/工具/权限/沙箱照旧运行；CommandGateway 是唯一写面，Wait/Wakeup/Checkpoint 全部落 HarnessStore。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe src={useBaseUrl('/archify/harness-runtime.html')} title="Harness 外循环机理图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-runtime.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 1. 它不会替换已有 Agent
 
 没有配置 Harness 时，现有的 `Agent`、`AgentSession`、`ToolExecutor`、MCP、Function Call、Skill、A2A、Subagent、Agent Team、Memory、上下文压缩、Sandbox、Permission、Hook 和 Plugin 的行为保持不变。

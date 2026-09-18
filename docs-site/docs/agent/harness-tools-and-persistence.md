@@ -35,6 +35,17 @@ HarnessToolExecutor
                               └─ Invocation / Wait / Approval / UNKNOWN 记录
 ```
 
+## Harness 执行生命周期时序图
+
+交互式时序图：一次 `run` 的完整生命周期——claim 租约+fencingToken、open(prevState) 开新 session、run 一段切片、snapshot 导出状态、等待时落 WaitRecord+WAITING、deliver 原子写 answer+wakeup→READY 后续跑下一切片。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe src={useBaseUrl('/archify/harness-lifecycle.html')} title="Harness 执行生命周期时序图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-lifecycle.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 1. 管理工具清单
 
 Harness 自动向已有工具 Registry 添加以下保留名称。业务 Tool 不应使用这些名称。

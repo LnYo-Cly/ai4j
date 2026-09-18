@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Agent Harness：包裹 Agent 的持久化外循环",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4" },
+    "views": [
+      {
+        "id": "slice",
+        "label": "一次切片",
+        "focus": ["host", "harness", "adapter", "session", "agent", "gateway"],
+        "note": "每次 run 只执行一段有界切片：claim 租约 → adapter.open → session.run → 状态映射 → 持久化结果。"
+      },
+      {
+        "id": "durable",
+        "label": "持久化台账",
+        "focus": ["gateway", "store", "waits", "harness"],
+        "note": "CommandGateway 是唯一写面：Execution/Task/Wait/Wakeup/Checkpoint/Event 全部落 HarnessStore。"
+      },
+      {
+        "id": "waiting",
+        "label": "等待与恢复",
+        "focus": ["waits", "agent", "harness", "host"],
+        "note": "六种 WaitType 让执行挂起为 WAITING；deliver/resume 重新激活为 READY 后跑下一段切片。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "run/resume/deliver/repair/runReady", "pos": [30, 60], "size": [160, 65] },
+    { "id": "harness", "type": "security", "label": "AgentHarness", "sublabel": "claim 租约+心跳 → 有界切片", "tag": "core", "pos": [260, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/AgentHarness.java" }] },
+    { "id": "adapter", "type": "backend", "label": "ExecutionAdapter", "sublabel": "open(ctx,budget,prevState)", "tag": "adapter", "pos": [510, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessExecutionAdapter.java" }] },
+    { "id": "session", "type": "backend", "label": "AdapterSession", "sublabel": "run(req) + snapshot()", "tag": "adapter", "pos": [760, 60], "size": [180, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessExecutionAdapterSession.java" }] },
+    { "id": "agent", "type": "backend", "label": "Agent / CodingAgent", "sublabel": "ReAct/工具/权限/沙箱照旧", "tag": "adapter", "pos": [760, 215], "size": [180, 65],
+      "sources": [{ "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentHarnessExecutionAdapter.java" }] },
+    { "id": "waits", "type": "database", "label": "Wait / Wakeup 记录", "sublabel": "6 种 WaitType", "tag": "ledger", "pos": [30, 215], "size": [160, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/WaitType.java" }] },
+    { "id": "gateway", "type": "backend", "label": "CommandGateway", "sublabel": "唯一写面 · 读模型", "tag": "ledger", "pos": [260, 215], "size": [180, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessCommandGateway.java" }] },
+    { "id": "store", "type": "database", "label": "HarnessStore", "sublabel": "File / JDBC 持久化", "tag": "ledger", "pos": [510, 215], "size": [180, 65],
+      "sources": [{ "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessPersistence.java" }] }
+  ],
+  "connections": [
+    { "from": "host", "to": "harness", "label": "① run/resume/deliver/repair", "labelAt": [225, 42] },
+    { "from": "harness", "to": "adapter", "label": "② open()", "variant": "emphasis", "labelAt": [475, 85] },
+    { "from": "adapter", "to": "session", "label": "③ 每切片一 session", "variant": "emphasis", "labelAt": [725, 142] },
+    { "from": "session", "to": "agent", "label": "④ run(request)", "labelAt": [920, 172] },
+    { "from": "harness", "to": "gateway", "label": "⑤ claim/persistOutcome/事件", "variant": "emphasis", "labelAt": [450, 172] },
+    { "from": "gateway", "to": "store", "label": "⑥ 变更+读模型", "labelAt": [475, 240] },
+    { "from": "gateway", "to": "waits", "label": "⑦ ensureWait/审批", "labelAt": [225, 304] },
+    { "from": "agent", "to": "waits", "label": "⑧ 异常→WaitRecord", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "labelAt": [480, 340], "via": [[850, 330], [110, 330]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "适配器协议（每切片开一个真实 session）",
+      "wraps": ["adapter", "session", "agent"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "持久化台账（Gateway 唯一写面）",
+      "wraps": ["waits", "gateway", "store"],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "有界切片 + 租约",
+      "items": [
+        "每次 run 只跑一段 bounded slice：claim 租约+fencingToken → 心跳续约 → adapter.open → session.run → 状态映射 → persistExecutionOutcome",
+        "持久化失败/租约丢失 → ExecutionStatus.UNKNOWN 待对账；Agent 的 ReAct/压缩/权限/沙箱/MCP 全部照旧由 Agent 负责"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "WAITING 六种原因",
+      "items": [
+        "adapter 返回 waitId（EXTERNAL_EVENT/ASYNC_OPERATION/RETRY/TIME）或抛 AgentHostInputException(USER_INPUT)/AgentApprovalRequiredException(APPROVAL) → WaitRecord + WAITING",
+        "deliver(waitId,input)：answer+wakeup 原子落库 → READY → 同步跑下一段切片；applyDelivery=false 时值作为下轮 input"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "恢复、幂等与修复",
+      "items": [
+        "checkpointState+adapterState+sessionSnapshot 随 outcome 落库；重启后 resume(executionId)/resumeTask/autoResume 续跑；idempotencyKey 防重复 execution",
+        "repair(parentExecutionId,…)：校验父执行终态 → 子 execution 自动挂 lineage；evaluateAcceptance 走 AcceptanceCoordinator（见验收图）"
+      ]
+    }
+  ]
+}

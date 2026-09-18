@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Agent Harness：一次 run 的生命周期与等待恢复",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 520],
+    "views": [
+      {
+        "id": "slice",
+        "label": "有界切片",
+        "focus": ["host", "harness", "adapter", "session", "gateway"],
+        "note": "claim 租约 → open(prevState) → run 一段切片 → 状态映射 → 持久化 outcome。"
+      },
+      {
+        "id": "wait",
+        "label": "等待回路",
+        "focus": ["harness", "gateway", "host"],
+        "note": "waitId/HostInput/ApprovalRequired → WaitRecord+WAITING；deliver 原子写 answer+wakeup→READY→下一切片。"
+      }
+    ]
+  },
+  "participants": [
+    { "id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "run/deliver/resume" },
+    { "id": "harness", "type": "security", "label": "AgentHarness", "sublabel": "持久化外循环" },
+    { "id": "gateway", "type": "backend", "label": "命令网关", "sublabel": "唯一写面→Store" },
+    { "id": "adapter", "type": "backend", "label": "执行适配器", "sublabel": "open/applyDelivery" },
+    { "id": "session", "type": "backend", "label": "适配会话", "sublabel": "包住真实 Agent" }
+  ],
+  "messages": [
+    { "from": "host", "to": "harness", "label": "run(request)", "y": 160 },
+    { "from": "harness", "to": "gateway", "label": "① claim → 租约+fencingToken", "y": 188 },
+    { "from": "harness", "to": "adapter", "label": "② open(ctx, budget, prevState)", "variant": "emphasis", "y": 216 },
+    { "from": "adapter", "to": "session", "label": "③ 创建 session（注入 prevState）", "y": 244 },
+    { "from": "harness", "to": "session", "label": "④ run(request) → Agent ReAct", "variant": "emphasis", "y": 272 },
+    { "from": "session", "to": "harness", "label": "AdapterExecution+snapshot()", "variant": "dashed", "y": 300 },
+    { "from": "harness", "to": "gateway", "label": "⑤ 等待→ensureWait / 终态→persistOutcome", "y": 328 },
+    { "from": "host", "to": "harness", "label": "deliver(waitId,input) / resume(execId)", "y": 356 },
+    { "from": "harness", "to": "adapter", "label": "⑥ applyDelivery(state,wait,input)", "y": 384 },
+    { "from": "harness", "to": "gateway", "label": "⑦ answer+wakeup 原子落库 → READY", "variant": "emphasis", "y": 412 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "租约与 UNKNOWN",
+      "items": [
+        "claim 拿租约+fencingToken 后心跳续约；持久化失败且租约仍在 → 尝试标 UNKNOWN 待对账，否则返回库中现状",
+        "InterruptedException → UNKNOWN（不当作普通 FAILED）；幂等键 idempotencyKey 防重复 execution"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "六种 WaitType",
+      "items": [
+        "TIME / EXTERNAL_EVENT / ASYNC_OPERATION / APPROVAL / USER_INPUT / RETRY；adapter 返回 waitId 或抛 HostInput/ApprovalRequired 异常 → WaitRecord+WAITING",
+        "WAITING 不能直接 resume：必须先 deliver/wakeup 落库转 READY；applyDelivery 决定值替换 pendingState 还是作下轮 input"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "切片间状态接力",
+      "items": [
+        "snapshot() 导出 adapterState；checkpointState+sessionSnapshot 随 outcome 落库；下个 open 拿到 prevState 原地续跑",
+        "repair(parentExecutionId)：父执行须终态 → 生成子 execution 自动挂 lineage；evaluateAcceptance 走 AcceptanceCoordinator"
+      ]
+    }
+  ]
+}
