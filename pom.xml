@@ -7,7 +7,7 @@
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-sdk</artifactId>
 
-    <version>2.4.3-SNAPSHOT</version>
+    <version>2.5.0</version>
 
     <packaging>pom</packaging>
 
@@ -356,6 +356,10 @@
                         <configuration>
                             <executable>${gpg.executable}</executable>
                             <keyname>cly</keyname>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
                         </configuration>
                         <executions>
                             <execution>
@@ -374,6 +378,9 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>LnYo-Cly</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                            <waitForPublishCompletion>true</waitForPublishCompletion>
                             <excludeArtifacts>
                                 <excludeArtifact>ai4j-sdk</excludeArtifact>
                                 <excludeArtifact>ai4j-flowgram-demo</excludeArtifact>
