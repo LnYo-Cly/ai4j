@@ -8,10 +8,10 @@ tags: [integration]
 :::tip 🚀 生产级参考插件
 `ai4j-plugin-dynamic-workflow` 是 ai4j 的**旗舰参考插件**——同时展示全部 4 种扩展能力（Tool + Command + Skill + Prompt），零运行时依赖（仅 `ai4j-extension-api`），安全设计（host-mediated 请求信封，不执行 JS / 不 spawn agent / 不碰文件），含 9 个单元测试 + 3 个 live 闭环烟测（MiniMax M3 → 脚本 → 信封 → agent 执行 → E2B 沙箱），Java 8 兼容，GitHub Actions CI。
 
-**GitHub**：[LnYo-Cly/ai4j-plugin-dynamic-workflow](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow)
+**GitHub**：[LnYo-Cly/ai4j-plugins](https://github.com/LnYo-Cly/ai4j-plugins)（`plugins/dynamic-workflow/`）
 :::
 
-`ai4j-plugin-dynamic-workflow` 是 AI4J 的动态工作流样板插件，推荐作为独立 GitHub 仓库维护和单独发版，而不是并入 `ai4j-sdk` reactor。它采用 Claude Code style dynamic workflow 的生态模式：**模型先把复杂任务写成一段可检查的 workflow script，再由宿主决定如何把脚本拆给 subagent、worktree、审批和模型路由执行**。
+`ai4j-plugin-dynamic-workflow` 是 AI4J 的官方旗舰参考插件，维护在 [ai4j-plugins](https://github.com/LnYo-Cly/ai4j-plugins) 插件仓的 official 层（`plugins/dynamic-workflow/`），独立于 `ai4j-sdk` reactor 单独发版。它采用 Claude Code style dynamic workflow 的生态模式：**模型先把复杂任务写成一段可检查的 workflow script，再由宿主决定如何把脚本拆给 subagent、worktree、审批和模型路由执行**。
 
 AI4J 这个插件首版刻意保持在 `ai4j-extension-api` 边界内：插件只贡献 tool、command、Skill 和 Prompt 资源，并返回 host-mediated JSON envelope；它不会在插件进程里执行 JavaScript、创建子 Agent、操作 git worktree 或绕过宿主审批。真正执行由宿主侧 `ai4j-agent` dynamic workflow runtime 可选接管。
 
@@ -28,25 +28,25 @@ AI4J 这个插件首版刻意保持在 `ai4j-extension-api` 边界内：插件�
 
 ## 2. 仓库和引入依赖
 
-独立仓库建议命名为：
+插件源码维护在社区插件仓的 `plugins/dynamic-workflow/` 目录：
 
 ```text
-https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow
+https://github.com/LnYo-Cly/ai4j-plugins/tree/main/plugins/dynamic-workflow
 ```
 
-这样它可以展示 AI4J plugin 生态，而不绑定到 SDK monorepo 的发布节奏。`ai4j-sdk` 侧只保留这篇文档入口和插件契约说明；插件源码、CI、版本号和发行说明由独立仓库维护。
+它是该仓 official 层的旗舰参考插件：随 `ai4j-plugins` 的统一发布管线单独发版，不绑定 `ai4j-sdk` 的发布节奏。`ai4j-sdk` 侧只保留这篇文档入口和插件契约说明。
 
-插件发布后直接引入独立 artifact：
+发布后引入坐标（插件仓统一 groupId）：
 
 ```xml
 <dependency>
-  <groupId>io.github.lnyo-cly</groupId>
+  <groupId>io.github.lnyo-cly.community</groupId>
   <artifactId>ai4j-plugin-dynamic-workflow</artifactId>
   <version>0.1.0</version>
 </dependency>
 ```
 
-快照或本地验证阶段可以使用 `0.1.0-SNAPSHOT`。该插件仍依赖 `ai4j-extension-api`；独立仓库的 POM 应显式声明兼容的 AI4J extension API 版本，例如：
+该插件仍依赖 `ai4j-extension-api`；插件 POM 通过共享 parent pin 住兼容的扩展 API 基线，例如：
 
 ```xml
 <dependency>
