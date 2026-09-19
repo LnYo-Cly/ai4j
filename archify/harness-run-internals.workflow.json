@@ -1,0 +1,283 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "一次 run 的内部管线：claim→open→切片→落库→deliver 回路",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "slice",
+        "label": "有界切片",
+        "focus": [
+          "host",
+          "claim",
+          "open",
+          "session",
+          "snapshot",
+          "map",
+          "persist",
+          "result"
+        ],
+        "note": "跟随一次 run(request)：claim 租约 → adapter.open → session.run → snapshot → 结果落库。"
+      },
+      {
+        "id": "wait-loop",
+        "label": "等待回路",
+        "focus": [
+          "map",
+          "ensure_wait",
+          "host",
+          "delivery",
+          "claim"
+        ],
+        "note": "结果映射到 WAITING 后由 deliver(waitId,input) 唤醒，execution 回 READY 进入下一切片。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "caller",
+      "label": "宿主调用面 Host API"
+    },
+    {
+      "id": "runtime",
+      "label": "AgentHarness 外循环 · ExecutionAdapter"
+    },
+    {
+      "id": "ledger",
+      "label": "CommandGateway + Store",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "intake",
+      "label": "接收与认领",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "slice",
+      "label": "有界切片",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "outcome",
+      "label": "落库与出口",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "slice_group",
+      "label": "每切片一个真实 AdapterSession",
+      "lane": "runtime",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "host",
+    "claim",
+    "open",
+    "session",
+    "snapshot",
+    "map",
+    "persist"
+  ],
+  "nodes": [
+    {
+      "id": "host",
+      "lane": "caller",
+      "col": 0,
+      "type": "external",
+      "label": "Host / Worker",
+      "sublabel": "run/resume/deliver 入口",
+      "width": 132
+    },
+    {
+      "id": "result",
+      "lane": "caller",
+      "col": 5,
+      "type": "backend",
+      "label": "HarnessRunResult",
+      "sublabel": "CONTINUE/WAIT/终态",
+      "width": 132
+    },
+    {
+      "id": "claim",
+      "lane": "runtime",
+      "col": 1,
+      "type": "security",
+      "label": "claimExecution",
+      "sublabel": "租约+fencingToken",
+      "tag": "lease",
+      "width": 132
+    },
+    {
+      "id": "open",
+      "lane": "runtime",
+      "col": 2,
+      "type": "backend",
+      "label": "adapter.open",
+      "sublabel": "ctx+budget+prevState",
+      "width": 132
+    },
+    {
+      "id": "session",
+      "lane": "runtime",
+      "col": 3,
+      "type": "backend",
+      "label": "session.run",
+      "sublabel": "每切片一 session",
+      "tag": "bounded",
+      "width": 132
+    },
+    {
+      "id": "snapshot",
+      "lane": "runtime",
+      "col": 4,
+      "type": "backend",
+      "label": "snapshot()",
+      "sublabel": "导出可序列化状态",
+      "width": 132
+    },
+    {
+      "id": "map",
+      "lane": "runtime",
+      "col": 5,
+      "type": "backend",
+      "label": "结果映射",
+      "sublabel": "CONTINUE/WAIT/终态",
+      "width": 132
+    },
+    {
+      "id": "delivery",
+      "lane": "caller",
+      "col": 1,
+      "type": "external",
+      "label": "deliver(waitId,input)",
+      "sublabel": "→applyDelivery 原子写",
+      "width": 150
+    },
+    {
+      "id": "ensure_wait",
+      "lane": "ledger",
+      "col": 4,
+      "type": "database",
+      "label": "ensureWait",
+      "sublabel": "WaitRecord+Wakeup",
+      "width": 132
+    },
+    {
+      "id": "persist",
+      "lane": "ledger",
+      "col": 5,
+      "type": "database",
+      "label": "persistOutcome",
+      "sublabel": "outcome+checkpoint+event",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "id": "run-entry",
+      "from": "host",
+      "to": "claim",
+      "label": "run(request)/resume(execId)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "claim-open",
+      "from": "claim",
+      "to": "open",
+      "variant": "emphasis"
+    },
+    {
+      "id": "open-session",
+      "from": "open",
+      "to": "session",
+      "variant": "default"
+    },
+    {
+      "id": "session-snapshot",
+      "from": "session",
+      "to": "snapshot",
+      "variant": "default"
+    },
+    {
+      "id": "snapshot-map",
+      "from": "snapshot",
+      "to": "map",
+      "variant": "default"
+    },
+    {
+      "id": "map-wait",
+      "from": "map",
+      "to": "ensure_wait",
+      "label": "waitId/HostInput/Approval",
+      "variant": "security"
+    },
+    {
+      "id": "map-persist",
+      "from": "map",
+      "to": "persist",
+      "label": "完成/失败",
+      "variant": "emphasis"
+    },
+    {
+      "id": "wait-host",
+      "from": "ensure_wait",
+      "to": "host",
+      "label": "WAITING 返回",
+      "variant": "security"
+    },
+    {
+      "id": "persist-result",
+      "from": "persist",
+      "to": "result",
+      "variant": "emphasis"
+    },
+    {
+      "id": "host-deliver",
+      "from": "host",
+      "to": "delivery",
+      "label": "deliver 唤醒等待",
+      "variant": "dashed"
+    },
+    {
+      "id": "delivery-ready",
+      "from": "delivery",
+      "to": "claim",
+      "label": "answer+wakeup→READY",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "有界切片",
+      "items": [
+        "每次 run 只跑一段受 HarnessRunBudget 约束的切片：open 建真实 session、跑 ReAct/工具、snapshot 导出状态",
+        "claim 生成租约+fencingToken；持久化校验 fencing 拒绝陈旧 worker 的迟到写入"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "deliver 回路",
+      "items": [
+        "切片返回 waitId 或抛 HostInput/ApprovalRequired → ensureWait 落 WaitRecord+Wakeup，执行转 WAITING",
+        "deliver(waitId,input) 原子写 answer+wakeup 转 READY；下一切片从 prevState+answer 恢复续跑"
+      ]
+    }
+  ]
+}

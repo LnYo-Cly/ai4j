@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Worker 失联恢复：租约过期→UNKNOWN→显式对账→接管续跑",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      560
+    ],
+    "views": [
+      {
+        "id": "loss",
+        "label": "失联→UNKNOWN",
+        "focus": [
+          "worker_a",
+          "harness",
+          "gateway",
+          "store"
+        ],
+        "note": "心跳停止→租约过期；副作用是否落库不可判定→execution 标 UNKNOWN，而非静默 FAILED。"
+      },
+      {
+        "id": "recover",
+        "label": "对账与接管",
+        "focus": [
+          "operator",
+          "harness",
+          "gateway",
+          "store",
+          "worker_b"
+        ],
+        "note": "reconcileExecution 显式把 UNKNOWN 对账回 READY；Worker B 重新 claim 拿到新租约与递增 fencingToken 续跑。"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "worker_a",
+      "type": "external",
+      "label": "Worker A",
+      "sublabel": "首个租约持有者"
+    },
+    {
+      "id": "harness",
+      "type": "security",
+      "label": "AgentHarness",
+      "sublabel": "持久化外循环"
+    },
+    {
+      "id": "gateway",
+      "type": "backend",
+      "label": "命令网关",
+      "sublabel": "Gateway·唯一写面"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "HarnessStore",
+      "sublabel": "File/JDBC"
+    },
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "宿主/对账方",
+      "sublabel": "reconcileExecution"
+    },
+    {
+      "id": "worker_b",
+      "type": "external",
+      "label": "Worker B",
+      "sublabel": "接管者"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 258,
+      "label": "① 认领与心跳"
+    },
+    {
+      "from": 258,
+      "to": 342,
+      "label": "② 失联 → UNKNOWN"
+    },
+    {
+      "from": 342,
+      "to": 480,
+      "label": "③ 显式对账 → 接管续跑"
+    }
+  ],
+  "messages": [
+    {
+      "from": "worker_a",
+      "to": "harness",
+      "label": "claimExecution(execId, workerA, leaseMs)",
+      "y": 160
+    },
+    {
+      "from": "harness",
+      "to": "gateway",
+      "label": "① 校验 READY→RUNNING",
+      "y": 188
+    },
+    {
+      "from": "gateway",
+      "to": "store",
+      "label": "写 LeaseRecord+fencingToken=n",
+      "y": 216
+    },
+    {
+      "from": "worker_a",
+      "to": "harness",
+      "label": "heartbeat(leaseId, token) 续约 —— 随后失联",
+      "y": 244
+    },
+    {
+      "from": "harness",
+      "to": "gateway",
+      "label": "② 租约过期→markExecutionUnknownIfLeaseLost",
+      "variant": "security",
+      "y": 272
+    },
+    {
+      "from": "gateway",
+      "to": "store",
+      "label": "execution→UNKNOWN（副作用待对账）",
+      "variant": "security",
+      "y": 300
+    },
+    {
+      "from": "store",
+      "to": "harness",
+      "label": "现状=UNKNOWN，等待对账",
+      "variant": "dashed",
+      "y": 328
+    },
+    {
+      "from": "operator",
+      "to": "harness",
+      "label": "reconcileExecution(execId, READY, reason)",
+      "y": 356
+    },
+    {
+      "from": "harness",
+      "to": "gateway",
+      "label": "③ mayReconcile 校验→execution.requeued 事件",
+      "y": 384
+    },
+    {
+      "from": "gateway",
+      "to": "store",
+      "label": "execution→READY（显式对账，非自动）",
+      "variant": "emphasis",
+      "y": 412
+    },
+    {
+      "from": "worker_b",
+      "to": "harness",
+      "label": "claimExecution(execId, workerB, leaseMs)",
+      "y": 440
+    },
+    {
+      "from": "harness",
+      "to": "worker_b",
+      "label": "新租约+fencing=n+1，续跑下一切片",
+      "variant": "dashed",
+      "y": 468
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "UNKNOWN ≠ FAILED",
+      "items": [
+        "租约丢失时副作用/持久化结果不可判定：标 UNKNOWN 挂起，等 reconcileExecution 显式对账",
+        "持久化校验 fencingToken：失联 worker 的迟到写入被拒，不覆盖接管者的新状态"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "接管语义",
+      "items": [
+        "reconcileExecution 受 mayReconcile 闸门约束并落 execution.requeued 事件；READY 后任一 worker 可 claim",
+        "同 worker 幂等续约；他 worker 在租约未过期时 claim → HarnessConflictException；过期后 fencing 递增"
+      ]
+    }
+  ]
+}
