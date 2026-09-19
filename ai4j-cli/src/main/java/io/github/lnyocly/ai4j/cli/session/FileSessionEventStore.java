@@ -5,6 +5,7 @@ import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -89,9 +90,9 @@ public class FileSessionEventStore implements SessionEventStore {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             while (channel.read(buffer) != -1) {
-                buffer.flip();
+                ((Buffer) buffer).flip();
                 out.write(buffer.array(), 0, buffer.remaining());
-                buffer.clear();
+                ((Buffer) buffer).clear();
             }
             tail = out.toByteArray();
         }
