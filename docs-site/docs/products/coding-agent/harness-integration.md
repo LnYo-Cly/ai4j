@@ -58,6 +58,18 @@ HarnessRunResult first = harness.run(HarnessRunRequest.builder()
 
 如果 CLI 已经从项目数据库或用户选择中得知 Task ID，可以直接传 `taskId`；否则省略它，让 Agent 动态决定。
 
+## CodingAgent 适配分层图
+
+交互式架构图：CodingAgentHarness 门面 → AgentHarness → CodingAgentHarnessExecutionAdapter——open 解码 CodingSessionState 并为每切片开一个真实 CodingSession，applyHarnessOverlay 注入 HarnessToolRegistry/Executor/Interceptor/Prompts/Budget，snapshot 与 applyDelivery 完成跨切片状态往返。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+
+<iframe src={useBaseUrl('/archify/harness-coding-adapter.html')} title="CodingAgent 适配分层图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-coding-adapter.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 3. 长时间自主推进
 
 一个 slice 结束并不等于项目任务完成。Coding 宿主可以在 `CONTINUATION_REQUIRED` 时恢复同一个 Execution：

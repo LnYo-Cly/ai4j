@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Execution 状态机：READY→RUNNING→等待/终态/对账",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      630
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "main",
+        "label": "主链与终态",
+        "focus": [
+          "ready",
+          "running",
+          "outcome_map",
+          "succeeded",
+          "failed"
+        ],
+        "note": "READY 经 claim 进入 RUNNING；切片结果映射到 SUCCEEDED/FAILED/CANCELLED 终态。"
+      },
+      {
+        "id": "wait-loop",
+        "label": "等待回路",
+        "focus": [
+          "outcome_map",
+          "waiting",
+          "ready"
+        ],
+        "note": "waitId/HostInput/ApprovalRequired → WAITING；deliver+wakeup 落库后回到 READY 再跑下一切片。"
+      },
+      {
+        "id": "reconcile",
+        "label": "对账恢复",
+        "focus": [
+          "running",
+          "unknown",
+          "ready"
+        ],
+        "note": "中断、持久化歧义或租约过期 → UNKNOWN；必须 reconcileExecution 显式回到 READY。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "执行主链"
+    },
+    {
+      "id": "waits",
+      "label": "等待"
+    },
+    {
+      "id": "recon",
+      "label": "对账"
+    },
+    {
+      "id": "terminal",
+      "label": "终态出口"
+    }
+  ],
+  "states": [
+    {
+      "id": "ready",
+      "type": "start",
+      "label": "READY",
+      "sublabel": "可被 claim",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "entry"
+    },
+    {
+      "id": "running",
+      "type": "active",
+      "label": "RUNNING",
+      "sublabel": "租约+心跳持有",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "lease"
+    },
+    {
+      "id": "outcome_map",
+      "type": "decision",
+      "label": "结果映射",
+      "sublabel": "切片出口判定",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "map"
+    },
+    {
+      "id": "waiting",
+      "type": "waiting",
+      "label": "WAITING",
+      "sublabel": "6 种 WaitType",
+      "lane": "waits",
+      "col": 1,
+      "tag": "pause"
+    },
+    {
+      "id": "unknown",
+      "type": "neutral",
+      "label": "UNKNOWN",
+      "sublabel": "副作用待对账",
+      "lane": "recon",
+      "col": 2,
+      "tag": "reconcile"
+    },
+    {
+      "id": "succeeded",
+      "type": "success",
+      "label": "SUCCEEDED",
+      "sublabel": "切片完成",
+      "lane": "terminal",
+      "col": 0,
+      "tag": "terminal"
+    },
+    {
+      "id": "cancelled",
+      "type": "failure",
+      "label": "CANCELLED",
+      "sublabel": "宿主随时取消",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "terminal"
+    },
+    {
+      "id": "failed",
+      "type": "failure",
+      "label": "FAILED",
+      "sublabel": "切片异常终态",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "terminal"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "to-succeeded",
+      "from": "outcome_map",
+      "to": "succeeded",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "to-waiting",
+      "from": "outcome_map",
+      "to": "waiting",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          556,
+          157
+        ]
+      ]
+    },
+    {
+      "id": "to-unknown",
+      "from": "running",
+      "to": "unknown",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          248,
+          40
+        ],
+        [
+          710,
+          40
+        ]
+      ]
+    },
+    {
+      "id": "waiting-ready",
+      "from": "waiting",
+      "to": "ready",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [
+        [
+          470,
+          307
+        ],
+        [
+          470,
+          520
+        ],
+        [
+          94,
+          520
+        ]
+      ]
+    },
+    {
+      "id": "unknown-ready",
+      "from": "unknown",
+      "to": "ready",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          633,
+          307
+        ],
+        [
+          633,
+          540
+        ],
+        [
+          60,
+          540
+        ],
+        [
+          60,
+          157
+        ]
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "状态语义速览",
+      "items": [
+        "claim 仅从 READY；RUNNING 持租约+心跳+fencingToken 拒迟到写入；deliver+wakeup 把 WAITING 原子转 READY",
+        "中断/歧义/租约过期 → UNKNOWN；reconcileExecution 显式回 READY（虚线）；异常→FAILED；取消→CANCELLED"
+      ]
+    }
+  ]
+}

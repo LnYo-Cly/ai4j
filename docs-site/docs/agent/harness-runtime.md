@@ -90,6 +90,16 @@ Harness deliberately 不把 Task 和 Session 强行绑定：
 
 因此，一条新的客服消息通常会创建一个新的 Execution；它可以复用客户的 Agent Session，但不会因为复用了 Session 就自动继承上一条消息的 Task。Coding Agent 的 Task 则通常属于项目，可以被不同 CLI、TUI、ACP 或后台 worker 的 Execution 继续处理。
 
+## Execution 状态机图
+
+交互式状态机：Execution 在 READY / RUNNING / WAITING / SUCCEEDED / FAILED / UNKNOWN 之间迁移——租约丢失或持久化不确定时标记 UNKNOWN 而不是 FAILED；WAITING 必须先由 deliver 原子写入 answer+wakeup 才能回到 READY；终态不可再迁移。
+
+
+<iframe src={useBaseUrl('/archify/harness-execution-states.html')} title="Execution 状态机图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-execution-states.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 3. 一次 `run` 如何工作
 
 `AgentHarness.run(...)` 每次执行一个有边界的切片：
@@ -122,6 +132,16 @@ if (result.getStatus() == HarnessRunStatus.WAITING) {
 
 `message` 不需要实现 SDK 的固定接口。它可以是电商消息 DTO、HTTP 请求、事件对象、CLI prompt、工单对象或任意业务输入。Harness 只保存输入摘要和 Agent 能够恢复所需的运行状态；完整业务对象是否落库、如何脱敏，由业务系统决定。
 
+## 单次 run 内部流程图
+
+交互式流程图：run/resume 入口 → claimExecution 租约+fencing → adapter.open(ctx,budget,prevState) → 有界 Agent/ReAct 切片 → snapshot → 状态映射 → persistOutcome / ensureWait；deliver 回路把 answer+wakeup 原子落库后从 prevState+answer 续跑下一段切片。
+
+
+<iframe src={useBaseUrl('/archify/harness-run-internals.html')} title="单次 run 内部流程图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-run-internals.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 4. Task 是运行时动态产生的
 
 开发者不需要为“退款”“改地址”“查订单”分别写固定的 `TaskDefinition`，也不需要在应用启动时创建唯一 Task。
@@ -146,6 +166,16 @@ harness_task_manage {
 - 通过 `harness_submission_request` 提交外部审核，而不是自行宣布完成。
 
 宿主只有在自己已经知道长期工作身份时才传 `taskId`，例如后台重试某个已知的退款工单或继续一个项目级编码 Task。Task 仍然可以有多个 Session 和多个 Execution。
+
+## 提交-评审-门禁流程图
+
+交互式流程图：Agent 不能直接把 Task 置为 IN_REVIEW——必须 submitTask 提交 → reviewSubmission（APPROVED / CHANGES_REQUESTED）→ AcceptanceCoordinator 评估证据与完成门禁 → completeTask 才能 DONE；repair(parentExecutionId) 创建挂在父执行 lineage 下的子执行。
+
+
+<iframe src={useBaseUrl('/archify/harness-submission-gate.html')} title="提交-评审-门禁流程图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-submission-gate.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
 
 ## 5. Agent、宿主和 Harness 各自负责什么
 
