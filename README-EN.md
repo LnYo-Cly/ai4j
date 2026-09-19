@@ -50,6 +50,85 @@ ai4j is a JDK 8+ Java AI Agentic SDK covering unified model access, Tool Calling
 
 > Want DashScope / DeepSeek / Ollama instead? Just swap the `PlatformType` and its Config; the rest of the code stays the same.
 
+## Modules
+
+| Module | Purpose |
+|---|---|
+| `ai4j` | Core SDK: provider access, Chat/Responses, RAG, MCP, vector, image, audio, realtime |
+| `ai4j-agent` | Agent runtime, workflow, trace, memory, subagent/team orchestration |
+| `ai4j-coding` | Coding-agent runtime, workspace tools, outer loop, compaction |
+| `ai4j-cli` | CLI / TUI / ACP host and session runtime |
+| `ai4j-extension-api` | Plugin extension contract: manifest, ServiceLoader discovery, enable/expose gates |
+| `ai4j-plugin-ask-user` | Official sample plugin (host-mediated user clarification) |
+| `ai4j-harness` | Durable, governed long-running Agent Harness runtime |
+| `ai4j-spring-boot-starter` | Spring Boot auto-configuration |
+| `ai4j-flowgram-spring-boot-starter` | FlowGram integration, task APIs, trace bridge |
+| `ai4j-flowgram-demo` | Demo backend for the FlowGram starter |
+| `ai4j-document-tika` | Optional Apache Tika document loading (PDF/Word/Excel/PPT) |
+| `ai4j-bom` | Version alignment BOM |
+
+Plus `docs-site/` (Docusaurus site) and `ai4j-flowgram-webapp-demo/` (web demo frontend).
+
+## Spring Boot
+
+```xml
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-spring-boot-starter</artifactId>
+    <version>2.4.2</version>
+</dependency>
+```
+
+```yaml
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY}
+```
+
+```java
+@Autowired
+private AiService aiService;
+```
+
+See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickstart.md).
+
+## Coding Agent CLI / TUI / ACP
+
+`ai4j-cli` is a ready-to-use local Coding Agent — not just an API wrapper. Three entry points: interactive CLI, TUI, and ACP (for IDE integration).
+
+**Install** (requires Java 8+; the script pulls `ai4j-cli` from Maven Central and creates the `ai4j` command):
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh    # Linux / macOS / Git Bash
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex         # Windows PowerShell
+```
+
+**Three entry points**:
+
+```bash
+ai4j code --provider openai --protocol responses --model gpt-5-mini --prompt "Summarize this project's structure"   # one-shot / interactive CLI
+ai4j tui  --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .   # TUI
+ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace .   # ACP, for IDE integration
+```
+
+Capabilities: one-shot and continuous sessions, persistent provider profiles (`~/.ai4j/providers.json`), workspace model overrides, subagents / agent teams, session resume / fork / replay, skills directories, MCP integration, tool approvals, background process management.
+
+Full docs: [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md) · [Quickstart](docs-site/docs/products/coding-agent/quickstart.md) · [Overview](docs-site/docs/products/coding-agent/overview.md)
+
+## Plugin ecosystem
+
+An AI4J plugin is an ordinary Maven jar: `ServiceLoader` discovery plus `ExtensionRegistry` three-stage gates (discover → enable → exposeTool). Adding a dependency never enables it by itself.
+
+| Plugin | Home | Notes |
+|---|---|---|
+| `ai4j-plugin-ask-user` | This reactor | Official sample plugin |
+| [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) | Standalone repo | Flagship reference: dynamic workflows |
+| Community plugins (e.g. `you-search`) | [LnYo-Cly/ai4j-plugins](https://github.com/LnYo-Cly/ai4j-plugins) | Community-maintained, unified Central releases |
+
+- Using plugins: [Plugin packages & gates](docs-site/docs/extending/plugins/plugin-packages.md)
+- Writing one: [Plugin author cookbook](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
+- Submitting to the community repo: [ai4j-plugins README](https://github.com/LnYo-Cly/ai4j-plugins#readme)
+
 ## Links
 
 - Docs: https://lnyo-cly.github.io/ai4j/

@@ -50,6 +50,85 @@ ai4j 是一款面向 JDK 8+ 的 Java AI Agentic 开发套件，覆盖统一模�
 
 > 换成 DashScope / DeepSeek / Ollama 等其他平台？只需替换 `PlatformType` 与对应 Config，其余代码不变。
 
+## 模块组成
+
+| 模块 | 说明 |
+|---|---|
+| `ai4j` | 核心 SDK：provider 接入、Chat/Responses、RAG、MCP、向量、图像、音频、realtime |
+| `ai4j-agent` | Agent 运行时、workflow、trace、memory、subagent/team 编排 |
+| `ai4j-coding` | Coding Agent 运行时、workspace 工具、outer loop、compaction |
+| `ai4j-cli` | CLI / TUI / ACP 宿主与会话运行时 |
+| `ai4j-extension-api` | 插件扩展契约：manifest、ServiceLoader 发现、enable/expose 门禁 |
+| `ai4j-plugin-ask-user` | 官方样例插件（host-mediated 用户提问） |
+| `ai4j-harness` | 持久化、受治理的长时运行 Agent Harness runtime |
+| `ai4j-spring-boot-starter` | Spring Boot 自动装配 |
+| `ai4j-flowgram-spring-boot-starter` | FlowGram 集成、task API、trace bridge |
+| `ai4j-flowgram-demo` | FlowGram starter 集成演示后端 |
+| `ai4j-document-tika` | 可选 Apache Tika 文档加载（PDF/Word/Excel/PPT） |
+| `ai4j-bom` | 版本对齐 BOM |
+
+另有 `docs-site/`（Docusaurus 文档站）与 `ai4j-flowgram-webapp-demo/`（Web 演示前端）。
+
+## Spring Boot 接入
+
+```xml
+<dependency>
+    <groupId>io.github.lnyo-cly</groupId>
+    <artifactId>ai4j-spring-boot-starter</artifactId>
+    <version>2.4.2</version>
+</dependency>
+```
+
+```yaml
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY}
+```
+
+```java
+@Autowired
+private AiService aiService;
+```
+
+详见 [Spring Boot 快速开始](docs-site/docs/integrations/spring-boot/quickstart.md)。
+
+## Coding Agent CLI / TUI / ACP
+
+`ai4j-cli` 是开箱即用的本地 Coding Agent，不只是 API 封装：交互式 CLI、TUI 界面、ACP（供 IDE 接入）三种入口。
+
+**安装**（需 Java 8+，脚本从 Maven Central 拉取 `ai4j-cli` 并生成 `ai4j` 命令）：
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh    # Linux / macOS / Git Bash
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex         # Windows PowerShell
+```
+
+**三种入口**：
+
+```bash
+ai4j code --provider openai --protocol responses --model gpt-5-mini --prompt "总结这个项目的结构"   # one-shot / 交互式 CLI
+ai4j tui  --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .   # TUI
+ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace .   # ACP，供 IDE 接入
+```
+
+能力：one-shot 与持续会话、provider profile 持久化（`~/.ai4j/providers.json`）、workspace model override、subagent / agent teams、session resume / fork / replay、skills 目录、MCP 对接、工具审批、后台 process 管理。
+
+完整说明：[Coding Agent CLI 文档](docs/readme/zh/coding-agent-cli.md) · [快速开始](docs-site/docs/products/coding-agent/quickstart.md) · [总览](docs-site/docs/products/coding-agent/overview.md)
+
+## 插件生态
+
+AI4J 插件是普通 Maven jar：`ServiceLoader` 发现 + `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）。引入依赖不等于启用。
+
+| 插件 | 归属 | 说明 |
+|---|---|---|
+| `ai4j-plugin-ask-user` | 本仓 reactor | 官方样例插件 |
+| [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) | 独立仓库 | 旗舰参考插件：动态工作流 |
+| 社区插件（如 `you-search`） | [LnYo-Cly/ai4j-plugins](https://github.com/LnYo-Cly/ai4j-plugins) | 社区维护、统一 Central 发布 |
+
+- 使用插件：[插件包与门禁](docs-site/docs/extending/plugins/plugin-packages.md)
+- 编写插件：[插件作者实战指南](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
+- 向社区仓提交插件：见 [ai4j-plugins README](https://github.com/LnYo-Cly/ai4j-plugins#readme)
+
 ## 链接
 
 - 文档站：https://lnyo-cly.github.io/ai4j/
