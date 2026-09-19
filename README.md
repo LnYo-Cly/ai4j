@@ -94,7 +94,26 @@ private AiService aiService;
 
 ## Coding Agent CLI / TUI / ACP
 
-`ai4j-cli` 是内置的 Coding Agent 宿主，提供 CLI、TUI 与 ACP 三种入口，内置 workspace 工具、审批与插件扩展。使用方式见 [Coding Agent CLI 文档](docs/readme/zh/coding-agent-cli.md)。
+`ai4j-cli` 是开箱即用的本地 Coding Agent，不只是 API 封装：交互式 CLI、TUI 界面、ACP（供 IDE 接入）三种入口。
+
+**安装**（需 Java 8+，脚本从 Maven Central 拉取 `ai4j-cli` 并生成 `ai4j` 命令）：
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh    # Linux / macOS / Git Bash
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex         # Windows PowerShell
+```
+
+**三种入口**：
+
+```bash
+ai4j code --provider openai --protocol responses --model gpt-5-mini --prompt "总结这个项目的结构"   # one-shot / 交互式 CLI
+ai4j tui  --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .   # TUI
+ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace .   # ACP，供 IDE 接入
+```
+
+能力：one-shot 与持续会话、provider profile 持久化（`~/.ai4j/providers.json`）、workspace model override、subagent / agent teams、session resume / fork / replay、skills 目录、MCP 对接、工具审批、后台 process 管理。
+
+完整说明：[Coding Agent CLI 文档](docs/readme/zh/coding-agent-cli.md) · [快速开始](docs-site/docs/products/coding-agent/quickstart.md) · [总览](docs-site/docs/products/coding-agent/overview.md)
 
 ## 插件生态
 

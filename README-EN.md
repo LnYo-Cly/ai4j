@@ -94,7 +94,26 @@ See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickst
 
 ## Coding Agent CLI / TUI / ACP
 
-`ai4j-cli` is the built-in Coding Agent host, with CLI, TUI, and ACP entries — workspace tools, approvals, and plugin extensions included. See the [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md).
+`ai4j-cli` is a ready-to-use local Coding Agent — not just an API wrapper. Three entry points: interactive CLI, TUI, and ACP (for IDE integration).
+
+**Install** (requires Java 8+; the script pulls `ai4j-cli` from Maven Central and creates the `ai4j` command):
+
+```bash
+curl -fsSL https://lnyo-cly.github.io/ai4j/install.sh | sh    # Linux / macOS / Git Bash
+irm https://lnyo-cly.github.io/ai4j/install.ps1 | iex         # Windows PowerShell
+```
+
+**Three entry points**:
+
+```bash
+ai4j code --provider openai --protocol responses --model gpt-5-mini --prompt "Summarize this project's structure"   # one-shot / interactive CLI
+ai4j tui  --provider zhipu --protocol chat --model glm-4.7 --base-url https://open.bigmodel.cn/api/coding/paas/v4 --workspace .   # TUI
+ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace .   # ACP, for IDE integration
+```
+
+Capabilities: one-shot and continuous sessions, persistent provider profiles (`~/.ai4j/providers.json`), workspace model overrides, subagents / agent teams, session resume / fork / replay, skills directories, MCP integration, tool approvals, background process management.
+
+Full docs: [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md) · [Quickstart](docs-site/docs/products/coding-agent/quickstart.md) · [Overview](docs-site/docs/products/coding-agent/overview.md)
 
 ## Plugin ecosystem
 
