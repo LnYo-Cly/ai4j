@@ -27,6 +27,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/permission-approval.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: permission decision lifecycle** — Wrapper interception → evaluate → ALLOW passthrough / REQUIRE_APPROVAL suspends until an approved resubmission / DENY fails closed.
+
+<iframe
+  src={useBaseUrl('/archify/permission-decision.html')}
+  title="permission-decision"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/permission-decision.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. When you need it
 
 If your Agent has tool-calling capability, you should think about this layer.

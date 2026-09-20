@@ -36,6 +36,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/workflow-stategraph.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：条件路由与回边** — resolveNext 先评估条件边（router/routeMap），再回落普通边；返回 null 即终止，命中节点形成回边成环。
+
+<iframe
+  src={useBaseUrl('/archify/stategraph-routing.html')}
+  title="stategraph-routing"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/stategraph-routing.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 先抓住 5 个关键设计决策
 
 ### 1.1 Workflow 是 Agent 之上的编排层，不是 runtime 变体

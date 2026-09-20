@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "权限决策生命周期：evaluate→三态裁决→放行/挂起/拒绝",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      595
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "eval",
+        "label": "评估链",
+        "focus": [
+          "call_in",
+          "evaluate",
+          "verdict"
+        ],
+        "note": "AgentPermissionToolExecutor 包装 delegate：每次工具调用先经 PermissionEngine.evaluate 裁决再决定是否放行。"
+      },
+      {
+        "id": "verdict",
+        "label": "三态裁决",
+        "focus": [
+          "verdict",
+          "allow",
+          "approval",
+          "denied"
+        ],
+        "note": "ALLOW 直通执行；DENY 抛异常 fail-closed；REQUIRE_APPROVAL 抛 AgentApprovalRequiredException 挂起。"
+      },
+      {
+        "id": "resume",
+        "label": "批准重发",
+        "focus": [
+          "approval",
+          "approved",
+          "evaluate"
+        ],
+        "note": "宿主批准后在 call 元数据打 granted 标记并重发 → 再评估命中 ALLOW → 继续执行。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "评估链与批准重发"
+    },
+    {
+      "id": "verdict",
+      "label": "裁决出口"
+    },
+    {
+      "id": "terminal",
+      "label": "终态出口"
+    }
+  ],
+  "states": [
+    {
+      "id": "call_in",
+      "type": "start",
+      "label": "工具调用",
+      "sublabel": "executor 拦截入口",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "entry"
+    },
+    {
+      "id": "evaluate",
+      "type": "active",
+      "label": "evaluate",
+      "sublabel": "规则评估",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "verdict",
+      "type": "decision",
+      "label": "裁决",
+      "sublabel": "三态分支",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "approved",
+      "type": "active",
+      "label": "已批准",
+      "sublabel": "granted 元数据",
+      "lane": "main",
+      "col": 3,
+      "step": "08",
+      "tag": "host"
+    },
+    {
+      "id": "allow",
+      "type": "success",
+      "label": "ALLOW",
+      "sublabel": "直通",
+      "lane": "verdict",
+      "col": 1,
+      "step": "04",
+      "tag": "pass"
+    },
+    {
+      "id": "approval",
+      "type": "waiting",
+      "label": "REQUIRE_APPROVAL",
+      "sublabel": "挂起待批",
+      "lane": "verdict",
+      "col": 2,
+      "step": "05",
+      "tag": "wait"
+    },
+    {
+      "id": "denied",
+      "type": "failure",
+      "label": "DENY",
+      "sublabel": "fail-closed",
+      "lane": "terminal",
+      "col": 0,
+      "step": "07",
+      "tag": "blocked",
+      "yOffset": -40
+    },
+    {
+      "id": "executed",
+      "type": "success",
+      "label": "delegate.execute",
+      "sublabel": "放行执行",
+      "lane": "terminal",
+      "col": 1,
+      "step": "06",
+      "tag": "done",
+      "yOffset": -40
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-in",
+      "from": "call_in",
+      "to": "evaluate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-eval",
+      "from": "evaluate",
+      "to": "verdict",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-allow",
+      "from": "verdict",
+      "to": "allow",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "t-approval",
+      "from": "verdict",
+      "to": "approval",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "t-deny",
+      "from": "verdict",
+      "to": "denied",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "t-exec",
+      "from": "allow",
+      "to": "executed",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "t-approve",
+      "from": "approval",
+      "to": "approved",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "t-resubmit",
+      "from": "approved",
+      "to": "evaluate",
+      "variant": "dashed",
+      "route": "top-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三态裁决语义",
+      "items": [
+        "ALLOW → 直通 delegate.execute；DENY → 抛异常 fail-closed，调用根本不到工具",
+        "REQUIRE_APPROVAL → 抛 AgentApprovalRequiredException：调用挂起，不静默放行也不记为失败"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "批准回路",
+      "items": [
+        "宿主审批后重发同一 call，元数据带 granted 标记；再评估命中 ALLOW 才进 execute",
+        "无 granted 标记的 REQUIRE_APPROVAL 每次都会再挂起——批准态不跨调用隐式继承"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "覆盖点",
+      "items": [
+        "AgentPermissionToolExecutor 是包装器：permission 逻辑与工具执行解耦，delegate 可为任意 ToolExecutor",
+        "规则来自 PermissionPolicy；granted 判定只看本次 call 的元数据键"
+      ]
+    }
+  ]
+}

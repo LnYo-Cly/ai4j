@@ -29,6 +29,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/prompt-context-projection.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：buildPrompt 数据流** — AgentMemory items 经 ContextProjector+Budget 投影裁剪；与 systemPrompt/instructions/visibleTools 合成 ModelRequest → ModelRequestHook 末次改写 → ModelClient 发送。
+
+<iframe
+  src={useBaseUrl('/archify/prompt-build-pipeline.html')}
+  title="prompt-build-pipeline"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/prompt-build-pipeline.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 先抓住 6 个关键设计决策
 
 ### 1.1 这两个字段都不是“当前轮临时文本”，而是 AgentContext 的一部分

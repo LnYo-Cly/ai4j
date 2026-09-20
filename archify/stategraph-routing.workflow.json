@@ -1,0 +1,82 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "StateGraphWorkflow：步进循环 + 两级路由判定",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "step-loop",
+        "label": "步进循环",
+        "focus": ["ctx_init", "loop", "node_exec", "ctx_update"],
+        "note": "while(current!=null && steps<maxSteps)：execute → 回写 lastResult/lastNodeId → 下一 request 取上一节点 outputText。"
+      },
+      {
+        "id": "resolve",
+        "label": "路由判定",
+        "focus": ["router_eval", "next"],
+        "note": "resolveNext 先查 conditionalEdges（router.route→routeMap），再查 transitions（condition.matches），都不命中返回 null 终止。"
+      }
+    ]
+  },
+  "lanes": [
+    {"id": "caller", "label": "宿主调用面"},
+    {"id": "engine", "label": "StateGraphWorkflow 引擎 + resolveNext"},
+    {"id": "nodes", "label": "AgentNode 节点面"}
+  ],
+  "phases": [
+    {"id": "intake", "label": "初始化", "fromCol": 0, "toCol": 1},
+    {"id": "exec", "label": "节点执行", "fromCol": 2, "toCol": 2, "variant": "emphasis"},
+    {"id": "route", "label": "路由与终止", "fromCol": 3, "toCol": 5, "variant": "dashed"}
+  ],
+  "mainPath": ["host", "ctx_init", "loop", "node_exec", "ctx_update", "router_eval", "next"],
+  "nodes": [
+    {"id": "host", "lane": "caller", "col": 0, "type": "external", "label": "宿主调用方", "sublabel": "run / runStream", "width": 132},
+    {"id": "result", "lane": "caller", "col": 5, "type": "backend", "label": "AgentResult", "sublabel": "lastResult 返回", "width": 132},
+    {"id": "ctx_init", "lane": "engine", "col": 1, "type": "backend", "label": "WorkflowContext", "sublabel": "session+request 初始化", "width": 150},
+    {"id": "loop", "lane": "engine", "col": 2, "type": "security", "label": "步进循环", "sublabel": "current!=null && steps<maxSteps", "width": 168},
+    {"id": "ctx_update", "lane": "engine", "col": 3, "type": "backend", "label": "上下文回写", "sublabel": "lastResult·req'=outputText", "width": 160},
+    {"id": "router_eval", "lane": "engine", "col": 4, "type": "security", "label": "resolveNext", "sublabel": "条件边优先·无条件边兜底", "width": 168},
+    {"id": "next", "lane": "engine", "col": 5, "type": "backend", "label": "currentNodeId=next", "sublabel": "回边成环 · null 终止", "width": 150},
+    {"id": "node_exec", "lane": "nodes", "col": 2, "type": "backend", "label": "AgentNode", "sublabel": "execute(context, request)", "width": 150}
+  ],
+  "edges": [
+    {"id": "e-run", "from": "host", "to": "ctx_init", "label": "run(session, request)", "variant": "emphasis"},
+    {"id": "e-init", "from": "ctx_init", "to": "loop", "label": "current=start", "variant": "emphasis"},
+    {"id": "e-exec", "from": "loop", "to": "node_exec", "label": "execute / executeStream", "variant": "default"},
+    {"id": "e-update", "from": "node_exec", "to": "ctx_update", "label": "lastResult", "variant": "default"},
+    {"id": "e-resolve", "from": "ctx_update", "to": "router_eval", "label": "resolveNext", "variant": "emphasis"},
+    {"id": "e-route-hit", "from": "router_eval", "to": "next", "label": "命中 nodeId", "variant": "emphasis"},
+    {"id": "e-loopback", "from": "next", "to": "loop", "label": "下一步（可回边成环）", "variant": "dashed", "route": "up-channel"},
+    {"id": "e-exit", "from": "loop", "to": "result", "label": "null/超限 → return", "variant": "emphasis"}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两级路由次序",
+      "items": [
+        "先遍历 conditionalEdges：router.route(ctx,req,result) 非 null 即命中，routeMap 可把语义键映射为 nodeId",
+        "route 为 null 才查 transitions：condition==null 恒命中；全不命中 → currentNodeId=null 终止"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "上下文接力",
+      "items": [
+        "执行前写 currentNodeId/currentRequest，执行后写 lastResult/lastNodeId；WorkflowContext 全图共享可读写",
+        "下一节点 request.input = 上一节点 lastResult.outputText；executeStream 经 WorkflowResultAware.getLastResult 补回结果"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "回边与终止",
+      "items": [
+        "路由返回已执行过的 nodeId 即成环（decide→tool→decide 的图编排）",
+        "maxSteps≤0 不限步；start 缺失或 nodeId 未注册 → IllegalStateException"
+      ]
+    }
+  ]
+}

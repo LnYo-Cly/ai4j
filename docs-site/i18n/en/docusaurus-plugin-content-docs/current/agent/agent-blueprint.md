@@ -31,6 +31,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/blueprint-assembly.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: load-validate-build pipeline** — Loader: YAML→DTO with field whitelist → Validator: ValidationReport with JSONPath issues (ERROR aborts) → AgentFactory assembles the Agent from host-supplied context.
+
+<iframe
+  src={useBaseUrl('/archify/blueprint-load-validate-build.html')}
+  title="blueprint-load-validate-build"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/blueprint-load-validate-build.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Suitable scenarios
 
 | Scenario | Suitable? |

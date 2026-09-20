@@ -32,6 +32,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/hooks-interceptors.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: interceptor call chain** — beforeToolCall returns ALLOW/MODIFY/BLOCK/ROUTE_TO → the effective call executes → afterToolCall may veto; interrupts and handoff exceptions are never swallowed.
+
+<iframe
+  src={useBaseUrl('/archify/tool-interceptor-chain.html')}
+  title="tool-interceptor-chain"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/tool-interceptor-chain.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## Quick start: the `hooks` facade (recommended)
 
 One entry point, every event, IDE-discoverable, compile-time typed. `AgentHooks` composes your

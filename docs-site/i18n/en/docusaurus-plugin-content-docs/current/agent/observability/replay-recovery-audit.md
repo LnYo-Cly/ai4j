@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/session-checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: resume/replay sequence** — Capture → persist → restart → rebuild/replay: a ResumeCache hit short-circuits; a miss goes through NodeReplayer in live or mock mode.
+
+<iframe
+  src={useBaseUrl('/archify/checkpoint-replay.html')}
+  title="checkpoint-replay"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 0. Key design decisions to grasp first
 
 These decisions run through all four layers. State them up front so each later section doesn't re-argue them.

@@ -23,6 +23,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/plugin-extension.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：扩展发现与启用** — ServiceLoader 发现 Ai4jExtension → manifest 注册 → enable → apply(context) 贡献 tools/prompts/skills → 运行时快照跟踪。
+
+<iframe
+  src={useBaseUrl('/archify/plugin-discovery-enable.html')}
+  title="plugin-discovery-enable"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/plugin-discovery-enable.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 插件发现：`ExtensionLoader`
 
 ### 1.1 默认路径

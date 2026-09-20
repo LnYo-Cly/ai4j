@@ -24,6 +24,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/plugin-extension.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: extension discovery and enablement** — ServiceLoader discovers Ai4jExtension → manifest registration → enable → apply(context) contributes tools/prompts/skills → runtime snapshot tracks state.
+
+<iframe
+  src={useBaseUrl('/archify/plugin-discovery-enable.html')}
+  title="plugin-discovery-enable"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/plugin-discovery-enable.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Plugin discovery: `ExtensionLoader`
 
 ### 1.1 Default path

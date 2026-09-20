@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
 
+**视角补充：A2A Task 状态机** — UNSPECIFIED→SUBMITTED→WORKING 主链；WORKING 可挂起为 INPUT_REQUIRED/AUTH_REQUIRED 再回 working；终态 COMPLETED/FAILED/CANCELED/REJECTED 由 isTransitionValid 校验。
+
+<iframe
+  src={useBaseUrl('/archify/a2a-task-lifecycle.html')}
+  title="a2a-task-lifecycle"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-task-lifecycle.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 与外部 Agent 如何交互（时序图）
 
 全景图回答的是「内部结构长什么样」，下面三张时序图回答的是「协议上怎么对话」：ai4j 作为客户端怎么调外部 Agent、外部项目怎么调 ai4j 的 A2A 服务、以及一次跨 Agent 的链式委托完整长什么样。三张图共用同一套记号——实线是请求/响应，虚线是 SSE 与 push 这类异步事件，红色是取消路径。

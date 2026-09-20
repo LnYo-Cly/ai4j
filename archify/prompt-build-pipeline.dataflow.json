@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "buildPrompt 管线：记忆+指令→投影→请求",
+    "locale": "zh-CN",
+    "viewBox": [
+      1070,
+      380
+    ],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "inputs",
+        "label": "输入与投影",
+        "focus": [
+          "memory",
+          "static",
+          "projector",
+          "report"
+        ],
+        "note": "AgentMemory 快照经 ContextProjector+ContextBudget 裁剪成 projectItems；静态指令与可见工具不走投影。"
+      },
+      {
+        "id": "out",
+        "label": "请求出口",
+        "focus": [
+          "prompt",
+          "hook",
+          "client"
+        ],
+        "note": "buildPrompt 合成 ModelRequest → ModelRequestHook 可改写 → AgentModelClient 发送。"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "输入面"
+    },
+    {
+      "label": "投影裁剪"
+    },
+    {
+      "label": "组装"
+    },
+    {
+      "label": "改写钩子"
+    },
+    {
+      "label": "出口"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "memory",
+      "type": "database",
+      "label": "AgentMemory",
+      "sublabel": "items 快照",
+      "stage": 0,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "static",
+      "type": "external",
+      "label": "静态指令面",
+      "sublabel": "system+instructions+tools",
+      "stage": 0,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "projector",
+      "type": "security",
+      "label": "ContextProjector",
+      "sublabel": "预算裁剪",
+      "stage": 1,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "ContextReport",
+      "sublabel": "投影统计",
+      "stage": 1,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "prompt",
+      "type": "backend",
+      "label": "buildPrompt",
+      "sublabel": "合成 ModelRequest",
+      "stage": 2,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "hook",
+      "type": "security",
+      "label": "ModelRequestHook",
+      "sublabel": "末次改写",
+      "stage": 3,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "client",
+      "type": "external",
+      "label": "AgentModelClient",
+      "sublabel": "Chat/Responses",
+      "stage": 4,
+      "row": 0,
+      "width": 160
+    }
+  ],
+  "flows": [
+    {
+      "from": "memory",
+      "to": "projector",
+      "label": "① items",
+      "classification": "memory",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        178,
+        100
+      ]
+    },
+    {
+      "from": "projector",
+      "to": "prompt",
+      "label": "② projectItems",
+      "classification": "items",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        423,
+        100
+      ]
+    },
+    {
+      "from": "projector",
+      "to": "report",
+      "label": "③ 报告",
+      "classification": "meta",
+      "route": "straight",
+      "labelAt": [
+        265,
+        214
+      ]
+    },
+    {
+      "from": "static",
+      "to": "prompt",
+      "label": "④ 合并",
+      "classification": "text",
+      "variant": "emphasis",
+      "route": "auto",
+      "labelAt": [
+        315,
+        330
+      ],
+      "via": [
+        [
+          100,
+          315
+        ],
+        [
+          530,
+          315
+        ]
+      ],
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "from": "prompt",
+      "to": "hook",
+      "label": "⑤ request",
+      "classification": "req",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        638,
+        100
+      ]
+    },
+    {
+      "from": "hook",
+      "to": "client",
+      "label": "⑥ 最终请求",
+      "classification": "req",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        868,
+        100
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "组装顺序",
+      "items": [
+        "每步模型调用前重建：合并 systemPrompt 与 instructions，挂 visibleTools",
+        "再把 ContextProjector 按 ContextBudget 选出的 memory items 投影进请求"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "投影语义",
+      "items": [
+        "投影不动 AgentMemory 本体；裁剪结果由 ContextReport 记录并触发 MEMORY_COMPRESS 事件",
+        "TypeAwareContextProjector 按 item 类型加权，DefaultContextProjector 按序截断"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "末次改写",
+      "items": [
+        "ModelRequestHook 在发送前可对请求做最后一次统一改写（如注入追踪头）",
+        "Chat 与 Responses 客户端共用该管线，差异在 ModelClient 内部适配"
+      ]
+    }
+  ]
+}

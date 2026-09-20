@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "插件发现与启用：ServiceLoader→manifest→apply→expose",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      520
+    ],
+    "views": [
+      {
+        "id": "discover",
+        "label": "发现与声明",
+        "focus": [
+          "host",
+          "registry",
+          "loader",
+          "ext"
+        ],
+        "note": "ExtensionRegistry.discover → ServiceLoaderExtensionLoader.load → ServiceLoader.load(Ai4jExtension) → manifest() 声明 id/能力。"
+      },
+      {
+        "id": "enable",
+        "label": "启用与放行",
+        "focus": [
+          "host",
+          "registry",
+          "ext",
+          "ctx"
+        ],
+        "note": "enable(id) → applyEnabledExtensions → ext.apply(ctx) 注册贡献 → exposeTool 显式放行 → snapshot 输出工具面。"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "host",
+      "type": "frontend",
+      "label": "宿主启动方",
+      "sublabel": "启用入口"
+    },
+    {
+      "id": "registry",
+      "type": "security",
+      "label": "Registry",
+      "sublabel": "ExtensionRegistry"
+    },
+    {
+      "id": "loader",
+      "type": "backend",
+      "label": "Loader",
+      "sublabel": "ServiceLoader 实现"
+    },
+    {
+      "id": "ext",
+      "type": "backend",
+      "label": "Ai4jExtension",
+      "sublabel": "manifest + apply"
+    },
+    {
+      "id": "ctx",
+      "type": "backend",
+      "label": "ExtContext",
+      "sublabel": "六类注册表"
+    }
+  ],
+  "messages": [
+    {
+      "from": "host",
+      "to": "registry",
+      "label": "① ExtensionRegistry.discover()",
+      "y": 160
+    },
+    {
+      "from": "registry",
+      "to": "loader",
+      "label": "② loader.load() → ServiceLoader.load(Ai4jExtension)",
+      "y": 188
+    },
+    {
+      "from": "loader",
+      "to": "registry",
+      "label": "DiscoveredExtension 列表（META-INF/services）",
+      "y": 216
+    },
+    {
+      "from": "registry",
+      "to": "ext",
+      "label": "③ extension.manifest() → id/能力声明",
+      "y": 244
+    },
+    {
+      "from": "host",
+      "to": "registry",
+      "label": "④ enable(extensionId)",
+      "y": 272
+    },
+    {
+      "from": "registry",
+      "to": "ext",
+      "label": "⑤ applyEnabledExtensions → ext.apply(context)",
+      "y": 300
+    },
+    {
+      "from": "ext",
+      "to": "ctx",
+      "label": "⑥ 注册 tool/command/skill/prompt/guardrail/hook",
+      "y": 328
+    },
+    {
+      "from": "host",
+      "to": "registry",
+      "label": "⑦ exposeTool(toolId) 显式放行",
+      "y": 356
+    },
+    {
+      "from": "registry",
+      "to": "host",
+      "label": "⑧ snapshot()：只含 enabled+exposed 的贡献面",
+      "y": 384
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "发现即声明",
+      "items": [
+        "ServiceLoaderExtensionLoader 走标准 ServiceLoader 机制（META-INF/services），可传自定义 ClassLoader",
+        "manifest() 提供 extensionId 与能力声明；discovered map 按 id 归一化登记，重复 id 拒绝"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "两道显式门",
+      "items": [
+        "enable(id) 只标记启用并触发 apply——贡献写进 ExtensionContext 各类注册表",
+        "工具要进宿主可见面还需 exposeTool(toolId) 白名单：enabled 但未 exposed 的工具不进 snapshot"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "校验与示例",
+      "items": [
+        "ExtensionValidator/ExtensionValidationReport 产出带 severity 的 issues；ExtensionToolSchemaValidator 校验工具 schema",
+        "官方示例 ai4j-plugin-ask-user：宿主中介的 ask-user 工具 + 命令 + Skill + Prompt 全套贡献"
+      ]
+    }
+  ]
+}

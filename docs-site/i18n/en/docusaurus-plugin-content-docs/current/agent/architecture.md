@@ -155,6 +155,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/agent-core-runtime.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: single ReAct step sequence** — Inside one step: compaction check → BEFORE_TURN hooks → buildPrompt → model execution → tool-call normalization/execution → results written back to AgentMemory → event publishing.
+
+<iframe
+  src={useBaseUrl('/archify/agent-react-step-loop.html')}
+  title="agent-react-step-loop"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-react-step-loop.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 3. What the build phase actually does
 
 To understand the architecture, the first class worth reading directly is still `AgentBuilder`.

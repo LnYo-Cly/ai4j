@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/trace-observability.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: events → span tree → exporter fan-out** — AgentEventPublisher broadcasts → AgentTraceListener maps events to a RUN>STEP>MODEL/TOOL span tree with paired closes → five TraceExporter implementations fan out.
+
+<iframe
+  src={useBaseUrl('/archify/trace-span-export.html')}
+  title="trace-span-export"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/trace-span-export.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Six key design decisions to grasp first
 
 ### 1.1 Trace is an event projection, not a data structure embedded in the runtime

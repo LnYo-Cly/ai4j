@@ -26,6 +26,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/permission-approval.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：权限裁决状态机** — 包装器拦截 → evaluate → ALLOW 直通 / REQUIRE_APPROVAL 挂起等待批准重发 / DENY fail-closed。
+
+<iframe
+  src={useBaseUrl('/archify/permission-decision.html')}
+  title="permission-decision"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/permission-decision.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 什么时候需要它
 
 如果你的 Agent 具备工具调用能力，就应该思考这一层。

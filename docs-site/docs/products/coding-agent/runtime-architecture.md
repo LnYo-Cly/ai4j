@@ -32,6 +32,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/coding-agent-loop.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：外层 turn 循环** — runSingleTurn → 聚合 steps/token/cost/工具结果 → LoopPolicy decide → continuationPrompt 回环，直至 stop 或 maxTotalTurns。
+
+<iframe
+  src={useBaseUrl('/archify/coding-agent-turn.html')}
+  title="coding-agent-turn"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/coding-agent-turn.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 先看最外层总装配入口
 
 CLI / TUI / ACP 当前真正的准备入口是：

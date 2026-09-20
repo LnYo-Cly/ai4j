@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "沙箱会话生命周期：provider→session→execute→close",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      575
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "provision",
+        "label": "会话获取",
+        "focus": [
+          "request",
+          "provider",
+          "session"
+        ],
+        "note": "SandboxProvider.supports 探测环境 → createSession 开会话；宿主不感知 provider 细节。"
+      },
+      {
+        "id": "exec",
+        "label": "执行与复用",
+        "focus": [
+          "session",
+          "executing",
+          "result",
+          "closed"
+        ],
+        "note": "同一 session 可多次 execute；SandboxResult 统一出口；cancel 中断进行中命令，close 释放远端资源。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "获取会话"
+    },
+    {
+      "id": "exec",
+      "label": "执行面"
+    },
+    {
+      "id": "terminal",
+      "label": "关闭"
+    }
+  ],
+  "states": [
+    {
+      "id": "request",
+      "type": "start",
+      "label": "bash 请求",
+      "sublabel": "宿主侧命令",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "entry"
+    },
+    {
+      "id": "provider",
+      "type": "active",
+      "label": "supports 选型",
+      "sublabel": "Provider 探测",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "session",
+      "type": "active",
+      "label": "createSession",
+      "sublabel": "会话打开",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "executing",
+      "type": "active",
+      "label": "execute",
+      "sublabel": "SandboxCommand",
+      "lane": "exec",
+      "col": 0,
+      "step": "04"
+    },
+    {
+      "id": "result",
+      "type": "success",
+      "label": "SandboxResult",
+      "sublabel": "exit/output/artifacts",
+      "lane": "exec",
+      "col": 2,
+      "step": "05",
+      "tag": "pass"
+    },
+    {
+      "id": "closed",
+      "type": "neutral",
+      "label": "close",
+      "sublabel": "释放远端资源",
+      "lane": "terminal",
+      "col": 1,
+      "step": "06",
+      "tag": "done",
+      "yOffset": -55
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-req",
+      "from": "request",
+      "to": "provider",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-prov",
+      "from": "provider",
+      "to": "session",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-open",
+      "from": "session",
+      "to": "executing",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight"
+    },
+    {
+      "id": "t-done",
+      "from": "executing",
+      "to": "result",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "straight"
+    },
+    {
+      "id": "t-cancel",
+      "from": "executing",
+      "to": "closed",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "t-close",
+      "from": "result",
+      "to": "closed",
+      "variant": "default"
+    },
+    {
+      "id": "t-reuse",
+      "from": "result",
+      "to": "executing",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "职责边界",
+      "items": [
+        "Provider：supports 探测+createSession；实现接 Docker/远端/本地受限环境",
+        "Session：execute/cancel/listArtifacts/close；SandboxResult 带 exit/输出/产物"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "消费侧适配",
+      "items": [
+        "SandboxShellCommandExecutor 把 bash 命令翻译成 SandboxCommand 交 session",
+        "工具层只面对 SPI，provider 变化不扩散到业务代码"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "复用与清理",
+      "items": [
+        "同一会话可多次 execute（虚线回路），各产独立 SandboxResult",
+        "cancel 中断进行中命令；close 幂等释放远端资源"
+      ]
+    }
+  ]
+}

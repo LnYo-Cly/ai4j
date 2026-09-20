@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Checkpoint 与 Replay：捕获→持久化→重启→重建",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 555],
+    "views": [
+      {
+        "id": "capture",
+        "label": "捕获与持久化",
+        "focus": ["runtime", "listener", "sink"],
+        "note": "IoCaptureAgentListener 挂事件流 → NodeIoRecord（prompt/response/tool args+output）→ IoCaptureSink；会话态走 AgentSessionStore。"
+      },
+      {
+        "id": "resume",
+        "label": "重启重建",
+        "focus": ["runtime", "cache", "replayer"],
+        "note": "同 input 重驱动：ResumeCache 命中即短路返回捕获结果；未命中节点经 NodeReplayer 真实重放并回填。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "run / 重启重跑"},
+    {"id": "runtime", "type": "backend", "label": "ReActRuntime", "sublabel": "步循环"},
+    {"id": "listener", "type": "backend", "label": "IoCapture", "sublabel": "AgentListener 实现"},
+    {"id": "sink", "type": "database", "label": "CaptureSink", "sublabel": "InMemory / Jsonl"},
+    {"id": "cache", "type": "database", "label": "ResumeCache", "sublabel": "命中短路"},
+    {"id": "replayer", "type": "backend", "label": "NodeReplayer", "sublabel": "live / mock 重放"}
+  ],
+  "messages": [
+    {"from": "host", "to": "runtime", "label": "run(request) 首跑", "y": 160},
+    {"from": "runtime", "to": "listener", "label": "① 节点事件：MODEL 请求/响应 · TOOL 调用/结果", "y": 188},
+    {"from": "listener", "to": "sink", "label": "② NodeIoRecord + SessionSnapshot 落盘", "y": 216},
+    {"from": "host", "to": "runtime", "label": "③ 进程重启 → run（同 input · 挂 ResumeCache）", "y": 244},
+    {"from": "runtime", "to": "cache", "label": "④ lookupModel / lookupTool(promptKey)", "y": 272},
+    {"from": "cache", "to": "runtime", "label": "命中 → 捕获结果短路（不再真实调用）", "y": 300},
+    {"from": "runtime", "to": "replayer", "label": "⑤ 未命中 → replayToolLive / replayModelLive", "y": 328},
+    {"from": "replayer", "to": "cache", "label": "⑥ recordTool / recordModel 回填缓存", "y": 356},
+    {"from": "runtime", "to": "listener", "label": "⑦ 尾部新节点继续写捕获", "y": 384},
+    {"from": "runtime", "to": "host", "label": "AgentResult（前缀重放 + 尾部真实执行）", "y": 412}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "捕获面",
+      "items": [
+        "IoCaptureAgentListener 消费事件流写 NodeIoRecord：模型 prompt/response、工具 args/output 逐节点成记录",
+        "IoCaptureSink 分 InMemory / Jsonl 两实现；会话快照走 AgentSessionStore（InMemory/File/JDBC，链式校验）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "恢复双通道",
+      "items": [
+        "ResumeCache 前缀命中即短路：lookupModel/lookupTool 按 promptKey/toolKey 查表，命中不计新调用",
+        "NodeReplayer 两模式：mock=用捕获输出重建 AgentModelResult（含 rawResponse 回退）；live=真重调模型/工具"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "编码侧检查点",
+      "items": [
+        "CodingSessionCheckpoint + Formatter 额外记 turn 边界与 splitTurn 标记，供会话级恢复",
+        "AgentTeamMemberSnapshot / StoredProcessSnapshot 分别覆盖团队任务态与托管进程态"
+      ]
+    }
+  ]
+}
