@@ -30,7 +30,7 @@ A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with co
 - **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long tasks come built in.
 - **Ready out of the box**: the Spring Boot starter injects `AiService` with one config key; a Coding Agent with CLI / TUI / ACP entries ships in the box; plugins cover Tool / Command / Skill / Prompt extension points — adding a dependency never enables it.
 
-Plus Skills resource packs, session replay, FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
+Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 
@@ -81,7 +81,7 @@ public class Ai4jFirstChat {
 
 Sample output:
 ```
-ai4j is a JDK 8+ Java AI Agentic SDK covering unified model access, Tool Calling, MCP, and RAG.
+ai4j is a JDK 8+ Java AI Agentic SDK with unified access to many model providers and complete agent capabilities built in.
 ```
 
 > Want DashScope / DeepSeek / Ollama instead? Just swap the `PlatformType` and its Config; the rest of the code stays the same.
@@ -166,7 +166,7 @@ Quick links:
 - **Retrieval & interop**: [RAG](docs-site/docs/capabilities/rag/overview.md) · [MCP](docs-site/docs/capabilities/mcp/overview.md) · [Skills](docs-site/docs/capabilities/skills/overview.md) · [A2A](docs-site/docs/agent/observability/a2a.md)
 - **Agent**: [Agent overview](docs-site/docs/agent/overview.md) · [Agent quickstart](docs-site/docs/agent/quickstart.md) · [Harness runtime](docs-site/docs/agent/harness-runtime.md) · [Agent teams](docs-site/docs/agent/orchestration/agent-teams.md)
 - **Products**: [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) · [FlowGram](docs-site/docs/products/flowgram/overview.md) · [Plugin author guide](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
-- **Reference**: [Troubleshooting](docs-site/docs/production/troubleshooting.md) · [Comparison](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
+- **Reference**: [Troubleshooting](docs-site/docs/production/troubleshooting.md) · [Production checklist](docs-site/docs/production/production-checklist.md) · [Comparison](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 

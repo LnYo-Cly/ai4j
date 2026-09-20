@@ -30,7 +30,7 @@
 - **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控与可观测都是内置的。
 - **开箱即用**：Spring Boot starter 一行配置注入 `AiService`；自带 Coding Agent 的 CLI / TUI / ACP 三入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不等于启用。
 
-此外还有 Skills 资源包、会话 replay、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
+此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 
@@ -81,7 +81,7 @@ public class Ai4jFirstChat {
 
 输出示例：
 ```
-ai4j 是一款面向 JDK 8+ 的 Java AI Agentic 开发套件，覆盖统一模型接入、Tool Calling、MCP 与 RAG。
+ai4j 是一套面向 JDK 8+ 的 Java AI Agentic 开发套件，统一接入多种大模型服务，内置完整的 Agent 能力。
 ```
 
 > 换成 DashScope / DeepSeek / Ollama 等其他平台？只需替换 `PlatformType` 与对应 Config，其余代码不变。
@@ -166,7 +166,7 @@ ai4j 提供两个文档入口，按需取用：
 - **检索与互联**：[RAG](docs-site/docs/capabilities/rag/overview.md) · [MCP](docs-site/docs/capabilities/mcp/overview.md) · [Skills](docs-site/docs/capabilities/skills/overview.md) · [A2A](docs-site/docs/agent/observability/a2a.md)
 - **Agent**：[Agent 总览](docs-site/docs/agent/overview.md) · [Agent 快速开始](docs-site/docs/agent/quickstart.md) · [Harness 运行时](docs-site/docs/agent/harness-runtime.md) · [多智能体团队](docs-site/docs/agent/orchestration/agent-teams.md)
 - **产品**：[Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) · [FlowGram](docs-site/docs/products/flowgram/overview.md) · [插件开发指南](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
-- **参考**：[排障指南](docs-site/docs/production/troubleshooting.md) · [选型对比](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
+- **参考**：[排障指南](docs-site/docs/production/troubleshooting.md) · [生产检查清单](docs-site/docs/production/production-checklist.md) · [选型对比](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 
