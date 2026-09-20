@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.extension;
 
 import io.github.lnyocly.ai4j.extension.command.CommandRegistry;
 import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRegistry;
+import io.github.lnyocly.ai4j.extension.interceptor.InterceptorRegistry;
 import io.github.lnyocly.ai4j.extension.lifecycle.LifecycleHookRegistry;
 import io.github.lnyocly.ai4j.extension.prompt.PromptRegistry;
 import io.github.lnyocly.ai4j.extension.skill.SkillRegistry;
@@ -22,4 +23,6 @@ public interface ExtensionContext {
     GuardrailRegistry guardrails();
 
     LifecycleHookRegistry lifecycle();
+
+    InterceptorRegistry interceptors();
 }

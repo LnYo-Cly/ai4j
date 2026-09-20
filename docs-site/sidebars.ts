@@ -206,6 +206,7 @@ const sidebars: SidebarsConfig = {
             'extending/plugins/dynamic-workflow-plugin',
             'extending/plugins/extension-spi',
             'extending/plugins/lifecycle-extensions',
+            'extending/plugins/interceptor-extensions',
           ],
         },
         {

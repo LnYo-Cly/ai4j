@@ -426,4 +426,16 @@ public final class ExtensionRegistry {
     public List<io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook> getLifecycleHooks() {
         return snapshot().getLifecycleHooks();
     }
+
+    public List<io.github.lnyocly.ai4j.extension.interceptor.ExtensionToolCallInterceptor> getToolCallInterceptors() {
+        return snapshot().getToolCallInterceptors();
+    }
+
+    public List<io.github.lnyocly.ai4j.extension.interceptor.ExtensionPromptInterceptor> getPromptInterceptors() {
+        return snapshot().getPromptInterceptors();
+    }
+
+    public List<io.github.lnyocly.ai4j.extension.interceptor.ExtensionModelRequestInterceptor> getModelRequestInterceptors() {
+        return snapshot().getModelRequestInterceptors();
+    }
 }

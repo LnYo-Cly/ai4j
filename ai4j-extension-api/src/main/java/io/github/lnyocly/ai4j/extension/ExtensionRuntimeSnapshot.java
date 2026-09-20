@@ -3,6 +3,9 @@ package io.github.lnyocly.ai4j.extension;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionModelRequestInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionPromptInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionToolCallInterceptor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
@@ -25,6 +28,9 @@ public final class ExtensionRuntimeSnapshot {
     private final List<ExtensionPromptResource> prompts;
     private final List<ExtensionGuardrail> guardrails;
     private final List<AgentLifecycleHook> lifecycleHooks;
+    private final List<ExtensionToolCallInterceptor> toolCallInterceptors;
+    private final List<ExtensionPromptInterceptor> promptInterceptors;
+    private final List<ExtensionModelRequestInterceptor> modelRequestInterceptors;
 
     public ExtensionRuntimeSnapshot(List<ExtensionToolSpec> tools,
                                     Map<String, ExtensionToolExecutor> toolExecutors,
@@ -34,6 +40,21 @@ public final class ExtensionRuntimeSnapshot {
         List<ExtensionPromptResource> prompts,
         List<ExtensionGuardrail> guardrails,
         List<AgentLifecycleHook> lifecycleHooks) {
+        this(tools, toolExecutors, commands, commandHandlers, skills, prompts, guardrails,
+                lifecycleHooks, null, null, null);
+    }
+
+    public ExtensionRuntimeSnapshot(List<ExtensionToolSpec> tools,
+                                    Map<String, ExtensionToolExecutor> toolExecutors,
+                                    List<ExtensionCommandSpec> commands,
+                                    Map<String, ExtensionCommandHandler> commandHandlers,
+                                    List<ExtensionSkillResource> skills,
+                                    List<ExtensionPromptResource> prompts,
+                                    List<ExtensionGuardrail> guardrails,
+                                    List<AgentLifecycleHook> lifecycleHooks,
+                                    List<ExtensionToolCallInterceptor> toolCallInterceptors,
+                                    List<ExtensionPromptInterceptor> promptInterceptors,
+                                    List<ExtensionModelRequestInterceptor> modelRequestInterceptors) {
         this.tools = tools == null ? Collections.<ExtensionToolSpec>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExtensionToolSpec>(tools));
         this.toolExecutors = toolExecutors == null ? Collections.<String, ExtensionToolExecutor>emptyMap()
@@ -50,6 +71,15 @@ public final class ExtensionRuntimeSnapshot {
                 : Collections.unmodifiableList(new ArrayList<ExtensionGuardrail>(guardrails));
         this.lifecycleHooks = lifecycleHooks == null ? Collections.<AgentLifecycleHook>emptyList()
                 : Collections.unmodifiableList(new ArrayList<AgentLifecycleHook>(lifecycleHooks));
+        this.toolCallInterceptors = toolCallInterceptors == null
+                ? Collections.<ExtensionToolCallInterceptor>emptyList()
+                : Collections.unmodifiableList(new ArrayList<ExtensionToolCallInterceptor>(toolCallInterceptors));
+        this.promptInterceptors = promptInterceptors == null
+                ? Collections.<ExtensionPromptInterceptor>emptyList()
+                : Collections.unmodifiableList(new ArrayList<ExtensionPromptInterceptor>(promptInterceptors));
+        this.modelRequestInterceptors = modelRequestInterceptors == null
+                ? Collections.<ExtensionModelRequestInterceptor>emptyList()
+                : Collections.unmodifiableList(new ArrayList<ExtensionModelRequestInterceptor>(modelRequestInterceptors));
     }
 
     public List<ExtensionToolSpec> getTools() {
@@ -82,5 +112,17 @@ public final class ExtensionRuntimeSnapshot {
 
     public List<AgentLifecycleHook> getLifecycleHooks() {
         return lifecycleHooks;
+    }
+
+    public List<ExtensionToolCallInterceptor> getToolCallInterceptors() {
+        return toolCallInterceptors;
+    }
+
+    public List<ExtensionPromptInterceptor> getPromptInterceptors() {
+        return promptInterceptors;
+    }
+
+    public List<ExtensionModelRequestInterceptor> getModelRequestInterceptors() {
+        return modelRequestInterceptors;
     }
 }

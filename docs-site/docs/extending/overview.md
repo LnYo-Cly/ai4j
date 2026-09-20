@@ -97,9 +97,9 @@ AI4J 当前的扩展链路，大体上是下面这条：
 
 官方 `ai4j-plugin-ask-user` 是第一个随 SDK 发布的样板插件，展示如何把 Agent 需要的用户确认表达成 host-mediated JSON envelope；独立仓库 `ai4j-plugin-dynamic-workflow` 展示如何把动态工作流请求表达成同样受宿主管控的 plugin envelope。已经准备接入插件时，优先看 [插件配方](/docs/extending/plugins/plugin-recipes)，它把依赖、检查、启用、授权、暴露和 Spring Boot / CLI 配置串成可复制配方。
 
-#### 3.1 插件能力清单（六种）
+#### 3.1 插件能力清单（七种）
 
-`ai4j-extension-api` 把一个插件能贡献的资源归为六种 `ExtensionCapability`，插件在 manifest 里声明它要贡献哪几种，registry 才会接受对应注册：
+`ai4j-extension-api` 把一个插件能贡献的资源归为七种 `ExtensionCapability`，插件在 manifest 里声明它要贡献哪几种，registry 才会接受对应注册：
 
 | Capability | 注册入口（`ExtensionContext`） | 贡献什么 | 稳定性 |
 | --- | --- | --- | --- |
@@ -109,8 +109,11 @@ AI4J 当前的扩展链路，大体上是下面这条：
 | `PROMPT` | `prompts()` | classpath 文本 Prompt 资源 | 实验 |
 | `GUARDRAIL` | `guardrails()` | tool execution 前置允许/拒绝判断 | 实验 |
 | `LIFECYCLE` | `lifecycle()` | agent 生命周期事件 hook（session/turn/model/tool/compact） | 实验 |
+| `INTERCEPTOR` | `interceptors()` | 控制流拦截：工具调用 allow/block/modify/routeTo、Prompt allow/block/modify、模型请求标量覆盖 | 实验 |
 
 前五种能力覆盖“插件贡献什么资源”。`LIFECYCLE` 是第六种，覆盖的是另一类需求：**插件想在 agent 执行的关键节点（会话开始结束、每轮前后、模型请求前后、工具调用前后、上下文压缩前后）收到通知**，而不是贡献工具或资源。它解决的是观察/遥测/审计类扩展，而不是新增能力。
+
+`INTERCEPTOR` 是第七种：插件返回**运行时会执行的控制流决策**——改写工具参数、把危险调用路由进沙箱、拦截或改写用户输入、逐请求调整模型标量字段。详见 [拦截器扩展](/docs/extending/plugins/interceptor-extensions)。
 
 声明 `LIFECYCLE` 后，插件在 `apply(...)` 里通过 `context.lifecycle().register(hook)` 注册 `AgentLifecycleHook`，agent 运行时会通过 `AgentLifecycleHookDispatcher` 把 `AgentLifecycleEvent` 分发给每个 hook。详见 [生命周期扩展](/docs/extending/plugins/lifecycle-extensions)。
 
@@ -137,6 +140,7 @@ AI4J 当前的扩展链路，大体上是下面这条：
 | `SkillRegistry`、`PromptRegistry`、`GuardrailRegistry` | skill/prompt/guardrail 注册 | `@Experimental(since = "2.4.3")` |
 | `ExtensionGuardrail` | guardrail 接口 | `@Experimental(since = "2.4.3")` |
 | `LifecycleHookRegistry`、`AgentLifecycleHook` | lifecycle hook 注册与接口 | `@Experimental(since = "2.4.3")` |
+| `InterceptorRegistry`、`ExtensionToolCallInterceptor`、`ExtensionPromptInterceptor`、`ExtensionModelRequestInterceptor` | 拦截器注册与接口 | `@Experimental(since = "2.5.1")` |
 | `ServiceLoaderExtensionLoader` | 默认 ServiceLoader 加载器 | `@Internal`（依赖 `ExtensionLoader`，不要直接依赖实现类） |
 
 换句话说：tool / command 主链路是稳定的；skill、prompt、guardrail、lifecycle 这四类资源注册接口仍是实验阶段，设计可能在后续版本调整。`@Experimental` 和 `@Internal` 都通过反射保留到运行时，插件作者可以直接在 IDE 里看到注解，不必记这张表。

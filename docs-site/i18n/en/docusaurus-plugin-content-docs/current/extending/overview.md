@@ -97,9 +97,9 @@ Plugin authors and consumers can run local validation with `ExtensionValidator` 
 
 The official `ai4j-plugin-ask-user` is the first sample plugin shipped with the SDK, demonstrating how to express the user confirmation an Agent needs as a host-mediated JSON envelope; the standalone repository `ai4j-plugin-dynamic-workflow` shows how to express a dynamic workflow request as a plugin envelope under the same host control. When you are ready to wire in plugins, start with [Plugin Recipes](/docs/extending/plugins/plugin-recipes), which strings dependencies, validation, enablement, authorization, exposure, and Spring Boot / CLI configuration into copyable recipes.
 
-#### 3.1 Plugin capability list (six kinds)
+#### 3.1 Plugin capability list (seven kinds)
 
-`ai4j-extension-api` groups the resources a plugin can contribute into six `ExtensionCapability` values. A plugin declares in its manifest which kinds it wants to contribute, and only then will the registry accept the corresponding registrations:
+`ai4j-extension-api` groups the resources a plugin can contribute into seven `ExtensionCapability` values. A plugin declares in its manifest which kinds it wants to contribute, and only then will the registry accept the corresponding registrations:
 
 | Capability | Registration entry (`ExtensionContext`) | What it contributes | Stability |
 | --- | --- | --- | --- |
@@ -109,8 +109,11 @@ The official `ai4j-plugin-ask-user` is the first sample plugin shipped with the 
 | `PROMPT` | `prompts()` | Classpath text Prompt resource | Experimental |
 | `GUARDRAIL` | `guardrails()` | Pre-tool-execution allow/deny decision | Experimental |
 | `LIFECYCLE` | `lifecycle()` | Agent lifecycle event hook (session/turn/model/tool/compact) | Experimental |
+| `INTERCEPTOR` | `interceptors()` | Control-flow interception: tool-call allow/block/modify/routeTo, prompt allow/block/modify, model-request overrides | Experimental |
 
 The first five capabilities cover "what resources a plugin contributes". `LIFECYCLE` is the sixth, covering a different class of need: **the plugin wants to be notified at key points during agent execution (session start/end, before and after each turn, before and after model requests, before and after tool calls, before and after context compaction)**, rather than contributing tools or resources. It addresses observation / telemetry / audit extensions, not new capabilities.
+
+`INTERCEPTOR` is the seventh: the plugin returns **decisions the runtime honors** — rewriting tool arguments, routing a dangerous call into a sandbox, blocking or rewriting user input, adjusting model-request scalars. See [Interceptor Extensions](/docs/extending/plugins/interceptor-extensions) for details.
 
 After declaring `LIFECYCLE`, the plugin registers an `AgentLifecycleHook` in `apply(...)` via `context.lifecycle().register(hook)`; at runtime the agent dispatches `AgentLifecycleEvent`s to each hook through `AgentLifecycleHookDispatcher`. See [Lifecycle Extensions](/docs/extending/plugins/lifecycle-extensions) for details.
 
@@ -137,6 +140,7 @@ As of `2.4.3`, the actual distribution of the extension SPI:
 | `SkillRegistry`, `PromptRegistry`, `GuardrailRegistry` | skill/prompt/guardrail registration | `@Experimental(since = "2.4.3")` |
 | `ExtensionGuardrail` | guardrail interface | `@Experimental(since = "2.4.3")` |
 | `LifecycleHookRegistry`, `AgentLifecycleHook` | lifecycle hook registration and interface | `@Experimental(since = "2.4.3")` |
+| `InterceptorRegistry`, `ExtensionToolCallInterceptor`, `ExtensionPromptInterceptor`, `ExtensionModelRequestInterceptor` | interceptor registration and interfaces | `@Experimental(since = "2.5.1")` |
 | `ServiceLoaderExtensionLoader` | default ServiceLoader loader | `@Internal` (depends on `ExtensionLoader`; do not depend on the implementation class directly) |
 
 In other words: the tool / command main path is stable; the four resource registration interfaces — skill, prompt, guardrail, and lifecycle — are still experimental, and their design may shift in later versions. Both `@Experimental` and `@Internal` are retained at runtime via reflection, so plugin authors can see the annotations directly in the IDE without memorizing this table.
