@@ -65,6 +65,18 @@ RagResult result = rag.search(RagQuery.builder()
 
 不会要求业务侧手动套 `PlanningRetriever`。
 
+**图解：查询规划路由** — `ModelRagQueryPlanner` 产出 ORIGINAL/REWRITE/MULTI_QUERY/HYDE/STEP_BACK 变体 → 限量召回 → 融合 → 重排 → 引用与 Trace。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/rag-query-routing.html')}
+  title="rag-query-routing"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/rag-query-routing.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 3. 最小使用方式
 
 如果你想开箱即用地用模型做检索前改写，可以先创建 `ModelRagQueryPlanner`：

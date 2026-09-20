@@ -144,6 +144,18 @@ The step most easily misunderstood here is step 7.
 
 Core SDK takes care of wiring up "a tool can be invoked by the model"; but **whether to execute automatically** is a runtime concern, not the sole responsibility of `Function Calling` itself.
 
+**Diagram: function-call round trip** — model emits tool_calls → `ToolUtil` resolves the registry and dispatches to Function/MCP/built-in executors → results feed the next request → final answer.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/function-call-roundtrip.html')}
+  title="function-call-roundtrip"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/function-call-roundtrip.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 7. Relationship with `Chat` and `Responses`
 
 Both `ChatCompletion` and `ResponseRequest` keep two sets of helper fields:

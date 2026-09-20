@@ -54,6 +54,18 @@ Configuration + AiConfig.platforms
 
 这意味着它不是“provider chooser”这么简单，而是把模型访问、检索增强和部分组合能力统一收束在一个入口对象下。
 
+**图解：AiService 服务面扇出** — `Configuration`+`PlatformType` 进工厂 → 10 个服务接口（Chat/Responses/Messages/媒体/Embedding/Rerank）各自平台实现，另挂检索增强与 RAG 组装件。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/service-entry-fanout.html')}
+  title="service-entry-fanout"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/service-entry-fanout.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 3. `AiService` 当前是显式工厂，不是动态发现
 
 这是必须先讲清楚的事实。
@@ -98,6 +110,16 @@ Configuration + AiConfig.platforms
 
 - 共享底层基础配置
 - 每个 id 拥有自己的 provider scoped 配置与 `AiService`
+
+**图解：注册表装配与 id 查找** — `DefaultAiServiceRegistry.from` 逐 AiPlatform 解析类型、拷出 scoped Configuration、经 `AiServiceFactory` 建实例入 registrations；`find(id)` 命中后 `getXxxService(platformType)` 分发。
+
+<iframe
+  src={useBaseUrl('/archify/service-registry-assembly.html')}
+  title="service-registry-assembly"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/service-registry-assembly.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
 
 ## 6. `FreeAiService` 的定位
 

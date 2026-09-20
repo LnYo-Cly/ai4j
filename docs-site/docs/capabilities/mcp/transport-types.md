@@ -35,6 +35,18 @@ transport 在 MCP 里不是“连通细节”，而是会直接改变部署形�
 
 因为它直接决定 `McpClient` 是否会启动应用层 heartbeat 检查。
 
+**图解：MCP 双泳道栈** — 客户端链 `McpGateway→McpClient→McpTransport`（Stdio/SSE/StreamableHttp）调远端；服务端链 `@McpService→McpServerFactory→三引擎` 暴露本地能力。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/mcp-transport-stack.html')}
+  title="mcp-transport-stack"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/mcp-transport-stack.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 2. `TransportConfig` 是统一配置平面
 
 AI4J 没把各种 transport 的参数各写一套，而是统一收进了 `TransportConfig`。

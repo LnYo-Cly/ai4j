@@ -101,6 +101,18 @@ ToolUtil.getAllTools(functionList, mcpServerIds, userId)
 
 不会因为类在 classpath 上，就把所有工具自动暴露给模型。
 
+**图解：工具执行管线** — `@FunctionCall` 注解扫描 → `JsonSchemaGenerator` 出参 → 注册表缓存 → 按名显式选择 → Function/MCP 分发执行 → 结果归一回写。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/tool-execution-pipeline.html')}
+  title="tool-execution-pipeline"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/tool-execution-pipeline.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 5. 一次调用回到宿主时，真实优先级是什么
 
 `ToolUtil.invoke(functionName, argument)` 的优先级，当前大致是：

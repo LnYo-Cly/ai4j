@@ -143,6 +143,18 @@ ResponseRequest request = ResponseRequest.builder()
 
 Core SDK 负责把“工具能被模型调用”这件事打通；但 **是不是自动执行**，是 runtime 语义，不是 `Function Calling` 本身的全部职责。
 
+**图解：function call 往返** — 模型产出 tool_calls → `ToolUtil` 查注册表派发到 Function/MCP/内置执行器 → 结果回填新一轮请求 → 模型给出最终答复。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/function-call-roundtrip.html')}
+  title="function-call-roundtrip"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/function-call-roundtrip.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 7. 和 `Chat`、`Responses` 的关系
 
 `ChatCompletion` 和 `ResponseRequest` 都保留了两组辅助字段：

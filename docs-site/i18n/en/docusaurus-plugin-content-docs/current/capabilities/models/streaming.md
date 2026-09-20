@@ -39,6 +39,18 @@ From this set of fields you can see that AI4J Chat streaming is not just "print 
 - Complete or fragmented tool calls
 - Usage rollups
 
+**Diagram: SSE streaming sequence** — `chatCompletionStream` opens an EventSource with a `SseListener`; frames feed `onEvent`, deltas and tool-call fragments accumulate, `send()` yields the result, `awaitCompletion` blocks until close.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/chat-streaming-sse.html')}
+  title="chat-streaming-sse"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/chat-streaming-sse.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 2. Why `Chat` streaming tool calls are not simple
 
 `SseListener.onEvent(...)` currently does dedicated handling for tool calls:

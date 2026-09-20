@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Function Call 往返：tool_calls→invoke→tool 消息回喂",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 530],
+    "views": [
+      {
+        "id": "first-call",
+        "label": "首轮带工具",
+        "focus": ["host", "service", "provider"],
+        "note": "请求携带 tools=ToolUtil.getAllTools(functions, mcpIds)；模型决定调用后返回 tool_calls 而非文本。"
+      },
+      {
+        "id": "exec-loop",
+        "label": "执行与回喂",
+        "focus": ["host", "toolutil", "toolimpl", "provider"],
+        "note": "ToolUtil.invoke 三路分发执行 → 结果作为 role=tool 消息追加 → 第二轮请求产出最终回答。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "驱动两轮调用"},
+    {"id": "service", "type": "backend", "label": "ChatService", "sublabel": "chatCompletion"},
+    {"id": "provider", "type": "cloud", "label": "Provider 模型", "sublabel": "tool_calls 裁决"},
+    {"id": "toolutil", "type": "security", "label": "ToolUtil", "sublabel": "invoke 分发"},
+    {"id": "toolimpl", "type": "backend", "label": "工具实现", "sublabel": "函数/MCP/内置"}
+  ],
+  "messages": [
+    {"from": "host", "to": "service", "label": "① chatCompletion(messages, tools=getAllTools)", "y": 160},
+    {"from": "service", "to": "provider", "label": "② POST /chat/completions（含 tools 声明）", "y": 188},
+    {"from": "provider", "to": "service", "label": "③ finish_reason=tool_calls：name + arguments JSON", "y": 216},
+    {"from": "service", "to": "host", "label": "④ ChatCompletionResponse.choices[0].toolCalls", "y": 244},
+    {"from": "host", "to": "toolutil", "label": "⑤ ToolUtil.invoke(functionName, argument)", "y": 272},
+    {"from": "toolutil", "to": "toolimpl", "label": "⑥ 分发：内置→executor · MCP→callTool · 函数→反射 invoke", "y": 300},
+    {"from": "toolimpl", "to": "toolutil", "label": "⑦ String result（业务输出）", "y": 328},
+    {"from": "toolutil", "to": "host", "label": "⑧ 结果字符串", "y": 356},
+    {"from": "host", "to": "service", "label": "⑨ 追加 role=tool 消息后再次 chatCompletion", "y": 384},
+    {"from": "service", "to": "provider", "label": "⑩ 第二轮（含 tool 结果）→ 最终文本回答", "y": 412}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "注解扫描成工具面",
+      "items": [
+        "@FunctionCall(name, description, strict) + @FunctionParameter 标注 POJO 方法；ToolUtil 用 Reflections 扫描进 toolEntityMap/toolClassMap",
+        "getAllTools(functions, mcpIds) 只生成显式声明的 tools 数组——不传不暴露"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "invoke 三路分发",
+      "items": [
+        "内置工具 → BuiltInToolExecutor.invoke（BuiltInToolContext 栈式上下文 push/pop）",
+        "MCP 工具 → invokeMcpTool 反射接 mcpGateway.callTool；普通函数 → newInstance + method.invoke 注入解析参数"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "回喂语义",
+      "items": [
+        "tool_calls 出现时本轮无最终文本：宿主必须把每条 call 的结果以 role=tool + tool_call_id 追加进 messages",
+        "第二轮模型基于完整对话（含 tool 输出）产出自然语言回答；多 call 可并行执行后逐条回填"
+      ]
+    }
+  ]
+}

@@ -27,6 +27,18 @@ tags: [concept]
 
 已经把默认实现注册到了 classpath。
 
+**图解：HTTP 出站链** — 服务实现取 `Configuration` 的 OkHttpClient（SPI 可覆盖连接池/调度器）→ 拦截器链 → Provider；非 2xx 经 `HttpErrorDecoder` 抛 `AiHttpException`，流式走 EventSource+`SseListener`。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/http-interceptor-chain.html')}
+  title="http-interceptor-chain"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/http-interceptor-chain.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 2. Spring Boot starter 里的真实装配顺序
 
 `AiConfigAutoConfiguration.initOkHttp()` 当前大致按下面顺序组装统一 `OkHttpClient`：

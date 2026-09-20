@@ -79,6 +79,18 @@ When entering this chapter for the first time, the most important thing is not t
 
 Many subsequent differences — including streaming, multimodal, and how tools are parsed — essentially fork from here.
 
+**Diagram: three-protocol dispatch** — Chat/Responses/Messages are routed through the `AiService` factory by `PlatformType`; coverage is not symmetric.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/model-call-protocols.html')}
+  title="model-call-protocols"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/model-call-protocols.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 4. Current provider coverage is not fully symmetric
 
 The `Chat` providers that `AiService.createChatService(...)` can currently create include:

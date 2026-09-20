@@ -66,6 +66,18 @@ RagResult result = rag.search(RagQuery.builder()
 
 There is no need for the business code to manually wrap a `PlanningRetriever`.
 
+**Diagram: query-routing** — `ModelRagQueryPlanner` emits ORIGINAL/REWRITE/MULTI_QUERY/HYDE/STEP_BACK variants → bounded recall → fusion → rerank → citations and trace.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/rag-query-routing.html')}
+  title="rag-query-routing"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/rag-query-routing.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 3. Minimal usage
 
 If you want a model to rewrite the query before retrieval out of the box, first create a `ModelRagQueryPlanner`:

@@ -86,6 +86,18 @@ RagService rag = new DefaultRagService(hybrid);
 
 详见 [混合检索](/docs/capabilities/rag/hybrid-retrieval)。
 
+**图解：RAG 端到端双通道** — 摄入侧 Loader→Processor→Chunker→Embedding→VectorStore 建索引；检索侧 QueryPlanner→混合检索融合→Reranker→TokenAware 组装出 RagContext。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/rag-end-to-end.html')}
+  title="rag-end-to-end"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/rag-end-to-end.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 4. 入库主线默认怎么跑
 
 如果走 `AiService.getIngestionPipeline(platform, vectorStore)`，默认装配则是：

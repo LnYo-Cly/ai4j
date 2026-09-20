@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "服务注册装配：AiConfig → Registry → id 路由",
+    "locale": "zh-CN",
+    "viewBox": [1070, 380],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "assembly",
+        "label": "装配路径",
+        "focus": ["aiconfig", "conf", "factory", "assemble", "regmap"],
+        "note": "DefaultAiServiceRegistry.from 遍历 AiPlatform：resolvePlatformType→scoped Configuration→AiServiceFactory.create→put 进 registrations。"
+      },
+      {
+        "id": "lookup",
+        "label": "查找路径",
+        "focus": ["caller", "regmap", "reg", "aisvc", "impl"],
+        "note": "调用方按 id 查 registrations → AiServiceRegistration → AiService → getXxxService(platformType) 落到平台实现。"
+      }
+    ]
+  },
+  "stages": [
+    {"label": "输入"},
+    {"label": "装配循环"},
+    {"label": "注册表"},
+    {"label": "命中记录"},
+    {"label": "服务实例"}
+  ],
+  "nodes": [
+    {"id": "aiconfig", "type": "database", "label": "AiConfig", "sublabel": "platforms 清单", "stage": 0, "row": 0, "width": 130},
+    {"id": "conf", "type": "database", "label": "Configuration", "sublabel": "全局配置", "stage": 0, "row": 1, "width": 130},
+    {"id": "assemble", "type": "backend", "label": "Registry.from()", "sublabel": "逐平台装配", "stage": 1, "row": 0, "width": 150},
+    {"id": "factory", "type": "backend", "label": "AiServiceFactory", "sublabel": "create(scoped)", "stage": 1, "row": 1, "width": 150},
+    {"id": "regmap", "type": "security", "label": "registrations", "sublabel": "Map<id,Reg> 保序", "stage": 2, "row": 0, "width": 150},
+    {"id": "caller", "type": "frontend", "label": "调用方", "sublabel": "FreeAiService/业务码", "stage": 2, "row": 1, "width": 160},
+    {"id": "reg", "type": "backend", "label": "Registration", "sublabel": "id+PlatformType+实例", "stage": 3, "row": 0, "width": 150},
+    {"id": "aisvc", "type": "backend", "label": "AiService", "sublabel": "每 id 一实例", "stage": 4, "row": 0, "width": 130},
+    {"id": "impl", "type": "cloud", "label": "平台实现", "sublabel": "PlatformType switch", "stage": 4, "row": 1, "width": 150}
+  ],
+  "flows": [
+    {"from": "aiconfig", "to": "assemble", "label": "① AiPlatform 列表", "classification": "config", "variant": "emphasis", "route": "auto", "labelAt": [108, 200]},
+    {"from": "conf", "to": "assemble", "label": "② BeanUtil 拷贝", "classification": "config", "variant": "emphasis", "route": "auto"},
+    {"from": "factory", "to": "assemble", "label": "③ create(scoped)", "classification": "service", "variant": "dashed", "route": "auto", "labelAt": [315, 314]},
+    {"from": "assemble", "to": "regmap", "label": "④ put(id,Reg)", "classification": "reg", "variant": "emphasis", "route": "auto", "labelAt": [423, 200]},
+    {"from": "regmap", "to": "reg", "label": "⑤ find(id)", "classification": "reg", "variant": "emphasis", "route": "auto"},
+    {"from": "reg", "to": "aisvc", "label": "⑥ getAiService()", "classification": "service", "variant": "emphasis", "route": "auto", "labelAt": [858, 200]},
+    {"from": "aisvc", "to": "impl", "label": "⑦ getXxxService(type)", "classification": "service", "variant": "emphasis", "route": "auto", "labelAt": [960, 200]},
+    {"from": "caller", "to": "regmap", "label": "⑧ getChatService(id)", "classification": "lookup", "variant": "emphasis", "route": "auto", "labelAt": [530, 314]}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "装配（from 静态工厂）",
+      "items": [
+        "每个 AiPlatform 需非空 id；platform 字符串经 resolvePlatformType 映射 PlatformType，未知值抛 IllegalArgumentException",
+        "createScopedConfiguration：BeanUtil.copyProperties 拷全局配置，再按平台 switch 写入 OpenAiConfig/DoubaoConfig 等子配置"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "每 id 一个 AiService",
+      "items": [
+        "AiServiceFactory.create(scopedConfiguration) 为每个平台 id 建独立 AiService；registrations 是不可变 LinkedHashMap",
+        "一个进程可同时持有 openai-main、doubao-backup 等多个 id，各自独立 api-key/base-url"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "查找与兼容入口",
+      "items": [
+        "find(id) 命中 AiServiceRegistration 后取 AiService，再 getChatService(platformType) 走平台 switch 到具体实现",
+        "FreeAiService 是 @Deprecated 兼容壳：构造时把 Registry.from 结果装进静态 registry，按 id 转发"
+      ]
+    }
+  ]
+}

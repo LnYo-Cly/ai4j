@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "工具全生命周期：注解→注册→schema→装配→执行",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "register",
+        "label": "扫描注册",
+        "focus": ["anno_scan", "registry"],
+        "note": "ensureInitialized 懒触发：函数工具走 Reflections 注解扫描，MCP 工具走 McpGateway 反射枚举。"
+      },
+      {
+        "id": "invoke",
+        "label": "装配与执行",
+        "focus": ["schema", "tools_arr", "request", "calls", "dispatch"],
+        "note": "JsonSchemaGenerator 纯反射产 JSON Schema → getAllTools 显式装配 → 模型 tool_calls → invoke 三路分发回填。"
+      }
+    ]
+  },
+  "lanes": [
+    {"id": "define", "label": "定义与注册"},
+    {"id": "assemble", "label": "请求装配"},
+    {"id": "execute", "label": "执行归一"}
+  ],
+  "phases": [
+    {"id": "scan", "label": "定义扫描", "fromCol": 0, "toCol": 1},
+    {"id": "build", "label": "schema 与装配", "fromCol": 2, "toCol": 3, "variant": "emphasis"},
+    {"id": "run", "label": "调用执行", "fromCol": 4, "toCol": 5, "variant": "dashed"}
+  ],
+  "mainPath": ["anno_scan", "registry", "schema", "tools_arr", "request", "calls", "dispatch"],
+  "nodes": [
+    {"id": "anno_scan", "lane": "define", "col": 0, "type": "external", "label": "注解类+扫描", "sublabel": "@FunctionCall→Reflections", "width": 150},
+    {"id": "registry", "lane": "define", "col": 1, "type": "database", "label": "工具注册表", "sublabel": "toolEntityMap 三表", "width": 140},
+    {"id": "schema", "lane": "assemble", "col": 1, "type": "backend", "label": "JsonSchemaGen", "sublabel": "类→JSON Schema", "width": 140},
+    {"id": "tools_arr", "lane": "assemble", "col": 2, "type": "backend", "label": "getAllTools", "sublabel": "显式工具集", "width": 130},
+    {"id": "request", "lane": "assemble", "col": 3, "type": "backend", "label": "ChatCompletion", "sublabel": "tools 入请求", "width": 140},
+    {"id": "calls", "lane": "execute", "col": 3, "type": "security", "label": "tool_calls", "sublabel": "模型裁决", "width": 130},
+    {"id": "dispatch", "lane": "execute", "col": 4, "type": "security", "label": "invoke→tool 回填", "sublabel": "三路分发", "width": 150}
+  ],
+  "edges": [
+    {"id": "e1", "from": "anno_scan", "to": "registry", "label": "注册三张 map", "variant": "emphasis"},
+    {"id": "e2", "from": "registry", "to": "schema", "label": "Tool+请求类", "variant": "default"},
+    {"id": "e3", "from": "schema", "to": "tools_arr", "label": "parameters", "variant": "emphasis"},
+    {"id": "e4", "from": "tools_arr", "to": "request", "label": "装入 tools", "variant": "emphasis"},
+    {"id": "e5", "from": "request", "to": "calls", "label": "模型返回", "variant": "default"},
+    {"id": "e6", "from": "calls", "to": "dispatch", "label": "invoke 执行", "variant": "emphasis"}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "扫描与懒初始化",
+      "items": [
+        "ensureInitialized 双检锁懒触发：scanFunctionTools 按注解入 toolEntityMap/toolClassMap/toolRequestMap",
+        "scanMcpTools 反射调 McpGateway.getAvailableTools——未初始化网关时安全跳过"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "schema 生成",
+      "items": [
+        "JsonSchemaGenerator.generate(Class) 纯反射产 JSON Schema，无外部依赖；responseFormat 同样由其生成",
+        "@FunctionCall.strict=true 时参数标 strict——与 provider 结构化输出对齐"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "显式工具面",
+      "items": [
+        "getAllTools(functionList, mcpServerIds) 只装声明过的工具；空列表即无工具调用能力",
+        "invoke 三路分发：内置→BuiltInToolExecutor · MCP→callTool · 函数→newInstance+method.invoke"
+      ]
+    }
+  ]
+}

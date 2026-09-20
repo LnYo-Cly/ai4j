@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "SSE 流式调用：EventSource→onEvent 逐帧→send 收口",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 530],
+    "views": [
+      {
+        "id": "open",
+        "label": "建流",
+        "focus": ["host", "service", "esource", "provider"],
+        "note": "chatCompletionStream 注册 SseListener → OkHttp EventSource 发 stream=true 请求建立 SSE 通道。"
+      },
+      {
+        "id": "consume",
+        "label": "逐帧消费",
+        "focus": ["provider", "esource", "listener", "host"],
+        "note": "每个 data: 帧进 onEvent → 解析 delta → 末尾 send() 交完整响应；awaitCompletion 用 latch 等流收尾。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "提供 listener"},
+    {"id": "service", "type": "backend", "label": "ChatService", "sublabel": "chatCompletionStream"},
+    {"id": "esource", "type": "backend", "label": "EventSource", "sublabel": "OkHttp SSE 通道"},
+    {"id": "provider", "type": "cloud", "label": "Provider", "sublabel": "data: 帧流"},
+    {"id": "listener", "type": "security", "label": "SseListener", "sublabel": "子类接 delta"}
+  ],
+  "messages": [
+    {"from": "host", "to": "service", "label": "① chatCompletionStream(req, sseListener)", "y": 160},
+    {"from": "service", "to": "esource", "label": "② newEventSource(POST, stream=true)", "y": 188},
+    {"from": "esource", "to": "provider", "label": "③ HTTPS 建立 SSE 长连接", "y": 216},
+    {"from": "provider", "to": "esource", "label": "④ data: {...} 增量帧 ×N", "y": 244},
+    {"from": "esource", "to": "listener", "label": "⑤ onEvent → choices[0].delta", "y": 272},
+    {"from": "provider", "to": "esource", "label": "⑥ data: [DONE] → onClosed", "y": 300},
+    {"from": "listener", "to": "host", "label": "⑦ send()：拼装好的完整 ChatCompletionResponse", "y": 328},
+    {"from": "host", "to": "listener", "label": "⑧ awaitCompletion(options)：latch 阻塞等收尾", "y": 356},
+    {"from": "host", "to": "listener", "label": "⑨ cancelStream()：可主动中断流", "y": 384}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "分片重组",
+      "items": [
+        "tool_call 的 name/arguments 在多帧间分片到达：consumeFragmentedToolCalls 把 argumentsDelta 逐段 append 到 pending",
+        "帧解析成 ChatCompletionResponse 后取 choices[0].delta——增量语义与 OpenAI SSE 协议逐字段对齐"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "失败与重试",
+      "items": [
+        "onFailure → recordFailure + finishAttempt；prepareForRetry 复位状态后由 StreamExecutionSupport 重发",
+        "onRetrying(failure, attempt, maxAttempts) 暴露重试进度；resetRetryState 在成功后清计数"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "并发原语",
+      "items": [
+        "awaitCompletion 走 CountDownLatch：onClosed/onFailure/cancel 都会 finishAttempt 归零放行",
+        "StreamExecutionOptions 控制超时与重试上限；cancelStream 中止底层 EventSource"
+      ]
+    }
+  ]
+}
