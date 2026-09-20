@@ -26,6 +26,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=ResponsesDocExamplesLiveTest
 Without `OPENAI_API_KEY` these tests are skipped automatically and will not fail the build.
 :::
 
+> For the field-level reference (the three input shapes, output item structure), see [Protocol Fields and Assembly Reference](./protocol-fields.md).
+
 ## 0. Run it first
 
 The minimal viable call. Note that Responses output is an **item list** — every item carries content parts. Reading assistant text goes through this structure, unlike Chat where you read `choice.message.content` directly:

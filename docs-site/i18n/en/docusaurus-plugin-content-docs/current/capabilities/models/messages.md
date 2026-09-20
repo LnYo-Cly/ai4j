@@ -27,6 +27,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=MessagesDocExamplesLiveTest
 Automatically skipped when `MINIMAX_API_KEY` is not set.
 :::
 
+> For the field-level reference (required max_tokens, strict user/assistant alternation, tool_result pairing), see [Protocol Fields and Assembly Reference](./protocol-fields.md).
+
 ## 1. Three lines, not a new-vs-old relationship
 
 | Line | Protocol | Interface | Fits |
