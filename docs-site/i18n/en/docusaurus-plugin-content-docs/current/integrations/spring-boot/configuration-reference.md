@@ -24,6 +24,7 @@ Common prefixes include:
 - `ai.vector.*`
 - `ai.agentflow.*`
 - `ai.extensions.*`
+- `ai.agent.*` (declarative Agent Blueprint assembly)
 - `ai4j.flowgram.*`
 
 ## 2. Where these configurations end up
