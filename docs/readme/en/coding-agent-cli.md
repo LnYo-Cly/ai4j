@@ -137,11 +137,12 @@ Recommended workflow:
 
 ### Documentation entry points
 
-+ [Coding Agent CLI Quickstart](../../../docs-site/docs/getting-started/coding-agent-cli-quickstart.md)
-+ [Coding Agent CLI and TUI](../../../docs-site/docs/agent/coding-agent-cli.md)
-+ [Multi-Provider Profiles](../../../docs-site/docs/agent/multi-provider-profiles.md)
-+ [Coding Agent Command Reference](../../../docs-site/docs/agent/coding-agent-command-reference.md)
-+ [Provider Configuration Examples](../../../docs-site/docs/agent/provider-config-examples.md)
++ [Coding Agent Overview](../../../docs-site/docs/products/coding-agent/overview.md)
++ [Coding Agent Quickstart](../../../docs-site/docs/products/coding-agent/quickstart.md)
++ [CLI / TUI Usage Guide](../../../docs-site/docs/products/coding-agent/cli-and-tui.md)
++ [Provider Profiles](../../../docs-site/docs/products/coding-agent/provider-profiles.md)
++ [Command Reference](../../../docs-site/docs/products/coding-agent/command-reference.md)
++ [Configuration](../../../docs-site/docs/products/coding-agent/configuration.md)
 
 ## Other support
 + [[Low-cost transit platform] Low-cost ApiKey - Limited-time special offer 0.7:1 - Supports the latest o1 model.](https://api.trovebox.online/)

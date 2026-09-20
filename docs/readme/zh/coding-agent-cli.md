@@ -180,17 +180,17 @@ skill 发现规则：
 
 ### 文档入口
 
-+ [Coding Agent 总览](../../../docs-site/docs/coding-agent/overview.md)
-+ [Coding Agent 快速开始](../../../docs-site/docs/coding-agent/quickstart.md)
-+ [CLI / TUI 使用指南](../../../docs-site/docs/coding-agent/cli-and-tui.md)
-+ [会话、流式与进程](../../../docs-site/docs/coding-agent/session-runtime.md)
-+ [配置体系](../../../docs-site/docs/coding-agent/configuration.md)
-+ [Tools 与审批机制](../../../docs-site/docs/coding-agent/tools-and-approvals.md)
-+ [Skills 使用与组织](../../../docs-site/docs/coding-agent/skills.md)
-+ [MCP 对接](../../../docs-site/docs/coding-agent/mcp-integration.md)
-+ [ACP 集成](../../../docs-site/docs/coding-agent/acp-integration.md)
-+ [TUI 定制与主题](../../../docs-site/docs/coding-agent/tui-customization.md)
-+ [命令参考](../../../docs-site/docs/coding-agent/command-reference.md)
++ [Coding Agent 总览](../../../docs-site/docs/products/coding-agent/overview.md)
++ [Coding Agent 快速开始](../../../docs-site/docs/products/coding-agent/quickstart.md)
++ [CLI / TUI 使用指南](../../../docs-site/docs/products/coding-agent/cli-and-tui.md)
++ [会话、流式与进程](../../../docs-site/docs/products/coding-agent/session-runtime.md)
++ [配置体系](../../../docs-site/docs/products/coding-agent/configuration.md)
++ [Tools 与审批机制](../../../docs-site/docs/products/coding-agent/tools-and-approvals.md)
++ [Skills 使用与组织](../../../docs-site/docs/products/coding-agent/skills.md)
++ [MCP 对接](../../../docs-site/docs/products/coding-agent/mcp-integration.md)
++ [ACP 集成](../../../docs-site/docs/products/coding-agent/acp-integration.md)
++ [TUI 定制与主题](../../../docs-site/docs/products/coding-agent/tui-customization.md)
++ [命令参考](../../../docs-site/docs/products/coding-agent/command-reference.md)
 
 ## 其它支持
 + [[低价中转平台] 低价ApiKey—限时特惠 ](https://api.trovebox.online/)
