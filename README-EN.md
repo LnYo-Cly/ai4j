@@ -16,7 +16,7 @@
 
 # ai4j
 
-A **JDK 8+** Java AI Agentic SDK: unified access to mainstream model providers, with built-in capabilities spanning tool calling, RAG, MCP, agent orchestration, and long-running task governance — supporting rapid development of dedicated agent applications.
+A **JDK 8+** Java AI Agentic SDK: unified access to mainstream model providers, with built-in capabilities spanning tool calling, RAG, MCP, skills, sandboxing, agent orchestration, and long-running task governance — supporting rapid development of dedicated agent and harness applications.
 
 [中文 README](README.md)
 

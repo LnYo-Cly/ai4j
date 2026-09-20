@@ -16,7 +16,7 @@
 
 # ai4j
 
-面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一接入主流大模型服务，内置从工具调用、RAG、MCP 到 Agent 编排与长时任务治理的完整能力，支撑快速构建专属 Agent 应用。
+面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一接入主流大模型服务，内置从工具调用、RAG、MCP、Skill、沙箱到 Agent 编排与长时任务治理的完整能力，支撑快速构建专属的 Agent 与 Harness 应用。
 
 [English README](README-EN.md)
 
