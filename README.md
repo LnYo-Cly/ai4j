@@ -142,7 +142,7 @@ OpenAI / OpenAI-compatible, Anthropic, DashScope（通义/百炼）, Doubao（�
 
 ai4j 提供两个文档入口，按需取用：
 
-- **官方文档站**：https://lnyo-cly.github.io/ai4j/ —— 中英双语，从 5 分钟跑通到各能力详解，附 50+ 张源码对齐的架构/时序图，适合系统学习和查 API 用法
+- **官方文档站**：https://lnyo-cly.github.io/ai4j/ —— 中英双语，从 5 分钟跑通到各能力详解，配有大量与源码对齐的架构/时序图，适合系统学习和查 API 用法
 - **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)** —— AI 问答式仓库导览，适合直接用自然语言问"某个功能是怎么实现的"，每周自动跟随仓库刷新
 
 快速入口：[5 分钟跑通](docs-site/docs/start-here/five-minute-first-chat.md) / [能力地图](docs-site/docs/start-here/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
