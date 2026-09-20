@@ -22,13 +22,15 @@
 
 ## 核心优势
 
-- **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等统一接入，Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式、图像/音频/视频/实时对话都内置；切换平台只改一个枚举值，多组 API Key 还能并存、按名字路由。
+- **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等统一接入，Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式开箱就有；Embedding、Rerank、图像/音频/视频/音乐生成、实时对话等十类服务接口一个工厂按需取用；切换平台只改一个枚举值，多组 API Key 还能并存、按名字路由。
 - **Agent 玩法全覆盖**：ReAct、CodeAct、Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，subagent 委派和多智能体团队协作也有——从简单问答到多步研究型 Agent 都有现成骨架。
 - **独创 `ai4j-harness` 长时运行 Harness**：让 Agent 从"一次性调用"变成可暂停、可恢复、可验收的长期任务（[详见下方专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
-- **内置完整 RAG**：文档加载、切块、向量入库、混合检索、重排、引用标注，整条链路都在 SDK 内实现，不需要外挂检索框架。
-- **生态互联**：MCP 客户端 + 服务端（Stdio / SSE / Streamable HTTP 三种传输）既能调别人的工具，也能把自己的能力暴露出去；A2A 协议让 Agent 之间可以互相协作。
+- **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路都在 SDK 内实现，不需要外挂检索框架。
+- **生态互联**：MCP 客户端 + 服务端（Stdio / SSE / Streamable HTTP 三种传输）既能调别人的工具，也能把自己的能力暴露出去；A2A 协议让 Agent 互相协作；还能反向接入 Dify / Coze / n8n 上已有的 AgentFlow 编排，另有联网搜索增强。
 - **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控与可观测都是内置的。
 - **开箱即用**：Spring Boot starter 一行配置注入 `AiService`；自带 Coding Agent 的 CLI / TUI / ACP 三入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不等于启用。
+
+此外还有 Skills 资源包、会话 replay、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 
@@ -148,7 +150,7 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 
 ## 支持的平台
 
-OpenAI / OpenAI-compatible, Anthropic, DashScope（通义/百炼）, Doubao（火山方舟/豆包）, DeepSeek, Moonshot, Zhipu（智谱）, Hunyuan（腾讯混元）, Lingyi（零一万物）, Ollama, MiniMax, Baichuan, Suno；Rerank（Jina / Ollama / Doubao）；AgentFlow（Dify / Coze / n8n）；VectorStore（Pinecone / Qdrant / pgvector / Milvus / Redis）。完整能力列表见 [feature-map](docs-site/docs/start-here/feature-map.md)。
+OpenAI / OpenAI-compatible, Anthropic, DashScope（通义/百炼）, Doubao（火山方舟/豆包）, DeepSeek, Moonshot, Zhipu（智谱）, Hunyuan（腾讯混元）, Lingyi（零一万物）, Ollama, MiniMax, Baichuan, Suno；Rerank（Jina / Ollama / Doubao）；AgentFlow（Dify / Coze / n8n）；VectorStore（Pinecone / Qdrant / pgvector / Milvus / Redis）。完整能力列表见 [feature-map](docs-site/docs/getting-started/feature-map.md)。
 
 ## 文档与链接
 
@@ -157,7 +159,7 @@ ai4j 提供两个文档入口，按需取用：
 - **官方文档站**：https://lnyo-cly.github.io/ai4j/ —— 中英双语，从 5 分钟跑通到各能力详解，配有大量与源码对齐的架构/时序图，适合系统学习和查 API 用法
 - **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)** —— AI 问答式仓库导览，适合直接用自然语言问"某个功能是怎么实现的"，每周自动跟随仓库刷新
 
-快速入口：[5 分钟跑通](docs-site/docs/start-here/five-minute-first-chat.md) / [能力地图](docs-site/docs/start-here/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
+快速入口：[5 分钟跑通](docs-site/docs/getting-started/quickstart-java.md) / [能力地图](docs-site/docs/getting-started/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 

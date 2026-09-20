@@ -22,13 +22,15 @@ A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with co
 
 ## Highlights
 
-- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao, Ollama and more, with full Chat / Responses / Messages protocol support — function calling, SSE streaming, and image/audio/video/realtime are all built in; switching providers is a one-enum change, and multiple API keys can coexist routed by name.
+- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao, Ollama and more, with full Chat / Responses / Messages protocol support — function calling and SSE streaming included; ten service interfaces (Embedding, Rerank, image/audio/video/music generation, realtime, and more) are served from one factory; switching providers is a one-enum change, and multiple API keys can coexist routed by name.
 - **Every agent design covered**: ReAct, CodeAct, and Deep Research execution modes, StateGraph orchestration with conditional branches and loops, plus subagent delegation and multi-agent teams — ready-made skeletons from simple Q&A to multi-step research agents.
 - **`ai4j-harness`, a unique long-running agent harness**: turns a one-shot agent call into a pausable, resumable, acceptance-gated long-lived job ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
-- **Complete RAG built in**: document loading, chunking, vector stores, hybrid retrieval, reranking, and citations all live inside the SDK — no external retrieval stack needed.
-- **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call others' tools or expose your own; the A2A protocol lets agents collaborate with each other.
+- **Complete RAG built in**: document loading (optional Tika for PDF/Word/Excel), chunking, five vector-store adapters (Pinecone / Qdrant / pgvector / Milvus / Redis), hybrid retrieval, reranking, and citations — the whole pipeline lives inside the SDK, no external retrieval stack needed.
+- **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call others' tools or expose your own; the A2A protocol lets agents collaborate; you can also call into existing Dify / Coze / n8n AgentFlow orchestrations, with web-search enhancement on top.
 - **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long tasks come built in.
 - **Ready out of the box**: the Spring Boot starter injects `AiService` with one config key; a Coding Agent with CLI / TUI / ACP entries ships in the box; plugins cover Tool / Command / Skill / Prompt extension points — adding a dependency never enables it.
+
+Plus Skills resource packs, session replay, FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 
@@ -148,7 +150,7 @@ An AI4J plugin is an ordinary Maven jar: `ServiceLoader` discovery plus `Extensi
 
 ## Supported platforms
 
-OpenAI / OpenAI-compatible, Anthropic, DashScope (Tongyi/Bailian), Doubao (Volcengine Ark/Doubao), DeepSeek, Moonshot, Zhipu, Tencent Hunyuan, Lingyi, Ollama, MiniMax, Baichuan, Suno; Rerank (Jina / Ollama / Doubao); AgentFlow (Dify / Coze / n8n); VectorStore (Pinecone / Qdrant / pgvector / Milvus / Redis). See the [feature-map](docs-site/docs/start-here/feature-map.md) for the full capability list.
+OpenAI / OpenAI-compatible, Anthropic, DashScope (Tongyi/Bailian), Doubao (Volcengine Ark/Doubao), DeepSeek, Moonshot, Zhipu, Tencent Hunyuan, Lingyi, Ollama, MiniMax, Baichuan, Suno; Rerank (Jina / Ollama / Doubao); AgentFlow (Dify / Coze / n8n); VectorStore (Pinecone / Qdrant / pgvector / Milvus / Redis). See the [feature-map](docs-site/docs/getting-started/feature-map.md) for the full capability list.
 
 ## Documentation & Links
 
@@ -157,7 +159,7 @@ ai4j offers two documentation entry points — pick what fits:
 - **Official docs site**: https://lnyo-cly.github.io/ai4j/ — bilingual (Chinese & English), from a five-minute first request to deep capability guides, with extensive source-aligned architecture/sequence diagrams; best for systematic learning and API reference
 - **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)** — an AI-powered Q&A tour of this repository; ask "how is feature X implemented" in natural language; auto-refreshes weekly with the repo
 
-Quick links: [First request in five minutes](docs-site/docs/start-here/five-minute-first-chat.md) / [Feature map](docs-site/docs/start-here/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
+Quick links: [First request in five minutes](docs-site/docs/getting-started/quickstart-java.md) / [Feature map](docs-site/docs/getting-started/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 
