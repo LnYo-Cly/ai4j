@@ -159,7 +159,14 @@ ai4j offers two documentation entry points — pick what fits:
 - **[Official docs site](https://lnyo-cly.github.io/ai4j/)**: bilingual (Chinese & English), from a five-minute first request to deep capability guides, with extensive source-aligned architecture/sequence diagrams; best for systematic learning and API reference
 - **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)**: an AI-powered Q&A tour of this repository — ask in natural language, e.g. "how is feature X implemented" or "how do I build a dedicated agent for my scenario with ai4j-harness"; auto-refreshes weekly with the repo
 
-Quick links: [First request in five minutes](docs-site/docs/getting-started/quickstart-java.md) / [Feature map](docs-site/docs/getting-started/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
+Quick links:
+
+- **Getting started**: [Java quickstart](docs-site/docs/getting-started/quickstart-java.md) · [Choose your path](docs-site/docs/getting-started/choose-your-path.md) · [Feature map](docs-site/docs/getting-started/feature-map.md) · [FAQ](docs-site/docs/reference/faq.md)
+- **Model access**: [Chat](docs-site/docs/capabilities/models/chat.md) · [Responses](docs-site/docs/capabilities/models/responses.md) · [Messages](docs-site/docs/capabilities/models/messages.md) · [Streaming](docs-site/docs/capabilities/models/streaming.md) · [Multimodal](docs-site/docs/capabilities/models/multimodal.md) · [Function Calling](docs-site/docs/capabilities/tools/function-calling.md)
+- **Retrieval & interop**: [RAG](docs-site/docs/capabilities/rag/overview.md) · [MCP](docs-site/docs/capabilities/mcp/overview.md) · [Skills](docs-site/docs/capabilities/skills/overview.md) · [A2A](docs-site/docs/agent/observability/a2a.md)
+- **Agent**: [Agent overview](docs-site/docs/agent/overview.md) · [Agent quickstart](docs-site/docs/agent/quickstart.md) · [Harness runtime](docs-site/docs/agent/harness-runtime.md) · [Agent teams](docs-site/docs/agent/orchestration/agent-teams.md)
+- **Products**: [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) · [FlowGram](docs-site/docs/products/flowgram/overview.md) · [Plugin author guide](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
+- **Reference**: [Troubleshooting](docs-site/docs/production/troubleshooting.md) · [Comparison](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 

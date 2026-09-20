@@ -159,7 +159,14 @@ ai4j 提供两个文档入口，按需取用：
 - **[官方文档站](https://lnyo-cly.github.io/ai4j/)**：中英双语，从 5 分钟跑通到各能力详解，配有大量与源码对齐的架构/时序图，适合系统学习和查 API 用法
 - **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)**：AI 问答式仓库导览，适合直接用自然语言提问——比如"某个功能是怎么实现的"、"如何用 ai4j-harness 开发某场景的专属 Agent"，每周自动跟随仓库刷新
 
-快速入口：[5 分钟跑通](docs-site/docs/getting-started/quickstart-java.md) / [能力地图](docs-site/docs/getting-started/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
+快速入口：
+
+- **新手起步**：[Java 快速开始](docs-site/docs/getting-started/quickstart-java.md) · [路径选择](docs-site/docs/getting-started/choose-your-path.md) · [能力地图](docs-site/docs/getting-started/feature-map.md) · [FAQ](docs-site/docs/reference/faq.md)
+- **模型调用**：[Chat](docs-site/docs/capabilities/models/chat.md) · [Responses](docs-site/docs/capabilities/models/responses.md) · [Messages](docs-site/docs/capabilities/models/messages.md) · [流式](docs-site/docs/capabilities/models/streaming.md) · [多模态](docs-site/docs/capabilities/models/multimodal.md) · [Function Calling](docs-site/docs/capabilities/tools/function-calling.md)
+- **检索与互联**：[RAG](docs-site/docs/capabilities/rag/overview.md) · [MCP](docs-site/docs/capabilities/mcp/overview.md) · [Skills](docs-site/docs/capabilities/skills/overview.md) · [A2A](docs-site/docs/agent/observability/a2a.md)
+- **Agent**：[Agent 总览](docs-site/docs/agent/overview.md) · [Agent 快速开始](docs-site/docs/agent/quickstart.md) · [Harness 运行时](docs-site/docs/agent/harness-runtime.md) · [多智能体团队](docs-site/docs/agent/orchestration/agent-teams.md)
+- **产品**：[Coding Agent CLI / TUI / ACP](docs/readme/zh/coding-agent-cli.md) · [FlowGram](docs-site/docs/products/flowgram/overview.md) · [插件开发指南](docs-site/docs/extending/plugins/plugin-author-cookbook.md)
+- **参考**：[排障指南](docs-site/docs/production/troubleshooting.md) · [选型对比](docs-site/docs/reference/about/comparison.md) · [Releases](https://github.com/LnYo-Cly/ai4j/releases) · [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 
