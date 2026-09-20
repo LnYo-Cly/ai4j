@@ -136,7 +136,7 @@ ai:
 
 ### OkHttp SPI 扩展点
 
-并发调度与连接池不是写死的，由 SPI 提供（详见 [Auto Configuration / OkHttp SPI 扩展点](/docs/integrations/spring-boot/auto-configuration#7-okhttp-spi-扩展点)）：
+并发调度与连接池不是写死的，由 SPI 提供（详见 [Auto Configuration / OkHttp SPI 扩展点](/docs/integrations/spring-boot/auto-configuration#8-okhttp-spi-扩展点)）：
 
 - `DispatcherProvider`（默认 `DefaultDispatcherProvider`）
 - `ConnectionPoolProvider`（默认 `DefaultConnectionPoolProvider`）
