@@ -27,7 +27,7 @@
 - **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包等统一接入，Chat / Responses / Messages 三套协议各自完整支持，切换平台只需换一个枚举值；多组 API Key 可以并存，按名字路由。
 - **内置完整 RAG**：文档加载、切块、向量入库、混合检索、重排、引用标注，整条链路都在 SDK 内实现，不需要外挂检索框架。
 - **生产可用的治理能力**：沙箱执行、权限审批、Hook、Skill、插件化扩展、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪——长任务的可控与可观测都是内置的。
-- **插件化开发**：插件就是普通 Maven jar，引入依赖不会自动启用，需要显式开启——三方扩展安全可控。
+- **插件化扩展**：插件用于给 Agent 增加新能力——自定义工具、斜杠命令、Skill、Prompt 四类扩展点。比如写一个插件让 Agent 能查你们内部的工单系统、加一个 `/review` 命令、或注入一套领域 Skill。插件就是普通 Maven jar，引入依赖不会自动启用，需要显式开启——三方扩展安全可控。
 
 ## 安装
 
@@ -120,7 +120,9 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 
 ## 插件生态
 
-AI4J 插件是普通 Maven jar：`ServiceLoader` 发现 + `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）。引入依赖不等于启用。
+插件用来给 Agent 扩展能力：可以向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容——比如对接内部系统做成工具、给 CLI/TUI 加自定义命令、封装团队专属的 Skill 包。
+
+插件就是普通 Maven jar：`ServiceLoader` 发现 + `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）。引入依赖不等于启用。
 
 | 插件 | 归属 | 说明 |
 |---|---|---|

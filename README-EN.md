@@ -27,7 +27,7 @@ A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with co
 - **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao and more, with full Chat / Responses / Messages protocol support — switching providers is a one-enum change, and multiple API keys can coexist routed by name.
 - **Complete RAG built in**: document loading, chunking, vector stores, hybrid retrieval, reranking, and citations — the whole pipeline lives inside the SDK, no external retrieval framework needed.
 - **Production-grade governance**: sandboxed execution, permission approvals, hooks, skills, plugin extension, memory compaction strategies, checkpoint resume, and end-to-end tracing — control and observability for long-running tasks come built in.
-- **Plugin-oriented development**: a plugin is just a plain Maven jar — adding the dependency never enables it; explicit opt-in keeps third-party extensions safe and controllable.
+- **Plugin-oriented extension**: plugins add new capabilities to agents — four extension points: custom **tools**, **slash commands**, **skills**, and **prompts**. Write a plugin to let the agent query your internal ticketing system, add a `/review` command, or ship a domain-specific skill pack. A plugin is just a plain Maven jar — adding the dependency never enables it; explicit opt-in keeps third-party extensions safe and controllable.
 
 ## Install
 
@@ -119,6 +119,8 @@ Capabilities: one-shot and continuous sessions, persistent provider profiles (`~
 Full docs: [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md) · [Quickstart](docs-site/docs/products/coding-agent/quickstart.md) · [Overview](docs-site/docs/products/coding-agent/overview.md)
 
 ## Plugin ecosystem
+
+Plugins extend what agents can do: they inject new **tools**, **slash commands**, **skills**, or **prompts** into the Agent / Coding Agent — for example wrapping an internal system as a tool, adding a custom command to the CLI/TUI, or packaging a team-specific skill.
 
 An AI4J plugin is an ordinary Maven jar: `ServiceLoader` discovery plus `ExtensionRegistry` three-stage gates (discover → enable → exposeTool). Adding a dependency never enables it by itself.
 
