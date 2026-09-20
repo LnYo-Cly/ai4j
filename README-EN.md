@@ -138,12 +138,14 @@ An AI4J plugin is an ordinary Maven jar: `ServiceLoader` discovery plus `Extensi
 
 OpenAI / OpenAI-compatible, Anthropic, DashScope (Tongyi/Bailian), Doubao (Volcengine Ark/Doubao), DeepSeek, Moonshot, Zhipu, Tencent Hunyuan, Lingyi, Ollama, MiniMax, Baichuan, Suno; Rerank (Jina / Ollama / Doubao); AgentFlow (Dify / Coze / n8n); VectorStore (Pinecone / Qdrant / pgvector / Milvus / Redis). See the [feature-map](docs-site/docs/start-here/feature-map.md) for the full capability list.
 
-## Links
+## Documentation & Links
 
-- Docs: https://lnyo-cly.github.io/ai4j/ · [DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j) (AI Q&A tour of this repo)
-- [First request in five minutes](docs-site/docs/start-here/five-minute-first-chat.md) / [feature map](docs-site/docs/start-here/feature-map.md)
-- [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md)
-- [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
+ai4j offers two documentation entry points — pick what fits:
+
+- **Official docs site**: https://lnyo-cly.github.io/ai4j/ — bilingual (Chinese & English), from a five-minute first request to deep capability guides, with 50+ source-aligned architecture/sequence diagrams; best for systematic learning and API reference
+- **[DeepWiki](https://deepwiki.com/LnYo-Cly/ai4j)** — an AI-powered Q&A tour of this repository; ask "how is feature X implemented" in natural language; auto-refreshes weekly with the repo
+
+Quick links: [First request in five minutes](docs-site/docs/start-here/five-minute-first-chat.md) / [Feature map](docs-site/docs/start-here/feature-map.md) / [Coding Agent CLI / TUI / ACP](docs/readme/en/coding-agent-cli.md) / [A2A Protocol](docs-site/docs/agent/a2a.md) / [CHANGELOG](CHANGELOG.md) / [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 
