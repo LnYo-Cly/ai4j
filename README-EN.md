@@ -22,12 +22,13 @@ A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with co
 
 ## Highlights
 
-- **`ai4j-harness`, a unique long-running agent harness**: turns an agent from a one-shot call into an operable long-lived job ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
-- **Every agent design you need**: ReAct / CodeAct / Deep Research execution modes, StateGraph orchestration with conditional branches and loops, plus subagent delegation and multi-agent teams.
-- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao and more, with full Chat / Responses / Messages protocol support — switching providers is a one-enum change, and multiple API keys can coexist routed by name.
-- **Complete RAG built in**: document loading, chunking, vector stores, hybrid retrieval, reranking, and citations — the whole pipeline lives inside the SDK, no external retrieval framework needed.
-- **Production-grade governance**: sandboxed execution, permission approvals, hooks, skills, plugin extension, memory compaction strategies, checkpoint resume, and end-to-end tracing — control and observability for long-running tasks come built in.
-- **Plugin-oriented extension**: plugins add new capabilities to agents — four extension points: custom **tools**, **slash commands**, **skills**, and **prompts**. Write a plugin to let the agent query your internal ticketing system, add a `/review` command, or ship a domain-specific skill pack. A plugin is just a plain Maven jar — adding the dependency never enables it; explicit opt-in keeps third-party extensions safe and controllable.
+- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao, Ollama and more, with full Chat / Responses / Messages protocol support — function calling, SSE streaming, and image/audio/video/realtime are all built in; switching providers is a one-enum change, and multiple API keys can coexist routed by name.
+- **Every agent design covered**: ReAct, CodeAct, and Deep Research execution modes, StateGraph orchestration with conditional branches and loops, plus subagent delegation and multi-agent teams — ready-made skeletons from simple Q&A to multi-step research agents.
+- **`ai4j-harness`, a unique long-running agent harness**: turns a one-shot agent call into a pausable, resumable, acceptance-gated long-lived job ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
+- **Complete RAG built in**: document loading, chunking, vector stores, hybrid retrieval, reranking, and citations all live inside the SDK — no external retrieval stack needed.
+- **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call others' tools or expose your own; the A2A protocol lets agents collaborate with each other.
+- **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long tasks come built in.
+- **Ready out of the box**: the Spring Boot starter injects `AiService` with one config key; a Coding Agent with CLI / TUI / ACP entries ships in the box; plugins cover Tool / Command / Skill / Prompt extension points — adding a dependency never enables it.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 

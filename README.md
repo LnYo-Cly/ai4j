@@ -22,12 +22,13 @@
 
 ## 核心优势
 
-- **独创 `ai4j-harness` 长时运行 Harness**：让 Agent 从"一次性调用"变成"可运维的长期任务"（[详见下方专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
-- **各种 Agent 设计都支持**：ReAct / CodeAct / Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，还有 subagent 委派和 agent team 多智能体协作。
-- **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包等统一接入，Chat / Responses / Messages 三套协议各自完整支持，切换平台只需换一个枚举值；多组 API Key 可以并存，按名字路由。
+- **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等统一接入，Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式、图像/音频/视频/实时对话都内置；切换平台只改一个枚举值，多组 API Key 还能并存、按名字路由。
+- **Agent 玩法全覆盖**：ReAct、CodeAct、Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，subagent 委派和多智能体团队协作也有——从简单问答到多步研究型 Agent 都有现成骨架。
+- **独创 `ai4j-harness` 长时运行 Harness**：让 Agent 从"一次性调用"变成可暂停、可恢复、可验收的长期任务（[详见下方专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
 - **内置完整 RAG**：文档加载、切块、向量入库、混合检索、重排、引用标注，整条链路都在 SDK 内实现，不需要外挂检索框架。
-- **生产可用的治理能力**：沙箱执行、权限审批、Hook、Skill、插件化扩展、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪——长任务的可控与可观测都是内置的。
-- **插件化扩展**：插件用于给 Agent 增加新能力——自定义工具、斜杠命令、Skill、Prompt 四类扩展点。比如写一个插件让 Agent 能查你们内部的工单系统、加一个 `/review` 命令、或注入一套领域 Skill。插件就是普通 Maven jar，引入依赖不会自动启用，需要显式开启——三方扩展安全可控。
+- **生态互联**：MCP 客户端 + 服务端（Stdio / SSE / Streamable HTTP 三种传输）既能调别人的工具，也能把自己的能力暴露出去；A2A 协议让 Agent 之间可以互相协作。
+- **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控与可观测都是内置的。
+- **开箱即用**：Spring Boot starter 一行配置注入 `AiService`；自带 Coding Agent 的 CLI / TUI / ACP 三入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不等于启用。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 
