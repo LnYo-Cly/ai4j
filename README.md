@@ -134,9 +134,12 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 
 ## 插件生态
 
-加一个 Skill 放目录、接 MCP 工具连服务即可，通常不需要插件；插件适用于**需要用代码实现的新能力**——例如一个新的工具实现、新的命令行为，或接入一套 SDK 尚未内置的执行机制。典型例子：Claude Code 推出 dynamic workflow 后 ai4j 并未原生适配，[`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) 即以插件形式独立实现了该能力，无需修改 ai4j 源码，也无需等待上游支持。
+插件是 ai4j 的代码级扩展点：可向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容。典型场景：
 
-插件可向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容，适合把一组能力打包成可分发的 Maven jar，供他人引入使用。
+- 把内部系统封装成 Agent 可调用的工具——查工单、读 CRM、调内部 API
+- 为 CLI/TUI 增加自定义命令——如 `/review`、`/deploy`
+- 实现 SDK 尚未内置的执行机制——如 [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) 的动态工作流
+- 将「工具 + Skill + Prompt」打包成领域扩展包分发——他人引入一个 jar 即得整套能力
 
 插件为普通 Maven jar：经 `ServiceLoader` 发现，由 `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）控制启用。引入依赖不等于启用。
 
