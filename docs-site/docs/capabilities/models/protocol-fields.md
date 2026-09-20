@@ -175,7 +175,7 @@ metadata / context_management                    # 元数据回显 + 上下文�
 | `system` | Object | 顶层字段：字符串或 content block 数组（支持 `cache_control` 缓存断点），**不是一条消息** |
 | `temperature` / `top_p` | Double | 采样参数 |
 | `stop_sequences` | `List<String>` | 停止序列 |
-| `tools` | `List<AnthropicTool>` | 工具声明 |
+| `tools` | `List<AnthropicTool>` | 工具声明；支持 `defer_loading` 延迟加载标记、`type`（server tool 如 `tool_search_tool_*`）、`cache_control` 断点 |
 | `tool_choice` | Object | `auto`/`any`/`tool`/`none` |
 | `stream` | Boolean | SSE 流式 |
 | `extraBody` | `@JsonAnyGetter` | 扩展字段直通 |
@@ -206,6 +206,7 @@ system(顶层) → user → assistant[text+tool_use(id=T)]
 | `thinking` | `thinking` | 返回（extended thinking 推理链） |
 | `tool_use` | `id`/`name`/`input` | 返回（模型发起调用） |
 | `tool_result` | `tool_use_id`/`content` | 请求（回传结果，content 可为字符串或 block 数组） |
+| `tool_reference` | `tool_name` | tool search 命中的工具引用，历史往返需保留 |
 | `image` 等 | — | 请求多模态部件 |
 
 `cacheControl` 字段可打在 system 或消息 block 上做 prompt caching 断点。

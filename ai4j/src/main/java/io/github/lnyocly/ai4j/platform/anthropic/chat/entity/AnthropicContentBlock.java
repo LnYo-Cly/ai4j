@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
  *   <li>{@code thinking} —— 思考内容（开 thinking 时），使用 {@link #thinking}</li>
  *   <li>{@code tool_use} —— 模型发起的工具调用，使用 {@link #id}/{@link #name}/{@link #input}</li>
  *   <li>{@code tool_result} —— 工具结果回传，使用 {@link #toolUseId}/{@link #content}</li>
+ *   <li>{@code tool_reference} —— tool search 命中的工具引用，使用 {@link #toolName}（历史往返需保留）</li>
  * </ul>
  */
 @Data
@@ -47,6 +48,10 @@ public class AnthropicContentBlock {
 
     /** tool_result block 的结果内容（字符串或 content block 数组） */
     private Object content;
+
+    /** tool_reference block 的工具名 */
+    @JsonProperty("tool_name")
+    private String toolName;
 
     /** Optional Anthropic prompt-cache breakpoint for this content block. */
     @JsonProperty("cache_control")

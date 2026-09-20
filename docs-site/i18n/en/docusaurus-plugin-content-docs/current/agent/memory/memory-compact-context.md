@@ -427,6 +427,7 @@ These will be filled in later across the plugin lifecycle, Sandbox SPI, Coding A
 
 - [Agent Session Runtime](/docs/agent/session-runtime)
 - [Memory and State](/docs/agent/memory/memory-and-state)
+- [Prompt Caching and KV Cache](/docs/agent/memory/prompt-caching) — how compaction interacts with cache hit rate
 - [AI4J Agent SDK Roadmap](/docs/reference/about/sdk-roadmap)
 - [Coding Agent Compact and Checkpoint](/docs/products/coding-agent/compact-and-checkpoint)
 

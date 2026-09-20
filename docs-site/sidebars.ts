@@ -154,6 +154,7 @@ const sidebars: SidebarsConfig = {
             'agent/memory/memory-and-state',
             'agent/memory/memory-compact-context',
             'agent/memory/context-window-management',
+            'agent/memory/prompt-caching',
           ],
         },
         {

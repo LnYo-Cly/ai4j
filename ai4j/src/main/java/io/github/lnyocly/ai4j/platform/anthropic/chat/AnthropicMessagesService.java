@@ -126,13 +126,17 @@ public class AnthropicMessagesService implements IMessagesService {
 
     public Request buildRequest(String baseUrl, String apiKey, AnthropicChatCompletion request) throws JsonProcessingException {
         String body = objectMapper.writeValueAsString(request);
-        return new Request.Builder()
+        Request.Builder builder = new Request.Builder()
                 .header("x-api-key", apiKey)
                 .header("anthropic-version", anthropicConfig.getApiVersion())
                 .header("Content-Type", Constants.APPLICATION_JSON)
                 .url(UrlUtils.concatUrl(baseUrl, anthropicConfig.getChatCompletionUrl()))
-                .post(RequestBody.create(body, JSON_MEDIA_TYPE))
-                .build();
+                .post(RequestBody.create(body, JSON_MEDIA_TYPE));
+        List<String> betaFeatures = anthropicConfig.getBetaFeatures();
+        if (betaFeatures != null && !betaFeatures.isEmpty()) {
+            builder.header("anthropic-beta", String.join(",", betaFeatures));
+        }
+        return builder.build();
     }
 
     public EventSource.Factory getFactory() {
