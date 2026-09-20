@@ -102,6 +102,18 @@ These two entry points only merge:
 
 It does not automatically expose every tool on the classpath to the model just because the class is there.
 
+**Diagram: tool execution pipeline** — `@FunctionCall` scan → `JsonSchemaGenerator` → registry cache → explicit selection → Function/MCP dispatch → normalized result write-back.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/tool-execution-pipeline.html')}
+  title="tool-execution-pipeline"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/tool-execution-pipeline.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 5. When a call returns to the host, what is the real precedence
 
 The precedence of `ToolUtil.invoke(functionName, argument)` is currently roughly:

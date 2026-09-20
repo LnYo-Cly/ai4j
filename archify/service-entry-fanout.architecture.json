@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AiService 服务面：工厂 → 10 个服务接口",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 560],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "63b3c116389f4bf0724c1cdbb190276ce34405c3" },
+    "views": [
+      {
+        "id": "entry",
+        "label": "工厂入口",
+        "focus": ["host", "factory", "config", "registry"],
+        "note": "AiService.getXxxService(PlatformType) 按平台 switch 实例化；FreeAiService/Registry 支持按 id 路由。"
+      },
+      {
+        "id": "services",
+        "label": "服务接口面",
+        "focus": ["chat", "responses", "messages", "embedding", "rerank", "image", "video", "audio", "music", "realtime"],
+        "note": "10 个 I*Service 接口收敛全部能力面；每个接口的平台支持度不同——sublabel 标注可用平台。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "业务代码 / Starter", "pos": [110, 40], "size": [160, 62] },
+    { "id": "config", "type": "database", "label": "Configuration", "sublabel": "api-key/base-url", "pos": [430, 40], "size": [160, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/Configuration.java" }] },
+    { "id": "registry", "type": "backend", "label": "FreeAiService", "sublabel": "Registry 按 id 路由", "pos": [750, 40], "size": [160, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/factory/FreeAiService.java" }] },
+    { "id": "factory", "type": "security", "label": "AiService", "sublabel": "getXxxService(platform)", "tag": "core", "pos": [445, 160], "size": [170, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/factory/AiService.java" }] },
+    { "id": "chat", "type": "backend", "label": "Chat", "sublabel": "12 平台", "pos": [15, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IChatService.java" }] },
+    { "id": "responses", "type": "backend", "label": "Responses", "sublabel": "3 平台", "pos": [122, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IResponsesService.java" }] },
+    { "id": "messages", "type": "backend", "label": "Messages", "sublabel": "Anthropic", "pos": [229, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IMessagesService.java" }] },
+    { "id": "embedding", "type": "backend", "label": "Embed", "sublabel": "OpenAI·Ollama", "pos": [336, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IEmbeddingService.java" }] },
+    { "id": "rerank", "type": "backend", "label": "Rerank", "sublabel": "Jina·Ollama·Ds", "pos": [443, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IRerankService.java" }] },
+    { "id": "image", "type": "backend", "label": "Image", "sublabel": "OpenAI·Doubao", "pos": [550, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IImageService.java" }] },
+    { "id": "video", "type": "backend", "label": "Video", "sublabel": "5 平台", "pos": [657, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IVideoService.java" }] },
+    { "id": "audio", "type": "backend", "label": "Audio", "sublabel": "OpenAI", "pos": [764, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IAudioService.java" }] },
+    { "id": "music", "type": "backend", "label": "Music", "sublabel": "Suno", "pos": [871, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IMusicService.java" }] },
+    { "id": "realtime", "type": "backend", "label": "Realtime", "sublabel": "OpenAI", "pos": [978, 330], "size": [92, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/service/IRealtimeService.java" }] },
+    { "id": "enhancer", "type": "backend", "label": "检索增强包装", "sublabel": "ChatWithWebSearchEnhance", "pos": [30, 455], "size": [240, 60] }
+  ],
+  "connections": [
+    { "from": "host", "to": "factory", "label": "① 取服务", "labelAt": [300, 118], "fromSide": "bottom", "toSide": "top", "via": [[190, 140], [530, 140]] },
+    { "from": "config", "to": "factory", "label": "② 注入配置", "labelAt": [565, 118], "fromSide": "bottom", "toSide": "top" },
+    { "from": "registry", "to": "factory", "label": "③ id→platform", "labelAt": [700, 118], "fromSide": "bottom", "toSide": "top", "via": [[830, 140], [530, 140]] },
+    { "from": "factory", "to": "chat", "variant": "emphasis", "fromSide": "left", "toSide": "top", "via": [[61, 191], [61, 310]] },
+    { "from": "factory", "to": "responses", "variant": "emphasis", "fromSide": "left", "toSide": "top", "via": [[168, 191], [168, 310]] },
+    { "from": "factory", "to": "messages", "variant": "emphasis", "fromSide": "left", "toSide": "top", "via": [[275, 191], [275, 310]] },
+    { "from": "factory", "to": "embedding", "variant": "emphasis", "fromSide": "left", "toSide": "top", "via": [[382, 191], [382, 310]] },
+    { "from": "factory", "to": "rerank", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "via": [[530, 240], [489, 240], [489, 310]] },
+    { "from": "factory", "to": "image", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "via": [[530, 255], [596, 255], [596, 310]] },
+    { "from": "factory", "to": "video", "variant": "emphasis", "fromSide": "right", "toSide": "top", "via": [[703, 191], [703, 310]] },
+    { "from": "factory", "to": "audio", "variant": "emphasis", "fromSide": "right", "toSide": "top", "via": [[810, 191], [810, 310]] },
+    { "from": "factory", "to": "music", "variant": "emphasis", "fromSide": "right", "toSide": "top", "via": [[917, 191], [917, 310]] },
+    { "from": "factory", "to": "realtime", "variant": "emphasis", "fromSide": "right", "toSide": "top", "via": [[1024, 191], [1024, 310]] },
+    { "from": "chat", "to": "enhancer", "label": "④ 包装增强", "variant": "dashed", "labelAt": [55, 440], "fromSide": "bottom", "toSide": "top", "via": [[61, 425], [150, 425]] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "10 个服务接口 = 全部能力面 · 各按 PlatformType switch 到 platform.<name>.*Service 实现",
+      "wraps": ["chat", "responses", "messages", "embedding", "rerank", "image", "video", "audio", "music", "realtime"],
+      "pad": 8
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "工厂与注册表",
+      "items": [
+        "AiService.getXxxService(platform) 每次 new 具体实现（无缓存）；未知平台抛 IllegalArgumentException",
+        "FreeAiService.getChatService(id) 经 AiServiceRegistry→registration 携带 PlatformType 路由"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "平台支持度矩阵",
+      "items": [
+        "Chat 最广 12 平台；Responses 3 家；Messages/Audio/Music/Realtime 各仅 1 家原生实现",
+        "Video 5 家（OpenAI/Grok/Minimax/Seedance/Agnes）；Embedding 2 家；Rerank 3 家（Jina/Ollama/Doubao）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "增强与组装",
+      "items": [
+        "webSearchEnhance(chatService) 把 ChatWithWebSearchEnhance 包在原服务外：检索结果先并入请求",
+        "getRagService/getIngestionPipeline/getModelReranker 在同工厂内组装 DenseRetriever/Reranker 等复合件"
+      ]
+    }
+  ]
+}

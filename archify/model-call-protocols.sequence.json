@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "模型调用三协议：AiService 工厂分发 → provider 端点",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 530],
+    "views": [
+      {
+        "id": "dispatch",
+        "label": "工厂分发",
+        "focus": ["host", "factory", "chat", "resp", "msg"],
+        "note": "AiService.getXxxService(PlatformType) 按平台 switch 实例化具体服务；同一 Configuration 注入 api-key/base-url。"
+      },
+      {
+        "id": "call",
+        "label": "协议调用",
+        "focus": ["host", "chat", "resp", "msg", "provider"],
+        "note": "三条协议各自打到 provider 原生端点：chat/completions、responses、messages；返回 JSON 或 SSE 流。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "业务代码 / Starter"},
+    {"id": "factory", "type": "backend", "label": "AiService", "sublabel": "工厂 · Configuration"},
+    {"id": "chat", "type": "backend", "label": "IChatService", "sublabel": "12 平台实现"},
+    {"id": "resp", "type": "backend", "label": "Responses", "sublabel": "OpenAI·Doubao·Ds"},
+    {"id": "msg", "type": "backend", "label": "Messages 服务", "sublabel": "仅 Anthropic"},
+    {"id": "provider", "type": "cloud", "label": "Provider 端点", "sublabel": "HTTPS JSON / SSE"}
+  ],
+  "messages": [
+    {"from": "host", "to": "factory", "label": "① getXxxService(platform)", "y": 160},
+    {"from": "factory", "to": "chat", "label": "② new XxxChatService(configuration)（12 平台）", "y": 188},
+    {"from": "factory", "to": "resp", "label": "③ new OpenAi/Doubao/DashScope ResponsesService", "y": 216},
+    {"from": "factory", "to": "msg", "label": "④ new AnthropicMessagesService（仅 ANTHROPIC）", "y": 244},
+    {"from": "host", "to": "chat", "label": "⑤ chatCompletion(request) / 流式 + listener", "y": 272},
+    {"from": "chat", "to": "provider", "label": "⑥ POST /v1/chat/completions", "y": 300},
+    {"from": "host", "to": "resp", "label": "⑦ create(request)：tools/mcp/reasoning 内建", "y": 328},
+    {"from": "resp", "to": "provider", "label": "⑧ POST /v1/responses", "y": 356},
+    {"from": "host", "to": "msg", "label": "⑨ send(request)：Anthropic 原生 Messages", "y": 384},
+    {"from": "msg", "to": "provider", "label": "⑩ POST /v1/messages", "y": 412},
+    {"from": "provider", "to": "host", "label": "⑪ 统一响应对象 或 SSE 增量回调", "y": 440}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "协议 × 平台矩阵",
+      "items": [
+        "Chat：OpenAI/Anthropic/Zhipu/DeepSeek/Moonshot/Hunyuan/Lingyi/Ollama/Minimax/Baichuan/DashScope/Doubao",
+        "Responses：OpenAI/Doubao/DashScope；Messages：仅 Anthropic 原生实现，选错平台抛 IllegalArgumentException"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "增强与注册表",
+      "items": [
+        "webSearchEnhance(chatService) 返回 ChatWithWebSearchEnhance 包装器：联网检索结果先并入请求再调底层服务",
+        "FreeAiService.getChatService(id) → AiServiceRegistry → registration 携带 PlatformType，按 id 路由到对应 AiService"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "统一出口",
+      "items": [
+        "三协议的请求/响应实体各自对齐 provider 原生格式，出口收敛为 SDK 统一对象（或流式 listener 回调）",
+        "Configuration 集中持有 api-key/base-url/超时/代理；切换平台只改 PlatformType 与 Config"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MCP 栈：客户端链 + 服务端引擎双泳道",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 480],
+    "repository": { "url": "https://github.com/LnYo-Cly/ai4j", "provider": "github", "revision": "63b3c116389f4bf0724c1cdbb190276ce34405c3" },
+    "views": [
+      {
+        "id": "client",
+        "label": "客户端链",
+        "focus": ["caller", "gateway", "client", "transport", "remote", "confsrc"],
+        "note": "ToolUtil.invokeMcpTool → McpGateway 单例 → McpClient → McpTransport 三实现 → 远端 MCP Server。"
+      },
+      {
+        "id": "server",
+        "label": "服务端链",
+        "focus": ["anno", "factory", "engine", "auth"],
+        "note": "@McpService 注解类 → McpServerFactory → Stdio/Sse/StreamableHttp 三引擎；BearerTokenAuthProvider 做鉴权。"
+      }
+    ]
+  },
+  "components": [
+    { "id": "caller", "type": "frontend", "label": "Agent / 宿主", "sublabel": "invokeMcpTool 调用", "pos": [30, 60], "size": [150, 62] },
+    { "id": "gateway", "type": "security", "label": "McpGateway", "sublabel": "单例 · callTool/listTools", "tag": "core", "pos": [250, 60], "size": [170, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/gateway/McpGateway.java" }] },
+    { "id": "client", "type": "backend", "label": "McpClient", "sublabel": "ClientFactory 复用", "pos": [490, 60], "size": [150, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/client/McpClient.java" }] },
+    { "id": "transport", "type": "backend", "label": "McpTransport", "sublabel": "Stdio / SSE / StreamableHttp", "pos": [710, 60], "size": [170, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/transport/McpTransportFactory.java" }] },
+    { "id": "remote", "type": "cloud", "label": "MCP Server", "sublabel": "远端 / 本机进程", "pos": [930, 60], "size": [140, 62] },
+    { "id": "confsrc", "type": "database", "label": "McpConfigManager", "sublabel": "mcp.json 配置源", "pos": [250, 180], "size": [170, 56],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/config/McpConfigManager.java" }] },
+    { "id": "anno", "type": "external", "label": "@McpService 类", "sublabel": "@McpTool/Prompt/Resource", "pos": [30, 320], "size": [150, 62] },
+    { "id": "factory", "type": "backend", "label": "McpServerFactory", "sublabel": "装配服务引擎", "pos": [250, 320], "size": [170, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/server/McpServerFactory.java" }] },
+    { "id": "engine", "type": "backend", "label": "Server 引擎 ×3", "sublabel": "Stdio / Sse / StreamableHttp", "pos": [490, 320], "size": [170, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/server/StreamableHttpMcpServer.java" }] },
+    { "id": "auth", "type": "security", "label": "McpAuthProvider", "sublabel": "BearerToken 校验", "pos": [710, 320], "size": [160, 62],
+      "sources": [{ "path": "ai4j/src/main/java/io/github/lnyocly/ai4j/mcp/server/BearerTokenAuthProvider.java" }] }
+  ],
+  "connections": [
+    { "from": "caller", "to": "gateway", "label": "① 工具调用/枚举", "variant": "emphasis", "labelAt": [215, 140] },
+    { "from": "gateway", "to": "client", "label": "② 复用 client", "variant": "emphasis", "labelAt": [455, 140] },
+    { "from": "client", "to": "transport", "label": "③ 按配置选通道", "variant": "emphasis", "labelAt": [675, 140] },
+    { "from": "transport", "to": "remote", "label": "④ JSON-RPC 帧", "variant": "emphasis", "labelAt": [905, 140] },
+    { "from": "confsrc", "to": "gateway", "label": "⑤ 配置加载", "labelAt": [345, 160], "fromSide": "top", "toSide": "bottom" },
+    { "from": "anno", "to": "factory", "label": "⑥ 注解注册", "variant": "emphasis", "labelAt": [215, 330] },
+    { "from": "factory", "to": "engine", "label": "⑦ 建引擎", "variant": "emphasis", "labelAt": [455, 330] },
+    { "from": "engine", "to": "auth", "label": "⑧ 请求鉴权", "labelAt": [685, 400] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "客户端侧：SDK 作为 MCP 调用方", "wraps": ["caller", "gateway", "client", "transport", "confsrc"], "pad": 12 },
+    { "kind": "region", "label": "服务端侧：SDK 暴露本地能力为 MCP Server", "wraps": ["anno", "factory", "engine", "auth"], "pad": 12 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "客户端链",
+      "items": [
+        "McpGateway 是单例门面：listTools 走 McpGatewayToolRegistry 聚合多 server 工具；callTool 按 serverId 路由",
+        "McpGatewayClientFactory 复用 McpClient 连接；McpTransportFactory 按 TransportConfig 选 Stdio/SSE/StreamableHttp"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "三种传输",
+      "items": [
+        "StdioTransport：拉起本地子进程走 stdin/stdout；SseTransport：SSE 读 + POST 写",
+        "StreamableHttpTransport：单端点双向流式（新版推荐）；McpProtocolProfile 记录协议版本协商"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "服务端链与鉴权",
+      "items": [
+        "@McpService 标注的类经 McpServerFactory 装配成 Server 引擎；StdioMcpServer 供本机、Sse/StreamableHttp 供远端",
+        "McpServerSessionSupport 管理会话态；BearerTokenAuthProvider 在 HTTP 引擎前校验 Bearer token"
+      ]
+    }
+  ]
+}

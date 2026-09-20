@@ -35,6 +35,18 @@ The single most important method here is:
 
 Because it directly determines whether `McpClient` starts an application-layer heartbeat check.
 
+**Diagram: MCP two-lane stack** — client lane `McpGateway→McpClient→McpTransport` (Stdio/SSE/StreamableHttp) calls remote servers; server lane `@McpService→McpServerFactory→three engines` exposes local tools.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/mcp-transport-stack.html')}
+  title="mcp-transport-stack"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/mcp-transport-stack.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 2. `TransportConfig` is the unified configuration surface
 
 AI4J does not give each transport its own parameter bag. Everything is unified under `TransportConfig`.

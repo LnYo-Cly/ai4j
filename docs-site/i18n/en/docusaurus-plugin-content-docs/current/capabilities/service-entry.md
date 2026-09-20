@@ -55,6 +55,18 @@ From the implementation side, it currently owns:
 
 This means it is not simply a "provider chooser" — it funnels model access, retrieval augmentation, and some composition capabilities into a single entry object.
 
+**Diagram: AiService fan-out** — `Configuration`+`PlatformType` into the factory → 10 service interfaces (Chat/Responses/Messages/media/Embedding/Rerank) to provider implementations, plus web-search enhance and RAG helpers.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/service-entry-fanout.html')}
+  title="service-entry-fanout"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/service-entry-fanout.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 3. `AiService` is an explicit factory today, not dynamic discovery
 
 This fact must be stated up front.
@@ -99,6 +111,16 @@ This means multi-instance is not a set of fully independent containers; it is cl
 
 - Sharing the underlying base configuration
 - Each id owning its own provider-scoped configuration and `AiService`
+
+**Diagram: registry assembly and id lookup** — `DefaultAiServiceRegistry.from` resolves each AiPlatform, builds a scoped `Configuration`, and registers one `AiService` per id via `AiServiceFactory`; `find(id)` then routes through `getXxxService(platformType)`.
+
+<iframe
+  src={useBaseUrl('/archify/service-registry-assembly.html')}
+  title="service-registry-assembly"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/service-registry-assembly.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
 
 ## 6. The role of `FreeAiService`
 

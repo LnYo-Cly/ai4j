@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "RAG 端到端：摄入建索引 + 检索组装双通道",
+    "locale": "zh-CN",
+    "viewBox": [1070, 380],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ingest",
+        "label": "摄入通道",
+        "focus": ["doc_source", "loader", "embed"],
+        "note": "DocumentLoader→Processor 清洗→RecursiveTextChunker→EmbeddingService→VectorStore.upsert 建索引。"
+      },
+      {
+        "id": "query",
+        "label": "检索通道",
+        "focus": ["query", "planner", "retrieve", "rerank", "assemble", "prompt"],
+        "note": "RagQueryPlanner 改写 → 稠密+BM25 混合检索融合 → Reranker → TokenAware 预算组装出 RagContext。"
+      }
+    ]
+  },
+  "stages": [
+    {"label": "输入"},
+    {"label": "加工 / 规划"},
+    {"label": "向量读写"},
+    {"label": "精排"},
+    {"label": "组装出口"}
+  ],
+  "nodes": [
+    {"id": "doc_source", "type": "external", "label": "文档源", "sublabel": "文件/URL", "stage": 0, "row": 0, "width": 120},
+    {"id": "query", "type": "external", "label": "用户问题", "sublabel": "RagQuery", "stage": 0, "row": 1, "width": 120},
+    {"id": "loader", "type": "backend", "label": "加载清洗", "sublabel": "Loader→Processor", "stage": 1, "row": 0, "width": 140},
+    {"id": "planner", "type": "backend", "label": "QueryPlanner", "sublabel": "改写多变体", "stage": 1, "row": 1, "width": 140},
+    {"id": "embed", "type": "database", "label": "Chunk+Embed", "sublabel": "切块→嵌入→upsert", "stage": 2, "row": 0, "width": 160},
+    {"id": "retrieve", "type": "security", "label": "混合检索", "sublabel": "Dense+BM25 融合", "stage": 2, "row": 1, "width": 150},
+    {"id": "rerank", "type": "security", "label": "Reranker", "sublabel": "Model/Chat/Noop", "stage": 3, "row": 1, "width": 140},
+    {"id": "assemble", "type": "backend", "label": "Assembler", "sublabel": "TokenAware 预算", "stage": 4, "row": 1, "width": 140},
+    {"id": "prompt", "type": "backend", "label": "RagContext", "sublabel": "上下文+引用→模型", "stage": 4, "row": 0, "width": 150}
+  ],
+  "flows": [
+    {"from": "doc_source", "to": "loader", "label": "① 加载", "classification": "doc", "variant": "emphasis", "route": "auto"},
+    {"from": "loader", "to": "embed", "label": "② 清洗切块", "classification": "chunks", "variant": "emphasis", "route": "auto"},
+    {"from": "query", "to": "planner", "label": "③ 原始 query", "classification": "query", "variant": "emphasis", "route": "auto"},
+    {"from": "planner", "to": "retrieve", "label": "④ 改写变体", "classification": "variants", "variant": "emphasis", "route": "auto"},
+    {"from": "embed", "to": "retrieve", "label": "⑤ 索引可查", "classification": "index", "variant": "dashed", "route": "auto", "labelAt": [530, 200]},
+    {"from": "retrieve", "to": "rerank", "label": "⑥ RagHit 列表", "classification": "hits", "variant": "emphasis", "route": "auto", "labelAt": [640, 314]},
+    {"from": "rerank", "to": "assemble", "label": "⑦ topK", "classification": "topk", "variant": "emphasis", "route": "auto"},
+    {"from": "assemble", "to": "prompt", "label": "⑧ 上下文", "classification": "context", "variant": "emphasis", "route": "auto", "labelAt": [960, 314]}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "摄入加工",
+      "items": [
+        "TextDocumentLoader/TikaDocumentLoader 加载 → OcrTextExtracting/WhitespaceNormalizing 等 Processor 清洗",
+        "RecursiveTextChunker 递归切块 + DefaultMetadataEnricher 补元数据 → EmbeddingService 向量化 → VectorStore.upsert"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "检索融合",
+      "items": [
+        "ModelRagQueryPlanner 产出多变体改写；DenseRetriever 向量召回 + Bm25Retriever 关键词召回",
+        "HybridRetriever 经 RRF/RSF/DBSF 三种 FusionStrategy 合流；Reranker 有 Model/Chat/Noop 三实现"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "组装与溯源",
+      "items": [
+        "TokenAwareRagContextAssembler 按 token 预算挑 hit 装 RagContext；DefaultRagContextAssembler 全量装",
+        "RagCitation 记录引用来源；RagTrace/RagOnlineEvaluator 支撑评估与审计"
+      ]
+    }
+  ]
+}

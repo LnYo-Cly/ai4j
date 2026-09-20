@@ -38,6 +38,18 @@ tags: [concept]
 - 完整或碎片化 tool calls
 - usage 汇总
 
+**图解：SSE 流式时序** — `chatCompletionStream` 注册 `SseListener` 起 EventSource，逐帧 `onEvent` 聚合 delta 与 tool_call 碎片，`send()` 收口，`awaitCompletion` 阻塞等收尾。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/chat-streaming-sse.html')}
+  title="chat-streaming-sse"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/chat-streaming-sse.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 2. `Chat` 的流式 tool call 为什么不简单
 
 `SseListener.onEvent(...)` 当前对 tool call 做了专门处理：

@@ -79,6 +79,18 @@ tags: [concept]
 
 很多后续差异，包括 streaming、多模态、工具解析方式，本质上都从这里分叉。
 
+**图解：三协议入口分发** — Chat/Responses/Messages 经 `AiService` 工厂按 `PlatformType` 分发到各自平台实现，三协议支持面并不对称。
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/model-call-protocols.html')}
+  title="model-call-protocols"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/model-call-protocols.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>
+
 ## 4. 当前 provider 覆盖并不完全对称
 
 `AiService.createChatService(...)` 当前能创建的 `Chat` provider 包括：

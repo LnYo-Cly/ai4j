@@ -28,6 +28,18 @@ The default implementations take effect not because the code hardcodes a fallbac
 
 have already registered the default implementations on the classpath.
 
+**Diagram: outbound HTTP chain** — services take the `Configuration` OkHttpClient (SPI can override pool/dispatcher) → interceptor chain → Provider; non-2xx decodes to `AiHttpException`; streaming via EventSource+`SseListener`.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/http-interceptor-chain.html')}
+  title="http-interceptor-chain"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/http-interceptor-chain.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 2. The real assembly order inside the Spring Boot starter
 
 `AiConfigAutoConfiguration.initOkHttp()` currently assembles the unified `OkHttpClient` in roughly the following order:

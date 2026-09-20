@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HTTP 出站链：Configuration → SPI 装配 → 拦截器 → Provider",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [960, 510],
+    "views": [
+      {
+        "id": "assemble",
+        "label": "客户端装配",
+        "focus": ["service", "config", "client"],
+        "note": "服务实现取 Configuration.getOkHttpClient；ServiceLoader SPI 可覆盖连接池/调度器；OkHttpConfig 挂日志拦截器。"
+      },
+      {
+        "id": "call",
+        "label": "同步调用",
+        "focus": ["service", "client", "chain", "provider"],
+        "note": "newCall().execute() 同步返回；非 2xx 在 ErrorInterceptor→HttpErrorDecoder 统一抛 AiHttpException。"
+      },
+      {
+        "id": "stream",
+        "label": "流式调用",
+        "focus": ["service", "client", "provider", "listener"],
+        "note": "createRequestFactory 产 EventSource.Factory；StreamExecutionSupport 管首帧/空闲超时与重试，SseListener 逐帧回调。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "service", "type": "backend", "label": "服务实现", "sublabel": "如 OpenAiChatService"},
+    {"id": "config", "type": "database", "label": "Configuration", "sublabel": "client+SPI 装配"},
+    {"id": "client", "type": "security", "label": "OkHttpClient", "sublabel": "连接池/调度器"},
+    {"id": "chain", "type": "security", "label": "拦截器链", "sublabel": "ContentType/Error"},
+    {"id": "provider", "type": "cloud", "label": "Provider", "sublabel": "JSON / SSE 帧"},
+    {"id": "listener", "type": "backend", "label": "SseListener", "sublabel": "逐帧回调"}
+  ],
+  "messages": [
+    {"from": "service", "to": "config", "label": "① getOkHttpClient() / createRequestFactory()", "y": 160},
+    {"from": "config", "to": "client", "label": "② SPI 覆盖 Pool/Dispatcher + 挂拦截器", "y": 188},
+    {"from": "service", "to": "client", "label": "③ Request.Builder → newCall().execute()", "y": 216},
+    {"from": "client", "to": "chain", "label": "④ ContentType→Error→Logging 依次过链", "y": 244},
+    {"from": "chain", "to": "provider", "label": "⑤ HTTPS 请求（鉴权头+JSON 体）", "y": 272},
+    {"from": "provider", "to": "chain", "label": "⑥ 200 JSON 体 / 非 2xx", "y": 300},
+    {"from": "chain", "to": "service", "label": "⑦ mapper.readValue → 响应实体", "y": 328},
+    {"from": "chain", "to": "service", "label": "⑧ 非 2xx → HttpErrorDecoder → AiHttpException", "y": 356},
+    {"from": "service", "to": "client", "label": "⑨ 流式：factory.newEventSource(req, sseListener)", "y": 384},
+    {"from": "provider", "to": "listener", "label": "⑩ data: 帧 → onEvent 增量 ×N → 收尾", "y": 412}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "统一客户端底座",
+      "items": [
+        "Configuration 内置 OkHttpClient（连接 10s / 读 300s / 写 60s）；可整体替换，也可注入 OkHttpConfig 日志级别",
+        "createRequestFactory() 把同一 client 包成 EventSource.Factory，供 SSE 流式复用"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "SPI 扩展点",
+      "items": [
+        "META-INF/services 注册 ConnectionPoolProvider / DispatcherProvider 即可替换连接池与调度器",
+        "ContentType/ErrorInterceptor 是 OkHttp Interceptor：可在自定义 client 上按顺序挂载"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "错误与流式出口",
+      "items": [
+        "非 2xx 统一 HttpErrorDecoder.decode → AiHttpException；所有平台服务共用此出口",
+        "流式经 StreamExecutionSupport.execute：首帧/空闲超时、可配重试（ai4j.stream.* 属性），SseListener 回调增量与收尾"
+      ]
+    }
+  ]
+}

@@ -87,6 +87,18 @@ RagService rag = new DefaultRagService(hybrid);
 
 See [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval).
 
+**Diagram: RAG end-to-end** — ingestion: Loader→Processor→Chunker→Embedding→VectorStore; query: QueryPlanner→hybrid retrieval fusion→Reranker→TokenAware assembly into RagContext.
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/rag-end-to-end.html')}
+  title="rag-end-to-end"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/rag-end-to-end.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new tab</a>
+
 ## 4. How the default ingestion main line runs
 
 If you go through `AiService.getIngestionPipeline(platform, vectorStore)`, the default wiring is:

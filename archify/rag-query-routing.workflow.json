@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "RAG 查询路由：规划变体→多路召回→融合→重排",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "plan",
+        "label": "查询规划",
+        "focus": ["query_in", "planner", "variants"],
+        "note": "ModelRagQueryPlanner 按策略逐个发 LLM 改写：ORIGINAL 保留原句，REWRITE/MULTI_QUERY/HYDE/STEP_BACK/CUSTOM 各配 systemPrompt。"
+      },
+      {
+        "id": "merge",
+        "label": "召回融合",
+        "focus": ["fanout", "fusion", "rerank", "hits"],
+        "note": "每个变体独立走 Dense+BM25 召回 → FusionStrategy 合流去重 → Reranker 重排出 RagHit。"
+      }
+    ]
+  },
+  "lanes": [
+    {"id": "plan", "label": "查询规划"},
+    {"id": "recall", "label": "召回融合"},
+    {"id": "rank", "label": "排序出口"}
+  ],
+  "phases": [
+    {"id": "p1", "label": "变体规划", "fromCol": 0, "toCol": 1},
+    {"id": "p2", "label": "多路召回", "fromCol": 2, "toCol": 3, "variant": "emphasis"},
+    {"id": "p3", "label": "融合排序", "fromCol": 4, "toCol": 5, "variant": "dashed"}
+  ],
+  "mainPath": ["query_in", "planner", "variants", "fanout", "fusion", "rerank", "hits"],
+  "nodes": [
+    {"id": "query_in", "lane": "plan", "col": 0, "type": "external", "label": "RagQuery", "sublabel": "原始查询", "width": 120},
+    {"id": "planner", "lane": "plan", "col": 1, "type": "backend", "label": "QueryPlanner", "sublabel": "策略逐一生成", "width": 140},
+    {"id": "variants", "lane": "plan", "col": 2, "type": "backend", "label": "变体集", "sublabel": "6 类·maxVariants", "width": 140},
+    {"id": "fanout", "lane": "recall", "col": 3, "type": "backend", "label": "多变体召回", "sublabel": "Dense+BM25 并行", "width": 150},
+    {"id": "fusion", "lane": "recall", "col": 4, "type": "security", "label": "FusionStrategy", "sublabel": "RRF/RSF/DBSF", "width": 150},
+    {"id": "rerank", "lane": "rank", "col": 4, "type": "security", "label": "Reranker", "sublabel": "Model/Chat/Noop", "width": 140},
+    {"id": "hits", "lane": "rank", "col": 5, "type": "backend", "label": "RagHit 集", "sublabel": "→ Assembler", "width": 130}
+  ],
+  "edges": [
+    {"id": "e1", "from": "query_in", "to": "planner", "label": "query", "variant": "emphasis"},
+    {"id": "e2", "from": "planner", "to": "variants", "label": "按策略改写", "variant": "emphasis"},
+    {"id": "e3", "from": "variants", "to": "fanout", "label": "逐变体召回", "variant": "emphasis"},
+    {"id": "e4", "from": "fanout", "to": "fusion", "label": "多路 hits", "variant": "emphasis"},
+    {"id": "e5", "from": "fusion", "to": "rerank", "label": "融合去重", "variant": "default"},
+    {"id": "e6", "from": "rerank", "to": "hits", "label": "重排出 topK", "variant": "emphasis"}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "变体策略（RagQueryVariantType）",
+      "items": [
+        "ORIGINAL 原句直通；REWRITE 改写；MULTI_QUERY 多角度扩展；HYDE 假设答案；STEP_BACK 抽象上位；CUSTOM 自定义",
+        "strategies 逐个调模型生成，达 maxVariants（默认 6）即截断；includeOriginal 默认保留原查询"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "三选一融合策略",
+      "items": [
+        "RRF（倒数名次融合）：按各变体排名 1/(k+rank) 求和，对分数尺度不敏感",
+        "RSF 分数归一融合；DBSF 分布融合——AbstractScoreFusionStrategy 提供骨架，RagScoreDetail 记分数来源"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "排序与出口",
+      "items": [
+        "Reranker 三实现：ModelReranker 专用重排模型 · ChatReranker 用 Chat 模型打分 · NoopReranker 直通",
+        "RagHit 携 chunk+score+sourceDetail 进 ContextAssembler 组装，引用链到 RagCitation"
+      ]
+    }
+  ]
+}
