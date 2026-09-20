@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
         'capabilities/models/request-and-response-conventions',
             'capabilities/models/openai-compatible-and-trovebox',
             'capabilities/models/platform-service-matrix',
+            'capabilities/models/structured-output',
           ],
         },
         {
