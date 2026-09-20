@@ -33,6 +33,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=ChatDocExamplesLiveTest
 Without `OPENAI_API_KEY` these tests are skipped automatically and will not fail the build.
 :::
 
+> For the field-level reference (request fields, role/ordering constraints, response shapes), see [Protocol Fields and Assembly Reference](./protocol-fields.md).
+
 ## 0. Get it running first
 
 The minimal callable, in three steps: build a service, build a request, read the answer.

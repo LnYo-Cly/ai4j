@@ -32,6 +32,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=ChatDocExamplesLiveTest
 没有 `OPENAI_API_KEY` 时这些测试会自动跳过，不会让构建失败。
 :::
 
+> 字段级参考（请求字段表、role/顺序约束、返回结构）见 [三协议字段与拼装参考](./protocol-fields.md)。
+
 ## 0. 先跑起来
 
 最小可用调用，三步：建 service、建请求、读回答。

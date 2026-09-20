@@ -25,6 +25,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=ResponsesDocExamplesLiveTest
 没有 `OPENAI_API_KEY` 时这些测试会自动跳过，不会让构建失败。
 :::
 
+> 字段级参考（input 三种形态、output item 结构）见 [三协议字段与拼装参考](./protocol-fields.md)。
+
 ## 0. 先跑起来
 
 最小可用调用。注意 Responses 的输出是 **item 列表**，每个 item 带 content parts——读取助手文本要走这个结构，不像 Chat 直接读 `choice.message.content`：

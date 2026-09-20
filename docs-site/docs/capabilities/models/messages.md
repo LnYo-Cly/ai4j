@@ -27,6 +27,8 @@ mvn -pl ai4j test -Plive-provider-tests -Dtest=MessagesDocExamplesLiveTest
 没有 `MINIMAX_API_KEY` 时自动跳过。
 :::
 
+> 字段级参考（max_tokens 必填、user/assistant 交替、tool_result 配对）见 [三协议字段与拼装参考](./protocol-fields.md)。
+
 ## 1. 三条主线，不是新旧关系
 
 | 主线 | 协议 | 接口 | 适合 |
