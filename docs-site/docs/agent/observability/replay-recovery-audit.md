@@ -29,6 +29,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/session-checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：恢复重放时序** — 捕获→持久化→重启→重建/重放：ResumeCache 命中即短路，未命中走 NodeReplayer live/mock 重跑。
+
+<iframe
+  src={useBaseUrl('/archify/checkpoint-replay.html')}
+  title="checkpoint-replay"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/checkpoint-replay.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 0. 先抓住几个关键设计决策
 
 这些决策贯穿四层，先讲清，后面每节就不再重复辩护。

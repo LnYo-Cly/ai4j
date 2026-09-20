@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/blueprint-assembly.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：装载-校验-装配流水线** — Loader：YAML→DTO+字段白名单 → Validator：带 JSONPath 的 ValidationReport，含 ERROR 即抛 → AgentFactory 用宿主供给上下文装配 Agent。
+
+<iframe
+  src={useBaseUrl('/archify/blueprint-load-validate-build.html')}
+  title="blueprint-load-validate-build"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/blueprint-load-validate-build.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 适合什么场景
 
 | 场景 | 是否适合 |

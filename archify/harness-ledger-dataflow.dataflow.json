@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "台账数据流：写命令→CommandGateway→HarnessState 记录谱系→File/JDBC",
+    "locale": "zh-CN",
+    "viewBox": [
+      1070,
+      380
+    ],
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "write-path",
+        "label": "写路径",
+        "focus": [
+          "exec_cmds",
+          "gov_cmds",
+          "gateway",
+          "exec_wait_rec",
+          "gov_rec",
+          "persistence"
+        ],
+        "note": "一切写入都是 StateCommand.apply(state)：gateway 校验 actor/状态机/fencing/幂等键后改 HarnessState。"
+      },
+      {
+        "id": "persist-path",
+        "label": "持久化",
+        "focus": [
+          "exec_wait_rec",
+          "gov_rec",
+          "persistence",
+          "file",
+          "jdbc"
+        ],
+        "note": "HarnessState 经 store.update 整体落盘；File=state.json，JDBC=关系表，二者同语义。"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "写命令面"
+    },
+    {
+      "label": "唯一写面"
+    },
+    {
+      "label": "HarnessState 记录谱系"
+    },
+    {
+      "label": "持久化"
+    },
+    {
+      "label": "存储实现"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "exec_cmds",
+      "type": "external",
+      "label": "执行写命令",
+      "sublabel": "claim/heartbeat/deliverWait",
+      "stage": 0,
+      "row": 0,
+      "width": 140
+    },
+    {
+      "id": "gov_cmds",
+      "type": "external",
+      "label": "治理写命令",
+      "sublabel": "createTask/submit/review",
+      "stage": 0,
+      "row": 1,
+      "width": 140
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "CommandGateway",
+      "sublabel": "校验+fencing+幂等",
+      "stage": 1,
+      "row": 1,
+      "width": 150,
+      "tag": "唯一写面"
+    },
+    {
+      "id": "exec_wait_rec",
+      "type": "database",
+      "label": "执行与等待谱系",
+      "sublabel": "Exec/Lease/Wait/Wakeup/Checkpoint",
+      "stage": 2,
+      "row": 0,
+      "width": 150,
+      "tag": "executionId 串联"
+    },
+    {
+      "id": "gov_rec",
+      "type": "database",
+      "label": "治理与审计谱系",
+      "sublabel": "Sub/Rev/Gate + Fact/Event",
+      "stage": 2,
+      "row": 1,
+      "width": 170,
+      "tag": "taskId 串联+events"
+    },
+    {
+      "id": "persistence",
+      "type": "backend",
+      "label": "HarnessPersistence",
+      "sublabel": "store.update 落盘",
+      "stage": 3,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "file",
+      "type": "database",
+      "label": "FileHarnessStore",
+      "sublabel": "state.json 单文件",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "jdbc",
+      "type": "database",
+      "label": "JdbcHarnessStore",
+      "sublabel": "关系表·多 worker 共享",
+      "stage": 4,
+      "row": 1
+    }
+  ],
+  "flows": [
+    {
+      "from": "exec_cmds",
+      "to": "gateway",
+      "label": "① 执行命令",
+      "classification": "StateCommand",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "gov_cmds",
+      "to": "gateway",
+      "label": "① 治理",
+      "classification": "StateCommand",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        170,
+        318
+      ]
+    },
+    {
+      "from": "gateway",
+      "to": "exec_wait_rec",
+      "label": "② 写执行记录",
+      "classification": "apply(state)",
+      "variant": "default",
+      "route": "auto"
+    },
+    {
+      "from": "gateway",
+      "to": "gov_rec",
+      "label": "② 治理",
+      "classification": "apply(state)",
+      "variant": "default",
+      "route": "straight",
+      "labelAt": [
+        418,
+        314
+      ]
+    },
+    {
+      "from": "exec_wait_rec",
+      "to": "persistence",
+      "label": "③ 执行聚合",
+      "classification": "HarnessState",
+      "variant": "default",
+      "route": "auto"
+    },
+    {
+      "from": "gov_rec",
+      "to": "persistence",
+      "label": "③ 治理聚合",
+      "classification": "HarnessState",
+      "variant": "default",
+      "route": "straight",
+      "labelAt": [
+        643,
+        314
+      ]
+    },
+    {
+      "from": "persistence",
+      "to": "file",
+      "label": "④ save/load",
+      "classification": "单机",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "persistence",
+      "to": "jdbc",
+      "label": "④ save/load",
+      "classification": "多 worker",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        950,
+        225
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "唯一写面",
+      "items": [
+        "所有写入经 CommandGateway.apply(state)：校验 actor/状态机/fencing/幂等",
+        "读侧 getState/listX 直接读 HarnessState，不带写锁"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "谱系可追",
+      "items": [
+        "executionId 串起 Execution→Wait→Checkpoint→Session 谱系",
+        "taskId→submissionId→gateId 串起治理链，可查 lineage"
+      ]
+    }
+  ]
+}

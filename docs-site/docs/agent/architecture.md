@@ -156,6 +156,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/agent-core-runtime.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
 
+**视角补充：ReAct 单步执行时序** — 一步内部的调用序：压缩检查 → BEFORE_TURN 钩子 → buildPrompt → 模型执行 → 工具调用归一化/执行 → 结果回写 AgentMemory → 事件发布。
+
+<iframe
+  src={useBaseUrl('/archify/agent-react-step-loop.html')}
+  title="agent-react-step-loop"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-react-step-loop.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 3. 构建阶段到底做了什么
 
 理解架构，最值得直接读的第一个类还是 `AgentBuilder`。

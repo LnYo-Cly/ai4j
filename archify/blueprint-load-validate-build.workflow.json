@@ -1,0 +1,197 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Blueprint 装配：YAML→DTO→校验→AgentFactory",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "gate",
+        "label": "校验门",
+        "focus": [
+          "load",
+          "dto",
+          "validate",
+          "issues",
+          "fail"
+        ],
+        "note": "Loader 只做解析+白名单；Validator 输出带 JSONPath 的 ValidationReport，非空 ERROR 即抛 AgentBlueprintLoadException。"
+      },
+      {
+        "id": "build",
+        "label": "宿主装配",
+        "focus": [
+          "issues",
+          "factory",
+          "builder",
+          "agent"
+        ],
+        "note": "P1-B：AgentFactory 用宿主供给的 AgentFactoryContext 装配依赖，Blueprint 自身不读 token、不建沙箱。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "io",
+      "label": "声明面 / YAML→DTO"
+    },
+    {
+      "id": "gate",
+      "label": "AgentBlueprintValidator"
+    },
+    {
+      "id": "build",
+      "label": "AgentFactory 宿主装配"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "yaml",
+      "type": "external",
+      "label": "Blueprint YAML",
+      "sublabel": "声明式 Agent 描述",
+      "lane": "io",
+      "col": 0
+    },
+    {
+      "id": "load",
+      "type": "backend",
+      "label": "load()",
+      "sublabel": "AgentBlueprintLoader",
+      "lane": "io",
+      "col": 1
+    },
+    {
+      "id": "dto",
+      "type": "backend",
+      "label": "BlueprintDTO",
+      "sublabel": "AgentBlueprint",
+      "lane": "io",
+      "col": 2
+    },
+    {
+      "id": "validate",
+      "type": "security",
+      "label": "validate()",
+      "sublabel": "分项校验",
+      "lane": "gate",
+      "col": 2
+    },
+    {
+      "id": "issues",
+      "type": "security",
+      "label": "Report",
+      "sublabel": "severity+JSONPath",
+      "lane": "gate",
+      "col": 3
+    },
+    {
+      "id": "fail",
+      "type": "external",
+      "label": "LoadException",
+      "sublabel": "ERROR 非空即抛",
+      "lane": "gate",
+      "col": 4
+    },
+    {
+      "id": "factory",
+      "type": "backend",
+      "label": "AgentFactory",
+      "sublabel": "宿主上下文供给",
+      "lane": "build",
+      "col": 3,
+      "width": 150
+    },
+    {
+      "id": "builder",
+      "type": "backend",
+      "label": "AgentBuilder",
+      "sublabel": "装配依赖",
+      "lane": "build",
+      "col": 4
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Agent",
+      "sublabel": "可运行实例",
+      "lane": "build",
+      "col": 5
+    }
+  ],
+  "edges": [
+    {
+      "from": "yaml",
+      "to": "load",
+      "label": "load(path)"
+    },
+    {
+      "from": "load",
+      "to": "dto",
+      "label": "反序列化"
+    },
+    {
+      "from": "dto",
+      "to": "validate",
+      "label": "validate"
+    },
+    {
+      "from": "validate",
+      "to": "issues",
+      "label": "issues"
+    },
+    {
+      "from": "issues",
+      "to": "fail",
+      "label": "含 ERROR"
+    },
+    {
+      "from": "issues",
+      "to": "factory",
+      "label": "无 ERROR"
+    },
+    {
+      "from": "factory",
+      "to": "builder",
+      "label": "装配"
+    },
+    {
+      "from": "builder",
+      "to": "agent",
+      "label": "build()"
+    }
+  ],
+  "phases": [
+    {
+      "label": "P1-A 解析与校验",
+      "fromCol": 0,
+      "toCol": 3,
+      "id": "p1"
+    },
+    {
+      "label": "P1-B 宿主装配",
+      "fromCol": 4,
+      "toCol": 5,
+      "id": "p2"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "解析与校验门",
+      "items": [
+        "Loader：YAML→DTO+字段白名单；Validator：分项校验→ValidationReport（severity+JSONPath）；含 ERROR 即抛 LoadException"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "P1-B 装配约束",
+      "items": [
+        "AgentFactory 从 AgentFactoryContext 取宿主供给依赖；声明只引用名字，token 与沙箱实例由宿主运行时供给"
+      ]
+    }
+  ]
+}

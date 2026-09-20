@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CodingAgentHarness：CodingAgent 接入 Harness 的适配分层",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      480
+    ],
+    "repository": {
+      "url": "https://github.com/LnYo-Cly/ai4j",
+      "provider": "github",
+      "revision": "e2feb397c09075115a9875dc6c0f8b5b937f9de4"
+    },
+    "views": [
+      {
+        "id": "slice",
+        "label": "切片打开",
+        "focus": [
+          "facade",
+          "harness",
+          "adapter",
+          "coding",
+          "overlay"
+        ],
+        "note": "open(ctx,budget,prevState)：解码 CodingSessionState → newSession(sessionId,state) → applyHarnessOverlay 注入管理面 → 每切片一个真实 CodingSession。"
+      },
+      {
+        "id": "boundary",
+        "label": "工具边界",
+        "focus": [
+          "overlay",
+          "coding",
+          "harness"
+        ],
+        "note": "HarnessToolExecutor 是强制边界：harness_* 管理调用转 CommandGateway 落账，业务工具原样委派给宿主 executor。"
+      },
+      {
+        "id": "state",
+        "label": "状态往返",
+        "focus": [
+          "adapter",
+          "coding",
+          "harness",
+          "store"
+        ],
+        "note": "snapshot() 把 CodingSessionState 写回 HarnessAdapterState；applyDelivery 按 wait.payload.callId 回填待决工具输出。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "facade",
+      "type": "frontend",
+      "label": "CodingAgentHarness",
+      "sublabel": "run/resume/deliver/runReady",
+      "pos": [
+        30,
+        60
+      ],
+      "size": [
+        170,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentHarness.java"
+        }
+      ]
+    },
+    {
+      "id": "harness",
+      "type": "security",
+      "label": "AgentHarness",
+      "sublabel": "租约/切片/结果映射",
+      "tag": "engine",
+      "pos": [
+        270,
+        60
+      ],
+      "size": [
+        170,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/AgentHarness.java"
+        }
+      ]
+    },
+    {
+      "id": "adapter",
+      "type": "backend",
+      "label": "HarnessExecutionAdapter",
+      "sublabel": "ai4j-coding · open/run/snapshot",
+      "tag": "adapter",
+      "pos": [
+        510,
+        60
+      ],
+      "size": [
+        190,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentHarnessExecutionAdapter.java"
+        }
+      ]
+    },
+    {
+      "id": "coding",
+      "type": "backend",
+      "label": "CodingSession",
+      "sublabel": "每切片真实会话 · 照旧",
+      "tag": "adapter",
+      "pos": [
+        780,
+        60
+      ],
+      "size": [
+        180,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingSession.java"
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "HarnessStore",
+      "sublabel": "File/JDBC · HarnessState",
+      "tag": "ledger",
+      "pos": [
+        270,
+        215
+      ],
+      "size": [
+        170,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessPersistence.java"
+        }
+      ]
+    },
+    {
+      "id": "overlay",
+      "type": "security",
+      "label": "Harness 覆盖层",
+      "sublabel": "Registry/Executor/Interceptor/Prompts",
+      "tag": "overlay",
+      "pos": [
+        510,
+        215
+      ],
+      "size": [
+        190,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/HarnessToolExecutor.java"
+        }
+      ]
+    },
+    {
+      "id": "delivery",
+      "type": "backend",
+      "label": "applyDelivery",
+      "sublabel": "按 callId 回填待决输出",
+      "tag": "adapter",
+      "pos": [
+        780,
+        215
+      ],
+      "size": [
+        180,
+        65
+      ],
+      "sources": [
+        {
+          "path": "ai4j-coding/src/main/java/io/github/lnyocly/ai4j/coding/CodingAgentHarnessExecutionAdapter.java"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "facade",
+      "to": "harness",
+      "label": "① run/deliver",
+      "labelAt": [
+        235,
+        78
+      ]
+    },
+    {
+      "from": "harness",
+      "to": "adapter",
+      "label": "② open()",
+      "variant": "emphasis",
+      "labelAt": [
+        475,
+        78
+      ]
+    },
+    {
+      "from": "adapter",
+      "to": "coding",
+      "label": "③ runSingleTurn",
+      "variant": "emphasis",
+      "labelAt": [
+        740,
+        78
+      ]
+    },
+    {
+      "from": "adapter",
+      "to": "overlay",
+      "label": "④ applyHarnessOverlay",
+      "labelAt": [
+        622,
+        172
+      ]
+    },
+    {
+      "from": "overlay",
+      "to": "coding",
+      "label": "⑤ 注入 context",
+      "via": [
+        [
+          750,
+          247.5
+        ],
+        [
+          750,
+          92.5
+        ]
+      ],
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        715,
+        172
+      ]
+    },
+    {
+      "from": "overlay",
+      "to": "harness",
+      "label": "⑥ harness_*→Gateway",
+      "variant": "dashed",
+      "toSide": "bottom",
+      "via": [
+        [
+          480,
+          247.5
+        ],
+        [
+          480,
+          160
+        ],
+        [
+          355,
+          160
+        ]
+      ],
+      "labelAt": [
+        460,
+        140
+      ]
+    },
+    {
+      "from": "harness",
+      "to": "store",
+      "label": "⑦ persistOutcome/事件",
+      "variant": "emphasis",
+      "labelAt": [
+        400,
+        178
+      ]
+    },
+    {
+      "from": "delivery",
+      "to": "coding",
+      "label": "⑧ deliver→applyDelivery",
+      "variant": "dashed",
+      "labelAt": [
+        880,
+        172
+      ],
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "适配层（ai4j-coding）：每切片开一个真实 CodingSession",
+      "wraps": [
+        "adapter",
+        "overlay",
+        "coding",
+        "delivery"
+      ],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "Harness 引擎与台账",
+      "wraps": [
+        "harness",
+        "store"
+      ],
+      "pad": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "门面 vs 引擎",
+      "items": [
+        "CodingAgentHarness.file(dir)/jdbc(ds,id) 只是把 CodingAgent 包进 AgentHarness；租约、写面、持久化全在引擎侧",
+        "run/runTask/resume/deliver/runReady 全部委派给 harness；getGateway() 可直接拿到唯一写面"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "applyHarnessOverlay 注入",
+      "items": [
+        "budget→AgentOptions（maxSteps/wallClock/tokenBudget）；HarnessToolRegistry 追加 8 个 harness_* 管理工具",
+        "HarnessToolExecutor 是强制边界：harness_* 转 Gateway 落账，业务工具照旧；HarnessToolInterceptor 保留宿主拦截器；systemPrompt 追加 HarnessPrompts.instructions(+resumed/+fidelity)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "切片状态往返",
+      "items": [
+        "open 解码 payload.codingSessionState → newSession(sessionId,state)；snapshot() → codingSession.exportState() 回写",
+        "applyDelivery：按 wait.payload.callId 把 deliver 值回填到 MemorySnapshot 的 pending function_call_output / CodeAct 标记；APPROVAL 写入 HARNESS_APPROVAL_GRANTED 让模型重试"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Memory 压缩：投影→判定→compact→回写→事件",
+    "locale": "zh-CN",
+    "viewBox": [
+      1070,
+      380
+    ],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "project",
+        "label": "投影通道",
+        "focus": [
+          "items",
+          "projector",
+          "budget"
+        ],
+        "note": "每步 buildPrompt 前 ContextProjector 按 ContextBudget 投影裁剪——只读快照，不动记忆本体。"
+      },
+      {
+        "id": "compact",
+        "label": "压缩回路",
+        "focus": [
+          "gate",
+          "compact",
+          "restore",
+          "event"
+        ],
+        "note": "shouldCompact 命中 → policy.compact → memory.restore 回写新 memory → MEMORY_COMPRESS 事件。"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "记忆本体"
+    },
+    {
+      "label": "投影裁剪"
+    },
+    {
+      "label": "压缩判定"
+    },
+    {
+      "label": "压缩执行"
+    },
+    {
+      "label": "回写与事件"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "items",
+      "type": "database",
+      "label": "AgentMemory",
+      "sublabel": "输入/输出/工具结果",
+      "stage": 0,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "projector",
+      "type": "backend",
+      "label": "ContextProjector",
+      "sublabel": "project(items,budget)",
+      "stage": 1,
+      "row": 0,
+      "width": 160
+    },
+    {
+      "id": "budget",
+      "type": "security",
+      "label": "ContextBudget",
+      "sublabel": "token 预算约束",
+      "stage": 1,
+      "row": 1,
+      "width": 140
+    },
+    {
+      "id": "gate",
+      "type": "security",
+      "label": "shouldCompact",
+      "sublabel": "snapshot 体量判定",
+      "stage": 2,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "compact",
+      "type": "backend",
+      "label": "policy.compact",
+      "sublabel": "Windowed/Llm/Structured",
+      "stage": 3,
+      "row": 0,
+      "width": 170
+    },
+    {
+      "id": "restore",
+      "type": "database",
+      "label": "memory.restore",
+      "sublabel": "CompactResult 回写",
+      "stage": 4,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "event",
+      "type": "backend",
+      "label": "MEMORY_COMPRESS",
+      "sublabel": "→ Listener / Trace",
+      "stage": 3,
+      "row": 1,
+      "width": 160
+    }
+  ],
+  "flows": [
+    {
+      "from": "items",
+      "to": "projector",
+      "label": "① items 快照",
+      "classification": "MemorySnapshot",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        205,
+        100
+      ]
+    },
+    {
+      "from": "budget",
+      "to": "projector",
+      "label": "② 预算",
+      "classification": "token",
+      "variant": "default",
+      "route": "straight",
+      "labelAt": [
+        250,
+        212
+      ]
+    },
+    {
+      "from": "projector",
+      "to": "gate",
+      "label": "③ ContextReport",
+      "classification": "report",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        425,
+        100
+      ]
+    },
+    {
+      "from": "gate",
+      "to": "compact",
+      "label": "④ 超阈值触发",
+      "classification": "decision",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        633,
+        200
+      ]
+    },
+    {
+      "from": "compact",
+      "to": "restore",
+      "label": "⑤ result.memory",
+      "classification": "memory",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        858,
+        100
+      ]
+    },
+    {
+      "from": "restore",
+      "to": "items",
+      "label": "⑥ 回写·下步生效",
+      "classification": "memory",
+      "variant": "dashed",
+      "route": "bottom-channel",
+      "labelAt": [
+        530,
+        305
+      ],
+      "channelY": 330
+    },
+    {
+      "from": "compact",
+      "to": "event",
+      "label": "⑦ 压缩事件",
+      "classification": "event",
+      "variant": "default",
+      "route": "auto",
+      "labelAt": [
+        800,
+        228
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "触发点与零开销路径",
+      "items": [
+        "autoCompactIfNecessary 在每步 buildPrompt 前执行；shouldCompact(snapshot)==false 直接 return，不投影不压缩",
+        "ContextProjector 投影只产报告不进记忆：本体修改只发生在 compact→restore 一步"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "失败语义",
+      "items": [
+        "compact 抛异常被吞掉（log + 继续用未压缩记忆）——压缩失败绝不破坏 run",
+        "restore 后发布 MEMORY_COMPRESS + ON_COMPACT 生命周期事件；BEFORE_COMPACT 在压缩前发出"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "策略谱系",
+      "items": [
+        "CompactPolicy 实现：WindowedMemoryCompressor 窗口截断 · LlmCompactPolicy 摘要 · StructuredSummaryCompactPolicy 结构化",
+        "CompactPolicyMemoryCompressor 桥接旧 MemoryCompressor SPI；投影器分 Default/TypeAware 两实现"
+      ]
+    }
+  ]
+}

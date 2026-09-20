@@ -148,6 +148,16 @@ HarnessRunResult resumed = harness.deliver(
 
 审批也遵守同一条副作用边界：如果现有 Agent 的 Permission 层在 Harness 已预留 Invocation 后要求审批，Harness 会在一个事务中把该 Invocation 与 `APPROVAL` Wait 关联并置为 `WAITING`。批准后，恢复的 Agent 可以用新的 provider `callId` 重试；只有同一 Execution、同一工具、等价参数且没有歧义时才会重新使用原 Invocation，并在真正执行前原子地恢复为 `STARTED`。拒绝则记为失败，不会执行工具。
 
+## Worker 故障恢复时序图
+
+交互式时序图：Worker A 心跳中断或租约过期 → Execution 被标记 UNKNOWN（不是 FAILED）→ 需要显式 reconcile 对账 → Worker B 拿新租约与 fencing token 从 prevState 续跑；过期 worker 的迟到写入被 fencing 拒绝。
+
+
+<iframe src={useBaseUrl('/archify/harness-worker-recovery.html')} title="Worker 故障恢复时序图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-worker-recovery.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
+
 ## 4. Wait 类型
 
 | Wait 类型 | 谁投递 | 示例 |
@@ -159,6 +169,16 @@ HarnessRunResult resumed = harness.deliver(
 | `TIME` / `RETRY` | 业务调度器或定时 worker | 到期检查、退避重试 |
 
 “等待用户输入”与“客服 Conversation 仍然开放”不是同一个概念。Harness 只负责保存 Wait；客服业务决定如何把 Wait 映射到消息渠道，以及 Conversation 是否因为人工接管而永久停止机器人。
+
+## 台账数据流图
+
+交互式数据流：执行/治理写命令 → CommandGateway 唯一写面（actor/状态机/fencing/幂等校验）→ HarnessState 记录谱系（执行与等待、治理与审计）→ HarnessPersistence 落盘 → File / JDBC 两种存储实现。
+
+
+<iframe src={useBaseUrl('/archify/harness-ledger-dataflow.html')} title="台账数据流图" style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}} />
+
+<a href={useBaseUrl('/archify/harness-ledger-dataflow.html')} target="_blank" rel="noopener noreferrer">在新窗口打开交互图</a>
+
 
 ## 5. File 持久化
 

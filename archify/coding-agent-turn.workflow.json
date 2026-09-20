@@ -1,0 +1,221 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "CodingAgent 外层 turn 循环：单turn→聚合→LoopPolicy 决策",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "loop",
+        "label": "turn 循环",
+        "focus": [
+          "guard",
+          "turn",
+          "aggregate",
+          "decide",
+          "next"
+        ],
+        "note": "while(true)：上限闸 → runSingleTurn → 聚合 → decide → continue 时 continuationPrompt 驱动下一 turn。"
+      },
+      {
+        "id": "judge",
+        "label": "LoopPolicy 决策",
+        "focus": [
+          "decide",
+          "next",
+          "result"
+        ],
+        "note": "decide(policy,result,compact,turns,error) 产出 CONTINUE_*/stop；recordLoopDecision 落审计。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "caller",
+      "label": "宿主调用面"
+    },
+    {
+      "id": "engine",
+      "label": "CodingAgentLoopController"
+    },
+    {
+      "id": "exec",
+      "label": "CodingSession + LoopPolicy"
+    }
+  ],
+  "phases": [
+    {
+      "id": "intake",
+      "label": "入口与上限",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "turn",
+      "label": "单 turn 执行",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "judge",
+      "label": "聚合与决策",
+      "fromCol": 3,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "host",
+    "guard",
+    "turn",
+    "aggregate",
+    "decide",
+    "result"
+  ],
+  "nodes": [
+    {
+      "id": "host",
+      "lane": "caller",
+      "col": 0,
+      "type": "external",
+      "label": "宿主调用方",
+      "sublabel": "run / runStream",
+      "width": 132
+    },
+    {
+      "id": "result",
+      "lane": "caller",
+      "col": 5,
+      "type": "backend",
+      "label": "CodingAgentResult",
+      "sublabel": "聚合产出返回",
+      "width": 150
+    },
+    {
+      "id": "guard",
+      "lane": "engine",
+      "col": 1,
+      "type": "security",
+      "label": "上限闸",
+      "sublabel": "maxTotalTurns · 中断",
+      "width": 150
+    },
+    {
+      "id": "aggregate",
+      "lane": "engine",
+      "col": 3,
+      "type": "backend",
+      "label": "聚合器",
+      "sublabel": "steps/token/cost 累加",
+      "width": 160
+    },
+    {
+      "id": "next",
+      "lane": "engine",
+      "col": 4,
+      "type": "backend",
+      "label": "continuationPrompt",
+      "sublabel": "下一 turn 输入",
+      "width": 160
+    },
+    {
+      "id": "turn",
+      "lane": "exec",
+      "col": 2,
+      "type": "backend",
+      "label": "runSingleTurn",
+      "sublabel": "内层 ReAct 执行",
+      "width": 150
+    },
+    {
+      "id": "decide",
+      "lane": "exec",
+      "col": 3,
+      "type": "security",
+      "label": "decide()",
+      "sublabel": "CONTINUE_* / stop",
+      "width": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-run",
+      "from": "host",
+      "to": "guard",
+      "label": "run(request)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-turn",
+      "from": "guard",
+      "to": "turn",
+      "label": "放行 → 单 turn",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-agg",
+      "from": "turn",
+      "to": "aggregate",
+      "label": "turnResult",
+      "variant": "default"
+    },
+    {
+      "id": "e-decide",
+      "from": "aggregate",
+      "to": "decide",
+      "label": "decide(policy,…)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-cont",
+      "from": "decide",
+      "to": "next",
+      "label": "isContinueLoop",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-loop",
+      "from": "next",
+      "to": "guard",
+      "label": "continuationPrompt 回环",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-exit",
+      "from": "decide",
+      "to": "result",
+      "label": "stop → aggregate 返回",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三类继续决策",
+      "items": [
+        "CONTINUE_AFTER_TOOL_WORK / CONTINUE_AFTER_COMPACTION / CONTINUE_AUTONOMOUS_WORK",
+        "decision.continuationPrompt 直接作为下一 turn 的输入；autoFollowUps 计数随轮递增"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "停止语义",
+      "items": [
+        "turns ≥ maxTotalTurns → forcedStop（MAX_TOTAL_TURNS_REACHED）立即聚合返回",
+        "输出文本命中 CONTINUE_PATTERN 可续跑；decision.isBlocked / 非 continue 即出循环"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "聚合与审计",
+      "items": [
+        "每 turn 累加 steps、各档 token、cost 与币种（币种不一致置 null 并标 mismatch）",
+        "session.recordLoopDecision 记录每次决策；StepOffsetAgentListener 给事件步号加全局偏移"
+      ]
+    }
+  ]
+}

@@ -31,6 +31,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/skill-mechanism.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: two skill injection paths** — resolver→scope→discover yields metadata only; automatic skills enter systemPrompt, selected skills are explicitly read and expanded into the overlay.
+
+<iframe
+  src={useBaseUrl('/archify/skill-apply-paths.html')}
+  title="skill-apply-paths"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/skill-apply-paths.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## Start with the right integration
 
 For a local developer Agent, use the workspace convenience method:

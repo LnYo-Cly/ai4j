@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ReAct 步循环：一步内 model→tool→memory→event 的次序",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 555],
+    "views": [
+      {
+        "id": "model-half",
+        "label": "模型半步",
+        "focus": ["runtime", "client", "memory", "publisher"],
+        "note": "STEP_START/BEFORE_TURN → buildPrompt（ContextProjector 裁剪）→ executeModel → addOutputItems 对齐 memoryItems。"
+      },
+      {
+        "id": "tool-half",
+        "label": "工具半步",
+        "focus": ["runtime", "executor", "memory", "publisher"],
+        "note": "Sanitizer 校验 → executeToolCalls（串行或并行）→ addToolOutput 回填 → TOOL_RESULT + STEP_END。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "run / runStream"},
+    {"id": "session", "type": "backend", "label": "AgentSession", "sublabel": "run 入口"},
+    {"id": "runtime", "type": "backend", "label": "ReActRuntime", "sublabel": "步循环主体"},
+    {"id": "client", "type": "backend", "label": "ModelClient", "sublabel": "Chat / Responses"},
+    {"id": "executor", "type": "backend", "label": "ToolExecutor", "sublabel": "校验 · 串/并行"},
+    {"id": "memory", "type": "backend", "label": "AgentMemory", "sublabel": "输入/输出/结果"},
+    {"id": "publisher", "type": "backend", "label": "Publisher", "sublabel": "→ Listener/Trace"}
+  ],
+  "messages": [
+    {"from": "host", "to": "session", "label": "run(request)", "y": 160},
+    {"from": "session", "to": "runtime", "label": "① runInternal：maxSteps 上限 + memory 校验", "y": 188},
+    {"from": "runtime", "to": "memory", "label": "② addUserInput(effectiveInput)", "y": 216},
+    {"from": "runtime", "to": "publisher", "label": "③ STEP_START + BEFORE_TURN", "y": 244},
+    {"from": "runtime", "to": "client", "label": "④ buildPrompt → executeModel", "y": 272},
+    {"from": "client", "to": "runtime", "label": "AgentModelResult：文本 或 toolCalls", "y": 300},
+    {"from": "runtime", "to": "memory", "label": "⑤ addOutputItems（对齐 provider memoryItems）", "y": 328},
+    {"from": "runtime", "to": "executor", "label": "⑥ executeToolCalls（串行/并行）", "y": 356},
+    {"from": "executor", "to": "runtime", "label": "AgentToolResult（含 trace 载荷）", "y": 384},
+    {"from": "runtime", "to": "memory", "label": "⑦ addToolOutput(callId, output)", "y": 412},
+    {"from": "runtime", "to": "publisher", "label": "⑧ TOOL_RESULT + STEP_END → 下一步或 FINAL_OUTPUT", "y": 440}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "步循环骨架",
+      "items": [
+        "while (step < maxSteps) 单步推进；模型无 toolCalls → publish FINAL_OUTPUT + AFTER_TURN + STEP_END 后返回 AgentResult（COMPLETED）",
+        "每步开头 autoCompactIfNecessary 先按预算裁剪，再 buildPrompt 组装 systemPrompt+instructions+可见工具"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "工具执行路径",
+      "items": [
+        "AgentToolCallSanitizer 校验失败 → 直接合成 FAILED result 并 addToolOutput，不进入 executor",
+        "parallelToolCalls 且 calls>1 → executeToolCallsInParallel，否则顺序执行；HostInputRequired 中断时为未配对 call 写占位 output 保持协议可恢复"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "事件谱系",
+      "items": [
+        "顺序固定：STEP_START → BEFORE_TURN → TOOL_CALL → TOOL_RESULT → AFTER_TURN → STEP_END → FINAL_OUTPUT",
+        "AgentTraceListener 消费同一事件流建 RUN>STEP>MODEL/TOOL span 树；监听器异常不阻断主流程"
+      ]
+    }
+  ]
+}

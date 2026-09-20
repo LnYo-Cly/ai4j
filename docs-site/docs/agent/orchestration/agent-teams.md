@@ -239,6 +239,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/agent-team-collaboration.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
 
+**视角补充：Planner→TaskBoard→成员协同** — run() 清消息总线 → Planner 产出任务 → TaskBoard 规范化并等审批 → 按 claim/heartbeat 派单与回收 → Synthesizer 汇总。
+
+<iframe
+  src={useBaseUrl('/archify/agent-team-coordination.html')}
+  title="agent-team-coordination"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-team-coordination.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 3. Planner 子系统的真实容错方式
 
 `LlmAgentTeamPlanner` 的容错并不是“planner 出错也没关系”，而是更具体的一种策略。

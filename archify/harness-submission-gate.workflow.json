@@ -1,0 +1,304 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "提交→评审→验收→门禁→DONE：完成治理管线",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "pipeline",
+        "label": "完成管线",
+        "focus": [
+          "agent",
+          "submit",
+          "review",
+          "accept",
+          "complete",
+          "done"
+        ],
+        "note": "submitTask→IN_REVIEW→评审→验收→completeTask 门禁→DONE，每步落台账记录。"
+      },
+      {
+        "id": "rework",
+        "label": "返工与修复",
+        "focus": [
+          "review",
+          "agent",
+          "complete",
+          "gate_rec",
+          "repair"
+        ],
+        "note": "CHANGES_REQUESTED 把任务打回 ACTIVE 返工；门禁 FAIL 抛 CompletionFailure，可 repair(parentExecutionId) 起 lineage 子执行。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "caller",
+      "label": "宿主 / 评审 / 验收调用面"
+    },
+    {
+      "id": "gateway",
+      "label": "CommandGateway（唯一写面·状态机校验）"
+    },
+    {
+      "id": "ledger",
+      "label": "HarnessStore 台账",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "submit_p",
+      "label": "提交与评审",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "accept_p",
+      "label": "验收",
+      "fromCol": 3,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "gate_p",
+      "label": "门禁与结果",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "records",
+      "label": "每步落不可变台账记录",
+      "lane": "ledger",
+      "fromCol": 1,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "agent",
+    "submit",
+    "review",
+    "accept",
+    "complete",
+    "done"
+  ],
+  "nodes": [
+    {
+      "id": "agent",
+      "lane": "caller",
+      "col": 0,
+      "type": "external",
+      "label": "Agent / Worker",
+      "sublabel": "完成工作→交付",
+      "width": 132
+    },
+    {
+      "id": "evaluator",
+      "lane": "caller",
+      "col": 3,
+      "type": "backend",
+      "label": "AcceptanceEvaluator",
+      "sublabel": "宿主侧验收实现",
+      "width": 150
+    },
+    {
+      "id": "done",
+      "lane": "caller",
+      "col": 5,
+      "type": "backend",
+      "label": "Task → DONE",
+      "sublabel": "须最新评审 APPROVED",
+      "width": 132
+    },
+    {
+      "id": "submit",
+      "lane": "gateway",
+      "col": 1,
+      "type": "backend",
+      "label": "submitTask",
+      "sublabel": "task→IN_REVIEW",
+      "width": 132
+    },
+    {
+      "id": "review",
+      "lane": "gateway",
+      "col": 2,
+      "type": "security",
+      "label": "reviewSubmission",
+      "sublabel": "评审者 verdict+findings",
+      "tag": "verdict",
+      "width": 140
+    },
+    {
+      "id": "accept",
+      "lane": "gateway",
+      "col": 3,
+      "type": "backend",
+      "label": "AcceptanceCoordinator.evaluate",
+      "sublabel": "评估+绑定验收",
+      "width": 210
+    },
+    {
+      "id": "complete",
+      "lane": "gateway",
+      "col": 4,
+      "type": "security",
+      "label": "completeTask",
+      "sublabel": "validateCompletion+门禁",
+      "tag": "gate",
+      "width": 140
+    },
+    {
+      "id": "submission",
+      "lane": "ledger",
+      "col": 1,
+      "type": "database",
+      "label": "SubmissionRecord",
+      "sublabel": "附 evidenceIds",
+      "width": 132
+    },
+    {
+      "id": "review_rec",
+      "lane": "ledger",
+      "col": 2,
+      "type": "database",
+      "label": "ReviewRecord",
+      "sublabel": "verdict+findings",
+      "width": 140
+    },
+    {
+      "id": "accept_rec",
+      "lane": "ledger",
+      "col": 3,
+      "type": "database",
+      "label": "AcceptanceRecord+Evidence",
+      "sublabel": "PASS/FAIL/ERROR/NOT_RUN",
+      "width": 168
+    },
+    {
+      "id": "gate_rec",
+      "lane": "ledger",
+      "col": 4,
+      "type": "database",
+      "label": "GateRecord",
+      "sublabel": "每门禁一条 PASS/FAIL",
+      "width": 132
+    },
+    {
+      "id": "repair",
+      "lane": "ledger",
+      "col": 5,
+      "type": "database",
+      "label": "repair(parentExecutionId)",
+      "sublabel": "lineage 子执行→重新提交",
+      "width": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "agent-submit",
+      "from": "agent",
+      "to": "submit",
+      "label": "交付工作",
+      "variant": "emphasis"
+    },
+    {
+      "id": "submit-review",
+      "from": "submit",
+      "to": "review",
+      "label": "进入评审",
+      "variant": "emphasis"
+    },
+    {
+      "id": "review-accept",
+      "from": "review",
+      "to": "accept",
+      "variant": "emphasis"
+    },
+    {
+      "id": "accept-complete",
+      "from": "accept",
+      "to": "complete",
+      "label": "验收结果",
+      "variant": "emphasis"
+    },
+    {
+      "id": "complete-done",
+      "from": "complete",
+      "to": "done",
+      "label": "全部 PASS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "submit-rec",
+      "from": "submit",
+      "to": "submission",
+      "variant": "default"
+    },
+    {
+      "id": "review-rec",
+      "from": "review",
+      "to": "review_rec",
+      "variant": "default"
+    },
+    {
+      "id": "accept-rec",
+      "from": "accept",
+      "to": "accept_rec",
+      "variant": "default"
+    },
+    {
+      "id": "complete-gate",
+      "from": "complete",
+      "to": "gate_rec",
+      "label": "GateResult×N",
+      "variant": "default"
+    },
+    {
+      "id": "eval-accept",
+      "from": "evaluator",
+      "to": "accept",
+      "variant": "default"
+    },
+    {
+      "id": "review-rework",
+      "from": "review",
+      "to": "agent",
+      "label": "CHANGES_REQUESTED→ACTIVE",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "complete-repair",
+      "from": "complete",
+      "to": "repair",
+      "label": "FAIL→CompletionFailure",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "完成门禁",
+      "items": [
+        "completeTask 先 validateCompletion：契约可要求最新评审 APPROVED、evidenceIds 非空",
+        "contract.evaluateCompletion 在写锁外评估；每个 GateResult 落 GateRecord，任一 FAIL → CompletionFailure"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "验收与修复",
+      "items": [
+        "AcceptanceCoordinator.evaluate 产出 Evaluation：AcceptanceRecord+EvidenceRecord，bindAcceptanceToSubmission 绑定提交",
+        "ArtifactContractGate 做确定性契约校验；repair(parentExecutionId) 起带子执行 lineage 的修复执行"
+      ]
+    }
+  ]
+}

@@ -32,6 +32,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/memory-compaction.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：压缩决策数据流** — 每步开头先 shouldCompact 判定 → compact 产 CompactResult → replacement memory 恢复替换 → 发 MEMORY_COMPRESS 事件，失败则沿用原记忆。
+
+<iframe
+  src={useBaseUrl('/archify/memory-compaction-flow.html')}
+  title="memory-compaction-flow"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/memory-compaction-flow.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 为什么需要这一层
 
 长程 Agent 会不断积累：

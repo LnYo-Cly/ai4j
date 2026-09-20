@@ -240,6 +240,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/agent-team-collaboration.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: Planner → TaskBoard → member coordination** — run() clears the bus → planner emits tasks → board normalizes and awaits approval → claim/heartbeat dispatch and recovery → synthesizer aggregates.
+
+<iframe
+  src={useBaseUrl('/archify/agent-team-coordination.html')}
+  title="agent-team-coordination"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/agent-team-coordination.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 3. How the Planner subsystem actually tolerates failure
 
 `LlmAgentTeamPlanner`'s fault tolerance is not "it's fine if the planner errs"; it is a more specific strategy.
