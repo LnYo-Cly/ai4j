@@ -16,32 +16,32 @@
 
 # ai4j
 
-A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with complete agent capabilities built in, so you can quickly build your own agent applications.
+A **JDK 8+** Java AI Agentic SDK: unified access to mainstream model providers, with built-in capabilities spanning tool calling, RAG, MCP, agent orchestration, and long-running task governance — supporting rapid development of dedicated agent applications.
 
 [中文 README](README.md)
 
 ## Highlights
 
-- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao, Ollama and more, with full Chat / Responses / Messages protocol support — function calling and SSE streaming included; ten service interfaces (Embedding, Rerank, image/audio/video/music generation, realtime, and more) are served from one factory; switching providers is a one-enum change, and multiple API keys can coexist routed by name.
-- **Every agent design covered**: ReAct, CodeAct, and Deep Research execution modes, StateGraph orchestration with conditional branches and loops, plus subagent delegation and multi-agent teams — ready-made skeletons from simple Q&A to multi-step research agents.
-- **`ai4j-harness`, a unique long-running agent harness**: turns a one-shot agent call into a pausable, resumable, acceptance-gated long-lived job ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
-- **Complete RAG built in**: document loading (optional Tika for PDF/Word/Excel), chunking, five vector-store adapters (Pinecone / Qdrant / pgvector / Milvus / Redis), hybrid retrieval, reranking, and citations — the whole pipeline lives inside the SDK, no external retrieval stack needed.
-- **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call others' tools or expose your own; the A2A protocol lets agents collaborate; you can also call into existing Dify / Coze / n8n AgentFlow orchestrations, with web-search enhancement on top.
-- **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long tasks come built in.
-- **Ready out of the box**: the Spring Boot starter injects `AiService` with one config key; a Coding Agent with CLI / TUI / ACP entries ships in the box; plugins cover Tool / Command / Skill / Prompt extension points — adding a dependency never enables it.
+- **Unified access to 12+ providers**: OpenAI, Anthropic, DeepSeek, Zhipu, Doubao, Ollama and more are served by one factory; full Chat / Responses / Messages protocol support with native function calling and SSE streaming; ten service interfaces (Embedding, Rerank, image/audio/video/music generation, realtime, and more) available on demand; switching providers requires only a `PlatformType` change, and multiple API keys can coexist routed by name.
+- **Complete agent orchestration**: ReAct, CodeAct, and Deep Research execution modes, StateGraph orchestration with conditional branches and loops, subagent delegation, and multi-agent teams — ready-made implementations from simple Q&A to multi-step research agents.
+- **`ai4j-harness`, a unique long-running agent harness**: turns a one-shot agent call into a pausable, resumable, acceptance-gated long-lived task ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
+- **Complete RAG built in**: document loading (optional Tika for PDF/Word/Excel), chunking, five vector-store adapters (Pinecone / Qdrant / pgvector / Milvus / Redis), hybrid retrieval, reranking, and citations — the whole pipeline is implemented inside the SDK, no external retrieval stack needed.
+- **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call external tools or expose your own; the A2A protocol enables agent-to-agent collaboration; existing Dify / Coze / n8n AgentFlow orchestrations can be invoked as well, with web-search enhancement included.
+- **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long-running tasks are built-in capabilities.
+- **Ready out of the box**: the Spring Boot starter injects `AiService` with a single config key; the built-in Coding Agent provides CLI / TUI / ACP entries; plugin extension covers Tool / Command / Skill / Prompt — adding a dependency never enables it automatically.
 
 Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 
-A normal agent call ends when it returns; `ai4j-harness` makes it a **durable, governed, resumable** long-running task:
+A regular agent call ends when it returns; `ai4j-harness` turns it into a **durable, governed, resumable** long-running task:
 
-- **Interruptible and resumable**: task state persists to File/JDBC stores — restart the process or move to another machine and continue from the checkpoint
-- **Safe multi-worker parallelism**: workers claim tasks through leases with no double-execution; a dead worker's task goes back to the claimable pool
-- **"Done" is not "accepted"**: an agent's submission must pass review and acceptance gates before it counts — rejected work goes back for another round
-- **Fully auditable**: task dependencies, facts, decisions, and evidence are all recorded in a ledger you can replay and trace
+- **Interruptible and resumable**: task state persists to File/JDBC stores — after a restart or migration to another machine, execution continues from the checkpoint
+- **Safe multi-worker parallelism**: workers claim tasks through leases with no double-execution; if a worker fails, its task returns to the claimable pool
+- **"Done" is not "accepted"**: an agent's submission must pass review and acceptance gates before it counts — rejected work is returned for another round
+- **Fully auditable**: task dependencies, facts, decisions, and evidence are all recorded in a ledger that supports replay and traceability
 
-A good fit for approval workflows, long business-process orchestration, and automation that needs human checkpoints. See [Harness runtime](docs-site/docs/agent/harness-runtime.md).
+Suited to approval workflows, long business-process orchestration, and automation requiring human confirmation. See [Harness runtime](docs-site/docs/agent/harness-runtime.md).
 
 ## Install
 
@@ -111,7 +111,7 @@ See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickst
 
 ## Coding Agent CLI / TUI / ACP
 
-`ai4j-cli` is a ready-to-use local Coding Agent — not just an API wrapper. Three entry points: interactive CLI, TUI, and ACP (for IDE integration). You can also pull `ai4j-cli` in as a dependency and build your own Coding Agent application on top of it — the TUI supports custom configuration.
+`ai4j-cli` is a ready-to-use local Coding Agent — not merely an API wrapper. It provides three entry points: interactive CLI, TUI, and ACP (for IDE integration). You can also pull `ai4j-cli` in as a dependency and build your own Coding Agent application on top of it — the TUI supports custom configuration.
 
 **Install** (requires Java 8+; the script pulls `ai4j-cli` from Maven Central and creates the `ai4j` command):
 
@@ -134,9 +134,9 @@ Full docs: [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md) · [Quicks
 
 ## Plugin ecosystem
 
-Plugins extend what agents can do: they inject new **tools**, **slash commands**, **skills**, or **prompts** into the Agent / Coding Agent — for example wrapping an internal system as a tool, adding a custom command to the CLI/TUI, or packaging a team-specific skill.
+Plugins extend agent capabilities: they inject new **tools**, **slash commands**, **skills**, or **prompts** into the Agent / Coding Agent — for example, wrapping an internal system as a tool, adding a custom command to the CLI/TUI, or packaging a team-specific skill.
 
-An AI4J plugin is an ordinary Maven jar: `ServiceLoader` discovery plus `ExtensionRegistry` three-stage gates (discover → enable → exposeTool). Adding a dependency never enables it by itself.
+An AI4J plugin is an ordinary Maven jar, discovered via `ServiceLoader` and gated by the `ExtensionRegistry` three-stage process (discover → enable → exposeTool). Adding a dependency never enables it automatically.
 
 | Plugin | Home | Notes |
 |---|---|---|

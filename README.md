@@ -16,32 +16,32 @@
 
 # ai4j
 
-一套面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一接入多种大模型服务，内置完整的 Agent 能力，帮你快速开发自己专属的 Agent 应用。
+面向 **JDK 8+** 的 Java AI Agentic 开发套件：统一接入主流大模型服务，内置从工具调用、RAG、MCP 到 Agent 编排与长时任务治理的完整能力，支撑快速构建专属 Agent 应用。
 
 [English README](README-EN.md)
 
 ## 核心优势
 
-- **一套代码接 12+ 平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等统一接入，Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式开箱就有；Embedding、Rerank、图像/音频/视频/音乐生成、实时对话等十类服务接口一个工厂按需取用；切换平台只改一个枚举值，多组 API Key 还能并存、按名字路由。
-- **Agent 玩法全覆盖**：ReAct、CodeAct、Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，subagent 委派和多智能体团队协作也有——从简单问答到多步研究型 Agent 都有现成骨架。
-- **独创 `ai4j-harness` 长时运行 Harness**：让 Agent 从"一次性调用"变成可暂停、可恢复、可验收的长期任务（[详见下方专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
-- **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路都在 SDK 内实现，不需要外挂检索框架。
-- **生态互联**：MCP 客户端 + 服务端（Stdio / SSE / Streamable HTTP 三种传输）既能调别人的工具，也能把自己的能力暴露出去；A2A 协议让 Agent 互相协作；还能反向接入 Dify / Coze / n8n 上已有的 AgentFlow 编排，另有联网搜索增强。
-- **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控与可观测都是内置的。
-- **开箱即用**：Spring Boot starter 一行配置注入 `AiService`；自带 Coding Agent 的 CLI / TUI / ACP 三入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不等于启用。
+- **统一接入 12+ 模型平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等由同一工厂提供服务；Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式原生具备；Embedding、Rerank、图像/音频/视频/音乐生成、实时对话等十类服务接口按需取用；切换平台仅需修改 `PlatformType`，多组 API Key 可并存并按名称路由。
+- **完整的 Agent 编排能力**：ReAct、CodeAct、Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，subagent 委派与多智能体团队协作——从简单问答到多步研究型 Agent 均有现成实现。
+- **独创 `ai4j-harness` 长时运行 Harness**：使 Agent 从一次性调用转变为可暂停、可恢复、可验收的长期任务（[详见专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
+- **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路在 SDK 内实现，无需外挂检索框架。
+- **生态互联**：MCP 客户端与服务端（Stdio / SSE / Streamable HTTP 三种传输），既可调用外部工具，也可对外暴露自身能力；A2A 协议支持 Agent 间协作；并可反向接入 Dify / Coze / n8n 已有的 AgentFlow 编排，附带联网搜索增强。
+- **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控性与可观测性均为内置能力。
+- **开箱即用**：Spring Boot starter 单行配置即可注入 `AiService`；内置 Coding Agent 提供 CLI / TUI / ACP 三种入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不会自动启用。
 
 此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 
-普通的 Agent 调用是"跑一次就结束"；`ai4j-harness` 让它变成一个**持久化、受治理、可恢复**的长期任务：
+常规 Agent 调用在一次返回后即结束；`ai4j-harness` 将其转变为**持久化、受治理、可恢复**的长期任务：
 
-- **能中断也能续跑**：任务状态持久化到 File/JDBC 存储，进程重启、机器换台都能从断点继续
-- **多实例安全并行**：多个 worker 通过租约认领任务，不会重复执行；worker 挂了任务自动回到可认领状态
-- **"做完了"不等于"验收过了"**：Agent 提交结果后要过评审和验收门禁才算完成，不通过可以打回重做
-- **全程可审计**：任务依赖、事实、决策、证据都有台账记录，出了什么问题可以回放追溯
+- **可中断、可恢复**：任务状态持久化到 File/JDBC 存储，进程重启或迁移机器后可从断点继续执行
+- **多实例安全并行**：多个 worker 通过租约认领任务，避免重复执行；worker 故障时任务自动回到可认领状态
+- **"完成"不等于"验收"**：Agent 提交结果后须经评审与验收门禁方可视为完成，未通过则退回重做
+- **全程可审计**：任务依赖、事实、决策、证据均有台账记录，支持回放与追溯
 
-适合审批流、长链路业务编排、需要人工介入确认的自动化等场景。详见 [Harness 运行时](docs-site/docs/agent/harness-runtime.md)。
+适用于审批流、长链路业务编排、需要人工介入确认的自动化等场景。详见 [Harness 运行时](docs-site/docs/agent/harness-runtime.md)。
 
 ## 安装
 
@@ -111,7 +111,7 @@ private AiService aiService;
 
 ## Coding Agent CLI / TUI / ACP
 
-`ai4j-cli` 是开箱即用的本地 Coding Agent，不只是 API 封装：交互式 CLI、TUI 界面、ACP（供 IDE 接入）三种入口。开发者也可以把 `ai4j-cli` 作为依赖引入自己的项目，直接在其上开发自己的 Coding Agent 应用——TUI 界面支持自定义配置。
+`ai4j-cli` 是开箱即用的本地 Coding Agent，而非单纯的 API 封装：提供交互式 CLI、TUI 界面、ACP（供 IDE 接入）三种入口。开发者也可将 `ai4j-cli` 作为依赖引入自有项目，在其基础上构建自己的 Coding Agent 应用——TUI 界面支持自定义配置。
 
 **安装**（需 Java 8+，脚本从 Maven Central 拉取 `ai4j-cli` 并生成 `ai4j` 命令）：
 
@@ -134,9 +134,9 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 
 ## 插件生态
 
-插件用来给 Agent 扩展能力：可以向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容——比如对接内部系统做成工具、给 CLI/TUI 加自定义命令、封装团队专属的 Skill 包。
+插件用于扩展 Agent 能力：可向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容——例如将内部系统封装为工具、为 CLI/TUI 增加自定义命令、封装团队专属的 Skill 包。
 
-插件就是普通 Maven jar：`ServiceLoader` 发现 + `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）。引入依赖不等于启用。
+插件为普通 Maven jar：经 `ServiceLoader` 发现，由 `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）控制启用。引入依赖不等于启用。
 
 | 插件 | 归属 | 说明 |
 |---|---|---|
