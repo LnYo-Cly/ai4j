@@ -33,6 +33,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/memory-compaction.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: compaction decision dataflow** — At step start: shouldCompact → compact produces CompactResult → replacement memory is restored → MEMORY_COMPRESS event; on failure the run continues with the original memory.
+
+<iframe
+  src={useBaseUrl('/archify/memory-compaction-flow.html')}
+  title="memory-compaction-flow"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/memory-compaction-flow.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Why this layer is needed
 
 A long-horizon agent keeps accumulating:

@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/prompt-context-projection.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: buildPrompt dataflow** — AgentMemory items are projected via ContextProjector+Budget; merged with systemPrompt/instructions/visibleTools into a ModelRequest → ModelRequestHook last-mile rewrite → ModelClient sends.
+
+<iframe
+  src={useBaseUrl('/archify/prompt-build-pipeline.html')}
+  title="prompt-build-pipeline"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/prompt-build-pipeline.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Start with six key design decisions
 
 ### 1.1 Neither field is "ad-hoc text for the current turn" — both are part of AgentContext

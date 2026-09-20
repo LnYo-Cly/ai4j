@@ -31,6 +31,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/hooks-interceptors.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：拦截器调用链序** — beforeToolCall 返回 ALLOW/MODIFY/BLOCK/ROUTE_TO 裁决 → 执行生效调用 → afterToolCall 可二次否决；中断与移交异常不被吞。
+
+<iframe
+  src={useBaseUrl('/archify/tool-interceptor-chain.html')}
+  title="tool-interceptor-chain"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/tool-interceptor-chain.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## Quick start: the `hooks` facade (recommended)
 
 One entry point, every event, IDE-discoverable, compile-time typed. `AgentHooks` composes your

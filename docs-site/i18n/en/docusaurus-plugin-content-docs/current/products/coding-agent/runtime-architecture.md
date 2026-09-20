@@ -32,6 +32,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/coding-agent-loop.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: outer turn loop** — runSingleTurn → aggregate steps/tokens/cost/tool results → LoopPolicy decide → continuationPrompt loops until a stop decision or maxTotalTurns.
+
+<iframe
+  src={useBaseUrl('/archify/coding-agent-turn.html')}
+  title="coding-agent-turn"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/coding-agent-turn.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Start with the outermost assembly entry point
 
 The real preparation entry point for CLI / TUI / ACP today is:

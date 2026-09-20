@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/trace-observability.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：事件→span 树→导出扇出** — AgentEventPublisher 广播 → AgentTraceListener 映射成 RUN>STEP>MODEL/TOOL span 树并配对闭合 → TraceExporter 五个实现扇出。
+
+<iframe
+  src={useBaseUrl('/archify/trace-span-export.html')}
+  title="trace-span-export"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/trace-span-export.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 先抓住 6 个关键设计决策
 
 ### 1.1 Trace 是事件投影，不是 runtime 内嵌数据结构

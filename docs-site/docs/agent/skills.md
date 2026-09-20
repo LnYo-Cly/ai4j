@@ -30,6 +30,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/skill-mechanism.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：Skill 两路注入** — resolver→scope→discover 只取元数据；automatic 直接进 systemPrompt，selected 则显式读正文展开进 Overlay。
+
+<iframe
+  src={useBaseUrl('/archify/skill-apply-paths.html')}
+  title="skill-apply-paths"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/skill-apply-paths.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## Start with the right integration
 
 For a local developer Agent, use the workspace convenience method:

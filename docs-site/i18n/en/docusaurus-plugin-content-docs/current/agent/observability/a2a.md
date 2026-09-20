@@ -38,6 +38,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/a2a-mechanism.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom and export included).
 
+**Complementary view: A2A task lifecycle** — UNSPECIFIED→SUBMITTED→WORKING main path; WORKING may suspend to INPUT_REQUIRED/AUTH_REQUIRED and return; terminals COMPLETED/FAILED/CANCELED/REJECTED enforced by isTransitionValid.
+
+<iframe
+  src={useBaseUrl('/archify/a2a-task-lifecycle.html')}
+  title="a2a-task-lifecycle"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/a2a-task-lifecycle.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## How ai4j talks to external agents (sequence diagrams)
 
 The panorama above answers "what the internals look like"; the three sequence diagrams below answer "what the protocol conversation looks like": how ai4j as a client calls an external agent, how an external project calls ai4j's A2A service, and what a full cross-agent delegation chain looks like. All three share the same notation — solid arrows are request/response, dashed arrows are asynchronous events such as SSE and push, and red marks the cancellation path.

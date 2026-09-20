@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "A2A Task 状态机：submitted→working→中断/终态",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      602
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "main",
+        "label": "主链",
+        "focus": [
+          "unsubmitted",
+          "submitted",
+          "working",
+          "completed"
+        ],
+        "note": "UNSPECIFIED→SUBMITTED→WORKING→COMPLETED 是单轮任务的成功主链。"
+      },
+      {
+        "id": "interrupt",
+        "label": "中断等待",
+        "focus": [
+          "working",
+          "input_required",
+          "auth_required"
+        ],
+        "note": "WORKING 可转 INPUT_REQUIRED/AUTH_REQUIRED 挂起；客户端补输入或完成授权后回 WORKING。"
+      },
+      {
+        "id": "terminal",
+        "label": "终态",
+        "focus": [
+          "submitted",
+          "rejected",
+          "input_required",
+          "failed",
+          "completed"
+        ],
+        "note": "COMPLETED 成功；FAILED/CANCELED/REJECTED 失败终态。isTerminal 后不再允许迁移。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "接收与执行"
+    },
+    {
+      "id": "wait",
+      "label": "中断等待"
+    },
+    {
+      "id": "terminal",
+      "label": "终态"
+    }
+  ],
+  "states": [
+    {
+      "id": "unsubmitted",
+      "type": "start",
+      "lane": "main",
+      "col": 0,
+      "label": "UNSPECIFIED",
+      "sublabel": "未提交"
+    },
+    {
+      "id": "submitted",
+      "type": "active",
+      "lane": "main",
+      "col": 1,
+      "label": "SUBMITTED",
+      "sublabel": "tasks/send 入队"
+    },
+    {
+      "id": "working",
+      "type": "active",
+      "lane": "main",
+      "col": 2,
+      "label": "WORKING",
+      "sublabel": "Agent 执行中"
+    },
+    {
+      "id": "input_required",
+      "type": "waiting",
+      "lane": "wait",
+      "col": 1,
+      "label": "INPUT_REQUIRED",
+      "sublabel": "缺输入挂起"
+    },
+    {
+      "id": "auth_required",
+      "type": "waiting",
+      "lane": "wait",
+      "col": 0,
+      "label": "AUTH_REQUIRED",
+      "sublabel": "待授权挂起"
+    },
+    {
+      "id": "rejected",
+      "type": "failure",
+      "lane": "terminal",
+      "col": 0,
+      "label": "REJECTED",
+      "sublabel": "拒绝受理",
+      "yOffset": -30
+    },
+    {
+      "id": "completed",
+      "type": "success",
+      "lane": "terminal",
+      "col": 2,
+      "label": "COMPLETED",
+      "sublabel": "产出 artifact",
+      "yOffset": -30
+    },
+    {
+      "id": "failed",
+      "type": "failure",
+      "lane": "terminal",
+      "col": 1,
+      "label": "FAILED / CANCELED",
+      "sublabel": "失败或 tasks/cancel",
+      "yOffset": -30
+    }
+  ],
+  "transitions": [
+    {
+      "from": "unsubmitted",
+      "to": "submitted",
+      "label": "tasks/send",
+      "labelAt": [
+        171,
+        108
+      ]
+    },
+    {
+      "from": "submitted",
+      "to": "working",
+      "label": "开始处理",
+      "labelAt": [
+        325,
+        108
+      ]
+    },
+    {
+      "from": "submitted",
+      "to": "rejected",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [
+        [
+          248,
+          230
+        ],
+        [
+          15,
+          230
+        ],
+        [
+          15,
+          449
+        ]
+      ],
+      "label": "拒绝受理"
+    },
+    {
+      "from": "working",
+      "to": "input_required",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "缺输入",
+      "labelAt": [
+        520,
+        205
+      ]
+    },
+    {
+      "from": "input_required",
+      "to": "working",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "label": "补输入",
+      "labelAt": [
+        590,
+        258
+      ]
+    },
+    {
+      "from": "working",
+      "to": "auth_required",
+      "route": "straight",
+      "label": "需授权",
+      "labelAt": [
+        355,
+        205
+      ]
+    },
+    {
+      "from": "auth_required",
+      "to": "working",
+      "route": "straight",
+      "label": "授权完成",
+      "labelAt": [
+        335,
+        255
+      ]
+    },
+    {
+      "from": "working",
+      "to": "completed",
+      "label": "完成",
+      "labelAt": [
+        830,
+        290
+      ],
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          800,
+          157
+        ],
+        [
+          800,
+          449
+        ]
+      ]
+    },
+    {
+      "from": "input_required",
+      "to": "failed",
+      "label": "失败/取消",
+      "labelAt": [
+        633,
+        352
+      ],
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "auth_required",
+      "to": "rejected",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "合法迁移表",
+      "items": [
+        "SUBMITTED→WORKING/INPUT_REQUIRED/AUTH_REQUIRED/REJECTED/FAILED/CANCELED；WORKING→INPUT/AUTH/COMPLETED/FAILED/CANCELED；INPUT/AUTH→WORKING/REJECTED/FAILED/CANCELED"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "终态语义",
+      "items": [
+        "FAILED 与 CANCELED 迁移规则相同，合并展示；isTerminal=COMPLETED/FAILED/CANCELED/REJECTED，isSuccess 仅 COMPLETED"
+      ]
+    }
+  ]
+}

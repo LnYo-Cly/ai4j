@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Trace 装配：事件→span 树→exporter 扇出",
+    "locale": "zh-CN",
+    "viewBox": [
+      1070,
+      380
+    ],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "build",
+        "label": "span 构建",
+        "focus": [
+          "events",
+          "listener",
+          "tree"
+        ],
+        "note": "AgentEventPublisher 广播 → AgentTraceListener 把事件映射为 RUN>STEP>MODEL/TOOL span 树并配对闭合。"
+      },
+      {
+        "id": "export",
+        "label": "导出扇出",
+        "focus": [
+          "tree",
+          "exporter",
+          "local",
+          "remote"
+        ],
+        "note": "TraceExporter SPI：Composite 一扇多出；本地 Console/InMemory/Jsonl，远端 Langfuse/OpenTelemetry。"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "事件源"
+    },
+    {
+      "label": "span 构建"
+    },
+    {
+      "label": "导出接口"
+    },
+    {
+      "label": "本地面"
+    },
+    {
+      "label": "远端面"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "events",
+      "type": "external",
+      "label": "AgentEventPublisher",
+      "sublabel": "12 类运行事件",
+      "stage": 0,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "listener",
+      "type": "backend",
+      "label": "AgentTraceListener",
+      "sublabel": "事件→span 映射",
+      "stage": 1,
+      "row": 0,
+      "width": 170
+    },
+    {
+      "id": "tree",
+      "type": "backend",
+      "label": "TraceSpan 树",
+      "sublabel": "RUN>STEP>MODEL/TOOL",
+      "stage": 2,
+      "row": 0,
+      "width": 170
+    },
+    {
+      "id": "exporter",
+      "type": "security",
+      "label": "TraceExporter",
+      "sublabel": "SPI · Composite 扇出",
+      "stage": 3,
+      "row": 0,
+      "width": 170
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "本地导出",
+      "sublabel": "Console/InMemory/Jsonl",
+      "stage": 4,
+      "row": 0,
+      "width": 160
+    },
+    {
+      "id": "remote",
+      "type": "backend",
+      "label": "远端导出",
+      "sublabel": "Langfuse/OpenTelemetry",
+      "stage": 4,
+      "row": 1,
+      "width": 170
+    }
+  ],
+  "flows": [
+    {
+      "from": "events",
+      "to": "listener",
+      "label": "① 事件订阅",
+      "classification": "AgentEvent",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        208,
+        100
+      ]
+    },
+    {
+      "from": "listener",
+      "to": "tree",
+      "label": "② 建 span",
+      "classification": "TraceSpan",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        423,
+        100
+      ]
+    },
+    {
+      "from": "tree",
+      "to": "exporter",
+      "label": "③ export(span)",
+      "classification": "span",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        638,
+        100
+      ]
+    },
+    {
+      "from": "exporter",
+      "to": "local",
+      "label": "④ 本地",
+      "classification": "sink",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        853,
+        100
+      ]
+    },
+    {
+      "from": "exporter",
+      "to": "remote",
+      "label": "⑤ 远端",
+      "classification": "sink",
+      "variant": "emphasis",
+      "route": "auto"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "span 谱系",
+      "items": [
+        "RUN 根 span > STEP > MODEL/TOOL，另有 HANDOFF 与 TEAM_TASK 两类协作 span",
+        "事件配对闭合 span：STEP_START↔STEP_END、TOOL_CALL↔TOOL_RESULT；TraceSpanStatus 记成败"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "导出实现谱系",
+      "items": [
+        "本地：ConsoleTraceExporter 调试 · InMemoryTraceExporter 测试 · JsonlTraceExporter 落文件",
+        "远端：LangfuseTraceExporter · OpenTelemetryTraceExporter；CompositeTraceExporter 一扇多出"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "配置与脱敏",
+      "items": [
+        "TraceConfig 默认全量记录模型输入/输出与工具 args/output，无遮罩无截断",
+        "TraceMasker 可脱敏；TracePricing/PricingResolver 按模型计价；TraceMetrics 汇总"
+      ]
+    }
+  ]
+}

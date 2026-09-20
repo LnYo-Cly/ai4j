@@ -36,6 +36,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/workflow-stategraph.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: conditional routing and back-edges** — resolveNext evaluates conditional edges (router/routeMap) first, then falls back to plain edges; null ends the run, a hit forms a loop back-edge.
+
+<iframe
+  src={useBaseUrl('/archify/stategraph-routing.html')}
+  title="stategraph-routing"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/stategraph-routing.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. Five key design decisions to grasp first
 
 ### 1.1 Workflow is an orchestration layer above Agents, not a runtime variant

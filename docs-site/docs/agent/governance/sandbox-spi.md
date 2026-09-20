@@ -26,6 +26,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/sandbox-spi.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能）。
 
+**视角补充：沙箱会话生命周期** — Provider 选型 → Session 创建/打开 → 命令执行 → 结果回收与复用 → 关闭清理。
+
+<iframe
+  src={useBaseUrl('/archify/sandbox-session-lifecycle.html')}
+  title="sandbox-session-lifecycle"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/sandbox-session-lifecycle.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
+
+
 ## 1. 它不是什么
 
 Sandbox SPI 不是再加一个普通工具，也不是安全承诺。

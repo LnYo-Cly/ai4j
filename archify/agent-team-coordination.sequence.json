@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "AgentTeam 协同：plan→claim→run→synthesize 一轮全序",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 555],
+    "views": [
+      {
+        "id": "plan",
+        "label": "规划阶段",
+        "focus": ["team", "planner", "board"],
+        "note": "planner.plan 产出 AgentTeamPlan → TaskBoard 规整任务与依赖 → persistState 落盘 → ensurePlanApproved 可挂起等宿主批准。"
+      },
+      {
+        "id": "dispatch",
+        "label": "调度阶段",
+        "focus": ["team", "board", "member"],
+        "note": "每轮 nextReadyTasks 取依赖已就绪的任务 → claimTask 独占 → 成员 Agent 执行 → completeTask/failTask 解锁后继。"
+      },
+      {
+        "id": "synthesis",
+        "label": "汇总阶段",
+        "focus": ["team", "synthesizer", "host"],
+        "note": "全部任务收敛后 synthesizer.synthesize(objective, plan, results) 生成最终 AgentResult。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "host", "type": "frontend", "label": "宿主调用方", "sublabel": "run(objective)"},
+    {"id": "team", "type": "backend", "label": "AgentTeam", "sublabel": "编排+控制面"},
+    {"id": "planner", "type": "backend", "label": "TeamPlanner", "sublabel": "LLM 规划器"},
+    {"id": "board", "type": "backend", "label": "TaskBoard", "sublabel": "claim·状态机"},
+    {"id": "member", "type": "backend", "label": "Member", "sublabel": "成员 Agent"},
+    {"id": "synthesizer", "type": "backend", "label": "Synthesizer", "sublabel": "LLM 汇总"}
+  ],
+  "messages": [
+    {"from": "host", "to": "team", "label": "run(objective)", "y": 160},
+    {"from": "team", "to": "planner", "label": "① plan(objective, members, options)", "y": 188},
+    {"from": "planner", "to": "team", "label": "AgentTeamPlan：任务+依赖", "y": 216},
+    {"from": "team", "to": "board", "label": "② normalizedTasks → READY/BLOCKED", "y": 244},
+    {"from": "team", "to": "board", "label": "③ 每轮 nextReadyTasks(batchSize)", "y": 272},
+    {"from": "team", "to": "board", "label": "④ claimTask(taskId, memberId)", "y": 300},
+    {"from": "team", "to": "member", "label": "⑤ member.agent.run(taskInput)", "y": 328},
+    {"from": "member", "to": "team", "label": "AgentTeamMemberResult", "y": 356},
+    {"from": "team", "to": "board", "label": "⑥ completeTask/failTask → 解锁后继", "y": 384},
+    {"from": "team", "to": "synthesizer", "label": "⑦ synthesize(objective, plan, results)", "y": 412},
+    {"from": "synthesizer", "to": "team", "label": "AgentResult → AgentTeamResult", "y": 440}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "依赖调度与认领",
+      "items": [
+        "nextReadyTasks 只发依赖全部 COMPLETED 的 READY 任务；claim/release/reassign/heartbeat 全部 synchronized 互斥",
+        "claim 超时由 recoverTimedOutClaims 回收重排；BLOCKED 任务在依赖失败后不会发出"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "轮次与并发",
+      "items": [
+        "parallelDispatch 时 batchSize=maxConcurrency 同轮多任务，否则逐任务串行",
+        "超过 maxRounds（默认 64）→ markStalledAsBlocked 终止调度，未完成任务记 BLOCKED"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "审批与持久化",
+      "items": [
+        "plan 生成后立即 persistState；ensurePlanApproved 可挂起等宿主批准再 dispatch",
+        "AgentTeamStateStore（InMemory/File）保存 plan/任务态/lastRounds；restoreState 支持断点续跑"
+      ]
+    }
+  ]
+}

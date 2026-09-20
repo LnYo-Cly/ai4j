@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ToolInterceptor 链：before→decision→execute→after",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      480
+    ],
+    "views": [
+      {
+        "id": "gate",
+        "label": "前置决策",
+        "focus": [
+          "runtime",
+          "interceptor"
+        ],
+        "note": "beforeToolCall 返回 ALLOW/MODIFY/BLOCK/ROUTE_TO；null 按 ALLOW 处理，抛异常则中断该调用。"
+      },
+      {
+        "id": "exec",
+        "label": "执行与后置",
+        "focus": [
+          "runtime",
+          "executor",
+          "lifecycle",
+          "interceptor"
+        ],
+        "note": "BEFORE_TOOL_CALL → executeToolInvocation → normalizeToolResult → afterToolCall 可否决 → AFTER_TOOL_CALL（finally）。"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "ReActRuntime",
+      "sublabel": "工具调用编排"
+    },
+    {
+      "id": "interceptor",
+      "type": "security",
+      "label": "Interceptor",
+      "sublabel": "before/after 决策"
+    },
+    {
+      "id": "lifecycle",
+      "type": "backend",
+      "label": "Lifecycle",
+      "sublabel": "生命周期事件"
+    },
+    {
+      "id": "executor",
+      "type": "backend",
+      "label": "ToolExecutor",
+      "sublabel": "真实工具执行"
+    }
+  ],
+  "messages": [
+    {
+      "from": "runtime",
+      "to": "interceptor",
+      "label": "① beforeToolCall(call, context)",
+      "y": 160
+    },
+    {
+      "from": "interceptor",
+      "to": "runtime",
+      "label": "② Decision：ALLOW 放行 / MODIFY 换 call / BLOCK 短路 / ROUTE_TO 改道",
+      "y": 188
+    },
+    {
+      "from": "runtime",
+      "to": "lifecycle",
+      "label": "③ BEFORE_TOOL_CALL 事件",
+      "y": 216
+    },
+    {
+      "from": "runtime",
+      "to": "executor",
+      "label": "④ executeToolInvocation（同步或 Async start/await）",
+      "y": 244
+    },
+    {
+      "from": "executor",
+      "to": "runtime",
+      "label": "AgentToolResult → normalizeToolResult",
+      "y": 272
+    },
+    {
+      "from": "runtime",
+      "to": "interceptor",
+      "label": "⑤ afterToolCall(call, output)：BLOCK 可否决结果",
+      "y": 300
+    },
+    {
+      "from": "runtime",
+      "to": "lifecycle",
+      "label": "⑥ AFTER_TOOL_CALL（finally 必发）",
+      "y": 328
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "四种前置决策",
+      "items": [
+        "ALLOW 原样放行；MODIFY 用 decision.modifiedCall 替换后再执行（改写 name/args）",
+        "BLOCK 不触达工具：合成 FAILED result 喂回模型；ROUTE_TO 带 SandboxSpec+SandboxCommand 改道沙箱执行"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "后置否决",
+      "items": [
+        "afterToolCall 拿到执行结果后仍可 BLOCK（如输出泄密）→ 结果替换为 blocked output 并标 FAILED",
+        "决策返回值 null 视为 ALLOW；interceptor 抛异常按工具失败处理"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "异常边界",
+      "items": [
+        "工具执行异常 → FAILED result 继续喂模型，循环不中断",
+        "HandoffPolicy / HostInput 等控制流异常直接上抛中断；AFTER_TOOL_CALL 在 finally 中必发"
+      ]
+    }
+  ]
+}

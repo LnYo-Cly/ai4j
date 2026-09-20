@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Skill 装配路径：resolver→scope→discover→两路注入",
+    "locale": "zh-CN",
+    "viewBox": [
+      1070,
+      380
+    ],
+    "animation": "trace",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "discover",
+        "label": "发现链",
+        "focus": [
+          "resolver",
+          "scope",
+          "discover"
+        ],
+        "note": "SkillResolver 解析声明 → scope 过滤 → Skills.discover 产出 AgentSkill 集合。"
+      },
+      {
+        "id": "apply",
+        "label": "两路注入",
+        "focus": [
+          "apply",
+          "system_prompt",
+          "overlay",
+          "read_file"
+        ],
+        "note": "automatic 技能注入 systemPrompt；selected 进 OverlayMemory 按需展开；read_skill_file 工具受 allowedReadRoots 限定。"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "定义源"
+    },
+    {
+      "label": "解析与作用域"
+    },
+    {
+      "label": "发现"
+    },
+    {
+      "label": "应用注入"
+    },
+    {
+      "label": "消费面"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "resolver",
+      "type": "external",
+      "label": "SkillResolver",
+      "sublabel": "声明来源",
+      "stage": 0,
+      "row": 0,
+      "width": 140
+    },
+    {
+      "id": "scope",
+      "type": "security",
+      "label": "scope 过滤",
+      "sublabel": "可用范围裁剪",
+      "stage": 1,
+      "row": 0,
+      "width": 140
+    },
+    {
+      "id": "discover",
+      "type": "backend",
+      "label": "Skills.discover",
+      "sublabel": "AgentSkill 集合",
+      "stage": 2,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "apply",
+      "type": "backend",
+      "label": "apply 分流",
+      "sublabel": "SkillRuntimeSupport",
+      "stage": 3,
+      "row": 0,
+      "width": 160
+    },
+    {
+      "id": "system_prompt",
+      "type": "backend",
+      "label": "automatic 路径",
+      "sublabel": "注入 systemPrompt",
+      "stage": 4,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "overlay",
+      "type": "database",
+      "label": "selected 路径",
+      "sublabel": "OverlayMemory 按需",
+      "stage": 4,
+      "row": 1,
+      "width": 150
+    },
+    {
+      "id": "read_file",
+      "type": "security",
+      "label": "read_skill_file",
+      "sublabel": "allowedReadRoots 限定",
+      "stage": 3,
+      "row": 1,
+      "width": 170
+    }
+  ],
+  "flows": [
+    {
+      "from": "resolver",
+      "to": "scope",
+      "label": "① 声明集",
+      "classification": "decl",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "scope",
+      "to": "discover",
+      "label": "② 作用域内",
+      "classification": "scoped",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "discover",
+      "to": "apply",
+      "label": "③ skills",
+      "classification": "AgentSkill",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "apply",
+      "to": "system_prompt",
+      "label": "④ automatic",
+      "classification": "prompt",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        855,
+        100
+      ]
+    },
+    {
+      "from": "apply",
+      "to": "overlay",
+      "label": "⑤ selected",
+      "classification": "overlay",
+      "variant": "emphasis",
+      "route": "auto"
+    },
+    {
+      "from": "read_file",
+      "to": "overlay",
+      "label": "⑥ 展开正文",
+      "classification": "content",
+      "variant": "dashed",
+      "route": "straight",
+      "labelAt": [
+        858,
+        314
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两路注入语义",
+      "items": [
+        "automatic：技能指令直接并入 systemPrompt，每轮对模型可见",
+        "selected：挂进 OverlayMemory 按需展开——先露名字/描述，模型需要时再读正文"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "文件访问边界",
+      "items": [
+        "read_skill_file 工具按 allowedReadRoots 白名单限定可读根，越界路径被拒",
+        "技能正文不预占上下文：只有模型主动 read 才进记忆"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "编码侧富化",
+      "items": [
+        "CodingSkillDiscovery 在 coding 运行时把技能发现结果并入 WorkspaceContext 参与组词",
+        "AgentSkillRuntimeSupport.apply 是唯一分流点：automatic/selected 两条路径互不混"
+      ]
+    }
+  ]
+}

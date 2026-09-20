@@ -27,6 +27,17 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/sandbox-spi.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (light/dark themes, zoom, and export included).
 
+**Complementary view: sandbox session lifecycle** — Provider selection → session create/open → command execution → result collection and reuse → close/cleanup.
+
+<iframe
+  src={useBaseUrl('/archify/sandbox-session-lifecycle.html')}
+  title="sandbox-session-lifecycle"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/sandbox-session-lifecycle.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
+
+
 ## 1. What it is not
 
 The Sandbox SPI is not just another ordinary tool, nor is it a security promise.
