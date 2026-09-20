@@ -15,6 +15,116 @@ tags: [concept]
 
 它们都基于 SSE，但消费目标和状态组织方式并不相同：`Chat` / `Responses` 是 listener 持有状态的聚合模型，`Messages` 是类型化回调模型。
 
+:::tip 本页代码都是可跑通的
+下面每段 Java 示例都来自仓库里的可执行测试
+[`StreamingDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/StreamingDocExamplesLiveTest.java)，
+已针对真实网关跑通。本地复跑：
+
+```bash
+export OPENAI_API_KEY=sk-...
+export OPENAI_API_HOST=https://your-gateway/   # 可选
+export OPENAI_CHAT_MODEL=gpt-4o-mini           # 可选
+export ANTHROPIC_API_KEY=sk-ant-...            # Messages 示例需要
+export ANTHROPIC_BASE_URL=https://api.anthropic.com/  # 可选
+export ANTHROPIC_MODEL=claude-haiku-4-5-20251001      # 可选
+
+mvn -pl ai4j test -Plive-provider-tests -Dtest=StreamingDocExamplesLiveTest
+```
+
+没有对应 key 时该主线的测试会自动跳过，不会让构建失败。
+:::
+
+## 0. 三条主线的最小可跑示例
+
+先跑起来，再读后面的语义细节。
+
+### `Chat` 流式：`SseListener` 聚合 delta
+
+```java
+ChatCompletion chatCompletion = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.withUser("从 1 数到 5，只输出数字"))
+        .stream(Boolean.TRUE)
+        .build();
+
+SseListener sseListener = new SseListener() {
+    @Override
+    protected void send() {
+        // 每个 delta 到达时触发；getCurrStr() 是本次增量
+        System.out.print(getCurrStr());
+    }
+};
+
+chatService.chatCompletionStream(chatCompletion, sseListener);
+
+// 流结束后，聚合状态都在 listener 上
+String full = sseListener.getOutput().toString();
+System.out.println("finishReason: " + sseListener.getFinishReason());
+System.out.println("usage: " + sseListener.getUsage());
+```
+
+### `Responses` 流式：`ResponseSseListener` 事件驱动聚合
+
+```java
+ResponseRequest request = ResponseRequest.builder()
+        .model("gpt-4o-mini")
+        .input("从 1 数到 5，只输出数字")
+        .stream(Boolean.TRUE)
+        .build();
+
+ResponseSseListener listener = new ResponseSseListener() {
+    @Override
+    protected void onEvent() {
+        // getCurrText() 是本次事件带来的文本增量
+        String delta = getCurrText();
+        if (delta != null && !delta.isEmpty()) {
+            System.out.print(delta);
+        }
+    }
+};
+
+responsesService.createStream(request, listener);
+
+// 流结束后，聚合状态都在 listener 上
+System.out.println("完整文本: " + listener.getOutputText());
+System.out.println("事件条数: " + listener.getEvents().size());
+```
+
+### `Messages` 流式：`AnthropicStreamHandler` 类型化回调
+
+```java
+AnthropicChatCompletion request = new AnthropicChatCompletion();
+request.setModel("claude-haiku-4-5-20251001");
+request.setMaxTokens(128);
+AnthropicMessage user = new AnthropicMessage();
+user.setRole("user");
+user.setContent("从 1 数到 5，只输出数字");
+request.setMessages(new ArrayList<>(Collections.singletonList(user)));
+
+AnthropicStreamHandler handler = new AnthropicStreamHandler() {
+    @Override
+    public void onDeltaText(String delta) {
+        // 正文文本增量，到达即打印
+        System.out.print(delta);
+    }
+
+    @Override
+    public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
+        System.out.println("stopReason: " + stopReason);
+    }
+
+    @Override
+    public void onComplete() {
+        // message_stop：流结束
+    }
+};
+
+// messagesStream 内部阻塞到 message_stop 或失败才返回
+messagesService.messagesStream(request, handler);
+```
+
+服务对象的构造方式与同步调用一致（`new AiService(configuration).getChatService(PlatformType.OPENAI)` / `getResponsesService(...)` / `getMessagesService(PlatformType.ANTHROPIC)`），完整可编译版本见上面的测试类。
+
 ## 1. `Chat` 流式到底在聚合什么
 
 `Chat` 侧核心对象是 `SseListener`。
