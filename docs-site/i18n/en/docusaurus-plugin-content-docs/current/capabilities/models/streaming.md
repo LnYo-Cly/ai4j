@@ -16,6 +16,116 @@ In AI4J, "streaming" is not a single unified token-output concept. It is three d
 
 All three are SSE-based, but their consumption targets and state organization differ: `Chat` and `Responses` use a listener-held-state aggregation model, while `Messages` uses a typed-callback model.
 
+:::tip Every code block on this page is runnable
+Each Java snippet below comes from the executable test
+[`StreamingDocExamplesLiveTest`](https://github.com/LnYo-Cly/ai4j/blob/main/ai4j/src/test/java/io/github/lnyocly/ai4j/docs/StreamingDocExamplesLiveTest.java)
+and has been verified against real gateways. To run locally:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export OPENAI_API_HOST=https://your-gateway/   # optional
+export OPENAI_CHAT_MODEL=gpt-4o-mini           # optional
+export ANTHROPIC_API_KEY=sk-ant-...            # required for the Messages example
+export ANTHROPIC_BASE_URL=https://api.anthropic.com/  # optional
+export ANTHROPIC_MODEL=claude-haiku-4-5-20251001      # optional
+
+mvn -pl ai4j test -Plive-provider-tests -Dtest=StreamingDocExamplesLiveTest
+```
+
+Tests for a line whose key is absent are skipped automatically and never fail the build.
+:::
+
+## 0. Minimal runnable examples for the three lines
+
+Get them running first, then read the semantics below.
+
+### `Chat` streaming: `SseListener` aggregates deltas
+
+```java
+ChatCompletion chatCompletion = ChatCompletion.builder()
+        .model("gpt-4o-mini")
+        .message(ChatMessage.withUser("Count from 1 to 5, digits only"))
+        .stream(Boolean.TRUE)
+        .build();
+
+SseListener sseListener = new SseListener() {
+    @Override
+    protected void send() {
+        // fires on each delta; getCurrStr() is the increment
+        System.out.print(getCurrStr());
+    }
+};
+
+chatService.chatCompletionStream(chatCompletion, sseListener);
+
+// after the stream ends, aggregated state lives on the listener
+String full = sseListener.getOutput().toString();
+System.out.println("finishReason: " + sseListener.getFinishReason());
+System.out.println("usage: " + sseListener.getUsage());
+```
+
+### `Responses` streaming: `ResponseSseListener` event-driven aggregation
+
+```java
+ResponseRequest request = ResponseRequest.builder()
+        .model("gpt-4o-mini")
+        .input("Count from 1 to 5, digits only")
+        .stream(Boolean.TRUE)
+        .build();
+
+ResponseSseListener listener = new ResponseSseListener() {
+    @Override
+    protected void onEvent() {
+        // getCurrText() is the text increment carried by this event
+        String delta = getCurrText();
+        if (delta != null && !delta.isEmpty()) {
+            System.out.print(delta);
+        }
+    }
+};
+
+responsesService.createStream(request, listener);
+
+// after the stream ends, aggregated state lives on the listener
+System.out.println("full text: " + listener.getOutputText());
+System.out.println("event count: " + listener.getEvents().size());
+```
+
+### `Messages` streaming: `AnthropicStreamHandler` typed callbacks
+
+```java
+AnthropicChatCompletion request = new AnthropicChatCompletion();
+request.setModel("claude-haiku-4-5-20251001");
+request.setMaxTokens(128);
+AnthropicMessage user = new AnthropicMessage();
+user.setRole("user");
+user.setContent("Count from 1 to 5, digits only");
+request.setMessages(new ArrayList<>(Collections.singletonList(user)));
+
+AnthropicStreamHandler handler = new AnthropicStreamHandler() {
+    @Override
+    public void onDeltaText(String delta) {
+        // body text increment, print as it arrives
+        System.out.print(delta);
+    }
+
+    @Override
+    public void onStopReason(String stopReason, long inputTokens, long outputTokens) {
+        System.out.println("stopReason: " + stopReason);
+    }
+
+    @Override
+    public void onComplete() {
+        // message_stop: stream finished
+    }
+};
+
+// messagesStream blocks internally until message_stop or failure
+messagesService.messagesStream(request, handler);
+```
+
+Service objects are built exactly as for synchronous calls (`new AiService(configuration).getChatService(PlatformType.OPENAI)` / `getResponsesService(...)` / `getMessagesService(PlatformType.ANTHROPIC)`); see the test class above for the fully compilable version.
+
 ## 1. What `Chat` streaming actually aggregates
 
 The core object on the `Chat` side is `SseListener`.
