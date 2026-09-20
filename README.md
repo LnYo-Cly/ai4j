@@ -134,7 +134,9 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 
 ## 插件生态
 
-插件用于扩展 Agent 能力：可向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容——例如将内部系统封装为工具、为 CLI/TUI 增加自定义命令、封装团队专属的 Skill 包。
+当你想给 Agent 加入一项 SDK 尚未内置的能力——一个工具、一个命令、一套 Skill 或一段 Prompt——就可以自己写一个插件来实现，无需修改 ai4j 源码，也无需等待上游支持。典型例子：Claude Code 推出 dynamic workflow 后 ai4j 并未原生适配，[`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) 即以插件形式独立实现了该能力。
+
+插件可向 Agent / Coding Agent 注入新的**工具**（Tool）、**斜杠命令**（Command）、**Skill**、**Prompt** 四类内容——例如将内部系统封装为工具、为 CLI/TUI 增加自定义命令、封装团队专属的 Skill 包。
 
 插件为普通 Maven jar：经 `ServiceLoader` 发现，由 `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）控制启用。引入依赖不等于启用。
 

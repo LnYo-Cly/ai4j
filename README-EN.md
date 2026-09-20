@@ -134,7 +134,9 @@ Full docs: [Coding Agent CLI doc](docs/readme/en/coding-agent-cli.md) · [Quicks
 
 ## Plugin ecosystem
 
-Plugins extend agent capabilities: they inject new **tools**, **slash commands**, **skills**, or **prompts** into the Agent / Coding Agent — for example, wrapping an internal system as a tool, adding a custom command to the CLI/TUI, or packaging a team-specific skill.
+When you want to give an agent a capability the SDK doesn't ship yet — a tool, a command, a skill set, or a prompt — you can implement it yourself as a plugin, without modifying ai4j's source or waiting for upstream support. A typical example: after Claude Code introduced dynamic workflows, [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) implemented that capability independently as a plugin rather than waiting for native support.
+
+Plugins inject new **tools**, **slash commands**, **skills**, or **prompts** into the Agent / Coding Agent — for example, wrapping an internal system as a tool, adding a custom command to the CLI/TUI, or packaging a team-specific skill.
 
 An AI4J plugin is an ordinary Maven jar, discovered via `ServiceLoader` and gated by the `ExtensionRegistry` three-stage process (discover → enable → exposeTool). Adding a dependency never enables it automatically.
 
