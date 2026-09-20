@@ -1,40 +1,33 @@
 <p align="center"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:6A5ACD,100:2E86C1&height=180&section=header&text=ai4j&fontSize=46&fontColor=ffffff&animation=fadeIn&desc=Java%20AI%20Agentic%20SDK%20for%20JDK%208%2B&descAlignY=68" alt="ai4j banner" /></p>
-<p align="center"><a href="https://search.maven.org/artifact/io.github.lnyo-cly/ai4j"><img src="https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=2E86C1&label=Maven%20Central" alt="Maven Central" /></a> <a href="https://lnyo-cly.github.io/ai4j/"><img src="https://img.shields.io/badge/Docs-GitHub%20Pages-0A7EA4" alt="Docs" /></a> <a href="https://deepwiki.com/LnYo-Cly/ai4j"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" /></a> <a href="https://www.apache.org/licenses/LICENSE-2.0.txt"><img src="https://img.shields.io/badge/License-Apache%202.0-1F6FEB" alt="License" /></a> <img src="https://img.shields.io/badge/JDK-8%2B-2EA043" alt="JDK 8+" /> <img src="https://img.shields.io/badge/Agentic-Enabled-6F42C1" alt="Agentic Enabled" /> <img src="https://img.shields.io/badge/MCP-Supported-0F766E" alt="MCP Supported" /> <img src="https://img.shields.io/badge/A2A-Supported-DC2626" alt="A2A Supported" /> <img src="https://img.shields.io/badge/RAG-Built--in-B45309" alt="RAG Built-in" /> <img src="https://img.shields.io/badge/CLI%20%2F%20TUI%20%2F%20ACP-Built--in-475569" alt="CLI TUI ACP Built-in" /></p>
+<p align="center">
+  <a href="https://search.maven.org/artifact/io.github.lnyo-cly/ai4j"><img src="https://img.shields.io/maven-central/v/io.github.lnyo-cly/ai4j?color=2E86C1&label=Maven%20Central" alt="Maven Central" /></a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0.txt"><img src="https://img.shields.io/badge/License-Apache%202.0-1F6FEB" alt="License" /></a>
+  <img src="https://img.shields.io/badge/JDK-8%2B-2EA043" alt="JDK 8+" />
+  <a href="https://lnyo-cly.github.io/ai4j/"><img src="https://img.shields.io/badge/Docs-GitHub%20Pages-0A7EA4" alt="Docs" /></a>
+  <a href="https://deepwiki.com/LnYo-Cly/ai4j"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" /></a>
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/Agentic-Enabled-6F42C1" alt="Agentic Enabled" />
+  <img src="https://img.shields.io/badge/MCP-Supported-0F766E" alt="MCP Supported" />
+  <img src="https://img.shields.io/badge/A2A-Supported-DC2626" alt="A2A Supported" />
+  <img src="https://img.shields.io/badge/RAG-Built--in-B45309" alt="RAG Built-in" />
+  <img src="https://img.shields.io/badge/CLI%20%2F%20TUI%20%2F%20ACP-Built--in-475569" alt="CLI TUI ACP Built-in" />
+</p>
 
 # ai4j
 
-A **JDK 8+** Java AI Agentic SDK — the whole path from a single model call to a governed, long-running agent is implemented in this repo, not stitched together from external frameworks.
+A **JDK 8+** Java AI Agentic SDK: unified access to many model providers with complete agent capabilities built in, so you can quickly build your own agent applications.
 
 [中文 README](README.md)
 
-## Why ai4j
+## Highlights
 
-Java has plenty of LLM clients, but few cover the **entire agentic path — protocol to governance — in one repository and on JDK 8**:
-
-- **Three protocols, native in / native out**: `Chat`, `Responses`, and `Messages` each speak their own dialect — Anthropic goes in and out natively with zero conversion and zero field loss, instead of flattening every provider into the OpenAI shape.
-- **One factory, 12+ platforms**: `Configuration` + `PlatformType` go in, `AiService` hands out ten service interfaces — Chat/Responses/Messages/Embedding/media/Rerank. The `AiServiceRegistry` lets one process hold several independent credentials (`openai-main`, `doubao-backup`) routed by id.
-- **Built-in, not passthrough**: RAG (loading → chunking → hybrid retrieval → RRF/RSF/DBSF fusion → rerank → citations), MCP (client *and* server over Stdio/SSE/Streamable HTTP), A2A, vector-store adapters, web-search enhancement — all inside the `ai4j` module.
-- **One chain from agent runtime to governance**: ReAct / CodeAct / DeepResearch strategies, StateGraph orchestration (conditional edges + loopbacks), tiered memory compaction, checkpoint/replay, RUN>STEP>MODEL/TOOL span-tree tracing, subagents/teams, permission/sandbox/hook/skill/plugin gates — topped by `ai4j-harness` for durable, governed execution.
-- **Ready out of the box**: the Spring Boot starter injects `AiService` from one config key; `ai4j-cli` ships a Coding Agent with CLI / TUI / ACP entry points; plugins are plain Maven jars with ServiceLoader discovery plus three-stage gates.
-
-## Modules
-
-| Module | What it is |
-|--------|-----------|
-| `ai4j` | Core SDK: `Configuration` + `AiService` unify 12+ providers with native Chat/Responses/Messages I/O; built-in full RAG chain (Loader→Chunker→Embedding→hybrid retrieval→RRF/RSF/DBSF fusion→Rerank→citations), MCP client+server on three transports, vector stores, image/audio/video/realtime |
-| `ai4j-agent` | Agent runtime: ReAct/CodeAct/DeepResearch strategies, StateGraph orchestration, memory compaction projections, checkpoint/replay, RUN>STEP>MODEL/TOOL span trees, subagent/team orchestration, permission/sandbox/hook/skill/plugin surfaces |
-| `ai4j-coding` | Coding-agent runtime: workspace-aware tools, outer loop, session compaction |
-| `ai4j-cli` | Coding Agent host: interactive CLI, TUI, and ACP (IDE integration) entries; persistent provider profiles, session resume/fork/replay |
-| `ai4j-extension-api` | Plugin extension contract: manifest, ServiceLoader discovery, `discover→enable→exposeTool` three-stage gates — adding a dependency never enables it |
-| `ai4j-harness` | **A durable, governed, long-running Agent Harness**: durable-execution and approval-gate thinking, driven by leases + fencing tokens so multiple workers can claim work safely, interruptible/resumable/auditable — Task/Execution/Checkpoint/Wait/Wakeup persistence primitives, a `submit → review → acceptance gate` chain that separates "the agent says it's done" from "the system accepts it's done", Task DAG dependencies (cycles rejected), Fact/Decision/Evidence ledgers, File/JDBC stores — turning an agent from a one-shot call into an operable long-lived job |
-| `ai4j-plugin-ask-user` | Official sample plugin: host-mediated user clarification |
-| `ai4j-spring-boot-starter` | Spring Boot auto-configuration: `ai.openai.api-key`-style config injects `AiService` |
-| `ai4j-flowgram-spring-boot-starter` | FlowGram integration: task APIs, trace bridge, starter-side runtime support |
-| `ai4j-flowgram-demo` | Demo backend for the FlowGram starter |
-| `ai4j-document-tika` | Optional Apache Tika document loading (PDF/Word/Excel/PPT) |
-| `ai4j-bom` | Version alignment BOM |
-
-Plus `docs-site/` (a bilingual Docusaurus site with 50+ source-aligned interactive architecture diagrams) and `ai4j-flowgram-webapp-demo/` (web demo frontend).
+- **`ai4j-harness`, a unique long-running agent harness**: turns an agent from a one-shot call into an operable long-lived job — tasks can pause, resume, and go through review and acceptance; multiple workers claim work safely without double-execution; every step is auditable.
+- **Every agent design you need**: ReAct / CodeAct / Deep Research execution modes, StateGraph orchestration with conditional branches and loops, plus subagent delegation and multi-agent teams.
+- **One codebase, 12+ providers**: unified access to OpenAI, Anthropic, DeepSeek, Zhipu, Doubao and more, with full Chat / Responses / Messages protocol support — switching providers is a one-enum change, and multiple API keys can coexist routed by name.
+- **Complete RAG built in**: document loading, chunking, vector stores, hybrid retrieval, reranking, and citations — the whole pipeline lives inside the SDK, no external retrieval framework needed.
+- **Production-grade governance**: sandboxed execution, permission approvals, hooks, skills, plugin extension, memory compaction strategies, checkpoint resume, and end-to-end tracing — control and observability for long-running tasks come built in.
+- **Plugin-oriented development**: a plugin is just a plain Maven jar — adding the dependency never enables it; explicit opt-in keeps third-party extensions safe and controllable.
 
 ## Install
 
@@ -104,7 +97,7 @@ See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickst
 
 ## Coding Agent CLI / TUI / ACP
 
-`ai4j-cli` is a ready-to-use local Coding Agent — not just an API wrapper. Three entry points: interactive CLI, TUI, and ACP (for IDE integration).
+`ai4j-cli` is a ready-to-use local Coding Agent — not just an API wrapper. Three entry points: interactive CLI, TUI, and ACP (for IDE integration). You can also pull `ai4j-cli` in as a dependency and build your own Coding Agent application on top of it — the TUI supports custom configuration.
 
 **Install** (requires Java 8+; the script pulls `ai4j-cli` from Maven Central and creates the `ai4j` command):
 
