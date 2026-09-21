@@ -37,7 +37,7 @@ tags: [how-to]
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-spring-boot-starter</artifactId>
-  <version>2.4.2</version>
+  <version>2.6.0</version>
 </dependency>
 ```
 
