@@ -673,7 +673,20 @@ public class AgentBuilder {
         if ("1.8".equals(javaSpecVersion) || "8".equals(javaSpecVersion)) {
             return new NashornCodeExecutor();
         }
-        return new GraalVmCodeExecutor();
+        if (isGraalPolyglotAvailable()) {
+            return new GraalVmCodeExecutor();
+        }
+        return new NashornCodeExecutor();
+    }
+
+    /** graal-sdk is an optional dependency of ai4j-agent; fall back to Nashorn when it is absent. */
+    private boolean isGraalPolyglotAvailable() {
+        try {
+            Class.forName("org.graalvm.polyglot.Context");
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
     private SubAgentRegistry resolveSubAgentRegistry() {
         if (subAgentRegistry != null) {

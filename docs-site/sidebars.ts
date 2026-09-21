@@ -137,6 +137,7 @@ const sidebars: SidebarsConfig = {
         'agent/system-prompt-vs-instructions',
         'agent/agent-blueprint',
         'agent/model-client-selection',
+        'agent/testing',
         {
           type: 'category',
           label: '运行时',
