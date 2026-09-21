@@ -206,6 +206,78 @@ public class AiServiceRegistryTest {
         Assert.assertNotNull(FreeAiService.getIngestionPipeline("tenant-a-openai", vectorStore));
     }
 
+    @Test
+    public void shouldResolveApiKeyFromDeclaredEnvVariable() {
+        String pathValue = System.getenv("PATH");
+        Assert.assertNotNull("PATH is expected to exist in test environments", pathValue);
+
+        Configuration configuration = new Configuration();
+        configuration.setOkHttpClient(new OkHttpClient());
+
+        AiPlatform aiPlatform = new AiPlatform();
+        aiPlatform.setId("tenant-env");
+        aiPlatform.setPlatform("openai");
+        aiPlatform.setApiKeyEnv("PATH");
+
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
+
+        AiServiceRegistry registry = DefaultAiServiceRegistry.from(configuration, aiConfig);
+        OpenAiConfig scoped = registry.get("tenant-env").getAiService().getConfiguration().getOpenAiConfig();
+
+        Assert.assertEquals(pathValue, scoped.getApiKey());
+        // caller's AiPlatform stays unresolved
+        Assert.assertNull(aiPlatform.getApiKey());
+    }
+
+    @Test
+    public void shouldPreferApiKeyEnvOverPlaintextApiKey() {
+        String pathValue = System.getenv("PATH");
+        Assert.assertNotNull("PATH is expected to exist in test environments", pathValue);
+
+        Configuration configuration = new Configuration();
+        configuration.setOkHttpClient(new OkHttpClient());
+
+        AiPlatform aiPlatform = new AiPlatform();
+        aiPlatform.setId("tenant-env-precedence");
+        aiPlatform.setPlatform("openai");
+        aiPlatform.setApiKey("sk-plaintext");
+        aiPlatform.setApiKeyEnv("PATH");
+
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
+
+        AiServiceRegistry registry = DefaultAiServiceRegistry.from(configuration, aiConfig);
+        OpenAiConfig scoped = registry.get("tenant-env-precedence").getAiService().getConfiguration().getOpenAiConfig();
+
+        Assert.assertEquals(pathValue, scoped.getApiKey());
+        Assert.assertNotEquals("sk-plaintext", scoped.getApiKey());
+    }
+
+    @Test
+    public void shouldFailFastNamingTheMissingEnvVariableWithoutLeakingValues() {
+        Configuration configuration = new Configuration();
+        configuration.setOkHttpClient(new OkHttpClient());
+
+        AiPlatform aiPlatform = new AiPlatform();
+        aiPlatform.setId("tenant-env-missing");
+        aiPlatform.setPlatform("openai");
+        aiPlatform.setApiKey("sk-should-not-leak");
+        aiPlatform.setApiKeyEnv("AI4J_TEST_DEFINITELY_MISSING_VAR");
+
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
+
+        try {
+            DefaultAiServiceRegistry.from(configuration, aiConfig);
+            Assert.fail("Expected missing apiKeyEnv variable to fail fast");
+        } catch (IllegalStateException e) {
+            Assert.assertTrue(e.getMessage().contains("AI4J_TEST_DEFINITELY_MISSING_VAR"));
+            Assert.assertTrue(e.getMessage().contains("tenant-env-missing"));
+            Assert.assertFalse(e.getMessage().contains("sk-should-not-leak"));
+        }
+    }
+
     private static class NoopVectorStore implements VectorStore {
         @Override
         public int upsert(io.github.lnyocly.ai4j.vector.store.VectorUpsertRequest request) {
