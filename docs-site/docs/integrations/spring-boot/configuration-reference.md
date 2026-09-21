@@ -23,6 +23,7 @@ AI4J 的 Spring Boot 配置不是一坨平铺字段，而是按能力面分层�
 - `ai.vector.*`
 - `ai.agentflow.*`
 - `ai.extensions.*`
+- `ai.agent.*`（Agent Blueprint 声明式装配）
 - `ai4j.flowgram.*`
 
 ## 2. 这些配置最终流向哪里
@@ -135,7 +136,7 @@ ai:
 
 ### OkHttp SPI 扩展点
 
-并发调度与连接池不是写死的，由 SPI 提供（详见 [Auto Configuration / OkHttp SPI 扩展点](/docs/integrations/spring-boot/auto-configuration#7-okhttp-spi-扩展点)）：
+并发调度与连接池不是写死的，由 SPI 提供（详见 [Auto Configuration / OkHttp SPI 扩展点](/docs/integrations/spring-boot/auto-configuration#8-okhttp-spi-扩展点)）：
 
 - `DispatcherProvider`（默认 `DefaultDispatcherProvider`）
 - `ConnectionPoolProvider`（默认 `DefaultConnectionPoolProvider`）

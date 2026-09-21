@@ -70,6 +70,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Optional: enables ai.agent.* blueprint auto-configuration when ai4j-agent is on the classpath -->
+        <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-agent</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
         <!-- B4 连带修复：ai4j lombok 已 optional 不再传递，下游需显式声明 -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -120,7 +120,29 @@ ai:
 如果你想完全接管扩展装配（例如从企业内部的权限系统动态生成清单），直接在自己的 `@Configuration` 里声明同名 `ExtensionRegistry` Bean 即可，starter 的默认装配会自动让位。
 :::
 
-## 7. OkHttp SPI 扩展点
+## 7. Agent Blueprint 装配：`ai.agent.*`
+
+当类路径上存在 `ai4j-agent`（starter 中以 optional 依赖引入）且 `ai.agent.enabled=true` 时，`AgentBlueprintAutoConfiguration` 会把声明的 Agent Blueprint YAML 装配成可注入的 `Agent`：
+
+```yaml
+ai:
+  agent:
+    enabled: true
+    default-agent: reviewer        # 注入一个默认 Agent Bean
+    blueprints:
+      reviewer: classpath:agents/reviewer.yaml
+      support: file:/etc/ai4j/agents/support.yaml
+```
+
+产出物：
+
+- `AgentBlueprintLoader` / `AgentFactory`：均为 `@ConditionalOnMissingBean`，可被用户 Bean 接管。
+- `AgentRegistry`：名字 → `Agent` 的注册表（与 `AgentFlowRegistry` 同形态），`get(name)` 取单个，`getDefault()` 在 `default-agent` 指定或仅一个蓝图时可用。
+- `Agent`：仅当 `ai.agent.default-agent` 设置时才暴露的默认 Bean。
+
+模型客户端按蓝图 `model.provider` 从 `AiServiceRegistry` 解析（对应 `ai.platforms[].id`），协议取 `model.options.protocol` → `ai.agent.protocol` → 平台默认（anthropic 走 `messages`，其余走 `chat`）。宿主依赖——`AgentToolRegistry`、`ToolExecutor`、`AgentPermissionPolicy`、`AgentSessionStore`、`AgentEventPublisher` 等——都可在容器中声明为 Bean 按需注入；已启用扩展的工具、guardrail、生命周期 hook 通过 `ExtensionAgentTools` 与用户工具合并（不是覆盖）接入每个 Agent。
+
+## 8. OkHttp SPI 扩展点
 
 `initOkHttp()` 里网络栈的两个关键零件不是写死的，而是通过 SPI 加载：
 
@@ -144,7 +166,7 @@ public interface ConnectionPoolProvider {
 
 默认实现是 `DefaultDispatcherProvider` / `DefaultConnectionPoolProvider`（各返回一个 `new Dispatcher()` / `new ConnectionPool()`）。要替换它们，实现对应接口，并通过 Java SPI（`META-INF/services/...`）注册即可，整个 starter 共享的 `OkHttpClient` 就会走你的实现。常见用途：自定义最大并发请求、连接池存活时长、按租户隔离调度器。
 
-## 8. 你应该怎么看这页
+## 9. 你应该怎么看这页
 
 把它看成一个对象图说明页：
 

@@ -121,7 +121,29 @@ After startup, `ExtensionRuntimeSnapshot` is the currently-effective extension v
 If you want to fully take over extension configuration (e.g. to dynamically generate lists from an enterprise-internal permission system), simply declare an `ExtensionRegistry` bean of the same name in your own `@Configuration`; the starter's default configuration will automatically step aside.
 :::
 
-## 7. OkHttp SPI extension points
+## 7. Agent Blueprint assembly: `ai.agent.*`
+
+When `ai4j-agent` is on the classpath (an optional dependency of the starter) and `ai.agent.enabled=true`, `AgentBlueprintAutoConfiguration` assembles declared Agent Blueprint YAML files into injectable `Agent` beans:
+
+```yaml
+ai:
+  agent:
+    enabled: true
+    default-agent: reviewer        # exposes one default Agent bean
+    blueprints:
+      reviewer: classpath:agents/reviewer.yaml
+      support: file:/etc/ai4j/agents/support.yaml
+```
+
+What gets produced:
+
+- `AgentBlueprintLoader` / `AgentFactory`: both `@ConditionalOnMissingBean`, so user beans take over cleanly.
+- `AgentRegistry`: a name → `Agent` registry (same shape as `AgentFlowRegistry`); `get(name)` fetches one, `getDefault()` works when `default-agent` is set or exactly one blueprint is declared.
+- `Agent`: the default bean, exposed only when `ai.agent.default-agent` is set.
+
+The model client is resolved from `AiServiceRegistry` by the blueprint's `model.provider` (matching `ai.platforms[].id`); the protocol comes from `model.options.protocol` → `ai.agent.protocol` → platform default (`messages` for anthropic, `chat` otherwise). Host dependencies — `AgentToolRegistry`, `ToolExecutor`, `AgentPermissionPolicy`, `AgentSessionStore`, `AgentEventPublisher`, and friends — can be declared as beans and are picked up per agent; tools, guardrails, and lifecycle hooks from enabled extensions are merged (not overwritten) into every agent via `ExtensionAgentTools`.
+
+## 8. OkHttp SPI extension points
 
 The two key parts of the network stack inside `initOkHttp()` are not hard-coded; they are loaded via SPI:
 
@@ -145,7 +167,7 @@ public interface ConnectionPoolProvider {
 
 The default implementations are `DefaultDispatcherProvider` / `DefaultConnectionPoolProvider` (each returns a `new Dispatcher()` / `new ConnectionPool()`). To replace them, implement the corresponding interface and register it via Java SPI (`META-INF/services/...`); the `OkHttpClient` shared across the entire starter will then go through your implementation. Common uses: customizing the maximum concurrent requests, connection pool keep-alive duration, or isolating dispatchers per tenant.
 
-## 8. How you should read this page
+## 9. How you should read this page
 
 Treat it as an object-graph reference page:
 

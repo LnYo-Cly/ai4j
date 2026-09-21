@@ -1,0 +1,13 @@
+version: ai4j.agent/v1
+id: test-reviewer
+name: Test Reviewer
+model:
+  provider: openai
+  model: gpt-4o-mini
+  options:
+    temperature: 0.2
+instructions:
+  system: You are a strict reviewer.
+workflow:
+  mode: react
+  maxTurns: 4
