@@ -85,6 +85,43 @@ ToolCalls.function("get_weather", "{}");              // auto callId
 ToolCalls.function("call_42", "get_weather", "{}");   // explicit callId
 ```
 
+## ReplayModelClient: golden fixture replay
+
+`ScriptedModelClient` keeps its script in code; `ReplayModelClient` externalizes it as a **committable JSON fixture** — capture each turn's response once from a real provider conversation (e.g. copy response bodies from debug logs / io-capture), save it as a `ModelFixture`, and replay with zero LLM dependency:
+
+```json
+{
+  "name": "deepseek-weather-toolcall",
+  "recordedFrom": "deepseek",
+  "exchanges": [
+    {
+      "expectedPromptContains": ["shanghai", "get_weather"],
+      "response": {
+        "toolCalls": [{"name": "get_weather", "arguments": "{\"city\":\"shanghai\"}", "callId": "call_1"}]
+      }
+    },
+    {
+      "expectedPromptContains": ["sunny"],
+      "response": {"outputText": "It is sunny in Shanghai."}
+    }
+  ]
+}
+```
+
+```java
+ReplayModelClient model = ReplayModelClient.load(
+        getClass().getResourceAsStream("/fixtures/deepseek-weather-toolcall.json"));
+model.failWhenExhausted(true);
+// …agent assembly, run, and assertions are identical to ScriptedModelClient
+```
+
+Two additions over a hand-written script:
+
+- `expectedPromptContains` pins the **request side** into the fixture: before each invocation, the serialized `AgentPrompt` must contain every listed substring — if the runtime sends something drifted, the call fails right there instead of surfacing later in `getPrompts()`.
+- A fixture is **data, not code**: provider response fields (reasoningText, toolCalls, token counts) are written literally in JSON, so a team can audit "what the real answer looked like" by reviewing the diff.
+
+The fixture deliberately does not reuse the `agent.replay` io-capture format — that one carries runIds/timestamps/token accounting for runtime audit, while a golden fixture must stay small, stable, and readable verbatim. Never put real API keys or real user data into fixtures.
+
 ## A complete end-to-end example
 
 ```java
