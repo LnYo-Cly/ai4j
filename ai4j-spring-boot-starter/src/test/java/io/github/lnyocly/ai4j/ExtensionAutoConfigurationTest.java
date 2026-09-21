@@ -57,12 +57,12 @@ public class ExtensionAutoConfigurationTest {
                     Assert.assertTrue(registry.getEnabledIds().contains("spring-weather-pack"));
                     Assert.assertTrue(registry.getExposedToolIds().contains("weather.search"));
                     Assert.assertEquals(1, snapshot.getTools().size());
-                    Assert.assertEquals("weather.search", snapshot.getTools().get(0).getName());
+                    Assert.assertEquals("plugin__spring-weather-pack__weather.search", snapshot.getTools().get(0).getName());
                     Assert.assertEquals(1, snapshot.getCommands().size());
                     Assert.assertEquals(1, snapshot.getSkills().size());
                     Assert.assertEquals(1, snapshot.getPrompts().size());
                     Assert.assertEquals(1, snapshot.getGuardrails().size());
-                    Assert.assertEquals("spring-weather:{}", execute(snapshot.getToolExecutors().get("weather.search"), "{}"));
+                    Assert.assertEquals("spring-weather:{}", execute(snapshot.getToolExecutors().get("plugin__spring-weather-pack__weather.search"), "{}"));
                 });
     }
 
