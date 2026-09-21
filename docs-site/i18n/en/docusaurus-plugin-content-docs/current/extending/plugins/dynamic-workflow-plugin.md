@@ -53,7 +53,7 @@ Use `0.1.0-SNAPSHOT` for snapshots or local validation. The plugin still depends
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-extension-api</artifactId>
-  <version>2.4.2</version>
+  <version>2.6.0</version>
 </dependency>
 ```
 

@@ -19,7 +19,7 @@ AI4J 当前发布坐标使用：
 当前仓库版本为：
 
 ```xml
-<version>2.4.2</version>
+<version>2.6.0</version>
 ```
 
 ## 推荐依赖方式
@@ -30,7 +30,7 @@ AI4J 当前发布坐标使用：
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>2.4.2</version>
+    <version>2.6.0</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@ AI4J 当前发布坐标使用：
         <dependency>
             <groupId>io.github.lnyo-cly</groupId>
             <artifactId>ai4j-bom</artifactId>
-            <version>2.4.2</version>
+            <version>2.6.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -93,7 +93,7 @@ AI4J 当前发布坐标使用：
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>2.4.2</version>
+    <version>2.6.0</version>
 </dependency>
 ```
 
@@ -103,7 +103,7 @@ AI4J 当前发布坐标使用：
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.4.2</version>
+    <version>2.6.0</version>
 </dependency>
 ```
 
@@ -113,7 +113,7 @@ AI4J 当前发布坐标使用：
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-agent</artifactId>
-    <version>2.4.2</version>
+    <version>2.6.0</version>
 </dependency>
 ```
 

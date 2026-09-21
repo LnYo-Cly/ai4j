@@ -6,6 +6,47 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Release notes are also published on the [GitHub Releases](https://github.com/LnYo-Cly/ai4j/releases) page.
 
+## [2.6.0] — 2026-09-21
+
+### Added
+- `StructuredOutputs` facade — one-line typed results from a POJO (#307).
+- `ai4j-testing` module: `ScriptedModelClient` + deterministic `ToolExecutor`
+  fixtures (#306); `ReplayModelClient` + `ModelFixture` record/replay golden
+  fixtures for key-free agent regression (#315).
+- Extension `INTERCEPTOR` capability — plugins can contribute tool-call, prompt,
+  and model-request interceptors (#308).
+- Extension runtime isolation — per-plugin classloaders, transactional apply
+  rollback, and `plugin__<extensionId>__<tool>` namespaced tool ids (#310).
+- Session event contract — every memory mutation emits a typed event, and
+  `SessionEventProjector` folds events back to memory state (#309).
+- `SessionLogReader` — offline session-log read surface
+  (list / read / events / search / project / fork) (#313).
+- `Agent.runAsync` — `CompletableFuture` async entry with an injectable
+  `Executor` (#312).
+- `apiKeyEnv` credential references — declare an env var name instead of a
+  literal key; resolved at assembly time and takes precedence over plaintext
+  (#314).
+- `maxParallelToolCalls` / `toolCallTimeoutMillis` — bounded parallel tool
+  dispatch with per-call timeout resultification (#316).
+- Spring Boot declarative Agent Blueprint bean assembly via `ai.agent.*` (#305).
+
+### Changed
+- Extension tools are exposed to the model under `plugin__<extensionId>__<tool>`
+  namespaced ids; `exposeTool` still accepts a bare name when it resolves to a
+  unique suffix match (#310).
+- README restructured (badges, capability summary, plugin motivation, extension
+  isolation, event sourcing, `api-key-env`, replay testing); docs-site embeds
+  ~28 interactive Archify architecture/sequence/dataflow views (#297–#317).
+
+## [2.5.0] — 2026-09-19
+
+### Added
+- Agent runtime family (ReAct / CodeAct / Deep Research), subagents and agent
+  teams, `ai4j-harness` long-running-task runtime, coding-agent workspace tools
+  and outer loop, `ai4j-cli` CLI/TUI/ACP, A2A protocol support, plugin SPI with
+  three-stage gates, and the bilingual docs-site — the 2.5 line carries the
+  whole agent stack on top of the unified model SDK.
+
 ## [2.4.2] — 2026-07-23
 
 ### Added
