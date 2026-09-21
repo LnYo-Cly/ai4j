@@ -76,6 +76,20 @@ System.out.println(session.getEventLog().getEvents().size());
 重点是 `memorySupplier(...)`：每次 `newSession()` 都应该拿到独立 memory。否则多个 session 可能共享同一个 memory 实例。
 :::
 
+### 3.1 异步运行：`runAsync`
+
+`Agent.runAsync(request)` 把一次运行调度到共享 daemon 线程池，返回 `CompletableFuture<AgentResult>`：
+
+```java
+CompletableFuture<AgentResult> future = agent.runAsync(
+    AgentRequest.builder().input("分析这个问题").build());
+
+// 需要自控线程池时传入自己的 Executor
+CompletableFuture<AgentResult> onMine = agent.runAsync(request, myExecutor);
+```
+
+`runAsync` 是 `Agent` 上的薄封装——语义与 `agent.run(request)` 一致（不创建 session），只是换了执行线程；运行异常经 `CompletableFuture` 以异常完成传播。默认池线程是 daemon 的 `ai4j-agent-async-N`，长时间阻塞调用建议传业务自己的 `Executor`。
+
 ## 4. 保存和恢复
 
 如果需要让 session 跨请求或跨进程边界恢复，给 Agent 配置 `AgentSessionStore`。
