@@ -328,6 +328,25 @@ This imposes a hard requirement on the executor:
 
 If the executor reuses mutable state internally, shares temp files, or relies on single-threaded ordering, turning on parallelism will break it. This problem usually does not surface as a model-layer error; it shows up as a tool-layer race condition.
 
+### 8.1 Concurrency cap and per-call timeout
+
+Parallel dispatch is governed by two optional knobs (Blueprint `$.model.options` accepts the same names, plus the snake_case aliases `max_parallel_tool_calls` / `tool_call_timeout_millis`):
+
+```java
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .parallelToolCalls(true)
+        .maxParallelToolCalls(4)        // at most 4 concurrent tool executions per turn
+        .toolCallTimeoutMillis(30_000L) // a single tool exceeding 30s is recorded as FAILED
+        .build();
+```
+
+- `maxParallelToolCalls`: the per-turn dispatch pool shrinks to `min(batch size, cap)`; `null` or `<= 0` keeps the historical behavior (one thread per call).
+- `toolCallTimeoutMillis`: a timed-out call is interrupted via `cancel(true)` and recorded as a `FAILED` result (`ok=false`, output is a `TOOL_ERROR` JSON) **without affecting its siblings** — the same convention as a tool that throws. `null` or `<= 0` disables the timeout.
+- Results are still written back to memory in the model's call order; the session event contract ordering is unchanged.
+- Dispatch pool workers are daemon threads (`ai4j-tool-exec-N`), so a leaked worker cannot block JVM shutdown.
+
 ## 9. Typical wiring patterns
 
 ### 9.1 Quickly assemble a unified tool surface with `ToolUtil` + MCP
