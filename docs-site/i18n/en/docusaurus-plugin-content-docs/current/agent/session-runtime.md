@@ -160,7 +160,29 @@ P0-B has already added:
 
 For usage details, see [Memory Compact Context Projector](/docs/agent/memory/memory-compact-context).
 
-## 8. Relationship to the Coding Agent / CLI
+## 8. Session event contract (every memory mutation emits an event)
+
+The session event log is not just an observability surface — it is a reconstructable record of session state. Every write the runtime performs against memory publishes a matching event, so folding the event stream in order rebuilds the exact `items + summary` that `memory.snapshot()` reports.
+
+Mutation-semantic events:
+
+| Event | Trigger | Payload |
+| --- | --- | --- |
+| `USER_INPUT` | `memory.addUserInput` | the raw input object |
+| `MEMORY_ITEMS_APPENDED` | `memory.addOutputItems` | the appended item list |
+| `TOOL_RESULT` | `memory.addToolOutput` (existing event reused) | `AgentToolResult` |
+| `TOOL_OUTPUT_REPLACED` | `session.replaceToolOutput` async patch | `{callId, output}` |
+| `MEMORY_COMPRESS` | `session.compact` / autoCompact | `CompactResult` (carries the post-compaction memory snapshot) |
+| `SESSION_RESTORED` | `session.restore(snapshot)` — the single funnel for resume, fork, and harness snapshot patching | the installed `MemorySnapshot` baseline |
+
+The companion projector `SessionEventProjector` (`deriveSnapshot` / `deriveItems` / `deriveSummary`) folds the event stream back into memory state — usable for audit, fork, offline analysis, and consistency checks (`SessionEventConsistencyTest` asserts projection == snapshot).
+
+Two caveats:
+
+- `MEMORY_COMPRESS` carries two payload kinds: a `CompactResult` means a real memory rewrite; a projection report means a request-scoped `ContextProjection` (it shaped one prompt, not memory). The projector discriminates by payload type.
+- Memory-internal compressors (`InMemoryAgentMemory.setCompressor`) rewrite inside `add*` calls and do not emit per-write events — that path is outside the event contract.
+
+## 9. Relationship to the Coding Agent / CLI
 
 `AgentSession` is a general-purpose SDK-layer capability.
 
@@ -176,7 +198,7 @@ For usage details, see [Memory Compact Context Projector](/docs/agent/memory/mem
 
 But none of these should leak back into the general runtime of `ai4j-agent`. The SDK layer keeps only the general contracts for session, events, memory, snapshot, and store.
 
-## 9. Production implementation guidance
+## 10. Production implementation guidance
 
 When implementing an `AgentSessionStore` for production, note the following:
 
@@ -186,7 +208,7 @@ When implementing an `AgentSessionStore` for production, note the following:
 - Whether store writes are synchronous or asynchronous should be decided by the business; do not force every event to block the main loop.
 - If memory or events grow large, combine them with a compact / retention policy.
 
-## 10. Next steps
+## 11. Next steps
 
 P0-A is only the foundation of the runtime container. The full Agent SDK will keep moving forward:
 

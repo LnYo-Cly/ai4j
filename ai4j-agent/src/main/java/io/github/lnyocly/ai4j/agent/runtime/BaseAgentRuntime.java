@@ -182,6 +182,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 }
             }
             memory.addUserInput(effectiveInput);
+            publish(context, listener, AgentEventType.USER_INPUT, 0, null, effectiveInput, runId, sessionId, turnId);
         }
 
         List<AgentToolCall> toolCalls = new ArrayList<>();
@@ -220,7 +221,9 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 // is not copied into AgentToolCall). Normalize the call first, then align the
                 // provider memory item before it is persisted. Otherwise the next request can
                 // contain assistant id=null and function_call_output.call_id=synthetic-id.
-                memory.addOutputItems(alignMemoryItems(modelResult.getMemoryItems(), calls));
+                List<Object> alignedItems = alignMemoryItems(modelResult.getMemoryItems(), calls);
+                memory.addOutputItems(alignedItems);
+                publish(context, listener, AgentEventType.MEMORY_ITEMS_APPENDED, step, null, alignedItems, runId, sessionId, turnId);
             }
             if (calls == null || calls.isEmpty()) {
                 String outputText = modelResult == null ? "" : modelResult.getOutputText();
@@ -273,9 +276,17 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 // #262: 宿主介入中断——已进历史的 tool_use 必须有配对 tool_result，
                 // 否则 anthropic_messages 等协议在恢复回合时按 invalid params 400 拒绝。
                 for (AgentToolCall unmatchedCall : validatedCalls) {
-                    memory.addToolOutput(unmatchedCall.getCallId(),
-                            "HOST_INPUT_REQUIRED: tool execution interrupted for host mediation; "
-                                    + "the conversation continues with a follow-up host/user message.");
+                    String interruptedOutput = "HOST_INPUT_REQUIRED: tool execution interrupted for host mediation; "
+                            + "the conversation continues with a follow-up host/user message.";
+                    memory.addToolOutput(unmatchedCall.getCallId(), interruptedOutput);
+                    publish(context, listener, AgentEventType.TOOL_RESULT, step, interruptedOutput,
+                            AgentToolResult.builder()
+                                    .name(unmatchedCall.getName())
+                                    .callId(unmatchedCall.getCallId())
+                                    .output(interruptedOutput)
+                                    .ok(Boolean.FALSE)
+                                    .build(),
+                            runId, sessionId, turnId);
                 }
                 throw controlFlow;
             }

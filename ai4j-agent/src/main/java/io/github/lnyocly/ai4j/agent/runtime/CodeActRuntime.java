@@ -85,6 +85,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         }
         if (request != null && request.getInput() != null) {
             memory.addUserInput(request.getInput());
+            publish(context, listener, AgentEventType.USER_INPUT, 0, null, request.getInput(), runId, sessionId, turnId);
         }
 
         CodeExecutor codeExecutor = context.getCodeExecutor();
@@ -112,14 +113,18 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
             if (modelResult != null && modelResult.getMemoryItems() != null) {
                 memory.addOutputItems(modelResult.getMemoryItems());
+                publish(context, listener, AgentEventType.MEMORY_ITEMS_APPENDED, step, null,
+                        modelResult.getMemoryItems(), runId, sessionId, turnId);
             }
 
             String output = modelResult == null ? null : modelResult.getOutputText();
             CodeActMessage message = parseMessage(output);
             if (reAct && finalizeRequested && message != null && "code".equals(message.type)) {
-                memory.addOutputItems(java.util.Collections.singletonList(
+                List<Object> finalizeItems = java.util.Collections.singletonList(
                         AgentInputItem.systemMessage("FINALIZE_MODE: Do not output code. Use the latest CODE_RESULT to respond with {\"type\":\"final\",\"output\":\"...\"}.")
-                ));
+                );
+                memory.addOutputItems(finalizeItems);
+                publish(context, listener, AgentEventType.MEMORY_ITEMS_APPENDED, step, null, finalizeItems, runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 step += 1;
@@ -186,8 +191,10 @@ public class CodeActRuntime extends BaseAgentRuntime {
             toolResults.add(codeToolResult);
             publish(context, listener, AgentEventType.TOOL_RESULT, step, toolOutput, codeToolResult, runId, sessionId, turnId);
             if (execResult != null && execResult.isWaiting()) {
-                memory.addOutputItems(java.util.Collections.singletonList(
-                        AgentInputItem.systemMessage(pendingMarker(toolCall, toolOutput))));
+                List<Object> pendingItems = java.util.Collections.singletonList(
+                        AgentInputItem.systemMessage(pendingMarker(toolCall, toolOutput)));
+                memory.addOutputItems(pendingItems);
+                publish(context, listener, AgentEventType.MEMORY_ITEMS_APPENDED, step, null, pendingItems, runId, sessionId, turnId);
                 dispatchLifecycle(context, AgentLifecycleEventType.AFTER_TURN, step, runtimeName(), modelResult);
                 publish(context, listener, AgentEventType.STEP_END, step, runtimeName(), null, runId, sessionId, turnId);
                 return usage.applyTo(AgentResult.builder()
@@ -206,7 +213,9 @@ public class CodeActRuntime extends BaseAgentRuntime {
             String toolMessage = (execResult != null && execResult.isSuccess())
                     ? "CODE_RESULT: " + toolOutput
                     : "CODE_ERROR: " + toolOutput;
-            memory.addOutputItems(java.util.Collections.singletonList(AgentInputItem.systemMessage(toolMessage)));
+            List<Object> toolMessageItems = java.util.Collections.singletonList(AgentInputItem.systemMessage(toolMessage));
+            memory.addOutputItems(toolMessageItems);
+            publish(context, listener, AgentEventType.MEMORY_ITEMS_APPENDED, step, null, toolMessageItems, runId, sessionId, turnId);
             if (reAct) {
                 finalizeRequested = execResult != null && execResult.isSuccess();
             }
