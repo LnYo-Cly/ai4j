@@ -26,4 +26,5 @@ public class AiPlatformProperties {
     private String musicUrl;
     private String lyricsUrl;
     private String fetchUrl;
+    private String systemOneUrl;
 }

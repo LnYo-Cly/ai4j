@@ -22,6 +22,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'capabilities/overview',
         'capabilities/service-entry',
+        'capabilities/system-one',
         {
           type: 'category',
           label: '模型接入',

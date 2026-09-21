@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Release notes are also published on the [GitHub Releases](https://github.com/LnYo-Cly/ai4j/releases) page.
 
+## [Unreleased]
+
+### Added
+- TypeSafe System One (Jev) provider — `PlatformType.TYPESAFE`,
+  `TypeSafeConfig`, `ISystemOneService`, and typed entities for
+  `choice`/`score`/`noul` questions with probabilities, confidence, and usage;
+  `listModels()` maps to `GET /v1/models`.
+- `SystemOneRouter` (`ai4j-agent`) — a `StateRouter` that maps a Choice answer
+  to `StateGraphWorkflow` conditional edges with `minConfidence` gating and a
+  fallback route.
+- `SystemOneGuardrail` (`ai4j-agent`) — Noul-based policy checks usable as a
+  `StateCondition` or a workflow node via `asNode(violationResult)`.
+- `ScriptedSystemOneService` (`ai4j-testing`) — queue-driven fixture that
+  records requests and replays responses for deterministic offline tests.
+- Spring Boot: `TypeSafeConfigProperties` (`ai.typesafe.*`) and
+  `system-one-url` on `ai.platforms[]`; works with `api-key-env:
+  TYPESAFE_API_KEY`.
+- Docs: bilingual `capabilities/system-one` page, platform/service matrix and
+  feature-map entries, and an Archify sequence view of the evaluation flow.
+
 ## [2.6.0] — 2026-09-21
 
 ### Added

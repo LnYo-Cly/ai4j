@@ -46,6 +46,7 @@ Configuration + AiConfig.platforms
 - `getRealtimeService(...)`
 - `getImageService(...)`
 - `getRerankService(...)`
+- `getSystemOneService(...)`
 - `getRagService(...)`
 - `getIngestionPipeline(...)`
 - `getModelReranker(...)`

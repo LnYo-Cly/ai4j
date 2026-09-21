@@ -30,7 +30,7 @@ A **JDK 8+** Java AI Agentic SDK: unified access to mainstream model providers, 
 - **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and an event-sourced session log (projectable replay, forking into new sessions, offline search) — control and observability for long-running tasks are built-in capabilities.
 - **Ready out of the box**: the Spring Boot starter injects `AiService` with a single config key; the built-in Coding Agent provides CLI / TUI / ACP entries; plugin extension covers Tool / Command / Skill / Prompt — adding a dependency never enables it automatically.
 
-Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, deterministic replay testing (`ai4j-testing` record/replay golden fixtures — regress agent behavior without live provider keys), FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
+Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, deterministic replay testing (`ai4j-testing` record/replay golden fixtures — regress agent behavior without live provider keys), TypeSafe System One (Jev) decision-model support (`choice`/`score`/`noul` parallel evaluation with confidence-gated routing and Noul guardrails), FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 

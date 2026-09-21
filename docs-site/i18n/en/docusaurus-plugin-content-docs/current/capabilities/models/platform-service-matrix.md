@@ -16,7 +16,7 @@ This page answers only two questions:
 
 ## 1. Platform enum
 
-The current platform enum is defined in `PlatformType` (14 in total):
+The current platform enum is defined in `PlatformType` (15 in total):
 
 - `OPENAI`
 - `ANTHROPIC`
@@ -32,6 +32,7 @@ The current platform enum is defined in `PlatformType` (14 in total):
 - `DOUBAO`
 - `JINA`
 - `SUNO`
+- `TYPESAFE`
 
 One caveat: the existence of a platform enum does not mean it automatically supports every service surface.
 The actual support relationship still depends on whether `AiService.create*Service(...)` has a matching branch.
@@ -99,6 +100,10 @@ Currently supported only on:
 - Doubao
 
 This shows that retrieval-related capabilities do not always come bundled with the `Chat` provider; in real engineering you frequently need to separate the "chat provider" from the "rerank provider".
+
+### `System One` is a decision-model surface of its own
+
+`TYPESAFE` (Jev / System One) is not part of the generative matrix above — it produces no text. It evaluates `choice`/`score`/`noul` questions in parallel against a `state` and returns typed answers with probabilities and confidence. The entry point is `ISystemOneService` (`getSystemOneService(PlatformType.TYPESAFE)`), mainly used for confidence-gated routing (`SystemOneRouter`) and Noul guardrails (`SystemOneGuardrail`) in agent orchestration. See [System One (TypeSafe Jev)](/docs/capabilities/system-one).
 
 ## 4. The unified entry point stays consistent
 

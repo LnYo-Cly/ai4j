@@ -78,6 +78,7 @@ import java.util.Map;
         DoubaoConfigProperties.class,
         JinaConfigProperties.class,
         SunoConfigProperties.class,
+        TypeSafeConfigProperties.class,
         AgentFlowProperties.class,
         AiExtensionProperties.class
 })
@@ -113,11 +114,12 @@ public class AiConfigAutoConfiguration {
     private final DoubaoConfigProperties doubaoConfigProperties;
     private final JinaConfigProperties jinaConfigProperties;
     private final SunoConfigProperties sunoConfigProperties;
+    private final TypeSafeConfigProperties typeSafeConfigProperties;
     private final AgentFlowProperties agentFlowProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, AgentFlowProperties agentFlowProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -140,6 +142,7 @@ public class AiConfigAutoConfiguration {
         this.doubaoConfigProperties = doubaoConfigProperties;
         this.jinaConfigProperties = jinaConfigProperties;
         this.sunoConfigProperties = sunoConfigProperties;
+        this.typeSafeConfigProperties = typeSafeConfigProperties;
         this.agentFlowProperties = agentFlowProperties;
     }
 
@@ -300,6 +303,7 @@ public class AiConfigAutoConfiguration {
         initDoubaoConfig();
         initJinaConfig();
         initSunoConfig();
+        initTypeSafeConfig();
     }
 
 
@@ -631,6 +635,17 @@ public class AiConfigAutoConfiguration {
         sunoConfig.setFetchUrl(sunoConfigProperties.getFetchUrl());
 
         configuration.setSunoConfig(sunoConfig);
+    }
+
+    private void initTypeSafeConfig() {
+        TypeSafeConfig typeSafeConfig = new TypeSafeConfig();
+        typeSafeConfig.setApiHost(typeSafeConfigProperties.getApiHost());
+        typeSafeConfig.setApiKey(typeSafeConfigProperties.getApiKey());
+        typeSafeConfig.setSystemOneUrl(typeSafeConfigProperties.getSystemOneUrl());
+        typeSafeConfig.setModelsUrl(typeSafeConfigProperties.getModelsUrl());
+        typeSafeConfig.setDefaultModel(typeSafeConfigProperties.getDefaultModel());
+
+        configuration.setTypeSafeConfig(typeSafeConfig);
     }
 
     private AgentFlowConfig toAgentFlowConfig(AgentFlowProperties.EndpointProperties properties) {

@@ -16,6 +16,7 @@ import io.github.lnyocly.ai4j.config.MoonshotConfig;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.SunoConfig;
+import io.github.lnyocly.ai4j.config.TypeSafeConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.service.AiConfig;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -164,6 +165,9 @@ public class DefaultAiServiceRegistry implements AiServiceRegistry {
                 break;
             case SUNO:
                 target.setSunoConfig(copy(aiPlatform, SunoConfig.class));
+                break;
+            case TYPESAFE:
+                target.setTypeSafeConfig(copy(aiPlatform, TypeSafeConfig.class));
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported platform type: " + platformType);

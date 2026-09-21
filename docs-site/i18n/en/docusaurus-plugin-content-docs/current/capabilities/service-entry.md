@@ -47,6 +47,7 @@ From the implementation side, it currently owns:
 - `getRealtimeService(...)`
 - `getImageService(...)`
 - `getRerankService(...)`
+- `getSystemOneService(...)`
 - `getRagService(...)`
 - `getIngestionPipeline(...)`
 - `getModelReranker(...)`

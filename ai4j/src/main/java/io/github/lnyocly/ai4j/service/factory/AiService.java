@@ -26,6 +26,7 @@ import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
 import io.github.lnyocly.ai4j.platform.grok.video.GrokVideoService;
 import io.github.lnyocly.ai4j.platform.suno.music.SunoMusicService;
+import io.github.lnyocly.ai4j.platform.typesafe.systemone.TypeSafeSystemOneService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
 import io.github.lnyocly.ai4j.rag.DefaultRagContextAssembler;
 import io.github.lnyocly.ai4j.rag.DefaultRagService;
@@ -273,6 +274,19 @@ public class AiService {
                 return new DoubaoRerankService(configuration);
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
+        }
+    }
+
+    public ISystemOneService getSystemOneService(PlatformType platform) {
+        return createSystemOneService(platform);
+    }
+
+    private ISystemOneService createSystemOneService(PlatformType platform) {
+        switch (platform) {
+            case TYPESAFE:
+                return new TypeSafeSystemOneService(configuration);
+            default:
+                throw new IllegalArgumentException("No System One service for platform: " + platform);
         }
     }
 
