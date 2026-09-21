@@ -27,10 +27,10 @@ A **JDK 8+** Java AI Agentic SDK: unified access to mainstream model providers, 
 - **`ai4j-harness`, a unique long-running agent harness**: turns a one-shot agent call into a pausable, resumable, acceptance-gated long-lived task ([see the dedicated section](#ai4j-harness-turn-agents-into-operable-long-lived-jobs)).
 - **Complete RAG built in**: document loading (optional Tika for PDF/Word/Excel), chunking, five vector-store adapters (Pinecone / Qdrant / pgvector / Milvus / Redis), hybrid retrieval, reranking, and citations — the whole pipeline is implemented inside the SDK, no external retrieval stack needed.
 - **Open interop**: MCP client *and* server over Stdio / SSE / Streamable HTTP — call external tools or expose your own; the A2A protocol enables agent-to-agent collaboration; existing Dify / Coze / n8n AgentFlow orchestrations can be invoked as well, with web-search enhancement included.
-- **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and session replay — control and observability for long-running tasks are built-in capabilities.
+- **Governed and observable**: sandboxed execution, permission approvals, hooks, skills, memory compaction, checkpoint resume, end-to-end tracing, and an event-sourced session log (projectable replay, forking into new sessions, offline search) — control and observability for long-running tasks are built-in capabilities.
 - **Ready out of the box**: the Spring Boot starter injects `AiService` with a single config key; the built-in Coding Agent provides CLI / TUI / ACP entries; plugin extension covers Tool / Command / Skill / Prompt — adding a dependency never enables it automatically.
 
-Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
+Plus RAG online evaluation (LLM-as-judge), prompt caching, declarative Agent Blueprint assembly, deterministic replay testing (`ai4j-testing` record/replay golden fixtures — regress agent behavior without live provider keys), FlowGram visual-workflow integration, and more — see the [feature map](docs-site/docs/getting-started/feature-map.md) for the full list.
 
 ## ai4j-harness: turn agents into operable long-lived jobs
 
@@ -107,7 +107,7 @@ ai:
 private AiService aiService;
 ```
 
-See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickstart.md).
+Credentials can also stay off disk: the named-platform setting `ai.platforms[].api-key-env` declares an environment variable name, resolved at assembly time and taking precedence over a literal key (see [service entry configuration](docs-site/docs/capabilities/service-entry.md)). See the [Spring Boot quickstart](docs-site/docs/integrations/spring-boot/quickstart.md).
 
 ## Coding Agent CLI / TUI / ACP
 
@@ -141,7 +141,7 @@ Plugins are ai4j's code-level extension point: they inject new **tools**, **slas
 - Implement an execution mechanism the SDK doesn't ship — e.g. [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow)'s dynamic workflows
 - Package "tools + skills + prompts" as a domain extension — others get the whole capability set from one jar
 
-An AI4J plugin is an ordinary Maven jar, discovered via `ServiceLoader` and gated by the `ExtensionRegistry` three-stage process (discover → enable → exposeTool). Adding a dependency never enables it automatically.
+An AI4J plugin is an ordinary Maven jar, discovered via `ServiceLoader` and gated by the `ExtensionRegistry` three-stage process (discover → enable → exposeTool) — adding a dependency never enables it automatically. Each plugin loads in its own classloader; a failed apply rolls back transactionally and cleans up the classloader, and exposed tools are forced into the `plugin__<id>__<tool>` namespace so plugins never pollute each other (isolation ≠ security sandbox — see the extension SPI docs).
 
 | Plugin | Home | Notes |
 |---|---|---|

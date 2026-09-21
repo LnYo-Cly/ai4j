@@ -34,7 +34,7 @@ SubAgent 的核心，不是“主 Agent 调另一个 Agent”，而是把另一�
 SDK 不主动 fan-out。"父 agent 同时跑多个子 agent"的真相是：
 
 1. 父模型在**一轮**里发出多个 tool_call（如同时调 `delegate_research` 和 `delegate_write`）
-2. 若 `parallelToolCalls=true`，runtime 用线程池**并行执行这一轮的所有 tool_call**
+2. 若 `parallelToolCalls=true`，runtime 用线程池并行执行这一轮的 tool_call（并发度受 `maxParallelToolCalls` 封顶；配置 `toolCallTimeoutMillis` 时超时调用转为失败结果，不影响同轮其他调用）
 3. 但这是一道 **fork-join barrier**：父必须等本轮全部 tool_call 结束才进下一轮
 
 所以并行的触发权在**模型的行为**（一轮发几个 call）+ `parallelToolCalls` 开关，不是 SDK 帮你调度。

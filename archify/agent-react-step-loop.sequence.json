@@ -57,7 +57,7 @@
       "title": "工具执行路径",
       "items": [
         "AgentToolCallSanitizer 校验失败 → 直接合成 FAILED result 并 addToolOutput，不进入 executor",
-        "parallelToolCalls 且 calls>1 → executeToolCallsInParallel，否则顺序执行；HostInputRequired 中断时为未配对 call 写占位 output 保持协议可恢复"
+        "parallelToolCalls 且 calls>1 → executeToolCallsInParallel（并发度受 maxParallelToolCalls 封顶；toolCallTimeoutMillis 超时转为 FAILED 结果），否则顺序执行；HostInputRequired 中断时为未配对 call 写占位 output 保持协议可恢复"
       ]
     },
     {
