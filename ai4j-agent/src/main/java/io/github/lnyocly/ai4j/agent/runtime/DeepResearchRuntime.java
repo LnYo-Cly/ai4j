@@ -59,6 +59,6 @@ public class DeepResearchRuntime extends BaseAgentRuntime {
         Object planItem = AgentInputItem.systemMessage(planText.toString());
         context.getMemory().addUserInput(planItem);
         publish(context, null, io.github.lnyocly.ai4j.agent.event.AgentEventType.USER_INPUT, 0, null,
-                planItem, null, context == null ? null : context.getSessionId(), null);
+                planItem, null, context.getSessionId(), null);
     }
 }

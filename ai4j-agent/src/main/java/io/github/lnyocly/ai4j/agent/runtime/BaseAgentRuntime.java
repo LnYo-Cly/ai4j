@@ -136,7 +136,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         boolean stream = listener != null && options != null && options.isStream();
         String sessionId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_SESSION_ID));
         if (sessionId == null) {
-            sessionId = context == null ? null : trimToNull(context.getSessionId());
+            sessionId = trimToNull(context.getSessionId());
         }
         String runId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_RUN_ID));
         if (runId == null) {
@@ -155,7 +155,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         if (request != null && request.getInput() != null) {
             Object rawInput = request.getInput();
             Object effectiveInput = rawInput;
-            PromptInterceptor promptInterceptor = context == null ? null : context.getPromptInterceptor();
+            PromptInterceptor promptInterceptor = context.getPromptInterceptor();
             if (promptInterceptor != null && rawInput instanceof String) {
                 PromptDecision decision = promptInterceptor.beforePrompt((String) rawInput, context);
                 if (decision == null) {
@@ -602,7 +602,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
-        return buildPrompt(context, memory, stream, 0, null, null, context == null ? null : context.getSessionId(), null);
+        return buildPrompt(context, memory, stream, 0, null, null, context.getSessionId(), null);
     }
 
     protected AgentPrompt buildPrompt(AgentContext context,
@@ -610,7 +610,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                       boolean stream,
                                       int step,
                                       AgentListener listener) {
-        return buildPrompt(context, memory, stream, step, listener, null, context == null ? null : context.getSessionId(), null);
+        return buildPrompt(context, memory, stream, step, listener, null, context.getSessionId(), null);
     }
 
     protected AgentPrompt buildPrompt(AgentContext context,
@@ -665,7 +665,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected List<Object> projectItems(AgentContext context, List<Object> items, int step, AgentListener listener) {
-        return projectItems(context, items, step, listener, null, context == null ? null : context.getSessionId(), null);
+        return projectItems(context, items, step, listener, null, context.getSessionId(), null);
     }
 
     protected List<Object> projectItems(AgentContext context,
@@ -688,7 +688,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
 
     protected AgentModelResult executeModel(AgentContext context, AgentPrompt prompt, AgentListener listener, int step, boolean stream, String runId, String sessionId, String turnId) throws Exception {
         // beforeModelRequest interception: allow modifying the full prompt (system, items, temperature, etc.)
-        ModelRequestHook modelHook = context == null ? null : context.getModelRequestHook();
+        ModelRequestHook modelHook = context.getModelRequestHook();
         if (modelHook != null) {
             AgentPrompt modified = modelHook.beforeModelRequest(prompt, context);
             if (modified != null) {
@@ -763,7 +763,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected AgentModelResult executeModel(AgentContext context, AgentPrompt prompt, AgentListener listener, int step, boolean stream) throws Exception {
-        return executeModel(context, prompt, listener, step, stream, null, context == null ? null : context.getSessionId(), null);
+        return executeModel(context, prompt, listener, step, stream, null, context.getSessionId(), null);
     }
 
     private Map<String, Object> retryPayload(int attempt, int maxAttempts, Throwable cause) {
@@ -784,7 +784,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                  AgentToolCall call,
                                  Integer step,
                                  AgentListener listener) throws Exception {
-        return executeTool(context, call, step, listener, null, context == null ? null : context.getSessionId(), null);
+        return executeTool(context, call, step, listener, null, context.getSessionId(), null);
     }
 
     protected String executeTool(AgentContext context,
@@ -815,7 +815,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
             throw new IllegalStateException("toolExecutor is required");
         }
         AgentToolCall effectiveCall = call;
-        ToolInterceptor interceptor = context == null ? null : context.getToolInterceptor();
+        ToolInterceptor interceptor = context.getToolInterceptor();
         if (interceptor != null) {
             ToolCallDecision decision = interceptor.beforeToolCall(call, context);
             if (decision == null) {
@@ -1107,10 +1107,13 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                            String runId,
                            String sessionId,
                            String turnId) {
+        if (context == null) {
+            return;
+        }
         AgentEvent event = AgentEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .runId(runId)
-                .sessionId(sessionId == null ? (context == null ? null : context.getSessionId()) : sessionId)
+                .sessionId(sessionId == null ? context.getSessionId() : sessionId)
                 .turnId(turnId)
                 .type(type)
                 .step(step)
@@ -1127,7 +1130,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected void publish(AgentContext context, AgentListener listener, AgentEventType type, int step, String message, Object payload) {
-        publish(context, listener, type, step, message, payload, null, context == null ? null : context.getSessionId(), null);
+        publish(context, listener, type, step, message, payload, null, context.getSessionId(), null);
     }
 
     protected void dispatchLifecycle(AgentContext context,

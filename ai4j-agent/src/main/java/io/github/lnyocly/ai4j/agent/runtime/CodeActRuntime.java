@@ -68,7 +68,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         boolean reAct = codeActOptions != null && codeActOptions.isReAct();
         String sessionId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_SESSION_ID));
         if (sessionId == null) {
-            sessionId = context == null ? null : trimToNull(context.getSessionId());
+            sessionId = trimToNull(context.getSessionId());
         }
         String runId = request == null ? null : trimToNull(request.getMetadataString(AgentRequest.METADATA_KEY_RUN_ID));
         if (runId == null) {
@@ -266,7 +266,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
     @Override
     protected AgentPrompt buildPrompt(AgentContext context, AgentMemory memory, boolean stream) {
-        return buildPrompt(context, memory, stream, 0, null, null, context == null ? null : context.getSessionId(), null);
+        return buildPrompt(context, memory, stream, 0, null, null, context.getSessionId(), null);
     }
 
     @Override
@@ -275,7 +275,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
                                       boolean stream,
                                       int step,
                                       AgentListener listener) {
-        return buildPrompt(context, memory, stream, step, listener, null, context == null ? null : context.getSessionId(), null);
+        return buildPrompt(context, memory, stream, step, listener, null, context.getSessionId(), null);
     }
 
     @Override
