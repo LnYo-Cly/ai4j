@@ -100,6 +100,8 @@ public class AgentFactory {
             builder.toolChoice(options.get("tool_choice"));
         }
         builder.parallelToolCalls(readBoolean(firstNonNull(options.get("parallelToolCalls"), options.get("parallel_tool_calls")), "$.model.options.parallelToolCalls"));
+        builder.maxParallelToolCalls(readInteger(firstNonNull(options.get("maxParallelToolCalls"), options.get("max_parallel_tool_calls")), "$.model.options.maxParallelToolCalls"));
+        builder.toolCallTimeoutMillis(readLong(firstNonNull(options.get("toolCallTimeoutMillis"), options.get("tool_call_timeout_millis")), "$.model.options.toolCallTimeoutMillis"));
         builder.store(readBoolean(options.get("store"), "$.model.options.store"));
         if (options.containsKey("user")) {
             builder.user(asString(options.get("user")));
@@ -207,6 +209,26 @@ public class AgentFactory {
             }
         }
         throw new AgentFactoryException("blueprint.option.integer.invalid", path + " must be an integer.");
+    }
+
+    private Long readLong(Object value, String path) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            double numeric = ((Number) value).doubleValue();
+            if (Math.floor(numeric) == numeric) {
+                return Long.valueOf(((Number) value).longValue());
+            }
+        }
+        if (value instanceof String) {
+            try {
+                return Long.valueOf(((String) value).trim());
+            } catch (NumberFormatException ignored) {
+                // fall through
+            }
+        }
+        throw new AgentFactoryException("blueprint.option.long.invalid", path + " must be a long integer.");
     }
 
     private Boolean readBoolean(Object value, String path) {

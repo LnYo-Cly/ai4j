@@ -329,6 +329,25 @@ ToolExecutor guarded = call -> {
 
 如果执行器内部复用可变状态、共享临时文件或依赖单线程顺序，那么一开并行就会出问题。这个问题通常不是模型层报错，而是工具层 race condition。
 
+### 8.1 并发上限与单调用超时
+
+并行派发由两个可选旋钮控制（Blueprint `$.model.options` 同名可用，也接受 `max_parallel_tool_calls` / `tool_call_timeout_millis` 蛇形键）：
+
+```java
+Agent agent = Agents.react()
+        .modelClient(modelClient)
+        .model("gpt-4.1")
+        .parallelToolCalls(true)
+        .maxParallelToolCalls(4)        // 同一轮最多并发 4 个工具执行
+        .toolCallTimeoutMillis(30_000L) // 单个工具 30s 未返回即记为 FAILED
+        .build();
+```
+
+- `maxParallelToolCalls`：每轮并发池大小收紧为 `min(本轮 call 数, cap)`；`null` 或 `<= 0` 保持历史行为（每个 call 一个线程）。
+- `toolCallTimeoutMillis`：超时 call 被 `cancel(true)` 中断并记录为 `FAILED` 结果（`ok=false`，output 为 `TOOL_ERROR` JSON），**不影响同批其它 call**——与工具自身抛异常的语义一致。`null` 或 `<= 0` 不启用。
+- 结果仍按模型返回的 call 顺序写回 memory，事件契约顺序不变。
+- 派发池 worker 是 daemon 线程（`ai4j-tool-exec-N`），不会阻止 JVM 退出。
+
 ## 9. 典型接入方式
 
 ### 9.1 用 `ToolUtil` + MCP 快速拼出统一工具面

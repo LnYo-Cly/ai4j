@@ -124,6 +124,8 @@ public class AgentBuilder {
     private Object reasoning;
     private Object toolChoice;
     private Boolean parallelToolCalls;
+    private Integer maxParallelToolCalls;
+    private Long toolCallTimeoutMillis;
     private Boolean store;
     private String user;
     private Map<String, Object> extraBody;
@@ -540,6 +542,25 @@ public class AgentBuilder {
         return this;
     }
 
+    /**
+     * Caps how many tool calls execute concurrently when {@link #parallelToolCalls} dispatch is on.
+     * Null or {@code <= 0} leaves the batch unbounded (one thread per call).
+     */
+    public AgentBuilder maxParallelToolCalls(Integer maxParallelToolCalls) {
+        this.maxParallelToolCalls = maxParallelToolCalls;
+        return this;
+    }
+
+    /**
+     * Per-call timeout for parallel tool dispatch, in milliseconds. A call that exceeds the budget
+     * is cancelled and recorded as a FAILED tool result; sibling calls still complete normally.
+     * Null or {@code <= 0} disables the timeout.
+     */
+    public AgentBuilder toolCallTimeoutMillis(Long toolCallTimeoutMillis) {
+        this.toolCallTimeoutMillis = toolCallTimeoutMillis;
+        return this;
+    }
+
     public AgentBuilder store(Boolean store) {
         this.store = store;
         return this;
@@ -656,6 +677,8 @@ public class AgentBuilder {
                 .reasoning(reasoning)
                 .toolChoice(toolChoice)
                 .parallelToolCalls(parallelToolCalls)
+                .maxParallelToolCalls(maxParallelToolCalls)
+                .toolCallTimeoutMillis(toolCallTimeoutMillis)
                 .store(store)
                 .user(user)
                 .extraBody(extraBody)

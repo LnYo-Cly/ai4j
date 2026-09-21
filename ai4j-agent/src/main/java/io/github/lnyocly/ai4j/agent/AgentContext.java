@@ -88,6 +88,19 @@ public class AgentContext {
 
     private Boolean parallelToolCalls;
 
+    /**
+     * Upper bound on concurrent tool executions when {@link #parallelToolCalls} dispatch is active.
+     * Null or {@code <= 0} keeps the historical behavior: one thread per call in the batch.
+     */
+    private Integer maxParallelToolCalls;
+
+    /**
+     * Per-call timeout for parallel tool dispatch, in milliseconds. Null or {@code <= 0} means no
+     * timeout (historical behavior). A call that exceeds the budget is cancelled and recorded as a
+     * FAILED tool result; sibling calls in the same batch are not affected.
+     */
+    private Long toolCallTimeoutMillis;
+
     private Boolean store;
 
     private String user;

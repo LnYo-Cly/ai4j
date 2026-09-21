@@ -57,7 +57,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.AgentRuntime {
 
@@ -1034,19 +1037,34 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                                                              String runId,
                                                              String sessionId,
                                                              String turnId) throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(calls.size());
+        Integer cap = context == null ? null : context.getMaxParallelToolCalls();
+        int poolSize = (cap == null || cap <= 0) ? calls.size() : Math.min(calls.size(), cap);
+        Long timeoutMillis = context == null ? null : context.getToolCallTimeoutMillis();
+        ExecutorService executor = Executors.newFixedThreadPool(poolSize, new ToolCallThreadFactory());
         try {
             List<Future<AgentToolResult>> futures = new ArrayList<>();
             for (AgentToolCall call : calls) {
                 futures.add(executor.submit(() -> runToolAndCaptureTrace(context, call, step, listener, runId, sessionId, turnId)));
             }
             List<AgentToolResult> results = new ArrayList<>();
-            for (Future<AgentToolResult> future : futures) {
-                results.add(waitForFuture(future));
+            for (int i = 0; i < futures.size(); i++) {
+                results.add(waitForFuture(futures.get(i), calls.get(i), timeoutMillis));
             }
             return results;
         } finally {
             executor.shutdownNow();
+        }
+    }
+
+    /** Daemon threads for per-turn tool dispatch so a leaked worker cannot block JVM shutdown. */
+    private static final class ToolCallThreadFactory implements ThreadFactory {
+        private final AtomicInteger sequence = new AtomicInteger();
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable, "ai4j-tool-exec-" + sequence.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
         }
     }
 
@@ -1083,9 +1101,25 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
         return executor instanceof TraceableToolExecutor ? ((TraceableToolExecutor) executor).lastTrace() : null;
     }
 
-    private <T> T waitForFuture(Future<T> future) throws Exception {
+    /**
+     * Waits for one tool call. When {@code timeoutMillis} is positive, a call that overruns the
+     * budget is cancelled and converted to a FAILED tool result (same convention as a tool that
+     * throws); sibling futures keep waiting normally.
+     */
+    private AgentToolResult waitForFuture(Future<AgentToolResult> future,
+                                          AgentToolCall call,
+                                          Long timeoutMillis) throws Exception {
         try {
-            return future.get();
+            if (timeoutMillis == null || timeoutMillis <= 0) {
+                return future.get();
+            }
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException timeout) {
+            future.cancel(true);
+            return result(call,
+                    buildToolErrorOutput(call, new TimeoutException(
+                            "tool call exceeded toolCallTimeoutMillis of " + timeoutMillis + " ms")),
+                    AgentToolExecutionStatus.FAILED);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw e;
