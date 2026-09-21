@@ -8,6 +8,13 @@ public class AiPlatform {
     private String platform;
     private String apiHost;
     private String apiKey;
+    /**
+     * Names an environment variable that supplies the api key at runtime.
+     * When set, it takes precedence over {@link #apiKey}: the resolved value is
+     * read via {@code System.getenv} during service registration and the
+     * plaintext field is ignored. Lets shared config avoid plaintext keys.
+     */
+    private String apiKeyEnv;
     private String chatCompletionUrl;
     private String embeddingUrl;
     private String speechUrl;

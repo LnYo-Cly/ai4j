@@ -157,6 +157,30 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 
 Here `trovebox-low-cost` is a business profile id; `openai` indicates the underlying protocol adaptation. For the full recipe, see [OpenAI-compatible and TroveBox](/docs/capabilities/models/openai-compatible-and-trovebox).
 
+### 7.1 Credential references: `api-key-env`
+
+`api-key` takes a plaintext key. For shared configuration, CI, or anywhere you don't want keys on disk, use `api-key-env` to declare an environment variable name that the registry resolves at assembly time:
+
+```yaml
+ai:
+  platforms:
+    - id: deepseek-main
+      platform: deepseek
+      api-key-env: DEEPSEEK_API_KEY
+      api-host: https://api.deepseek.com/
+```
+
+Rules:
+
+- When `api-key-env` is declared it **takes precedence** over plaintext `api-key` — if both are present, the env value wins.
+- Missing or empty variable → fail-fast at assembly time; the error names the platform `id` and the variable name and **never prints any key value**.
+- Resolution happens in `DefaultAiServiceRegistry.from` (the `AiConfig` assembly funnel), so Spring binding, programmatic `AiConfig`, and any config path that maps onto `AiPlatform` behave identically; the caller's `AiPlatform` object is not mutated.
+- It does not conflict with Spring's `${ENV}` placeholders: `${VAR}` is expanded by Spring at bind time, while `api-key-env` is resolved by the SDK at assembly time — the latter also covers non-Spring usage and produces clearer errors.
+
+:::tip
+For team-shared config repositories, prefer `api-key-env` uniformly so plaintext keys never get committed.
+:::
+
 ## 8. How this page divides labor with adjacent pages
 
 - `service-entry-and-registry` covers "where to enter the capabilities"

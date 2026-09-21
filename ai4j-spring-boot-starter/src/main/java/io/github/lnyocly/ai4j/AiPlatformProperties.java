@@ -10,6 +10,8 @@ public class AiPlatformProperties {
     private String platform;
     private String apiHost;
     private String apiKey;
+    // 声明环境变量名，运行时由 System.getenv 解析为 apiKey；设置后优先于明文 apiKey
+    private String apiKeyEnv;
     private String chatCompletionUrl;
     private String embeddingUrl;
     private String speechUrl;

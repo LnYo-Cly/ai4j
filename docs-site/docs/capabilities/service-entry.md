@@ -156,6 +156,30 @@ IChatService chatService = aiServiceRegistry.getChatService("trovebox-low-cost")
 
 这里 `trovebox-low-cost` 是业务 profile id；`openai` 表示底层协议适配。完整 recipe 见 [OpenAI-compatible 与 TroveBox](/docs/capabilities/models/openai-compatible-and-trovebox)。
 
+### 7.1 凭据引用：`api-key-env`
+
+`api-key` 直填的是明文 key。共享配置、CI、或不愿把 key 落盘时，改用 `api-key-env` 声明一个环境变量名，由注册表在装配时解析：
+
+```yaml
+ai:
+  platforms:
+    - id: deepseek-main
+      platform: deepseek
+      api-key-env: DEEPSEEK_API_KEY
+      api-host: https://api.deepseek.com/
+```
+
+规则：
+
+- `api-key-env` 显式声明时**优先于** `api-key` 明文——两者同现以 env 为准。
+- 环境变量缺失或为空 → 装配期 fail-fast，报错含平台 `id` 与变量名，**不打印任何 key 值**。
+- 解析发生在 `DefaultAiServiceRegistry.from`（`AiConfig` 装配漏斗），因此 Spring 绑定、编程式 `AiConfig`、以及任何映射到 `AiPlatform` 的配置路径行为一致；调用方传入的 `AiPlatform` 对象不被改写。
+- 与 Spring 的 `${ENV}` 占位符不冲突：`${VAR}` 在绑定期由 Spring 展开，`api-key-env` 在装配期由 SDK 解析——后者同时覆盖非 Spring 使用方式，且出错信息更明确。
+
+:::tip
+团队共享配置仓库时建议统一使用 `api-key-env`，避免明文 key 随配置文件提交。
+:::
+
 ## 8. 这页和相邻页面怎么分工
 
 - `service-entry-and-registry` 讲“从哪里进入能力”
