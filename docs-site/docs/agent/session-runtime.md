@@ -205,6 +205,24 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 - `MEMORY_COMPRESS` 有两种 payload：携带 `CompactResult` 的是真正的 memory 重写；携带投影报告的是请求级 `ContextProjection`（只影响当次 prompt，不改 memory），投影器按 payload 类型区分。
 - 内存实现内部的压缩器（`InMemoryAgentMemory.setCompressor`）在 `add*` 内部重写，不单独发事件——该路径不在事件契约内。
 
+### 8.1 离线读取：`SessionLogReader`
+
+审计、调试与 eval 场景不需要拉起 runtime——`SessionLogReader.of(store)` 在 `AgentSessionStore` 之上提供统一读入口：
+
+```java
+SessionLogReader reader = SessionLogReader.of(store);
+
+reader.listSessionIds();                       // 全部会话 id
+AgentSessionSnapshot s = reader.read(id);      // 持久化快照（含 memory + events）
+List<AgentSessionEvent> all = reader.events(id);        // 全量事件（append 序）
+reader.search(id, AgentEventType.USER_INPUT);           // 按类型过滤
+reader.search(id, e -> e.getSequence() > 100);          // 谓词过滤
+MemorySnapshot m = reader.project(id);                  // 折叠事件流回 memory 状态
+reader.fork(id, "audit-copy");                          // 复制快照为新会话，源不动
+```
+
+读操作全部不改存储；`fork` 在**新 session id** 下写入快照副本（事件历史一并深拷贝），是审计回放与分支实验的安全起点。`project` 与 `SessionEventProjector` 同源——对遵循事件契约写入的会话，投影结果与运行期 `memory.snapshot()` 一致。
+
 ## 9. 与 Coding Agent / CLI 的关系
 
 `AgentSession` 是通用 SDK 层能力。

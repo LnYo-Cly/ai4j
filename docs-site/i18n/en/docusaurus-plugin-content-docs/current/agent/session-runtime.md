@@ -206,6 +206,24 @@ Two caveats:
 - `MEMORY_COMPRESS` carries two payload kinds: a `CompactResult` means a real memory rewrite; a projection report means a request-scoped `ContextProjection` (it shaped one prompt, not memory). The projector discriminates by payload type.
 - Memory-internal compressors (`InMemoryAgentMemory.setCompressor`) rewrite inside `add*` calls and do not emit per-write events — that path is outside the event contract.
 
+### 8.1 Offline reading: `SessionLogReader`
+
+Audit, debugging, and eval workflows do not need a running runtime — `SessionLogReader.of(store)` provides a unified read entry on top of `AgentSessionStore`:
+
+```java
+SessionLogReader reader = SessionLogReader.of(store);
+
+reader.listSessionIds();                       // all session ids
+AgentSessionSnapshot s = reader.read(id);      // persisted snapshot (memory + events)
+List<AgentSessionEvent> all = reader.events(id);        // full event log, append order
+reader.search(id, AgentEventType.USER_INPUT);           // filter by event type
+reader.search(id, e -> e.getSequence() > 100);          // predicate filter
+MemorySnapshot m = reader.project(id);                  // fold events back to memory state
+reader.fork(id, "audit-copy");                          // copy snapshot to a new id; source untouched
+```
+
+Reads never mutate the store; `fork` persists a snapshot copy under a **new session id** (event history deep-copied along with it), making it a safe starting point for audit replay and branch experiments. `project` shares the same fold as `SessionEventProjector` — for sessions written under the event contract, the projection equals the runtime `memory.snapshot()`.
+
 ## 9. Relationship to the Coding Agent / CLI
 
 `AgentSession` is a general-purpose SDK-layer capability.
