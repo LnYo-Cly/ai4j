@@ -65,6 +65,7 @@ The rule is simple: pull in the minimal module that solves your current problem 
 | Streaming | `stable` | `ai4j` | Streamed output, incremental results, and frontend display | [Streaming](/docs/capabilities/models/streaming) |
 | Multimodal | `advanced` | `ai4j` | Multimodal input/output such as text and images | [Multimodal](/docs/capabilities/models/multimodal) |
 | Tools / Function Call | `stable` | `ai4j` | Local function declaration, execution, and safety boundaries | [Tools](/docs/capabilities/tools/overview) |
+| System One (Jev) | `preview` | `ai4j` | TypeSafe decision model: evaluates choice/score/noul against a state in parallel, typed answers + confidence for routing and guardrails | [System One](/docs/capabilities/system-one) |
 | Skills | `advanced` | `ai4j` | Let the model read instructions, templates, and workflow assets on demand | [Skills](/docs/capabilities/skills/overview) |
 
 ## RAG, retrieval, and MCP

@@ -64,6 +64,7 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | Streaming | `stable` | `ai4j` | 流式输出、增量结果和前端展示 | [流式语义](/docs/capabilities/models/streaming) |
 | Multimodal | `advanced` | `ai4j` | 文本、图像等多模态输入输出 | [多模态](/docs/capabilities/models/multimodal) |
 | Tools / Function Call | `stable` | `ai4j` | 本地函数声明、执行和安全边界 | [Tools](/docs/capabilities/tools/overview) |
+| System One（Jev） | `preview` | `ai4j` | TypeSafe 决策模型：对 state 并行求值 choice/score/noul，返回类型化答案+置信度，用于路由和护栏 | [System One](/docs/capabilities/system-one) |
 | Skills | `advanced` | `ai4j` | 给模型按需读取说明、模板和工作流资产 | [Skills](/docs/capabilities/skills/overview) |
 
 ## RAG、检索和 MCP

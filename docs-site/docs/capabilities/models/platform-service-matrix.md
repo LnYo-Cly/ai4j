@@ -16,7 +16,7 @@ tags: [reference]
 
 ## 1. 平台枚举
 
-当前平台枚举定义在 `PlatformType`（共 14 个）：
+当前平台枚举定义在 `PlatformType`（共 15 个）：
 
 - `OPENAI`
 - `ANTHROPIC`
@@ -32,6 +32,7 @@ tags: [reference]
 - `DOUBAO`
 - `JINA`
 - `SUNO`
+- `TYPESAFE`
 
 要注意一点：平台枚举存在，并不等于它自动支持所有 service 面。  
 真正的支持关系仍然取决于 `AiService.create*Service(...)` 里有没有对应分支。
@@ -99,6 +100,10 @@ tags: [reference]
 - Doubao
 
 这说明检索相关能力并不总是跟 `Chat` provider 一起出现，实际工程里经常需要“chat provider”和“rerank provider”分离。
+
+### `System One` 是决策模型独立面
+
+`TYPESAFE`（Jev / System One）不在上面的生成式矩阵里——它不产生文本，而是对 `state` 并行求值 `choice`/`score`/`noul` 三类问题，返回带概率和置信度的类型化答案。入口是 `ISystemOneService`（`getSystemOneService(PlatformType.TYPESAFE)`），主要用于 Agent 编排里的置信度门控路由（`SystemOneRouter`）和 Noul 护栏（`SystemOneGuardrail`）。详见 [System One（TypeSafe Jev）](/docs/capabilities/system-one)。
 
 ## 4. 统一调用入口仍然一致
 

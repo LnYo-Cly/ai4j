@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.config.AiPlatform;
 import io.github.lnyocly.ai4j.config.JinaConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.SunoConfig;
+import io.github.lnyocly.ai4j.config.TypeSafeConfig;
 import io.github.lnyocly.ai4j.platform.jina.rerank.JinaRerankService;
 import io.github.lnyocly.ai4j.platform.openai.chat.OpenAiChatService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
@@ -276,6 +277,35 @@ public class AiServiceRegistryTest {
             Assert.assertTrue(e.getMessage().contains("tenant-env-missing"));
             Assert.assertFalse(e.getMessage().contains("sk-should-not-leak"));
         }
+    }
+
+    @Test
+    public void shouldWireTypeSafePlatformWithEnvKeyAndSystemOneUrl() {
+        String pathValue = System.getenv("PATH");
+        Assert.assertNotNull("PATH is expected to exist in test environments", pathValue);
+
+        Configuration configuration = new Configuration();
+        configuration.setOkHttpClient(new OkHttpClient());
+
+        AiPlatform aiPlatform = new AiPlatform();
+        aiPlatform.setId("tenant-typesafe");
+        aiPlatform.setPlatform("typesafe");
+        aiPlatform.setApiKeyEnv("PATH");
+        aiPlatform.setApiHost("https://typesafe.example.com/");
+        aiPlatform.setSystemOneUrl("v2/systemone");
+
+        AiConfig aiConfig = new AiConfig();
+        aiConfig.setPlatforms(Collections.singletonList(aiPlatform));
+
+        AiServiceRegistry registry = DefaultAiServiceRegistry.from(configuration, aiConfig);
+        TypeSafeConfig scoped = registry.get("tenant-typesafe").getAiService().getConfiguration().getTypeSafeConfig();
+
+        Assert.assertNotNull(scoped);
+        Assert.assertEquals(pathValue, scoped.getApiKey());
+        Assert.assertEquals("https://typesafe.example.com/", scoped.getApiHost());
+        Assert.assertEquals("v2/systemone", scoped.getSystemOneUrl());
+        Assert.assertNotNull(registry.get("tenant-typesafe").getAiService().getSystemOneService(PlatformType.TYPESAFE));
+        Assert.assertNull(aiPlatform.getApiKey());
     }
 
     private static class NoopVectorStore implements VectorStore {

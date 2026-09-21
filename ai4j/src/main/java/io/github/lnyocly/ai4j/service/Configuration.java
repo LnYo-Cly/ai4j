@@ -62,4 +62,6 @@ public class Configuration {
     private JinaConfig jinaConfig;
 
     private SunoConfig sunoConfig;
+
+    private TypeSafeConfig typeSafeConfig;
 }

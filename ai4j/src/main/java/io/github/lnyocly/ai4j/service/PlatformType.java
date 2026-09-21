@@ -27,6 +27,7 @@ public enum PlatformType {
     SUNO("suno"),
     GROK("grok"),
     AGNES("agnes"),
+    TYPESAFE("typesafe"),
     ;
     private final String platform;
 

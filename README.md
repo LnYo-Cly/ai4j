@@ -30,7 +30,7 @@
 - **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、事件溯源会话日志（可投影回放、fork 新会话、离线检索）——长任务的可控性与可观测性均为内置能力。
 - **开箱即用**：Spring Boot starter 单行配置即可注入 `AiService`；内置 Coding Agent 提供 CLI / TUI / ACP 三种入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不会自动启用。
 
-此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、确定性回放测试（`ai4j-testing` 录制回放 golden 夹具，无需真实密钥即可回归 Agent 行为）、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
+此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、确定性回放测试（`ai4j-testing` 录制回放 golden 夹具，无需真实密钥即可回归 Agent 行为）、TypeSafe System One（Jev）决策模型接入（`choice`/`score`/`noul` 并行求值，置信度门控路由与 Noul 护栏）、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 

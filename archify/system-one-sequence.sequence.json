@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "System One 求值：一次调用并行返回类型化决策",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 560],
+    "views": [
+      {
+        "id": "evaluate",
+        "label": "求值路径",
+        "focus": ["caller", "service", "jev"],
+        "note": "ISystemOneService.evaluate 把 state + choice/score/noul 问题打包为一次 POST /v1/systemone，jev 并行求值后返回类型化答案。"
+      },
+      {
+        "id": "orchestration",
+        "label": "编排消费",
+        "focus": ["caller", "router", "guardrail"],
+        "note": "SystemOneRouter 把 choice 答案映射为 StateGraphWorkflow 路由标签并按 minConfidence 兜底；SystemOneGuardrail 用 noul 概率做阈值拦截。"
+      }
+    ]
+  },
+  "participants": [
+    {"id": "caller", "type": "frontend", "label": "调用方", "sublabel": "workflow / 业务代码"},
+    {"id": "service", "type": "backend", "label": "ISystemOneService", "sublabel": "TypeSafeSystemOneService"},
+    {"id": "jev", "type": "backend", "label": "TypeSafe Jev", "sublabel": "POST /v1/systemone"},
+    {"id": "router", "type": "backend", "label": "SystemOneRouter", "sublabel": "StateRouter 实现"},
+    {"id": "guardrail", "type": "backend", "label": "SystemOneGuardrail", "sublabel": "StateCondition / AgentNode"}
+  ],
+  "messages": [
+    {"from": "caller", "to": "service", "label": "① evaluate(state + questions{choice,score,noul})", "y": 160},
+    {"from": "service", "to": "jev", "label": "② POST {apiHost}/v1/systemone（Bearer apiKey）", "y": 188},
+    {"from": "jev", "to": "service", "label": "③ answers：每问类型化答案 + probabilities + confidence", "y": 216},
+    {"from": "service", "to": "caller", "label": "④ SystemOneResponse（choices()/scores()/nouls() 按类型过滤）", "y": 244},
+    {"from": "caller", "to": "router", "label": "⑤ route(ctx, req, res)：choice → 路由标签", "y": 300},
+    {"from": "router", "to": "caller", "label": "⑥ confidence < minConfidence → fallbackRoute", "y": 328},
+    {"from": "caller", "to": "guardrail", "label": "⑦ matches/isViolation：noul ≥ threshold 判违规", "y": 384},
+    {"from": "guardrail", "to": "caller", "label": "⑧ 通过放行 / asNode 返回固定 violationResult", "y": 412}
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三种原语",
+      "items": [
+        "choice：label→描述映射，答案给胜出标签 + 每标签概率 + confidence",
+        "score：有序等级列表，答案给等级索引 + legend 回映射",
+        "noul：是/否命题，答案给“是”的概率 0..1"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "编排语义",
+      "items": [
+        "SystemOneRouter 实现 StateRouter，返回值经 routeMap 映射到节点 id；低置信度走 fallbackRoute",
+        "SystemOneGuardrail 实现 StateCondition（matches=放行），也可 asNode 作为拦截节点"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "边界",
+      "items": [
+        "jev 不生成文本：答案永远类型化；每次求值独立、无会话记忆",
+        "默认模型 jev-latest；api-key-env: TYPESAFE_API_KEY 凭据不落盘",
+        "ai4j-testing 的 ScriptedSystemOneService 提供离线确定性夹具"
+      ]
+    }
+  ]
+}
