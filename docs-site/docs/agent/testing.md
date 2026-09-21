@@ -85,6 +85,43 @@ ToolCalls.function("get_weather", "{}");               // 自动 callId
 ToolCalls.function("call_42", "get_weather", "{}");    // 显式 callId
 ```
 
+## ReplayModelClient：golden 夹具回放
+
+`ScriptedModelClient` 的脚本写在代码里；`ReplayModelClient` 把脚本外置成**可提交的 JSON 夹具**——把一次真实 provider 对话的每轮响应手工抓下来（如从调试日志/io-capture 抄响应体），落成 `ModelFixture`，回放时零 LLM 依赖：
+
+```json
+{
+  "name": "deepseek-weather-toolcall",
+  "recordedFrom": "deepseek",
+  "exchanges": [
+    {
+      "expectedPromptContains": ["shanghai", "get_weather"],
+      "response": {
+        "toolCalls": [{"name": "get_weather", "arguments": "{\"city\":\"shanghai\"}", "callId": "call_1"}]
+      }
+    },
+    {
+      "expectedPromptContains": ["sunny"],
+      "response": {"outputText": "It is sunny in Shanghai."}
+    }
+  ]
+}
+```
+
+```java
+ReplayModelClient model = ReplayModelClient.load(
+        getClass().getResourceAsStream("/fixtures/deepseek-weather-toolcall.json"));
+model.failWhenExhausted(true);
+// …装配 agent、run、断言与 ScriptedModelClient 完全相同
+```
+
+与手写脚本的两点增量：
+
+- `expectedPromptContains` 把**请求侧**也钉进夹具：每轮调用前，断言序列化 `AgentPrompt` 包含全部子串——模型被喂了什么不对，在该轮调用处直接失败，而不是事后翻 `getPrompts()`。
+- 夹具是**数据不是代码**：provider 响应字段（reasoningText、toolCalls、token 计数）在 JSON 里直写，团队 review diff 即可审计"录到的真实应答"。
+
+夹具刻意不复用 `agent.replay` 的 io-capture 格式——那是带 runId/时间戳/token 的运行时审计面，golden 夹具需要的是小、稳、逐字可读。夹具里不要放真实 key 或用户数据。
+
 ## 一个完整的端到端用例
 
 ```java

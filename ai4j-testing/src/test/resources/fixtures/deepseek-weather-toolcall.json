@@ -1,0 +1,26 @@
+{
+  "name": "deepseek-weather-toolcall",
+  "recordedFrom": "deepseek",
+  "exchanges": [
+    {
+      "expectedPromptContains": ["shanghai", "get_weather"],
+      "response": {
+        "reasoningText": "Need live weather for shanghai.",
+        "toolCalls": [
+          {"name": "get_weather", "arguments": "{\"city\":\"shanghai\"}", "callId": "call_weather_1"}
+        ],
+        "inputTokens": 120,
+        "outputTokens": 18
+      }
+    },
+    {
+      "expectedPromptContains": ["sunny"],
+      "response": {
+        "outputText": "It is sunny in Shanghai, around 26C.",
+        "inputTokens": 148,
+        "outputTokens": 11,
+        "totalTokens": 159
+      }
+    }
+  ]
+}
