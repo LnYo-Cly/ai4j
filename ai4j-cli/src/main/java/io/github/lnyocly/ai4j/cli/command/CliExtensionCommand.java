@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.extension.ExtensionInspectionSnapshot;
 import io.github.lnyocly.ai4j.extension.ExtensionManifest;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
+import io.github.lnyocly.ai4j.extension.runtime.ExtensionRuntimeState;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandRequest;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
@@ -668,7 +669,20 @@ public class CliExtensionCommand {
             return;
         }
         for (String name : requested) {
-            ExtensionActivationItem item = findActivationItem(items, name);
+            String lookup = name;
+            if ("tool".equals(type) && items != null) {
+                List<String> itemNames = new ArrayList<String>();
+                for (ExtensionActivationItem item : items) {
+                    if (item != null) {
+                        itemNames.add(item.getName());
+                    }
+                }
+                String resolved = ExtensionRuntimeState.resolveToolName(itemNames, name);
+                if (resolved != null) {
+                    lookup = resolved;
+                }
+            }
+            ExtensionActivationItem item = findActivationItem(items, lookup);
             if (item != null && item.isActive()) {
                 continue;
             }

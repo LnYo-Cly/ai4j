@@ -52,7 +52,7 @@ public class ExtensionAgentToolsTest {
     public void shouldMapExtensionToolSchemaToAgentTool() {
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
                 .enable("weather-pack")
-                .exposeTool("weather.search");
+                .exposeTool("plugin__weather-pack__weather.search");
 
         List<Object> tools = ExtensionAgentTools.from(registry).getToolRegistry().getTools();
 
@@ -60,7 +60,7 @@ public class ExtensionAgentToolsTest {
         Assert.assertTrue(tools.get(0) instanceof Tool);
         Tool tool = (Tool) tools.get(0);
         Assert.assertEquals("function", tool.getType());
-        Assert.assertEquals("weather.search", tool.getFunction().getName());
+        Assert.assertEquals("plugin__weather-pack__weather.search", tool.getFunction().getName());
         Assert.assertEquals("Search weather", tool.getFunction().getDescription());
         Assert.assertEquals("object", tool.getFunction().getParameters().getType());
         Assert.assertEquals(Arrays.asList("city"), tool.getFunction().getParameters().getRequired());
@@ -75,11 +75,11 @@ public class ExtensionAgentToolsTest {
         WeatherExtension.resetExecuteCount();
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
                 .enable("weather-pack")
-                .exposeTool("weather.search");
+                .exposeTool("plugin__weather-pack__weather.search");
         QueueModelClient modelClient = new QueueModelClient();
         modelClient.enqueue(AgentModelResult.builder()
                 .toolCalls(Arrays.asList(AgentToolCall.builder()
-                        .name("weather.search")
+                        .name("plugin__weather-pack__weather.search")
                         .arguments("{\"city\":\"Shanghai\"}")
                         .callId("call-weather-1")
                         .type("function_call")
@@ -100,7 +100,7 @@ public class ExtensionAgentToolsTest {
 
         Assert.assertEquals("weather done", result.getOutputText());
         Assert.assertEquals(1, result.getToolResults().size());
-        Assert.assertEquals("weather.search", result.getToolResults().get(0).getName());
+        Assert.assertEquals("plugin__weather-pack__weather.search", result.getToolResults().get(0).getName());
         Assert.assertEquals("weather:{\"city\":\"Shanghai\"}:call-weather-1",
                 result.getToolResults().get(0).getOutput());
         Assert.assertEquals(2, modelClient.prompts.size());
@@ -113,11 +113,11 @@ public class ExtensionAgentToolsTest {
         WeatherExtension.resetExecuteCount();
         ExtensionRegistry registry = ExtensionRegistry.of(new DenyWeatherExtension())
                 .enable("weather-pack")
-                .exposeTool("weather.search");
+                .exposeTool("plugin__weather-pack__weather.search");
         QueueModelClient modelClient = new QueueModelClient();
         modelClient.enqueue(AgentModelResult.builder()
                 .toolCalls(Arrays.asList(AgentToolCall.builder()
-                        .name("weather.search")
+                        .name("plugin__weather-pack__weather.search")
                         .arguments("{\"city\":\"Shanghai\"}")
                         .callId("call-weather-denied")
                         .type("function_call")
@@ -138,13 +138,13 @@ public class ExtensionAgentToolsTest {
 
         Assert.assertEquals("guardrail handled", result.getOutputText());
         Assert.assertEquals(1, result.getToolResults().size());
-        Assert.assertEquals("weather.search", result.getToolResults().get(0).getName());
+        Assert.assertEquals("plugin__weather-pack__weather.search", result.getToolResults().get(0).getName());
         Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
         JSONObject payload = toolErrorPayload(result.getToolResults().get(0).getOutput());
         Assert.assertEquals("io.github.lnyocly.ai4j.extension.ExtensionException", payload.getString("errorType"));
-        Assert.assertEquals("Extension guardrail denied tool weather.search by deny-weather: weather access disabled",
+        Assert.assertEquals("Extension guardrail denied tool plugin__weather-pack__weather.search by deny-weather: weather access disabled",
                 payload.getString("error"));
-        Assert.assertEquals("weather.search", payload.getString("tool"));
+        Assert.assertEquals("plugin__weather-pack__weather.search", payload.getString("tool"));
         Assert.assertEquals("call-weather-denied", payload.getString("callId"));
         Assert.assertFalse(payload.containsKey("stackTrace"));
         Assert.assertEquals(0, WeatherExtension.getExecuteCount());
@@ -157,7 +157,7 @@ public class ExtensionAgentToolsTest {
 
         try {
             ExtensionAgentTools.from(registry).getToolExecutor().execute(AgentToolCall.builder()
-                    .name("weather.search")
+                    .name("plugin__weather-pack__weather.search")
                     .arguments("{}")
                     .build());
             Assert.fail("expected IllegalArgumentException");
@@ -219,7 +219,7 @@ public class ExtensionAgentToolsTest {
 
                 public GuardrailDecision evaluate(GuardrailRequest request) {
                     if ("tool.execute".equals(request.getAction())
-                            && "weather.search".equals(request.getTarget())) {
+                            && "plugin__weather-pack__weather.search".equals(request.getTarget())) {
                         return GuardrailDecision.deny("weather access disabled");
                     }
                     return GuardrailDecision.allow();

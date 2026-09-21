@@ -180,7 +180,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("permissions=network:example.test"));
         Assert.assertTrue(output.contains("configPrefix=ai4j.extensions.cli-test"));
         Assert.assertTrue(output.contains("runtime=not-inspected"));
-        Assert.assertFalse(output.contains("tools=cli.echo"));
+        Assert.assertFalse(output.contains("tools=plugin__cli-test-pack__cli.echo"));
         Assert.assertEquals(0, CliExtensionTestExtension.getApplyCount());
     }
 
@@ -202,7 +202,7 @@ public class Ai4jCliTest {
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("runtime=inspected"));
-        Assert.assertTrue(output.contains("tools=cli.echo"));
+        Assert.assertTrue(output.contains("tools=plugin__cli-test-pack__cli.echo"));
         Assert.assertTrue(output.contains("commands=cli-echo"));
         Assert.assertTrue(output.contains("skills=cli-skill@skills/cli/SKILL.md"));
         Assert.assertTrue(output.contains("prompts=cli-prompt@prompts/cli.md"));
@@ -242,7 +242,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("enabled=true"));
         Assert.assertTrue(output.contains("explicitResourceActivation=true"));
         Assert.assertTrue(output.contains("permissions=network:example.test"));
-        Assert.assertTrue(output.contains("name=cli.echo state=active reason=exposeTool allowlist"));
+        Assert.assertTrue(output.contains("name=plugin__cli-test-pack__cli.echo state=active reason=exposeTool allowlist"));
         Assert.assertTrue(output.contains("name=cli-echo state=active reason=resource allowlist"));
         Assert.assertTrue(output.contains("name=cli-skill state=inactive reason=not allowed"));
         Assert.assertTrue(output.contains("name=missing-skill state=inactive reason=not registered by extension"));
@@ -280,7 +280,7 @@ public class Ai4jCliTest {
         Assert.assertTrue(output.contains("validation:"));
         Assert.assertTrue(output.contains("id=cli-test-pack status=pass errors=0 warnings=0"));
         Assert.assertTrue(output.contains("activation-plan:"));
-        Assert.assertTrue(output.contains("name=cli.echo state=active reason=exposeTool allowlist"));
+        Assert.assertTrue(output.contains("name=plugin__cli-test-pack__cli.echo state=active reason=exposeTool allowlist"));
         Assert.assertTrue(output.contains("name=cli-skill state=active reason=resource allowlist"));
         Assert.assertTrue(output.contains("check:"));
         Assert.assertTrue(output.contains("status=pass"));

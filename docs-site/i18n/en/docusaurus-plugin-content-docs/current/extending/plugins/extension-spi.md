@@ -138,6 +138,41 @@ for (DiscoveredExtension discovered : registry.list()) {
 
 If you just want to know "which extensions exist and which are enabled," use `registry.list()`. To get a single extension's manifest, use `registry.manifest(id)` — you do not need to filter this list yourself.
 
+### 1.5 Isolated loading: `IsolatedExtensionLoader`
+
+The default `ServiceLoaderExtensionLoader` loads every extension into a single classloader — simple, but two plugins carrying conflicting dependencies can pollute each other. `IsolatedExtensionLoader` (`@Experimental`) creates a dedicated `URLClassLoader` per extension jar, with the classloader that loaded `ai4j-extension-api` as the fixed parent:
+
+```java
+ExtensionRegistry registry = ExtensionRegistry.discover(
+        IsolatedExtensionLoader.fromDirectory(Paths.get("plugins")));
+```
+
+- SPI contract types (`Ai4jExtension`, `ExtensionContext`, manifests, specs) are shared through the parent, so isolation never produces `ClassCastException` on the contract surface.
+- Each plugin jar (or equivalent directory) gets its own `URLClassLoader`; its private dependencies stay invisible to other plugins and never leak onto the host classpath.
+
+:::warning
+Classloader isolation solves **dependency conflicts and lifecycle management** — it is not a security sandbox: a malicious plugin still runs in the host process. Untrusted code needs a process boundary, not a classloader.
+:::
+
+### 1.6 Tool namespaces and the unload lifecycle
+
+`registerTool` rewrites the tool name to `plugin__<extensionId>__<tool>` — two independently authored plugins can both declare `echo`, and the model sees `plugin__a__echo` plus `plugin__b__echo` with no collision. Guardrails and interceptors observe this namespaced id via `request.getTarget()` too.
+
+`exposeTool(...)` and the CLI `--expose-tool` accept both forms:
+
+| Form | Behavior |
+| --- | --- |
+| `plugin__pack-a__echo` (full namespaced id) | Exact match |
+| `echo` (bare name) | Resolves to the unique registered tool ending in `__echo`; multiple matches raise `ambiguous tool id` |
+
+For lifecycle, `Ai4jExtension` provides a default no-op `onStop()` hook — existing extensions do not need to change:
+
+- When `apply(...)` throws after `enable(...)`: everything that extension registered is discarded with the temporary state (transactional rollback), `onStop()` is invoked, and — if loaded via `IsolatedExtensionLoader` — its classloader is released.
+- `registry.disable(id)`: removes the extension from the enabled set, invokes `onStop()`, and releases its classloader; the next `snapshot()` rebuilds runtime state without its contributions.
+- `registry.close()`: disables every enabled extension in reverse order, then closes the isolated loader.
+
+Note that `disable` does not prune leftover `exposeTool(...)` entries — the next `snapshot()` fails with `tool not registered`. Manage enable/expose and disable in the same configuration surface to keep them consistent.
+
 ## 2. Plugin resource reading: `ExtensionResourceResolver`
 
 ### 2.1 What problem it solves

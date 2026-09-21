@@ -12,7 +12,7 @@ final class AskUserPayloads {
         return "{"
                 + "\"type\":\"ai4j.ask_user.request\","
                 + "\"source\":\"tool\","
-                + "\"tool\":\"" + AskUserExtension.TOOL_NAME + "\","
+                + "\"tool\":\"" + AskUserExtension.NAMESPACED_TOOL_NAME + "\","
                 + "\"status\":\"pending_user_input\","
                 + "\"hostAction\":\"render_question_to_user\","
                 + "\"blocking\":\"host_decides\","

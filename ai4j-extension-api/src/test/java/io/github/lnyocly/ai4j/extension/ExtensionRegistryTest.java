@@ -43,11 +43,11 @@ public class ExtensionRegistryTest {
         Assert.assertEquals(1, withoutExpose.getPrompts().size());
         Assert.assertEquals(1, withoutExpose.getGuardrails().size());
 
-        ExtensionRuntimeSnapshot exposed = registry.exposeTool("weather.search").snapshot();
+        ExtensionRuntimeSnapshot exposed = registry.exposeTool("plugin__weather-pack__weather.search").snapshot();
 
         Assert.assertEquals(1, exposed.getTools().size());
-        Assert.assertEquals("weather.search", exposed.getTools().get(0).getName());
-        Assert.assertEquals("ok:{}", execute(exposed.getToolExecutors().get("weather.search"), "{}"));
+        Assert.assertEquals("plugin__weather-pack__weather.search", exposed.getTools().get(0).getName());
+        Assert.assertEquals("ok:{}", execute(exposed.getToolExecutors().get("plugin__weather-pack__weather.search"), "{}"));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class ExtensionRegistryTest {
     public void shouldDescribeActivationPlanForEnabledAndAllowedResources() {
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
                 .enable("weather-pack")
-                .exposeTool("weather.search")
+                .exposeTool("plugin__weather-pack__weather.search")
                 .allowCommand("weather")
                 .allowSkill("missing-skill")
                 .allowPrompt("weather-summary")
@@ -106,7 +106,7 @@ public class ExtensionRegistryTest {
         Assert.assertEquals("weather-pack", plan.getManifest().getId());
         Assert.assertTrue(plan.isEnabled());
         Assert.assertTrue(plan.isExplicitResourceActivation());
-        Assert.assertTrue(find(plan.getTools(), "weather.search").isActive());
+        Assert.assertTrue(find(plan.getTools(), "plugin__weather-pack__weather.search").isActive());
         Assert.assertTrue(find(plan.getCommands(), "weather").isActive());
         Assert.assertFalse(find(plan.getSkills(), "weather-skill").isActive());
         Assert.assertTrue(find(plan.getSkills(), "weather-skill").getReason().contains("not allowed"));
@@ -123,7 +123,7 @@ public class ExtensionRegistryTest {
         ExtensionInspectionSnapshot inspected = registry.inspectRuntime(" weather-pack ");
 
         Assert.assertEquals(1, inspected.getTools().size());
-        Assert.assertEquals("weather.search", inspected.getTools().get(0).getName());
+        Assert.assertEquals("plugin__weather-pack__weather.search", inspected.getTools().get(0).getName());
         Assert.assertEquals(1, inspected.getCommands().size());
         Assert.assertEquals("weather", inspected.getCommands().get(0).getName());
         Assert.assertEquals(1, inspected.getSkills().size());

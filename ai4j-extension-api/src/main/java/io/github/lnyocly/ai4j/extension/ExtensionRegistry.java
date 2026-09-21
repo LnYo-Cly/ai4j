@@ -29,10 +29,12 @@ public final class ExtensionRegistry {
     private final Set<String> allowedPromptIds = new LinkedHashSet<String>();
     private final Set<String> allowedGuardrailIds = new LinkedHashSet<String>();
     private ExtensionRuntimeState runtimeState = new ExtensionRuntimeState();
+    private final ExtensionLoader loader;
     private boolean applied;
     private boolean explicitResourceActivation;
 
-    private ExtensionRegistry(Collection<Ai4jExtension> extensions) {
+    private ExtensionRegistry(ExtensionLoader loader, Collection<Ai4jExtension> extensions) {
+        this.loader = loader;
         this.discovered = new LinkedHashMap<String, Ai4jExtension>();
         this.manifests = new LinkedHashMap<String, ExtensionManifest>();
         if (extensions != null) {
@@ -50,7 +52,7 @@ public final class ExtensionRegistry {
         if (loader == null) {
             throw new IllegalArgumentException("extension loader must not be null");
         }
-        return new ExtensionRegistry(loader.load());
+        return new ExtensionRegistry(loader, loader.load());
     }
 
     public static ExtensionRegistry of(Ai4jExtension... extensions) {
@@ -58,13 +60,53 @@ public final class ExtensionRegistry {
         if (extensions != null) {
             Collections.addAll(list, extensions);
         }
-        return new ExtensionRegistry(list);
+        return new ExtensionRegistry(null, list);
     }
 
     public ExtensionRegistry enable(String extensionId) {
         String normalized = requireKnownExtension(extensionId);
         enabledIds.add(normalized);
         applied = false;
+        return this;
+    }
+
+    /**
+     * Disables an extension: removes it from the enabled set, invokes its
+     * {@link Ai4jExtension#onStop()} release hook, and closes its dedicated
+     * classloader when it was loaded through {@link IsolatedExtensionLoader}.
+     * The next {@link #snapshot()} rebuilds runtime state without it.
+     */
+    public ExtensionRegistry disable(String extensionId) {
+        String normalized = requireKnownExtension(extensionId);
+        if (!enabledIds.remove(normalized)) {
+            return this;
+        }
+        applied = false;
+        Ai4jExtension extension = discovered.get(normalized);
+        try {
+            if (extension != null) {
+                extension.onStop();
+            }
+        } finally {
+            if (loader instanceof IsolatedExtensionLoader && extension != null) {
+                ((IsolatedExtensionLoader) loader).release(extension);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Disables every enabled extension in reverse enable order, invoking each
+     * extension's release hook and closing isolated classloaders. Idempotent.
+     */
+    public ExtensionRegistry close() {
+        List<String> order = new ArrayList<String>(enabledIds);
+        for (int i = order.size() - 1; i >= 0; i--) {
+            disable(order.get(i));
+        }
+        if (loader instanceof IsolatedExtensionLoader) {
+            ((IsolatedExtensionLoader) loader).close();
+        }
         return this;
     }
 
@@ -274,7 +316,23 @@ public final class ExtensionRegistry {
         for (String extensionId : enabledIds) {
             Ai4jExtension extension = discovered.get(extensionId);
             ExtensionManifest manifest = manifests.get(extensionId);
-            extension.apply(new DefaultExtensionContext(manifest, nextState));
+            try {
+                extension.apply(new DefaultExtensionContext(manifest, nextState));
+            } catch (RuntimeException e) {
+                // Registration rollback is implicit: nextState is discarded. The
+                // extension still gets its release hook and its dedicated
+                // classloader is closed so a failed apply cannot leak resources.
+                try {
+                    extension.onStop();
+                } catch (RuntimeException ignored) {
+                    // a broken release hook must not mask the real apply failure
+                } finally {
+                    if (loader instanceof IsolatedExtensionLoader) {
+                        ((IsolatedExtensionLoader) loader).release(extension);
+                    }
+                }
+                throw e;
+            }
         }
         this.runtimeState = nextState;
         this.applied = true;
@@ -285,14 +343,25 @@ public final class ExtensionRegistry {
         Set<String> contributed = new LinkedHashSet<String>();
         if (tools != null) {
             for (ExtensionToolSpec tool : tools) {
-                String name = tool.getName();
-                contributed.add(name);
-                items.add(item("tool", name, enabled && exposedToolIds.contains(name),
-                        enabled ? "exposeTool allowlist" : "extension not enabled",
-                        enabled ? "not exposed" : "extension not enabled"));
+                contributed.add(tool.getName());
             }
         }
-        addMissingItems(items, "tool", exposedToolIds, contributed, enabled);
+        Set<String> resolvedExposed = new LinkedHashSet<String>();
+        Set<String> unresolved = new LinkedHashSet<String>();
+        for (String requested : exposedToolIds) {
+            String resolved = ExtensionRuntimeState.resolveToolName(contributed, requested);
+            if (resolved == null) {
+                unresolved.add(requested);
+            } else {
+                resolvedExposed.add(resolved);
+            }
+        }
+        for (String name : contributed) {
+            items.add(item("tool", name, enabled && resolvedExposed.contains(name),
+                    enabled ? "exposeTool allowlist" : "extension not enabled",
+                    enabled ? "not exposed" : "extension not enabled"));
+        }
+        addMissingItems(items, "tool", unresolved, contributed, enabled);
         return items;
     }
 

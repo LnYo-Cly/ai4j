@@ -19,6 +19,8 @@ public final class AskUserExtension implements Ai4jExtension {
 
     public static final String EXTENSION_ID = "ask-user";
     public static final String TOOL_NAME = "ask_user";
+    /** The tool id visible to models and callers after registry namespacing. */
+    public static final String NAMESPACED_TOOL_NAME = "plugin__" + EXTENSION_ID + "__" + TOOL_NAME;
     public static final String COMMAND_NAME = "ask-user";
     public static final String SKILL_NAME = "ask-user-collaboration";
     public static final String PROMPT_NAME = "ask-user-question";

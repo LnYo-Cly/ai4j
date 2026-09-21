@@ -49,12 +49,12 @@ public class AskUserExtensionTest {
     public void toolReturnsHostMediatedRequestWithoutBlocking() throws Exception {
         ExtensionRegistry registry = ExtensionRegistry.of(new AskUserExtension())
                 .enable("ask-user")
-                .exposeTool("ask_user");
+                .exposeTool(AskUserExtension.NAMESPACED_TOOL_NAME);
 
         ExtensionRuntimeSnapshot snapshot = registry.snapshot();
-        ExtensionToolExecutor executor = snapshot.getToolExecutors().get("ask_user");
+        ExtensionToolExecutor executor = snapshot.getToolExecutors().get(AskUserExtension.NAMESPACED_TOOL_NAME);
 
-        String result = executor.execute(new ExtensionToolCall("ask_user",
+        String result = executor.execute(new ExtensionToolCall(AskUserExtension.NAMESPACED_TOOL_NAME,
                 "{\"question\":\"Which database should I use?\",\"choices\":[\"H2\",\"PostgreSQL\"],\"blocking\":true}"));
 
         Assert.assertTrue(result.contains("\"type\":\"ai4j.ask_user.request\""));
@@ -83,10 +83,10 @@ public class AskUserExtensionTest {
     public void toolEscapesMalformedArgumentsIntoStableEnvelope() throws Exception {
         ExtensionRegistry registry = ExtensionRegistry.of(new AskUserExtension())
                 .enable("ask-user")
-                .exposeTool("ask_user");
-        ExtensionToolExecutor executor = registry.snapshot().getToolExecutors().get("ask_user");
+                .exposeTool(AskUserExtension.NAMESPACED_TOOL_NAME);
+        ExtensionToolExecutor executor = registry.snapshot().getToolExecutors().get(AskUserExtension.NAMESPACED_TOOL_NAME);
 
-        String result = executor.execute(new ExtensionToolCall("ask_user", "{bad\njson"));
+        String result = executor.execute(new ExtensionToolCall(AskUserExtension.NAMESPACED_TOOL_NAME, "{bad\njson"));
 
         Assert.assertTrue(result.contains("\"argumentsRaw\":\"{bad\\njson\""));
         Assert.assertTrue(result.contains("\"status\":\"pending_user_input\""));
@@ -96,10 +96,10 @@ public class AskUserExtensionTest {
     public void toolCapsOversizedArgumentsRaw() throws Exception {
         ExtensionRegistry registry = ExtensionRegistry.of(new AskUserExtension())
                 .enable("ask-user")
-                .exposeTool("ask_user");
-        ExtensionToolExecutor executor = registry.snapshot().getToolExecutors().get("ask_user");
+                .exposeTool(AskUserExtension.NAMESPACED_TOOL_NAME);
+        ExtensionToolExecutor executor = registry.snapshot().getToolExecutors().get(AskUserExtension.NAMESPACED_TOOL_NAME);
 
-        String result = executor.execute(new ExtensionToolCall("ask_user", repeat('x', 20000)));
+        String result = executor.execute(new ExtensionToolCall(AskUserExtension.NAMESPACED_TOOL_NAME, repeat('x', 20000)));
 
         Assert.assertTrue(result.contains("\"argumentsTruncated\":true"));
         Assert.assertTrue(result.length() < 17000);
