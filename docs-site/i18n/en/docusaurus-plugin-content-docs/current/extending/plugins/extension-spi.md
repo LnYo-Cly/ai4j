@@ -34,6 +34,16 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/plugin-discovery-enable.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (light/dark themes, zoom, export).
 
+**Additional view: runtime isolation** — each extension JAR loads through its own `URLClassLoader` (SPI contract types stay shared via the parent loader), `apply()` writes a staged state transactionally and rolls back on failure while releasing that classloader, extension tools are namespaced as `plugin__<id>__<tool>`, and `disable()` runs `onStop` plus resource cleanup in reverse order.
+
+<iframe
+  src={useBaseUrl('/archify/extension-isolation.html')}
+  title="Extension runtime isolation - interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/extension-isolation.html')} target="_blank" rel="noopener noreferrer">Open the full-screen interactive diagram</a> (dual themes, zoom, export; the view switcher focuses on isolated loading, transactional enablement, and namespacing/teardown).
+
 
 ## 1. Plugin discovery: `ExtensionLoader`
 

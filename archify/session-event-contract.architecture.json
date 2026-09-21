@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "会话事件契约 —— 变更事件 · 哈希链日志 · 投影重建",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      860,
+      400
+    ],
+    "repository": {
+      "url": "https://github.com/LnYo-Cly/ai4j",
+      "provider": "github",
+      "revision": "306ba64b731ab8894682d0a9500782b47559f80b"
+    },
+    "views": [
+      {
+        "id": "write-path",
+        "label": "写点事件化",
+        "focus": [
+          "runtime",
+          "events",
+          "memory"
+        ],
+        "note": "每次 memory 变更在直写运行态的同时发布对应追加事件——模型可见 ⟺ 已记录。"
+      },
+      {
+        "id": "funnel",
+        "label": "restore 统一漏斗",
+        "focus": [
+          "harness",
+          "session",
+          "events"
+        ],
+        "note": "resume / fork / harness setItems 补丁全部经 restore() 漏斗，自动产生 SESSION_RESTORED。"
+      },
+      {
+        "id": "project",
+        "label": "投影与一致性",
+        "focus": [
+          "eventlog",
+          "projector",
+          "memory",
+          "verify"
+        ],
+        "note": "SessionEventProjector 折叠事件流重建 items；回归测试断言投影 == 运行态快照。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Runtime 写点",
+      "sublabel": "BaseAgentRuntime · CodeAct",
+      "pos": [
+        20,
+        40
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/runtime/BaseAgentRuntime.java"
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "type": "messagebus",
+      "label": "Mutation 事件",
+      "sublabel": "USER_INPUT 等 6 类变更事件",
+      "pos": [
+        210,
+        40
+      ],
+      "size": [
+        200,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/event/AgentEventType.java"
+        }
+      ]
+    },
+    {
+      "id": "eventlog",
+      "type": "database",
+      "label": "HashChainedEventLog",
+      "sublabel": "sha256 链 · append-only",
+      "pos": [
+        440,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/HashChainedEventLog.java"
+        }
+      ]
+    },
+    {
+      "id": "projector",
+      "type": "backend",
+      "label": "SessionEventProjector",
+      "sublabel": "deriveItems 折叠重建",
+      "pos": [
+        640,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/session/SessionEventProjector.java"
+        }
+      ]
+    },
+    {
+      "id": "session",
+      "type": "backend",
+      "label": "AgentSession",
+      "sublabel": "restore() · compact · replace",
+      "pos": [
+        210,
+        165
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/AgentSession.java"
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "type": "backend",
+      "label": "AgentMemory",
+      "sublabel": "运行态缓存 · 直写保持",
+      "pos": [
+        20,
+        290
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/main/java/io/github/lnyocly/ai4j/agent/memory/InMemoryAgentMemory.java"
+        }
+      ]
+    },
+    {
+      "id": "harness",
+      "type": "backend",
+      "label": "Harness 补丁点",
+      "sublabel": "resume · fork · setItems",
+      "pos": [
+        440,
+        290
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-harness/src/main/java/io/github/lnyocly/ai4j/harness/AgentHarness.java"
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "type": "security",
+      "label": "一致性回归",
+      "sublabel": "project(log) == memory.items",
+      "pos": [
+        640,
+        290
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-agent/src/test/java/io/github/lnyocly/agent/SessionEventConsistencyTest.java"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "runtime",
+      "to": "events",
+      "label": "① mutation 事件",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        195,
+        115
+      ]
+    },
+    {
+      "from": "runtime",
+      "to": "memory",
+      "label": "② 直写运行态",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        110,
+        190
+      ]
+    },
+    {
+      "from": "events",
+      "to": "eventlog",
+      "label": "③ append + 哈希链",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        425,
+        115
+      ]
+    },
+    {
+      "from": "eventlog",
+      "to": "projector",
+      "label": "④ fold 事件流",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        625,
+        115
+      ]
+    },
+    {
+      "from": "session",
+      "to": "events",
+      "label": "⑤ SESSION_RESTORED",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        315,
+        130
+      ]
+    },
+    {
+      "from": "harness",
+      "to": "session",
+      "label": "⑥ 补丁经 restore()",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "via": [
+        [
+          530,
+          255
+        ],
+        [
+          300,
+          255
+        ]
+      ],
+      "labelAt": [
+        415,
+        240
+      ]
+    },
+    {
+      "from": "projector",
+      "to": "verify",
+      "label": "⑦ 投影 items",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        735,
+        190
+      ]
+    },
+    {
+      "from": "memory",
+      "to": "verify",
+      "label": "⑧ 运行态 items",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          110,
+          380
+        ],
+        [
+          730,
+          380
+        ]
+      ],
+      "labelAt": [
+        420,
+        372
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "契约不变量",
+      "items": [
+        "每次 memory 变更必产生对应追加事件",
+        "模型可见内容 ⟺ 已记录事件",
+        "一致性测试断言 投影(log) == 运行态快照"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "restore() 统一漏斗",
+      "items": [
+        "resume / fork / harness setItems 补丁全经 restore()",
+        "漏斗内自动追加 SESSION_RESTORED，无需逐点补埋",
+        "HashChainedEventLog 重封印后仍可 append"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "投影而非旁路",
+      "items": [
+        "io-capture 仍是旁路录制；事件日志才是契约镜像",
+        "fork / 审计 / eval 数据集从同一事件流重建",
+        "compact 改写经 restore() 路径同样落 SESSION_RESTORED"
+      ]
+    }
+  ]
+}

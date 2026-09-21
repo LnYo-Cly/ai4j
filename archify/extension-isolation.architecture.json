@@ -1,0 +1,326 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "扩展运行时隔离 —— 独立类加载 · 事务化启用 · 命名空间工具",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      860,
+      400
+    ],
+    "repository": {
+      "url": "https://github.com/LnYo-Cly/ai4j",
+      "provider": "github",
+      "revision": "306ba64b731ab8894682d0a9500782b47559f80b"
+    },
+    "views": [
+      {
+        "id": "isolation",
+        "label": "隔离加载",
+        "focus": [
+          "jar",
+          "loader",
+          "spi"
+        ],
+        "note": "每个扩展 JAR 独立 URLClassLoader；SPI 契约类型经父加载器共享，实现类相互不可见。"
+      },
+      {
+        "id": "transaction",
+        "label": "事务化启用",
+        "focus": [
+          "apply",
+          "context",
+          "rollback"
+        ],
+        "note": "apply() 先写暂存态，全部成功才换入运行态；任一失败回滚并释放该扩展 classloader。"
+      },
+      {
+        "id": "teardown",
+        "label": "命名空间与释放",
+        "focus": [
+          "tools",
+          "disable"
+        ],
+        "note": "扩展工具强制 plugin__<id>__<tool> 命名空间；disable 逆序 onStop + 关闭 classloader。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "jar",
+      "type": "external",
+      "label": "扩展 JAR",
+      "sublabel": "META-INF/services 声明",
+      "pos": [
+        20,
+        40
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-plugin-ask-user/src/main/resources/META-INF/services/io.github.lnyocly.ai4j.extension.Ai4jExtension"
+        }
+      ]
+    },
+    {
+      "id": "loader",
+      "type": "backend",
+      "label": "IsolatedExtensionLoader",
+      "sublabel": "每扩展一个 URLClassLoader",
+      "pos": [
+        230,
+        40
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/IsolatedExtensionLoader.java"
+        }
+      ]
+    },
+    {
+      "id": "apply",
+      "type": "backend",
+      "label": "ExtensionRegistry",
+      "sublabel": "事务化 apply → 换入运行态",
+      "pos": [
+        460,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/ExtensionRegistry.java"
+        }
+      ]
+    },
+    {
+      "id": "rollback",
+      "type": "security",
+      "label": "失败回滚",
+      "sublabel": "onStop + 关闭该类加载器",
+      "pos": [
+        680,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/runtime/ExtensionRuntimeState.java"
+        }
+      ]
+    },
+    {
+      "id": "spi",
+      "type": "backend",
+      "label": "SPI 契约共享",
+      "sublabel": "Ai4jExtension 走父加载器",
+      "pos": [
+        230,
+        175
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/Ai4jExtension.java"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "backend",
+      "label": "DefaultExtensionContext",
+      "sublabel": "tools/commands/skills 暂存注册",
+      "pos": [
+        460,
+        175
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/runtime/DefaultExtensionContext.java"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "type": "messagebus",
+      "label": "命名空间工具",
+      "sublabel": "plugin__<id>__<tool>",
+      "pos": [
+        460,
+        300
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/main/java/io/github/lnyocly/ai4j/extension/runtime/ExtensionRuntimeState.java"
+        }
+      ]
+    },
+    {
+      "id": "disable",
+      "type": "backend",
+      "label": "disable() 释放",
+      "sublabel": "逆序 onStop + close",
+      "pos": [
+        230,
+        300
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "ai4j-extension-api/src/test/java/io/github/lnyocly/ai4j/extension/ExtensionIsolationTest.java"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "jar",
+      "to": "loader",
+      "label": "① 逐 JAR 建加载器",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        195,
+        115
+      ]
+    },
+    {
+      "from": "loader",
+      "to": "apply",
+      "label": "② discover + apply",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        445,
+        115
+      ]
+    },
+    {
+      "from": "loader",
+      "to": "spi",
+      "label": "③ SPI 类型父委托",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        335,
+        140
+      ]
+    },
+    {
+      "from": "apply",
+      "to": "rollback",
+      "label": "④ 失败即回滚",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        655,
+        115
+      ]
+    },
+    {
+      "from": "apply",
+      "to": "context",
+      "label": "⑤ 注册写暂存态",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        565,
+        140
+      ]
+    },
+    {
+      "from": "context",
+      "to": "tools",
+      "label": "⑥ 工具名命名空间化",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        500,
+        288
+      ]
+    },
+    {
+      "from": "context",
+      "to": "disable",
+      "label": "⑦ 逆序释放",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          555,
+          270
+        ],
+        [
+          325,
+          270
+        ]
+      ],
+      "labelAt": [
+        410,
+        258
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "隔离边界",
+      "items": [
+        "每扩展 JAR 一个 URLClassLoader，实现类互不污染",
+        "SPI 契约类型由父加载器共享，instanceof 语义一致",
+        "隔离解决依赖冲突——不是安全沙箱，不可信代码需进程边界"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "事务语义",
+      "items": [
+        "apply() 的注册先落暂存态，全部成功才换入运行快照",
+        "任一扩展 apply 失败：回滚已注册项 + onStop + 关闭其加载器",
+        "清理钩子抛错不掩盖原始 apply 失败原因"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "命名空间与生命周期",
+      "items": [
+        "扩展工具统一 plugin__<id>__<tool>，杜绝跨插件撞名",
+        "expose 仍接受裸名——解析器按后缀唯一匹配，歧义报错",
+        "disable 逆序执行 onStop 并逆序关闭 classloader/资源"
+      ]
+    }
+  ]
+}

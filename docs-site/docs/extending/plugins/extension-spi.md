@@ -33,6 +33,16 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 <a href={useBaseUrl('/archify/plugin-discovery-enable.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含明暗双主题、缩放与导出）。
 
+**视角补充：运行时隔离** — 每个扩展 JAR 由独立 `URLClassLoader` 加载（SPI 契约类型仍走父加载器共享），`apply()` 事务化写暂存态、失败即回滚并释放其类加载器，扩展工具统一 `plugin__<id>__<tool>` 命名空间，disable 逆序 `onStop` + 关闭资源。
+
+<iframe
+  src={useBaseUrl('/archify/extension-isolation.html')}
+  title="扩展运行时隔离 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/extension-isolation.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出；右上角视角切换可分别聚焦隔离加载、事务化启用、命名空间与释放）。
+
 
 ## 1. 插件发现：`ExtensionLoader`
 

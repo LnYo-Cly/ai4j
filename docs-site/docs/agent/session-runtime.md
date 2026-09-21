@@ -163,6 +163,16 @@ P0-B 已补上：
 
 会话事件日志不只是观测面——它是会话状态的可重建记录。runtime 对 memory 的每一次写入都会同步发布一条事件，因此把事件流按顺序折叠（fold）就能重建出与 `memory.snapshot()` 完全一致的 `items + summary`。
 
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/session-event-contract.html')}
+  title="会话事件契约 · 交互式架构图"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/session-event-contract.html')} target="_blank" rel="noopener noreferrer">在新窗口打开全屏大图</a>（含双主题、缩放与导出功能；右上角视角切换可分别聚焦写点事件化、restore 统一漏斗、投影与一致性）。
+
 变更语义事件一览：
 
 | 事件 | 触发点 | payload |

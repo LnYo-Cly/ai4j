@@ -164,6 +164,16 @@ For usage details, see [Memory Compact Context Projector](/docs/agent/memory/mem
 
 The session event log is not just an observability surface — it is a reconstructable record of session state. Every write the runtime performs against memory publishes a matching event, so folding the event stream in order rebuilds the exact `items + summary` that `memory.snapshot()` reports.
 
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<iframe
+  src={useBaseUrl('/archify/session-event-contract.html')}
+  title="Session event contract - interactive architecture diagram"
+  style={{width: '100%', height: 940, border: '1px solid var(--ifm-color-emphasis-300)', borderRadius: 8}}
+/>
+
+<a href={useBaseUrl('/archify/session-event-contract.html')} target="_blank" rel="noopener noreferrer">Open the full-screen diagram in a new window</a> (dual theme, zoom and export; the view switcher focuses on write-path eventization, the unified restore funnel, and projection consistency).
+
 Mutation-semantic events:
 
 | Event | Trigger | Payload |
