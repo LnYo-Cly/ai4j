@@ -74,8 +74,9 @@ public class TypeSafeSystemOneService implements ISystemOneService {
             builder.header("Authorization", "Bearer " + key);
         }
         try (okhttp3.Response response = okHttpClient.newCall(builder.build()).execute()) {
-            if (response.isSuccessful() && response.body() != null) {
-                return objectMapper.readValue(response.body().string(), SystemOneResponse.class);
+            okhttp3.ResponseBody body = response.body();
+            if (response.isSuccessful() && body != null) {
+                return objectMapper.readValue(body.string(), SystemOneResponse.class);
             }
             throw HttpErrorDecoder.decode(response);
         }
@@ -95,8 +96,9 @@ public class TypeSafeSystemOneService implements ISystemOneService {
             builder.header("Authorization", "Bearer " + apiKey);
         }
         try (okhttp3.Response response = okHttpClient.newCall(builder.build()).execute()) {
-            if (response.isSuccessful() && response.body() != null) {
-                JsonNode root = objectMapper.readTree(response.body().string());
+            okhttp3.ResponseBody body = response.body();
+            if (response.isSuccessful() && body != null) {
+                JsonNode root = objectMapper.readTree(body.string());
                 JsonNode models = root.isArray() ? root : root.get("models");
                 if (models == null || !models.isArray()) {
                     return Collections.emptyList();
