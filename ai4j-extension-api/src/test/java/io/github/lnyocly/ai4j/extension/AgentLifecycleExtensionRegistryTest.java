@@ -15,7 +15,7 @@ public class AgentLifecycleExtensionRegistryTest {
     public void shouldKeepExistingExtensionsCompatibleWithoutLifecycleHooks() {
         ExtensionRegistry registry = ExtensionRegistry.of(new ToolOnlyExtension())
                 .enable("tool-only")
-                .exposeTool("tool.echo");
+                .exposeTool("plugin__tool-only__tool.echo");
 
         ExtensionRuntimeSnapshot snapshot = registry.snapshot();
 

@@ -44,9 +44,51 @@ public final class ExtensionRuntimeState {
         if (executor == null) {
             throw new IllegalArgumentException("tool executor must not be null: " + spec.getName());
         }
-        ensureUnique(tools, spec.getName(), "tool", manifest);
-        tools.put(spec.getName(), spec);
-        toolExecutors.put(spec.getName(), executor);
+        // Extension tools are namespaced as plugin__<extensionId>__<tool> so two
+        // independently authored extensions can never collide on a tool id.
+        String namespacedName = namespacedToolName(manifest, spec.getName());
+        ensureUnique(tools, namespacedName, "tool", manifest);
+        ExtensionToolSpec namespacedSpec = ExtensionToolSpec.builder()
+                .name(namespacedName)
+                .description(spec.getDescription())
+                .inputSchema(spec.getInputSchema())
+                .build();
+        tools.put(namespacedName, namespacedSpec);
+        toolExecutors.put(namespacedName, executor);
+    }
+
+    public static String namespacedToolName(ExtensionManifest manifest, String toolName) {
+        String extensionId = manifest == null || manifest.getId() == null ? "unknown" : manifest.getId();
+        return "plugin__" + extensionId + "__" + toolName;
+    }
+
+    /**
+     * Resolves a requested tool id against registered names. Exact (namespaced) ids match
+     * directly; a bare tool name resolves to the unique registered id ending with
+     * {@code "__" + requested}. Returns null when nothing matches.
+     */
+    public static String resolveToolName(Iterable<String> registeredNames, String requested) {
+        if (registeredNames == null || requested == null) {
+            return null;
+        }
+        String suffix = "__" + requested;
+        String match = null;
+        for (String id : registeredNames) {
+            if (id == null) {
+                continue;
+            }
+            if (id.equals(requested)) {
+                return id;
+            }
+            if (id.endsWith(suffix)) {
+                if (match != null) {
+                    throw new ExtensionException("ambiguous tool id: " + requested
+                            + " matches " + match + " and " + id);
+                }
+                match = id;
+            }
+        }
+        return match;
     }
 
     public void registerCommand(ExtensionManifest manifest, ExtensionCommandSpec spec, ExtensionCommandHandler handler) {
@@ -145,12 +187,13 @@ public final class ExtensionRuntimeState {
         List<ExtensionToolSpec> exposedTools = new ArrayList<ExtensionToolSpec>();
         Map<String, ExtensionToolExecutor> exposedExecutors = new LinkedHashMap<String, ExtensionToolExecutor>();
         for (String toolId : allowlist) {
-            ExtensionToolSpec spec = tools.get(toolId);
+            String resolved = resolveToolName(tools.keySet(), toolId);
+            ExtensionToolSpec spec = resolved == null ? null : tools.get(resolved);
             if (spec == null) {
                 throw new ExtensionException("tool not registered by enabled extensions: " + toolId);
             }
             exposedTools.add(spec);
-            exposedExecutors.put(toolId, toolExecutors.get(toolId));
+            exposedExecutors.put(resolved, toolExecutors.get(resolved));
         }
         return new ExtensionRuntimeSnapshot(
                 exposedTools,

@@ -137,6 +137,41 @@ for (DiscoveredExtension discovered : registry.list()) {
 
 如果你只是想知道"有哪些扩展、哪些启用了"，用 `registry.list()`；要拿单个扩展的 manifest，用 `registry.manifest(id)`，不必自己过滤这个列表。
 
+### 1.5 隔离加载：`IsolatedExtensionLoader`
+
+默认 `ServiceLoaderExtensionLoader` 把所有扩展加载进同一个 classloader——实现简单，但两个插件携带冲突依赖时会互相污染。`IsolatedExtensionLoader`（`@Experimental`）为每个扩展 jar 建一个独立的 `URLClassLoader`，父加载器固定为加载 `ai4j-extension-api` 的那个 classloader：
+
+```java
+ExtensionRegistry registry = ExtensionRegistry.discover(
+        IsolatedExtensionLoader.fromDirectory(Paths.get("plugins")));
+```
+
+- SPI 契约类型（`Ai4jExtension`、`ExtensionContext`、manifest、各类 spec）经父加载器共享，隔离不会在契约面上制造 `ClassCastException`。
+- 每个插件 jar（或等价目录）拿到自己的 `URLClassLoader`，其私有依赖对其它插件不可见，也不会泄漏到宿主 classpath。
+
+:::warning
+Classloader 隔离解决的是**依赖冲突与生命周期管理**，不是安全沙箱：恶意插件仍跑在宿主进程内。不可信代码需要的是进程边界，不是 classloader。
+:::
+
+### 1.6 工具命名空间与卸载生命周期
+
+`registerTool` 会把工具名改写为 `plugin__<extensionId>__<tool>`——两个独立插件即使都声明 `echo`，模型看到的也是 `plugin__a__echo` 和 `plugin__b__echo`，永不冲突。Guardrail / interceptor 看到的 `request.getTarget()` 也是这个命名空间 id。
+
+`exposeTool(...)` 与 CLI `--expose-tool` 同时接受两种写法：
+
+| 写法 | 行为 |
+| --- | --- |
+| `plugin__pack-a__echo`（完整命名空间 id） | 精确匹配 |
+| `echo`（裸名） | 解析到唯一以 `__echo` 结尾的已注册工具；多义时报 `ambiguous tool id` |
+
+生命周期上，`Ai4jExtension` 提供默认空实现的 `onStop()` 钩子，已有扩展无需改动：
+
+- `enable(...)` 后 `apply(...)` 抛错：该扩展已做的注册随临时状态整体丢弃（事务式回滚），随后调用 `onStop()`；若经 `IsolatedExtensionLoader` 加载，其 classloader 一并释放。
+- `registry.disable(id)`：移出启用集合、调用 `onStop()`、释放其 classloader；下一次 `snapshot()` 重建的运行时不再包含它的贡献。
+- `registry.close()`：按启用逆序逐个 disable，最后关闭隔离 loader。
+
+注意 `disable` 不会自动清掉 `exposeTool(...)` 里的残留条目——下一次 `snapshot()` 会因 `tool not registered` 报错。把 enable/expose 与 disable 放在同一层配置管理里，是最稳的姿势。
+
 ## 2. 插件资源读取：`ExtensionResourceResolver`
 
 ### 2.1 它解决什么问题

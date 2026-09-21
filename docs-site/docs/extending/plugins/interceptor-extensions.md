@@ -51,6 +51,10 @@ public void apply(ExtensionContext context) {
 
 `beforeToolCall` 在工具执行前求值；`afterToolCall` 在工具执行后拿到输出再求值（默认 allow）。请求载体是 `ExtensionToolCallRequest`（name / arguments / callId / type 四个可移植字段）。
 
+:::note
+`request.getName()` 是**宿主视角的工具 id**：插件贡献的工具在这里出现为 `plugin__<extensionId>__<tool>` 命名空间形式（例如 `plugin__ask-user__ask_user`），内置工具保持原名（`bash`、`read_file` 等）。匹配插件工具时用完整命名空间 id，或按 `__<tool>` 后缀判断。
+:::
+
 ```java
 public class SandboxBashInterceptor implements ExtensionToolCallInterceptor {
     public String name() { return "sandbox-bash"; }

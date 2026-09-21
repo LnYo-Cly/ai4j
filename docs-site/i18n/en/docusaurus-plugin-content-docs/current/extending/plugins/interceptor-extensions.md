@@ -64,6 +64,13 @@ runtime:
 (default: allow). The request carrier is `ExtensionToolCallRequest` with four portable fields
 (name / arguments / callId / type).
 
+:::note
+`request.getName()` is the **host-facing tool id**: plugin-contributed tools appear here in
+namespaced form `plugin__<extensionId>__<tool>` (e.g. `plugin__ask-user__ask_user`), while
+built-in tools keep their original names (`bash`, `read_file`, ...). Match plugin tools by
+the full namespaced id or by the `__<tool>` suffix.
+:::
+
 ```java
 public class SandboxBashInterceptor implements ExtensionToolCallInterceptor {
     public String name() { return "sandbox-bash"; }

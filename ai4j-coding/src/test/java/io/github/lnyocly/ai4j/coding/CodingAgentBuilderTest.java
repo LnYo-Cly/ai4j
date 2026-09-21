@@ -468,12 +468,12 @@ public class CodingAgentBuilderTest {
                 .build();
         ExtensionRegistry registry = ExtensionRegistry.of(new WeatherExtension())
                 .enable("weather-pack")
-                .exposeTool("weather.search");
+                .exposeTool("plugin__weather-pack__weather.search");
 
         QueueModelClient modelClient = new QueueModelClient();
         modelClient.enqueue(AgentModelResult.builder()
                 .toolCalls(Arrays.asList(AgentToolCall.builder()
-                        .name("weather.search")
+                        .name("plugin__weather-pack__weather.search")
                         .arguments("{\"city\":\"Shanghai\"}")
                         .callId("coding-weather-call-1")
                         .build()))
@@ -498,11 +498,11 @@ public class CodingAgentBuilderTest {
 
         assertEquals("extension weather ready", result.getOutputText());
         assertEquals(1, result.getToolResults().size());
-        assertEquals("weather.search", result.getToolResults().get(0).getName());
+        assertEquals("plugin__weather-pack__weather.search", result.getToolResults().get(0).getName());
         assertEquals("weather:{\"city\":\"Shanghai\"}:coding-weather-call-1",
                 result.getToolResults().get(0).getOutput());
         assertEquals(2, modelClient.prompts.size());
-        assertTrue(modelClient.prompts.get(0).getTools().toString().contains("weather.search"));
+        assertTrue(modelClient.prompts.get(0).getTools().toString().contains("plugin__weather-pack__weather.search"));
     }
 
     @Test
