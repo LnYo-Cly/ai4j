@@ -12,7 +12,7 @@ If you are just writing an ordinary plugin, the [Plugin Author Cookbook](/docs/e
 
 ## Mechanism Diagram (Interactive)
 
-The diagram below covers the full extension lifecycle: ServiceLoader discovers `Ai4jExtension`, `manifest`+`apply(ctx)` performs registration, `ExtensionRegistry` separates enable from five explicit expose gates, `ExtensionContext` exposes five registries, and the host surface picks up tools, commands, Skills, and Prompts.
+The diagram below covers the full extension lifecycle: ServiceLoader discovers `Ai4jExtension`, `manifest`+`apply(ctx)` performs registration, `ExtensionRegistry` separates enable from five explicit expose gates, `ExtensionContext` exposes seven registries (tools/commands/skills/prompts/guardrails/lifecycle/interceptors), and the host surface picks up tools, commands, Skills, Prompts, and interceptors.
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
@@ -218,3 +218,4 @@ When a read fails, `readText` / `readTextStrict` throw `ExtensionException("exte
 1. [Plugin Packages](/docs/extending/plugins/plugin-packages)
 2. [Plugin Author Cookbook](/docs/extending/plugins/plugin-author-cookbook)
 3. [Lifecycle Extensions](/docs/extending/plugins/lifecycle-extensions)
+4. [Interceptor Extensions](/docs/extending/plugins/interceptor-extensions)

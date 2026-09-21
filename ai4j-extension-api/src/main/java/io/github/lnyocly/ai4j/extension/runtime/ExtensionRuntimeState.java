@@ -7,6 +7,9 @@ import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionModelRequestInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionPromptInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionToolCallInterceptor;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
 import io.github.lnyocly.ai4j.extension.skill.ExtensionSkillResource;
@@ -30,6 +33,9 @@ public final class ExtensionRuntimeState {
     private final Map<String, ExtensionPromptResource> prompts = new LinkedHashMap<String, ExtensionPromptResource>();
     private final Map<String, ExtensionGuardrail> guardrails = new LinkedHashMap<String, ExtensionGuardrail>();
     private final Map<String, AgentLifecycleHook> lifecycleHooks = new LinkedHashMap<String, AgentLifecycleHook>();
+    private final Map<String, ExtensionToolCallInterceptor> toolCallInterceptors = new LinkedHashMap<String, ExtensionToolCallInterceptor>();
+    private final Map<String, ExtensionPromptInterceptor> promptInterceptors = new LinkedHashMap<String, ExtensionPromptInterceptor>();
+    private final Map<String, ExtensionModelRequestInterceptor> modelRequestInterceptors = new LinkedHashMap<String, ExtensionModelRequestInterceptor>();
 
     public void registerTool(ExtensionManifest manifest, ExtensionToolSpec spec, ExtensionToolExecutor executor) {
         if (spec == null) {
@@ -89,6 +95,33 @@ public final class ExtensionRuntimeState {
         lifecycleHooks.put(name, hook);
     }
 
+    public void registerToolCallInterceptor(ExtensionManifest manifest, ExtensionToolCallInterceptor interceptor) {
+        if (interceptor == null) {
+            throw new IllegalArgumentException("tool call interceptor must not be null");
+        }
+        String name = ExtensionManifest.requireResourceName(interceptor.name(), "tool call interceptor name");
+        ensureUnique(toolCallInterceptors, name, "tool call interceptor", manifest);
+        toolCallInterceptors.put(name, interceptor);
+    }
+
+    public void registerPromptInterceptor(ExtensionManifest manifest, ExtensionPromptInterceptor interceptor) {
+        if (interceptor == null) {
+            throw new IllegalArgumentException("prompt interceptor must not be null");
+        }
+        String name = ExtensionManifest.requireResourceName(interceptor.name(), "prompt interceptor name");
+        ensureUnique(promptInterceptors, name, "prompt interceptor", manifest);
+        promptInterceptors.put(name, interceptor);
+    }
+
+    public void registerModelRequestInterceptor(ExtensionManifest manifest, ExtensionModelRequestInterceptor interceptor) {
+        if (interceptor == null) {
+            throw new IllegalArgumentException("model request interceptor must not be null");
+        }
+        String name = ExtensionManifest.requireResourceName(interceptor.name(), "model request interceptor name");
+        ensureUnique(modelRequestInterceptors, name, "model request interceptor", manifest);
+        modelRequestInterceptors.put(name, interceptor);
+    }
+
     public ExtensionRuntimeSnapshot snapshot(Set<String> exposedToolIds) {
         return snapshot(
                 exposedToolIds,
@@ -127,7 +160,10 @@ public final class ExtensionRuntimeState {
                 filterList(skills, allowedSkillIds, explicitResourceActivation, "skill"),
                 filterList(prompts, allowedPromptIds, explicitResourceActivation, "prompt"),
                 filterList(guardrails, allowedGuardrailIds, explicitResourceActivation, "guardrail"),
-                new ArrayList<AgentLifecycleHook>(lifecycleHooks.values())
+                new ArrayList<AgentLifecycleHook>(lifecycleHooks.values()),
+                new ArrayList<ExtensionToolCallInterceptor>(toolCallInterceptors.values()),
+                new ArrayList<ExtensionPromptInterceptor>(promptInterceptors.values()),
+                new ArrayList<ExtensionModelRequestInterceptor>(modelRequestInterceptors.values())
         );
     }
 
@@ -138,7 +174,10 @@ public final class ExtensionRuntimeState {
                 new ArrayList<ExtensionSkillResource>(skills.values()),
                 new ArrayList<ExtensionPromptResource>(prompts.values()),
                 new ArrayList<String>(guardrails.keySet()),
-                new ArrayList<String>(lifecycleHooks.keySet())
+                new ArrayList<String>(lifecycleHooks.keySet()),
+                new ArrayList<String>(toolCallInterceptors.keySet()),
+                new ArrayList<String>(promptInterceptors.keySet()),
+                new ArrayList<String>(modelRequestInterceptors.keySet())
         );
     }
 

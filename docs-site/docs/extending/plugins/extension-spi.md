@@ -11,7 +11,7 @@ tags: [reference]
 
 ## 实现机理图（交互式）
 
-下图把扩展生命周期画全：ServiceLoader 发现 `Ai4jExtension`，`manifest`+`apply(ctx)` 执行注册，`ExtensionRegistry` 把 enable 与五类显式 expose 门分开，`ExtensionContext` 暴露五张注册表，最终汇入宿主的工具/命令/Skill/Prompt 面。
+下图把扩展生命周期画全：ServiceLoader 发现 `Ai4jExtension`，`manifest`+`apply(ctx)` 执行注册，`ExtensionRegistry` 把 enable 与五类显式 expose 门分开，`ExtensionContext` 暴露七张注册表（tools/commands/skills/prompts/guardrails/lifecycle/interceptors），最终汇入宿主的工具/命令/Skill/Prompt/拦截面。
 
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
@@ -217,3 +217,4 @@ String markdown = ExtensionResourceResolver.readTextStrict(
 1. [插件包](/docs/extending/plugins/plugin-packages)
 2. [插件作者实战指南](/docs/extending/plugins/plugin-author-cookbook)
 3. [生命周期扩展](/docs/extending/plugins/lifecycle-extensions)
+4. [拦截器扩展](/docs/extending/plugins/interceptor-extensions)

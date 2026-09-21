@@ -83,6 +83,11 @@ public final class ExtensionValidator {
         validateDeclaredCapability(manifest, ExtensionCapability.PROMPT, snapshot.getPrompts().isEmpty(), report);
         validateDeclaredCapability(manifest, ExtensionCapability.GUARDRAIL, snapshot.getGuardrails().isEmpty(), report);
         validateDeclaredCapability(manifest, ExtensionCapability.LIFECYCLE, snapshot.getLifecycleHooks().isEmpty(), report);
+        validateDeclaredCapability(manifest, ExtensionCapability.INTERCEPTOR,
+                snapshot.getToolCallInterceptors().isEmpty()
+                        && snapshot.getPromptInterceptors().isEmpty()
+                        && snapshot.getModelRequestInterceptors().isEmpty(),
+                report);
 
         for (ExtensionToolSpec tool : snapshot.getTools()) {
             validateTool(tool, report);

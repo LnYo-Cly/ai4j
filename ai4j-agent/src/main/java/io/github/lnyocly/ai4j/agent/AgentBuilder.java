@@ -15,6 +15,7 @@ import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowRuntimeOption
 import io.github.lnyocly.ai4j.agent.dynamicworkflow.NashornDynamicWorkflowExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
+import io.github.lnyocly.ai4j.agent.extension.ExtensionInterceptors;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionGuardrailToolExecutor;
 import io.github.lnyocly.ai4j.agent.lifecycle.AgentLifecycleHookDispatcher;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
@@ -616,17 +617,26 @@ public class AgentBuilder {
         AgentLifecycleHookDispatcher lifecycleHooks = mergedHooks.isEmpty()
                 ? AgentLifecycleHookDispatcher.empty()
                 : new AgentLifecycleHookDispatcher(mergedHooks);
+        ToolInterceptor resolvedToolInterceptor = ExtensionInterceptors.composeToolCall(
+                toolInterceptor,
+                extensionTools == null ? null : extensionTools.getToolCallInterceptors());
+        PromptInterceptor resolvedPromptInterceptor = ExtensionInterceptors.composePrompt(
+                promptInterceptor,
+                extensionTools == null ? null : extensionTools.getPromptInterceptors());
+        ModelRequestHook resolvedModelRequestHook = ExtensionInterceptors.composeModelRequest(
+                modelRequestHook,
+                extensionTools == null ? null : extensionTools.getModelRequestInterceptors());
 
         AgentContext context = AgentContext.builder()
                 .modelClient(modelClient)
                 .toolRegistry(resolvedToolRegistry)
                 .toolVisibility(toolVisibility)
                 .toolExecutor(resolvedToolExecutor)
-                .toolInterceptor(toolInterceptor)
-                .promptInterceptor(promptInterceptor)
+                .toolInterceptor(resolvedToolInterceptor)
+                .promptInterceptor(resolvedPromptInterceptor)
                 .sandboxProvider(sandboxProvider)
                 .compactPolicy(compactPolicy)
-                .modelRequestHook(modelRequestHook)
+                .modelRequestHook(resolvedModelRequestHook)
                 .codeExecutor(resolvedCodeExecutor)
                 .memory(memory)
                 .options(resolvedOptions)

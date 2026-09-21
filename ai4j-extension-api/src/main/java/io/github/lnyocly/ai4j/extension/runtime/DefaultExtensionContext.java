@@ -9,6 +9,10 @@ import io.github.lnyocly.ai4j.extension.command.ExtensionCommandHandler;
 import io.github.lnyocly.ai4j.extension.command.ExtensionCommandSpec;
 import io.github.lnyocly.ai4j.extension.guardrail.ExtensionGuardrail;
 import io.github.lnyocly.ai4j.extension.guardrail.GuardrailRegistry;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionModelRequestInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionPromptInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.ExtensionToolCallInterceptor;
+import io.github.lnyocly.ai4j.extension.interceptor.InterceptorRegistry;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
 import io.github.lnyocly.ai4j.extension.lifecycle.LifecycleHookRegistry;
 import io.github.lnyocly.ai4j.extension.prompt.ExtensionPromptResource;
@@ -29,6 +33,7 @@ public final class DefaultExtensionContext implements ExtensionContext {
     private final PromptRegistry prompts;
     private final GuardrailRegistry guardrails;
     private final LifecycleHookRegistry lifecycle;
+    private final InterceptorRegistry interceptors;
 
     public DefaultExtensionContext(final ExtensionManifest manifest, final ExtensionRuntimeState runtimeState) {
         if (manifest == null) {
@@ -75,6 +80,22 @@ public final class DefaultExtensionContext implements ExtensionContext {
                 runtimeState.registerLifecycleHook(manifest, hook);
             }
         };
+        this.interceptors = new InterceptorRegistry() {
+            public void registerToolCall(ExtensionToolCallInterceptor interceptor) {
+                requireCapability(ExtensionCapability.INTERCEPTOR);
+                runtimeState.registerToolCallInterceptor(manifest, interceptor);
+            }
+
+            public void registerPrompt(ExtensionPromptInterceptor interceptor) {
+                requireCapability(ExtensionCapability.INTERCEPTOR);
+                runtimeState.registerPromptInterceptor(manifest, interceptor);
+            }
+
+            public void registerModelRequest(ExtensionModelRequestInterceptor interceptor) {
+                requireCapability(ExtensionCapability.INTERCEPTOR);
+                runtimeState.registerModelRequestInterceptor(manifest, interceptor);
+            }
+        };
     }
 
     public ExtensionManifest manifest() {
@@ -103,6 +124,10 @@ public final class DefaultExtensionContext implements ExtensionContext {
 
     public LifecycleHookRegistry lifecycle() {
         return lifecycle;
+    }
+
+    public InterceptorRegistry interceptors() {
+        return interceptors;
     }
 
     private void requireCapability(ExtensionCapability capability) {
