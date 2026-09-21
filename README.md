@@ -27,10 +27,10 @@
 - **独创 `ai4j-harness` 长时运行 Harness**：使 Agent 从一次性调用转变为可暂停、可恢复、可验收的长期任务（[详见专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
 - **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路在 SDK 内实现，无需外挂检索框架。
 - **生态互联**：MCP 客户端与服务端（Stdio / SSE / Streamable HTTP 三种传输），既可调用外部工具，也可对外暴露自身能力；A2A 协议支持 Agent 间协作；并可反向接入 Dify / Coze / n8n 已有的 AgentFlow 编排，附带联网搜索增强。
-- **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、会话回放——长任务的可控性与可观测性均为内置能力。
+- **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、事件溯源会话日志（可投影回放、fork 新会话、离线检索）——长任务的可控性与可观测性均为内置能力。
 - **开箱即用**：Spring Boot starter 单行配置即可注入 `AiService`；内置 Coding Agent 提供 CLI / TUI / ACP 三种入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不会自动启用。
 
-此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
+此外还有 RAG 在线评估（LLM-as-judge）、提示词缓存、Agent Blueprint 声明式装配、确定性回放测试（`ai4j-testing` 录制回放 golden 夹具，无需真实密钥即可回归 Agent 行为）、FlowGram 可视化工作流集成等——完整能力清单见[能力地图](docs-site/docs/getting-started/feature-map.md)。
 
 ## ai4j-harness：把 Agent 变成可运维的长期任务
 
@@ -107,7 +107,7 @@ ai:
 private AiService aiService;
 ```
 
-详见 [Spring Boot 快速开始](docs-site/docs/integrations/spring-boot/quickstart.md)。
+凭据也可不落盘：命名平台配置 `ai.platforms[].api-key-env` 声明环境变量名，装配期解析且优先于明文 key（见[服务入口配置](docs-site/docs/capabilities/service-entry.md)）。详见 [Spring Boot 快速开始](docs-site/docs/integrations/spring-boot/quickstart.md)。
 
 ## Coding Agent CLI / TUI / ACP
 
@@ -141,7 +141,7 @@ ai4j acp  --provider openai --protocol responses --model gpt-5-mini --workspace 
 - 实现 SDK 尚未内置的执行机制——如 [`ai4j-plugin-dynamic-workflow`](https://github.com/LnYo-Cly/ai4j-plugin-dynamic-workflow) 的动态工作流
 - 将「工具 + Skill + Prompt」打包成领域扩展包分发——他人引入一个 jar 即得整套能力
 
-插件为普通 Maven jar：经 `ServiceLoader` 发现，由 `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）控制启用。引入依赖不等于启用。
+插件为普通 Maven jar：经 `ServiceLoader` 发现，由 `ExtensionRegistry` 三段门禁（discover → enable → exposeTool）控制启用——引入依赖不等于启用。每个插件由独立类加载器加载，apply 失败事务化回滚并清理类加载器；暴露的工具强制 `plugin__<id>__<tool>` 命名空间，插件间互不污染（隔离≠安全沙箱，详见扩展 SPI 文档）。
 
 | 插件 | 归属 | 说明 |
 |---|---|---|

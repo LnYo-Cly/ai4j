@@ -45,6 +45,9 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | 嵌入 Agent runtime | `ai4j-agent` | 依赖 `ai4j` | 需要 memory、state、workflow、trace、team orchestration |
 | 做本地 Coding Agent runtime | `ai4j-coding` | 依赖 `ai4j`、`ai4j-agent` | 需要 workspace 工具、会话、outer loop、compaction |
 | 提供 CLI / TUI / ACP 入口 | `ai4j-cli` | 依赖 `ai4j`、`ai4j-coding` | 需要终端产品壳层和本地会话入口 |
+| 运行长时任务 Harness | `ai4j-harness` | 依赖 `ai4j-agent` | 需要任务持久化、暂停/恢复、租约认领和验收审计 |
+| 编写插件/扩展 | `ai4j-extension-api` | 无 AI4J 内部依赖 | 需要向 Agent / Coding Agent 注入 Tool、Command、Skill、Prompt |
+| Agent 确定性测试 | `ai4j-testing` | 依赖 `ai4j-agent` | 需要脚本化/回放模型客户端做无密钥 golden 回归 |
 | 接 FlowGram 后端 | `ai4j-flowgram-spring-boot-starter` | 依赖 `ai4j-agent`、`ai4j-spring-boot-starter` | 需要可视化工作流、任务 API、trace bridge |
 | 跑 FlowGram demo | `ai4j-flowgram-demo` | 依赖 FlowGram starter | 需要示例后端验证集成 |
 | 统一版本 | `ai4j-bom` | 管理多个 artifact 版本 | 同时引入多个 AI4J 模块时减少版本漂移 |
@@ -82,6 +85,10 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | Agent Runtime | `preview` | `ai4j-agent` | 需要 memory、state、tool registry、workflow 或 team orchestration | [Agent 总览](/docs/agent/overview) |
 | Agent Quickstart | `preview` | `ai4j-agent` | 想先跑一个最小 Agent | [Agent 快速开始](/docs/agent/quickstart) |
 | Agent Teams | `preview` | `ai4j-agent` | 多 agent 协作和分工编排 | [Agent 团队](/docs/agent/orchestration/agent-teams) |
+| 会话治理与回放 | `preview` | `ai4j-agent` | checkpoint 断点续跑、事件溯源会话日志的投影/回放/fork/检索（`SessionLogReader`） | [会话与运行时](/docs/agent/session-runtime) |
+| Agent 回放测试 | `preview` | `ai4j-testing` | `ScriptedModelClient` / `ReplayModelClient` golden 夹具，无密钥确定性回归 | [Agent 测试](/docs/agent/testing) |
+| Harness 长时任务 | `preview` | `ai4j-harness` | 把一次性 Agent 调用变成可暂停、可恢复、可验收的长期任务 | [Harness 运行时](/docs/agent/harness-runtime) |
+| 插件扩展 SPI | `preview` | `ai4j-extension-api` | 三段门禁、独立类加载器隔离、`plugin__` 工具命名空间 | [扩展 SPI 与隔离](/docs/extending/plugins/extension-spi) |
 | Coding Agent | `preview` | `ai4j-coding`、`ai4j-cli` | 面向本地代码仓的任务执行、workspace 工具和 CLI/TUI | [Coding Agent Overview](/docs/products/coding-agent/overview) |
 | Coding Agent Quickstart | `preview` | `ai4j-coding`、`ai4j-cli` | 想体验本地 Coding Agent 产品入口 | [Coding Agent Quickstart](/docs/products/coding-agent/quickstart) |
 | FlowGram | `preview` | `ai4j-flowgram-spring-boot-starter` | 可视化工作流平台后端、节点运行和 trace bridge | [FlowGram Overview](/docs/products/flowgram/overview) |

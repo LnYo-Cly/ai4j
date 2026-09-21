@@ -46,6 +46,9 @@ AI4J's module relationships are stacked upward from a foundation, not a platform
 | Embed an Agent runtime | `ai4j-agent` | Depends on `ai4j` | You need memory, state, workflow, tracing, or team orchestration |
 | Build a local Coding Agent runtime | `ai4j-coding` | Depends on `ai4j`, `ai4j-agent` | You need workspace tools, sessions, the outer loop, and compaction |
 | Provide a CLI / TUI / ACP entry point | `ai4j-cli` | Depends on `ai4j`, `ai4j-coding` | You need a terminal product shell and a local session entry point |
+| Run the long-running-task harness | `ai4j-harness` | Depends on `ai4j-agent` | You need durable tasks, pause/resume, lease claiming, and acceptance auditing |
+| Write plugins/extensions | `ai4j-extension-api` | No internal AI4J dependencies | You need to inject Tools, Commands, Skills, or Prompts into the Agent / Coding Agent |
+| Deterministic Agent testing | `ai4j-testing` | Depends on `ai4j-agent` | You need scripted/replay model clients for key-free golden regression |
 | Connect a FlowGram backend | `ai4j-flowgram-spring-boot-starter` | Depends on `ai4j-agent`, `ai4j-spring-boot-starter` | You need visual workflows, task API, and a trace bridge |
 | Run the FlowGram demo | `ai4j-flowgram-demo` | Depends on the FlowGram starter | You need a sample backend to validate the integration |
 | Unify versions | `ai4j-bom` | Manages versions across multiple artifacts | Reduce version drift when pulling in multiple AI4J modules |
@@ -83,6 +86,10 @@ The rule is simple: pull in the minimal module that solves your current problem 
 | Agent Runtime | `preview` | `ai4j-agent` | You need memory, state, tool registry, workflow, or team orchestration | [Agent Overview](/docs/agent/overview) |
 | Agent Quickstart | `preview` | `ai4j-agent` | You want to run a minimal Agent first | [Agent Quickstart](/docs/agent/quickstart) |
 | Agent Teams | `preview` | `ai4j-agent` | Multi-agent collaboration and division-of-labor orchestration | [Agent Teams](/docs/agent/orchestration/agent-teams) |
+| Session governance & replay | `preview` | `ai4j-agent` | Checkpoint resume, event-sourced session log projection/replay/fork/search (`SessionLogReader`) | [Session & Runtime](/docs/agent/session-runtime) |
+| Agent replay testing | `preview` | `ai4j-testing` | `ScriptedModelClient` / `ReplayModelClient` golden fixtures for key-free deterministic regression | [Agent Testing](/docs/agent/testing) |
+| Long-running-task harness | `preview` | `ai4j-harness` | Turn a one-shot Agent call into a pausable, resumable, acceptance-gated long-lived task | [Harness Runtime](/docs/agent/harness-runtime) |
+| Plugin extension SPI | `preview` | `ai4j-extension-api` | Three-stage gates, isolated classloaders, `plugin__` tool namespacing | [Extension SPI & Isolation](/docs/extending/plugins/extension-spi) |
 | Coding Agent | `preview` | `ai4j-coding`, `ai4j-cli` | Repository-scoped task execution, workspace tools, and CLI/TUI | [Coding Agent Overview](/docs/products/coding-agent/overview) |
 | Coding Agent Quickstart | `preview` | `ai4j-coding`, `ai4j-cli` | You want to try the local Coding Agent product entry point | [Coding Agent Quickstart](/docs/products/coding-agent/quickstart) |
 | FlowGram | `preview` | `ai4j-flowgram-spring-boot-starter` | Visual-workflow platform backend, node execution, and trace bridge | [FlowGram Overview](/docs/products/flowgram/overview) |

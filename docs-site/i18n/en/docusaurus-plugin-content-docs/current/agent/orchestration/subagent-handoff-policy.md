@@ -34,7 +34,7 @@ Once the sub-agent receives the task input it **runs to completion independently
 The SDK does not proactively fan out. The truth behind "the parent agent runs several sub-agents at once" is:
 
 1. The parent model emits multiple tool_calls **in a single turn** (e.g. calling `delegate_research` and `delegate_write` at the same time)
-2. If `parallelToolCalls=true`, the runtime uses a thread pool to **execute every tool_call of that turn in parallel**
+2. If `parallelToolCalls=true`, the runtime uses a thread pool to execute that turn's tool_calls in parallel (concurrency capped by `maxParallelToolCalls`; with `toolCallTimeoutMillis` configured, timed-out calls become failed results without affecting sibling calls)
 3. But this is a **fork-join barrier**: the parent must wait for all tool_calls of the current turn to finish before moving to the next turn
 
 So the trigger for parallelism is the **model's behavior** (how many calls it emits in one turn) plus the `parallelToolCalls` flag — the SDK does not schedule it for you.

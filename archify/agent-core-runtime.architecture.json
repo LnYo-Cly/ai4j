@@ -90,7 +90,7 @@
       "dot": "violet",
       "title": "工具执行与配对",
       "items": [
-        "AgentToolCallSanitizer 先校验；parallelToolCalls=true 且 >1 个调用时并行，否则串行（:243-271）",
+        "AgentToolCallSanitizer 先校验；parallelToolCalls=true 且 >1 个调用时并行（并发度受 maxParallelToolCalls 封顶，toolCallTimeoutMillis 超时结果化），否则串行（:243-271）",
         "每个 tool_use 必须配对 tool_result——宿主中断（AgentControlFlowException）也会补齐占位结果（:272-280）"
       ]
     },
