@@ -11,6 +11,13 @@ import io.github.lnyocly.ai4j.agent.session.AgentSessionStore;
 import io.github.lnyocly.ai4j.agent.session.InMemoryAgentSessionEventLog;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class Agent {
@@ -33,6 +40,31 @@ public class Agent {
 
     public AgentResult run(AgentRequest request) throws Exception {
         return runtime.run(baseContext, request);
+    }
+
+    /**
+     * Runs this agent on a shared daemon-thread pool. Agent runs are
+     * blocking calls; callers that need tighter control over scheduling
+     * should use {@link #runAsync(AgentRequest, Executor)} with their own
+     * executor instead of the common pool.
+     */
+    public CompletableFuture<AgentResult> runAsync(AgentRequest request) {
+        return runAsync(request, AsyncExecutorHolder.EXECUTOR);
+    }
+
+    /**
+     * Runs this agent on the supplied executor. The returned future completes
+     * exceptionally with the underlying failure when {@link #run} throws.
+     */
+    public CompletableFuture<AgentResult> runAsync(AgentRequest request, Executor executor) {
+        Executor target = executor == null ? AsyncExecutorHolder.EXECUTOR : executor;
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return run(request);
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        }, target);
     }
 
     /**
@@ -140,5 +172,18 @@ public class Agent {
             }
         });
         return publisher;
+    }
+
+    private static final class AsyncExecutorHolder {
+        private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(new ThreadFactory() {
+            private final AtomicInteger sequence = new AtomicInteger();
+
+            @Override
+            public Thread newThread(Runnable runnable) {
+                Thread thread = new Thread(runnable, "ai4j-agent-async-" + sequence.incrementAndGet());
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 }

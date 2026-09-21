@@ -77,6 +77,20 @@ System.out.println(session.getEventLog().getEvents().size());
 The key point is `memorySupplier(...)`: every `newSession()` should get an independent memory instance. Otherwise, multiple sessions may end up sharing the same memory instance.
 :::
 
+### 3.1 Async run: `runAsync`
+
+`Agent.runAsync(request)` schedules one run on a shared daemon-thread pool and returns `CompletableFuture<AgentResult>`:
+
+```java
+CompletableFuture<AgentResult> future = agent.runAsync(
+    AgentRequest.builder().input("analyze this problem").build());
+
+// bring your own Executor when you need scheduling control
+CompletableFuture<AgentResult> onMine = agent.runAsync(request, myExecutor);
+```
+
+`runAsync` is a thin facade on `Agent` — same semantics as `agent.run(request)` (it does not create a session), just on a different thread; failures complete the future exceptionally. The default pool uses daemon threads named `ai4j-agent-async-N`; for long blocking calls prefer passing your own `Executor`.
+
 ## 4. Save and restore
 
 If you need a session to survive across requests or process boundaries, configure the Agent with an `AgentSessionStore`.
