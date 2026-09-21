@@ -426,6 +426,7 @@ P0-B 是基础层，不包含：
 
 - [Agent 会话运行时](/docs/agent/session-runtime)
 - [记忆与状态](/docs/agent/memory/memory-and-state)
+- [Prompt 缓存与 KV Cache](/docs/agent/memory/prompt-caching)——压缩与缓存命中率的交互
 - [AI4J Agent SDK 路线图](/docs/reference/about/sdk-roadmap)
 - [Coding Agent Compact and Checkpoint](/docs/products/coding-agent/compact-and-checkpoint)
 

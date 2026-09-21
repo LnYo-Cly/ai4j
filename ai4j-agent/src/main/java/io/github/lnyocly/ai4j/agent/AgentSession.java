@@ -116,8 +116,15 @@ public class AgentSession {
 
     /** Replaces an asynchronous tool's pending result in the session memory. */
     public boolean replaceToolOutput(String callId, String output) {
-        return context != null && context.getMemory() != null
+        boolean replaced = context != null && context.getMemory() != null
                 && context.getMemory().replaceToolOutput(callId, output);
+        if (replaced) {
+            Map<String, Object> payload = new java.util.LinkedHashMap<String, Object>();
+            payload.put("callId", callId);
+            payload.put("output", output);
+            appendSessionEvent(AgentEventType.TOOL_OUTPUT_REPLACED, "tool output replaced", payload);
+        }
+        return replaced;
     }
 
     public Object getMetadata(String key) {
@@ -158,6 +165,7 @@ public class AgentSession {
         eventLog.restore(snapshot.getEvents());
         lastCompactResult = snapshot.getCompactResult();
         sandboxBinding = snapshot.getSandboxBinding();
+        appendSessionEvent(AgentEventType.SESSION_RESTORED, "session restored", snapshot.getMemory());
         return this;
     }
 
@@ -174,6 +182,7 @@ public class AgentSession {
             memory.restore(result.getMemory());
         }
         lastCompactResult = result == null ? null : result.copy();
+        appendSessionEvent(AgentEventType.MEMORY_COMPRESS, "compacted", result);
         AgentLifecycleHookDispatcher dispatcher = context == null ? null : context.getLifecycleHooks();
         if (dispatcher != null) {
             dispatcher.dispatch(context, AgentLifecycleEventType.ON_COMPACT, "session", 0, "compact", lastCompactResult);

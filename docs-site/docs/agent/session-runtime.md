@@ -159,7 +159,29 @@ P0-B 已补上：
 
 使用细节见 [记忆压缩与上下文投影器](/docs/agent/memory/memory-compact-context)。
 
-## 8. 与 Coding Agent / CLI 的关系
+## 8. 会话事件契约（每次 memory 变更必有事件）
+
+会话事件日志不只是观测面——它是会话状态的可重建记录。runtime 对 memory 的每一次写入都会同步发布一条事件，因此把事件流按顺序折叠（fold）就能重建出与 `memory.snapshot()` 完全一致的 `items + summary`。
+
+变更语义事件一览：
+
+| 事件 | 触发点 | payload |
+| --- | --- | --- |
+| `USER_INPUT` | `memory.addUserInput` | 原始输入对象 |
+| `MEMORY_ITEMS_APPENDED` | `memory.addOutputItems` | 追加的 item 列表 |
+| `TOOL_RESULT` | `memory.addToolOutput`（复用既有事件） | `AgentToolResult` |
+| `TOOL_OUTPUT_REPLACED` | `session.replaceToolOutput` 异步补丁 | `{callId, output}` |
+| `MEMORY_COMPRESS` | `session.compact` / autoCompact | `CompactResult`（含压缩后 memory 快照） |
+| `SESSION_RESTORED` | `session.restore(snapshot)`——resume、fork、harness 快照补丁的统一入口 | 安装的 `MemorySnapshot` 基线 |
+
+配套投影器 `SessionEventProjector`：`deriveSnapshot(events)` / `deriveItems(events)` / `deriveSummary(events)` 把事件流折叠回 memory 状态，可用于审计、fork、离线分析与一致性校验（`SessionEventConsistencyTest` 断言投影==快照）。
+
+注意两点：
+
+- `MEMORY_COMPRESS` 有两种 payload：携带 `CompactResult` 的是真正的 memory 重写；携带投影报告的是请求级 `ContextProjection`（只影响当次 prompt，不改 memory），投影器按 payload 类型区分。
+- 内存实现内部的压缩器（`InMemoryAgentMemory.setCompressor`）在 `add*` 内部重写，不单独发事件——该路径不在事件契约内。
+
+## 9. 与 Coding Agent / CLI 的关系
 
 `AgentSession` 是通用 SDK 层能力。
 
@@ -175,7 +197,7 @@ P0-B 已补上：
 
 但这些不应该反向污染 `ai4j-agent` 的通用运行时。SDK 层只保留通用会话、事件、memory、snapshot 和 store 合同。
 
-## 9. 生产实现建议
+## 10. 生产实现建议
 
 生产侧实现 `AgentSessionStore` 时建议注意：
 
@@ -185,7 +207,7 @@ P0-B 已补上：
 - store 写入应该由业务决定同步或异步，不要让每个事件都强制阻塞主 loop。
 - 如果 memory 或 event 很大，应结合 compact / retention policy。
 
-## 10. 下一步
+## 11. 下一步
 
 P0-A 只是运行态容器基础。完整 Agent SDK 还会继续推进：
 

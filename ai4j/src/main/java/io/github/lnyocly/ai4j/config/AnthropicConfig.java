@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * Anthropic（Claude / Messages API）平台配置。
  * <p>
@@ -23,4 +25,7 @@ public class AnthropicConfig {
 
     /** 单次流式调用的安全网超时上限（毫秒），防止挂起的流永久阻塞 messagesStream。默认 10 分钟。 */
     private long streamTimeoutMillis = 600_000L;
+
+    /** Anthropic beta 特性列表；非空时以 {@code anthropic-beta} header 逗号拼接发送（如 {@code advanced-tool-use-2025-11-20}）。 */
+    private List<String> betaFeatures;
 }

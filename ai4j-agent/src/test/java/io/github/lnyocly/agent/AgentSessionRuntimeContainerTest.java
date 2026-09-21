@@ -87,7 +87,10 @@ public class AgentSessionRuntimeContainerTest {
         Assert.assertEquals(session.getRunId(), restored.getRunId());
         Assert.assertEquals("runtime", restored.getMetadata("owner"));
         Assert.assertEquals(updatedAt, restored.getMetadata().getUpdatedAtEpochMs());
-        Assert.assertEquals(snapshot.getEvents().size(), restored.getEventLog().getEvents().size());
+        // restore appends one SESSION_RESTORED marker after the replayed events
+        Assert.assertEquals(snapshot.getEvents().size() + 1, restored.getEventLog().getEvents().size());
+        Assert.assertEquals(AgentEventType.SESSION_RESTORED,
+                restored.getEventLog().getEvents().get(restored.getEventLog().getEvents().size() - 1).getEvent().getType());
         Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getEventId(), restored.getEventLog().getEvents().get(0).getEvent().getEventId());
         Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getRunId(), restored.getEventLog().getEvents().get(0).getEvent().getRunId());
         Assert.assertEquals(snapshot.getEvents().get(0).getEvent().getTurnId(), restored.getEventLog().getEvents().get(0).getEvent().getTurnId());
@@ -115,7 +118,10 @@ public class AgentSessionRuntimeContainerTest {
         Assert.assertEquals(session.getSessionId(), resumed.getSessionId());
         Assert.assertEquals(session.getRunId(), resumed.getRunId());
         Assert.assertEquals("P0-A", resumed.getMetadata("ticket"));
-        Assert.assertEquals(session.getEventLog().getEvents().size(), resumed.getEventLog().getEvents().size());
+        // resume replays the stored log then appends one SESSION_RESTORED marker
+        Assert.assertEquals(session.getEventLog().getEvents().size() + 1, resumed.getEventLog().getEvents().size());
+        Assert.assertEquals(AgentEventType.SESSION_RESTORED,
+                resumed.getEventLog().getEvents().get(resumed.getEventLog().getEvents().size() - 1).getEvent().getType());
         Assert.assertEquals(session.snapshot().getMemory().getItems().size(), resumed.snapshot().getMemory().getItems().size());
     }
 

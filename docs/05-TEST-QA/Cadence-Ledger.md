@@ -1,6 +1,6 @@
 # Cadence Ledger - ai4j-sdk
 
-> Last updated: 2026-09-17
+> Last updated: 2026-09-20
 > Defines which regression gates should be revisited when each repository surface changes.
 > Historical rows may retain the exact pre-HA command used as evidence; new work must use HA.
 
@@ -146,3 +146,5 @@ HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/te
 2026-09-14 Harness recovery guidance follow-up: named workspace paths are now explicitly tool-first inputs, and restored-session instructions are appended only when an Agent or Coding adapter loaded durable state. The Harness rerun passed 80 tests and the Coding adapter recovery test passed 2 tests; no live score is claimed.
 
 2026-09-14 Agent loop default regression: generic AgentOptions and StateGraphWorkflow now default to the existing zero/unlimited sentinel, StateGraphWorkflow accepts zero to clear a previously configured positive limit, and CodingAgentOptions/CodingLoopPolicy no longer impose implicit follow-up or total-turn caps. Full agent regression passed 399 tests with 10 existing optional skips; focused tests cover Agent execution beyond 20 steps, StateGraph execution beyond 32 nodes and reset-after-bound, Coding execution beyond 6 turns, and explicit positive limits. No provider credential or live benchmark score was used.
+
+2026-09-20 Anthropic deferred-tool passthrough: ai4j native Anthropic entities now serialize `defer_loading`/server-tool `type`, `AnthropicContentBlock` preserves `tool_reference` `tool_name` across history round-trips, and `AnthropicConfig.betaFeatures` emits a comma-joined `anthropic-beta` request header. Focused `mvn -pl ai4j -Dtest=Anthropic*Test -DskipTests=false test` passed 27 tests; full RG-001 `mvn -pl ai4j -am -DskipTests=false test` passed 361 tests with 1 existing optional skip; RG-008 `docs-site npm run build` passed for zh and en locales. No provider credential or live call was used.
