@@ -63,6 +63,22 @@ Harness 自动向已有工具 Registry 添加以下保留名称。业务 Tool �
 
 这些工具的参数是通用的。订单、客户、代码文件、短剧素材等业务对象应放在 Task metadata、Evidence contentRef、Relation metadata 或业务数据库中，而不是让 SDK 猜测业务字段。
 
+### Fact 与 Evidence：结论与物证
+
+两者都是持久化记录，但语义不同、生命周期不同，不能混用：
+
+| | Fact（结论） | Evidence（物证） |
+| --- | --- | --- |
+| 记录什么 | 一句断言："该订单符合退款条件" | 指向产物的引用：`location`/`contentRef` + `kind` + `summary` |
+| 可信度 | `confidence` + `source` | 不表达置信度——物证本身就是历史 |
+| 血缘 | 只挂 `taskId` | 额外挂 `executionId`，可追溯到哪次运行产生 |
+| 可作废？ | 可以：`invalidateFact` 置 `valid=false` 并留痕 | 不可作废，只追加——"那次测试跑过"永远成立 |
+| 回答的问题 | "我们目前相信什么"（可能过期） | "凭什么信"（不会过期） |
+
+典型连接方式：Evidence 通过 `SUPPORTS` 关系支撑 Fact，Submission 的 `evidenceIds[]` 在提交时引用既有 Evidence，验收 Gate 核的就是这条引用链。Fact 在执行期任何时刻都能记录，并非"收口时才产出"；收口动作本身产出的是 Submission、Review 和 `AcceptanceRecord`（验收评估记录，记录哪些 Gate 被评估、结果如何，并绑定到对应 Submission）。
+
+> **注意：Gate 校验的是证据引用链的完整性**（引用的 Evidence 存在、scope 匹配、属于当前 Submission），**不验证 `contentRef` 指向的产物内容是否真实**。内容真实性由 Reviewer 或自定义 `HarnessGate` 负责——例如写一个 Gate 检查 `contentRef` 文件确实存在、测试日志确实通过。
+
 ## 2. Agent 会不会绕过 Harness
 
 需要区分两种情况：

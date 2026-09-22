@@ -90,6 +90,21 @@ Harness deliberately 不把 Task 和 Session 强行绑定：
 
 因此，一条新的客服消息通常会创建一个新的 Execution；它可以复用客户的 Agent Session，但不会因为复用了 Session 就自动继承上一条消息的 Task。Coding Agent 的 Task 则通常属于项目，可以被不同 CLI、TUI、ACP 或后台 worker 的 Execution 继续处理。
 
+### 实体血缘：谁挂在谁身上
+
+所有治理实体都通过外键锚定到 Task 或 Execution，形成一张可审计的血缘图：
+
+| 实体 | 锚定字段 | 额外引用 | 生命周期 |
+| --- | --- | --- | --- |
+| Fact | `taskId` + `scopeKey` | `source`、`confidence`、`provenance` | 可作废：`invalidateFact` 置 `valid=false` 并留痕，不删除 |
+| Decision | `taskId` + `scopeKey` | `proposer` / `arbiter` | `PROPOSED` → 由有权 Actor `resolveDecision` 定音 |
+| Evidence | `taskId` + `executionId` | `location`、`contentRef`、`kind` | 只追加，不可作废——物证是历史事实 |
+| Submission | `taskId` + `executionId` | `submitter`、`evidenceIds[]` | 创建即把 `task.submissionId` 指向自己，Task → `IN_REVIEW` |
+| Review | `submissionId` + `taskId` | `reviewer`、`verdict` | `CHANGES_REQUESTED` 会把 Task 弹回 `ACTIVE` |
+| Gate/Acceptance | `taskId` + `executionId` + `submissionId` | 评估结果与原因 | `completeTask` 时评估，全 PASS 才允许 `DONE` |
+
+实体之间还可以通过 `RelationRecord` 建立通用有向边，端点是 `(EntityKind, id)` 对（TASK/FACT/DECISION/EVIDENCE/EXECUTION/CHECKPOINT/WAIT/REVIEW），内置四种类型：`PARENT_OF`（父子任务）、`DEPENDS_ON`（任务依赖，Gateway 拒绝成环）、`SUPPORTS`（证据支撑结论）、`DERIVED_FROM`（结论派生自证据）。
+
 ## Execution 状态机图
 
 交互式状态机：Execution 在 READY / RUNNING / WAITING / SUCCEEDED / FAILED / UNKNOWN 之间迁移——租约丢失或持久化不确定时标记 UNKNOWN 而不是 FAILED；WAITING 必须先由 deliver 原子写入 answer+wakeup 才能回到 READY；终态不可再迁移。
@@ -238,6 +253,17 @@ try {
 ```
 
 `HarnessContract` 是治理规则，不是业务任务模板。上面的规则表达的是：没有 Task 不能调用 `submitRefund`，并且调用前需要审批；它没有规定 Task 的标题、订单字段或客服会话字段。
+
+`HarnessContract.builder()` 的默认姿态是严格的，要放宽必须显式声明：
+
+| 守卫 | 默认值 | 含义 |
+| --- | --- | --- |
+| `requiresApprovedReview` | `true` | Task 完成前必须有一条 APPROVED 的 Review |
+| `requiresCompletionEvidence` | `true` | Submission 必须引用 Evidence 才能过完成门 |
+| `allowSystemApproval` / `allowSystemCompletion` / `allowSystemReconciliation` | `true` | system Actor 可以审批/完成/对账；置 `false` 则只允许 human Actor |
+| `mayApprove` / `mayComplete` / `mayReconcile` | `!actor.isAgent()` | **代码级硬挡**：无论怎么配置，Agent 身份永远不能审批、完成或对账自己的工作 |
+
+也就是说，"Agent 不能自审"不靠提示词自觉，而是 Gateway 里的身份检查。
 
 对于 `ai4j-coding`，使用 `CodingAgentHarness` 可以保留 workspace 工具、CodeAct、compact、进程、MCP、subagent 和现有审批语义，详见 [Coding Agent Harness 集成](/docs/products/coding-agent/harness-integration)。
 
