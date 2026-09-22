@@ -97,6 +97,52 @@ public class SystemOneContractTest {
         Assert.assertEquals(1, response.choices().size());
         Assert.assertEquals(1, response.scores().size());
         Assert.assertEquals(1, response.nouls().size());
+
+        Assert.assertEquals("billing", response.choice("route"));
+        Assert.assertEquals(2.0, response.score("severity"), 1e-6);
+        Assert.assertEquals(0.02, response.noul("has_pii"), 1e-6);
+        Assert.assertEquals(0.91, response.confidence("route"), 1e-6);
+        Assert.assertNull(response.choice("missing"));
+        Assert.assertNull(response.noul(null));
+    }
+
+    @Test
+    public void shouldBuildIdenticalJsonFromBuilderAndMap() throws Exception {
+        Map<String, Object> choiceCriteria = new LinkedHashMap<String, Object>();
+        choiceCriteria.put("billing", "Invoices and payments");
+        choiceCriteria.put("support", "Product usage questions");
+
+        Map<String, SystemOneQuestion> questions = new LinkedHashMap<String, SystemOneQuestion>();
+        questions.put("route", ChoiceQuestion.of("Pick a branch", choiceCriteria));
+        questions.put("severity", ScoreQuestion.of("Rate severity",
+                Arrays.<Object>asList("trivial", "minor", "critical")));
+        questions.put("has_pii", NoulQuestion.of("Contains PII?",
+                new NoulCriteria("content includes PII", "no PII present")));
+
+        Map<String, Object> state = new LinkedHashMap<String, Object>();
+        state.put("text", "my invoice is wrong");
+
+        SystemOneRequest viaMap = SystemOneRequest.of(state, "jev-latest", questions);
+        SystemOneRequest viaBuilder = SystemOneRequest.builder()
+                .state(state)
+                .model("jev-latest")
+                .choice("route", "Pick a branch", choiceCriteria)
+                .score("severity", "Rate severity",
+                        Arrays.<Object>asList("trivial", "minor", "critical"))
+                .noul("has_pii", "Contains PII?",
+                        new NoulCriteria("content includes PII", "no PII present"))
+                .build();
+
+        Assert.assertEquals(mapper.writeValueAsString(viaMap), mapper.writeValueAsString(viaBuilder));
+
+        SystemOneRequest noulOnly = SystemOneRequest.builder()
+                .state("plain text state")
+                .noul("is_spam", "Is this spam?")
+                .build();
+        JsonNode root = mapper.readTree(mapper.writeValueAsString(noulOnly));
+        Assert.assertEquals("plain text state", root.get("state").asText());
+        Assert.assertEquals("noul", root.get("questions").get("is_spam").get("type").asText());
+        Assert.assertFalse(root.get("questions").get("is_spam").has("criteria"));
     }
 
     @Test

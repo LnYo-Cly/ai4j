@@ -24,13 +24,27 @@ POST https://api.typesafe.ai/v1/systemone
 
 你提交一份 `state`（字符串、JSON 对象、数组或 null）和一组**类型化问题**，模型对同一份 state **并行且独立**地求值所有问题，一次请求返回全部答案——每个答案带概率分布和置信度。
 
-三种问题原语：
+### 三种问题原语：用客服工单走一遍
 
-| 类型 | 语义 | criteria 形态 | 答案字段 |
-| --- | --- | --- | --- |
-| `choice` | 从一组标签中选一个 | `label → 描述` 映射 | `choice`（胜出标签）、`probabilities`、`confidence` |
-| `score` | 在有序等级表上评级 | 有序列表（index 0..n） | `score`（等级索引）、`probabilities`、`confidence`、`legend` |
-| `noul` | 判定一个是/否命题 | 可选 `{true, false}` 分支描述 | `noul`（"是"的概率 0..1） |
+假设 `state` 是一封用户来信：`"我的卡被重复扣款了（尾号 4242），请尽快退款！"`。三种问题各管一件事：
+
+| 类型 | 它在问什么 | criteria 里填什么 | 答案长什么样 | 什么时候用它 |
+| --- | --- | --- | --- | --- |
+| `choice` | "从这几个互斥选项里选一个" | `{选项名: 选项说明}` 映射，选项名就是可能的答案 | `choice` = 胜出的选项名，外加每个选项的 `probabilities` 和整体 `confidence` | 路由、分类、意图分流："这封工单该给 billing / tech / sales 哪个组？" |
+| `score` | "在有序等级上评到第几级" | 有序列表 `["不急","一般","紧急","致命"]`，下标即等级 | `score` = 等级下标（如 `2`），`legend` 把下标映射回描述，另有 `probabilities`/`confidence` | 程度评级：紧急度、严重程度、质量分档——选项之间有明确顺序时用 |
+| `noul` | "这个命题成立吗？给概率" | 可空；可填 `{true: "算'是'的情形", false: "算'否'的情形"}` 澄清边界 | `noul` = "是"的概率 `0..1` | 是/否判定：是否含隐私信息、是否违规、是否需要人工介入——天然适合做护栏阈值 |
+
+同一次求值的返回：
+
+```json
+"answers": {
+  "route":        {"type": "choice", "choice": "billing", "probabilities": {"billing": 0.91, "tech": 0.06, "sales": 0.03}, "confidence": 0.91},
+  "urgency":      {"type": "score", "score": 2, "probabilities": {"0": 0.02, "1": 0.10, "2": 0.81, "3": 0.07}, "confidence": 0.81, "legend": {"0": "不急", "1": "一般", "2": "紧急", "3": "致命"}},
+  "contains_pii": {"type": "noul", "noul": 0.97}
+}
+```
+
+要点：`route`/`urgency`/`contains_pii` 这些 key 是**你自己起的问题名**，请求里叫什么，答案里就用同一个 key 取回来。
 
 这意味着它在 SDK 里的位置不是 `IChatService`，而是独立的 `ISystemOneService`——和 `IRerankService` 一样，是一个**结构化、非生成式**的 service 面。
 
@@ -67,37 +81,38 @@ ISystemOneService systemOne = new AiService(configuration)
 
 ## 3. 发起一次求值
 
-```java
-Map<String, SystemOneQuestion> questions = new LinkedHashMap<>();
+`SystemOneRequest.builder()` 的 `choice` / `score` / `noul` 三个方法各对应一种问题原语，第一个参数是问题名（答案的 key），第二个是 instructions，第三个是该类型的 criteria：
 
+```java
+// state：任意 EntryType——String / Map / List / null
+Map<String, Object> state = new LinkedHashMap<>();
+state.put("message", "I was charged twice on my card ending 4242, refund ASAP");
+
+// choice 的 criteria：{选项名: 选项说明}
 Map<String, Object> routes = new LinkedHashMap<>();
 routes.put("billing", "Invoices, refunds, subscription payments");
 routes.put("support", "Product usage, bugs, how-to questions");
 routes.put("sales", "Pricing, upgrades, new purchases");
-questions.put("route", ChoiceQuestion.of("Which team should handle this?", routes));
-
-questions.put("urgency", ScoreQuestion.of("How urgent is the request?",
-        Arrays.asList("low", "normal", "high", "critical")));
-
-questions.put("contains_pii", NoulQuestion.of(
-        "Does the message contain personally identifiable information?"));
-
-Map<String, Object> state = new LinkedHashMap<>();
-state.put("message", "I was charged twice on my card ending 4242, refund ASAP");
 
 SystemOneResponse response = systemOne.evaluate(
-        SystemOneRequest.of(state, null, questions));  // model 缺省 = jev-latest
+        SystemOneRequest.builder()
+                .state(state)
+                .model("jev-latest")                    // 可省略，缺省 jev-latest
+                .choice("route", "Which team should handle this?", routes)
+                .score("urgency", "How urgent is the request?",
+                        Arrays.asList("low", "normal", "high", "critical"))
+                .noul("contains_pii", "Does the message contain personally identifiable information?")
+                .build());
 
-SystemOneAnswer route = response.getAnswers().get("route");
-route.getChoice();        // 例如 "billing"
-route.getConfidence();    // 0..1
-route.getProbabilities(); // 每个标签的概率
-
-SystemOneAnswer pii = response.getAnswers().get("contains_pii");
-pii.getNoul();            // "yes" 的概率 0..1
+response.choice("route");        // 例如 "billing"
+response.score("urgency");       // 等级下标，如 2.0
+response.noul("contains_pii");   // "yes" 的概率 0..1
+response.confidence("route");    // 0..1
 ```
 
-`SystemOneResponse` 还提供 `choices()` / `scores()` / `nouls()` 按类型过滤答案。`listModels()` 对应 `GET /v1/models`。
+noul 需要澄清判定边界时传第三个参数 `.noul(name, instructions, new NoulCriteria("算'是'的情形", "算'否'的情形"))`；不传则该字段不出现在请求里。也可以用底层写法自己组 `Map<String, SystemOneQuestion>` 传给 `SystemOneRequest.of(state, model, questions)`——两种写法产出的 JSON 完全一致。
+
+`SystemOneResponse` 还提供 `choices()` / `scores()` / `nouls()` 按类型过滤答案，以及 `getAnswers().get(name)` 拿整个 `SystemOneAnswer`（含 `probabilities`、`legend`）。`listModels()` 对应 `GET /v1/models`。
 
 **图例：System One 求值序列** —— state+questions → 并行求值 → 类型化答案+置信度 → 路由/护栏决策。
 
@@ -127,16 +142,18 @@ SystemOneRouter router = new SystemOneRouter(systemOne)
         .minConfidence(0.7)          // 置信度不足 → 走 fallback
         .fallbackRoute("generic");
 
+Map<String, String> routeMap = new LinkedHashMap<>();
+routeMap.put("billing", "billing");
+routeMap.put("support", "support");
+routeMap.put("generic", "generic");
+
 StateGraphWorkflow workflow = new StateGraphWorkflow()
         .addNode("decide", decideNode)
         .addNode("billing", billingNode)
         .addNode("support", supportNode)
         .addNode("generic", genericNode)
         .start("decide")
-        .addConditionalEdges("decide", router, Map.of(
-                "billing", "billing",
-                "support", "support",
-                "generic", "generic"));
+        .addConditionalEdges("decide", router, routeMap);
 ```
 
 路由输入默认取 `WorkflowContext.state`（非空时），否则取 `request.input`。返回值是**路由标签**，由 `routeMap` 映射到节点 id。

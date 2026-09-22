@@ -24,13 +24,27 @@ POST https://api.typesafe.ai/v1/systemone
 
 You submit a `state` (string, JSON object, array, or null) plus a set of **typed questions**. The model evaluates all questions **in parallel and independently** against the same state, returning every answer in one call — each with a probability distribution and a confidence value.
 
-Three question primitives:
+### Three question primitives, on one support ticket
 
-| Type | Semantics | Criteria shape | Answer fields |
-| --- | --- | --- | --- |
-| `choice` | Pick one label from a set | `label → description` map | `choice` (winning label), `probabilities`, `confidence` |
-| `score` | Rate on an ordered level list | ordered list (index 0..n) | `score` (level index), `probabilities`, `confidence`, `legend` |
-| `noul` | Judge a yes/no proposition | optional `{true, false}` branch descriptions | `noul` (probability of "yes", 0..1) |
+Suppose `state` is a customer message: `"I was charged twice on my card ending 4242, refund ASAP!"`. Each primitive answers a different kind of question about it:
+
+| Type | What it asks | What goes in criteria | What the answer looks like | When to use it |
+| --- | --- | --- | --- | --- |
+| `choice` | "Pick exactly one of these mutually exclusive options" | `{label: description}` map — the labels are the possible answers | `choice` = winning label, plus per-option `probabilities` and overall `confidence` | Routing, classification, intent dispatch: "which team — billing / tech / sales — owns this ticket?" |
+| `score` | "Rate it on an ordered scale" | ordered list `["low","normal","high","critical"]`; the index is the level | `score` = level index (e.g. `2`), `legend` maps indices back to descriptions, plus `probabilities`/`confidence` | Degree rating: urgency, severity, quality bands — whenever options have a clear ordering |
+| `noul` | "Is this proposition true? Give a probability" | nullable; optionally `{true: "what counts as yes", false: "what counts as no"}` to sharpen the boundary | `noul` = probability of "yes", `0..1` | Yes/no judgment: contains PII? violates policy? needs human review? — a natural fit for threshold guardrails |
+
+One evaluation returns:
+
+```json
+"answers": {
+  "route":        {"type": "choice", "choice": "billing", "probabilities": {"billing": 0.91, "tech": 0.06, "sales": 0.03}, "confidence": 0.91},
+  "urgency":      {"type": "score", "score": 2, "probabilities": {"0": 0.02, "1": 0.10, "2": 0.81, "3": 0.07}, "confidence": 0.81, "legend": {"0": "low", "1": "normal", "2": "high", "3": "critical"}},
+  "contains_pii": {"type": "noul", "noul": 0.97}
+}
+```
+
+Note: `route`/`urgency`/`contains_pii` are **question names you pick** — whatever key you use in the request is the key you read back in `answers`.
 
 So its place in the SDK is not `IChatService` but a dedicated `ISystemOneService` — like `IRerankService`, a **structured, non-generative** service surface.
 
@@ -67,37 +81,38 @@ ISystemOneService systemOne = new AiService(configuration)
 
 ## 3. Running an evaluation
 
-```java
-Map<String, SystemOneQuestion> questions = new LinkedHashMap<>();
+`SystemOneRequest.builder()` exposes one method per question primitive — `choice` / `score` / `noul`. First argument is the question name (the answer key), second is instructions, third is that type's criteria:
 
+```java
+// state: any EntryType — String / Map / List / null
+Map<String, Object> state = new LinkedHashMap<>();
+state.put("message", "I was charged twice on my card ending 4242, refund ASAP");
+
+// choice criteria: {label: description}
 Map<String, Object> routes = new LinkedHashMap<>();
 routes.put("billing", "Invoices, refunds, subscription payments");
 routes.put("support", "Product usage, bugs, how-to questions");
 routes.put("sales", "Pricing, upgrades, new purchases");
-questions.put("route", ChoiceQuestion.of("Which team should handle this?", routes));
-
-questions.put("urgency", ScoreQuestion.of("How urgent is the request?",
-        Arrays.asList("low", "normal", "high", "critical")));
-
-questions.put("contains_pii", NoulQuestion.of(
-        "Does the message contain personally identifiable information?"));
-
-Map<String, Object> state = new LinkedHashMap<>();
-state.put("message", "I was charged twice on my card ending 4242, refund ASAP");
 
 SystemOneResponse response = systemOne.evaluate(
-        SystemOneRequest.of(state, null, questions));  // model defaults to jev-latest
+        SystemOneRequest.builder()
+                .state(state)
+                .model("jev-latest")                    // optional, defaults to jev-latest
+                .choice("route", "Which team should handle this?", routes)
+                .score("urgency", "How urgent is the request?",
+                        Arrays.asList("low", "normal", "high", "critical"))
+                .noul("contains_pii", "Does the message contain personally identifiable information?")
+                .build());
 
-SystemOneAnswer route = response.getAnswers().get("route");
-route.getChoice();        // e.g. "billing"
-route.getConfidence();    // 0..1
-route.getProbabilities(); // per-label probabilities
-
-SystemOneAnswer pii = response.getAnswers().get("contains_pii");
-pii.getNoul();            // probability of "yes", 0..1
+response.choice("route");        // e.g. "billing"
+response.score("urgency");       // level index, e.g. 2.0
+response.noul("contains_pii");   // probability of "yes", 0..1
+response.confidence("route");    // 0..1
 ```
 
-`SystemOneResponse` also offers `choices()` / `scores()` / `nouls()` to filter answers by type. `listModels()` maps to `GET /v1/models`.
+To sharpen a noul's decision boundary, pass a third argument `.noul(name, instructions, new NoulCriteria("what counts as yes", "what counts as no"))`; omit it and the field is absent from the request. The low-level path still works — assemble a `Map<String, SystemOneQuestion>` yourself and pass it to `SystemOneRequest.of(state, model, questions)`; both produce identical JSON.
+
+`SystemOneResponse` also offers `choices()` / `scores()` / `nouls()` to filter answers by type, and `getAnswers().get(name)` for the full `SystemOneAnswer` (including `probabilities` and `legend`). `listModels()` maps to `GET /v1/models`.
 
 **Diagram: System One evaluation sequence** — state+questions → parallel evaluation → typed answers+confidence → routing/guardrail decision.
 
@@ -127,16 +142,18 @@ SystemOneRouter router = new SystemOneRouter(systemOne)
         .minConfidence(0.7)          // below threshold → fallback
         .fallbackRoute("generic");
 
+Map<String, String> routeMap = new LinkedHashMap<>();
+routeMap.put("billing", "billing");
+routeMap.put("support", "support");
+routeMap.put("generic", "generic");
+
 StateGraphWorkflow workflow = new StateGraphWorkflow()
         .addNode("decide", decideNode)
         .addNode("billing", billingNode)
         .addNode("support", supportNode)
         .addNode("generic", genericNode)
         .start("decide")
-        .addConditionalEdges("decide", router, Map.of(
-                "billing", "billing",
-                "support", "support",
-                "generic", "generic"));
+        .addConditionalEdges("decide", router, routeMap);
 ```
 
 Routing input defaults to `WorkflowContext.state` (when non-empty), otherwise `request.input`. The return value is a **route label**, mapped to node ids by `routeMap`.

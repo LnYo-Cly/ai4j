@@ -23,6 +23,9 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 - Spring Boot: `TypeSafeConfigProperties` (`ai.typesafe.*`) and
   `system-one-url` on `ai.platforms[]`; works with `api-key-env:
   TYPESAFE_API_KEY`.
+- `SystemOneRequest.builder()` with typed `choice`/`score`/`noul` question
+  methods, and `SystemOneResponse` helpers `choice(name)` / `score(name)` /
+  `noul(name)` / `confidence(name)` for direct answer access.
 - Docs: bilingual `capabilities/system-one` page, platform/service matrix and
   feature-map entries, and an Archify sequence view of the evaluation flow.
 
