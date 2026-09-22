@@ -82,7 +82,7 @@ trace / replay 是 ai4j 的**可观测性与可靠性**层（进程内 tracing�
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.6.0</version>
+  <version>2.7.0</version>
 </dependency>
 ```
 
