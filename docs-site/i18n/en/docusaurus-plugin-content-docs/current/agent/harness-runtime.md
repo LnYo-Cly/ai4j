@@ -90,6 +90,21 @@ The distinction between these identities matters:
 
 So a new customer-service message normally creates a new Execution; it can reuse the customer's Agent Session, but reusing a Session does not automatically inherit the previous message's Task. A Coding Agent's Task usually belongs to the project and can be continued by Executions from different CLI, TUI, ACP, or background workers.
 
+### Entity Lineage: What Anchors to What
+
+Every governance entity is anchored to a Task or an Execution through foreign keys, forming an auditable lineage graph:
+
+| Entity | Anchored by | Additional references | Lifecycle |
+| --- | --- | --- | --- |
+| Fact | `taskId` + `scopeKey` | `source`, `confidence`, `provenance` | Invalidatable: `invalidateFact` sets `valid=false` with a trail; never deleted |
+| Decision | `taskId` + `scopeKey` | `proposer` / `arbiter` | `PROPOSED` → settled by an entitled Actor via `resolveDecision` |
+| Evidence | `taskId` + `executionId` | `location`, `contentRef`, `kind` | Append-only, cannot be invalidated — an artifact is a historical fact |
+| Submission | `taskId` + `executionId` | `submitter`, `evidenceIds[]` | On creation it points `task.submissionId` at itself; Task → `IN_REVIEW` |
+| Review | `submissionId` + `taskId` | `reviewer`, `verdict` | `CHANGES_REQUESTED` bounces the Task back to `ACTIVE` |
+| Gate/Acceptance | `taskId` + `executionId` + `submissionId` | Evaluation result and reason | Evaluated at `completeTask`; all PASS required for `DONE` |
+
+Entities can also be linked by `RelationRecord` — a generic directed edge whose endpoints are `(EntityKind, id)` pairs (TASK/FACT/DECISION/EVIDENCE/EXECUTION/CHECKPOINT/WAIT/REVIEW). Four built-in types: `PARENT_OF` (parent/child tasks), `DEPENDS_ON` (task dependency; the Gateway rejects cycles), `SUPPORTS` (evidence backing a conclusion), `DERIVED_FROM` (a conclusion derived from evidence).
+
 ## Execution State Machine Diagram
 
 Interactive state machine: Execution migrates among READY / RUNNING / WAITING / SUCCEEDED / FAILED / UNKNOWN — when a lease is lost or the persisted outcome is uncertain it is marked UNKNOWN rather than FAILED; a WAITING execution can only return to READY after `deliver` atomically writes answer+wakeup; terminal states cannot transition further.
@@ -240,6 +255,17 @@ try {
 ```
 
 `HarnessContract` is a governance rule set, not a business task template. The rules above say: `submitRefund` cannot be called without a Task, and calling it requires approval; they say nothing about the Task's title, order fields, or conversation fields.
+
+`HarnessContract.builder()` defaults to a strict posture — relaxing it requires an explicit call:
+
+| Guard | Default | Meaning |
+| --- | --- | --- |
+| `requiresApprovedReview` | `true` | Task completion requires an APPROVED Review first |
+| `requiresCompletionEvidence` | `true` | A Submission must reference Evidence to pass the completion gate |
+| `allowSystemApproval` / `allowSystemCompletion` / `allowSystemReconciliation` | `true` | system Actors may approve/complete/reconcile; set `false` to restrict these to human Actors |
+| `mayApprove` / `mayComplete` / `mayReconcile` | `!actor.isAgent()` | **Hard-coded**: no configuration ever lets an Agent identity approve, complete, or reconcile its own work |
+
+In other words, "the Agent cannot approve itself" is enforced by an identity check inside the Gateway, not by prompt discipline.
 
 For `ai4j-coding`, use `CodingAgentHarness`, which preserves workspace tools, CodeAct, compact, processes, MCP, subagents, and the existing approval semantics — see [Coding Agent Harness Integration](/docs/products/coding-agent/harness-integration).
 

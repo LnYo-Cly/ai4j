@@ -63,6 +63,22 @@ Harness automatically adds the following reserved names to the existing tool reg
 
 These tools take generic arguments. Business objects — orders, customers, code files, episode assets — belong in Task metadata, Evidence contentRef, Relation metadata, or the business database, not in fields the SDK would have to guess.
 
+### Fact vs Evidence: Conclusion vs Artifact
+
+Both are durable records, but they differ in semantics and lifecycle — do not mix them up:
+
+| | Fact (conclusion) | Evidence (artifact) |
+| --- | --- | --- |
+| Records | An assertion: "this order qualifies for a refund" | A pointer to an artifact: `location`/`contentRef` + `kind` + `summary` |
+| Confidence | `confidence` + `source` | None needed — an artifact is history |
+| Lineage | Anchored to `taskId` only | Also carries `executionId`, traceable to the run that produced it |
+| Invalidatable? | Yes: `invalidateFact` sets `valid=false` with a trail | No — append-only; "that test run happened" stays true forever |
+| Answers | "What do we currently believe" (may go stale) | "Why should we believe it" (never goes stale) |
+
+The typical wiring: an Evidence `SUPPORTS` a Fact through a Relation; a Submission's `evidenceIds[]` references existing Evidence at submit time, and the acceptance Gate checks that reference chain. Facts can be recorded at any point during execution — they are not "produced at closeout". The closeout act itself produces the Submission, the Review, and the `AcceptanceRecord` (the evaluation record of which Gates ran and how they ended, bound to the Submission).
+
+> **Note: a Gate verifies the integrity of the evidence reference chain** (the referenced Evidence exists, scopes match, and it belongs to the current Submission) — **it does not verify that the artifact at `contentRef` is real or says what the summary claims**. Content truth is the Reviewer's job, or a custom `HarnessGate`'s — e.g. a Gate that checks the `contentRef` file actually exists and the test log actually passed.
+
 ## 2. Can the Agent Bypass the Harness?
 
 Two cases need to be distinguished:
