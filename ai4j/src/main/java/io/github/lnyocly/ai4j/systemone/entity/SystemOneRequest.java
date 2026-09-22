@@ -31,7 +31,7 @@ import java.util.Map;
  */
 @Data
 @Builder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SystemOneRequest {
