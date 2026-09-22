@@ -36,6 +36,37 @@ public class SystemOneResponse {
         return answersOfType("noul");
     }
 
+    /** Winning label of the Choice answer stored under {@code name}, or null. */
+    public String choice(String name) {
+        SystemOneAnswer answer = answer(name);
+        return answer == null ? null : answer.getChoice();
+    }
+
+    /** Chosen level index of the Score answer stored under {@code name}, or null. */
+    public Double score(String name) {
+        SystemOneAnswer answer = answer(name);
+        return answer == null ? null : answer.getScore();
+    }
+
+    /** "Yes" probability of the Noul answer stored under {@code name}, or null. */
+    public Double noul(String name) {
+        SystemOneAnswer answer = answer(name);
+        return answer == null ? null : answer.getNoul();
+    }
+
+    /** Model-reported confidence of the answer stored under {@code name}, or null. */
+    public Double confidence(String name) {
+        SystemOneAnswer answer = answer(name);
+        return answer == null ? null : answer.getConfidence();
+    }
+
+    private SystemOneAnswer answer(String name) {
+        if (answers == null || name == null) {
+            return null;
+        }
+        return answers.get(name);
+    }
+
     private Map<String, SystemOneAnswer> answersOfType(String type) {
         if (answers == null || answers.isEmpty()) {
             return Collections.emptyMap();
