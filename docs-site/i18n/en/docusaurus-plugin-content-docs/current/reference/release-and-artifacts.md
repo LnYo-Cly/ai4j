@@ -20,7 +20,7 @@ AI4J currently publishes under the coordinates:
 The current repository version is:
 
 ```xml
-<version>2.6.0</version>
+<version>2.7.0</version>
 ```
 
 ## Recommended Dependency Declaration
@@ -31,7 +31,7 @@ When you only pull in a single module, you can declare that module's version dir
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>2.6.0</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 
@@ -43,7 +43,7 @@ When pulling in multiple AI4J modules, aligning them through the BOM is recommen
         <dependency>
             <groupId>io.github.lnyo-cly</groupId>
             <artifactId>ai4j-bom</artifactId>
-            <version>2.6.0</version>
+            <version>2.7.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -94,7 +94,7 @@ The release profile handles source, javadoc, GPG signing, and the Sonatype Centr
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j</artifactId>
-    <version>2.6.0</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 
@@ -104,7 +104,7 @@ The release profile handles source, javadoc, GPG signing, and the Sonatype Centr
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.6.0</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 
@@ -114,7 +114,7 @@ The release profile handles source, javadoc, GPG signing, and the Sonatype Centr
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-agent</artifactId>
-    <version>2.6.0</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 

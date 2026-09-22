@@ -8,6 +8,8 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-09-22
+
 ### Added
 - TypeSafe System One (Jev) provider — `PlatformType.TYPESAFE`,
   `TypeSafeConfig`, `ISystemOneService`, and typed entities for
