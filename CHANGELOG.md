@@ -8,6 +8,8 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-09-23
+
 ### Added
 - MinerU cloud document parsing in core `ai4j` (`document.mineru` package):
   `MinerUService` covers the authenticated v4 precise API (URL tasks, batch
