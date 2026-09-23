@@ -6,6 +6,7 @@ AI4J_BIN_DIR="$AI4J_HOME/bin"
 AI4J_LIB_DIR="$AI4J_HOME/lib"
 AI4J_VERSION_FILE="$AI4J_HOME/version.txt"
 MAVEN_REPO="${AI4J_MAVEN_REPO:-https://repo.maven.apache.org/maven2}"
+GH_RELEASES="${AI4J_GH_REPO:-https://github.com/LnYo-Cly/ai4j/releases/download}"
 METADATA_URL="$MAVEN_REPO/io/github/lnyo-cly/ai4j-cli/maven-metadata.xml"
 
 say() {
@@ -176,13 +177,18 @@ main() {
   ensure_java
 
   version="$(resolve_version)"
-  jar_url="$MAVEN_REPO/io/github/lnyo-cly/ai4j-cli/$version/ai4j-cli-$version-jar-with-dependencies.jar"
+  jar_name="ai4j-cli-$version-jar-with-dependencies.jar"
+  gh_url="$GH_RELEASES/v$version/$jar_name"
+  maven_url="$MAVEN_REPO/io/github/lnyo-cly/ai4j-cli/$version/$jar_name"
   tmp_jar="$AI4J_LIB_DIR/ai4j-cli.jar.tmp"
   jar_path="$AI4J_LIB_DIR/ai4j-cli.jar"
 
   say "Installing ai4j-cli $version"
   mkdir -p "$AI4J_BIN_DIR" "$AI4J_LIB_DIR"
-  download_to "$jar_url" "$tmp_jar"
+  if ! download_to "$gh_url" "$tmp_jar"; then
+    say "GitHub Releases download failed; falling back to Maven Central"
+    download_to "$maven_url" "$tmp_jar"
+  fi
   mv "$tmp_jar" "$jar_path"
   printf '%s\n' "$version" > "$AI4J_VERSION_FILE"
   write_launcher

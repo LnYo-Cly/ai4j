@@ -98,7 +98,10 @@ function Main {
     $ai4jHome = if ($env:AI4J_HOME) { $env:AI4J_HOME } else { Join-Path $HOME ".ai4j" }
     $binDir = Join-Path $ai4jHome "bin"
     $libDir = Join-Path $ai4jHome "lib"
-    $jarUrl = "$repo/io/github/lnyo-cly/ai4j-cli/$version/ai4j-cli-$version-jar-with-dependencies.jar"
+    $ghReleases = if ($env:AI4J_GH_REPO) { $env:AI4J_GH_REPO.TrimEnd('/') } else { "https://github.com/LnYo-Cly/ai4j/releases/download" }
+    $jarName = "ai4j-cli-$version-jar-with-dependencies.jar"
+    $ghUrl = "$ghReleases/v$version/$jarName"
+    $mavenUrl = "$repo/io/github/lnyo-cly/ai4j-cli/$version/$jarName"
     $jarPath = Join-Path $libDir "ai4j-cli.jar"
     $tmpJar = Join-Path $libDir "ai4j-cli.jar.tmp"
     $versionFile = Join-Path $ai4jHome "version.txt"
@@ -107,7 +110,12 @@ function Main {
     Write-Info "Installing ai4j-cli $version"
     New-Item -ItemType Directory -Force -Path $binDir | Out-Null
     New-Item -ItemType Directory -Force -Path $libDir | Out-Null
-    Invoke-WebRequest -UseBasicParsing -Uri $jarUrl -OutFile $tmpJar
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri $ghUrl -OutFile $tmpJar
+    } catch {
+        Write-Info "GitHub Releases download failed; falling back to Maven Central"
+        Invoke-WebRequest -UseBasicParsing -Uri $mavenUrl -OutFile $tmpJar
+    }
     Move-Item -Force $tmpJar $jarPath
     Set-Content -Path $versionFile -Value $version -Encoding Ascii
 
