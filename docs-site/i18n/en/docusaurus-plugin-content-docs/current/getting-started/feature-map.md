@@ -74,6 +74,7 @@ The rule is simple: pull in the minimal module that solves your current problem 
 | --- | --- | --- | --- | --- |
 | Search & RAG | `advanced` | `ai4j` | Retrieve from external knowledge, augment answers, and preserve citation leads | [Overview](/docs/capabilities/rag/overview) |
 | Ingestion Pipeline | `advanced` | `ai4j` | Document ingestion, splitting, and pre-indexing | [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline) |
+| MinerU document parsing | `advanced` | `ai4j` | Cloud precise/lite parsing of PDFs, scans, and complex layouts into Markdown for RAG | [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline) |
 | Hybrid Retrieval | `advanced` | `ai4j` | Combine keyword, vector, and other recall strategies | [Hybrid Retrieval](/docs/capabilities/rag/hybrid-retrieval) |
 | Rerank | `advanced` | `ai4j` | Rerank candidate results to improve retrieval quality | [Rerank](/docs/capabilities/rag/rerank) |
 | MCP | `advanced` | `ai4j` | Integrate external tools, services, and capability gateways via the protocol | [MCP Overview](/docs/capabilities/mcp/overview) |

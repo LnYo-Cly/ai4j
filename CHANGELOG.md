@@ -8,6 +8,22 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+### Added
+- MinerU cloud document parsing in core `ai4j` (`document.mineru` package):
+  `MinerUService` covers the authenticated v4 precise API (URL tasks, batch
+  tasks, presigned local-file upload, result-zip download/extraction of
+  `full.md` + `content_list.json` + images) and the token-free v1 lite API
+  (IP rate-limited, Markdown only). `MinerUDocumentParser` adapts both to the
+  `DocumentParser` SPI via explicit construction (no ServiceLoader
+  registration); `MinerUDocumentLoader` feeds parsed Markdown into the RAG
+  ingestion pipeline for local files and remote URLs.
+- `Configuration.mineruConfig` plus Spring Boot `ai.mineru.*` properties and a
+  `minerUService` bean; `apiKey` empty falls back to the lite API
+  automatically. Local documents limited to 200 MB (v4) / 10 MB (lite).
+- Polling tolerates transient network errors and 429s with a bounded retry
+  budget and an overall `pollTimeoutMs` deadline, raising `AiTimeoutException`
+  with the task/batch id.
+
 ## [2.7.0] — 2026-09-22
 
 ### Added

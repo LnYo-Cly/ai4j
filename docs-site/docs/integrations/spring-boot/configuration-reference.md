@@ -18,6 +18,7 @@ AI4J 的 Spring Boot 配置不是一坨平铺字段，而是按能力面分层�
 - `ai.dashscope.*`
 - `ai.ollama.*`
 - `ai.jina.*`
+- `ai.mineru.*`
 - `ai.okhttp.*`
 - `ai.platforms[]`
 - `ai.vector.*`
@@ -143,7 +144,40 @@ ai:
 
 要换实现，走 Java SPI（`META-INF/services`）注册即可，无需改 starter。
 
-## 5. `ai4j.flowgram.*`：FlowGram 后端配置
+## 5. `ai.mineru.*`：MinerU 云端文档解析
+
+`MinerUConfigProperties`（前缀 `ai.mineru`）装配 `Configuration.mineruConfig`，并暴露 `minerUService` bean。核心类是 `MinerUService`（v4 精准解析 + v1 免 token lite 解析）和 `MinerUDocumentLoader`（RAG 入库 loader，见 [摄取管线](/docs/capabilities/rag/ingestion-pipeline)）。
+
+```yaml
+ai:
+  mineru:
+    api-key: ${MINERU_API_KEY}     # 留空则走免 token 的 lite 接口（IP 限频）
+    model-version: vlm
+    is-ocr: false
+    enable-formula: true
+    enable-table: true
+    language: ch
+```
+
+| 字段 | 默认值 | 含义 |
+| --- | --- | --- |
+| `api-key` | 空 | MinerU API token；为空时所有请求走 lite 接口 |
+| `base-url` | `https://mineru.net/api/v4` | v4 精准解析 API 根地址 |
+| `lite-base-url` | `https://mineru.net/api/v1/agent` | v1 lite API 根地址 |
+| `model-version` | `vlm` | 模型版本（`pipeline`/`vlm`/`MinerU-HTML`） |
+| `is-ocr` | `false` | 是否启用 OCR |
+| `enable-formula` | `true` | 是否开启公式识别 |
+| `enable-table` | `true` | 是否开启表格识别 |
+| `language` | `ch` | 文档语言 |
+| `page-ranges` | 空 | 页码范围，如 `2,4-6` |
+| `extra-formats` | 空 | 额外导出格式（`docx`/`html`/`latex`） |
+| `data-id` | 空 | 业务数据 ID 透传（`data_id`） |
+| `poll-interval-ms` | `3000` | 任务轮询间隔（毫秒） |
+| `poll-timeout-ms` | `600000` | 任务轮询总超时（毫秒） |
+
+限制：v4 本地文档 ≤200MB；lite ≤10MB/约 20 页且按 IP 限频，免费队列繁忙时轮询可能超时——超时抛 `AiTimeoutException`（带 taskId，可稍后手动查）。
+
+## 6. `ai4j.flowgram.*`：FlowGram 后端配置
 
 FlowGram 后端绑定类是 `FlowGramProperties`（前缀 `ai4j.flowgram`），只在 `ai4j.flowgram.enabled=true` 且 Web 环境下由 `FlowGramAutoConfiguration` 装配。这里只列与跨域、HTTP 节点安全相关的常用项。
 
@@ -197,7 +231,7 @@ ai4j:
 
 `http-node.allow-private-network` 默认 `false`，HTTP 节点请求会先过 `HttpNodeSsrfGuard`，拦截回环/私网/链路本地/云元数据地址。仅在确需访问内网服务时才显式设为 `true`。详见 [Built-in Nodes / SSRF 防护](/docs/products/flowgram/built-in-nodes#ssrf-guard)。
 
-## 6. 这页应该怎么用
+## 7. 这页应该怎么用
 
 当你要加一个新环境配置时，先问自己三个问题：
 
@@ -207,7 +241,7 @@ ai4j:
 
 如果这三个问题没想清楚，字段加对了也容易放错层。
 
-## 7. 关键对象
+## 8. 关键对象
 
 继续对照源码时，优先看：
 
@@ -218,7 +252,7 @@ ai4j:
 
 它们共同构成了从 YAML 到运行时对象图的路径。
 
-## 8. 继续阅读
+## 9. 继续阅读
 
 - 首次接入：看 [Spring Boot 快速开始](/docs/getting-started/quickstart-spring-boot)
 - 中转平台：看 [OpenAI-compatible 与 TroveBox](/docs/capabilities/models/openai-compatible-and-trovebox)
