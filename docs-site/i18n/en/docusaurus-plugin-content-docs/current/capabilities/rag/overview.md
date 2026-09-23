@@ -109,6 +109,8 @@ If you go through `AiService.getIngestionPipeline(platform, vectorStore)`, the d
 - `WhitespaceNormalizingDocumentProcessor`
 - `DefaultMetadataEnricher`
 
+For cloud parsing (scanned documents, formulas, complex layouts → Markdown) you can explicitly wire in `MinerUDocumentLoader` — it is not part of the default assembly (see [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline), section 7.5).
+
 And `IngestionPipeline` itself splits a single ingest request into:
 
 1. source load

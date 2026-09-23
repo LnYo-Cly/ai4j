@@ -19,6 +19,7 @@ Common prefixes include:
 - `ai.dashscope.*`
 - `ai.ollama.*`
 - `ai.jina.*`
+- `ai.mineru.*`
 - `ai.okhttp.*`
 - `ai.platforms[]`
 - `ai.vector.*`
@@ -144,7 +145,40 @@ Concurrency dispatch and connection pooling are not hard-coded; they are provide
 
 To swap implementations, register them through Java SPI (`META-INF/services`); no starter changes required.
 
-## 5. `ai4j.flowgram.*`: FlowGram backend configuration
+## 5. `ai.mineru.*`: MinerU cloud document parsing
+
+`MinerUConfigProperties` (prefix `ai.mineru`) assembles `Configuration.mineruConfig` and exposes a `minerUService` bean. The core classes are `MinerUService` (v4 precise parsing + v1 token-free lite parsing) and `MinerUDocumentLoader` (the RAG ingestion loader; see [Ingestion Pipeline](/docs/capabilities/rag/ingestion-pipeline)).
+
+```yaml
+ai:
+  mineru:
+    api-key: ${MINERU_API_KEY}     # leave empty to use the token-free lite API (IP rate-limited)
+    model-version: vlm
+    is-ocr: false
+    enable-formula: true
+    enable-table: true
+    language: ch
+```
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `api-key` | empty | MinerU API token; when empty every request uses the lite API |
+| `base-url` | `https://mineru.net/api/v4` | v4 precise parsing API root |
+| `lite-base-url` | `https://mineru.net/api/v1/agent` | v1 lite API root |
+| `model-version` | `vlm` | Model version (`pipeline`/`vlm`/`MinerU-HTML`) |
+| `is-ocr` | `false` | Whether to enable OCR |
+| `enable-formula` | `true` | Whether to enable formula recognition |
+| `enable-table` | `true` | Whether to enable table recognition |
+| `language` | `ch` | Document language |
+| `page-ranges` | empty | Page ranges, e.g. `2,4-6` |
+| `extra-formats` | empty | Extra export formats (`docx`/`html`/`latex`) |
+| `data-id` | empty | Business data ID passthrough (`data_id`) |
+| `poll-interval-ms` | `3000` | Task poll interval (ms) |
+| `poll-timeout-ms` | `600000` | Total task poll timeout (ms) |
+
+Limits: v4 local documents ≤200MB; lite ≤10MB / ~20 pages and rate-limited per IP — when the free queue is busy polling may time out with `AiTimeoutException` (carrying the taskId for a later manual lookup).
+
+## 6. `ai4j.flowgram.*`: FlowGram backend configuration
 
 The FlowGram backend is bound to the class `FlowGramProperties` (prefix `ai4j.flowgram`), and is only assembled by `FlowGramAutoConfiguration` when `ai4j.flowgram.enabled=true` and a web environment is present. Only the common items related to CORS and HTTP node security are listed here.
 
@@ -198,7 +232,7 @@ Only listed origins can make cross-origin calls to `/flowgram/**`.
 
 `http-node.allow-private-network` defaults to `false`. HTTP node requests pass through `HttpNodeSsrfGuard` first, which blocks loopback, private network, link-local, and cloud metadata addresses. Set it to `true` explicitly only when you genuinely need to reach internal services. See [Built-in Nodes / SSRF protection](/docs/products/flowgram/built-in-nodes#ssrf-guard).
 
-## 6. How to use this page
+## 7. How to use this page
 
 When you are about to add a new environment configuration, ask yourself three questions first:
 
@@ -208,7 +242,7 @@ When you are about to add a new environment configuration, ask yourself three qu
 
 If these three questions are not clear, even correctly defined fields can end up in the wrong layer.
 
-## 7. Key objects
+## 8. Key objects
 
 When cross-referencing against source, look at these first:
 
@@ -219,7 +253,7 @@ When cross-referencing against source, look at these first:
 
 Together they form the path from YAML to the runtime object graph.
 
-## 8. Further reading
+## 9. Further reading
 
 - First-time wiring: see [Quickstart for Spring Boot](/docs/getting-started/quickstart-spring-boot)
 - Relay platforms: see [OpenAI-compatible and TroveBox](/docs/capabilities/models/openai-compatible-and-trovebox)

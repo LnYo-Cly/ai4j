@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service;
 
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.document.mineru.MinerUConfig;
 import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import lombok.Data;
 import okhttp3.OkHttpClient;
@@ -64,4 +65,6 @@ public class Configuration {
     private SunoConfig sunoConfig;
 
     private TypeSafeConfig typeSafeConfig;
+
+    private MinerUConfig mineruConfig;
 }

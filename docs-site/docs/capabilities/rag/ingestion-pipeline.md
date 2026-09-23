@@ -240,6 +240,36 @@ IngestionResult result = ingestionPipeline.ingest(IngestionRequest.builder()
 
 顺序很重要：**先抽取，后清洗**。因为清洗只对已经有文本的文档生效，而扫描件的文本要靠抽取这一步补上。
 
+### 7.5 云端解析：`MinerUDocumentLoader`
+
+OCR processor 是"本地补文本"的路线；另一条路线是把整篇文档交给云端解析服务。`rag/ingestion/MinerUDocumentLoader.java` 实现了 `DocumentLoader`，把 MinerU 云端解析结果（Markdown，公式为 LaTeX、表格结构化、插图单独计数）直接作为 `content` 进 chunker——对扫描件、无文本层 PDF、复杂版面通常比"OCR 补纯文本"质量更高。
+
+行为要点：
+
+- `supports(...)` 接受本地 `File` 和 `http(s)` URL 两类 `IngestionSource`
+- 配置了 `apiKey` 走 v4 精准解析（≤200MB，本地文件走签名上传、URL 走任务轮询，结果 zip 解包取 `full.md`）；未配置时自动降级到免 token 的 v1 lite 接口（IP 限频，≤10MB/约 20 页，仅 Markdown）
+- 产出 metadata 带 `parser=mineru`、`mode=precise|lite`、taskId、`imageCount`（v4）、`mimeType`（本地文件）
+- **显式装配**：它不在默认 loader 列表里，也没有注册 ServiceLoader——需要时把它并进 `IngestionPipeline` 的 loader 链
+
+```java
+MinerUService minerUService = new MinerUService(configuration.getMineruConfig());
+
+IngestionPipeline pipeline = new IngestionPipeline(
+        embeddingService,
+        vectorStore,
+        Arrays.<DocumentLoader>asList(new MinerUDocumentLoader(minerUService)),
+        new RecursiveTextChunker(1000, 200),
+        null);   // processors / enrichers 走默认
+
+pipeline.ingest(IngestionRequest.builder()
+        .dataset("kb_scan")
+        .embeddingModel("text-embedding-3-small")
+        .source(IngestionSource.file(new File("scanned-contract.pdf")))
+        .build());
+```
+
+Spring Boot 下配置走 `ai.mineru.*`（见 [Spring Boot 配置参考](/docs/integrations/spring-boot/configuration-reference)），`minerUService` bean 可直接注入。`document.mineru` 包还单独暴露 `MinerUService`（任务提交、签名上传、轮询、zip 解包）和 `MinerUDocumentParser`（`DocumentParser` SPI 适配层），不经 ingestion 也能单独调用。
+
 ## 8. 规范 metadata：`RagMetadataKeys` 与租户/业务/版本隔离
 
 向量库里每个 chunk 都带着一串 metadata，这些 key 不是随手取的名字，而是 `RagMetadataKeys` 定义的**规范常量**。它们被 `DefaultMetadataEnricher` 在入库时统一写进每个 chunk 的 metadata，并被检索、引用、删除等下游能力依赖。

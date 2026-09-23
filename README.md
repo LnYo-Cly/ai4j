@@ -25,7 +25,7 @@
 - **统一接入 12+ 模型平台**：OpenAI、Anthropic、DeepSeek、智谱、豆包、Ollama 等由同一工厂提供服务；Chat / Responses / Messages 三套协议完整支持，Function Calling、SSE 流式原生具备；Embedding、Rerank、图像/音频/视频/音乐生成、实时对话等十类服务接口按需取用；切换平台仅需修改 `PlatformType`，多组 API Key 可并存并按名称路由。
 - **完整的 Agent 编排能力**：ReAct、CodeAct、Deep Research 三种执行模式，StateGraph 图编排支持条件分支与循环，subagent 委派与多智能体团队协作——从简单问答到多步研究型 Agent 均有现成实现。
 - **独创 `ai4j-harness` 长时运行 Harness**：使 Agent 从一次性调用转变为可暂停、可恢复、可验收的长期任务（[详见专节](#ai4j-harness把-agent-变成可运维的长期任务)）。
-- **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路在 SDK 内实现，无需外挂检索框架。
+- **内置完整 RAG**：文档加载（可选 Tika 解析 PDF/Word/Excel，或 MinerU 云端解析扫描件/公式/复杂版面为 Markdown）、切块、五大向量库适配（Pinecone / Qdrant / pgvector / Milvus / Redis）、混合检索、重排、引用标注，整条链路在 SDK 内实现，无需外挂检索框架。
 - **生态互联**：MCP 客户端与服务端（Stdio / SSE / Streamable HTTP 三种传输），既可调用外部工具，也可对外暴露自身能力；A2A 协议支持 Agent 间协作；并可反向接入 Dify / Coze / n8n 已有的 AgentFlow 编排，附带联网搜索增强。
 - **可控可观测**：沙箱执行、权限审批、Hook、Skill、记忆压缩策略、checkpoint 断点续跑、全链路调用追踪、事件溯源会话日志（可投影回放、fork 新会话、离线检索）——长任务的可控性与可观测性均为内置能力。
 - **开箱即用**：Spring Boot starter 单行配置即可注入 `AiService`；内置 Coding Agent 提供 CLI / TUI / ACP 三种入口；插件化扩展覆盖 Tool / Command / Skill / Prompt 四类扩展点，引入依赖不会自动启用。

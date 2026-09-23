@@ -73,6 +73,7 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 | --- | --- | --- | --- | --- |
 | Search & RAG | `advanced` | `ai4j` | 从外部知识中检索、增强回答和保留引用线索 | [Overview](/docs/capabilities/rag/overview) |
 | Ingestion Pipeline | `advanced` | `ai4j` | 文档入库、切分和索引前处理 | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
+| MinerU 文档解析 | `advanced` | `ai4j` | 云端精准/轻量解析 PDF、扫描件、复杂版面为 Markdown，可直接进 RAG | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
 | Hybrid Retrieval | `advanced` | `ai4j` | 组合关键词、向量和其他召回策略 | [混合检索](/docs/capabilities/rag/hybrid-retrieval) |
 | Rerank | `advanced` | `ai4j` | 对候选结果重排，提高检索质量 | [重排](/docs/capabilities/rag/rerank) |
 | MCP | `advanced` | `ai4j` | 通过协议接入外部工具、服务和能力网关 | [MCP Overview](/docs/capabilities/mcp/overview) |

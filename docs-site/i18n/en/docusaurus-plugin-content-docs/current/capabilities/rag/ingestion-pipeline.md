@@ -240,6 +240,36 @@ IngestionResult result = ingestionPipeline.ingest(IngestionRequest.builder()
 
 Order matters: **extract first, clean second**. Cleaning only takes effect on documents that already have text, and the scanned document's text is supplied by the extraction step.
 
+### 7.5 Cloud parsing: `MinerUDocumentLoader`
+
+The OCR processors are the "fill in text locally" route; the other route is handing the whole document to a cloud parsing service. `rag/ingestion/MinerUDocumentLoader.java` implements `DocumentLoader` and feeds MinerU's cloud parsing output — Markdown with LaTeX formulas, structured tables, and counted images — straight into the chunker as `content`. For scanned files, text-layer-less PDFs, and complex layouts it usually beats "OCR backfilled plain text".
+
+Behavior notes:
+
+- `supports(...)` accepts local `File` sources and `http(s)` URL sources
+- With an `apiKey` configured it uses the v4 precise pipeline (≤200MB; local files go through presigned upload, URLs through task polling, and the result zip is unpacked to `full.md`); without a key it falls back to the token-free v1 lite API (IP rate-limited, ≤10MB / ~20 pages, Markdown only)
+- Output metadata carries `parser=mineru`, `mode=precise|lite`, `taskId`, `imageCount` (v4), and `mimeType` (local files)
+- **Explicit wiring**: it is not in the default loader list and is not ServiceLoader-registered — add it to the `IngestionPipeline` loader chain yourself
+
+```java
+MinerUService minerUService = new MinerUService(configuration.getMineruConfig());
+
+IngestionPipeline pipeline = new IngestionPipeline(
+        embeddingService,
+        vectorStore,
+        Arrays.<DocumentLoader>asList(new MinerUDocumentLoader(minerUService)),
+        new RecursiveTextChunker(1000, 200),
+        null);   // processors / enrichers stay on defaults
+
+pipeline.ingest(IngestionRequest.builder()
+        .dataset("kb_scan")
+        .embeddingModel("text-embedding-3-small")
+        .source(IngestionSource.file(new File("scanned-contract.pdf")))
+        .build());
+```
+
+Under Spring Boot, configuration goes through `ai.mineru.*` (see [Spring Boot configuration reference](/docs/integrations/spring-boot/configuration-reference)) and the `minerUService` bean is injectable. The `document.mineru` package also exposes `MinerUService` (task submit, presigned upload, polling, zip unpacking) and `MinerUDocumentParser` (a `DocumentParser` SPI adapter) for direct use outside ingestion.
+
 ## 8. Canonical metadata: `RagMetadataKeys` and tenant / business / version isolation
 
 Every chunk in the vector store carries a set of metadata; these keys are not arbitrary names but **canonical constants** defined by `RagMetadataKeys`. They are written into each chunk's metadata at ingestion time by `DefaultMetadataEnricher`, and downstream capabilities — retrieval, citation, deletion — depend on them.

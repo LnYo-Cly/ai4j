@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import io.github.lnyocly.ai4j.agentflow.AgentFlow;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.config.*;
+import io.github.lnyocly.ai4j.document.mineru.MinerUConfig;
+import io.github.lnyocly.ai4j.document.mineru.MinerUService;
 import io.github.lnyocly.ai4j.extension.ExtensionRegistry;
 import io.github.lnyocly.ai4j.extension.ExtensionRuntimeSnapshot;
 import io.github.lnyocly.ai4j.interceptor.ContentTypeInterceptor;
@@ -80,7 +82,8 @@ import java.util.Map;
         SunoConfigProperties.class,
         TypeSafeConfigProperties.class,
         AgentFlowProperties.class,
-        AiExtensionProperties.class
+        AiExtensionProperties.class,
+        MinerUConfigProperties.class
 })
 
 public class AiConfigAutoConfiguration {
@@ -116,10 +119,11 @@ public class AiConfigAutoConfiguration {
     private final SunoConfigProperties sunoConfigProperties;
     private final TypeSafeConfigProperties typeSafeConfigProperties;
     private final AgentFlowProperties agentFlowProperties;
+    private final MinerUConfigProperties mineruConfigProperties;
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties, MinerUConfigProperties mineruConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -144,6 +148,7 @@ public class AiConfigAutoConfiguration {
         this.sunoConfigProperties = sunoConfigProperties;
         this.typeSafeConfigProperties = typeSafeConfigProperties;
         this.agentFlowProperties = agentFlowProperties;
+        this.mineruConfigProperties = mineruConfigProperties;
     }
 
     @Bean
@@ -232,6 +237,12 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(MinerUService.class)
+    public MinerUService minerUService() {
+        return new MinerUService(configuration);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(PineconeVectorStore.class)
     public PineconeVectorStore pineconeVectorStore(PineconeService pineconeService) {
         return new PineconeVectorStore(pineconeService);
@@ -288,6 +299,7 @@ public class AiConfigAutoConfiguration {
         initRedisConfig();
 
         initSearXNGConfig();
+        initMinerUConfig();
 
         initOpenAiConfig();
         initZhipuConfig();
@@ -587,6 +599,28 @@ public class AiConfigAutoConfiguration {
         searXNGConfig.setNums(searXNGConfigProperties.getNums());
 
         configuration.setSearXNGConfig(searXNGConfig);
+    }
+
+    /**
+     * 初始化MinerU文档解析配置信息
+     */
+    private void initMinerUConfig() {
+        MinerUConfig mineruConfig = new MinerUConfig();
+        mineruConfig.setApiKey(mineruConfigProperties.getApiKey());
+        mineruConfig.setBaseUrl(mineruConfigProperties.getBaseUrl());
+        mineruConfig.setLiteBaseUrl(mineruConfigProperties.getLiteBaseUrl());
+        mineruConfig.setModelVersion(mineruConfigProperties.getModelVersion());
+        mineruConfig.setIsOcr(mineruConfigProperties.getIsOcr());
+        mineruConfig.setEnableFormula(mineruConfigProperties.getEnableFormula());
+        mineruConfig.setEnableTable(mineruConfigProperties.getEnableTable());
+        mineruConfig.setLanguage(mineruConfigProperties.getLanguage());
+        mineruConfig.setPageRanges(mineruConfigProperties.getPageRanges());
+        mineruConfig.setExtraFormats(mineruConfigProperties.getExtraFormats());
+        mineruConfig.setDataId(mineruConfigProperties.getDataId());
+        mineruConfig.setPollIntervalMs(mineruConfigProperties.getPollIntervalMs());
+        mineruConfig.setPollTimeoutMs(mineruConfigProperties.getPollTimeoutMs());
+
+        configuration.setMineruConfig(mineruConfig);
     }
 
     /**

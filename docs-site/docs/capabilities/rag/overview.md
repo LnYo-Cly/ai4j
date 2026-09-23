@@ -108,6 +108,8 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 - `WhitespaceNormalizingDocumentProcessor`
 - `DefaultMetadataEnricher`
 
+需要云端解析（扫描件、公式、复杂版面 → Markdown）时，可以显式换上 `MinerUDocumentLoader`——它不在默认装配里（见 [摄取管线](/docs/capabilities/rag/ingestion-pipeline) 第 7.5 节）。
+
 而 `IngestionPipeline` 本身会把一条 ingest 请求拆成：
 
 1. source load
