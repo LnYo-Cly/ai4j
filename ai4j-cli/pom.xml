@@ -171,7 +171,8 @@
         <profile>
             <id>release</id>
             <properties>
-                <ai4j.cli.assembly.skip>false</ai4j.cli.assembly.skip>
+                <!-- Fat jar 不发布 Central：作为 GitHub Release asset 分发（install 脚本下载源） -->
+                <ai4j.cli.assembly.skip>true</ai4j.cli.assembly.skip>
             </properties>
             <build>
                 <plugins>

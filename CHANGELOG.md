@@ -8,6 +8,14 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+### Changed
+- `ai4j-cli-*-jar-with-dependencies.jar` is no longer deployed to Maven
+  Central (release profile sets `ai4j.cli.assembly.skip=true`); it ships as a
+  GitHub Release asset instead. `install.sh` / `install.ps1` now download it
+  from GitHub Releases first and fall back to Maven Central, so pinned older
+  versions keep installing. SDK consumers using the thin `ai4j-cli` artifact
+  or other modules are unaffected.
+
 ## [2.8.0] — 2026-09-23
 
 ### Added

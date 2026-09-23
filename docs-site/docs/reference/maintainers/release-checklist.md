@@ -50,13 +50,24 @@ mvn -P release -DskipTests clean deploy
 
 记录 Central deployment id。若 Central 返回 `validated` 但要求手动发布，在 Sonatype Central Portal 或 Publisher API 中发布该 deployment。
 
+注意：`mvn deploy` 即使验证失败也会计入 Sonatype 月度 Release Count / File Count / Release Size 配额；失败先去 Central Portal 查清原因，不要盲目重跑。
+
+## CLI fat jar 分发
+
+`ai4j-cli-<version>-jar-with-dependencies.jar` 不上 Central（release profile 中 `ai4j.cli.assembly.skip=true`），作为 GitHub Release asset 分发，`install.sh` / `install.ps1` 从这里下载。
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package   # 不带 release profile，产出 fat jar
+gh release upload v<version> ai4j-cli/target/ai4j-cli-<version>-jar-with-dependencies.jar
+```
+
 ## 发布后验证
 
 1. Maven Central deployment 状态为 `PUBLISHED`。
 2. `maven-metadata.xml` 的 `latest` 和 `release` 等于本次版本。
 3. 主模块的 `pom`、`jar`、`sources`、`javadoc` 和 `.asc` 可下载。
-4. `ai4j-cli-<version>-jar-with-dependencies.jar` 不存在。
-5. 创建 GitHub tag / Release，说明版本变化和 Maven 坐标。
+4. `ai4j-cli-<version>-jar-with-dependencies.jar` 不出现在 Central，但作为 asset 出现在 GitHub Release 上（`gh release view v<version>` 可见）。
+5. 创建 GitHub tag / Release，说明版本变化和 Maven 坐标，并上传 fat jar asset（见上节）。
 6. 新分支把所有 Maven POM bump 到下一个 `SNAPSHOT` 并合回 `main`。
 
 ## 收口
