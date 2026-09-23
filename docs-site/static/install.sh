@@ -7,6 +7,8 @@ AI4J_LIB_DIR="$AI4J_HOME/lib"
 AI4J_VERSION_FILE="$AI4J_HOME/version.txt"
 MAVEN_REPO="${AI4J_MAVEN_REPO:-https://repo.maven.apache.org/maven2}"
 GH_RELEASES="${AI4J_GH_REPO:-https://github.com/LnYo-Cly/ai4j/releases/download}"
+MAVEN_REPO="${MAVEN_REPO%/}"
+GH_RELEASES="${GH_RELEASES%/}"
 METADATA_URL="$MAVEN_REPO/io/github/lnyo-cly/ai4j-cli/maven-metadata.xml"
 
 say() {
@@ -62,7 +64,7 @@ download_text() {
 
 resolve_version() {
   if [ -n "${AI4J_VERSION:-}" ]; then
-    printf '%s' "$AI4J_VERSION"
+    printf '%s' "${AI4J_VERSION#v}"
     return
   fi
 

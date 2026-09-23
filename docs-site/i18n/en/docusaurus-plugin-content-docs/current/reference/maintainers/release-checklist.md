@@ -51,13 +51,24 @@ mvn -P release -DskipTests clean deploy
 
 Record the Central deployment id. If Central returns `validated` but requires manual publishing, publish that deployment from the Sonatype Central Portal or the Publisher API.
 
+Note: a failed `mvn deploy` still counts toward Sonatype's monthly Release Count / File Count / Release Size quotas; investigate validation errors in the Central Portal before rerunning.
+
+## CLI fat jar distribution
+
+`ai4j-cli-<version>-jar-with-dependencies.jar` is not published to Central (`ai4j.cli.assembly.skip=true` in the release profile); it ships as a GitHub Release asset that `install.sh` / `install.ps1` download. Run this after creating the GitHub tag / Release:
+
+```powershell
+mvn -pl ai4j-cli -am -DskipTests package   # without the release profile, produces the fat jar
+gh release upload v<version> ai4j-cli/target/ai4j-cli-<version>-jar-with-dependencies.jar
+```
+
 ## Post-release verification
 
 1. Maven Central deployment status is `PUBLISHED`.
 2. `maven-metadata.xml` `latest` and `release` equal this version.
 3. The main module's `pom`, `jar`, `sources`, `javadoc`, and `.asc` are downloadable.
-4. `ai4j-cli-<version>-jar-with-dependencies.jar` does not exist.
-5. Create a GitHub tag / Release describing the version changes and Maven coordinates.
+4. `ai4j-cli-<version>-jar-with-dependencies.jar` is absent from Central but present as a GitHub Release asset (visible via `gh release view v<version>`).
+5. Create a GitHub tag / Release describing the version changes and Maven coordinates, and upload the fat jar asset (see above).
 6. On a new branch, bump all Maven POMs to the next `SNAPSHOT` and merge it back to `main`.
 
 ## Wrap-up

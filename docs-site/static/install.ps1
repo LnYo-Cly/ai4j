@@ -21,7 +21,7 @@ function Test-SkipPathUpdate {
 
 function Resolve-Version {
     if ($env:AI4J_VERSION) {
-        return $env:AI4J_VERSION
+        return $env:AI4J_VERSION -replace '^v', ''
     }
 
     $repo = if ($env:AI4J_MAVEN_REPO) { $env:AI4J_MAVEN_REPO.TrimEnd('/') } else { "https://repo.maven.apache.org/maven2" }
