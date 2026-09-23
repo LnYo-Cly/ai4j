@@ -82,7 +82,7 @@ Dependency (note the real Maven groupId is `io.github.lnyo-cly`):
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j</artifactId>
-  <version>2.7.0</version>
+  <version>2.8.0</version>
 </dependency>
 ```
 

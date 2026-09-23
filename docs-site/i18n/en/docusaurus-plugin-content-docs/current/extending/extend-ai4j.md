@@ -87,7 +87,7 @@ Add the dependency:
 <dependency>
   <groupId>io.github.lnyo-cly</groupId>
   <artifactId>ai4j-plugin-ask-user</artifactId>
-  <version>2.7.0</version>
+  <version>2.8.0</version>
 </dependency>
 ```
 
