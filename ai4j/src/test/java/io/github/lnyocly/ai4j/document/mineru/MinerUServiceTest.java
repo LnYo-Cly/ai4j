@@ -2,12 +2,16 @@ package io.github.lnyocly.ai4j.document.mineru;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.document.mineru.entity.MinerUBatchRequest;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUBatchStatus;
+import io.github.lnyocly.ai4j.document.mineru.entity.MinerUFileSpec;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUTaskRequest;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUTaskStatus;
 import io.github.lnyocly.ai4j.exception.AiRateLimitException;
 import io.github.lnyocly.ai4j.exception.AiTimeoutException;
 import io.github.lnyocly.ai4j.exception.CommonException;
+import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
+import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -187,6 +191,34 @@ public class MinerUServiceTest {
     }
 
     @Test
+    public void waitForTaskTolerates429WithErrorInterceptorClient() throws Exception {
+        // starter 路径注入的共享 client 带 ErrorInterceptor——MinerUService 必须剔除它，
+        // 否则 429 会被拍平成 CommonException 使轮询容错失效
+        MockWebServer server = new MockWebServer();
+        server.start();
+        server.enqueue(new MockResponse().setResponseCode(429).setBody("too many requests"));
+        server.enqueue(json(taskJson("done")));
+        try {
+            MinerUConfig config = new MinerUConfig();
+            config.setBaseUrl(server.url("/api/v4").toString());
+            config.setApiKey("test-key");
+            config.setPollIntervalMs(10);
+            config.setPollTimeoutMs(5000);
+            Configuration configuration = new Configuration();
+            configuration.setMineruConfig(config);
+            configuration.setOkHttpClient(new OkHttpClient.Builder()
+                    .addInterceptor(new ErrorInterceptor()).build());
+            MinerUService service = new MinerUService(configuration);
+            MinerUTaskStatus status = service.waitForTask("t-1");
+
+            Assert.assertTrue(status.isDone());
+            Assert.assertEquals(2, server.getRequestCount());
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
     public void waitForTaskThrowsTimeoutException() throws Exception {
         MockWebServer server = new MockWebServer();
         server.start();
@@ -300,9 +332,71 @@ public class MinerUServiceTest {
         }
     }
 
+    @Test
+    public void applyUploadUrlsDefaultsIsOcrOnFileSpec() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.start();
+        server.enqueue(json("{\"code\":0,\"data\":{\"batch_id\":\"b-1\",\"file_urls\":[\""
+                + server.url("/oss/f1") + "\"]},\"msg\":\"ok\"}"));
+        try {
+            MinerUConfig config = new MinerUConfig();
+            config.setBaseUrl(server.url("/api/v4").toString());
+            config.setApiKey("test-key");
+            config.setIsOcr(true);
+            MinerUService service = new MinerUService(config, new OkHttpClient());
+            service.applyUploadUrls(MinerUBatchRequest.builder()
+                    .file(MinerUFileSpec.ofName("a.pdf")).build());
+
+            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            JSONObject file = body.getJSONArray("files").getJSONObject(0);
+            Assert.assertEquals("a.pdf", file.getString("name"));
+            Assert.assertEquals(Boolean.TRUE, file.getBoolean("is_ocr"));
+            Assert.assertEquals("vlm", body.getString("model_version"));
+        } finally {
+            server.shutdown();
+        }
+    }
+
+    @Test
+    public void downloadRejectsBlankUrl() throws Exception {
+        MinerUService service = new MinerUService(new MinerUConfig(), new OkHttpClient());
+        try {
+            service.downloadAndExtract(null);
+            Assert.fail("expected CommonException");
+        } catch (CommonException e) {
+            Assert.assertTrue(e.getMessage().contains("url"));
+        }
+    }
+
     // ---------------------------------------------------------------
     // v1 Agent 轻量解析 API
     // ---------------------------------------------------------------
+
+    @Test
+    public void liteParseByUrlRunsFullChain() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.start();
+        String mdUrl = server.url("/md/full.md").toString();
+        server.enqueue(json("{\"code\":0,\"data\":{\"task_id\":\"lt-9\"},\"msg\":\"ok\"}"));
+        server.enqueue(json("{\"code\":0,\"data\":{\"task_id\":\"lt-9\",\"state\":\"done\",\"markdown_url\":\""
+                + mdUrl + "\"},\"msg\":\"ok\"}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("# Url doc\n"));
+        try {
+            MinerUService service = service(server, false);
+            String markdown = service.liteParseByUrl("https://example.com/a.pdf");
+
+            Assert.assertEquals("# Url doc\n", markdown);
+            RecordedRequest submit = server.takeRequest(1, TimeUnit.SECONDS);
+            Assert.assertEquals("/api/v1/agent/parse/url", submit.getPath());
+            Assert.assertNull(submit.getHeader("Authorization"));
+            JSONObject body = JSON.parseObject(submit.getBody().readUtf8());
+            Assert.assertEquals("https://example.com/a.pdf", body.getString("url"));
+            Assert.assertEquals("/api/v1/agent/parse/lt-9", server.takeRequest(1, TimeUnit.SECONDS).getPath());
+            Assert.assertEquals("/md/full.md", server.takeRequest(1, TimeUnit.SECONDS).getPath());
+        } finally {
+            server.shutdown();
+        }
+    }
 
     @Test
     public void liteParseByFileRunsFullChainWithoutAuth() throws Exception {

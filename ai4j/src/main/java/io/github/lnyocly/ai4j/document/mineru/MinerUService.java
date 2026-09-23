@@ -17,6 +17,7 @@ import io.github.lnyocly.ai4j.exception.AiRateLimitException;
 import io.github.lnyocly.ai4j.exception.AiTimeoutException;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
+import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -63,9 +64,23 @@ public class MinerUService {
     private final OkHttpClient okHttpClient;
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * 基于全局 {@link Configuration} 构造。共享 OkHttpClient 上的
+     * {@link ErrorInterceptor} 会把非 2xx 统一拍平为 {@link CommonException} 并整包缓冲
+     * 响应体——本类自行通过 {@link HttpErrorDecoder} 分类错误且需要下载 zip，
+     * 因此派生一个剔除该拦截器的客户端（保留超时等共享配置）。
+     */
     public MinerUService(Configuration configuration) {
-        this.config = configuration.getMineruConfig() == null ? new MinerUConfig() : configuration.getMineruConfig();
-        this.okHttpClient = configuration.getOkHttpClient() == null ? new OkHttpClient() : configuration.getOkHttpClient();
+        this.config = configuration == null || configuration.getMineruConfig() == null
+                ? new MinerUConfig() : configuration.getMineruConfig();
+        OkHttpClient shared = configuration == null ? null : configuration.getOkHttpClient();
+        if (shared == null) {
+            this.okHttpClient = new OkHttpClient();
+        } else {
+            OkHttpClient.Builder builder = shared.newBuilder();
+            builder.interceptors().removeIf(ErrorInterceptor.class::isInstance);
+            this.okHttpClient = builder.build();
+        }
     }
 
     public MinerUService(MinerUConfig config) {
@@ -231,6 +246,9 @@ public class MinerUService {
      * 原始字节下载（zip/markdown CDN 链接，无需鉴权）。
      */
     public byte[] download(String url) throws IOException {
+        if (StringUtils.isBlank(url)) {
+            throw new CommonException("MinerU result url is empty");
+        }
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
@@ -504,6 +522,19 @@ public class MinerUService {
         }
         if (request.getExtraFormats() == null) {
             request.setExtraFormats(config.getExtraFormats());
+        }
+        if (request.getFiles() != null) {
+            for (MinerUFileSpec file : request.getFiles()) {
+                if (file.getIsOcr() == null) {
+                    file.setIsOcr(config.getIsOcr());
+                }
+                if (file.getDataId() == null) {
+                    file.setDataId(config.getDataId());
+                }
+                if (file.getPageRanges() == null) {
+                    file.setPageRanges(config.getPageRanges());
+                }
+            }
         }
     }
 
