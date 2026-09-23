@@ -54,7 +54,7 @@ mvn -P release -DskipTests clean deploy
 
 ## CLI fat jar 分发
 
-`ai4j-cli-<version>-jar-with-dependencies.jar` 不上 Central（release profile 中 `ai4j.cli.assembly.skip=true`），作为 GitHub Release asset 分发，`install.sh` / `install.ps1` 从这里下载。
+`ai4j-cli-<version>-jar-with-dependencies.jar` 不上 Central（release profile 中 `ai4j.cli.assembly.skip=true`），作为 GitHub Release asset 分发，`install.sh` / `install.ps1` 从这里下载。在创建 GitHub tag / Release 之后执行：
 
 ```powershell
 mvn -pl ai4j-cli -am -DskipTests package   # 不带 release profile，产出 fat jar
