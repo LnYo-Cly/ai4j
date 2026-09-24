@@ -27,6 +27,14 @@ public class RagQuery {
 
     private Integer finalTopK;
 
+    /**
+     * Optional minimum retrieval score. Hits whose dense retriever score is
+     * below this value are dropped before fusion/rerank. Null means no
+     * threshold. Only applies to normalized similarity scores (dense path);
+     * BM25 and fusion scores are not filtered by this value.
+     */
+    private Float minScore;
+
     private Map<String, Object> filter;
 
     /**

@@ -34,6 +34,14 @@ The provider side also has a few implementations:
 - `platform/jina/rerank/JinaRerankService.java`
 - `platform/ollama/rerank/OllamaRerankService.java`
 
+`JinaRerankService` is itself a preconfigured shell over `StandardRerankService`. Any rerank endpoint that follows the same HTTP shape (`model` + `query` + `documents` → `results[{index, relevance_score}]`) can be wired straight through the generic factory entry — no dedicated provider needed:
+
+```java
+IRerankService rerankService = aiService.getStandardRerankService(
+        "https://provider.example.com/", "sk-...", "v1/rerank");
+Reranker reranker = new ModelReranker(rerankService, "rerank-model");
+```
+
 But the thing that actually wires rerank into the main RAG chain is `DefaultRagService.search(...)`.
 
 ## 2. Exactly where rerank happens in the default RAG chain

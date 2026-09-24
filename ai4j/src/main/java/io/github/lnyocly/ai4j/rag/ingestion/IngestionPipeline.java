@@ -37,6 +37,7 @@ public class IngestionPipeline {
     private final Chunker defaultChunker;
     private final List<LoadedDocumentProcessor> defaultDocumentProcessors;
     private final List<MetadataEnricher> defaultMetadataEnrichers;
+    private final String defaultEmbeddingModel;
 
     public IngestionPipeline(IEmbeddingService embeddingService, VectorStore vectorStore) {
         this(
@@ -63,6 +64,16 @@ public class IngestionPipeline {
                              Chunker defaultChunker,
                              List<LoadedDocumentProcessor> defaultDocumentProcessors,
                              List<MetadataEnricher> defaultMetadataEnrichers) {
+        this(embeddingService, vectorStore, documentLoaders, defaultChunker, defaultDocumentProcessors, defaultMetadataEnrichers, null);
+    }
+
+    public IngestionPipeline(IEmbeddingService embeddingService,
+                             VectorStore vectorStore,
+                             List<DocumentLoader> documentLoaders,
+                             Chunker defaultChunker,
+                             List<LoadedDocumentProcessor> defaultDocumentProcessors,
+                             List<MetadataEnricher> defaultMetadataEnrichers,
+                             String defaultEmbeddingModel) {
         if (embeddingService == null) {
             throw new IllegalArgumentException("embeddingService is required");
         }
@@ -79,6 +90,7 @@ public class IngestionPipeline {
         this.defaultMetadataEnrichers = defaultMetadataEnrichers == null
                 ? Collections.<MetadataEnricher>singletonList(new DefaultMetadataEnricher())
                 : new ArrayList<MetadataEnricher>(defaultMetadataEnrichers);
+        this.defaultEmbeddingModel = defaultEmbeddingModel;
     }
 
     public IngestionResult ingest(IngestionRequest request) throws Exception {
@@ -88,7 +100,8 @@ public class IngestionPipeline {
         if (isBlank(request.getDataset())) {
             throw new IllegalArgumentException("dataset is required");
         }
-        if (isBlank(request.getEmbeddingModel())) {
+        String embeddingModel = isBlank(request.getEmbeddingModel()) ? defaultEmbeddingModel : request.getEmbeddingModel();
+        if (isBlank(embeddingModel)) {
             throw new IllegalArgumentException("embeddingModel is required");
         }
         long t0 = System.nanoTime();
@@ -107,7 +120,7 @@ public class IngestionPipeline {
         if (chunks.isEmpty()) {
             return IngestionResult.builder()
                     .dataset(request.getDataset())
-                    .embeddingModel(request.getEmbeddingModel())
+                    .embeddingModel(embeddingModel)
                     .source(request.getSource())
                     .document(document)
                     .chunks(Collections.<RagChunk>emptyList())
@@ -138,7 +151,7 @@ public class IngestionPipeline {
             }
             ingestableChunks.add(chunk);
         }
-        List<VectorRecord> records = buildRecords(request, ingestableChunks);
+        List<VectorRecord> records = buildRecords(embeddingModel, request, ingestableChunks);
         long t3 = System.nanoTime();
         int upsertedCount = Boolean.FALSE.equals(request.getUpsert()) || records.isEmpty()
                 ? 0
@@ -150,7 +163,7 @@ public class IngestionPipeline {
 
         return IngestionResult.builder()
                 .dataset(request.getDataset())
-                .embeddingModel(request.getEmbeddingModel())
+                .embeddingModel(embeddingModel)
                 .source(request.getSource())
                 .document(document)
                 .chunks(chunks)
@@ -265,7 +278,8 @@ public class IngestionPipeline {
         return normalized;
     }
 
-    private List<VectorRecord> buildRecords(IngestionRequest request,
+    private List<VectorRecord> buildRecords(String embeddingModel,
+                                            IngestionRequest request,
                                             List<RagChunk> chunks) throws Exception {
         if (chunks == null || chunks.isEmpty()) {
             return Collections.emptyList();
@@ -274,7 +288,7 @@ public class IngestionPipeline {
         for (RagChunk chunk : chunks) {
             contents.add(chunk.getContent());
         }
-        List<List<Float>> vectors = embed(contents, request.getEmbeddingModel(), request.getBatchSize());
+        List<List<Float>> vectors = embed(contents, embeddingModel, request.getBatchSize());
         if (vectors.size() != chunks.size()) {
             throw new IllegalStateException("Embedding vector count does not match chunk count");
         }

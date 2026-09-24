@@ -262,6 +262,10 @@ return RagQueryPlan.of(query.getQuery(), Arrays.asList(
   -> assembler 用原 query 组装上下文
 ```
 
+:::note
+多个 variant 的检索是**并行扇出**的（`CompletableFuture` + common pool），不再是串行往返——4 个变体约等于 1 次检索的墙钟延迟。归并仍按变体顺序确定性地进行；若有变体失败，抛出的是变体序里第一个失败的异常。线程安全前提落在 retriever 上：内置的 `DenseRetriever`/`Bm25Retriever`/`HybridRetriever` 都无状态可并发；自定义 retriever 若持有非线程安全状态需自行保证。
+:::
+
 如果 base retriever 本身是 `HybridRetriever`，那就是：
 
 ```text

@@ -86,6 +86,23 @@ Yet `RagChunk` explicitly supports these fields:
 
 This shows the default implementation is positioned as "a text-splitting base component that runs end to end," not "a complete semantic-structure splitter."
 
+### 3.1 Built-in alternative: `SentenceTextChunker`
+
+Besides recursive character splitting, the SDK ships `SentenceTextChunker` (same `rag.ingestion` package):
+
+```java
+.chunker(new SentenceTextChunker(500, 50))
+```
+
+Key differences from `RecursiveTextChunker`:
+
+- **Sentences are never cut**: boundaries are detected on `。！？；`, `.!?;`, and line breaks, then whole sentences are greedily packed into `chunkSize` — retrieval snippets and citation display read naturally
+- A single sentence longer than `chunkSize` falls back to a hard character cut (with `chunkOverlap` overlap) so no content is lost
+- Line breaks are boundaries; closing quotes/brackets after terminal punctuation stay inside the sentence
+- Same output contract: only `documentId` / `content` / `chunkIndex` are populated
+
+How to choose: keep recursive splitting (the default) for general/mixed documents; prefer sentence splitting for chat logs, FAQs, and corpora where sentence-level semantics matter.
+
 ## 4. Why the default strategy is sufficient, but far from complete
 
 The default `RecursiveTextChunker` has these strengths:

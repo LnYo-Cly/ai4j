@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 
 public class DefaultRagServiceTest {
 
@@ -97,8 +99,8 @@ public class DefaultRagServiceTest {
 
     @Test
     public void shouldRetrievePlannedVariantsBeforeRerankAndPreserveOriginalQuery() throws Exception {
-        final List<String> retrievedQueries = new ArrayList<String>();
-        final List<List<ChatMemoryItem>> retrievedHistory = new ArrayList<List<ChatMemoryItem>>();
+        final List<String> retrievedQueries = Collections.synchronizedList(new ArrayList<String>());
+        final List<List<ChatMemoryItem>> retrievedHistory = Collections.synchronizedList(new ArrayList<List<ChatMemoryItem>>());
         final String[] rerankQuery = new String[1];
         Retriever retriever = new Retriever() {
             @Override
@@ -142,7 +144,11 @@ public class DefaultRagServiceTest {
                 .topK(5)
                 .build());
 
-        Assert.assertEquals(Arrays.asList("rewrite benefits policy", "step back employee benefits"), retrievedQueries);
+        // Variant retrievals fan out in parallel, so execution order is
+        // unspecified; membership and merge order stay deterministic.
+        Assert.assertEquals(new java.util.HashSet<String>(
+                Arrays.asList("rewrite benefits policy", "step back employee benefits")),
+                new java.util.HashSet<String>(retrievedQueries));
         Assert.assertEquals(history, retrievedHistory.get(0));
         Assert.assertEquals(history, retrievedHistory.get(1));
         Assert.assertEquals("benefits", result.getQuery());
@@ -183,5 +189,65 @@ public class DefaultRagServiceTest {
         Assert.assertTrue(result.getTrace().getQueryPlan().isFallback());
         Assert.assertEquals("planner unavailable", result.getTrace().getQueryPlan().getFallbackReason());
         Assert.assertEquals(RagQueryVariantType.ORIGINAL, result.getTrace().getQueryPlan().getVariants().get(0).getType());
+    }
+
+    @Test
+    public void shouldRetrieveVariantsInParallel() throws Exception {
+        // Only meaningful when the common pool can actually run two tasks
+        // concurrently; on single-worker pools the latch would time out.
+        org.junit.Assume.assumeTrue(ForkJoinPool.getCommonPoolParallelism() > 1);
+        final CountDownLatch bothStarted = new CountDownLatch(2);
+        Retriever retriever = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) throws Exception {
+                bothStarted.countDown();
+                if (!bothStarted.await(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("variant retrievals did not overlap");
+                }
+                return Collections.singletonList(
+                        RagHit.builder().id(query.getQuery()).content(query.getQuery()).score(0.5f).build());
+            }
+        };
+        RagQueryPlanner planner = new RagQueryPlanner() {
+            @Override
+            public RagQueryPlan plan(RagQuery query) {
+                return RagQueryPlan.of(query.getQuery(), Arrays.asList(
+                        RagQueryVariant.multiQuery("variant-a"),
+                        RagQueryVariant.multiQuery("variant-b")
+                ));
+            }
+        };
+
+        DefaultRagService ragService = new DefaultRagService(retriever, new NoopReranker(), new DefaultRagContextAssembler(), planner);
+        RagResult result = ragService.search(RagQuery.builder().query("benefits").topK(10).build());
+
+        Assert.assertEquals(2, result.getHits().size());
+    }
+
+    @Test
+    public void shouldThrowFirstVariantFailureInVariantOrder() {
+        Retriever retriever = new Retriever() {
+            @Override
+            public List<RagHit> retrieve(RagQuery query) {
+                throw new IllegalStateException("boom-" + query.getQuery());
+            }
+        };
+        RagQueryPlanner planner = new RagQueryPlanner() {
+            @Override
+            public RagQueryPlan plan(RagQuery query) {
+                return RagQueryPlan.of(query.getQuery(), Arrays.asList(
+                        RagQueryVariant.multiQuery("v1"),
+                        RagQueryVariant.multiQuery("v2")
+                ));
+            }
+        };
+
+        DefaultRagService ragService = new DefaultRagService(retriever, new NoopReranker(), new DefaultRagContextAssembler(), planner);
+        try {
+            ragService.search(RagQuery.builder().query("benefits").build());
+            Assert.fail("expected retrieval failure");
+        } catch (Exception e) {
+            Assert.assertEquals("boom-v1", e.getMessage());
+        }
     }
 }

@@ -14,6 +14,7 @@ import io.github.lnyocly.ai4j.rag.ingestion.OcrNoiseCleaningDocumentProcessor;
 import io.github.lnyocly.ai4j.rag.ingestion.OcrTextExtractingDocumentProcessor;
 import io.github.lnyocly.ai4j.rag.ingestion.OcrTextExtractor;
 import io.github.lnyocly.ai4j.rag.ingestion.RecursiveTextChunker;
+import io.github.lnyocly.ai4j.rag.ingestion.TextDocumentLoader;
 import io.github.lnyocly.ai4j.service.IEmbeddingService;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
@@ -181,6 +182,59 @@ public class IngestionPipelineTest {
         Assert.assertEquals(0, result.getUpsertedCount());
         Assert.assertNull(((CapturingVectorStore) vectorStore).lastUpsertRequest);
         Assert.assertTrue(embeddingService.embeddedInputs.isEmpty());
+    }
+
+    @Test
+    public void shouldUsePipelineDefaultEmbeddingModelWhenRequestOmitsIt() throws Exception {
+        CapturingVectorStore vectorStore = new CapturingVectorStore();
+        IngestionPipeline pipeline = new IngestionPipeline(
+                new FakeEmbeddingService(), vectorStore,
+                Collections.<DocumentLoader>singletonList(new TextDocumentLoader()),
+                null, null, null, "default-embed-model");
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_default_model")
+                .source(IngestionSource.text("some content"))
+                .upsert(Boolean.FALSE)
+                .build());
+
+        Assert.assertEquals("default-embed-model", result.getEmbeddingModel());
+        Assert.assertFalse(result.getRecords().isEmpty());
+    }
+
+    @Test
+    public void shouldPreferRequestEmbeddingModelOverPipelineDefault() throws Exception {
+        CapturingVectorStore vectorStore = new CapturingVectorStore();
+        IngestionPipeline pipeline = new IngestionPipeline(
+                new FakeEmbeddingService(), vectorStore,
+                Collections.<DocumentLoader>singletonList(new TextDocumentLoader()),
+                null, null, null, "default-embed-model");
+
+        IngestionResult result = pipeline.ingest(IngestionRequest.builder()
+                .dataset("kb_default_model")
+                .embeddingModel("explicit-model")
+                .source(IngestionSource.text("some content"))
+                .upsert(Boolean.FALSE)
+                .build());
+
+        Assert.assertEquals("explicit-model", result.getEmbeddingModel());
+    }
+
+    @Test
+    public void shouldStillRequireEmbeddingModelWithoutPipelineDefault() {
+        CapturingVectorStore vectorStore = new CapturingVectorStore();
+        IngestionPipeline pipeline = new IngestionPipeline(new FakeEmbeddingService(), vectorStore);
+        try {
+            pipeline.ingest(IngestionRequest.builder()
+                    .dataset("kb_default_model")
+                    .source(IngestionSource.text("some content"))
+                    .build());
+            Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertEquals("embeddingModel is required", expected.getMessage());
+        } catch (Exception e) {
+            Assert.fail("expected IllegalArgumentException, got " + e);
+        }
     }
 
     @Test

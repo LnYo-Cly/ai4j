@@ -263,6 +263,10 @@ original query
   -> assembler builds context with the original query
 ```
 
+:::note
+Multiple variant retrievals **fan out in parallel** (`CompletableFuture` on the common pool), no longer serialized — 4 variants cost roughly one retrieval's wall-clock latency. The merge still happens deterministically in variant order; on failure, the exception thrown is the first failing variant in variant order. Thread-safety rests on the retriever: the built-in `DenseRetriever`/`Bm25Retriever`/`HybridRetriever` are stateless and safe; a custom retriever holding non-thread-safe state must guard itself.
+:::
+
 If the base retriever is itself a `HybridRetriever`, that becomes:
 
 ```text

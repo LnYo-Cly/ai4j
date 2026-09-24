@@ -44,7 +44,98 @@ public class DenseRetrieverTest {
         Assert.assertEquals("Paid leave policy", hits.get(0).getContent());
     }
 
+    @Test
+    public void shouldDropHitsBelowMinScoreAndKeepUnscoredHits() throws Exception {
+        DenseRetriever retriever = new DenseRetriever(new FakeEmbeddingService(),
+                new FixedResultsVectorStore(Arrays.asList(
+                        VectorSearchResult.builder().id("high").score(0.9f).content("high").build(),
+                        VectorSearchResult.builder().id("unscored").score(null).content("unscored").build(),
+                        VectorSearchResult.builder().id("low").score(0.3f).content("low").build()
+                )));
+
+        List<RagHit> hits = retriever.retrieve(RagQuery.builder()
+                .query("policy")
+                .embeddingModel("text-embedding-3-small")
+                .minScore(0.5f)
+                .build());
+
+        Assert.assertEquals(2, hits.size());
+        Assert.assertEquals("high", hits.get(0).getId());
+        Assert.assertEquals("unscored", hits.get(1).getId());
+    }
+
+    @Test
+    public void shouldUseConfiguredDefaultEmbeddingModelWhenQueryOmitsIt() throws Exception {
+        FakeEmbeddingService embeddingService = new FakeEmbeddingService();
+        DenseRetriever retriever = new DenseRetriever(embeddingService,
+                new FixedResultsVectorStore(Collections.<VectorSearchResult>emptyList()),
+                "default-embed-model");
+
+        retriever.retrieve(RagQuery.builder().query("policy").build());
+
+        Assert.assertEquals("default-embed-model", embeddingService.lastModel);
+    }
+
+    @Test
+    public void shouldPreferRequestEmbeddingModelOverDefault() throws Exception {
+        FakeEmbeddingService embeddingService = new FakeEmbeddingService();
+        DenseRetriever retriever = new DenseRetriever(embeddingService,
+                new FixedResultsVectorStore(Collections.<VectorSearchResult>emptyList()),
+                "default-embed-model");
+
+        retriever.retrieve(RagQuery.builder()
+                .query("policy")
+                .embeddingModel("explicit-model")
+                .build());
+
+        Assert.assertEquals("explicit-model", embeddingService.lastModel);
+    }
+
+    @Test
+    public void shouldStillRequireEmbeddingModelWhenNoDefaultConfigured() {
+        DenseRetriever retriever = new DenseRetriever(new FakeEmbeddingService(),
+                new FixedResultsVectorStore(Collections.<VectorSearchResult>emptyList()));
+        try {
+            retriever.retrieve(RagQuery.builder().query("policy").build());
+            Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+            Assert.assertEquals("embeddingModel is required", expected.getMessage());
+        } catch (Exception e) {
+            Assert.fail("expected IllegalArgumentException, got " + e);
+        }
+    }
+
+    private static class FixedResultsVectorStore implements VectorStore {
+        private final List<VectorSearchResult> results;
+
+        private FixedResultsVectorStore(List<VectorSearchResult> results) {
+            this.results = results;
+        }
+
+        @Override
+        public int upsert(io.github.lnyocly.ai4j.vector.store.VectorUpsertRequest request) {
+            return 0;
+        }
+
+        @Override
+        public List<VectorSearchResult> search(VectorSearchRequest request) {
+            return results;
+        }
+
+        @Override
+        public boolean delete(io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest request) {
+            return false;
+        }
+
+        @Override
+        public VectorStoreCapabilities capabilities() {
+            return VectorStoreCapabilities.builder().dataset(true).metadataFilter(true).build();
+        }
+    }
+
     private static class FakeEmbeddingService implements IEmbeddingService {
+        private String lastModel;
+
         @Override
         public EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq) {
             return embedding(embeddingReq);
@@ -52,6 +143,7 @@ public class DenseRetrieverTest {
 
         @Override
         public EmbeddingResponse embedding(Embedding embeddingReq) {
+            this.lastModel = embeddingReq.getModel();
             return EmbeddingResponse.builder()
                     .data(Collections.singletonList(EmbeddingObject.builder()
                             .index(0)
