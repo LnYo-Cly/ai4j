@@ -40,6 +40,7 @@ A regular agent call ends when it returns; `ai4j-harness` turns it into a **dura
 - **Safe multi-worker parallelism**: workers claim tasks through leases with no double-execution; if a worker fails, its task returns to the claimable pool
 - **"Done" is not "accepted"**: an agent's submission must pass review and acceptance gates before it counts — rejected work is returned for another round
 - **Fully auditable**: task dependencies, facts, decisions, and evidence are all recorded in a ledger that supports replay and traceability
+- **Governance per task type**: task-level presets attach different acceptance chains to different task classes, and an ACCEPTED decision can be promoted by a human into a durable runtime rule (LEARN reflow) so lessons constrain every future run
 
 Suited to approval workflows, long business-process orchestration, and automation requiring human confirmation. See [Harness runtime](docs-site/docs/agent/harness-runtime.md).
 

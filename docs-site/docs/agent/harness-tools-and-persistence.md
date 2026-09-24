@@ -52,10 +52,10 @@ Harness 自动向已有工具 Registry 添加以下保留名称。业务 Tool �
 
 | 工具 | 作用 | 典型操作 |
 | --- | --- | --- |
-| `harness_context_get` | 读取当前 Execution 的 Task、可运行 Task、Wait、Fact、Decision、Evidence 和工具调用 | 查看当前长期上下文 |
-| `harness_task_manage` | 管理 Task 和依赖 | `create`、`split`、`update`、`transition`、`add_dependency`、`get`、`list`、`runnable` |
+| `harness_context_get` | 读取当前 Execution 的 Task、可运行 Task、Wait、Fact、Decision、Evidence、工具调用和当前生效的 `learnedRules` | 查看当前长期上下文 |
+| `harness_task_manage` | 管理 Task 和依赖（`metadata` 可声明 `preset` 选择验收档位） | `create`、`split`、`update`、`transition`、`add_dependency`、`get`、`list`、`runnable` |
 | `harness_fact_record` | 记录或失效一个带来源的 Fact | `record`、`invalidate` |
-| `harness_decision_propose` | 提出或由有权限的非 Agent 角色解决 Decision | `propose`、`resolve` |
+| `harness_decision_propose` | 提出或由有权限的非 Agent 角色解决 Decision；ACCEPTED 的 Decision 可由宿主经 `gateway.promoteLesson` 晋升为运行时规则 | `propose`、`resolve` |
 | `harness_evidence_record` | 记录模型、工具、测试、文件或外部系统产生的 Evidence | `record` |
 | `harness_relation_manage` | 管理实体间的通用关系 | `create`、`add`、`get`、`list` |
 | `harness_control_request` | 请求 checkpoint、用户输入、异步操作、外部事件或审批等待 | `checkpoint`、`wait`、`approval` |

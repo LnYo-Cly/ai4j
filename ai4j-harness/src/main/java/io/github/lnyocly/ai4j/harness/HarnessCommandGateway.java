@@ -983,6 +983,153 @@ public final class HarnessCommandGateway implements AutoCloseable {
         });
     }
 
+    /**
+     * Promotes an ACCEPTED decision into a durable {@link HarnessRule} so the
+     * lesson constrains future executions ("a failure should pay rent").
+     * Agents may propose decisions but can never promote them; by default only
+     * a human actor may promote — see {@link HarnessContract#mayPromoteLesson}.
+     * Re-promoting an identical enabled rule is idempotent and returns the
+     * existing record.
+     */
+    public HarnessRule promoteLesson(String decisionId, HarnessRuleSpec spec) {
+        return promoteLesson(decisionId, spec, defaultActor);
+    }
+
+    public HarnessRule promoteLesson(final String decisionId,
+                                     final HarnessRuleSpec spec,
+                                     HarnessActor actor) {
+        final String id = requireText(decisionId, "decision id");
+        if (spec == null || spec.getKind() == null) {
+            throw new HarnessValidationException("rule kind is required");
+        }
+        final String payload = requireText(spec.getPayload(), "rule payload");
+        final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
+        if (!contract.mayPromoteLesson(effectiveActor)) {
+            throw new HarnessValidationException("actor is not allowed to promote lessons into rules");
+        }
+        return write(new StateCommand<HarnessRule>() {
+            @Override
+            public HarnessRule apply(HarnessState state) {
+                DecisionRecord decision = state.getDecisions().get(id);
+                if (decision == null) {
+                    throw new HarnessValidationException("decision not found: " + id);
+                }
+                if (decision.getStatus() != DecisionStatus.ACCEPTED) {
+                    throw new HarnessConflictException(
+                            "only an ACCEPTED decision can be promoted to a rule: " + id);
+                }
+                String preset = trimToNull(spec.getPreset());
+                for (HarnessRule existing : state.getLearnedRules().values()) {
+                    if (existing != null && existing.isEnabled()
+                            && id.equals(existing.getDecisionId())
+                            && spec.getKind() == existing.getKind()
+                            && payload.equals(existing.getPayload())
+                            && safeEquals(preset, existing.getPreset())) {
+                        return existing.copy();
+                    }
+                }
+                String ruleId = valueOrGenerated(spec.getRuleId(), "rule_");
+                HarnessRule rule = HarnessRule.builder()
+                        .ruleId(ruleId)
+                        .scopeKey(decision.getScopeKey())
+                        .decisionId(id)
+                        .kind(spec.getKind())
+                        .payload(payload)
+                        .preset(preset)
+                        .promotedBy(copyActor(effectiveActor))
+                        .promotedAtEpochMs(now())
+                        .enabled(true)
+                        .build();
+                state.getLearnedRules().put(ruleId, rule);
+                addEvent(state, "rule.promoted", ruleId, effectiveActor,
+                        mapOf("decisionId", id, "kind", spec.getKind().name(), "payload", payload));
+                return rule.copy();
+            }
+        });
+    }
+
+    /**
+     * Disables a learned rule without deleting it: the record, its decisionId
+     * lineage, and the revoking actor stay in the ledger for audit.
+     */
+    public HarnessRule revokeLesson(String ruleId) {
+        return revokeLesson(ruleId, defaultActor);
+    }
+
+    public HarnessRule revokeLesson(final String ruleId, HarnessActor actor) {
+        final String id = requireText(ruleId, "rule id");
+        final HarnessActor effectiveActor = normalizeActor(actor, defaultActor);
+        if (!contract.mayPromoteLesson(effectiveActor)) {
+            throw new HarnessValidationException("actor is not allowed to revoke learned rules");
+        }
+        return write(new StateCommand<HarnessRule>() {
+            @Override
+            public HarnessRule apply(HarnessState state) {
+                HarnessRule rule = state.getLearnedRules().get(id);
+                if (rule == null) {
+                    throw new HarnessValidationException("learned rule not found: " + id);
+                }
+                if (rule.isEnabled()) {
+                    rule.setEnabled(false);
+                    rule.setRevokedBy(copyActor(effectiveActor));
+                    rule.setRevokedAtEpochMs(now());
+                    addEvent(state, "rule.revoked", id, effectiveActor, mapOf("decisionId", rule.getDecisionId()));
+                }
+                return rule.copy();
+            }
+        });
+    }
+
+    public List<HarnessRule> listLearnedRulesInScope(String scopeKey) {
+        List<HarnessRule> result = new ArrayList<HarnessRule>();
+        for (HarnessRule rule : getState().getLearnedRules().values()) {
+            if (rule != null && visibleScope(rule.getScopeKey(), scopeKey)) {
+                result.add(rule.copy());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Effective tool policy for the current execution: static contract rules
+     * unioned with enabled learned rules that match the execution's scope and
+     * its task's preset. Learned rules can only tighten, never loosen.
+     */
+    public boolean toolRequiresTask(String executionId, String toolName) {
+        return contract.requiresTaskForTool(toolName)
+                || hasLearnedToolRule(executionId, toolName, RuleKind.REQUIRE_TASK_FOR_TOOL);
+    }
+
+    public boolean toolRequiresApproval(String executionId, String toolName) {
+        return contract.requiresApprovalForTool(toolName)
+                || hasLearnedToolRule(executionId, toolName, RuleKind.REQUIRE_APPROVAL_FOR_TOOL);
+    }
+
+    private boolean hasLearnedToolRule(String executionId, String toolName, RuleKind kind) {
+        String tool = trimToNull(toolName);
+        String execId = trimToNull(executionId);
+        if (tool == null || execId == null) {
+            return false;
+        }
+        HarnessState state = getState();
+        ExecutionRecord execution = state.getExecutions().get(execId);
+        if (execution == null) {
+            return false;
+        }
+        TaskRecord task = execution.getTaskId() == null
+                ? null : state.getTasks().get(execution.getTaskId());
+        String scope = execution.getScopeKey();
+        for (HarnessRule rule : state.getLearnedRules().values()) {
+            if (rule != null && rule.isEnabled() && rule.getKind() == kind
+                    && tool.equals(rule.getPayload())
+                    && safeEquals(normalizeScope(rule.getScopeKey()), normalizeScope(scope))
+                    && rule.appliesTo(task)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public EvidenceRecord recordEvidence(HarnessEvidenceSpec spec) {
         return recordEvidence(spec, defaultActor);
     }
@@ -1086,7 +1233,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
         ExecutionRecord targetExecution = executions.get(executions.size() - 1);
         TaskRecord task = targetExecution.getTaskId() == null ? null : state.getTasks().get(targetExecution.getTaskId());
         SubmissionRecord submission = latestSubmissionForExecution(state, targetExecution.getExecutionId());
-        Set<String> required = normalizedChecks(contract.requiredAcceptanceChecks(task, submission));
+        Set<String> required = effectiveRequiredChecks(state, task, submission);
         Map<String, AcceptanceRecord> latestByCheck = latestAcceptanceByCheck(acceptances, submission);
         Set<String> missing = new LinkedHashSet<String>(required);
         missing.removeAll(latestByCheck.keySet());
@@ -1493,7 +1640,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                                              TaskRecord task,
                                              SubmissionRecord submission,
                                              String executionId) {
-        Set<String> requiredChecks = normalizedChecks(contract.requiredAcceptanceChecks(task, submission));
+        Set<String> requiredChecks = effectiveRequiredChecks(state, task, submission);
         if (requiredChecks.isEmpty()) {
             if (!contract.requiresCompletionEvidence(task, submission)) {
                 return;
@@ -3365,6 +3512,32 @@ public final class HarnessCommandGateway implements AutoCloseable {
             }
         }
         return latest;
+    }
+
+    /**
+     * Static contract checks unioned with enabled learned rules matching the
+     * task's scope and preset. Additive-only: learned rules can add required
+     * checks, never remove a check the contract declares.
+     */
+    private Set<String> effectiveRequiredChecks(HarnessState state,
+                                                TaskRecord task,
+                                                SubmissionRecord submission) {
+        Set<String> required = normalizedChecks(contract.requiredAcceptanceChecks(task, submission));
+        if (task == null) {
+            return required;
+        }
+        for (HarnessRule rule : state.getLearnedRules().values()) {
+            if (rule != null && rule.isEnabled()
+                    && rule.getKind() == RuleKind.REQUIRE_ACCEPTANCE_CHECK
+                    && safeEquals(normalizeScope(rule.getScopeKey()), normalizeScope(task.getScopeKey()))
+                    && rule.appliesTo(task)) {
+                String payload = trimToNull(rule.getPayload());
+                if (payload != null) {
+                    required.add(payload);
+                }
+            }
+        }
+        return required;
     }
 
     private Set<String> normalizedChecks(Set<String> checks) {

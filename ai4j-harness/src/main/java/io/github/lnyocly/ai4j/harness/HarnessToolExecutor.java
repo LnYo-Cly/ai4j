@@ -205,11 +205,11 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
     }
 
     private boolean requiresTask(AgentToolCall call) {
-        return context.getGateway().getContract().requiresTaskForTool(call.getName());
+        return context.getGateway().toolRequiresTask(context.getExecutionId(), call.getName());
     }
 
     private boolean isApprovalRequired(AgentToolCall call) {
-        return context.getGateway().getContract().requiresApprovalForTool(call.getName());
+        return context.getGateway().toolRequiresApproval(context.getExecutionId(), call.getName());
     }
 
     private AgentToolExecution approvalWait(AgentToolCall call) {

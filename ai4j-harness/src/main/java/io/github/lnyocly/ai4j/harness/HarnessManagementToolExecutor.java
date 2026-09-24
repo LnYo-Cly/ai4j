@@ -289,6 +289,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
         result.put("evidence", gateway.listEvidenceInScope(context.getScopeKey()));
         result.put("relations", gateway.listRelationsInScope(context.getScopeKey()));
         result.put("toolInvocations", gateway.listToolInvocationsInScope(context.getScopeKey()));
+        result.put("learnedRules", gateway.listLearnedRulesInScope(context.getScopeKey()));
         return result;
     }
 

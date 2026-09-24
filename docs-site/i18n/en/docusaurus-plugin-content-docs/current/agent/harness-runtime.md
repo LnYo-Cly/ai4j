@@ -102,6 +102,7 @@ Every governance entity is anchored to a Task or an Execution through foreign ke
 | Submission | `taskId` + `executionId` | `submitter`, `evidenceIds[]` | On creation it points `task.submissionId` at itself; Task → `IN_REVIEW` |
 | Review | `submissionId` + `taskId` | `reviewer`, `verdict` | `CHANGES_REQUESTED` bounces the Task back to `ACTIVE` |
 | Gate/Acceptance | `taskId` + `executionId` + `submissionId` | Evaluation result and reason | Evaluated at `completeTask`; all PASS required for `DONE` |
+| HarnessRule | `decisionId` + `scopeKey` | `kind`, `payload`, `preset`, `promotedBy` | Promoted via `promoteLesson` (human Actor only by default); `revokeLesson` disables with lineage kept |
 
 Entities can also be linked by `RelationRecord` — a generic directed edge whose endpoints are `(EntityKind, id)` pairs (TASK/FACT/DECISION/EVIDENCE/EXECUTION/CHECKPOINT/WAIT/REVIEW). Four built-in types: `PARENT_OF` (parent/child tasks), `DEPENDS_ON` (task dependency; the Gateway rejects cycles), `SUPPORTS` (evidence backing a conclusion), `DERIVED_FROM` (a conclusion derived from evidence).
 
@@ -263,9 +264,54 @@ try {
 | `requiresApprovedReview` | `true` | Task completion requires an APPROVED Review first |
 | `requiresCompletionEvidence` | `true` | A Submission must reference Evidence to pass the completion gate |
 | `allowSystemApproval` / `allowSystemCompletion` / `allowSystemReconciliation` | `true` | system Actors may approve/complete/reconcile; set `false` to restrict these to human Actors |
+| `allowSystemPromotion` | `false` | whether system Actors may promote decisions into rules; by default only human Actors can |
 | `mayApprove` / `mayComplete` / `mayReconcile` | `!actor.isAgent()` | **Hard-coded**: no configuration ever lets an Agent identity approve, complete, or reconcile its own work |
+| `mayPromoteLesson` | `actor.isHuman()` | promoting a rule is stricter than resolving a decision — rules constrain every future execution |
 
 In other words, "the Agent cannot approve itself" is enforced by an identity check inside the Gateway, not by prompt discipline.
+
+### Task-level presets: different acceptance chains per task type
+
+A single `HarnessContract` is instance-wide — when one Harness serves different task types (refund vs FAQ vs logistics lookup), `PresetHarnessContract` routes contract queries by `task.metadata["preset"]`:
+
+```java
+HarnessContract contract = PresetHarnessContract.builder()
+        .preset("refund", p -> p
+                .requiresApprovedReview(true)
+                .requiredAcceptanceCheck("payment-verified")
+                .completionGate(refundReconciledGate))
+        .preset("faq", p -> p
+                .requiresApprovedReview(false)
+                .requiresCompletionEvidence(false))
+        .base(HarnessContract.builder().build())          // tasks without a preset land here
+        .onUnknownPreset(UnknownPresetPolicy.FAIL_CLOSED) // default: a typo'd preset fails
+        .build();
+```
+
+A task declares its preset at creation: `harness_task_manage` passes `metadata` through on `create`/`update`, and the host can set `preset` in `HarnessTaskSpec.metadata` directly. Deliberate boundary: **tool-level rules do not enter presets** — `taskRequiredTool`/`approvalRequiredTool` stay global, because whether an action needs approval should not depend on the task type.
+
+### LEARN reflow: turning a lesson into a runtime rule
+
+A failure should not leave only an error message — it should pay rent. The full pipeline: failure → Fact ("this input class times out") → Decision proposal → an entitled Actor resolves it ACCEPTED → **`promoteLesson` turns it into a `HarnessRule`** → subsequent executions are constrained by the new rule:
+
+```java
+// The Agent may propose; only a human may resolve and promote.
+DecisionRecord decision = gateway.proposeDecision(HarnessDecisionSpec.builder()
+        .scopeKey("shop-A")
+        .question("Must refunds check dispute status first?")
+        .chosenOption("yes — that is where the last chargeback came from")
+        .build());
+gateway.resolveDecision(decision.getDecisionId(), DecisionStatus.ACCEPTED,
+        "chargeback incident INC-88", HarnessActor.human("ops-lead"));
+
+gateway.promoteLesson(decision.getDecisionId(), HarnessRuleSpec.builder()
+        .kind(RuleKind.REQUIRE_ACCEPTANCE_CHECK)   // adds a mandatory acceptance check
+        .payload("dispute-status-checked")
+        .preset("refund")                          // optional: only refund-preset tasks
+        .build(), HarnessActor.human("ops-lead"));
+```
+
+Three `RuleKind`s: `REQUIRE_ACCEPTANCE_CHECK` (payload = check id), `REQUIRE_APPROVAL_FOR_TOOL` (payload = tool name), `REQUIRE_TASK_FOR_TOOL`. Rules merge with the static contract **as a union** — they can only tighten, never weaken what was declared at build time; relaxing a static rule means changing code and redeploying, on purpose. `revokeLesson(ruleId, actor)` disables a rule while keeping the record and its lineage; the Agent sees the rules currently in force through `harness_context_get`'s `learnedRules` field, so it knows what it must satisfy.
 
 For `ai4j-coding`, use `CodingAgentHarness`, which preserves workspace tools, CodeAct, compact, processes, MCP, subagents, and the existing approval semantics — see [Coding Agent Harness Integration](/docs/products/coding-agent/harness-integration).
 

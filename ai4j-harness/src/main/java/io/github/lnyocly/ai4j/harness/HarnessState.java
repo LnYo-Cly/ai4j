@@ -64,6 +64,8 @@ public class HarnessState {
     @Builder.Default
     private Map<String, ToolInvocationRecord> toolInvocations = new LinkedHashMap<String, ToolInvocationRecord>();
     @Builder.Default
+    private Map<String, HarnessRule> learnedRules = new LinkedHashMap<String, HarnessRule>();
+    @Builder.Default
     private Map<String, String> idempotency = new LinkedHashMap<String, String>();
     @Builder.Default
     private List<HarnessEventRecord> events = new ArrayList<HarnessEventRecord>();
@@ -103,6 +105,7 @@ public class HarnessState {
         if (sessions == null) sessions = new LinkedHashMap<String, AgentSessionSnapshot>();
         if (sessionLeases == null) sessionLeases = new LinkedHashMap<String, SessionLeaseRecord>();
         if (toolInvocations == null) toolInvocations = new LinkedHashMap<String, ToolInvocationRecord>();
+        if (learnedRules == null) learnedRules = new LinkedHashMap<String, HarnessRule>();
         if (idempotency == null) idempotency = new LinkedHashMap<String, String>();
         if (events == null) events = new ArrayList<HarnessEventRecord>();
     }
