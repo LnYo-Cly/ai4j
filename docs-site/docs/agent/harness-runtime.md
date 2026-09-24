@@ -102,6 +102,7 @@ Harness deliberately 不把 Task 和 Session 强行绑定：
 | Submission | `taskId` + `executionId` | `submitter`、`evidenceIds[]` | 创建即把 `task.submissionId` 指向自己，Task → `IN_REVIEW` |
 | Review | `submissionId` + `taskId` | `reviewer`、`verdict` | `CHANGES_REQUESTED` 会把 Task 弹回 `ACTIVE` |
 | Gate/Acceptance | `taskId` + `executionId` + `submissionId` | 评估结果与原因 | `completeTask` 时评估，全 PASS 才允许 `DONE` |
+| HarnessRule | `decisionId` + `scopeKey` | `kind`、`payload`、`preset`、`promotedBy` | `promoteLesson` 晋升（默认仅 human Actor），`revokeLesson` 停用留痕不删除 |
 
 实体之间还可以通过 `RelationRecord` 建立通用有向边，端点是 `(EntityKind, id)` 对（TASK/FACT/DECISION/EVIDENCE/EXECUTION/CHECKPOINT/WAIT/REVIEW），内置四种类型：`PARENT_OF`（父子任务）、`DEPENDS_ON`（任务依赖，Gateway 拒绝成环）、`SUPPORTS`（证据支撑结论）、`DERIVED_FROM`（结论派生自证据）。
 
@@ -261,9 +262,54 @@ try {
 | `requiresApprovedReview` | `true` | Task 完成前必须有一条 APPROVED 的 Review |
 | `requiresCompletionEvidence` | `true` | Submission 必须引用 Evidence 才能过完成门 |
 | `allowSystemApproval` / `allowSystemCompletion` / `allowSystemReconciliation` | `true` | system Actor 可以审批/完成/对账；置 `false` 则只允许 human Actor |
+| `allowSystemPromotion` | `false` | system Actor 能否把 Decision 晋升为规则；默认只有 human Actor 可以 |
 | `mayApprove` / `mayComplete` / `mayReconcile` | `!actor.isAgent()` | **代码级硬挡**：无论怎么配置，Agent 身份永远不能审批、完成或对账自己的工作 |
+| `mayPromoteLesson` | `actor.isHuman()` | 晋升规则的权限比裁决更严——规则会约束未来的每一次执行 |
 
 也就是说，"Agent 不能自审"不靠提示词自觉，而是 Gateway 里的身份检查。
+
+### 任务级 Preset：不同任务类型挂不同验收链
+
+单一 `HarnessContract` 是实例级的——同一个 Harness 服务退款、FAQ、物流查询等不同任务类型时，用 `PresetHarnessContract` 按 `task.metadata["preset"]` 路由到各自的规则集：
+
+```java
+HarnessContract contract = PresetHarnessContract.builder()
+        .preset("refund", p -> p
+                .requiresApprovedReview(true)
+                .requiredAcceptanceCheck("payment-verified")
+                .completionGate(refundReconciledGate))
+        .preset("faq", p -> p
+                .requiresApprovedReview(false)
+                .requiresCompletionEvidence(false))
+        .base(HarnessContract.builder().build())      // 无 preset 的任务走这里
+        .onUnknownPreset(UnknownPresetPolicy.FAIL_CLOSED) // 默认：写错 preset 名直接失败
+        .build();
+```
+
+任务在创建时声明档位：`harness_task_manage` 的 `create`/`update` 透传 `metadata`，宿主也可以直接在 `HarnessTaskSpec.metadata` 里写 `preset`。刻意边界：**工具级规则不进 preset**——`taskRequiredTool`/`approvalRequiredTool` 始终是全局的，审批要不要做不该因任务类型而不同。
+
+### LEARN 回流：把教训固化成运行时规则
+
+一次失败不应该只留下一条报错——它应该付租金。完整管线是：失败 → Fact（"这类输入会超时"）→ Decision 提议 → 有权 Actor 裁决为 ACCEPTED → **`promoteLesson` 把它固化成 `HarnessRule`** → 之后的 Execution 直接被新规则拦住：
+
+```java
+// Agent 提议（可以），human 裁决并晋升（只有 human 可以）
+DecisionRecord decision = gateway.proposeDecision(HarnessDecisionSpec.builder()
+        .scopeKey("shop-A")
+        .question("退款前是否必须先查争议状态？")
+        .chosenOption("必须——上次的退单就是这么来的")
+        .build());
+gateway.resolveDecision(decision.getDecisionId(), DecisionStatus.ACCEPTED,
+        "chargeback incident INC-88", HarnessActor.human("ops-lead"));
+
+gateway.promoteLesson(decision.getDecisionId(), HarnessRuleSpec.builder()
+        .kind(RuleKind.REQUIRE_ACCEPTANCE_CHECK)   // 新增一条必过验收项
+        .payload("dispute-status-checked")
+        .preset("refund")                          // 可选：只对 refund preset 的任务生效
+        .build(), HarnessActor.human("ops-lead"));
+```
+
+`RuleKind` 三种：`REQUIRE_ACCEPTANCE_CHECK`（payload=checkId）、`REQUIRE_APPROVAL_FOR_TOOL`（payload=工具名）、`REQUIRE_TASK_FOR_TOOL`。规则与静态 Contract **取并集**——只能收紧、永远不能削弱构建期声明的规则；想放宽只能改代码发版，这是刻意的。`revokeLesson(ruleId, actor)` 停用但保留记录和血缘；Agent 通过 `harness_context_get` 的 `learnedRules` 字段看到当前生效的规则，才知道该遵守什么。
 
 对于 `ai4j-coding`，使用 `CodingAgentHarness` 可以保留 workspace 工具、CodeAct、compact、进程、MCP、subagent 和现有审批语义，详见 [Coding Agent Harness 集成](/docs/products/coding-agent/harness-integration)。
 

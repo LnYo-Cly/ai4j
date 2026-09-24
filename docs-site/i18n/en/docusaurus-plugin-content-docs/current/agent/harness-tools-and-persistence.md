@@ -52,10 +52,10 @@ Harness automatically adds the following reserved names to the existing tool reg
 
 | Tool | Purpose | Typical operations |
 | --- | --- | --- |
-| `harness_context_get` | Reads the current Execution's Task, runnable Tasks, Waits, Facts, Decisions, Evidence, and tool invocations | Inspect the current long-running context |
-| `harness_task_manage` | Manages Tasks and dependencies | `create`, `split`, `update`, `transition`, `add_dependency`, `get`, `list`, `runnable` |
+| `harness_context_get` | Reads the current Execution's Task, runnable Tasks, Waits, Facts, Decisions, Evidence, tool invocations, and the `learnedRules` currently in force | Inspect the current long-running context |
+| `harness_task_manage` | Manages Tasks and dependencies (`metadata` may declare a `preset` selecting the acceptance profile) | `create`, `split`, `update`, `transition`, `add_dependency`, `get`, `list`, `runnable` |
 | `harness_fact_record` | Records or invalidates a sourced Fact | `record`, `invalidate` |
-| `harness_decision_propose` | Proposes a Decision, or resolves one for entitled non-Agent actors | `propose`, `resolve` |
+| `harness_decision_propose` | Proposes a Decision, or resolves one for entitled non-Agent actors; an ACCEPTED Decision can be promoted into a runtime rule by the host via `gateway.promoteLesson` | `propose`, `resolve` |
 | `harness_evidence_record` | Records Evidence produced by the model, tools, tests, files, or external systems | `record` |
 | `harness_relation_manage` | Manages generic relations between entities | `create`, `add`, `get`, `list` |
 | `harness_control_request` | Requests a checkpoint, user input, async operation, external event, or approval wait | `checkpoint`, `wait`, `approval` |

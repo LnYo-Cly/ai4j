@@ -12,6 +12,9 @@ import java.util.Set;
  */
 public interface HarnessContract {
 
+    /** Default metadata key a task uses to declare its contract preset. */
+    String PRESET_METADATA_KEY = "preset";
+
     default boolean requiresTaskForTool(String toolName) {
         return false;
     }
@@ -54,10 +57,19 @@ public interface HarnessContract {
         return Collections.emptyList();
     }
 
+    /**
+     * Task-aware variant of {@link #completionGates()}; presets route through
+     * this hook. The default delegates to the instance-level list so existing
+     * contracts keep working unchanged.
+     */
+    default List<HarnessGate> completionGates(TaskRecord task) {
+        return completionGates();
+    }
+
     default List<GateResult> evaluateCompletion(TaskRecord task,
                                                  SubmissionRecord submission,
                                                  HarnessState state) {
-        List<HarnessGate> gates = completionGates();
+        List<HarnessGate> gates = completionGates(task);
         if (gates == null || gates.isEmpty()) {
             return Collections.singletonList(GateResult.pass("default"));
         }
@@ -106,6 +118,17 @@ public interface HarnessContract {
         return actor != null && !actor.isAgent();
     }
 
+    /**
+     * Controls who may promote an ACCEPTED decision into a durable
+     * {@link HarnessRule}. Promotion changes what every future execution must
+     * satisfy, so the default is intentionally stricter than decision
+     * resolution: only a human actor may promote. {@link Builder#allowSystemPromotion}
+     * widens this to system actors for explicitly automated governance.
+     */
+    default boolean mayPromoteLesson(HarnessActor actor) {
+        return actor != null && actor.isHuman();
+    }
+
     static Builder builder() {
         return new Builder();
     }
@@ -121,6 +144,7 @@ public interface HarnessContract {
         private boolean allowSystemApproval = true;
         private boolean allowSystemCompletion = true;
         private boolean allowSystemReconciliation = true;
+        private boolean allowSystemPromotion = false;
 
         public Builder taskRequiredTool(String toolName) {
             if (toolName != null && !toolName.trim().isEmpty()) {
@@ -175,6 +199,17 @@ public interface HarnessContract {
             return this;
         }
 
+        /**
+         * Widens {@link #mayPromoteLesson} to system actors. Off by default:
+         * an unattended pipeline silently turning agent proposals into binding
+         * rules is exactly the autonomous-churn failure mode this gate exists
+         * to prevent.
+         */
+        public Builder allowSystemPromotion(boolean value) {
+            allowSystemPromotion = value;
+            return this;
+        }
+
         public HarnessContract build() {
             final Set<String> taskTools = new LinkedHashSet<String>(taskRequiredTools);
             final Set<String> approvalTools = new LinkedHashSet<String>(approvalRequiredTools);
@@ -185,6 +220,7 @@ public interface HarnessContract {
             final boolean systemApproval = allowSystemApproval;
             final boolean systemCompletion = allowSystemCompletion;
             final boolean systemReconciliation = allowSystemReconciliation;
+            final boolean systemPromotion = allowSystemPromotion;
             return new HarnessContract() {
                 @Override
                 public boolean requiresTaskForTool(String toolName) {
@@ -245,6 +281,12 @@ public interface HarnessContract {
                                                           ToolInvocationStatus resolution) {
                     return actor != null && (!actor.isAgent())
                             && (systemReconciliation || !actor.isSystem());
+                }
+
+                @Override
+                public boolean mayPromoteLesson(HarnessActor actor) {
+                    return actor != null && (actor.isHuman()
+                            || (systemPromotion && actor.isSystem()));
                 }
             };
         }
