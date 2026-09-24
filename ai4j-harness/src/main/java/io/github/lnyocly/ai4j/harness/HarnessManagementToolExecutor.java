@@ -61,7 +61,8 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
                     .evidenceId(string(arguments, "evidenceId"))
                     .scopeKey(scopeKey(arguments))
                     .taskId(defaultTask(string(arguments, "taskId")))
-                    .executionId(string(arguments, "executionId"))
+                    .executionId(string(arguments, "executionId") == null
+                            ? context.getExecutionId() : string(arguments, "executionId"))
                     .kind(string(arguments, "kind"))
                     .location(string(arguments, "location"))
                     .summary(string(arguments, "summary"))
