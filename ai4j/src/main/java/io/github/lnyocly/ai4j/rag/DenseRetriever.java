@@ -17,8 +17,13 @@ public class DenseRetriever implements Retriever {
 
     private final IEmbeddingService embeddingService;
     private final VectorStore vectorStore;
+    private final String defaultEmbeddingModel;
 
     public DenseRetriever(IEmbeddingService embeddingService, VectorStore vectorStore) {
+        this(embeddingService, vectorStore, null);
+    }
+
+    public DenseRetriever(IEmbeddingService embeddingService, VectorStore vectorStore, String defaultEmbeddingModel) {
         if (embeddingService == null) {
             throw new IllegalArgumentException("embeddingService is required");
         }
@@ -27,6 +32,7 @@ public class DenseRetriever implements Retriever {
         }
         this.embeddingService = embeddingService;
         this.vectorStore = vectorStore;
+        this.defaultEmbeddingModel = defaultEmbeddingModel;
     }
 
     @Override
@@ -34,12 +40,13 @@ public class DenseRetriever implements Retriever {
         if (query == null || query.getQuery() == null || query.getQuery().trim().isEmpty()) {
             return Collections.emptyList();
         }
-        if (query.getEmbeddingModel() == null || query.getEmbeddingModel().trim().isEmpty()) {
+        String embeddingModel = firstNonBlank(query.getEmbeddingModel(), defaultEmbeddingModel);
+        if (embeddingModel == null) {
             throw new IllegalArgumentException("embeddingModel is required");
         }
 
         EmbeddingResponse response = embeddingService.embedding(Embedding.builder()
-                .model(query.getEmbeddingModel())
+                .model(embeddingModel)
                 .input(query.getQuery())
                 .build());
         List<EmbeddingObject> data = response == null ? null : response.getData();
@@ -61,6 +68,9 @@ public class DenseRetriever implements Retriever {
         List<RagHit> hits = new ArrayList<RagHit>();
         for (VectorSearchResult result : searchResults) {
             if (result == null) {
+                continue;
+            }
+            if (query.getMinScore() != null && result.getScore() != null && result.getScore() < query.getMinScore()) {
                 continue;
             }
             Map<String, Object> metadata = result.getMetadata();

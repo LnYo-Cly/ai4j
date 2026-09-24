@@ -179,6 +179,25 @@ So it is an optional capability:
 Callers must check `capabilities().isMetadataLookup()` and must not assume every vector store supports it.
 :::
 
+### 5.2 In-process backend: `InMemoryVectorStore`
+
+Beyond the five external backends, the SDK ships `io.github.lnyocly.ai4j.vector.store.memory.InMemoryVectorStore` — a zero-dependency in-JVM store that works with a plain `new`:
+
+```java
+VectorStore store = new InMemoryVectorStore();
+// plugs straight into the existing pipeline
+IngestionPipeline pipeline = new IngestionPipeline(embeddingService, store);
+DenseRetriever retriever = new DenseRetriever(embeddingService, store);
+```
+
+- Search uses **exact cosine similarity** (exhaustive scoring + sort), not an approximate index
+- `dataset` isolation, metadata equality `filter`, delete by `ids`/`filter`/`deleteAll`, and `exists` metadata-only lookup are all supported — every `capabilities()` flag is on
+- So `skipExistingContentHash` incremental ingestion works for real on it
+
+Be clear about positioning: it targets **demos, unit tests, smoke tests, and small embedded apps** (CLI/desktop/plugins); data dies with the process. Production deployments still belong on Qdrant / Milvus / PgVector / Pinecone / Redis — it is not a replacement, it is the developer-experience piece that makes "real vector retrieval with nothing to install" possible.
+
+On the factory side, all five external backends now have symmetric getters: `getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()` (the last was missing before and required a manual `new RedisVectorStore(configuration)`).
+
 ## 6. How `VectorStore` relates to `DenseRetriever`
 
 `DenseRetriever` does not care which vector store sits behind it.

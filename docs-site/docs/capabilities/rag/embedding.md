@@ -41,18 +41,31 @@ EmbeddingResponse embedding(Embedding embeddingReq)
 
 ## 2. 当前工厂默认支持哪些 embedding provider
 
-`AiService.createEmbeddingService(platform)` 目前只支持：
+`AiService.getEmbeddingService(platform)` 目前支持：
 
-- `OPENAI`
-- `OLLAMA`
+- `OPENAI`、`OLLAMA`：原生实现
+- `ZHIPU`、`DOUBAO`、`DASHSCOPE`、`JINA`、`BAICHUAN`、`MINIMAX`：复用各平台 config 的 `apiHost`/`apiKey`，走其 OpenAI 兼容 embeddings 端点（智谱取 `ZhipuConfig.embeddingUrl`，其余按各平台兼容路径）
 
 这一点很值得在文档里讲透，因为它和聊天模型支持面并不一致。  
 也就是说，AI4J 当前平台支持面里：
 
 - chat provider 比 embedding provider 更多
 - rerank provider 又是另一套支持集合
+- `DEEPSEEK`、`MOONSHOT`、`GROK` 等平台不提供公开 embedding 端点，工厂会明确抛 `IllegalArgumentException`
 
 所以“这个平台能聊天”并不等于“这个平台也能直接作为 embedding 提供方”。
+
+### 2.1 可以配置默认 embedding model，请求级仍优先
+
+`DenseRetriever` 和 `IngestionPipeline` 都支持构造器注入默认模型：
+
+```java
+new DenseRetriever(embeddingService, vectorStore, "text-embedding-3-small");
+new IngestionPipeline(embeddingService, vectorStore,
+        loaders, chunker, processors, enrichers, "text-embedding-3-small");
+```
+
+优先级规则是固定的：**`RagQuery.embeddingModel` / `IngestionRequest.embeddingModel` 显式值 > 构造器默认值 > 都没有则抛 `embeddingModel is required`**。同一个知识库反复 ingest/检索时不必每个请求都重复写模型名。
 
 ## 3. embedding 在 ingest 链里是怎么被调用的
 

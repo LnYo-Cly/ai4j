@@ -22,6 +22,37 @@ public class Bm25Retriever implements Retriever {
         this(corpus, new DefaultTextTokenizer(), 1.5d, 0.75d);
     }
 
+    /**
+     * Build a BM25 retriever over {@link RagChunk}s produced by a {@code Chunker}
+     * or {@code IngestionPipeline}. Lets lexical and dense retrieval share the
+     * same chunk list instead of maintaining a separate corpus:
+     * <pre>{@code
+     * IngestionResult result = pipeline.ingest(request);
+     * Retriever bm25 = Bm25Retriever.fromChunks(result.getChunks());
+     * }</pre>
+     */
+    public static Bm25Retriever fromChunks(List<RagChunk> chunks) {
+        if (chunks == null || chunks.isEmpty()) {
+            return new Bm25Retriever(Collections.<RagHit>emptyList());
+        }
+        List<RagHit> hits = new ArrayList<RagHit>(chunks.size());
+        for (RagChunk chunk : chunks) {
+            if (chunk == null || chunk.getContent() == null || chunk.getContent().trim().isEmpty()) {
+                continue;
+            }
+            hits.add(RagHit.builder()
+                    .id(chunk.getChunkId())
+                    .documentId(chunk.getDocumentId())
+                    .content(chunk.getContent())
+                    .chunkIndex(chunk.getChunkIndex())
+                    .pageNumber(chunk.getPageNumber())
+                    .sectionTitle(chunk.getSectionTitle())
+                    .metadata(chunk.getMetadata())
+                    .build());
+        }
+        return new Bm25Retriever(hits);
+    }
+
     public Bm25Retriever(List<RagHit> corpus, TextTokenizer tokenizer, double k1, double b) {
         this.corpus = corpus == null ? Collections.<RagHit>emptyList() : new ArrayList<RagHit>(corpus);
         this.tokenizer = tokenizer == null ? new DefaultTextTokenizer() : tokenizer;

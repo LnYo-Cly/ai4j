@@ -33,6 +33,14 @@ provider 侧还有几个实现：
 - `platform/jina/rerank/JinaRerankService.java`
 - `platform/ollama/rerank/OllamaRerankService.java`
 
+其中 `JinaRerankService` 本身就是 `StandardRerankService` 的预制壳。任何遵循同一 HTTP 请求/响应形状（`model` + `query` + `documents` → `results[{index, relevance_score}]`）的 rerank 端点，都可以直接走工厂通用入口，不必等专用 provider：
+
+```java
+IRerankService rerankService = aiService.getStandardRerankService(
+        "https://provider.example.com/", "sk-...", "v1/rerank");
+Reranker reranker = new ModelReranker(rerankService, "rerank-model");
+```
+
 但真正把 rerank 接进 RAG 主链的，是 `DefaultRagService.search(...)`。
 
 ## 2. 在默认 RAG 链里，rerank 精确发生在哪一步

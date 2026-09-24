@@ -85,6 +85,23 @@ List<RagChunk> chunk(RagDocument document, String content)
 
 这说明默认实现的定位是“给你一个能跑通的文本切分基础件”，不是“完整语义结构切分器”。
 
+### 3.1 内置备选：`SentenceTextChunker`
+
+除递归字符切分外，SDK 还内置了 `SentenceTextChunker`（同包 `rag.ingestion`）：
+
+```java
+.chunker(new SentenceTextChunker(500, 50))
+```
+
+与 `RecursiveTextChunker` 的关键差异：
+
+- **句子不被切断**：按 `。！？；`、`.!?;` 和换行符识别句子边界，贪心把完整句子装进 `chunkSize`；引用展示和召回片段读起来更自然
+- 单句超过 `chunkSize` 时退化为按字符硬切（带 `chunkOverlap` 重叠），保证不丢内容
+- 换行即边界，句末标点后的引号/括号会留在句内
+- 同样只填 `documentId` / `content` / `chunkIndex`，其余字段语义与默认 chunker 一致
+
+怎么选：通用文档/混排文本继续用递归切分（默认）；对话记录、FAQ、句子粒度语义强的语料更适合句子切分。
+
 ## 4. 默认策略为什么够用，但远远不够完整
 
 默认 `RecursiveTextChunker` 的优点是：

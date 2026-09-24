@@ -39,4 +39,27 @@ public class Bm25RetrieverTest {
 
         Assert.assertTrue(hits.isEmpty());
     }
+
+    @Test
+    public void shouldBuildCorpusFromIngestedChunks() throws Exception {
+        Bm25Retriever retriever = Bm25Retriever.fromChunks(Arrays.asList(
+                RagChunk.builder().chunkId("doc-0#0").documentId("doc-0")
+                        .content("vacation policy for employees").chunkIndex(0).build(),
+                RagChunk.builder().chunkId("doc-0#1").documentId("doc-0")
+                        .content("insurance handbook and benefits").chunkIndex(1).build(),
+                null,
+                RagChunk.builder().chunkId("doc-0#2").documentId("doc-0")
+                        .content("   ").chunkIndex(2).build()
+        ));
+
+        List<RagHit> hits = retriever.retrieve(RagQuery.builder()
+                .query("vacation policy")
+                .topK(2)
+                .build());
+
+        Assert.assertEquals(1, hits.size());
+        Assert.assertEquals("doc-0#0", hits.get(0).getId());
+        Assert.assertEquals("doc-0", hits.get(0).getDocumentId());
+        Assert.assertEquals(Integer.valueOf(0), hits.get(0).getChunkIndex());
+    }
 }

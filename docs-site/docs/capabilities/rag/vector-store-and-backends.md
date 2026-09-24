@@ -178,6 +178,25 @@ Pinecone 当前封装没有 metadata-only lookup，因此保留默认 `false`，
 调用方必须看 `capabilities().isMetadataLookup()`，不能假设所有向量库都支持。
 :::
 
+### 5.2 进程内后端：`InMemoryVectorStore`
+
+除五个外部后端外，SDK 还内置了 `io.github.lnyocly.ai4j.vector.store.memory.InMemoryVectorStore`——一个零依赖的 JVM 堆内向量库，`new` 即用：
+
+```java
+VectorStore store = new InMemoryVectorStore();
+// 直接接进现成的管线
+IngestionPipeline pipeline = new IngestionPipeline(embeddingService, store);
+DenseRetriever retriever = new DenseRetriever(embeddingService, store);
+```
+
+- 检索语义是**精确余弦相似度**（穷举打分 + 排序），不是近似索引
+- `dataset` 隔离、metadata 等值 `filter`、`ids`/`filter`/`deleteAll` 删除、`exists` metadata-only lookup 全部支持，`capabilities()` 六项全开
+- 因此 `skipExistingContentHash` 增量入库在它上面是真实生效的
+
+定位要说清楚：它面向 **demo、单元测试、冒烟测试和小规模内嵌场景**（CLI/桌面/插件），进程重启即丢数据。生产部署仍然用 Qdrant / Milvus / PgVector / Pinecone / Redis 这类持久化后端——它不是替代品，是让"不装任何服务也能跑真向量检索"成为可能的开发体验件。
+
+另外，工厂层五个外部后端现在都有对称 getter：`getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()`（后者此前缺失，需手动 `new RedisVectorStore(configuration)`）。
+
 ## 6. `VectorStore` 和 `DenseRetriever` 的关系是什么
 
 `DenseRetriever` 并不会直接关心你后面是哪种向量库。

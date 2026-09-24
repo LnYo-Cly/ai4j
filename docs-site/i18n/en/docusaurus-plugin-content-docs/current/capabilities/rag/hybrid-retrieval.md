@@ -93,6 +93,13 @@ Retriever bm25 = new Bm25Retriever(bm25Corpus);
 RagService rag = new DefaultRagService(bm25);
 ```
 
+If that corpus already comes out of the ingestion pipeline, there is no need to hand-maintain a second copy: `Bm25Retriever.fromChunks(...)` maps `IngestionResult.chunks` (or any `List<RagChunk>`) straight into a BM25 corpus, carrying `chunkId`/`documentId`/`chunkIndex`/`pageNumber`/`sectionTitle`/`metadata` along:
+
+```java
+IngestionResult result = pipeline.ingest(request);
+Retriever bm25 = Bm25Retriever.fromChunks(result.getChunks());
+```
+
 If you want Dense + BM25 hybrid recall, assemble a `HybridRetriever` yourself:
 
 ```java
@@ -387,6 +394,15 @@ In the current implementation, `query.topK` affects at least two layers:
 If it is then handed to `DefaultRagService`, there is a third layer:
 
 3. `query.finalTopK` trims again after rerank
+
+There is also a recall-side threshold: `RagQuery.minScore` makes `DenseRetriever` drop hits whose vector-store `score` is below the value before fusion/rerank (hits without a score are kept). It only filters dense similarity scores — BM25 and fusion scores are a different unit and are not compared against it. Typical use: cut low-relevance noise that would otherwise ride into context via `topK` padding:
+
+```java
+RagQuery.builder().query("...").dataset("hr-docs")
+        .embeddingModel("text-embedding-3-small")
+        .minScore(0.72f)   // dense similarity threshold only
+        .topK(8).finalTopK(4).build();
+```
 
 So when you feel "hybrid recall is too small", do not stare at only one layer. It could be:
 

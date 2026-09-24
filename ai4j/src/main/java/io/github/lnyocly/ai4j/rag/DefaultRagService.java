@@ -6,6 +6,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.function.Supplier;
 
 public class DefaultRagService implements RagService {
 
@@ -140,16 +143,42 @@ public class DefaultRagService implements RagService {
                     retriever.retrieve(copyWithQuery(originalQuery, variant.getQuery())),
                     retriever.retrieverSource());
         }
+        List<RagQueryVariant> effectiveVariants = new ArrayList<RagQueryVariant>();
+        for (RagQueryVariant variant : queryPlan.getVariants()) {
+            if (variant != null && !isBlank(variant.getQuery())) {
+                effectiveVariants.add(variant);
+            }
+        }
+        // Fan out independent variant retrievals in parallel, then merge in
+        // deterministic variant order. Failures surface in variant order:
+        // the first failing variant's exception is thrown.
+        List<CompletableFuture<List<RagHit>>> futures = new ArrayList<CompletableFuture<List<RagHit>>>(effectiveVariants.size());
+        for (final RagQueryVariant variant : effectiveVariants) {
+            futures.add(CompletableFuture.supplyAsync(new Supplier<List<RagHit>>() {
+                @Override
+                public List<RagHit> get() {
+                    try {
+                        return retriever.retrieve(copyWithQuery(originalQuery, variant.getQuery()));
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                }
+            }));
+        }
         List<PlannedHit> merged = new ArrayList<PlannedHit>();
         Map<String, PlannedHit> index = new LinkedHashMap<String, PlannedHit>();
-        for (int i = 0; i < queryPlan.getVariants().size(); i++) {
-            RagQueryVariant variant = queryPlan.getVariants().get(i);
-            if (variant == null || isBlank(variant.getQuery())) {
-                continue;
+        for (int i = 0; i < effectiveVariants.size(); i++) {
+            RagQueryVariant variant = effectiveVariants.get(i);
+            List<RagHit> hits;
+            try {
+                hits = RagHitSupport.prepareRetrievedHits(futures.get(i).join(), retriever.retrieverSource());
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof Exception) {
+                    throw (Exception) cause;
+                }
+                throw ex;
             }
-            List<RagHit> hits = RagHitSupport.prepareRetrievedHits(
-                    retriever.retrieve(copyWithQuery(originalQuery, variant.getQuery())),
-                    retriever.retrieverSource());
             for (int j = 0; j < hits.size(); j++) {
                 RagHit hit = hits.get(j);
                 if (hit == null) {
@@ -204,6 +233,7 @@ public class DefaultRagService implements RagService {
                 .embeddingModel(source.getEmbeddingModel())
                 .topK(source.getTopK())
                 .finalTopK(source.getFinalTopK())
+                .minScore(source.getMinScore())
                 .filter(source.getFilter())
                 .history(source.getHistory())
                 .delimiter(source.getDelimiter())

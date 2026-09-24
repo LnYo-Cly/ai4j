@@ -92,6 +92,13 @@ Retriever bm25 = new Bm25Retriever(bm25Corpus);
 RagService rag = new DefaultRagService(bm25);
 ```
 
+如果这批语料本来就来自入库管线，不必手写两份：`Bm25Retriever.fromChunks(...)` 直接把 `IngestionResult.chunks`（或任何 `List<RagChunk>`）映射成 BM25 语料，`chunkId`/`documentId`/`chunkIndex`/`pageNumber`/`sectionTitle`/`metadata` 一并带入：
+
+```java
+IngestionResult result = pipeline.ingest(request);
+Retriever bm25 = Bm25Retriever.fromChunks(result.getChunks());
+```
+
 如果要 Dense + BM25 混合召回，就自己组一个 `HybridRetriever`：
 
 ```java
@@ -386,6 +393,15 @@ new HybridRetriever(Arrays.asList(dense, bm25), new DbsfFusionStrategy());
 如果后面再交给 `DefaultRagService`，还会有第三层：
 
 3. `query.finalTopK` 在 rerank 之后再次裁剪
+
+此外 `RagQuery.minScore` 是**召回侧阈值**：`DenseRetriever` 拿到向量库结果后，直接丢掉 `score < minScore` 的命中（无分数的命中保留不滤）。它作用在融合/rerank 之前，只裁剪 dense 相似度分数——BM25 分和融合分不与之比较（它们和相似度分不是同一量纲）。典型用途是把"向量距离很远但 topK 兜底进来"的低相关噪声在进入 context 前就截掉：
+
+```java
+RagQuery.builder().query("...").dataset("hr-docs")
+        .embeddingModel("text-embedding-3-small")
+        .minScore(0.72f)   // 仅 dense 相似度阈值
+        .topK(8).finalTopK(4).build();
+```
 
 所以当你觉得“hybrid 召回太少”时，不要只盯着一层看。可能是：
 

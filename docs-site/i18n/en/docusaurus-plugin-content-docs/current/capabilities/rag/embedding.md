@@ -42,17 +42,30 @@ It is only responsible for "turning input text into a vector".
 
 ## 2. Which embedding providers the factory currently supports
 
-`AiService.createEmbeddingService(platform)` currently supports only:
+`AiService.getEmbeddingService(platform)` currently supports:
 
-- `OPENAI`
-- `OLLAMA`
+- `OPENAI`, `OLLAMA`: native implementations
+- `ZHIPU`, `DOUBAO`, `DASHSCOPE`, `JINA`, `BAICHUAN`, `MINIMAX`: reuse each platform config's `apiHost`/`apiKey` over its OpenAI-compatible embeddings endpoint (Zhipu takes `ZhipuConfig.embeddingUrl`; the others use their documented compatible paths)
 
 This is worth spelling out in the docs, because it does not match the surface area of the chat models. That is, within AI4J's current platform support:
 
 - There are more chat providers than embedding providers
 - The rerank provider set is yet another separate collection
+- Platforms without a public embeddings endpoint (`DEEPSEEK`, `MOONSHOT`, `GROK`, ...) fail fast with `IllegalArgumentException`
 
 So "this platform can do chat" does not imply "this platform can also serve directly as an embedding provider".
+
+### 2.1 A default embedding model can be configured; request-level still wins
+
+Both `DenseRetriever` and `IngestionPipeline` accept a default model via constructor:
+
+```java
+new DenseRetriever(embeddingService, vectorStore, "text-embedding-3-small");
+new IngestionPipeline(embeddingService, vectorStore,
+        loaders, chunker, processors, enrichers, "text-embedding-3-small");
+```
+
+The precedence rule is fixed: **explicit `RagQuery.embeddingModel` / `IngestionRequest.embeddingModel` > constructor default > `embeddingModel is required` when neither exists**. Repeatedly ingesting and querying one knowledge base no longer requires restating the model on every call.
 
 ## 3. How embedding is called inside the ingest chain
 

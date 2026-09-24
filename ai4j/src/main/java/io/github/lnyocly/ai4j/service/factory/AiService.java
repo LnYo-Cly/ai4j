@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.service.factory;
 
 import io.github.lnyocly.ai4j.agentflow.AgentFlow;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
+import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicChatService;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.AnthropicMessagesService;
 import io.github.lnyocly.ai4j.platform.baichuan.chat.BaichuanChatService;
@@ -25,6 +26,7 @@ import io.github.lnyocly.ai4j.platform.openai.image.OpenAiImageService;
 import io.github.lnyocly.ai4j.platform.openai.realtime.OpenAiRealtimeService;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoService;
 import io.github.lnyocly.ai4j.platform.grok.video.GrokVideoService;
+import io.github.lnyocly.ai4j.platform.standard.rerank.StandardRerankService;
 import io.github.lnyocly.ai4j.platform.suno.music.SunoMusicService;
 import io.github.lnyocly.ai4j.platform.typesafe.systemone.TypeSafeSystemOneService;
 import io.github.lnyocly.ai4j.platform.zhipu.chat.ZhipuChatService;
@@ -48,6 +50,7 @@ import io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore;
 import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
 import io.github.lnyocly.ai4j.vector.store.VectorStore;
 import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
+import io.github.lnyocly.ai4j.vector.store.redis.RedisVectorStore;
 import io.github.lnyocly.ai4j.websearch.ChatWithWebSearchEnhance;
 
 import java.util.List;
@@ -142,9 +145,51 @@ public class AiService {
                 return new OpenAiEmbeddingService(configuration);
             case OLLAMA:
                 return new OllamaEmbeddingService(configuration);
+            case ZHIPU:
+                return openAiCompatibleEmbedding(
+                        configuration.getZhipuConfig().getApiHost(),
+                        configuration.getZhipuConfig().getApiKey(),
+                        configuration.getZhipuConfig().getEmbeddingUrl());
+            case DOUBAO:
+                return openAiCompatibleEmbedding(
+                        configuration.getDoubaoConfig().getApiHost(),
+                        configuration.getDoubaoConfig().getApiKey(),
+                        "embeddings");
+            case DASHSCOPE:
+                return openAiCompatibleEmbedding(
+                        configuration.getDashScopeConfig().getApiHost(),
+                        configuration.getDashScopeConfig().getApiKey(),
+                        "embeddings");
+            case JINA:
+                return openAiCompatibleEmbedding(
+                        configuration.getJinaConfig().getApiHost(),
+                        configuration.getJinaConfig().getApiKey(),
+                        "v1/embeddings");
+            case BAICHUAN:
+                return openAiCompatibleEmbedding(
+                        configuration.getBaichuanConfig().getApiHost(),
+                        configuration.getBaichuanConfig().getApiKey(),
+                        "v1/embeddings");
+            case MINIMAX:
+                return openAiCompatibleEmbedding(
+                        configuration.getMinimaxConfig().getApiHost(),
+                        configuration.getMinimaxConfig().getApiKey(),
+                        "v1/embeddings");
             default:
-                throw new IllegalArgumentException("Unknown platform: " + platform);
+                throw new IllegalArgumentException("No embedding service for platform: " + platform);
         }
+    }
+
+    /**
+     * Build an embedding service over a provider's OpenAI-compatible
+     * embeddings endpoint using that provider's configured host and key.
+     */
+    private IEmbeddingService openAiCompatibleEmbedding(String apiHost, String apiKey, String embeddingUrl) {
+        OpenAiConfig openAiConfig = new OpenAiConfig();
+        openAiConfig.setApiHost(apiHost);
+        openAiConfig.setApiKey(apiKey);
+        openAiConfig.setEmbeddingUrl(embeddingUrl);
+        return new OpenAiEmbeddingService(configuration, openAiConfig);
     }
 
     public IAudioService getAudioService(PlatformType platform) {
@@ -191,6 +236,10 @@ public class AiService {
 
     public VectorStore getPgVectorStore() {
         return new PgVectorStore(configuration);
+    }
+
+    public VectorStore getRedisVectorStore() {
+        return new RedisVectorStore(configuration);
     }
 
     public IImageService getImageService(PlatformType platform) {
@@ -275,6 +324,15 @@ public class AiService {
             default:
                 throw new IllegalArgumentException("Unknown platform: " + platform);
         }
+    }
+
+    /**
+     * Generic rerank service over any HTTP rerank endpoint that follows the
+     * standard {@code StandardRerankService} request/response shape (e.g.
+     * Jina-style or provider-hosted rerank APIs).
+     */
+    public IRerankService getStandardRerankService(String apiHost, String apiKey, String rerankUrl) {
+        return new StandardRerankService(configuration.getOkHttpClient(), apiHost, apiKey, rerankUrl);
     }
 
     public ISystemOneService getSystemOneService(PlatformType platform) {
