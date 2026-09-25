@@ -1,5 +1,8 @@
 package io.github.lnyocly.ai4j.vector.store.memory;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
@@ -9,6 +12,10 @@ import io.github.lnyocly.ai4j.vector.store.VectorStoreCapabilities;
 import io.github.lnyocly.ai4j.vector.store.VectorUpsertRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,6 +39,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * skipped. {@code filter} maps are matched as equality on record metadata.
  * All declared capabilities are supported, including metadata lookup and
  * delete-by-filter, so {@code skipExistingContentHash} ingestion works.</p>
+ *
+ * <p>{@link #persistToFile(Path)} writes all datasets and records to a JSON
+ * file and {@link #loadFromFile(Path)} restores them, which covers small
+ * embedded use cases that need restart durability without running a
+ * dedicated vector database.</p>
  */
 public class InMemoryVectorStore implements VectorStore {
 
@@ -170,6 +182,76 @@ public class InMemoryVectorStore implements VectorStore {
                 .deleteByFilter(true)
                 .returnStoredVector(true)
                 .build();
+    }
+
+    /**
+     * Persist every dataset and record to {@code path} as JSON. The format is
+     * {@code {"datasets":{"<dataset>":[<record>, ...]}}} where each record has
+     * {@code id}, {@code content}, {@code vector}, and {@code metadata}.
+     */
+    public void persistToFile(Path path) throws IOException {
+        JSONObject root = new JSONObject();
+        JSONObject datasetsJson = new JSONObject();
+        for (Map.Entry<String, List<VectorRecord>> entry : datasets.entrySet()) {
+            JSONArray recordsJson = new JSONArray();
+            for (VectorRecord record : entry.getValue()) {
+                if (record == null) {
+                    continue;
+                }
+                JSONObject recordJson = new JSONObject();
+                recordJson.put("id", record.getId());
+                recordJson.put("content", record.getContent());
+                recordJson.put("vector", record.getVector());
+                recordJson.put("metadata", record.getMetadata());
+                recordsJson.add(recordJson);
+            }
+            datasetsJson.put(entry.getKey(), recordsJson);
+        }
+        root.put("datasets", datasetsJson);
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        Files.write(path, root.toJSONString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Load a store previously written by {@link #persistToFile(Path)}.
+     */
+    public static InMemoryVectorStore loadFromFile(Path path) throws IOException {
+        InMemoryVectorStore store = new InMemoryVectorStore();
+        byte[] bytes = Files.readAllBytes(path);
+        JSONObject root = JSON.parseObject(new String(bytes, StandardCharsets.UTF_8));
+        JSONObject datasetsJson = root == null ? null : root.getJSONObject("datasets");
+        if (datasetsJson == null) {
+            return store;
+        }
+        for (String dataset : datasetsJson.keySet()) {
+            JSONArray recordsJson = datasetsJson.getJSONArray(dataset);
+            if (recordsJson == null) {
+                continue;
+            }
+            for (int i = 0; i < recordsJson.size(); i++) {
+                JSONObject recordJson = recordsJson.getJSONObject(i);
+                if (recordJson == null) {
+                    continue;
+                }
+                List<Float> vector = null;
+                JSONArray vectorJson = recordJson.getJSONArray("vector");
+                if (vectorJson != null) {
+                    vector = new ArrayList<Float>(vectorJson.size());
+                    for (int j = 0; j < vectorJson.size(); j++) {
+                        vector.add(vectorJson.getFloat(j));
+                    }
+                }
+                store.dataset(dataset).add(VectorRecord.builder()
+                        .id(recordJson.getString("id"))
+                        .content(recordJson.getString("content"))
+                        .vector(vector)
+                        .metadata(recordJson.getJSONObject("metadata"))
+                        .build());
+            }
+        }
+        return store;
     }
 
     private List<VectorRecord> dataset(String dataset) {

@@ -153,6 +153,44 @@ public class InMemoryVectorStoreTest {
         Assert.assertNull(withoutVector.get(0).getVector());
     }
 
+    @Test
+    public void shouldPersistAndRestoreAllDatasets() throws Exception {
+        InMemoryVectorStore store = new InMemoryVectorStore();
+        Map<String, Object> meta = new HashMap<String, Object>();
+        meta.put("tenant", "acme");
+        meta.put("contentHash", "abc123");
+        store.upsert(upsert("kb1", Arrays.asList(
+                record("a", Arrays.asList(1f, 0f), "alpha", meta),
+                record("b", Arrays.asList(0f, 1f), "beta", null))));
+        store.upsert(upsert("kb2", Collections.singletonList(
+                record("c", Arrays.asList(0f, 1f), "gamma", meta))));
+
+        java.nio.file.Path file = java.nio.file.Files.createTempFile("ai4j-vectors", ".json");
+        try {
+            store.persistToFile(file);
+            InMemoryVectorStore restored = InMemoryVectorStore.loadFromFile(file);
+
+            List<VectorSearchResult> kb1 = restored.search(VectorSearchRequest.builder()
+                    .dataset("kb1").vector(Arrays.asList(1f, 0f)).topK(10).build());
+            Assert.assertEquals(2, kb1.size());
+            Assert.assertEquals("a", kb1.get(0).getId());
+            Assert.assertEquals("alpha", kb1.get(0).getContent());
+            Assert.assertEquals("acme", kb1.get(0).getMetadata().get("tenant"));
+
+            List<VectorSearchResult> kb2 = restored.search(VectorSearchRequest.builder()
+                    .dataset("kb2").vector(Arrays.asList(0f, 1f)).topK(10).build());
+            Assert.assertEquals(1, kb2.size());
+            Assert.assertEquals("c", kb2.get(0).getId());
+
+            Map<String, Object> filter = new HashMap<String, Object>();
+            filter.put("contentHash", "abc123");
+            Assert.assertTrue(restored.exists(VectorExistsRequest.builder()
+                    .dataset("kb1").filter(filter).build()));
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
+    }
+
     private static VectorUpsertRequest upsert(String dataset, List<VectorRecord> records) {
         return VectorUpsertRequest.builder().dataset(dataset).records(records).build();
     }

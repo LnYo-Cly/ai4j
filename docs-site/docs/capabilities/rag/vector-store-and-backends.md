@@ -1,11 +1,11 @@
 ---
 title: 向量存储与后端
-description: 讲清 AI4J VectorStore 统一契约如何收口 Pinecone/Qdrant/Milvus/PgVector/Redis 五个后端：dataset 是硬边界，capabilities() 显式暴露 returnStoredVector/metadataLookup 差异，统一调用但不抹平存储现实。
+description: 讲清 AI4J VectorStore 统一契约如何收口 Pinecone/Qdrant/Milvus/PgVector/Redis/Elasticsearch/Chroma 七个外部后端与 InMemory 内嵌后端：dataset 是硬边界，capabilities() 显式暴露 returnStoredVector/metadataLookup 差异，统一调用但不抹平存储现实。
 tags: [concept]
 ---
 
 # 向量存储与后端
-AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / Redis”，信息密度其实很低。
+AI4J 这一层如果只写成“支持 Pinecone / Qdrant / Milvus / PgVector / Redis / Elasticsearch / Chroma / InMemory”，信息密度其实很低。
 真正重要的是：**它怎样用统一 `VectorStore` 契约把不同后端收口，同时又不假装这些后端完全等价。**
 
 ## 1. 统一契约到底有多大
@@ -42,13 +42,15 @@ VectorStoreCapabilities capabilities();
 
 都是主字段，不是可选标签。
 
-更关键的是，5 个当前内置后端都把 `dataset` 当作必填：
+更关键的是，7 个外部内置后端都把 `dataset` 当作必填：
 
 - Pinecone：`requiredDataset(...)`
 - Qdrant：`requiredDataset(...)`
 - Milvus：`requiredDataset(...)`
 - PgVector：`requiredDataset(...)`
 - Redis：`requiredDataset(...)`
+- Elasticsearch：`requiredDataset(...)`
+- Chroma：`requiredDataset(...)`
 
 也就是说，在 AI4J 当前实现里，`dataset` 不是“如果你想分库再填”，而是：
 
@@ -92,6 +94,22 @@ VectorStoreCapabilities capabilities();
 
 它落到一栈多用的 Redis 实例里，按 dataset 隔离的 key 空间 + 索引过滤。
 
+### Elasticsearch
+
+`dataset` 被存成：
+
+- 每条文档上的 `dataset` keyword 字段，所有 `_search` / `_delete_by_query` 都带 `term` 过滤
+
+也就是说：多个 dataset 共享一个索引（`indexName` 配置），靠字段过滤做边界。检索走 ES 8.x `knn` 查询，`metadata` 列是 `flattened` 类型，filter 键落到 `metadata.<key>` 的 term/terms 查询。索引在首次 upsert 时按 `vectorDim` 自动创建 `dense_vector` mapping；写入用 `refresh=true`，保证写完立即可查。
+
+### Chroma
+
+`dataset` 被存成：
+
+- 每条记录的 `dataset` metadata 字段，所有 query/get/delete 都带 `where` 条件
+
+也就是说：多个 dataset 共享一个 collection（`collection` 配置，首次使用自动 `get_or_create` 并以 cosine 距离建索引）。Chroma 返回的是 cosine **distance**，SDK 统一换算成 `1 - distance` 的相似度 score 返回。
+
 :::warning Redis 后端依赖
 Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Jedis 是 optional 依赖，用户需自行在 pom 引入 `redis.clients:jedis:4.x`——4.x 是最后支持 JDK 8 的大版本，5.x 需 JDK 17，与 ai4j 的 JDK 8 字节码不兼容。若你的项目已绑定 Jedis 5.x 且不可降级，请改用其他向量后端（Milvus/Qdrant/Pinecone/PgVector），它们走同一套 `VectorStore` 契约。
 :::
@@ -103,6 +121,8 @@ Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Je
 - URL scope
 - relational filter column
 - redis key 前缀分段 + TAG 过滤
+- elasticsearch keyword 字段 + term 过滤
+- chroma metadata 字段 + where 条件
 
 这也是为什么你不能把“切换后端”理解成“换个连接串”。
 
@@ -137,7 +157,7 @@ Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Je
 
 ## 5. `capabilities()` 为什么是这层最有价值的设计
 
-5 个当前内置后端都会显式返回 `VectorStoreCapabilities`。
+7 个外部内置后端都会显式返回 `VectorStoreCapabilities`。
 而且这不是装饰性信息，里面真的有差异。
 
 当前源码里：
@@ -147,6 +167,8 @@ Redis 是 **opt-in 后端**：需要 Redis Stack（含 RediSearch 模块）；Je
 - Milvus：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
 - PgVector：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
 - Redis：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
+- Elasticsearch：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=true`
+- Chroma：`dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=true`
 
 这里最值得注意的是：
 
@@ -172,6 +194,8 @@ Pinecone 当前封装没有 metadata-only lookup，因此保留默认 `false`，
 - Milvus：走 query/filter
 - PgVector：走 SQL metadata filter
 - Redis：走 RediSearch filter-only 查询
+- Elasticsearch：走 `_search` `size=0` + `terminate_after=1` 的 filter-only 查询
+- Chroma：走 `/get` `where` + `limit=1` 查询
 - Pinecone：当前封装保持默认 `false`，不伪造 metadata-only lookup
 
 :::note
@@ -193,9 +217,16 @@ DenseRetriever retriever = new DenseRetriever(embeddingService, store);
 - `dataset` 隔离、metadata 等值 `filter`、`ids`/`filter`/`deleteAll` 删除、`exists` metadata-only lookup 全部支持，`capabilities()` 六项全开
 - 因此 `skipExistingContentHash` 增量入库在它上面是真实生效的
 
-定位要说清楚：它面向 **demo、单元测试、冒烟测试和小规模内嵌场景**（CLI/桌面/插件），进程重启即丢数据。生产部署仍然用 Qdrant / Milvus / PgVector / Pinecone / Redis 这类持久化后端——它不是替代品，是让"不装任何服务也能跑真向量检索"成为可能的开发体验件。
+定位要说清楚：它面向 **demo、单元测试、冒烟测试和小规模内嵌场景**（CLI/桌面/插件）。但它不是"重启即丢"的纯玩具——两个持久化方法覆盖小规模内嵌的落盘需求：
 
-另外，工厂层五个外部后端现在都有对称 getter：`getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()`（后者此前缺失，需手动 `new RedisVectorStore(configuration)`）。
+```java
+store.persistToFile(Paths.get("vectors.json"));                 // 全量 dataset 写 JSON
+InMemoryVectorStore restored = InMemoryVectorStore.loadFromFile(Paths.get("vectors.json"));
+```
+
+生产部署仍然用 Qdrant / Milvus / PgVector / Pinecone / Redis / Elasticsearch / Chroma 这类持久化后端——它不是替代品，是让"不装任何服务也能跑真向量检索"成为可能的开发体验件。
+
+另外，工厂层所有后端现在都有对称 getter：`getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()` / `getElasticsearchVectorStore()` / `getChromaVectorStore()` / `getInMemoryVectorStore()`。
 
 ## 6. `VectorStore` 和 `DenseRetriever` 的关系是什么
 

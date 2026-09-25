@@ -27,6 +27,8 @@ import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.service.spi.ServiceLoaderUtil;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
 import io.github.lnyocly.ai4j.vector.store.VectorStore;
+import io.github.lnyocly.ai4j.vector.store.chroma.ChromaVectorStore;
+import io.github.lnyocly.ai4j.vector.store.elasticsearch.ElasticsearchVectorStore;
 import io.github.lnyocly.ai4j.vector.store.milvus.MilvusVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
@@ -66,6 +68,8 @@ import java.util.Map;
         MilvusConfigProperties.class,
         PgVectorConfigProperties.class,
         RedisVectorConfigProperties.class,
+        ElasticsearchConfigProperties.class,
+        ChromaConfigProperties.class,
         ZhipuConfigProperties.class,
         AnthropicConfigProperties.class,
         DeepSeekConfigProperties.class,
@@ -97,6 +101,8 @@ public class AiConfigAutoConfiguration {
     private final MilvusConfigProperties milvusConfigProperties;
     private final PgVectorConfigProperties pgVectorConfigProperties;
     private final RedisVectorConfigProperties redisVectorConfigProperties;
+    private final ElasticsearchConfigProperties elasticsearchConfigProperties;
+    private final ChromaConfigProperties chromaConfigProperties;
 
     // searxng閰嶇疆
     private final SearXNGConfigProperties searXNGConfigProperties;
@@ -123,7 +129,7 @@ public class AiConfigAutoConfiguration {
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties, MinerUConfigProperties mineruConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, ElasticsearchConfigProperties elasticsearchConfigProperties, ChromaConfigProperties chromaConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties, MinerUConfigProperties mineruConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -131,6 +137,8 @@ public class AiConfigAutoConfiguration {
         this.milvusConfigProperties = milvusConfigProperties;
         this.pgVectorConfigProperties = pgVectorConfigProperties;
         this.redisVectorConfigProperties = redisVectorConfigProperties;
+        this.elasticsearchConfigProperties = elasticsearchConfigProperties;
+        this.chromaConfigProperties = chromaConfigProperties;
         this.searXNGConfigProperties = searXNGConfigProperties;
         this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
@@ -232,6 +240,8 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.pinecone", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(PineconeService.class)
     public PineconeService pineconeService() {
         return new PineconeService(configuration);
     }
@@ -243,6 +253,7 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.pinecone", name = "enabled", havingValue = "true")
     @ConditionalOnMissingBean(PineconeVectorStore.class)
     public PineconeVectorStore pineconeVectorStore(PineconeService pineconeService) {
         return new PineconeVectorStore(pineconeService);
@@ -277,6 +288,20 @@ public class AiConfigAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.elasticsearch", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(ElasticsearchVectorStore.class)
+    public ElasticsearchVectorStore elasticsearchVectorStore() {
+        return new ElasticsearchVectorStore(configuration);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ai.vector.chroma", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(ChromaVectorStore.class)
+    public ChromaVectorStore chromaVectorStore() {
+        return new ChromaVectorStore(configuration);
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public RagContextAssembler ragContextAssembler() {
         return new DefaultRagContextAssembler();
@@ -297,6 +322,8 @@ public class AiConfigAutoConfiguration {
         initMilvusConfig();
         initPgVectorConfig();
         initRedisConfig();
+        initElasticsearchConfig();
+        initChromaConfig();
 
         initSearXNGConfig();
         initMinerUConfig();
@@ -502,6 +529,31 @@ public class AiConfigAutoConfiguration {
         redisVectorConfig.setReadTimeoutMillis(redisVectorConfigProperties.getReadTimeoutMillis());
 
         configuration.setRedisVectorConfig(redisVectorConfig);
+    }
+
+    private void initElasticsearchConfig() {
+        ElasticsearchConfig elasticsearchConfig = new ElasticsearchConfig();
+        elasticsearchConfig.setEnabled(elasticsearchConfigProperties.isEnabled());
+        elasticsearchConfig.setHost(elasticsearchConfigProperties.getHost());
+        elasticsearchConfig.setApiKey(elasticsearchConfigProperties.getApiKey());
+        elasticsearchConfig.setUsername(elasticsearchConfigProperties.getUsername());
+        elasticsearchConfig.setPassword(elasticsearchConfigProperties.getPassword());
+        elasticsearchConfig.setIndexName(elasticsearchConfigProperties.getIndexName());
+        elasticsearchConfig.setVectorDim(elasticsearchConfigProperties.getVectorDim());
+
+        configuration.setElasticsearchConfig(elasticsearchConfig);
+    }
+
+    private void initChromaConfig() {
+        ChromaConfig chromaConfig = new ChromaConfig();
+        chromaConfig.setEnabled(chromaConfigProperties.isEnabled());
+        chromaConfig.setHost(chromaConfigProperties.getHost());
+        chromaConfig.setTenant(chromaConfigProperties.getTenant());
+        chromaConfig.setDatabase(chromaConfigProperties.getDatabase());
+        chromaConfig.setCollection(chromaConfigProperties.getCollection());
+        chromaConfig.setToken(chromaConfigProperties.getToken());
+
+        configuration.setChromaConfig(chromaConfig);
     }
 
     /**
