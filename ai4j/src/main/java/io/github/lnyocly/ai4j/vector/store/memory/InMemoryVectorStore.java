@@ -14,8 +14,10 @@ import io.github.lnyocly.ai4j.vector.store.VectorRecord;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -188,6 +190,9 @@ public class InMemoryVectorStore implements VectorStore {
      * Persist every dataset and record to {@code path} as JSON. The format is
      * {@code {"datasets":{"<dataset>":[<record>, ...]}}} where each record has
      * {@code id}, {@code content}, {@code vector}, and {@code metadata}.
+     * The payload is written to a sibling temp file first and then moved into
+     * place (atomically where the filesystem supports it), so a crash mid-write
+     * cannot leave a truncated JSON at {@code path}.
      */
     public void persistToFile(Path path) throws IOException {
         JSONObject root = new JSONObject();
@@ -212,7 +217,14 @@ public class InMemoryVectorStore implements VectorStore {
         if (parent != null) {
             Files.createDirectories(parent);
         }
-        Files.write(path, root.toJSONString().getBytes(StandardCharsets.UTF_8));
+        byte[] payload = root.toJSONString().getBytes(StandardCharsets.UTF_8);
+        Path temp = path.resolveSibling(path.getFileName() + ".tmp");
+        Files.write(temp, payload);
+        try {
+            Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     /**

@@ -168,6 +168,8 @@ public class InMemoryVectorStoreTest {
         java.nio.file.Path file = java.nio.file.Files.createTempFile("ai4j-vectors", ".json");
         try {
             store.persistToFile(file);
+            Assert.assertFalse("temp file must be moved away after persist",
+                    java.nio.file.Files.exists(file.resolveSibling(file.getFileName() + ".tmp")));
             InMemoryVectorStore restored = InMemoryVectorStore.loadFromFile(file);
 
             List<VectorSearchResult> kb1 = restored.search(VectorSearchRequest.builder()
