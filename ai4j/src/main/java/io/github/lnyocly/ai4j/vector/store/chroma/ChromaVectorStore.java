@@ -123,7 +123,8 @@ public class ChromaVectorStore implements VectorStore {
         JSONArray queryEmbeddings = new JSONArray();
         queryEmbeddings.add(request.getVector());
         body.put("query_embeddings", queryEmbeddings);
-        body.put("n_results", request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK());
+        Integer topK = request.getTopK();
+        body.put("n_results", topK == null || topK <= 0 ? 10 : topK.intValue());
         body.put("where", where(dataset, request.getFilter()));
         JSONArray include = new JSONArray();
         include.add("documents");

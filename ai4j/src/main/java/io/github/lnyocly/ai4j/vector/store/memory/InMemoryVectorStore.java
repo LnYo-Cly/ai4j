@@ -208,8 +208,9 @@ public class InMemoryVectorStore implements VectorStore {
             datasetsJson.put(entry.getKey(), recordsJson);
         }
         root.put("datasets", datasetsJson);
-        if (path.getParent() != null) {
-            Files.createDirectories(path.getParent());
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
         Files.write(path, root.toJSONString().getBytes(StandardCharsets.UTF_8));
     }
