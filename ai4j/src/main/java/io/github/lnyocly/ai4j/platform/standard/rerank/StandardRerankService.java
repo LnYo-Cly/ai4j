@@ -100,8 +100,30 @@ public class StandardRerankService implements IRerankService {
                 .id(text(root, "id"))
                 .model(firstNonBlank(text(root, "model"), request == null ? null : request.getModel()))
                 .results(results)
-                .usage(parseUsage(root == null ? null : root.get("usage")))
+                .usage(parseUsage(usageNode(root)))
                 .build();
+    }
+
+    protected JsonNode usageNode(JsonNode root) {
+        if (root == null) {
+            return null;
+        }
+        JsonNode usage = root.get("usage");
+        if (usage != null && !usage.isNull()) {
+            return usage;
+        }
+        JsonNode meta = root.get("meta");
+        if (meta != null && meta.isObject()) {
+            JsonNode tokens = meta.get("tokens");
+            if (tokens != null && tokens.isObject()) {
+                return tokens;
+            }
+            JsonNode billed = meta.get("billed_units");
+            if (billed != null && billed.isObject()) {
+                return billed;
+            }
+        }
+        return null;
     }
 
     protected RerankUsage parseUsage(JsonNode usageNode) {
