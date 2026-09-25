@@ -116,6 +116,24 @@ ai:
 Historically `pineconeService` / `pineconeVectorStore` were created **unconditionally** — every app pulling in the starter got both beans, which caused `VectorStore` injection ambiguity once another backend was enabled. They now match the other backends: no beans are created unless `ai.vector.pinecone.enabled=true`. Apps relying on the old behavior must set `enabled: true` after upgrading.
 :::
 
+### 5.2 `VectorStore` injection and `ai.vector.primary`
+
+The starter also provides a `@Primary` `vectorStore` bean so `@Autowired VectorStore` always resolves:
+
+- **One backend enabled**: it is selected automatically;
+- **Multiple backends enabled**: `ai.vector.primary` is required — a backend name (`qdrant`/`chroma`/`pinecone`/`milvus`/`pgvector`/`redis`/`elasticsearch`) or the bean name of a custom `VectorStore`. Missing or unmatched values fail fast at startup with the candidate list;
+- **A specific backend**: inject the concrete type (e.g. `QdrantVectorStore`) or the bean name — unaffected by the primary selection.
+
+```yaml
+ai:
+  vector:
+    primary: qdrant          # @Autowired VectorStore resolves here when several stores are enabled
+    qdrant:
+      enabled: true
+    chroma:
+      enabled: true
+```
+
 ## 6. Extension and plugin configuration: `ai.extensions.*`
 
 `AiConfigAutoConfiguration` does not only configure models and the network; it also wires ai4j's extension/plugin system into Spring automatically. The binding entry point is `AiExtensionProperties` (prefix `ai.extensions`), producing two beans:
