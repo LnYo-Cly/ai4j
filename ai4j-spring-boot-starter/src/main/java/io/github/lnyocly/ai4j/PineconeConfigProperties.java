@@ -12,6 +12,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "ai.vector.pinecone")
 public class PineconeConfigProperties {
+
+    private boolean enabled = false;
+
     private String host = "https://xxx.svc.xxx.pinecone.io";
     private String key = "";
 

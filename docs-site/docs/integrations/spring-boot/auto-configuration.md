@@ -82,6 +82,39 @@ starter 里并不是所有东西都无条件创建。
 
 这意味着默认 Bean 的存在是“可被接管”的，而不是强制覆盖业务实现。
 
+### 5.1 向量库 Bean 全部是 opt-in
+
+每个外部向量库都挂在自己的 `ai.vector.<backend>.enabled=true` 开关后面，不配就不进容器：
+
+```yaml
+ai:
+  vector:
+    elasticsearch:
+      enabled: true
+      host: http://localhost:9200
+      index-name: kb_vectors
+      vector-dim: 1024
+      api-key: ${ES_API_KEY}        # 或 username/password 走 Basic
+    chroma:
+      enabled: true
+      host: http://localhost:8000
+      collection: kb_docs
+```
+
+| 前缀 | Bean | 绑定属性类 |
+| --- | --- | --- |
+| `ai.vector.pinecone` | `pineconeService` + `pineconeVectorStore` | `PineconeConfigProperties` |
+| `ai.vector.qdrant` | `qdrantVectorStore` | `QdrantConfigProperties` |
+| `ai.vector.milvus` | `milvusVectorStore` | `MilvusConfigProperties` |
+| `ai.vector.pgvector` | `pgVectorStore` | `PgVectorConfigProperties` |
+| `ai.vector.redis` | `redisVectorStore` | `RedisVectorConfigProperties` |
+| `ai.vector.elasticsearch` | `elasticsearchVectorStore` | `ElasticsearchConfigProperties` |
+| `ai.vector.chroma` | `chromaVectorStore` | `ChromaConfigProperties` |
+
+:::warning Pinecone 行为变更
+历史上 `pineconeService` / `pineconeVectorStore` 是**无条件创建**的——任何引入 starter 的应用容器里都会有这两个 Bean，导致多 VectorStore 并存时接口注入歧义。现在它们与其他后端一致：`ai.vector.pinecone.enabled` 未显式设 `true` 时不再创建。依赖旧行为的应用升级后需补上 `enabled: true`。
+:::
+
 ## 6. 扩展与插件装配：`ai.extensions.*`
 
 `AiConfigAutoConfiguration` 不只装配模型和网络，还把 ai4j 的扩展/插件体系自动接进 Spring。绑定入口是 `AiExtensionProperties`（前缀 `ai.extensions`），产出两个 Bean：

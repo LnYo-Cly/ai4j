@@ -103,6 +103,26 @@ Key differences from `RecursiveTextChunker`:
 
 How to choose: keep recursive splitting (the default) for general/mixed documents; prefer sentence splitting for chat logs, FAQs, and corpora where sentence-level semantics matter.
 
+### 3.2 Built-in alternative: `SemanticTextChunker`
+
+One step further, `SemanticTextChunker` (same `rag.ingestion` package) cuts on **semantic boundaries** rather than a character budget:
+
+```java
+.chunker(new SemanticTextChunker(embeddingService, "text-embedding-3-small"))
+```
+
+What it actually does in source:
+
+- Reuses `SentenceTextChunker`'s sentence splitting to get a sentence list
+- Issues **one batch embedding call** (`input` is the whole sentence list) to vectorize every sentence — this is its cost: each `chunk(...)` call makes at least one embedding request
+- Computes cosine distance between adjacent sentences, then cuts wherever the distance exceeds the `breakpointPercentile` (default `0.95`, linear interpolation) of the document's own distance distribution — i.e., where the topic changes
+- Packs the resulting semantic groups into chunks of at most `maxChunkSize` (default 2000 chars), falling back to a hard character cut for oversized groups
+- Same output contract: only `documentId` / `content` / `chunkIndex` are populated
+
+The key difference is worth stating plainly: recursive/sentence chunking asks "how long is this piece", semantic chunking asks "is this sentence still talking about the same thing as the previous one". For long documents whose topics jump around (multi-topic FAQs, meeting notes, tutorial collections), it avoids stitching two unrelated topics into one chunk — the direct fix for the "two unrelated paragraphs cut together" problem from §7.
+
+How to choose: default recursive splitting for short or well-structured documents; `SentenceTextChunker` when sentence boundaries must survive; `SemanticTextChunker` when the corpus mixes topics and the embedding cost is worth the boundary quality.
+
 ## 4. Why the default strategy is sufficient, but far from complete
 
 The default `RecursiveTextChunker` has these strengths:

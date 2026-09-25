@@ -45,6 +45,9 @@ import io.github.lnyocly.ai4j.rag.Reranker;
 import io.github.lnyocly.ai4j.rag.ingestion.IngestionPipeline;
 import io.github.lnyocly.ai4j.service.*;
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import io.github.lnyocly.ai4j.vector.store.chroma.ChromaVectorStore;
+import io.github.lnyocly.ai4j.vector.store.elasticsearch.ElasticsearchVectorStore;
+import io.github.lnyocly.ai4j.vector.store.memory.InMemoryVectorStore;
 import io.github.lnyocly.ai4j.vector.store.milvus.MilvusVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pgvector.PgVectorStore;
 import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
@@ -240,6 +243,18 @@ public class AiService {
 
     public VectorStore getRedisVectorStore() {
         return new RedisVectorStore(configuration);
+    }
+
+    public VectorStore getElasticsearchVectorStore() {
+        return new ElasticsearchVectorStore(configuration);
+    }
+
+    public VectorStore getChromaVectorStore() {
+        return new ChromaVectorStore(configuration);
+    }
+
+    public VectorStore getInMemoryVectorStore() {
+        return new InMemoryVectorStore();
     }
 
     public IImageService getImageService(PlatformType platform) {

@@ -102,6 +102,26 @@ List<RagChunk> chunk(RagDocument document, String content)
 
 怎么选：通用文档/混排文本继续用递归切分（默认）；对话记录、FAQ、句子粒度语义强的语料更适合句子切分。
 
+### 3.2 内置备选：`SemanticTextChunker`
+
+更进一步，`SemanticTextChunker`（同包 `rag.ingestion`）按**语义边界**切，而不是按字符预算切：
+
+```java
+.chunker(new SemanticTextChunker(embeddingService, "text-embedding-3-small"))
+```
+
+源码层面的真实行为：
+
+- 复用 `SentenceTextChunker` 的句子切分，拿到句子序列
+- 一次批量 embedding 调用（`input` 是整个句子列表）拿到每句向量——**这是它的代价：每次 `chunk(...)` 至少一次 embedding 请求**
+- 计算相邻句余弦距离，把距离超过文档内距离分布 `breakpointPercentile`（默认 `0.95`，线性插值）的位置当作**话题转换点**切开
+- 语义组再按 `maxChunkSize`（默认 2000 字符）打包，超长组按字符硬切兜底
+- 同样只填 `documentId` / `content` / `chunkIndex`
+
+关键差异要说清：递归/句子切分问的是"这段多长"，语义切分问的是"这句话和上一句还在讲同一件事吗"。对话题跳跃频繁的长文（多主题 FAQ、会议纪要、教程合集），它能避免把两个无关主题缝进同一 chunk——这正是 §7 里"两个不相干段落切在一起"问题的直接解法。
+
+怎么选：短文档/结构清晰的用默认递归切分；需要保句子边界的用 `SentenceTextChunker`；语料主题混杂且愿意付 embedding 成本换边界质量的，用 `SemanticTextChunker`。
+
 ## 4. 默认策略为什么够用，但远远不够完整
 
 默认 `RecursiveTextChunker` 的优点是：

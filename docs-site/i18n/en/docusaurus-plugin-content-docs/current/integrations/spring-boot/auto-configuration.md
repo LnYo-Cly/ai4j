@@ -83,6 +83,39 @@ Some beans are:
 
 This means the default beans are designed to be taken over, not to forcibly override your business implementations.
 
+### 5.1 All vector store beans are opt-in
+
+Every external vector store is gated behind its own `ai.vector.<backend>.enabled=true` flag — without it, no bean enters the context:
+
+```yaml
+ai:
+  vector:
+    elasticsearch:
+      enabled: true
+      host: http://localhost:9200
+      index-name: kb_vectors
+      vector-dim: 1024
+      api-key: ${ES_API_KEY}        # or username/password for Basic auth
+    chroma:
+      enabled: true
+      host: http://localhost:8000
+      collection: kb_docs
+```
+
+| Prefix | Bean(s) | Properties class |
+| --- | --- | --- |
+| `ai.vector.pinecone` | `pineconeService` + `pineconeVectorStore` | `PineconeConfigProperties` |
+| `ai.vector.qdrant` | `qdrantVectorStore` | `QdrantConfigProperties` |
+| `ai.vector.milvus` | `milvusVectorStore` | `MilvusConfigProperties` |
+| `ai.vector.pgvector` | `pgVectorStore` | `PgVectorConfigProperties` |
+| `ai.vector.redis` | `redisVectorStore` | `RedisVectorConfigProperties` |
+| `ai.vector.elasticsearch` | `elasticsearchVectorStore` | `ElasticsearchConfigProperties` |
+| `ai.vector.chroma` | `chromaVectorStore` | `ChromaConfigProperties` |
+
+:::warning Pinecone behavior change
+Historically `pineconeService` / `pineconeVectorStore` were created **unconditionally** — every app pulling in the starter got both beans, which caused `VectorStore` injection ambiguity once another backend was enabled. They now match the other backends: no beans are created unless `ai.vector.pinecone.enabled=true`. Apps relying on the old behavior must set `enabled: true` after upgrading.
+:::
+
 ## 6. Extension and plugin configuration: `ai.extensions.*`
 
 `AiConfigAutoConfiguration` does not only configure models and the network; it also wires ai4j's extension/plugin system into Spring automatically. The binding entry point is `AiExtensionProperties` (prefix `ai.extensions`), producing two beans:

@@ -111,7 +111,7 @@ public class SentenceTextChunker implements Chunker {
      * Split on sentence-ending punctuation (kept attached to the sentence)
      * and on line breaks (dropped as boundaries).
      */
-    private List<String> splitSentences(String content) {
+    static List<String> splitSentences(String content) {
         List<String> sentences = new ArrayList<String>();
         StringBuilder current = new StringBuilder();
         for (int i = 0; i < content.length(); i++) {
@@ -139,12 +139,12 @@ public class SentenceTextChunker implements Chunker {
         return sentences;
     }
 
-    private boolean isSentenceEnd(char c) {
+    private static boolean isSentenceEnd(char c) {
         return c == '。' || c == '！' || c == '？' || c == '；'
                 || c == '!' || c == '?' || c == ';' || c == '.';
     }
 
-    private boolean isClosingMark(char c) {
+    private static boolean isClosingMark(char c) {
         return c == '"' || c == '\'' || c == ')' || c == ']' || c == '}'
                 || c == '”' || c == '’' || c == '）' || c == '】' || c == '》';
     }

@@ -52,6 +52,10 @@ public class Configuration {
 
     private RedisVectorConfig redisVectorConfig;
 
+    private ElasticsearchConfig elasticsearchConfig;
+
+    private ChromaConfig chromaConfig;
+
     private SearXNGConfig searXNGConfig;
 
     private McpConfig mcpConfig;

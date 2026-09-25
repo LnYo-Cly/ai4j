@@ -1,12 +1,12 @@
 ---
 title: "Vector Store and Backends"
-description: "How the AI4J VectorStore contract unifies five backends (Pinecone/Qdrant/Milvus/PgVector/Redis): dataset is a hard boundary, capabilities() explicitly exposes returnStoredVector/metadataLookup differences — one call surface, without flattening storage reality."
+description: "How the AI4J VectorStore contract unifies seven external backends (Pinecone/Qdrant/Milvus/PgVector/Redis/Elasticsearch/Chroma) plus an in-JVM store: dataset is a hard boundary, capabilities() explicitly exposes returnStoredVector/metadataLookup differences — one call surface, without flattening storage reality."
 tags: [concept]
 ---
 
 # Vector Store and Backends
 
-If this layer of AI4J were described only as "supports Pinecone / Qdrant / Milvus / PgVector / Redis", the information density would be very low.
+If this layer of AI4J were described only as "supports Pinecone / Qdrant / Milvus / PgVector / Redis / Elasticsearch / Chroma / InMemory", the information density would be very low.
 What actually matters is: **how it uses a unified `VectorStore` contract to bring different backends together, without pretending those backends are fully equivalent.**
 
 ## 1. How broad is the unified contract
@@ -43,13 +43,15 @@ Look at the request objects and you will see:
 
 are both primary fields, not optional tags.
 
-More importantly, all five built-in backends treat `dataset` as required:
+More importantly, all seven external built-in backends treat `dataset` as required:
 
 - Pinecone: `requiredDataset(...)`
 - Qdrant: `requiredDataset(...)`
 - Milvus: `requiredDataset(...)`
 - PgVector: `requiredDataset(...)`
 - Redis: `requiredDataset(...)`
+- Elasticsearch: `requiredDataset(...)`
+- Chroma: `requiredDataset(...)`
 
 That is, in the current AI4J implementation, `dataset` is not "fill this in if you want to split databases"; it is:
 
@@ -93,6 +95,22 @@ It acts more like collection-level scope.
 
 It lands in a single Redis instance that serves many purposes, isolating the key space and applying index filtering by dataset.
 
+### Elasticsearch
+
+`dataset` is stored as:
+
+- a `dataset` keyword field on every document, applied as a `term` filter on every `_search` / `_delete_by_query`
+
+That is, multiple datasets share one index (the `indexName` config) with field-level filtering as the boundary. Search uses the ES 8.x `knn` query; `metadata` is a `flattened` field, so filter keys land on `metadata.<key>` term/terms queries. The index is auto-created on first upsert with a `dense_vector` mapping sized by `vectorDim`; writes use `refresh=true` so records are searchable immediately.
+
+### Chroma
+
+`dataset` is stored as:
+
+- a `dataset` metadata field on every record, applied as a `where` condition on every query/get/delete
+
+That is, multiple datasets share one collection (the `collection` config, auto-resolved via `get_or_create` with cosine distance). Chroma returns cosine **distance**; the SDK converts it into a `1 - distance` similarity score.
+
 :::warning Redis backend dependencies
 Redis is an **opt-in backend**: it requires Redis Stack (with the RediSearch module); Jedis is an optional dependency, and users must add `redis.clients:jedis:4.x` to their pom themselves — 4.x is the last major version that supports JDK 8, while 5.x requires JDK 17 and is not bytecode-compatible with ai4j's JDK 8 target. If your project is already pinned to Jedis 5.x and cannot downgrade, use one of the other vector backends instead (Milvus/Qdrant/Pinecone/PgVector); they all go through the same `VectorStore` contract.
 :::
@@ -104,6 +122,8 @@ So from a business viewpoint they are all called `dataset`, but from a storage r
 - URL scope
 - relational filter column
 - redis key prefix segment + TAG filter
+- elasticsearch keyword field + term filter
+- chroma metadata field + where condition
 
 This is also why you should not read "switch backends" as "swap the connection string".
 
@@ -138,7 +158,7 @@ This is precisely the precondition for `DenseRetriever` to later load those resu
 
 ## 5. Why `capabilities()` is the most valuable design in this layer
 
-All five built-in backends explicitly return `VectorStoreCapabilities`.
+All seven external built-in backends explicitly return `VectorStoreCapabilities`.
 And this is not decorative information — there are real differences inside.
 
 In the current source:
@@ -148,6 +168,8 @@ In the current source:
 - Milvus: `dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
 - PgVector: `dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
 - Redis: `dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=false`
+- Elasticsearch: `dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=true`
+- Chroma: `dataset=true` `metadataFilter=true` `metadataLookup=true` `deleteByFilter=true` `returnStoredVector=true`
 
 The most notable points here:
 
@@ -173,6 +195,8 @@ So it is an optional capability:
 - Milvus: via query/filter
 - PgVector: via SQL metadata filter
 - Redis: via a RediSearch filter-only query
+- Elasticsearch: via `_search` `size=0` + `terminate_after=1` filter-only query
+- Chroma: via `/get` `where` + `limit=1`
 - Pinecone: the current wrapper keeps the default `false` and does not fake a metadata-only lookup
 
 :::note
@@ -194,9 +218,16 @@ DenseRetriever retriever = new DenseRetriever(embeddingService, store);
 - `dataset` isolation, metadata equality `filter`, delete by `ids`/`filter`/`deleteAll`, and `exists` metadata-only lookup are all supported — every `capabilities()` flag is on
 - So `skipExistingContentHash` incremental ingestion works for real on it
 
-Be clear about positioning: it targets **demos, unit tests, smoke tests, and small embedded apps** (CLI/desktop/plugins); data dies with the process. Production deployments still belong on Qdrant / Milvus / PgVector / Pinecone / Redis — it is not a replacement, it is the developer-experience piece that makes "real vector retrieval with nothing to install" possible.
+Be clear about positioning: it targets **demos, unit tests, smoke tests, and small embedded apps** (CLI/desktop/plugins). It is not purely ephemeral though — two persistence methods cover restart durability for small embedded use cases:
 
-On the factory side, all five external backends now have symmetric getters: `getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()` (the last was missing before and required a manual `new RedisVectorStore(configuration)`).
+```java
+store.persistToFile(Paths.get("vectors.json"));                 // writes every dataset as JSON
+InMemoryVectorStore restored = InMemoryVectorStore.loadFromFile(Paths.get("vectors.json"));
+```
+
+Production deployments still belong on Qdrant / Milvus / PgVector / Pinecone / Redis / Elasticsearch / Chroma — it is not a replacement, it is the developer-experience piece that makes "real vector retrieval with nothing to install" possible.
+
+On the factory side, every backend now has a symmetric getter: `getPineconeVectorStore()` / `getQdrantVectorStore()` / `getMilvusVectorStore()` / `getPgVectorStore()` / `getRedisVectorStore()` / `getElasticsearchVectorStore()` / `getChromaVectorStore()` / `getInMemoryVectorStore()`.
 
 ## 6. How `VectorStore` relates to `DenseRetriever`
 
