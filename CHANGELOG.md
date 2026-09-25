@@ -8,6 +8,54 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+## [2.8.1] — 2026-09-25
+
+### Added
+- RAG capability expansion (issue #335):
+  - `RagQuery.minScore`: retrieval-side score threshold applied in
+    `DenseRetriever` before fusion/rerank; unscored hits pass through.
+  - `ModelRagQueryPlanner` multi-variant retrieval fans out concurrently via
+    `CompletableFuture`; merge stays deterministic in variant order.
+  - `InMemoryVectorStore`: zero-dependency in-process `VectorStore` (exact
+    cosine, dataset isolation, metadata equality filter, contentHash `exists`)
+    for demos and tests.
+  - `Bm25Retriever.fromChunks(chunks)`: reuse ingestion chunks directly as the
+    BM25 corpus.
+  - `SentenceTextChunker`: sentence-boundary chunking with overlap and hard-cut
+    fallback for oversized sentences.
+  - Embedding coverage: ZHIPU/DOUBAO/DASHSCOPE/JINA/BAICHUAN/MINIMAX are wired
+    through each platform's OpenAI-compatible endpoint config.
+  - `AiService.getStandardRerankService(host, key, url)`: generic Jina-protocol
+    rerank hatch usable with any compatible endpoint.
+  - `AiService.getRedisVectorStore()` factory symmetry;
+    `defaultEmbeddingModel` on `DenseRetriever`/`IngestionPipeline`.
+- Vector store and chunking expansion (issue #337):
+  - `ElasticsearchVectorStore`: ES REST — `_bulk` upsert, top-level `knn`
+    search with dataset/metadata term filters, `_delete_by_query`,
+    `terminate_after` exists, lazy `dense_vector` index creation. Live-verified
+    against Elasticsearch 9.1.9.
+  - `ChromaVectorStore`: Chroma v2 REST — `get_or_create` collection,
+    upsert/query/get/delete, `where` dataset scoping, cosine
+    distance-to-similarity. Live-verified against Chroma 0.6.3.
+  - `SemanticTextChunker`: percentile breakpoints over adjacent-sentence
+    cosine distances via one batch embedding call; live-verified with a real
+    embedding model.
+  - `InMemoryVectorStore.persistToFile`/`loadFromFile`: JSON round-trip
+    written via temp file plus move (`ATOMIC_MOVE` where supported).
+- Spring Boot starter:
+  - `ai.vector.elasticsearch.*` / `ai.vector.chroma.*` property binding.
+  - `ai.vector.primary` + a `@Primary` `vectorStore` bean: unqualified
+    `VectorStore` injection always resolves — a single enabled store
+    auto-selects, multiple enabled stores require the property (backend or
+    bean name) and fail fast with the candidate list; custom `VectorStore`
+    beans join the candidate set.
+- Harness: task-level presets (`PresetHarnessContract`) and learned-rule
+  promotion (`HarnessRule`, `promoteLesson`/`revokeLesson`/`listLearnedRules`)
+  closing the LEARN loop.
+- Env-gated live smoke tests under the `live-provider-tests` profile:
+  `VectorStoreLiveTest` (Chroma/Elasticsearch), `SemanticChunkerLiveTest`
+  (Ollama embeddings), `RerankLiveTest` (Jina-protocol rerank endpoints).
+
 ### Changed
 - `ai4j-cli-*-jar-with-dependencies.jar` is no longer deployed to Maven
   Central (release profile sets `ai4j.cli.assembly.skip=true`); it ships as a
@@ -15,6 +63,23 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
   from GitHub Releases first and fall back to Maven Central, so pinned older
   versions keep installing. SDK consumers using the thin `ai4j-cli` artifact
   or other modules are unaffected.
+- **Behavior change**: `pineconeService`/`pineconeVectorStore` beans are now
+  opt-in like every other vector backend — set
+  `ai.vector.pinecone.enabled=true` after upgrading if you rely on them.
+- Upgrade note: Lombok has been `provided`+`optional` since 2.8.0 and is not
+  transitive — consumers upgrading from ≤2.7 that use Lombok must declare it
+  in their own build.
+
+### Fixed
+- `StandardRerankService` usage parsing falls back to `meta.tokens` /
+  `meta.billed_units` for Jina-protocol providers that report usage outside
+  the top-level `usage` field (found via a real SiliconFlow call).
+- `InMemoryVectorStore.persistToFile` no longer leaves a partially written
+  target file on ordinary write failure (temp file + move).
+- Multi-`VectorStore` injection ambiguity via the new primary bean (above).
+- Harness evidence records bind to the current execution by default so
+  slice-produced evidence backs that slice's submission
+  (`requiresCompletionEvidence`).
 
 ## [2.8.0] — 2026-09-23
 

@@ -46,8 +46,8 @@ Suited to approval workflows, long business-process orchestration, and automatio
 
 ## Install
 
-- Gradle: `implementation 'io.github.lnyo-cly:ai4j:2.8.0'`
-- Maven: `<dependency><groupId>io.github.lnyo-cly</groupId><artifactId>ai4j</artifactId><version>2.8.0</version></dependency>`
+- Gradle: `implementation 'io.github.lnyo-cly:ai4j:2.8.1'`
+- Maven: `<dependency><groupId>io.github.lnyo-cly</groupId><artifactId>ai4j</artifactId><version>2.8.1</version></dependency>`
 
 ## Run your first request in 30 seconds
 
@@ -93,7 +93,7 @@ ai4j is a JDK 8+ Java AI Agentic SDK with unified access to many model providers
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.8.0</version>
+    <version>2.8.1</version>
 </dependency>
 ```
 

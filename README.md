@@ -46,8 +46,8 @@
 
 ## 安装
 
-- Gradle：`implementation 'io.github.lnyo-cly:ai4j:2.8.0'`
-- Maven：`<dependency><groupId>io.github.lnyo-cly</groupId><artifactId>ai4j</artifactId><version>2.8.0</version></dependency>`
+- Gradle：`implementation 'io.github.lnyo-cly:ai4j:2.8.1'`
+- Maven：`<dependency><groupId>io.github.lnyo-cly</groupId><artifactId>ai4j</artifactId><version>2.8.1</version></dependency>`
 
 ## 30 秒跑通
 
@@ -93,7 +93,7 @@ ai4j 是一套面向 JDK 8+ 的 Java AI Agentic 开发套件，统一接入多�
 <dependency>
     <groupId>io.github.lnyo-cly</groupId>
     <artifactId>ai4j-spring-boot-starter</artifactId>
-    <version>2.8.0</version>
+    <version>2.8.1</version>
 </dependency>
 ```
 
