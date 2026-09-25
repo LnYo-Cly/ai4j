@@ -1,9 +1,11 @@
 package io.github.lnyocly.ai4j;
 
 import io.github.lnyocly.ai4j.vector.service.PineconeService;
+import io.github.lnyocly.ai4j.vector.store.VectorStore;
 import io.github.lnyocly.ai4j.vector.store.chroma.ChromaVectorStore;
 import io.github.lnyocly.ai4j.vector.store.elasticsearch.ElasticsearchVectorStore;
 import io.github.lnyocly.ai4j.vector.store.pinecone.PineconeVectorStore;
+import io.github.lnyocly.ai4j.vector.store.qdrant.QdrantVectorStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -21,7 +23,56 @@ public class VectorStoreAutoConfigurationTest {
             Assert.assertFalse(context.containsBean("pineconeVectorStore"));
             Assert.assertFalse(context.containsBean("pineconeService"));
             Assert.assertFalse(context.containsBean("qdrantVectorStore"));
+            Assert.assertFalse(context.containsBean("vectorStore"));
         });
+    }
+
+    @Test
+    public void test_single_enabled_store_is_the_primary_vector_store() {
+        contextRunner
+                .withPropertyValues("ai.vector.chroma.enabled=true")
+                .run(context -> {
+                    Assert.assertTrue(context.containsBean("vectorStore"));
+                    Assert.assertTrue(context.getBean(VectorStore.class) instanceof ChromaVectorStore);
+                });
+    }
+
+    @Test
+    public void test_primary_property_selects_among_multiple_enabled_stores() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.vector.chroma.enabled=true",
+                        "ai.vector.qdrant.enabled=true",
+                        "ai.vector.primary=qdrant")
+                .run(context -> {
+                    Assert.assertTrue(context.getBean(VectorStore.class) instanceof QdrantVectorStore);
+                    Assert.assertTrue(context.getBean("chromaVectorStore") instanceof ChromaVectorStore);
+                    Assert.assertTrue(context.getBean("qdrantVectorStore") instanceof QdrantVectorStore);
+                });
+    }
+
+    @Test
+    public void test_multiple_enabled_stores_without_primary_fails_fast() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.vector.chroma.enabled=true",
+                        "ai.vector.qdrant.enabled=true")
+                .run(context -> {
+                    Assert.assertNotNull(context.getStartupFailure());
+                    Assert.assertTrue(context.getStartupFailure().getMessage().contains("ai.vector.primary"));
+                });
+    }
+
+    @Test
+    public void test_primary_pointing_to_disabled_store_fails_fast() {
+        contextRunner
+                .withPropertyValues(
+                        "ai.vector.chroma.enabled=true",
+                        "ai.vector.primary=elasticsearch")
+                .run(context -> {
+                    Assert.assertNotNull(context.getStartupFailure());
+                    Assert.assertTrue(context.getStartupFailure().getMessage().contains("ai.vector.primary"));
+                });
     }
 
     @Test

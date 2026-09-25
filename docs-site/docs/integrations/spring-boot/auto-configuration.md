@@ -115,6 +115,24 @@ ai:
 历史上 `pineconeService` / `pineconeVectorStore` 是**无条件创建**的——任何引入 starter 的应用容器里都会有这两个 Bean，导致多 VectorStore 并存时接口注入歧义。现在它们与其他后端一致：`ai.vector.pinecone.enabled` 未显式设 `true` 时不再创建。依赖旧行为的应用升级后需补上 `enabled: true`。
 :::
 
+### 5.2 `VectorStore` 接口注入与 `ai.vector.primary`
+
+starter 额外提供一个 `@Primary` 的 `vectorStore` Bean，让 `@Autowired VectorStore` 永远可注入：
+
+- **只启用一个后端**：自动选中它；
+- **启用多个后端**：必须用 `ai.vector.primary` 指定默认后端，取值是后端名（`qdrant`/`chroma`/`pinecone`/`milvus`/`pgvector`/`redis`/`elasticsearch`）或自定义 VectorStore 的 Bean 名；未指定则启动直接失败并列出候选；
+- **要特定后端**：注入具体类型（如 `QdrantVectorStore`）或按 Bean 名注入，不受影响。
+
+```yaml
+ai:
+  vector:
+    primary: qdrant          # 多后端并存时 @Autowired VectorStore 解析到这里
+    qdrant:
+      enabled: true
+    chroma:
+      enabled: true
+```
+
 ## 6. 扩展与插件装配：`ai.extensions.*`
 
 `AiConfigAutoConfiguration` 不只装配模型和网络，还把 ai4j 的扩展/插件体系自动接进 Spring。绑定入口是 `AiExtensionProperties`（前缀 `ai.extensions`），产出两个 Bean：

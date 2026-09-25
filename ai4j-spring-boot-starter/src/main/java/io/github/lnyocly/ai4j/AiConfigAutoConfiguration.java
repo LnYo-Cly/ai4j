@@ -38,12 +38,15 @@ import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
@@ -70,6 +73,7 @@ import java.util.Map;
         RedisVectorConfigProperties.class,
         ElasticsearchConfigProperties.class,
         ChromaConfigProperties.class,
+        VectorStoreProperties.class,
         ZhipuConfigProperties.class,
         AnthropicConfigProperties.class,
         DeepSeekConfigProperties.class,
@@ -103,6 +107,7 @@ public class AiConfigAutoConfiguration {
     private final RedisVectorConfigProperties redisVectorConfigProperties;
     private final ElasticsearchConfigProperties elasticsearchConfigProperties;
     private final ChromaConfigProperties chromaConfigProperties;
+    private final VectorStoreProperties vectorStoreProperties;
 
     // searxng閰嶇疆
     private final SearXNGConfigProperties searXNGConfigProperties;
@@ -129,7 +134,7 @@ public class AiConfigAutoConfiguration {
 
     private io.github.lnyocly.ai4j.service.Configuration configuration = new io.github.lnyocly.ai4j.service.Configuration();
 
-    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, ElasticsearchConfigProperties elasticsearchConfigProperties, ChromaConfigProperties chromaConfigProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties, MinerUConfigProperties mineruConfigProperties) {
+    public AiConfigAutoConfiguration(OkHttpConfigProperties okHttpConfigProperties, OpenAiConfigProperties openAiConfigProperties, PineconeConfigProperties pineconeConfigProperties, QdrantConfigProperties qdrantConfigProperties, MilvusConfigProperties milvusConfigProperties, PgVectorConfigProperties pgVectorConfigProperties, RedisVectorConfigProperties redisVectorConfigProperties, ElasticsearchConfigProperties elasticsearchConfigProperties, ChromaConfigProperties chromaConfigProperties, VectorStoreProperties vectorStoreProperties, SearXNGConfigProperties searXNGConfigProperties, AiConfigProperties aiConfigProperties, ZhipuConfigProperties zhipuConfigProperties, AnthropicConfigProperties anthropicConfigProperties, DeepSeekConfigProperties deepSeekConfigProperties, MoonshotConfigProperties moonshotConfigProperties, HunyuanConfigProperties hunyuanConfigProperties, LingyiConfigProperties lingyiConfigProperties, OllamaConfigProperties ollamaConfigProperties, MinimaxConfigProperties minimaxConfigProperties, BaichuanConfigProperties baichuanConfigProperties, DashScopeConfigProperties dashScopeConfigProperties, DoubaoConfigProperties doubaoConfigProperties, JinaConfigProperties jinaConfigProperties, SunoConfigProperties sunoConfigProperties, TypeSafeConfigProperties typeSafeConfigProperties, AgentFlowProperties agentFlowProperties, MinerUConfigProperties mineruConfigProperties) {
         this.okHttpConfigProperties = okHttpConfigProperties;
         this.openAiConfigProperties = openAiConfigProperties;
         this.pineconeConfigProperties = pineconeConfigProperties;
@@ -139,6 +144,7 @@ public class AiConfigAutoConfiguration {
         this.redisVectorConfigProperties = redisVectorConfigProperties;
         this.elasticsearchConfigProperties = elasticsearchConfigProperties;
         this.chromaConfigProperties = chromaConfigProperties;
+        this.vectorStoreProperties = vectorStoreProperties;
         this.searXNGConfigProperties = searXNGConfigProperties;
         this.aiConfigProperties = aiConfigProperties;
         this.zhipuConfigProperties = zhipuConfigProperties;
@@ -299,6 +305,63 @@ public class AiConfigAutoConfiguration {
     @ConditionalOnMissingBean(ChromaVectorStore.class)
     public ChromaVectorStore chromaVectorStore() {
         return new ChromaVectorStore(configuration);
+    }
+
+    /**
+     * Primary VectorStore for unqualified injection. With a single enabled store it is selected
+     * automatically; with multiple enabled stores ai.vector.primary decides (backend name or bean name).
+     */
+    @Bean
+    @Primary
+    @ConditionalOnBean(VectorStore.class)
+    public VectorStore vectorStore(ConfigurableListableBeanFactory beanFactory,
+                                   ObjectProvider<PineconeVectorStore> pineconeStore,
+                                   ObjectProvider<QdrantVectorStore> qdrantStore,
+                                   ObjectProvider<MilvusVectorStore> milvusStore,
+                                   ObjectProvider<PgVectorStore> pgVectorStore,
+                                   ObjectProvider<RedisVectorStore> redisVectorStore,
+                                   ObjectProvider<ElasticsearchVectorStore> elasticsearchStore,
+                                   ObjectProvider<ChromaVectorStore> chromaStore) {
+        Map<String, VectorStore> candidates = new LinkedHashMap<String, VectorStore>();
+        putVectorStore(candidates, "pinecone", pineconeStore.getIfAvailable());
+        putVectorStore(candidates, "qdrant", qdrantStore.getIfAvailable());
+        putVectorStore(candidates, "milvus", milvusStore.getIfAvailable());
+        putVectorStore(candidates, "pgvector", pgVectorStore.getIfAvailable());
+        putVectorStore(candidates, "redis", redisVectorStore.getIfAvailable());
+        putVectorStore(candidates, "elasticsearch", elasticsearchStore.getIfAvailable());
+        putVectorStore(candidates, "chroma", chromaStore.getIfAvailable());
+
+        // pick up user-defined VectorStore beans not produced by this configuration
+        for (String name : beanFactory.getBeanNamesForType(VectorStore.class, true, false)) {
+            if ("vectorStore".equals(name)) {
+                continue;
+            }
+            VectorStore store = beanFactory.getBean(name, VectorStore.class);
+            if (!candidates.containsValue(store)) {
+                candidates.put(name, store);
+            }
+        }
+
+        String primary = vectorStoreProperties.getPrimary();
+        if (StringUtils.isNotBlank(primary)) {
+            VectorStore selected = candidates.get(primary);
+            if (selected == null) {
+                throw new IllegalStateException("ai.vector.primary='" + primary
+                        + "' does not match an available VectorStore; available: " + candidates.keySet());
+            }
+            return selected;
+        }
+        if (candidates.size() == 1) {
+            return candidates.values().iterator().next();
+        }
+        throw new IllegalStateException("multiple VectorStore beans are available " + candidates.keySet()
+                + "; set ai.vector.primary to select one");
+    }
+
+    private void putVectorStore(Map<String, VectorStore> candidates, String name, VectorStore store) {
+        if (store != null) {
+            candidates.put(name, store);
+        }
     }
 
     @Bean
