@@ -32,11 +32,11 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 - Use `ha` (Harness Anything) for all new project-management work.
 - `harness/` is the active private HA ledger with its own nested Git repository. `.harness/` is generated projection/cache state. Neither belongs in code PRs; commit ledger changes inside `harness/` separately when they must be retained.
 - Before substantive work, treat `ha capabilities --json` and the relevant `ha <domain> --help` output as the command authority. If this workspace is not initialized, run `ha init --repo-id ai4j-sdk --person-id <person-id> --display-name "<display-name>"`; then inspect `ha daemon status`, `ha agenda`, `ha agent list --json`, `ha squad list --json`, and `ha runtime instance list`.
-- The current thin CLI does not expose the historical `ha doctor --json`, `ha status --json`, or `ha check --profile target-project --strict --json` preflight commands. Do not copy those commands from older task records; use the live capabilities/help output instead.
+- `ha doctor --json` is the environment preflight; historical `ha status --json` and `ha check --profile target-project --strict --json` are retired. Do not copy retired commands from older task records; use the live capabilities/help output instead.
 - HA writes require explicit actor attribution. Agents use `HARNESS_ACTOR=agent:<id>` or an explicit agent actor; humans use `ha --actor human:<id>`. Do not export a human actor for child processes. Configure `HARNESS_GIT_AUTHOR_NAME` and `HARNESS_GIT_AUTHOR_EMAIL` for local ledger commits.
 - The normal write path is the daemon-backed CLI. `HARNESS_DAEMON_MODE=direct` is only for bootstrap, recovery, or isolated tests, and must carry `HARNESS_DIRECT_WRITE_REASON=recovery|test`.
 - Fable identities are installed from packages containing `agent.json` or `squad.json`: validate with `ha agent validate --source <dir>` or `ha squad validate --source <dir>`, install with `ha agent install --source <dir>` or `ha squad install --source <dir>`, then read back with `ha agent list --json` plus `ha agent inspect <id>` or `ha squad list --json` plus `ha squad inspect <id>`. Dispatch uses a declared identity plus a ready runtime instance; the instance is an execution resource, not the agent or squad identity.
-- Complete work through the current HA lifecycle: acquire an Execution lease, record progress/evidence, obtain a typed human review/consent when required, and run `ha task complete`. `ha task review` is legacy compatibility lint, not the approval gate.
+- Complete work through the current HA lifecycle: acquire an Execution lease (`ha task start`), record progress/evidence, submit with `ha task submit` (or the one-shot `ha task settle` chain), let the owner forward to independent review via `ha task adjudicate --forward`, record `ha task review-execution --review-id <rid> --from-file <review.json>`, consent via `ha task review-consent`, and run `ha task complete`. Declared gates are witnessed via `ha task attest --gate <g> --result pass` or `ha task code-doc reconcile --path <p>`. `ha task review` is compatibility lint, not the approval gate.
 
 ## Hard Rules
 
@@ -171,7 +171,7 @@ Treat this repository as a 10-module monorepo plus docs/demo surfaces.
 4. Implement in the narrowest correct module boundary.
 5. Run targeted regression based on `docs/05-TEST-QA/Cadence-Ledger.md` and record command evidence in the HA task.
 6. Update the tracked Regression SSoT/Cadence Ledger if a fixed gate or evidence scope changes.
-7. Submit the Execution, obtain typed independent review and owner consent, and run `ha task complete <id>`; use `ha task closeout` when a canonical closeout packet is available.
+7. Submit the Execution (`ha task submit <id>`), obtain typed independent review and owner consent (`ha task adjudicate --forward` → `ha task review-execution --from-file` → `ha task review-consent`), fill `closeout.md` and submit it via `ha doc sync --submit`, then run `ha task complete <id>` — declared gates need their witnesses first (`ha task attest`, `ha task code-doc reconcile`, or recorded CI observations).
 8. Commit outer code/docs separately from the private `harness/` ledger; keep `.harness/` untracked and rebuildable.
 
 ## Review Focus
