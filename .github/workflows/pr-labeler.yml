@@ -1,0 +1,28 @@
+name: pr-labeler
+
+# pull_request_target (not pull_request) so the token can write labels even on
+# pull requests opened from forks. The labeler only reads the changed-file list
+# through the API and never checks out or executes PR content, so the extra
+# privilege granted by this event is not reachable by a PR author.
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply path-based labels
+        uses: actions/labeler@v6
+        with:
+          # Labels removed from a PR when they stop matching are limited to the
+          # ones declared in .github/labeler.yml; user-applied labels survive.
+          sync-labels: true
