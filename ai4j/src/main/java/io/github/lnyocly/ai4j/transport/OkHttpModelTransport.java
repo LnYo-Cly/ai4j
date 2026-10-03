@@ -167,7 +167,7 @@ public final class OkHttpModelTransport implements ModelTransport {
                             eventSourceFactory.newEventSource(httpRequest, listener);
                         });
             } catch (Throwable failure) {
-                channel.onFailure(failure, null);
+                channel.onFailure(failure, listener.getFailureResponse(), listener.failureBody());
             } finally {
                 completion.countDown();
             }

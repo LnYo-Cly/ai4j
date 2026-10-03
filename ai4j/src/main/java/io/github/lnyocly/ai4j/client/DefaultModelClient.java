@@ -8,6 +8,8 @@ import io.github.lnyocly.ai4j.model.ModelEventType;
 import io.github.lnyocly.ai4j.model.ModelRequest;
 import io.github.lnyocly.ai4j.model.ModelResult;
 import io.github.lnyocly.ai4j.model.Protocol;
+import io.github.lnyocly.ai4j.model.ToolDeclaration;
+import io.github.lnyocly.ai4j.model.ToolKind;
 import io.github.lnyocly.ai4j.protocol.Capabilities;
 import io.github.lnyocly.ai4j.protocol.Capability;
 import io.github.lnyocly.ai4j.protocol.Endpoint;
@@ -128,7 +130,7 @@ final class DefaultModelClient implements ModelClient {
         private void start() {
             WireRequest wire = codec.encode(request, policy);
             aggregator.addWarnings(wire.getWarnings());
-            CallExecutionOptions execution = request.getExecution();
+            CallExecutionOptions execution = effectiveExecution(request);
             TransportRequest transportRequest = TransportRequest.of(endpoint, wire, execution);
             io.github.lnyocly.ai4j.transport.SseChannel channel =
                     new io.github.lnyocly.ai4j.transport.SseChannel() {
@@ -182,13 +184,20 @@ final class DefaultModelClient implements ModelClient {
 
                         @Override
                         public void onFailure(Throwable failureCause, okhttp3.Response response) {
+                            onFailure(failureCause, response, null);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable failureCause, okhttp3.Response response,
+                                              String responseBody) {
                             if (cancelled.get()) {
                                 settle(ModelCallStatus.CANCELLED);
                                 return;
                             }
                             ModelCallException mapped = response == null
                                     ? ErrorMapping.fromFailure(protocol, failureCause)
-                                    : ErrorMapping.fromResponse(protocol, wireResponseOf(response));
+                                    : ErrorMapping.fromResponse(protocol,
+                                            wireResponseOf(response, responseBody));
                             failure.compareAndSet(null, mapped);
                             settle(ModelCallStatus.FAILED);
                             dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
@@ -218,6 +227,34 @@ final class DefaultModelClient implements ModelClient {
                 failure.set(ErrorMapping.fromFailure(protocol, startFailure));
                 settle(ModelCallStatus.FAILED);
             }
+        }
+
+        /**
+         * Retry budget is zeroed when the request cannot be safely replayed or declares a
+         * provider-hosted tool (design 8.3 F5).
+         */
+        private CallExecutionOptions effectiveExecution(ModelRequest request) {
+            CallExecutionOptions base = request.getExecution() == null
+                    ? CallExecutionOptions.defaults() : request.getExecution();
+            if (request.isReplayable() && !declaresHostedTool(request)) {
+                return base;
+            }
+            return CallExecutionOptions.builder()
+                    .firstTokenTimeoutMs(base.getFirstTokenTimeoutMs())
+                    .idleTimeoutMs(base.getIdleTimeoutMs())
+                    .maxRetries(0)
+                    .retryBackoffMs(base.getRetryBackoffMs())
+                    .retryEnabled(base.isRetryEnabled())
+                    .build();
+        }
+
+        private boolean declaresHostedTool(ModelRequest request) {
+            for (ToolDeclaration tool : request.getTools()) {
+                if (tool.getKind() == ToolKind.HOSTED) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** Dispatch the single terminal event exactly once, before {@code await()} returns. */
@@ -279,14 +316,16 @@ final class DefaultModelClient implements ModelClient {
             return status.get();
         }
 
-        private WireResponse wireResponseOf(okhttp3.Response response) {
-            String bodyText = null;
-            try {
-                if (response.body() != null) {
-                    bodyText = response.body().string();
+        private WireResponse wireResponseOf(okhttp3.Response response, String responseBody) {
+            String bodyText = responseBody;
+            if (bodyText == null) {
+                try {
+                    if (response.body() != null) {
+                        bodyText = response.body().string();
+                    }
+                } catch (Exception ignored) {
+                    bodyText = null;
                 }
-            } catch (Exception ignored) {
-                bodyText = null;
             }
             java.util.Map<String, String> headers = new java.util.LinkedHashMap<String, String>();
             for (int i = 0; i < response.headers().size(); i++) {

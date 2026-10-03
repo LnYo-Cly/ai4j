@@ -105,6 +105,11 @@ public abstract class AbstractManagedStreamListener extends EventSourceListener 
         return failure;
     }
 
+    /** Read-only view of the response recorded with the last failure, or {@code null}. */
+    public Response getFailureResponse() {
+        return failureResponse;
+    }
+
     @Override
     public void recordFailure(Throwable failure) {
         recordFailure(failure, null);

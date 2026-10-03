@@ -9,6 +9,7 @@ import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.model.ModelCallStatus;
 import io.github.lnyocly.ai4j.model.Protocol;
 import io.github.lnyocly.ai4j.protocol.WireResponse;
+import io.github.lnyocly.ai4j.transport.Retryability;
 
 /**
  * Maps HTTP responses onto {@link ModelCallException} using the existing
@@ -25,7 +26,7 @@ final class ErrorMapping {
                 messageOf(protocol, response));
         return new ModelCallException(protocol, response.getStatusCode(),
                 providerErrorTypeOf(protocol, response), requestIdOf(response),
-                isRetryable(response.getStatusCode()), decoded.getMessage(),
+                Retryability.isRetryableStatus(response.getStatusCode()), decoded.getMessage(),
                 snippet(response.getBodyText()), ModelCallStatus.FAILED);
     }
 
@@ -37,17 +38,12 @@ final class ErrorMapping {
         if (failure instanceof AiHttpException) {
             AiHttpException http = (AiHttpException) failure;
             return new ModelCallException(protocol, http.getStatusCode(), null, null,
-                    isRetryable(http.getStatusCode()), http.getMessage(), null,
+                    Retryability.isRetryableStatus(http.getStatusCode()), http.getMessage(), null,
                     ModelCallStatus.FAILED);
         }
-        return new ModelCallException(protocol, 0, null, null, true,
+        return new ModelCallException(protocol, 0, null, null, Retryability.isRetryableStatusOrUnknown(0),
                 failure == null ? "model call failed" : failure.getMessage(), null,
                 ModelCallStatus.UNKNOWN);
-    }
-
-    private static boolean isRetryable(int statusCode) {
-        return statusCode == 429 || statusCode == 408 || statusCode == 504 || statusCode >= 500
-                || statusCode == 0;
     }
 
     private static String providerErrorTypeOf(Protocol protocol, WireResponse response) {
