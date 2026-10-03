@@ -4,6 +4,7 @@ import io.github.lnyocly.ai4j.listener.AbstractManagedStreamListener;
 import io.github.lnyocly.ai4j.listener.RetryEligibility;
 import io.github.lnyocly.ai4j.protocol.RawSseEvent;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okhttp3.sse.EventSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,7 +82,8 @@ final class StreamBridgeListener extends AbstractManagedStreamListener implement
 
     private static String readBodySafely(Response response) {
         try {
-            return response.body() == null ? null : response.body().string();
+            ResponseBody body = response.body();
+            return body == null ? null : body.string();
         } catch (Exception ignored) {
             return null;
         }

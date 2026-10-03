@@ -320,8 +320,9 @@ final class DefaultModelClient implements ModelClient {
             String bodyText = responseBody;
             if (bodyText == null) {
                 try {
-                    if (response.body() != null) {
-                        bodyText = response.body().string();
+                    okhttp3.ResponseBody body = response.body();
+                    if (body != null) {
+                        bodyText = body.string();
                     }
                 } catch (Exception ignored) {
                     bodyText = null;
