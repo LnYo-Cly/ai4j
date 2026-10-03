@@ -12,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-abstract class AbstractManagedStreamListener extends EventSourceListener implements ManagedStreamListener {
+public abstract class AbstractManagedStreamListener extends EventSourceListener implements ManagedStreamListener {
 
     @Getter
     private volatile CountDownLatch countDownLatch = new CountDownLatch(1);
