@@ -449,10 +449,16 @@ public final class ResponsesCodec implements ProtocolCodec {
                     .build();
         }
         if ("response.output_item.added".equals(type)) {
+            Map<String, Object> item = JsonWire.objectAt(root, "item");
+            String itemId = JsonWire.textAt(root, "item_id");
+            if (itemId == null) {
+                itemId = JsonWire.textAt(item, "id");
+            }
             return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_START)
-                    .itemId(JsonWire.textAt(root, "item_id"))
+                    .itemId(itemId)
                     .outputIndex(JsonWire.intAt(root, "output_index"))
-                    .itemType(JsonWire.textAt(JsonWire.objectAt(root, "item"), "type"))
+                    .itemType(JsonWire.textAt(item, "type"))
+                    .toolName(JsonWire.textAt(item, "name"))
                     .build();
         }
         if ("response.output_text.delta".equals(type)) {
@@ -470,12 +476,16 @@ public final class ResponsesCodec implements ProtocolCodec {
         if ("response.output_text.done".equals(type)) {
             return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DONE)
                     .itemId(JsonWire.textAt(root, "item_id"))
+                    .outputIndex(JsonWire.intAt(root, "output_index"))
+                    .contentIndex(JsonWire.intAt(root, "content_index"))
                     .build();
         }
         if ("response.output_item.done".equals(type)) {
             Map<String, Object> item = JsonWire.objectAt(root, "item");
             ModelEvent.Builder done = ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DONE)
-                    .itemId(JsonWire.textAt(root, "item_id"));
+                    .itemId(JsonWire.textAt(root, "item_id"))
+                    .outputIndex(JsonWire.intAt(root, "output_index"))
+                    .contentIndex(JsonWire.intAt(root, "content_index"));
             ModelItem decoded = decodeOutputItem(item);
             if (decoded != null) {
                 done.item(decoded);

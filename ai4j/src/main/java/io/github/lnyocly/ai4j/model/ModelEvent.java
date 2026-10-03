@@ -18,6 +18,8 @@ public final class ModelEvent {
     private final String deltaText;
     private final String itemId;
     private final String itemType;
+    private final String toolName;
+    private final String stopReason;
     private final String role;
     private final Integer outputIndex;
     private final Integer contentIndex;
@@ -35,6 +37,8 @@ public final class ModelEvent {
         this.deltaText = builder.deltaText;
         this.itemId = builder.itemId;
         this.itemType = builder.itemType;
+        this.toolName = builder.toolName;
+        this.stopReason = builder.stopReason;
         this.role = builder.role;
         this.outputIndex = builder.outputIndex;
         this.contentIndex = builder.contentIndex;
@@ -72,6 +76,16 @@ public final class ModelEvent {
 
     public String getItemType() {
         return itemType;
+    }
+
+    /** Protocol-native function/tool name for a tool item or tool-args delta. */
+    public String getToolName() {
+        return toolName;
+    }
+
+    /** Protocol-native stop reason carried by a finish/terminal delta. */
+    public String getStopReason() {
+        return stopReason;
     }
 
     public String getRole() {
@@ -127,6 +141,8 @@ public final class ModelEvent {
         private String deltaText;
         private String itemId;
         private String itemType;
+        private String toolName;
+        private String stopReason;
         private String role;
         private Integer outputIndex;
         private Integer contentIndex;
@@ -155,6 +171,16 @@ public final class ModelEvent {
 
         public Builder itemType(String itemType) {
             this.itemType = itemType;
+            return this;
+        }
+
+        public Builder toolName(String toolName) {
+            this.toolName = toolName;
+            return this;
+        }
+
+        public Builder stopReason(String stopReason) {
+            this.stopReason = stopReason;
             return this;
         }
 

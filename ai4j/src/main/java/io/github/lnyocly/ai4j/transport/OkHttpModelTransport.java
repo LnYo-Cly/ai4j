@@ -132,17 +132,23 @@ public final class OkHttpModelTransport implements ModelTransport {
          * another calls {@code cancel()} (design 8.4).
          */
         void start() {
+            final StreamBridgeListener listener = new StreamBridgeListener(channel);
+            listenerRef.set(listener);
             Thread worker = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    runStream();
+                    runStream(listener);
                 }
             }, "ai4j-model-stream");
             worker.setDaemon(true);
             worker.start();
         }
 
-        private void runStream() {
+        private void runStream(StreamBridgeListener listener) {
+            if (cancelled.get()) {
+                completion.countDown();
+                return;
+            }
             try {
                 io.github.lnyocly.ai4j.listener.StreamExecutionOptions options =
                         io.github.lnyocly.ai4j.listener.StreamExecutionOptions.builder()
@@ -152,10 +158,11 @@ public final class OkHttpModelTransport implements ModelTransport {
                                         ? request.getExecution().getMaxRetries() : 0)
                                 .retryBackoffMs(request.getExecution().getRetryBackoffMs())
                                 .build();
-                StreamBridgeListener listener = new StreamBridgeListener(channel);
-                listenerRef.set(listener);
                 io.github.lnyocly.ai4j.listener.StreamExecutionSupport.execute(
                         listener, options, () -> {
+                            if (cancelled.get()) {
+                                return;
+                            }
                             Request httpRequest = buildRequest(request, true);
                             eventSourceFactory.newEventSource(httpRequest, listener);
                         });

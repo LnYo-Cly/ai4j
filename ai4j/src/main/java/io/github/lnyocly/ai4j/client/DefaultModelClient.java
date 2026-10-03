@@ -115,6 +115,8 @@ final class DefaultModelClient implements ModelClient {
                 handle = new java.util.concurrent.atomic.AtomicReference<io.github.lnyocly.ai4j.transport.CallHandle>();
         private final java.util.concurrent.atomic.AtomicBoolean cancelled =
                 new java.util.concurrent.atomic.AtomicBoolean();
+        private final java.util.concurrent.atomic.AtomicBoolean doneDispatched =
+                new java.util.concurrent.atomic.AtomicBoolean();
 
         DefaultModelCall(ModelRequest request, ModelEventListener listener) {
             this.request = request;
@@ -147,47 +149,60 @@ final class DefaultModelClient implements ModelClient {
                                         .itemType("decode_error")
                                         .build();
                             }
-                            if (modelEvent != null) {
-                                aggregator.accept(modelEvent);
-                                dispatch(modelEvent);
+                            if (modelEvent == null) {
+                                return;
                             }
-                            if (modelEvent != null && modelEvent.getType() == ModelEventType.ERROR) {
+                            aggregator.accept(modelEvent);
+                            if (modelEvent.getType() == ModelEventType.ERROR) {
                                 io.github.lnyocly.ai4j.model.ModelCallExceptionMarker marker =
                                         modelEvent.getFailure();
                                 if (marker != null) {
                                     failure.compareAndSet(null, ModelCallException.fromMarker(marker));
                                 }
+                                settle(ModelCallStatus.FAILED);
+                                dispatch(modelEvent);
+                                return;
                             }
+                            if (modelEvent.getType() == ModelEventType.DONE) {
+                                settle(ModelCallStatus.COMPLETED);
+                                dispatchDone();
+                                return;
+                            }
+                            dispatch(modelEvent);
                         }
 
                         @Override
                         public void onClosed() {
+                            if (cancelled.get() || status.get() == ModelCallStatus.FAILED) {
+                                return;
+                            }
                             settle(ModelCallStatus.COMPLETED);
+                            dispatchDone();
                         }
 
                         @Override
-                        public void onFailure(Throwable failureCause,
-                                              okhttp3.Response response) {
+                        public void onFailure(Throwable failureCause, okhttp3.Response response) {
                             if (cancelled.get()) {
                                 settle(ModelCallStatus.CANCELLED);
                                 return;
                             }
                             ModelCallException mapped = response == null
                                     ? ErrorMapping.fromFailure(protocol, failureCause)
-                                    : ErrorMapping.fromResponse(protocol,
-                                            WireResponse.of(protocol, response.code(),
-                                                    null, null));
+                                    : ErrorMapping.fromResponse(protocol, wireResponseOf(response));
                             failure.compareAndSet(null, mapped);
+                            settle(ModelCallStatus.FAILED);
                             dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
                                     .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
                                             .builder(protocol)
                                             .message(mapped.getMessage())
                                             .httpStatus(mapped.getHttpStatus())
+                                            .providerErrorType(mapped.getProviderErrorType())
+                                            .providerRequestId(mapped.getProviderRequestId())
                                             .retryable(mapped.isRetryable())
+                                            .rawSnippet(mapped.getRawSnippet())
                                             .status(mapped.getStatus())
                                             .build())
                                     .build());
-                            settle(ModelCallStatus.FAILED);
                         }
 
                         @Override
@@ -202,6 +217,15 @@ final class DefaultModelClient implements ModelClient {
             } catch (Exception startFailure) {
                 failure.set(ErrorMapping.fromFailure(protocol, startFailure));
                 settle(ModelCallStatus.FAILED);
+            }
+        }
+
+        /** Dispatch the single terminal event exactly once, before {@code await()} returns. */
+        private void dispatchDone() {
+            if (doneDispatched.compareAndSet(false, true)) {
+                dispatch(ModelEvent.builder(protocol, ModelEventType.DONE)
+                        .usage(aggregator.usage())
+                        .build());
             }
         }
 
@@ -247,18 +271,28 @@ final class DefaultModelClient implements ModelClient {
             if (error != null) {
                 throw error;
             }
-            ModelResult result = aggregator.result(protocol);
-            if (status.get() == ModelCallStatus.COMPLETED) {
-                dispatch(ModelEvent.builder(protocol, ModelEventType.DONE)
-                        .usage(result.getUsage())
-                        .build());
-            }
-            return result;
+            return aggregator.result(protocol);
         }
 
         @Override
         public ModelCallStatus status() {
             return status.get();
+        }
+
+        private WireResponse wireResponseOf(okhttp3.Response response) {
+            String bodyText = null;
+            try {
+                if (response.body() != null) {
+                    bodyText = response.body().string();
+                }
+            } catch (Exception ignored) {
+                bodyText = null;
+            }
+            java.util.Map<String, String> headers = new java.util.LinkedHashMap<String, String>();
+            for (int i = 0; i < response.headers().size(); i++) {
+                headers.put(response.headers().name(i), response.headers().value(i));
+            }
+            return WireResponse.of(protocol, response.code(), bodyText, headers);
         }
     }
 }

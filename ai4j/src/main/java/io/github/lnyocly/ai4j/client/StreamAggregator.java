@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.client;
 
-import io.github.lnyocly.ai4j.model.Block;
 import io.github.lnyocly.ai4j.model.DroppedField;
 import io.github.lnyocly.ai4j.model.EventDeltaKind;
 import io.github.lnyocly.ai4j.model.ModelEvent;
@@ -9,8 +8,10 @@ import io.github.lnyocly.ai4j.model.ModelItem;
 import io.github.lnyocly.ai4j.model.ModelResult;
 import io.github.lnyocly.ai4j.model.ModelUsage;
 import io.github.lnyocly.ai4j.model.Protocol;
-import io.github.lnyocly.ai4j.model.ReasoningBlock;
+import io.github.lnyocly.ai4j.model.ReasoningItem;
 import io.github.lnyocly.ai4j.model.TextBlock;
+import io.github.lnyocly.ai4j.model.ToolCallItem;
+import io.github.lnyocly.ai4j.model.ToolCallValue;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,17 +23,22 @@ import java.util.Map;
  * {@link ModelResult}.
  *
  * <p>The direct channel does not aggregate (design 4.4/11): consumers that want
- * only events just ignore the aggregated result. Deltas are merged by content
- * index so interleaved blocks keep their order.</p>
+ * only events just ignore the aggregated result. Deltas are merged by output
+ * index so interleaved items keep their order, and every slot contributes at
+ * most one item (design 7.2: one output item is exactly one {@link ModelItem}).</p>
  */
 final class StreamAggregator {
 
     private final Map<Integer, StreamSlot> slots = new LinkedHashMap<Integer, StreamSlot>();
-    private final List<ModelItem> completedItems = new ArrayList<ModelItem>();
     private final List<DroppedField> warnings = new ArrayList<DroppedField>();
     private ModelUsage usage;
     private String stopReason;
     private String responseId;
+
+    /** Latest usage snapshot seen on the stream, or {@code null}. */
+    ModelUsage usage() {
+        return usage;
+    }
 
     void addWarnings(List<DroppedField> encodeWarnings) {
         if (encodeWarnings != null) {
@@ -57,13 +63,16 @@ final class StreamAggregator {
                 slotFor(indexOf(event)).start(event);
                 break;
             case ITEM_DELTA:
+                if (event.getStopReason() != null) {
+                    stopReason = event.getStopReason();
+                }
                 handleDelta(event);
                 break;
             case ITEM_DONE:
-                ModelItem completed = slotFor(indexOf(event)).finish(event);
-                if (completed != null) {
-                    completedItems.add(completed);
+                if (event.getStopReason() != null) {
+                    stopReason = event.getStopReason();
                 }
+                slotFor(indexOf(event)).finish(event);
                 break;
             case USAGE:
                 if (event.getUsage() != null) {
@@ -105,11 +114,11 @@ final class StreamAggregator {
     }
 
     private static int indexOf(ModelEvent event) {
-        if (event.getContentIndex() != null) {
-            return event.getContentIndex();
-        }
         if (event.getOutputIndex() != null) {
             return event.getOutputIndex();
+        }
+        if (event.getContentIndex() != null) {
+            return event.getContentIndex();
         }
         return -1;
     }
@@ -125,11 +134,9 @@ final class StreamAggregator {
 
     ModelResult result(Protocol protocol) {
         ModelResult.Builder builder = ModelResult.builder();
-        builder.items(completedItems);
-        // Slots that never produced an explicit item still contribute content.
         for (StreamSlot slot : slots.values()) {
             ModelItem item = slot.toItem();
-            if (item != null && !completedItems.contains(item)) {
+            if (item != null) {
                 builder.item(item);
             }
         }
@@ -149,10 +156,12 @@ final class StreamAggregator {
         private StringBuilder signature;
         private ModelItem doneItem;
         private String itemType;
+        private String toolName;
         private String itemId;
 
         void start(ModelEvent event) {
             itemType = event.getItemType();
+            toolName = event.getToolName();
             itemId = event.getItemId();
         }
 
@@ -163,6 +172,9 @@ final class StreamAggregator {
             }
             if (itemType == null && event.getItemType() != null) {
                 itemType = event.getItemType();
+            }
+            if (toolName == null && event.getToolName() != null) {
+                toolName = event.getToolName();
             }
         }
 
@@ -183,12 +195,12 @@ final class StreamAggregator {
             signature.append(delta);
         }
 
-        ModelItem finish(ModelEvent event) {
+        void finish(ModelEvent event) {
             if (event.getItem() != null) {
                 doneItem = event.getItem();
-                return doneItem;
+            } else if (doneItem == null) {
+                doneItem = toItem();
             }
-            return toItem();
         }
 
         ModelItem toItem() {
@@ -196,8 +208,7 @@ final class StreamAggregator {
                 return doneItem;
             }
             if (reasoning.length() > 0 || signature != null) {
-                return io.github.lnyocly.ai4j.model.ReasoningItem.of(
-                        reasoning.toString(),
+                return ReasoningItem.of(reasoning.toString(),
                         signature == null ? null : signature.toString());
             }
             if (text.length() > 0) {
@@ -206,12 +217,10 @@ final class StreamAggregator {
                         .build();
             }
             if (toolArgs.length() > 0 && itemId != null) {
-                return io.github.lnyocly.ai4j.model.ToolCallItem.of(
-                        io.github.lnyocly.ai4j.model.ToolCallValue.of(
-                                itemId, itemType == null ? "" : itemType, toolArgs.toString()));
+                return ToolCallItem.of(ToolCallValue.of(itemId,
+                        toolName == null ? "" : toolName, toolArgs.toString()));
             }
             return null;
         }
     }
-
 }

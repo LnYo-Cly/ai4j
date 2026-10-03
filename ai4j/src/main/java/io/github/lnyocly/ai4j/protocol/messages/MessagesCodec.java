@@ -459,6 +459,7 @@ public final class MessagesCodec implements ProtocolCodec {
             return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_START)
                     .contentIndex(JsonWire.intAt(root, "index"))
                     .itemType(JsonWire.textAt(block, "type"))
+                    .toolName(JsonWire.textAt(block, "name"))
                     .itemId(JsonWire.textAt(block, "id"))
                     .build();
         }
@@ -498,6 +499,7 @@ public final class MessagesCodec implements ProtocolCodec {
             return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
                     .itemType("message_delta")
                     .delta(EventDeltaKind.OTHER, JsonWire.textAt(delta, "stop_reason"))
+                    .stopReason(JsonWire.textAt(delta, "stop_reason"))
                     .usage(decodeUsage(JsonWire.objectAt(root, "usage")))
                     .build();
         }

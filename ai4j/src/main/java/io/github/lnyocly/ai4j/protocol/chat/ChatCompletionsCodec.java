@@ -422,13 +422,22 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
         if (data == null || data.trim().isEmpty()) {
             return null;
         }
+        if ("[DONE]".equals(data.trim())) {
+            return ModelEvent.builder(getProtocol(), ModelEventType.DONE).build();
+        }
         Map<String, Object> root = JsonWire.readObject(data);
         if (root.isEmpty()) {
             return null;
         }
         List<Object> choices = JsonWire.arrayAt(root, "choices");
         Map<String, Object> usageMap = JsonWire.objectAt(root, "usage");
-        if (choices.isEmpty()) {
+        Map<String, Object> choice = null;
+        if (!choices.isEmpty() && choices.get(0) instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> first = (Map<String, Object>) choices.get(0);
+            choice = first;
+        }
+        if (choice == null) {
             if (!usageMap.isEmpty()) {
                 return ModelEvent.builder(getProtocol(), ModelEventType.USAGE)
                         .usage(decodeUsage(usageMap))
@@ -438,53 +447,55 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
                     .itemType("chat_completions.chunk")
                     .build();
         }
-        @SuppressWarnings("unchecked")
-        Map<String, Object> choice = (Map<String, Object>) choices.get(0);
+        String finishReason = JsonWire.textAt(choice, "finish_reason");
         Map<String, Object> delta = JsonWire.objectAt(choice, "delta");
-        if (delta.isEmpty()) {
+        if (!delta.isEmpty()) {
+            String text = JsonWire.textAt(delta, "content");
+            if (text != null && !text.isEmpty()) {
+                return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
+                        .delta(EventDeltaKind.TEXT, text)
+                        .stopReason(finishReason)
+                        .build();
+            }
+            String reasoning = JsonWire.textAt(delta, "reasoning_content");
+            if (reasoning != null && !reasoning.isEmpty()) {
+                return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
+                        .delta(EventDeltaKind.REASONING, reasoning)
+                        .stopReason(finishReason)
+                        .build();
+            }
+            List<Object> toolCalls = JsonWire.arrayAt(delta, "tool_calls");
+            if (!toolCalls.isEmpty() && toolCalls.get(0) instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> call = (Map<String, Object>) toolCalls.get(0);
+                Map<String, Object> function = JsonWire.objectAt(call, "function");
+                String arguments = JsonWire.textAt(function, "arguments");
+                if (arguments == null) {
+                    arguments = "";
+                }
+                return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
+                        .delta(EventDeltaKind.TOOL_ARGS, arguments)
+                        .itemId(JsonWire.textAt(call, "id"))
+                        .itemType(JsonWire.textAt(function, "name"))
+                        .toolName(JsonWire.textAt(function, "name"))
+                        .contentIndex(JsonWire.intAt(call, "index"))
+                        .stopReason(finishReason)
+                        .build();
+            }
+        } else {
             Map<String, Object> message = JsonWire.objectAt(choice, "message");
             if (!message.isEmpty()) {
                 ModelResult decoded = decode(WireResponse.of(getProtocol(), 200,
                         JsonWire.write(root)));
                 return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DONE)
                         .item(decoded.getItems().isEmpty() ? null : decoded.getItems().get(0))
+                        .stopReason(finishReason)
                         .build();
             }
-            return ModelEvent.builder(getProtocol(), ModelEventType.OPAQUE)
-                    .itemType("chat_completions.chunk")
-                    .build();
         }
-        String text = JsonWire.textAt(delta, "content");
-        if (text != null && !text.isEmpty()) {
-            return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
-                    .delta(EventDeltaKind.TEXT, text)
-                    .build();
-        }
-        String reasoning = JsonWire.textAt(delta, "reasoning_content");
-        if (reasoning != null && !reasoning.isEmpty()) {
-            return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
-                    .delta(EventDeltaKind.REASONING, reasoning)
-                    .build();
-        }
-        List<Object> toolCalls = JsonWire.arrayAt(delta, "tool_calls");
-        if (!toolCalls.isEmpty() && toolCalls.get(0) instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> call = (Map<String, Object>) toolCalls.get(0);
-            Map<String, Object> function = JsonWire.objectAt(call, "function");
-            String arguments = JsonWire.textAt(function, "arguments");
-            if (arguments == null) {
-                arguments = "";
-            }
-            return ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DELTA)
-                    .delta(EventDeltaKind.TOOL_ARGS, arguments)
-                    .itemId(JsonWire.textAt(call, "id"))
-                    .itemType(JsonWire.textAt(function, "name"))
-                    .contentIndex(JsonWire.intAt(call, "index"))
-                    .build();
-        }
-        String finishReason = JsonWire.textAt(choice, "finish_reason");
         if (finishReason != null) {
-            ModelEvent.Builder builder = ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DONE);
+            ModelEvent.Builder builder = ModelEvent.builder(getProtocol(), ModelEventType.ITEM_DONE)
+                    .stopReason(finishReason);
             if (!usageMap.isEmpty()) {
                 builder.usage(decodeUsage(usageMap));
             }
