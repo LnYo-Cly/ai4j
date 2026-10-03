@@ -50,6 +50,9 @@ public final class EndpointPolicy {
                 .intersect(profile.getDisabledCapabilities().isEmpty()
                         ? null
                         : complement(profile.getDisabledCapabilities()));
+        if (!endpoint.getDisabledCapabilities().isEmpty()) {
+            capabilities = capabilities.subtract(endpoint.getDisabledCapabilities());
+        }
         if (!endpoint.getCapabilityOverrides().isEmpty()) {
             capabilities = capabilities.plus(endpoint.getCapabilityOverrides());
         }

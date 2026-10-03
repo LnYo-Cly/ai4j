@@ -58,6 +58,20 @@ public final class Capabilities {
         return new Capabilities(protocol, result);
     }
 
+    /** Remove every capability in {@code other}; the endpoint-disabled layer (design 4.6). */
+    public Capabilities subtract(Set<Capability> other) {
+        if (other == null || other.isEmpty()) {
+            return this;
+        }
+        EnumSet<Capability> result = EnumSet.noneOf(Capability.class);
+        for (Capability capability : capabilities) {
+            if (!other.contains(capability)) {
+                result.add(capability);
+            }
+        }
+        return new Capabilities(protocol, result);
+    }
+
     public Capabilities plus(Set<Capability> other) {
         EnumSet<Capability> result = EnumSet.noneOf(Capability.class);
         result.addAll(capabilities);

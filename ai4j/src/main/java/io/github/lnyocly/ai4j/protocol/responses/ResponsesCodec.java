@@ -79,11 +79,17 @@ public final class ResponsesCodec implements ProtocolCodec {
             } else if (item instanceof ToolResultItem) {
                 input.add(toolResultToWire((ToolResultItem) item));
             } else if (item instanceof ReasoningItem) {
-                input.add(reasoningToWire((ReasoningItem) item, warnings));
+                Map<String, Object> reasoning = reasoningToWire((ReasoningItem) item, warnings);
+                if (reasoning != null) {
+                    input.add(reasoning);
+                }
             } else if (item instanceof NativeItem) {
                 NativeItem nativeItem = (NativeItem) item;
-                if (nativeItem.getProtocol() == getProtocol()) {
+                if (nativeItem.getProtocol() == getProtocol() && !nativeItem.getPayload().isEmpty()) {
                     input.add(new LinkedHashMap<String, Object>(nativeItem.getPayload()));
+                } else if (nativeItem.getProtocol() == getProtocol()) {
+                    warnings.add(DroppedField.of("items[native]",
+                            "native item payload is empty and would emit an empty object"));
                 } else {
                     warnings.add(DroppedField.of("items[native]",
                             "native item belongs to " + nativeItem.getProtocol()
@@ -209,7 +215,6 @@ public final class ResponsesCodec implements ProtocolCodec {
     }
 
     private Map<String, Object> reasoningToWire(ReasoningItem item, List<DroppedField> warnings) {
-        Map<String, Object> wire = new LinkedHashMap<String, Object>();
         Map<String, Object> protocolData = item.getProtocolData();
         String encryptedContent = JsonWire.textAt(protocolData, "encrypted_content");
         if (encryptedContent == null && item.getItemId() != null) {
@@ -218,8 +223,9 @@ public final class ResponsesCodec implements ProtocolCodec {
         if (encryptedContent == null) {
             warnings.add(DroppedField.of("items[reasoning]",
                     "reasoning without provider replay handle is not replay-valid for RESPONSES"));
-            return wire;
+            return null;
         }
+        Map<String, Object> wire = new LinkedHashMap<String, Object>();
         wire.put("type", "reasoning");
         wire.put("encrypted_content", encryptedContent);
         if (item.getItemId() != null) {

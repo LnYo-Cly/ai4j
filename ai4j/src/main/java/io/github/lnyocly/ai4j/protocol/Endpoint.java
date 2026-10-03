@@ -28,10 +28,12 @@ public final class Endpoint {
     private final ProviderProfile profile;
     private final Map<String, String> headers;
     private final Set<Capability> capabilityOverrides;
+    private final Set<Capability> disabledCapabilities;
 
     private Endpoint(Protocol protocol, String name, String baseUrl, String endpointPath,
                      Credentials credentials, ProviderProfile profile,
-                     Map<String, String> headers, Set<Capability> capabilityOverrides) {
+                     Map<String, String> headers, Set<Capability> capabilityOverrides,
+                     Set<Capability> disabledCapabilities) {
         this.protocol = Objects.requireNonNull(protocol, "protocol is required");
         this.name = name;
         this.baseUrl = Objects.requireNonNull(baseUrl, "baseUrl is required");
@@ -44,6 +46,9 @@ public final class Endpoint {
         this.capabilityOverrides = capabilityOverrides == null
                 ? Collections.<Capability>emptySet()
                 : Collections.unmodifiableSet(capabilityOverrides);
+        this.disabledCapabilities = disabledCapabilities == null || disabledCapabilities.isEmpty()
+                ? Collections.<Capability>emptySet()
+                : Collections.unmodifiableSet(EnumSet.copyOf(disabledCapabilities));
     }
 
     public static Builder builder(Protocol protocol) {
@@ -84,6 +89,11 @@ public final class Endpoint {
         return capabilityOverrides;
     }
 
+    /** Baseline capabilities this endpoint explicitly removes (design 4.6). */
+    public Set<Capability> getDisabledCapabilities() {
+        return disabledCapabilities;
+    }
+
     @Override
     public String toString() {
         return "Endpoint{" + protocol + ", name=" + name + ", baseUrl=" + baseUrl + '}';
@@ -100,6 +110,7 @@ public final class Endpoint {
         private ProviderProfile profile;
         private final Map<String, String> headers = new java.util.LinkedHashMap<String, String>();
         private final Set<Capability> capabilityOverrides = EnumSet.noneOf(Capability.class);
+        private final Set<Capability> disabledCapabilities = EnumSet.noneOf(Capability.class);
 
         private Builder(Protocol protocol) {
             this.protocol = protocol;
@@ -143,13 +154,13 @@ public final class Endpoint {
 
         /** Declare that this endpoint does not support a baseline capability. */
         public Builder disableCapability(Capability capability) {
-            this.capabilityOverrides.remove(capability);
+            this.disabledCapabilities.add(capability);
             return this;
         }
 
         public Endpoint build() {
             return new Endpoint(protocol, name, baseUrl, endpointPath, credentials, profile,
-                    headers, capabilityOverrides);
+                    headers, capabilityOverrides, disabledCapabilities);
         }
     }
 }

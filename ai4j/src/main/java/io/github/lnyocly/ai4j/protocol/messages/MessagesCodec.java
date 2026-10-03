@@ -86,13 +86,19 @@ public final class MessagesCodec implements ProtocolCodec {
             } else if (item instanceof ToolResultItem) {
                 messages.add(userToolResultToWire((ToolResultItem) item));
             } else if (item instanceof ReasoningItem) {
-                messages.add(assistantReasoningToWire((ReasoningItem) item, warnings));
+                Map<String, Object> reasoning = assistantReasoningToWire((ReasoningItem) item, warnings);
+                if (reasoning != null) {
+                    messages.add(reasoning);
+                }
             } else if (item instanceof NativeItem) {
                 NativeItem nativeItem = (NativeItem) item;
-                if (nativeItem.getProtocol() == getProtocol()) {
+                if (nativeItem.getProtocol() == getProtocol() && !nativeItem.getPayload().isEmpty()) {
                     Map<String, Object> wire = new LinkedHashMap<String, Object>(
                             nativeItem.getPayload());
                     messages.add(wire);
+                } else if (nativeItem.getProtocol() == getProtocol()) {
+                    warnings.add(DroppedField.of("items[native]",
+                            "native item payload is empty and would emit an empty object"));
                 } else {
                     warnings.add(DroppedField.of("items[native]",
                             "native item belongs to " + nativeItem.getProtocol()
@@ -270,19 +276,19 @@ public final class MessagesCodec implements ProtocolCodec {
 
     private Map<String, Object> assistantReasoningToWire(ReasoningItem item,
                                                          List<DroppedField> warnings) {
-        Map<String, Object> message = new LinkedHashMap<String, Object>();
-        message.put("role", "assistant");
-        List<Object> blocks = new ArrayList<Object>();
         if (item.getSignature() == null) {
             warnings.add(DroppedField.of("items[reasoning]",
                     "unsigned reasoning cannot be replayed to MESSAGES (design F4)"));
-        } else {
-            Map<String, Object> thinking = new LinkedHashMap<String, Object>();
-            thinking.put("type", "thinking");
-            thinking.put("thinking", item.getText() == null ? "" : item.getText());
-            thinking.put("signature", item.getSignature());
-            blocks.add(thinking);
+            return null;
         }
+        Map<String, Object> message = new LinkedHashMap<String, Object>();
+        message.put("role", "assistant");
+        List<Object> blocks = new ArrayList<Object>();
+        Map<String, Object> thinking = new LinkedHashMap<String, Object>();
+        thinking.put("type", "thinking");
+        thinking.put("thinking", item.getText() == null ? "" : item.getText());
+        thinking.put("signature", item.getSignature());
+        blocks.add(thinking);
         message.put("content", blocks);
         return message;
     }
