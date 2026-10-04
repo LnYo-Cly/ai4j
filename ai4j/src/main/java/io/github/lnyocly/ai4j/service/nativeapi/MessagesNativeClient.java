@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.service.nativeapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.model.CallExecutionOptions;
 import io.github.lnyocly.ai4j.model.Protocol;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
@@ -31,11 +32,14 @@ import java.util.Objects;
  *
  * <p>Neither path executes client-side tools. The request's native fields
  * (including {@code tools}, {@code system} and {@code extraBody} protocol
- * extensions such as {@code thinking}) are transmitted as-is.</p>
+ * extensions such as {@code thinking}) are transmitted as-is. The Anthropic DTO
+ * has no local {@code streamExecution} field, so stream timeouts are supplied
+ * through the explicit {@link CallExecutionOptions} overload.</p>
  */
 public final class MessagesNativeClient {
 
     private static final String PATH = "v1/messages";
+    private static final int MAX_RAW_BODY_CHARS = 500;
 
     private static final NativeErrorMapper ERRORS = new NativeErrorMapper() {
         @Override
@@ -86,13 +90,23 @@ public final class MessagesNativeClient {
 
     /**
      * Start one native SSE call; returns immediately with a cancellable handle.
-     * Events are delivered raw to {@code listener} in wire order.
+     *
+     * <p>Events are delivered raw to {@code listener} in wire order; a
+     * {@link NativeMessagesStreamListener} receives them as typed
+     * {@link NativeMessagesStreamEvent}s.</p>
      */
     public NativeStreamCall messagesStream(AnthropicChatCompletion request, NativeSseListener listener) {
+        return messagesStream(request, listener, CallExecutionOptions.defaults());
+    }
+
+    /** Start one native SSE call with explicit local execution options. */
+    public NativeStreamCall messagesStream(AnthropicChatCompletion request, NativeSseListener listener,
+                                           CallExecutionOptions execution) {
         Objects.requireNonNull(listener, "listener is required");
-        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS);
+        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS,
+                NativeStreamSemantics.of(Protocol.MESSAGES));
         CallHandle handle = transport.stream(
-                TransportRequest.of(endpoint, wire(request, true), null), call);
+                TransportRequest.of(endpoint, wire(request, true), execution), call);
         call.bind(handle);
         return call;
     }
@@ -112,14 +126,44 @@ public final class MessagesNativeClient {
             try {
                 JsonNode node = NativeProtocolSupport.mapper().readTree(bodyText);
                 JsonNode error = node.path("error");
-                type = error.path("type").asText(null);
-                String errorMessage = error.path("message").asText(null);
-                message = errorMessage != null ? errorMessage : node.path("message").asText(null);
+                type = text(error, "type");
+                message = text(error, "message");
+                if (message == null) {
+                    message = text(node, "message");
+                }
             } catch (java.io.IOException ignored) {
                 // keep the HTTP status even when the body is not the expected JSON shape
             }
         }
-        String requestId = headers == null ? null : headers.get("request-id");
+        if (message == null) {
+            message = rawBodySnippet(bodyText);
+        }
+        String requestId = NativeProtocolSupport.anthropicRequestId(headers);
         return AnthropicApiException.of(statusCode, type, message, requestId);
+    }
+
+    private static String text(JsonNode node, String field) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode value = node.path(field);
+        if (value.isMissingNode() || value.isNull()) {
+            return null;
+        }
+        String text = value.asText(null);
+        return text == null || text.trim().isEmpty() ? null : text;
+    }
+
+    private static String rawBodySnippet(String bodyText) {
+        if (bodyText == null) {
+            return null;
+        }
+        String trimmed = bodyText.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.length() <= MAX_RAW_BODY_CHARS
+                ? trimmed
+                : trimmed.substring(0, MAX_RAW_BODY_CHARS) + "... (truncated)";
     }
 }

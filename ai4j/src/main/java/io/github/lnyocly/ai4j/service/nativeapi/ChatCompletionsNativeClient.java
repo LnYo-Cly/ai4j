@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.nativeapi;
 
+import io.github.lnyocly.ai4j.model.CallExecutionOptions;
 import io.github.lnyocly.ai4j.model.Protocol;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -12,6 +13,7 @@ import io.github.lnyocly.ai4j.transport.CallHandle;
 import io.github.lnyocly.ai4j.transport.OkHttpModelTransport;
 import io.github.lnyocly.ai4j.transport.TransportRequest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -28,9 +30,15 @@ import java.util.Objects;
  *
  * <p>Neither path executes client-side tools: a returned tool call is data for
  * the host to run. The native fields (including {@code tools} and
- * {@code extraBody}) are transmitted as-is; the legacy helper fields
- * {@code functions}/{@code mcpServices} are not wire fields and are not resolved
- * here, so pass {@code tools} directly.</p>
+ * {@code extraBody}) are transmitted as-is. The legacy helper fields
+ * {@code functions}/{@code mcpServices} have no native resolution here, so they
+ * are rejected before networking instead of being silently dropped - pass
+ * {@code tools} directly.</p>
+ *
+ * <p>The request's local {@code streamExecution} options (first-token/idle
+ * timeout, retry budget) are applied locally and never serialized. Retries are
+ * delegated to the shared engine, which only resends a side-effect-safe failure
+ * that received a retryable HTTP status before any event.</p>
  */
 public final class ChatCompletionsNativeClient {
 
@@ -39,7 +47,7 @@ public final class ChatCompletionsNativeClient {
     private static final NativeErrorMapper ERRORS = new NativeErrorMapper() {
         @Override
         public RuntimeException fromHttp(int statusCode, String bodyText, Map<String, String> headers) {
-            return NativeProtocolSupport.openAiHttpError(statusCode, bodyText);
+            return NativeProtocolSupport.openAiHttpError(statusCode, bodyText, headers);
         }
     };
 
@@ -72,6 +80,7 @@ public final class ChatCompletionsNativeClient {
      * {@link ChatCompletion} (stream flag, tools, messages) is never mutated.</p>
      */
     public ChatCompletionResponse chatCompletion(ChatCompletion request) throws Exception {
+        rejectUnsupportedHelpers(request);
         WireResponse response = transport.execute(
                 TransportRequest.of(endpoint, wire(request, false), null));
         if (!response.isSuccessful()) {
@@ -83,13 +92,27 @@ public final class ChatCompletionsNativeClient {
 
     /**
      * Start one native SSE call; returns immediately with a cancellable handle.
-     * Events are delivered raw to {@code listener} in wire order.
+     *
+     * <p>Events are delivered raw to {@code listener} in wire order; a
+     * {@link NativeChatStreamListener} receives them as typed
+     * {@link NativeChatStreamEvent}s. The local {@code streamExecution} options
+     * on the request are applied to this call.</p>
      */
     public NativeStreamCall chatCompletionStream(ChatCompletion request, NativeSseListener listener) {
+        Objects.requireNonNull(request, "request is required");
+        return chatCompletionStream(request, listener,
+                NativeProtocolSupport.execution(request.getStreamExecution()));
+    }
+
+    /** Start one native SSE call with explicit local execution options. */
+    public NativeStreamCall chatCompletionStream(ChatCompletion request, NativeSseListener listener,
+                                                 CallExecutionOptions execution) {
         Objects.requireNonNull(listener, "listener is required");
-        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS);
+        rejectUnsupportedHelpers(request);
+        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS,
+                NativeStreamSemantics.of(Protocol.CHAT_COMPLETIONS));
         CallHandle handle = transport.stream(
-                TransportRequest.of(endpoint, wire(request, true), null), call);
+                TransportRequest.of(endpoint, wire(request, true), execution), call);
         call.bind(handle);
         return call;
     }
@@ -99,5 +122,21 @@ public final class ChatCompletionsNativeClient {
         Map<String, Object> body = NativeProtocolSupport.snapshot(request);
         body.put("stream", stream);
         return NativeProtocolSupport.wire(Protocol.CHAT_COMPLETIONS, PATH, body, stream);
+    }
+
+    private static void rejectUnsupportedHelpers(ChatCompletion request) {
+        Objects.requireNonNull(request, "request is required");
+        List<String> functions = request.getFunctions();
+        if (functions != null && !functions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "functions is a legacy helper without a native resolution on this entry; "
+                            + "pass tools directly");
+        }
+        List<String> mcpServices = request.getMcpServices();
+        if (mcpServices != null && !mcpServices.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "mcpServices is a legacy helper without a native resolution on this entry; "
+                            + "pass tools directly");
+        }
     }
 }

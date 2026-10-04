@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.service.nativeapi;
 
+import io.github.lnyocly.ai4j.model.CallExecutionOptions;
 import io.github.lnyocly.ai4j.model.Protocol;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.Response;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.ResponseRequest;
@@ -12,6 +13,7 @@ import io.github.lnyocly.ai4j.transport.CallHandle;
 import io.github.lnyocly.ai4j.transport.OkHttpModelTransport;
 import io.github.lnyocly.ai4j.transport.TransportRequest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -28,7 +30,9 @@ import java.util.Objects;
  * <p>Neither path executes client-side tools. The request's native fields -
  * including protocol API {@code metadata} and any {@code extraBody} protocol
  * extension - are transmitted as-is; the local {@code streamExecution} field is
- * {@code @JsonIgnore} and never reaches the wire.</p>
+ * {@code @JsonIgnore} and never reaches the wire. The legacy
+ * {@code functions}/{@code mcpServices} helpers have no native resolution here
+ * and are rejected before networking.</p>
  */
 public final class ResponsesNativeClient {
 
@@ -37,7 +41,7 @@ public final class ResponsesNativeClient {
     private static final NativeErrorMapper ERRORS = new NativeErrorMapper() {
         @Override
         public RuntimeException fromHttp(int statusCode, String bodyText, Map<String, String> headers) {
-            return NativeProtocolSupport.openAiHttpError(statusCode, bodyText);
+            return NativeProtocolSupport.openAiHttpError(statusCode, bodyText, headers);
         }
     };
 
@@ -70,6 +74,7 @@ public final class ResponsesNativeClient {
      * {@link ResponseRequest} (stream flag, tools, input) is never mutated.</p>
      */
     public Response create(ResponseRequest request) throws Exception {
+        rejectUnsupportedHelpers(request);
         WireResponse response = transport.execute(
                 TransportRequest.of(endpoint, wire(request, false), null));
         if (!response.isSuccessful()) {
@@ -81,13 +86,27 @@ public final class ResponsesNativeClient {
 
     /**
      * Start one native SSE call; returns immediately with a cancellable handle.
-     * Events are delivered raw to {@code listener} in wire order.
+     *
+     * <p>Events are delivered raw to {@code listener} in wire order; a
+     * {@link NativeResponsesStreamListener} receives them as typed
+     * {@link NativeResponsesStreamEvent}s. The local {@code streamExecution}
+     * options on the request are applied to this call.</p>
      */
     public NativeStreamCall createStream(ResponseRequest request, NativeSseListener listener) {
+        Objects.requireNonNull(request, "request is required");
+        return createStream(request, listener,
+                NativeProtocolSupport.execution(request.getStreamExecution()));
+    }
+
+    /** Start one native SSE call with explicit local execution options. */
+    public NativeStreamCall createStream(ResponseRequest request, NativeSseListener listener,
+                                         CallExecutionOptions execution) {
         Objects.requireNonNull(listener, "listener is required");
-        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS);
+        rejectUnsupportedHelpers(request);
+        NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS,
+                NativeStreamSemantics.of(Protocol.RESPONSES));
         CallHandle handle = transport.stream(
-                TransportRequest.of(endpoint, wire(request, true), null), call);
+                TransportRequest.of(endpoint, wire(request, true), execution), call);
         call.bind(handle);
         return call;
     }
@@ -97,5 +116,21 @@ public final class ResponsesNativeClient {
         Map<String, Object> body = NativeProtocolSupport.snapshot(request);
         body.put("stream", stream);
         return NativeProtocolSupport.wire(Protocol.RESPONSES, PATH, body, stream);
+    }
+
+    private static void rejectUnsupportedHelpers(ResponseRequest request) {
+        Objects.requireNonNull(request, "request is required");
+        List<String> functions = request.getFunctions();
+        if (functions != null && !functions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "functions is a legacy helper without a native resolution on this entry; "
+                            + "pass tools directly");
+        }
+        List<String> mcpServices = request.getMcpServices();
+        if (mcpServices != null && !mcpServices.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "mcpServices is a legacy helper without a native resolution on this entry; "
+                            + "pass tools directly");
+        }
     }
 }

@@ -133,7 +133,7 @@ public class NativeStreamCallContractTest {
 
     @Test
     public void streamingCallDeepSnapshotsTheRequestInsteadOfMutatingIt() throws Exception {
-        server.enqueue(sseResponse("data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"}}]}\n\n"));
+        server.enqueue(sseResponse("data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"}}]}\n\n" + "data: [DONE]\n\n"));
 
         ChatCompletionsNativeClient client = ChatCompletionsNativeClient.of(
                 server.url("/").toString(), "native-key", configuration);
@@ -177,3 +177,4 @@ public class NativeStreamCallContractTest {
                 .setBody(body);
     }
 }
+
