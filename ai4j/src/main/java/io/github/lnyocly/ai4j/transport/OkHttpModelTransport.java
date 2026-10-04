@@ -119,6 +119,8 @@ public final class OkHttpModelTransport implements ModelTransport {
         private final CountDownLatch completion = new CountDownLatch(1);
         private final AtomicReference<StreamBridgeListener> listenerRef =
                 new AtomicReference<StreamBridgeListener>();
+        private final AtomicReference<okhttp3.sse.EventSource> eventSourceRef =
+                new AtomicReference<okhttp3.sse.EventSource>();
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
         StreamingHandle(TransportRequest request, SseChannel channel) {
@@ -163,8 +165,14 @@ public final class OkHttpModelTransport implements ModelTransport {
                             if (cancelled.get()) {
                                 return;
                             }
+                            eventSourceRef.set(null);
                             Request httpRequest = buildRequest(request, true);
-                            eventSourceFactory.newEventSource(httpRequest, listener);
+                            okhttp3.sse.EventSource eventSource =
+                                    eventSourceFactory.newEventSource(httpRequest, listener);
+                            eventSourceRef.set(eventSource);
+                            if (cancelled.get()) {
+                                eventSource.cancel();
+                            }
                         });
             } catch (Throwable failure) {
                 channel.onFailure(failure, listener.getFailureResponse(), listener.failureBody());
@@ -176,6 +184,14 @@ public final class OkHttpModelTransport implements ModelTransport {
         @Override
         public void cancel() {
             if (cancelled.compareAndSet(false, true)) {
+                okhttp3.sse.EventSource eventSource = eventSourceRef.get();
+                if (eventSource != null) {
+                    try {
+                        eventSource.cancel();
+                    } catch (Exception ignored) {
+                        // Best effort cancel so the upstream call cannot stay alive.
+                    }
+                }
                 StreamBridgeListener listener = listenerRef.get();
                 if (listener != null) {
                     listener.cancelStream();

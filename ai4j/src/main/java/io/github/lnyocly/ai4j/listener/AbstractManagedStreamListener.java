@@ -30,7 +30,10 @@ public abstract class AbstractManagedStreamListener extends EventSourceListener 
     @Override
     public void onOpen(@NotNull EventSource eventSource, @NotNull Response response) {
         attachEventSource(eventSource);
-        cancelRequested = false;
+        if (cancelRequested) {
+            cancelActiveEventSource();
+            return;
+        }
         openedAtEpochMs = System.currentTimeMillis();
         lastActivityAtEpochMs = openedAtEpochMs;
         receivedEvent = false;
@@ -135,7 +138,6 @@ public abstract class AbstractManagedStreamListener extends EventSourceListener 
     public void prepareForRetry() {
         clearFailure();
         eventSource = null;
-        cancelRequested = false;
         openedAtEpochMs = 0L;
         lastActivityAtEpochMs = 0L;
         receivedEvent = false;
