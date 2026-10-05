@@ -52,6 +52,25 @@ public interface NativeStreamEvent {
         return false;
     }
 
+    /**
+     * Choice indices observed in this event, in wire order; empty when the event
+     * carries no per-choice payload (every non-chat protocol).
+     *
+     * <p>Used with {@link #finishedChoiceIndices()} to decide whether the whole
+     * choice set has finished before a transport close.</p>
+     */
+    default java.util.Set<Integer> choiceIndices() {
+        return java.util.Collections.emptySet();
+    }
+
+    /**
+     * Choice indices whose choice carried a {@code finish_reason} in this event;
+     * empty when none did.
+     */
+    default java.util.Set<Integer> finishedChoiceIndices() {
+        return java.util.Collections.emptySet();
+    }
+
     /** Explicit marker for events the decoder did not model. */
     String UNKNOWN_TYPE = "unknown";
 }

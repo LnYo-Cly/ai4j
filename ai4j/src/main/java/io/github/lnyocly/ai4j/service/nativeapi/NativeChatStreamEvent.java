@@ -109,6 +109,33 @@ public final class NativeChatStreamEvent implements NativeStreamEvent {
         return false;
     }
 
+    @Override
+    public java.util.Set<Integer> choiceIndices() {
+        return choiceIndices(false);
+    }
+
+    @Override
+    public java.util.Set<Integer> finishedChoiceIndices() {
+        return choiceIndices(true);
+    }
+
+    private java.util.Set<Integer> choiceIndices(boolean finishedOnly) {
+        if (chunk == null || chunk.getChoices() == null || chunk.getChoices().isEmpty()) {
+            return java.util.Collections.emptySet();
+        }
+        java.util.Set<Integer> indices = new java.util.LinkedHashSet<Integer>();
+        for (Choice choice : chunk.getChoices()) {
+            if (choice == null) {
+                continue;
+            }
+            if (finishedOnly && choice.getFinishReason() == null) {
+                continue;
+            }
+            indices.add(choice.getIndex());
+        }
+        return indices;
+    }
+
     /** Parsed native chunk, or {@code null} for {@code done}/{@code error}/{@code unknown}. */
     public ChatCompletionResponse getChunk() {
         return chunk;

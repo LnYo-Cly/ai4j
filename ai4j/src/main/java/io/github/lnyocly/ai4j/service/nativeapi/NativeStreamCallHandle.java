@@ -36,6 +36,8 @@ final class NativeStreamCallHandle implements NativeStreamCall, SseChannel {
     private volatile ModelCallStatus status = ModelCallStatus.RUNNING;
     private volatile Throwable failure;
     private volatile boolean completionSignalSeen;
+    private final java.util.Set<Integer> observedChoices = new java.util.HashSet<Integer>();
+    private final java.util.Set<Integer> finishedChoices = new java.util.HashSet<Integer>();
     private volatile CallHandle handle;
 
     NativeStreamCallHandle(NativeSseListener listener, NativeErrorMapper errorMapper,
@@ -70,7 +72,9 @@ final class NativeStreamCallHandle implements NativeStreamCall, SseChannel {
         String type = event.getType();
         String data = event.getData();
         NativeStreamEvent typed = semantics.decode(id, type, data);
-        if (typed.isCompletionSignal()) {
+        observedChoices.addAll(typed.choiceIndices());
+        finishedChoices.addAll(typed.finishedChoiceIndices());
+        if (semantics.choiceFinishCompletesCall(observedChoices, finishedChoices)) {
             completionSignalSeen = true;
         }
         listener.onEvent(id, type, data);

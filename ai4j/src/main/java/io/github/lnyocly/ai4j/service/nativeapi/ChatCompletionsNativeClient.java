@@ -110,7 +110,7 @@ public final class ChatCompletionsNativeClient {
         Objects.requireNonNull(listener, "listener is required");
         rejectUnsupportedHelpers(request);
         NativeStreamCallHandle call = new NativeStreamCallHandle(listener, ERRORS,
-                NativeStreamSemantics.of(Protocol.CHAT_COMPLETIONS));
+                NativeStreamSemantics.of(Protocol.CHAT_COMPLETIONS, expectedChoices(request)));
         CallHandle handle = transport.stream(
                 TransportRequest.of(endpoint, wire(request, true), execution), call);
         call.bind(handle);
@@ -122,6 +122,15 @@ public final class ChatCompletionsNativeClient {
         Map<String, Object> body = NativeProtocolSupport.snapshot(request);
         body.put("stream", stream);
         return NativeProtocolSupport.wire(Protocol.CHAT_COMPLETIONS, PATH, body, stream);
+    }
+
+    /**
+     * The request's expected choice count ({@code n}); a whole-call finish signal
+     * must cover this many choices before a clean EOF can complete the stream.
+     */
+    private static int expectedChoices(ChatCompletion request) {
+        Integer n = request.getN();
+        return n == null || n < 1 ? 1 : n;
     }
 
     private static void rejectUnsupportedHelpers(ChatCompletion request) {

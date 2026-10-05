@@ -175,11 +175,22 @@ final class DefaultModelClient implements ModelClient {
 
                         @Override
                         public void onClosed() {
-                            if (cancelled.get() || status.get() == ModelCallStatus.FAILED) {
+                            if (cancelled.get() || status.get() != ModelCallStatus.RUNNING) {
                                 return;
                             }
-                            settle(ModelCallStatus.COMPLETED);
-                            dispatchDone();
+                            ModelCallException incomplete = new ModelCallException(protocol, 0,
+                                    null, null, false,
+                                    "stream ended without its terminal event", null,
+                                    ModelCallStatus.FAILED);
+                            failure.compareAndSet(null, incomplete);
+                            settle(ModelCallStatus.FAILED);
+                            dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
+                                    .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
+                                            .builder(protocol)
+                                            .message(incomplete.getMessage())
+                                            .status(ModelCallStatus.FAILED)
+                                            .build())
+                                    .build());
                         }
 
                         @Override
