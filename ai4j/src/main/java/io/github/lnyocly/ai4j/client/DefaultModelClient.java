@@ -158,16 +158,17 @@ final class DefaultModelClient implements ModelClient {
                             if (modelEvent.getType() == ModelEventType.ERROR) {
                                 io.github.lnyocly.ai4j.model.ModelCallExceptionMarker marker =
                                         modelEvent.getFailure();
-                                if (marker != null) {
-                                    failure.compareAndSet(null, ModelCallException.fromMarker(marker));
+                                ModelCallException mapped = marker == null
+                                        ? null : ModelCallException.fromMarker(marker);
+                                if (settle(ModelCallStatus.FAILED, mapped)) {
+                                    dispatch(modelEvent);
                                 }
-                                settle(ModelCallStatus.FAILED);
-                                dispatch(modelEvent);
                                 return;
                             }
                             if (modelEvent.getType() == ModelEventType.DONE) {
-                                settle(ModelCallStatus.COMPLETED);
-                                dispatchDone();
+                                if (settle(ModelCallStatus.COMPLETED, null)) {
+                                    dispatchDone();
+                                }
                                 return;
                             }
                             dispatch(modelEvent);
@@ -182,15 +183,15 @@ final class DefaultModelClient implements ModelClient {
                                     null, null, false,
                                     "stream ended without its terminal event", null,
                                     ModelCallStatus.FAILED);
-                            failure.compareAndSet(null, incomplete);
-                            settle(ModelCallStatus.FAILED);
-                            dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
-                                    .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
-                                            .builder(protocol)
-                                            .message(incomplete.getMessage())
-                                            .status(ModelCallStatus.FAILED)
-                                            .build())
-                                    .build());
+                            if (settle(ModelCallStatus.FAILED, incomplete)) {
+                                dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
+                                        .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
+                                                .builder(protocol)
+                                                .message(incomplete.getMessage())
+                                                .status(ModelCallStatus.FAILED)
+                                                .build())
+                                        .build());
+                            }
                         }
 
                         @Override
@@ -202,27 +203,27 @@ final class DefaultModelClient implements ModelClient {
                         public void onFailure(Throwable failureCause, okhttp3.Response response,
                                               String responseBody) {
                             if (cancelled.get()) {
-                                settle(ModelCallStatus.CANCELLED);
+                                settle(ModelCallStatus.CANCELLED, null);
                                 return;
                             }
                             ModelCallException mapped = response == null
                                     ? ErrorMapping.fromFailure(protocol, failureCause)
                                     : ErrorMapping.fromResponse(protocol,
                                             wireResponseOf(response, responseBody));
-                            failure.compareAndSet(null, mapped);
-                            settle(ModelCallStatus.FAILED);
-                            dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
-                                    .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
-                                            .builder(protocol)
-                                            .message(mapped.getMessage())
-                                            .httpStatus(mapped.getHttpStatus())
-                                            .providerErrorType(mapped.getProviderErrorType())
-                                            .providerRequestId(mapped.getProviderRequestId())
-                                            .retryable(mapped.isRetryable())
-                                            .rawSnippet(mapped.getRawSnippet())
-                                            .status(mapped.getStatus())
-                                            .build())
-                                    .build());
+                            if (settle(ModelCallStatus.FAILED, mapped)) {
+                                dispatch(ModelEvent.builder(protocol, ModelEventType.ERROR)
+                                        .failure(io.github.lnyocly.ai4j.model.ModelCallExceptionMarker
+                                                .builder(protocol)
+                                                .message(mapped.getMessage())
+                                                .httpStatus(mapped.getHttpStatus())
+                                                .providerErrorType(mapped.getProviderErrorType())
+                                                .providerRequestId(mapped.getProviderRequestId())
+                                                .retryable(mapped.isRetryable())
+                                                .rawSnippet(mapped.getRawSnippet())
+                                                .status(mapped.getStatus())
+                                                .build())
+                                        .build());
+                            }
                         }
 
                         @Override
@@ -235,8 +236,7 @@ final class DefaultModelClient implements ModelClient {
             try {
                 handle.set(transport.stream(transportRequest, channel));
             } catch (Exception startFailure) {
-                failure.set(ErrorMapping.fromFailure(protocol, startFailure));
-                settle(ModelCallStatus.FAILED);
+                settle(ModelCallStatus.FAILED, ErrorMapping.fromFailure(protocol, startFailure));
             }
         }
 
@@ -283,10 +283,15 @@ final class DefaultModelClient implements ModelClient {
             }
         }
 
-        private void settle(ModelCallStatus newStatus) {
+        private boolean settle(ModelCallStatus newStatus, ModelCallException terminalFailure) {
             if (status.compareAndSet(ModelCallStatus.RUNNING, newStatus)) {
+                if (terminalFailure != null) {
+                    failure.set(terminalFailure);
+                }
                 settled.countDown();
+                return true;
             }
+            return false;
         }
 
         @Override
@@ -296,7 +301,7 @@ final class DefaultModelClient implements ModelClient {
                 if (active != null) {
                     active.cancel();
                 }
-                settle(ModelCallStatus.CANCELLED);
+                settle(ModelCallStatus.CANCELLED, null);
             }
         }
 

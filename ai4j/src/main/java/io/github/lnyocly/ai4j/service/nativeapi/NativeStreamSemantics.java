@@ -43,16 +43,29 @@ final class NativeStreamSemantics {
 
     /**
      * Whole-call completion from choice finish evidence: every choice observed on
-     * the stream must have finished, and at least the request's expected number of
-     * choices must have finished. A single-choice stream keeps the existing
-     * finish+EOF behavior; a multi-choice stream needs this full coverage or the
-     * authoritative terminal event.
+     * the stream must have finished. A single-choice stream keeps the existing
+     * finish+EOF behavior; a multi-choice stream additionally needs its finished
+     * index set to be exactly the request's expected {@code 0..n-1} set, or the
+     * authoritative terminal event must arrive.
      */
     boolean choiceFinishCompletesCall(Set<Integer> observedChoiceIndices,
                                       Set<Integer> finishedChoiceIndices) {
-        return !finishedChoiceIndices.isEmpty()
-                && observedChoiceIndices.equals(finishedChoiceIndices)
-                && finishedChoiceIndices.size() >= expectedChoices;
+        if (finishedChoiceIndices.isEmpty()
+                || !observedChoiceIndices.equals(finishedChoiceIndices)) {
+            return false;
+        }
+        if (expectedChoices <= 1) {
+            return true;
+        }
+        if (finishedChoiceIndices.size() != expectedChoices) {
+            return false;
+        }
+        for (int index = 0; index < expectedChoices; index++) {
+            if (!finishedChoiceIndices.contains(index)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Failure used when the transport closes cleanly without the required terminal. */

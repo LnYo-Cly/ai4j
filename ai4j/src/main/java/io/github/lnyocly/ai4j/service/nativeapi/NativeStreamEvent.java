@@ -41,12 +41,16 @@ public interface NativeStreamEvent {
     NativeStreamError getError();
 
     /**
-     * {@code true} when this event signals that the model finished generating but
-     * the stream may still carry trailing data before it closes.
+     * {@code true} when this event, on its own, classifies the model as having
+     * finished generating while the stream may still carry trailing data before it
+     * closes.
      *
-     * <p>Only the OpenAI chat {@code finish_reason} case uses this: a usage chunk
-     * may follow the final choice chunk, so the call is not settled until the
-     * transport closes or {@code [DONE]} arrives.</p>
+     * <p>This is a per-event classification retained for API compatibility; it is
+     * not what decides whole-call completion. The native stream handle settles on
+     * {@link #choiceIndices()} and {@link #finishedChoiceIndices()} through
+     * {@code NativeStreamSemantics.choiceFinishCompletesCall}, or on the
+     * protocol's authoritative terminal event. Only the OpenAI chat
+     * {@code finish_reason} case returns {@code true}.</p>
      */
     default boolean isCompletionSignal() {
         return false;
