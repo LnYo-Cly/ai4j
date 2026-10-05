@@ -159,6 +159,22 @@ public class NativeChatMultiChoiceTerminalContractTest {
                 ((NativeStreamException) call.failure()).getKind());
     }
 
+    @Test
+    public void multiChoiceUnexpectedIndexSetThenEofIsIncomplete() throws Exception {
+        server.enqueue(sseResponse(
+                "data: {\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"}]}\n\n"
+                        + "data: {\"choices\":[{\"index\":2,\"finish_reason\":\"stop\"}]}\n\n"));
+
+        NativeStreamCall call = chatClient().chatCompletionStream(multiChoiceRequest(2), noopListener());
+
+        Assert.assertTrue(call.await(5, TimeUnit.SECONDS));
+        Assert.assertEquals("an index set that skips an expected choice is not the whole contract",
+                ModelCallStatus.FAILED, call.status());
+        Assert.assertTrue(call.failure() instanceof NativeStreamException);
+        Assert.assertEquals(NativeStreamException.KIND_INCOMPLETE,
+                ((NativeStreamException) call.failure()).getKind());
+    }
+
     private ChatCompletionsNativeClient chatClient() {
         return ChatCompletionsNativeClient.of(server.url("/").toString(), "native-key", configuration);
     }
