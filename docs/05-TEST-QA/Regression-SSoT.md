@@ -99,3 +99,7 @@ RG-013 current verification supersedes the earlier 78-test snapshot: the 2026-09
 2026-09-17 coding-loop model-error stop: `mvn -pl ai4j-coding -Dtest=StreamErrorLoopReproTest -DskipTests=false test` (2 tests). A turn whose stream published an ERROR event and produced no output/tool calls now stops with `CodingStopReason.ERROR` instead of auto-continuing — including when `maxAutoFollowUps`/`maxTotalTurns` are configured `0` (unlimited).
 
 2026-09-17 CLI event-tail regression: `mvn -pl ai4j-cli -Dtest=FileSessionEventStoreTest -DskipTests=false test` covers byte-offset `tailEvents` (incremental, EOF-idle, missing-file). `CodingCliSessionRunner.refreshTuiEvents` now tails the session event file instead of reparsing all events per agent event; `SessionEventStore.tailEvents`/`CodingSessionManager.tailEvents` default to full-list fallback (`nextOffset=-1`) for non-file stores.
+
+## MiniMax speech synthesis regression
+
+RG-001 covers `MinimaxAudioServiceTest`: factory selection, native speech request mapping, decoded hexadecimal audio, URL output, per-call endpoint/key overrides, business errors, missing audio/status, malformed hexadecimal output, and unsupported transcription/translation. The shared request requires an explicit MiniMax speech model and voice ID.
