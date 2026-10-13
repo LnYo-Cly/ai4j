@@ -1,0 +1,11 @@
+# Generated single-file interactive diagrams (archify).
+#
+# These are build artifacts, not authored source: each ~800 KB HTML inlines the
+# same archify runtime (≈281 KB CSS + ≈484 KB JS), and they are rendered from the
+# committed *.architecture.json / *.sequence.json / *.workflow.json specs next to
+# them. 109 tracked files total ≈85 MB, which otherwise makes GitHub's language
+# statistics report this repository as ~90% HTML.
+#
+# linguist-generated = "Excluded from stats, hidden in diffs".
+archify/*.html                  linguist-generated
+docs-site/static/archify/*.html linguist-generated
