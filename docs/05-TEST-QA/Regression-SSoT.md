@@ -102,4 +102,4 @@ RG-013 current verification supersedes the earlier 78-test snapshot: the 2026-09
 
 ## MiniMax speech synthesis regression
 
-RG-001 covers `MinimaxAudioServiceTest`: factory selection, native speech request mapping, decoded hexadecimal audio, URL output, per-call endpoint/key overrides, business errors, missing audio/status, malformed hexadecimal output, and unsupported transcription/translation. The shared request requires an explicit MiniMax speech model and voice ID.
+RG-001 covers `MinimaxAudioServiceTest`: factory selection, native speech request mapping, decoded hexadecimal audio, URL output, per-call endpoint/key overrides, business errors, missing audio/status, malformed hexadecimal output, and unsupported transcription/translation. The shared request requires an explicit MiniMax speech model and voice ID. MiniMax keys are region-bound: global keys use `https://api.minimax.io/`, CN keys use `https://api.minimax.cn/`; a mismatch answers `1004 login fail`.

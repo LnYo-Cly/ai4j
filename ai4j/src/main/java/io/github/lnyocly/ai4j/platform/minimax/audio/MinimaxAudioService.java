@@ -19,14 +19,26 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Synchronous MiniMax speech synthesis. Set a MiniMax speech model and voice ID
- * explicitly on the request. The input stream contains decoded audio bytes.
+ * Synchronous MiniMax speech synthesis ({@code POST v1/t2a_v2}). Set a MiniMax speech
+ * model (e.g. {@code speech-2.8-hd}) and voice ID explicitly on the request.
+ * The input stream contains decoded audio bytes.
+ *
+ * <p>MiniMax keys are region-bound: use the global gateway
+ * ({@code https://api.minimax.io/}) with global keys and the CN gateway
+ * ({@code https://api.minimax.cn/}) with CN keys, otherwise the API answers
+ * {@code 1004 login fail}. The gateway follows {@code MinimaxConfig.getApiHost()}
+ * unless a per-call {@code baseUrl} overrides it.
+ *
+ * <p>Supported audio {@code format} values are {@code mp3}, {@code pcm},
+ * {@code flac}, {@code wav}, {@code pcmu_raw}, {@code pcmu_wav} and {@code opus};
+ * {@code aac} is not accepted by MiniMax.
  */
 public class MinimaxAudioService implements IAudioService {
     private static final MediaType JSON_TYPE = MediaType.get("application/json");
@@ -95,11 +107,15 @@ public class MinimaxAudioService implements IAudioService {
             if (!response.isSuccessful()) {
                 throw HttpErrorDecoder.decode(response);
             }
-            if (response.body() == null) {
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
                 throw new AiClientException(response.code(), "MiniMax speech response had no body");
             }
-            JSONObject root = JSON.parseObject(response.body().string());
-            JSONObject status = root == null ? null : root.getJSONObject("base_resp");
+            JSONObject root = JSON.parseObject(responseBody.string());
+            if (root == null) {
+                throw new AiClientException(response.code(), "MiniMax speech response missing status code");
+            }
+            JSONObject status = root.getJSONObject("base_resp");
             if (status == null || status.getInteger("status_code") == null) {
                 throw new AiClientException(response.code(), "MiniMax speech response missing status code");
             }
