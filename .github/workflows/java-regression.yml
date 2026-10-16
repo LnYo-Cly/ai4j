@@ -110,10 +110,18 @@ jobs:
             **/target/japicmp/**
           if-no-files-found: ignore
 
-  # E1: JDK x OS matrix for cross-JDK test verification
+  # E1: JDK matrix for cross-JDK test verification.
+  #
+  # Cost note (2026-10): windows-latest is a premium runner that is NOT free for this
+  # repository, unlike ubuntu-latest, and it was the single largest line item on the
+  # account's Actions invoice (~6000 Windows minutes in 2026-09 = ~$60 for that month).
+  # The Windows dimension was removed on 2026-10-13. The job id and the aggregate gate
+  # are unchanged, so no branch-protection update is required. To bring back a narrow
+  # Windows smoke leg, add `os: [ubuntu-latest, windows-latest]` plus an exclude list
+  # that keeps exactly one module/JDK pair, and re-add ${{ matrix.os }} to `runs-on`.
   module-tests:
-    name: module-tests (${{ matrix.module }} / JDK ${{ matrix.jdk }} / ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: module-tests (${{ matrix.module }} / JDK ${{ matrix.jdk }})
+    runs-on: ubuntu-latest
     needs: detect-java-changes
     if: needs.detect-java-changes.outputs.java == 'true'
     timeout-minutes: 30
@@ -131,32 +139,24 @@ jobs:
           - ai4j-spring-boot-starter
           - ai4j-flowgram-spring-boot-starter
           - ai4j-flowgram-demo
-        jdk: ['8', '17', '21']
-        os: [ubuntu-latest, windows-latest]
+        # Pull requests exercise the full cross-JDK surface. Pushes (usually the merge
+        # commit of an already-verified PR) run the P0 baseline only, so the default
+        # branch no longer pays for the same best-effort matrix twice per change.
+        jdk: ${{ github.event_name == 'pull_request' && fromJSON('["8", "17", "21"]') || fromJSON('["8"]') }}
         exclude:
-          # Starter modules: JDK [8, 17] x ubuntu only (Boot 2.x 不支持 JDK 21)
+          # Starter modules: JDK [8, 17] only (Boot 2.x 不支持 JDK 21)
           - module: ai4j-spring-boot-starter
             jdk: '21'
-          - module: ai4j-spring-boot-starter
-            os: windows-latest
           - module: ai4j-flowgram-spring-boot-starter
             jdk: '21'
-          - module: ai4j-flowgram-spring-boot-starter
-            os: windows-latest
-          # Light modules: JDK [8, 17] x ubuntu only
+          # Light modules: JDK [8, 17] only
           - module: ai4j-extension-api
             jdk: '21'
-          - module: ai4j-extension-api
-            os: windows-latest
           - module: ai4j-plugin-ask-user
             jdk: '21'
-          - module: ai4j-plugin-ask-user
-            os: windows-latest
-          # Demo: ubuntu only, JDK [8, 17]
+          # Demo: JDK [8, 17] only
           - module: ai4j-flowgram-demo
             jdk: '21'
-          - module: ai4j-flowgram-demo
-            os: windows-latest
 
     # JDK 17/21 are best-effort: P0 baseline is JDK 8 (the supported Java 8 promise).
     # Cross-JDK failures (process state STOPPED vs EXITED, Nashorn API drift, etc.) are
