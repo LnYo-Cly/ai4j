@@ -41,6 +41,10 @@ Default task closeout should cite `local-required` evidence. If a task needs a l
 
 `RG-001`, `RG-003`, `RG-007`, and `RG-008` also cover recursive deterministic discovery of nested `SKILL.md` / `skill.md` directories, no-follow symlink behavior, host-visible `disable-model-invocation`, and exclusion of manual-only Skills from the automatic catalog. Focused evidence is `SkillsIChatServiceTest` (core) and `CodingSkillSupportTest` (coding); this does not grant Skills additional Tool, MCP, or permission scope.
 
+### MiniMax text defaults and transport
+
+`RG-001`, `RG-005`, and `RG-009` cover MiniMax regional configuration, Flash defaults for newly created FlowGram workflows, and preservation of explicit M3, legacy, and custom models. `MinimaxChatServiceTest` checks serialized HTTP requests through `AiService`, including reasoning effort and image/tool history. `MinimaxConfigDefaultsTest` retains the published configuration constructors and video defaults. These offline checks do not establish subscription entitlement or live regional availability.
+
 ## Live And Credential Opt-in Gates
 
 | ID | Status | Surface | Primary Entrypoint | Cadence | Evidence Depth | Last Verified | Notes |

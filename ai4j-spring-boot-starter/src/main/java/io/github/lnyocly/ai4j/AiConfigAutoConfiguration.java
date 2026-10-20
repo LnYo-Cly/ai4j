@@ -688,6 +688,8 @@ public class AiConfigAutoConfiguration {
         minimaxConfig.setApiHost(minimaxConfigProperties.getApiHost());
         minimaxConfig.setApiKey(minimaxConfigProperties.getApiKey());
         minimaxConfig.setChatCompletionUrl(minimaxConfigProperties.getChatCompletionUrl());
+        minimaxConfig.setAnthropicApiHost(minimaxConfigProperties.getAnthropicApiHost());
+        minimaxConfig.setAnthropicMessagesUrl(minimaxConfigProperties.getAnthropicMessagesUrl());
 
         configuration.setMinimaxConfig(minimaxConfig);
     }
@@ -814,6 +816,5 @@ public class AiConfigAutoConfiguration {
                 .build();
     }
 }
-
 
 

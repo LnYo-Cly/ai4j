@@ -3,6 +3,11 @@ server:
 
 ai:
   platforms:
+    - id: minimax
+      platform: minimax
+      api-key: ${MINIMAX_API_KEY:}
+      api-host: https://api.minimax.io/
+      chat-completion-url: v1/chat/completions
     - id: minimax-coding
       platform: minimax
       api-key: ${MINIMAX_API_KEY:}
@@ -16,6 +21,6 @@ ai:
 
 ai4j:
   flowgram:
-    default-service-id: minimax-coding
+    default-service-id: minimax
     api:
       base-path: /flowgram

@@ -37,6 +37,10 @@
 | `AGENTS.md`, `docs/11-REFERENCE/`, Regression SSoT, Cadence Ledger, task standards, or workflow governance changes | affected gates by manual review; no executable gate unless command behavior changes | none by default | touched-surface governance review | L0/L1 doc verification | governance docs alone do not imply code regression, but they must not drift from executable commands |
 | any merge to `dev` or `main` | full local baseline RG-001 to RG-018 | only opt-in gates explicitly required by the merged task/release | merge-batch | L1/L2; L3-L5 only when approved | branch integration should refresh the full deterministic control surface |
 
+## MiniMax text regression scope
+
+When changing MiniMax text defaults or transport, run `MinimaxConfigDefaultsTest`, `MinimaxChatServiceTest`, and `MinimaxAutoConfigurationTest` under RG-001/RG-005. For FlowGram defaults, RG-009 also verifies that workflow serialization preserves saved models and service IDs. Full Java packaging and frontend lint/type/build remain required; unavailable resource gates must be reported as incomplete validation. No provider credential is required for these tests.
+
 ## Shared Regression Batch Log
 
 | Batch | Date | Scope | Trigger | Result | Notes | Next Checkpoint |

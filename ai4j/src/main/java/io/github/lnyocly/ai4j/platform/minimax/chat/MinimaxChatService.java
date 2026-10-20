@@ -35,6 +35,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Collections;
 
 /**
@@ -79,7 +81,16 @@ public class MinimaxChatService implements IChatService, ParameterConvert<Minima
         minimaxChatCompletion.setTopP(chatCompletion.getTopP());
         minimaxChatCompletion.setStream(chatCompletion.getStream());
         minimaxChatCompletion.setMaxTokens(resolveMaxTokens(chatCompletion));
-        minimaxChatCompletion.setExtraBody(chatCompletion.getExtraBody());
+        if (chatCompletion.getReasoningEffort() == null) {
+            minimaxChatCompletion.setExtraBody(chatCompletion.getExtraBody());
+        } else {
+            Map<String, Object> extraBody = new LinkedHashMap<String, Object>();
+            if (chatCompletion.getExtraBody() != null) {
+                extraBody.putAll(chatCompletion.getExtraBody());
+            }
+            extraBody.putIfAbsent("reasoning_effort", chatCompletion.getReasoningEffort());
+            minimaxChatCompletion.setExtraBody(extraBody);
+        }
         return minimaxChatCompletion;
     }
 

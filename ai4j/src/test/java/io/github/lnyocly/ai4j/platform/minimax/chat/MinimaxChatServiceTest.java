@@ -101,6 +101,80 @@ public class MinimaxChatServiceTest {
         Assert.assertEquals(18L, response.getUsage().getTotalTokens());
     }
 
+    @Test
+    public void factoryShouldPreserveModelsEffortAndHistoryAtHttpBoundary() throws Exception {
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String[] models = {"MiniMax-M3.1-Flash", "MiniMax-M3", "MiniMax-M2.7",
+                "MiniMax-M2.1", "custom/minimax-deployment"};
+        for (String model : models) {
+            for (String effort : new String[]{null, "low", "medium", "high", "xhigh", "max"}) {
+                AtomicReference<Request> recorded = new AtomicReference<>();
+                Configuration configuration = capturingConfiguration(recorded);
+                io.github.lnyocly.ai4j.service.IChatService service =
+                        new io.github.lnyocly.ai4j.service.factory.AiService(configuration)
+                                .getChatService(io.github.lnyocly.ai4j.service.PlatformType.MINIMAX);
+                io.github.lnyocly.ai4j.platform.openai.tool.ToolCall call =
+                        new io.github.lnyocly.ai4j.platform.openai.tool.ToolCall("call_saved", "function",
+                                new io.github.lnyocly.ai4j.platform.openai.tool.ToolCall.Function("lookup", "{}"));
+                ChatCompletion request = ChatCompletion.builder().model(model).reasoningEffort(effort)
+                        .messages(java.util.Arrays.asList(
+                                ChatMessage.withSystem("Saved instructions"),
+                                ChatMessage.withUser("Inspect image", "data:image/png;base64,c2F2ZWQ="),
+                                ChatMessage.withAssistant(Collections.singletonList(call)),
+                                ChatMessage.withTool("Saved tool result", "call_saved")))
+                        .build();
+                String history = mapper.writeValueAsString(request.getMessages());
+                service.chatCompletion(request);
+                okio.Buffer buffer = new okio.Buffer();
+                recorded.get().body().writeTo(buffer);
+                com.fasterxml.jackson.databind.JsonNode body = mapper.readTree(buffer.readUtf8());
+                Assert.assertEquals("https://api.minimax.io/v1/chat/completions", recorded.get().url().toString());
+                Assert.assertEquals(model, body.path("model").asText());
+                Assert.assertEquals(mapper.readTree(history), body.path("messages"));
+                Assert.assertEquals(history, mapper.writeValueAsString(request.getMessages()));
+                Assert.assertEquals(model, request.getModel());
+                Assert.assertTrue(request.getExtraBody().isEmpty());
+                if (effort == null) {
+                    Assert.assertFalse(body.has("reasoning_effort"));
+                } else {
+                    Assert.assertEquals(effort, body.path("reasoning_effort").asText());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void explicitExtraBodyEffortShouldWinWithoutMutatingCaller() throws Exception {
+        AtomicReference<Request> recorded = new AtomicReference<>();
+        ChatCompletion request = ChatCompletion.builder().model("MiniMax-M3").reasoningEffort("low")
+                .extraBody("reasoning_effort", "high")
+                .messages(Collections.singletonList(ChatMessage.withUser("Hello"))).build();
+        Configuration configuration = capturingConfiguration(recorded);
+        configuration.getMinimaxConfig().setApiHost("https://api.minimaxi.com/");
+        new MinimaxChatService(configuration).chatCompletion(request);
+        Assert.assertEquals("https://api.minimaxi.com/v1/chat/completions", recorded.get().url().toString());
+        okio.Buffer buffer = new okio.Buffer();
+        recorded.get().body().writeTo(buffer);
+        Assert.assertEquals("high", new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(buffer.readUtf8()).path("reasoning_effort").asText());
+        Assert.assertEquals(Collections.<String, Object>singletonMap("reasoning_effort", "high"), request.getExtraBody());
+    }
+
+    private Configuration capturingConfiguration(AtomicReference<Request> recorded) {
+        Configuration configuration = new Configuration();
+        MinimaxConfig minimax = new MinimaxConfig();
+        minimax.setApiKey("unit-test-key");
+        configuration.setMinimaxConfig(minimax);
+        configuration.setOkHttpClient(new OkHttpClient.Builder().addInterceptor(chain -> {
+            recorded.set(chain.request());
+            return new Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(200).message("OK")
+                    .body(ResponseBody.create("{\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}",
+                            MediaType.get("application/json"))).build();
+        }).build());
+        return configuration;
+    }
+
     private Tool tool(String name) {
         Tool.Function function = new Tool.Function();
         function.setName(name);
