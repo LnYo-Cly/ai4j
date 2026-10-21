@@ -642,6 +642,60 @@ public class ToolUtil {
     }
     
     /**
+     * 显式登记 {@code @FunctionCall} 工具类，绕开 classpath 扫描。
+     *
+     * <p>默认扫描基于 Reflections + {@code ClasspathHelper.forPackage(...)}，在普通目录型
+     * classpath 下会解析到 classpath 根（因此任意包的工具都能被扫到），但在嵌套 jar
+     * （Spring Boot fat jar）等特殊形态下可能解析不出 URL，导致所有工具都扫不到。
+     * 这种环境里可以用本方法逐个登记工具类。
+     *
+     * @param classes 带 {@code @FunctionCall} 的工具类
+     */
+    public static void registerFunctionClasses(Class<?>... classes) {
+        if (classes == null || classes.length == 0) {
+            return;
+        }
+        for (Class<?> functionClass : classes) {
+            if (functionClass == null) {
+                continue;
+            }
+            FunctionCall functionCall = functionClass.getAnnotation(FunctionCall.class);
+            if (functionCall == null) {
+                throw new IllegalArgumentException(
+                        "Class is not annotated with @FunctionCall: " + functionClass.getName());
+            }
+            registerFunctionClass(functionCall, functionClass);
+        }
+    }
+
+    /**
+     * 按注解把单个工具类写入注册表：工具映射、request 类、以及可用于请求白名单的 Tool schema。
+     */
+    private static void registerFunctionClass(FunctionCall functionCall, Class<?> functionClass) {
+        String functionName = functionCall.name();
+
+        toolClassMap.put(functionName, functionClass);
+        Class<?>[] innerClasses = functionClass.getDeclaredClasses();
+        for (Class<?> innerClass : innerClasses) {
+            if (innerClass.getAnnotation(FunctionRequest.class) != null) {
+                toolRequestMap.put(functionName, innerClass);
+                break;
+            }
+        }
+
+        Tool.Function functionEntity = new Tool.Function();
+        functionEntity.setName(functionName);
+        functionEntity.setDescription(functionCall.description());
+        setFunctionParameters(functionEntity, functionClass);
+        if (functionCall.strict()) {
+            applyStrictMode(functionEntity);
+        }
+        toolEntityMap.put(functionName, new Tool("function", functionEntity));
+
+        log.debug("显式注册Function工具: {}", functionName);
+    }
+
+    /**
      * 扫描传统Function工具
      */
     private static void scanFunctionTools() {

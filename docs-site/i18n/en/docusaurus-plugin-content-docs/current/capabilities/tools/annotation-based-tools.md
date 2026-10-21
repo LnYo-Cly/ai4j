@@ -262,7 +262,48 @@ Based on the current implementation, the most robust tool design is usually:
 
 This significantly reduces schema drift and the chance of model mis-invocation.
 
-## 11. The conclusion to take away from this page
+## 11. Which package must a tool live in: the real scan scope
+
+`ToolUtil` scans `@FunctionCall` with Reflections, and the scan URLs come from
+`ToolUtil.getReflections()`:
+
+```java
+ClasspathHelper.forPackage("io.github.lnyocly.ai4j")
+```
+
+That line is easy to misread. Reflections 0.10 resolves the package name **back to the classpath
+root**, not to the `io/github/lnyocly/ai4j` subdirectory, and `ToolUtil` sets no `filterInputsBy`
+prefix. On an ordinary directory classpath it actually returns:
+
+```text
+file:/.../target/test-classes/
+file:/.../target/classes/
+```
+
+So tools are discovered **regardless of their package**: there is no requirement to put them under
+`io.github.lnyocly.ai4j`. The `forPackage` call keeps cold-start scanning cheap; it is not a package
+allowlist.
+
+What actually makes tools disappear is a classpath layout from which `forPackage` resolves no URL
+at all:
+
+- nested jars (Spring Boot fat jar `BOOT-INF/lib/*.jar`)
+- special classloaders (OSGi, custom containers)
+- build-time relocation of the SDK package (shade relocation)
+
+In those cases even the SDK's own built-in tools are invisible: the model sees no local function tool,
+or a call fails with `工具未找到: xxx`.
+
+Two escape hatches:
+
+1. **Explicit registration**: call `ToolUtil.registerFunctionClasses(MyTool.class, OtherTool.class);`
+   at startup to write tool classes straight into the registry — no classpath scanning involved
+   (the class must be public, have a no-arg constructor, and expose `apply(Request)`).
+2. **Full control**: use `StaticToolRegistry` with your own `ToolExecutor` so that schema and
+   execution both come from the host, letting your container own tool instances
+   (see [Tools and registry](/docs/agent/tools-and-registry)).
+
+## 12. The conclusion to take away from this page
 
 AI4J's annotation-based tools are not "sticking a few labels on a class," but rather a generation pipeline from Java types to provider tool schema.
 

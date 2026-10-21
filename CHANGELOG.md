@@ -8,6 +8,21 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+### Added
+- Tool discovery robustness:
+  - `ToolUtil.registerFunctionClasses(Class...)` — explicit registration path for tool classes that
+    bypasses classpath scanning entirely. Use it on classpath layouts where Reflections resolves no
+    URL (nested jars such as Spring Boot fat jars, relocated SDK packages, exotic classloaders);
+    without it those layouts lose every local function tool, including the built-in ones.
+  - `ExternalScanPackageTest` pins both behaviours: an `@FunctionCall` declared outside the SDK
+    package is discovered normally, and explicit registration works when scanning does not.
+
+### Fixed
+- Documented the real scan scope in `capabilities/tools/annotation-based-tools` (zh + en) and linked
+  it from `function-calling`. `ClasspathHelper.forPackage("io.github.lnyocly.ai4j")` resolves to
+  classpath roots under Reflections 0.10, so tools are **not** restricted to that package — the
+  previous silence about this made every "my tool is not picked up" report look like a package problem.
+
 ## [2.8.1] — 2026-09-25
 
 ### Added

@@ -261,7 +261,43 @@ public class WeatherMcpService {
 
 这会显著降低 schema 漂移和模型误调用概率。
 
-## 11. 这页最该记住的结论
+## 11. 工具类要放在哪个包：扫描范围的真实语义
+
+`ToolUtil` 用 Reflections 扫描 `@FunctionCall`，扫描 URL 来自 `ToolUtil.getReflections()`：
+
+```java
+ClasspathHelper.forPackage("io.github.lnyocly.ai4j")
+```
+
+这行代码很容易被字面意思误导。Reflections 0.10 会把这个包名**解析回 classpath 根**，而不是
+`io/github/lnyocly/ai4j` 子目录，同时 `ToolUtil` 也没有设置 `filterInputsBy` 前缀过滤。在普通目录型
+classpath 下，它实际返回的是：
+
+```text
+file:/.../target/test-classes/
+file:/.../target/classes/
+```
+
+结论：**工具类放在哪个包都能被扫到**，并不存在“必须写在 `io.github.lnyocly.ai4j` 包下”的限制。
+那行 `forPackage` 的作用是把冷启动扫描限制在 classpath 根上（避免扫更多无关资源），不是包白名单。
+
+真正会让工具消失的，是 classpath 形态导致 `forPackage` 解析不出任何 URL：
+
+- 嵌套 jar（Spring Boot fat jar 的 `BOOT-INF/lib/*.jar`）
+- 特殊 classloader（OSGi、自定义容器）
+- 打包时对 SDK 做过包名重定位（shade relocation）
+
+此时连 SDK 内置工具也会一起扫不到，表现为模型看不到任何本地函数工具，或调用时报
+`工具未找到: xxx`。
+
+自救方式有两种：
+
+1. **显式登记**：启动时调用 `ToolUtil.registerFunctionClasses(MyTool.class, OtherTool.class);`，
+   把工具类直接写进注册表，不依赖 classpath 扫描（要求：类 public、有无参构造、`apply(Request)` 公开）。
+2. **完全自控**：走 `StaticToolRegistry` + 自定义 `ToolExecutor`，schema 与执行都由宿主提供，
+   顺带让工具可以交给容器管理（见 [工具与注册表](/docs/agent/tools-and-registry)）。
+
+## 12. 这页最该记住的结论
 
 AI4J 的注解式工具，不是“给类贴几个标签”，而是一条从 Java 类型到 provider tool schema 的生成链。
 
