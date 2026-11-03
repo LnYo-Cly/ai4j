@@ -262,39 +262,44 @@ Based on the current implementation, the most robust tool design is usually:
 
 This significantly reduces schema drift and the chance of model mis-invocation.
 
-## 11. Which package must a tool live in: the real scan scope
+## 11. Where a tool must live to be discovered: the real scan scope
 
-`ToolUtil` scans `@FunctionCall` with Reflections, and the scan URLs come from
-`ToolUtil.getReflections()`:
+`ToolUtil` scans `@FunctionCall` and `@McpService` with Reflections. This is **not a package-name
+restriction** — it is a **classpath-element restriction**. A tool is found only when its class lands in
+one of the classpath roots covered by the scan URLs.
+
+`scanUrls()` merges two sets of URLs:
 
 ```java
-ClasspathHelper.forPackage("io.github.lnyocly.ai4j")
+ClasspathHelper.forPackage("io.github.lnyocly.ai4j")  // roots of elements containing the SDK package
+ClasspathHelper.forPackage("")                        // roots of every classpath element
 ```
 
-That line is easy to misread. Reflections 0.10 resolves the package name **back to the classpath
-root**, not to the `io/github/lnyocly/ai4j` subdirectory, and `ToolUtil` sets no `filterInputsBy`
-prefix. On an ordinary directory classpath it actually returns:
+The first line is easy to misread. Reflections 0.10 resolves the package name back to the **root of
+the classpath element that contains it** (not to the `io/github/lnyocly/ai4j` subdirectory), and only
+returns elements that actually contain that directory. Two environments therefore behave differently:
 
-```text
-file:/.../target/test-classes/
-file:/.../target/classes/
-```
+| Environment | `forPackage("io.github.lnyocly.ai4j")` returns | User-defined tools |
+|---|---|---|
+| Running tests inside the SDK module | `target/classes/`, `target/test-classes/` (both contain the SDK package) | Any package under those roots is discovered |
+| Application depending on `ai4j.jar` | Only `ai4j.jar!/` (the application's `classes/` has no SDK package directory) | **Outside the scan set, not discovered** |
 
-So tools are discovered **regardless of their package**: there is no requirement to put them under
-`io.github.lnyocly.ai4j`. The `forPackage` call keeps cold-start scanning cheap; it is not a package
-allowlist.
+The second is the common real-world case. `ToolUtil` used to rely on that first line alone, so a
+custom `@FunctionCall` was never registered: the model saw no such tool, or a call failed with
+`工具未找到: xxx` — while the SDK's own built-in tools worked fine because they live inside the jar.
+`scanUrls()` now merges all classpath roots from `forPackage("")` so the application's classes
+directory is covered.
 
-What actually makes tools disappear is a classpath layout from which `forPackage` resolves no URL
-at all:
+The precise conclusions:
 
-- nested jars (Spring Boot fat jar `BOOT-INF/lib/*.jar`)
-- special classloaders (OSGi, custom containers)
-- build-time relocation of the SDK package (shade relocation)
+- Tools do **not** need to live in the `io.github.lnyocly.ai4j` package;
+- The classpath element holding them must be in the scan-root set (ordinary directory and ordinary jar
+  classpaths now satisfy this by default);
+- What still fails is any layout where even `forPackage("")` resolves no root: nested jars (Spring Boot
+  fat jar `BOOT-INF/lib/*.jar`), special classloaders (OSGi, custom containers), or build-time
+  relocation of the SDK package. Then even the SDK's built-in tools are invisible.
 
-In those cases even the SDK's own built-in tools are invisible: the model sees no local function tool,
-or a call fails with `工具未找到: xxx`.
-
-Two escape hatches:
+Escape hatches:
 
 1. **Explicit registration**: call `ToolUtil.registerFunctionClasses(MyTool.class, OtherTool.class);`
    at startup to write tool classes straight into the registry — no classpath scanning involved

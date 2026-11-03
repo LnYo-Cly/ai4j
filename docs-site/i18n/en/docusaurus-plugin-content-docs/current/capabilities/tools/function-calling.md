@@ -133,7 +133,7 @@ This is also AI4J's current safe default.
 Stringing the whole chain together, the flow is actually quite clear:
 
 1. You declare the tool class
-2. At runtime, `@FunctionCall` is detected by scanning (the scan is classpath-level and independent of the tool's package; see [Annotation-based tools](/docs/capabilities/tools/annotation-based-tools) for the layouts where scanning fails and how to recover)
+2. At runtime, `@FunctionCall` is detected by scanning (discovery depends on the tool's classpath element being in the scan set, not on its package; see [Annotation-based tools](/docs/capabilities/tools/annotation-based-tools))
 3. You select the tools needed for this call via `functions(...)` in the request
 4. The provider service calls `ToolUtil.getAllTools(...)` before sending
 5. Local functions are converted into the provider `tools` payload

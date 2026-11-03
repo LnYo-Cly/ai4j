@@ -261,41 +261,44 @@ public class WeatherMcpService {
 
 这会显著降低 schema 漂移和模型误调用概率。
 
-## 11. 工具类要放在哪个包：扫描范围的真实语义
+## 11. 工具类放在哪里才会被发现：扫描范围的真实语义
 
-`ToolUtil` 用 Reflections 扫描 `@FunctionCall`，扫描 URL 来自 `ToolUtil.getReflections()`：
+`ToolUtil` 用 Reflections 扫描 `@FunctionCall` 和 `@McpService`。这里**不是包名限制**，而是
+**classpath 元素限制**——能否被发现取决于工具类是否落在扫描 URL 覆盖的 classpath 根里。
+
+`scanUrls()` 的扫描 URL 由两部分合并而成：
 
 ```java
-ClasspathHelper.forPackage("io.github.lnyocly.ai4j")
+ClasspathHelper.forPackage("io.github.lnyocly.ai4j")  // 含 SDK 包目录的 classpath 元素的根
+ClasspathHelper.forPackage("")                        // 所有 classpath 元素的根
 ```
 
-这行代码很容易被字面意思误导。Reflections 0.10 会把这个包名**解析回 classpath 根**，而不是
-`io/github/lnyocly/ai4j` 子目录，同时 `ToolUtil` 也没有设置 `filterInputsBy` 前缀过滤。在普通目录型
-classpath 下，它实际返回的是：
+第一行很容易被字面意思误导：Reflections 0.10 会把包名解析回它所在 classpath 元素的**根**
+（不是 `io/github/lnyocly/ai4j` 子目录），而且只返回**包含该包目录**的那些元素。两种环境因此表现完全不同：
 
-```text
-file:/.../target/test-classes/
-file:/.../target/classes/
-```
+| 运行环境 | `forPackage("io.github.lnyocly.ai4j")` 返回 | 用户自定义工具 |
+|---|---|---|
+| SDK 模块内跑测试 | `target/classes/`、`target/test-classes/`（两者都含 SDK 包） | 同根下的任意包都能被扫到 |
+| 业务项目引用 `ai4j.jar` 启动 | 只有 `ai4j.jar!/`（业务 `classes/` 里没有 SDK 包目录） | **不在扫描范围内，扫不到** |
 
-结论：**工具类放在哪个包都能被扫到**，并不存在“必须写在 `io.github.lnyocly.ai4j` 包下”的限制。
-那行 `forPackage` 的作用是把冷启动扫描限制在 classpath 根上（避免扫更多无关资源），不是包白名单。
+第二种才是绝大多数真实用法。曾经 `ToolUtil` 只用第一行，此时自定义 `@FunctionCall` 不会被注册，
+表现为模型看不到这个工具，或调用时报 `工具未找到: xxx`；SDK 内置工具因为就在 jar 里，反倒正常。
+现在 `scanUrls()` 把 `forPackage("")` 的所有 classpath 根合并进来，业务项目的 classes 目录才被覆盖。
 
-真正会让工具消失的，是 classpath 形态导致 `forPackage` 解析不出任何 URL：
+准确结论：
 
-- 嵌套 jar（Spring Boot fat jar 的 `BOOT-INF/lib/*.jar`）
-- 特殊 classloader（OSGi、自定义容器）
-- 打包时对 SDK 做过包名重定位（shade relocation）
+- **不需要**把工具类放进 `io.github.lnyocly.ai4j` 包；
+- 但必须保证它所在的 classpath 元素在扫描根集合里（普通目录型 / 普通 jar 型 classpath 现在默认满足）；
+- 真正会失败的是 `forPackage("")` 也解析不出根的场景：嵌套 jar（Spring Boot fat jar 的
+  `BOOT-INF/lib/*.jar`）、特殊 classloader（OSGi、自定义容器）、打包时重定位了 SDK 包名。
+  此时连 SDK 内置工具也会一起扫不到。
 
-此时连 SDK 内置工具也会一起扫不到，表现为模型看不到任何本地函数工具，或调用时报
-`工具未找到: xxx`。
+自救方式：
 
-自救方式有两种：
-
-1. **显式登记**：启动时调用 `ToolUtil.registerFunctionClasses(MyTool.class, OtherTool.class);`，
-   把工具类直接写进注册表，不依赖 classpath 扫描（要求：类 public、有无参构造、`apply(Request)` 公开）。
-2. **完全自控**：走 `StaticToolRegistry` + 自定义 `ToolExecutor`，schema 与执行都由宿主提供，
-   顺带让工具可以交给容器管理（见 [工具与注册表](/docs/agent/tools-and-registry)）。
+1. **显式登记**：`ToolUtil.registerFunctionClasses(MyTool.class, OtherTool.class);` 把工具类直接写进
+   注册表，不依赖 classpath 扫描（要求：类 public、有无参构造、`apply(Request)` 公开）。
+2. **完全自控**：`StaticToolRegistry` + 自定义 `ToolExecutor`，schema 与执行都由宿主提供，也能让工具
+   交给容器管理（见 [工具与注册表](/docs/agent/tools-and-registry)）。
 
 ## 12. 这页最该记住的结论
 

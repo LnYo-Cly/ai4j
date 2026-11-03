@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,15 +31,33 @@ public class ToolUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ToolUtil.class);
 
-    // 反射扫描器，支持注解和方法扫描（延迟初始化，限定扫描范围以加速冷启动）
+    /** SDK 自身包名，用于定位 SDK 所在的 classpath 元素。 */
+    private static final String DEFAULT_SCAN_PACKAGE = "io.github.lnyocly.ai4j";
+
+    // 反射扫描器，支持注解和方法扫描（延迟初始化）
     private static volatile Reflections reflections;
+
+    /**
+     * 扫描 URL 必须同时覆盖 SDK 所在的 classpath 元素和业务项目自己的 classpath 元素。
+     *
+     * <p>{@code forPackage("io.github.lnyocly.ai4j")} 只返回"包含该包目录"的 classpath 元素的根：
+     * 在 SDK 模块内是 classes / test-classes，在引用 SDK jar 启动的业务项目里则只有 ai4j.jar。
+     * 业务项目的 classes 目录里没有 io/github/lnyocly/ai4j，不会被返回，用户自定义的
+     * {@code @FunctionCall} 就永远扫不到（表现为 {@code 工具未找到: xxx}）。因此再合并
+     * {@code forPackage("")}（所有 classpath 根），与 {@code McpToolAdapter} 保持一致。
+     */
+    private static Collection<URL> scanUrls() {
+        Collection<URL> urls = new LinkedHashSet<>(ClasspathHelper.forPackage(DEFAULT_SCAN_PACKAGE));
+        urls.addAll(ClasspathHelper.forPackage(""));
+        return urls;
+    }
 
     private static Reflections getReflections() {
         if (reflections == null) {
             synchronized (ToolUtil.class) {
                 if (reflections == null) {
                     reflections = new Reflections(new ConfigurationBuilder()
-                            .setUrls(ClasspathHelper.forPackage("io.github.lnyocly.ai4j"))
+                            .setUrls(scanUrls())
                             .setScanners(Scanners.TypesAnnotated, Scanners.MethodsAnnotated));
                 }
             }
