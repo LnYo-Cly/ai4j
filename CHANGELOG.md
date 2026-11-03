@@ -8,6 +8,27 @@ Release notes are also published on the [GitHub Releases](https://github.com/LnY
 
 ## [Unreleased]
 
+### Added
+- Tool discovery for consuming applications:
+  - `ToolUtil.scanUrls()` now merges `ClasspathHelper.forPackage("io.github.lnyocly.ai4j")` (roots of
+    elements containing the SDK package) with `ClasspathHelper.forPackage("")` (every classpath root).
+    An application depending on `ai4j.jar` previously scanned only `ai4j.jar!/`, so its own
+    `@FunctionCall` classes were never registered while the SDK's built-in tools worked — surfacing as
+    `工具未找到: xxx`. Verified with a standalone classpath probe: `getAllFunctionTools(...)` returned
+    0 before the fix and 1 after, with `invoke(...)` returning the tool result.
+  - `ToolUtil.registerFunctionClasses(Class...)`: explicit registration path that bypasses classpath
+    scanning, for layouts where even `forPackage("")` resolves no root (nested jars such as Spring
+    Boot fat jars, relocated SDK packages, exotic classloaders).
+  - `ExternalScanPackageTest` (4 tests) pins the scan-root requirement, discovery outside the SDK
+    package in a shared classpath root, explicit registration, and fail-fast on unannotated classes.
+
+### Fixed
+- `capabilities/tools/annotation-based-tools` (zh + en) now states the real discovery boundary: it is a
+  classpath-element restriction, not a package-name restriction. `function-calling` links to it. An
+  earlier revision of this section wrongly claimed tools in any package are scanned; that only holds
+  inside the SDK module itself, where `target/classes` and `target/test-classes` both contain the SDK
+  package and therefore both appear in the scan-root set.
+
 ## [2.8.1] — 2026-09-25
 
 ### Added

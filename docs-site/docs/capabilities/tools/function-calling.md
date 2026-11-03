@@ -132,7 +132,7 @@ ResponseRequest request = ResponseRequest.builder()
 把全链路串起来，流程其实很清晰：
 
 1. 你声明工具类
-2. 运行时扫描到 `@FunctionCall`
+2. 运行时扫描到 `@FunctionCall`（能否被发现取决于工具类所在的 classpath 元素是否在扫描范围内，与包名无关；详见 [注解式工具](/docs/capabilities/tools/annotation-based-tools)）
 3. 你在请求里用 `functions(...)` 选出本次需要的工具
 4. provider service 在发送前调用 `ToolUtil.getAllTools(...)`
 5. 本地函数被转换成 provider `tools` payload
