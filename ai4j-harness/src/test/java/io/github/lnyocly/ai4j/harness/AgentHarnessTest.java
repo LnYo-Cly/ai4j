@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
@@ -190,9 +189,9 @@ public class AgentHarnessTest {
                 .input("B-private-question")
                 .build());
 
-        String memoryA = JSON.toJSONString(
+        String memoryA = HarnessJson.toJson(
                 harness.getGateway().getSessionSnapshot("customer-A").getMemory().getItems());
-        String memoryB = JSON.toJSONString(
+        String memoryB = HarnessJson.toJson(
                 harness.getGateway().getSessionSnapshot("customer-B").getMemory().getItems());
         Assert.assertEquals(HarnessRunStatus.COMPLETED, customerA.getStatus());
         Assert.assertEquals(HarnessRunStatus.COMPLETED, customerB.getStatus());
@@ -233,7 +232,7 @@ public class AgentHarnessTest {
         Assert.assertEquals(task.getTaskId(), first.getExecution().getTaskId());
         Assert.assertNull("a later message does not inherit the earlier task", second.getExecution().getTaskId());
 
-        String memory = JSON.toJSONString(
+        String memory = HarnessJson.toJson(
                 harness.getGateway().getSessionSnapshot("customer-session").getMemory().getItems());
         Assert.assertTrue(memory.contains("first message"));
         Assert.assertTrue(memory.contains("second message"));
@@ -697,7 +696,7 @@ public class AgentHarnessTest {
                 .build());
 
         awaitWaitStatus(harness, waiting.getWaitId(), WaitStatus.DELIVERED);
-        String restored = JSON.toJSONString(harness.getGateway()
+        String restored = HarnessJson.toJson(harness.getGateway()
                 .getSessionSnapshot("code-session").getMemory().getItems());
         Assert.assertTrue(restored.contains("CODE_RESULT: slow operation accepted"));
         Assert.assertFalse(restored.contains(AgentToolCall.CODEACT_PENDING_RESULT_PREFIX));

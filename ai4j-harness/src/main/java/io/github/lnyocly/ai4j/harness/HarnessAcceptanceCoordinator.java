@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
 import java.util.UUID;
 
 /** Runs a host validator and durably records its result without invoking the model. */
@@ -68,7 +67,7 @@ public final class HarnessAcceptanceCoordinator {
                 .acceptanceId(acceptanceId).taskId(context.getTaskId()).executionId(context.getExecutionId())
                 .submissionId(context.getSubmissionId()).checkId(result.getCheckId())
                 .status(result.getStatus()).summary(result.getSummary())
-                .findingsJson(JSON.toJSONString(result.getFindings())).evaluatedAtEpochMs(evaluatedAt)
+                .findingsJson(HarnessJson.toJson(result.getFindings())).evaluatedAtEpochMs(evaluatedAt)
                 .provenance(provenance).acceptanceProvenance(acceptanceProvenance).build(), effectiveActor);
         EvidenceRecord evidence = null;
         if (HarnessAcceptanceStatus.PASS == result.getStatus()) {

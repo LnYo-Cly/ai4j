@@ -1,7 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
@@ -171,7 +169,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
         if (raw instanceof AgentSessionSnapshot) {
             return HarnessJson.copy((AgentSessionSnapshot) raw, AgentSessionSnapshot.class);
         }
-        return JSON.parseObject(JSON.toJSONString(raw), AgentSessionSnapshot.class);
+        return HarnessJson.convert(raw, AgentSessionSnapshot.class);
     }
 
     private HarnessAdapterState withSessionSnapshot(HarnessAdapterState state,
@@ -239,7 +237,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
             String markerJson = String.valueOf(rawText)
                     .substring(AgentToolCall.CODEACT_PENDING_RESULT_PREFIX.length()).trim();
             try {
-                JSONObject marker = JSON.parseObject(markerJson);
+                Map<String, Object> marker = HarnessJson.parseMap(markerJson);
                 if (marker == null || !callId.equals(String.valueOf(marker.get("callId")))) {
                     continue;
                 }
@@ -265,7 +263,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     }
 
     private String stringify(Object value) {
-        return value instanceof String ? (String) value : JSON.toJSONString(value);
+        return value instanceof String ? (String) value : HarnessJson.toJson(value);
     }
 
     private String approvalDeliveryOutput(Object input) {
