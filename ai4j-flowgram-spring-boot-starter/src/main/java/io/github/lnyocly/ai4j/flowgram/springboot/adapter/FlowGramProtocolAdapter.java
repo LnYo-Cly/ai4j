@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.adapter;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskReportOutput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskResultOutput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskRunInput;
@@ -14,6 +13,7 @@ import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskRunResponse;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTraceView;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateRequest;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskValidateResponse;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramJsonSupport;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -114,7 +114,7 @@ public class FlowGramProtocolAdapter {
         if (schema instanceof String) {
             return (String) schema;
         }
-        return JSON.toJSONString(schema);
+        return FlowGramJsonSupport.toJson(schema);
     }
 
     private Map<String, Object> safeMap(Map<String, Object> source) {

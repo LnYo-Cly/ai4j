@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.support;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTaskReportResponse;
 import io.github.lnyocly.ai4j.flowgram.springboot.dto.FlowGramTraceView;
 
@@ -238,11 +237,7 @@ class FlowGramTraceResponseEnricher {
         }
         Object normalized = source;
         if (!(source instanceof Map) && !(source instanceof List)) {
-            try {
-                normalized = JSON.parse(JSON.toJSONString(source));
-            } catch (RuntimeException ignored) {
-                return source;
-            }
+            normalized = FlowGramJsonSupport.tryRoundTrip(source);
         }
         if (normalized instanceof Map) {
             Map<String, Object> copy = new LinkedHashMap<String, Object>();

@@ -1,13 +1,12 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.node;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionRequest;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutor;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramJsonSupport;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,8 +57,8 @@ public class FlowGramCodeNodeExecutor implements FlowGramNodeExecutor {
     }
 
     private String buildScript(String userCode, Map<String, Object> params) {
-        String paramsJson = JSON.toJSONString(params == null ? new LinkedHashMap<String, Object>() : params);
-        String paramsLiteral = JSON.toJSONString(paramsJson);
+        String paramsJson = FlowGramJsonSupport.toJson(params == null ? new LinkedHashMap<String, Object>() : params);
+        String paramsLiteral = FlowGramJsonSupport.toJson(paramsJson);
         StringBuilder builder = new StringBuilder();
         builder.append("var params = JSON.parse(").append(paramsLiteral).append(");\n");
         builder.append("var __flowgram_input = { params: params };\n");
@@ -82,10 +81,7 @@ public class FlowGramCodeNodeExecutor implements FlowGramNodeExecutor {
         if (isBlank(rawResult)) {
             return new LinkedHashMap<String, Object>();
         }
-        Object parsed = tryParse(rawResult);
-        if (parsed instanceof JSONObject) {
-            return new LinkedHashMap<String, Object>(((JSONObject) parsed));
-        }
+        Object parsed = FlowGramJsonSupport.tryParse(rawResult);
         if (parsed instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) parsed;
@@ -94,14 +90,6 @@ public class FlowGramCodeNodeExecutor implements FlowGramNodeExecutor {
         Map<String, Object> outputs = new LinkedHashMap<String, Object>();
         outputs.put("result", parsed == null ? rawResult : parsed);
         return outputs;
-    }
-
-    private Object tryParse(String raw) {
-        try {
-            return JSON.parse(raw);
-        } catch (Exception ex) {
-            return raw;
-        }
     }
 
     private Map<String, Object> mapValue(Object value) {
