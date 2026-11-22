@@ -1,10 +1,10 @@
 package io.github.lnyocly.ai4j.cli.hook;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptDecision;
 import io.github.lnyocly.ai4j.agent.interceptor.PromptInterceptor;
+import io.github.lnyocly.ai4j.cli.CliJson;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,7 +61,7 @@ public class CliPromptInterceptor implements PromptInterceptor {
     private PromptDecision runOne(CliHookEntry hook, String input) {
         Map<String, Object> payload = new LinkedHashMap<String, Object>();
         payload.put("input", input == null ? "" : input);
-        String stdinJson = JSON.toJSONString(payload);
+        String stdinJson = CliJson.toJson(payload);
         HookCommandRunner.HookCommandResult result;
         try {
             result = runner.run(hook.getCommand(), stdinJson);
@@ -74,14 +74,14 @@ public class CliPromptInterceptor implements PromptInterceptor {
         if (result.exitCode != 0) {
             return null; // soft error: continue
         }
-        JSONObject json = parseJson(result.stdout);
+        ObjectNode json = parseJson(result.stdout);
         if (json != null) {
-            String decision = json.getString("decision");
+            String decision = CliJson.getString(json, "decision");
             if ("block".equalsIgnoreCase(decision)) {
-                return PromptDecision.block(json.getString("reason"));
+                return PromptDecision.block(CliJson.getString(json, "reason"));
             }
             if ("modify".equalsIgnoreCase(decision)) {
-                String modified = json.getString("input");
+                String modified = CliJson.getString(json, "input");
                 if (modified != null) {
                     return PromptDecision.modify(modified);
                 }
@@ -98,15 +98,8 @@ public class CliPromptInterceptor implements PromptInterceptor {
         return reason.isEmpty() ? "blocked by prompt hook" : reason;
     }
 
-    private static JSONObject parseJson(String stdout) {
-        if (stdout == null || stdout.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return JSON.parseObject(stdout);
-        } catch (Exception ignored) {
-            return null;
-        }
+    private static ObjectNode parseJson(String stdout) {
+        return CliJson.parseObjectOrNull(stdout);
     }
 
     private static String safeMessage(Throwable e) {

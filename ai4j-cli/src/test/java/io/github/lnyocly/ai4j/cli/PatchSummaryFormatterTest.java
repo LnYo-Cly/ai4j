@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.cli;
 
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.cli.render.PatchSummaryFormatter;
 import org.junit.Test;
 
@@ -35,19 +35,19 @@ public class PatchSummaryFormatterTest {
 
     @Test
     public void summarizePatchResultPrefersStructuredFileChanges() {
-        JSONObject output = new JSONObject();
-        JSONArray fileChanges = new JSONArray();
-        fileChanges.add(new JSONObject()
-                .fluentPut("path", "notes/todo.txt")
-                .fluentPut("operation", "add")
-                .fluentPut("linesAdded", 3)
-                .fluentPut("linesRemoved", 0));
-        fileChanges.add(new JSONObject()
-                .fluentPut("path", "src/App.java")
-                .fluentPut("operation", "update")
-                .fluentPut("linesAdded", 8)
-                .fluentPut("linesRemoved", 2));
-        output.put("fileChanges", fileChanges);
+        ObjectNode output = CliJson.newObject();
+        ArrayNode fileChanges = CliJson.newArray();
+        fileChanges.addObject()
+                .put("path", "notes/todo.txt")
+                .put("operation", "add")
+                .put("linesAdded", 3)
+                .put("linesRemoved", 0);
+        fileChanges.addObject()
+                .put("path", "src/App.java")
+                .put("operation", "update")
+                .put("linesAdded", 8)
+                .put("linesRemoved", 2);
+        output.set("fileChanges", fileChanges);
 
         List<String> lines = PatchSummaryFormatter.summarizePatchResult(output, 8);
 

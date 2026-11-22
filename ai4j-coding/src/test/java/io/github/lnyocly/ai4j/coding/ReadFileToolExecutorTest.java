@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.tool.ReadFileToolExecutor;
@@ -38,10 +37,10 @@ public class ReadFileToolExecutorTest {
                 .arguments("{\"path\":\"demo.txt\"}")
                 .build());
 
-        JSONObject result = JSON.parseObject(raw);
-        assertEquals("demo.txt", result.getString("path"));
-        assertEquals("alpha\nbeta", result.getString("content"));
-        assertFalse(result.getBooleanValue("truncated"));
+        ObjectNode result = CodingJson.parseObject(raw);
+        assertEquals("demo.txt", CodingJson.getString(result, "path"));
+        assertEquals("alpha\nbeta", CodingJson.getString(result, "content"));
+        assertFalse(CodingJson.getBooleanValue(result, "truncated"));
     }
 
     @Test(expected = IllegalArgumentException.class)

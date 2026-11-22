@@ -1,9 +1,10 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,62 +51,61 @@ public class GrepToolExecutorTest {
 
     @Test
     public void shouldFindAllMatchesAcrossFiles() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "TODO")));
-        assertEquals(2, result.getIntValue("totalMatches"));
-        assertEquals(2, result.getIntValue("filesMatched"));
-        assertFalse(result.getJSONArray("matches").isEmpty());
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "TODO")));
+        assertEquals(2, CodingJson.getIntValue(result, "totalMatches"));
+        assertEquals(2, CodingJson.getIntValue(result, "filesMatched"));
+        assertFalse(CodingJson.getArray(result, "matches").isEmpty());
     }
 
     @Test
     public void shouldExcludeTargetDirectory() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "TODO")));
-        for (Object match : result.getJSONArray("matches")) {
-            JSONObject m = (JSONObject) match;
-            assertFalse("target/ should be excluded", m.getString("file").startsWith("target/"));
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "TODO")));
+        for (JsonNode match : CodingJson.getArray(result, "matches")) {
+            assertFalse("target/ should be excluded", CodingJson.getString(match, "file").startsWith("target/"));
         }
     }
 
     @Test
     public void shouldReturnLineNumbersAndContent() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("pattern", "TODO");
         a.put("path", "src/Foo.java");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(1, result.getIntValue("totalMatches"));
-        JSONObject match = result.getJSONArray("matches").getJSONObject(0);
-        assertEquals("src/Foo.java", match.getString("file"));
-        assertEquals(2, match.getIntValue("line"));
-        assertTrue(match.getString("content").contains("TODO"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(1, CodingJson.getIntValue(result, "totalMatches"));
+        ObjectNode match = CodingJson.getObject(CodingJson.getArray(result, "matches"), 0);
+        assertEquals("src/Foo.java", CodingJson.getString(match, "file"));
+        assertEquals(2, CodingJson.getIntValue(match, "line"));
+        assertTrue(CodingJson.getString(match, "content").contains("TODO"));
     }
 
     @Test
     public void shouldSupportCaseInsensitive() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("pattern", "todo");
         a.put("caseInsensitive", true);
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(3, result.getIntValue("totalMatches"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(3, CodingJson.getIntValue(result, "totalMatches"));
     }
 
     @Test
     public void shouldBeCaseSensitiveByDefault() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "todo")));
-        assertEquals(1, result.getIntValue("totalMatches"));
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "todo")));
+        assertEquals(1, CodingJson.getIntValue(result, "totalMatches"));
     }
 
     @Test
     public void shouldSupportIncludeGlobFilter() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("pattern", "TODO");
         a.put("include", "*.java");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertTrue(result.getIntValue("totalMatches") >= 2);
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertTrue(CodingJson.getIntValue(result, "totalMatches") >= 2);
     }
 
     @Test
     public void shouldSupportRegexPattern() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "TODO.*implement")));
-        assertEquals(1, result.getIntValue("totalMatches"));
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "TODO.*implement")));
+        assertEquals(1, CodingJson.getIntValue(result, "totalMatches"));
     }
 
     @Test
@@ -121,9 +121,9 @@ public class GrepToolExecutorTest {
     }
 
     private String args(String key, String value) {
-        JSONObject obj = new JSONObject();
+        ObjectNode obj = CodingJson.newObject();
         obj.put(key, value);
-        return obj.toJSONString();
+        return CodingJson.toJson(obj);
     }
 
     private String execute(String args) throws Exception {

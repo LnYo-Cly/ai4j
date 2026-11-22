@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.coding.compact;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.memory.InMemoryAgentMemory;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
@@ -11,6 +10,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.CodingSessionCheckpoint;
 import io.github.lnyocly.ai4j.coding.CodingSessionCheckpointFormatter;
 import io.github.lnyocly.ai4j.coding.CodingSessionCompactResult;
@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class CodingSessionCompactor {
 
@@ -284,44 +283,45 @@ public class CodingSessionCompactor {
     }
 
     private boolean isValidCutPoint(Object item) {
-        JSONObject object = toJSONObject(item);
-        return "message".equals(object.getString("type"));
+        ObjectNode object = toObjectNode(item);
+        return "message".equals(CodingJson.getString(object, "type"));
     }
 
     private boolean isUserMessage(Object item) {
-        JSONObject object = toJSONObject(item);
-        return "message".equals(object.getString("type")) && "user".equals(object.getString("role"));
+        ObjectNode object = toObjectNode(item);
+        return "message".equals(CodingJson.getString(object, "type"))
+                && "user".equals(CodingJson.getString(object, "role"));
     }
 
     private int estimateItemTokens(Object item) {
-        JSONObject object = toJSONObject(item);
-        String type = object.getString("type");
+        ObjectNode object = toObjectNode(item);
+        String type = CodingJson.getString(object, "type");
         if ("function_call_output".equals(type)) {
-            return estimateTextTokens(object.getString("output"));
+            return estimateTextTokens(CodingJson.getString(object, "output"));
         }
         if ("message".equals(type)) {
-            JSONArray content = object.getJSONArray("content");
+            ArrayNode content = CodingJson.getArray(object, "content");
             if (content == null) {
-                return estimateTextTokens(object.toJSONString());
+                return estimateTextTokens(CodingJson.toJson(object));
             }
             int chars = 0;
             for (int i = 0; i < content.size(); i++) {
-                JSONObject part = content.getJSONObject(i);
+                ObjectNode part = CodingJson.getObject(content, i);
                 if (part == null) {
                     continue;
                 }
-                String partType = part.getString("type");
+                String partType = CodingJson.getString(part, "type");
                 if ("input_text".equals(partType) || "output_text".equals(partType)) {
-                    chars += safeText(part.getString("text")).length();
+                    chars += safeText(CodingJson.getString(part, "text")).length();
                 } else if ("input_image".equals(partType)) {
                     chars += 4800;
                 } else {
-                    chars += part.toJSONString().length();
+                    chars += CodingJson.toJson(part).length();
                 }
             }
             return estimateChars(chars);
         }
-        return estimateTextTokens(object.toJSONString());
+        return estimateTextTokens(CodingJson.toJson(object));
     }
 
     private CodingSessionCheckpoint buildCheckpoint(AgentContext context,
@@ -479,17 +479,17 @@ public class CodingSessionCompactor {
     }
 
     private String serializeItem(Object item) {
-        JSONObject object = toJSONObject(item);
-        String type = object.getString("type");
+        ObjectNode object = toObjectNode(item);
+        String type = CodingJson.getString(object, "type");
         if ("function_call_output".equals(type)) {
-            return "[Tool Result]: " + truncateForSummary(object.getString("output"));
+            return "[Tool Result]: " + truncateForSummary(CodingJson.getString(object, "output"));
         }
         if (!"message".equals(type)) {
-            return "[Context]: " + truncateForSummary(object.toJSONString());
+            return "[Context]: " + truncateForSummary(CodingJson.toJson(object));
         }
 
-        String role = object.getString("role");
-        String text = extractMessageText(object.getJSONArray("content"));
+        String role = CodingJson.getString(object, "role");
+        String text = extractMessageText(CodingJson.getArray(object, "content"));
         if ("user".equals(role)) {
             return "[User]: " + truncateForSummary(text);
         }
@@ -502,22 +502,22 @@ public class CodingSessionCompactor {
         return "[" + safeText(role) + "]: " + truncateForSummary(text);
     }
 
-    private String extractMessageText(JSONArray content) {
+    private String extractMessageText(ArrayNode content) {
         if (content == null || content.isEmpty()) {
             return "";
         }
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < content.size(); i++) {
-            JSONObject part = content.getJSONObject(i);
+            ObjectNode part = CodingJson.getObject(content, i);
             if (part == null) {
                 continue;
             }
-            String partType = part.getString("type");
+            String partType = CodingJson.getString(part, "type");
             if ("input_text".equals(partType) || "output_text".equals(partType)) {
                 if (builder.length() > 0) {
                     builder.append(' ');
                 }
-                builder.append(safeText(part.getString("text")));
+                builder.append(safeText(CodingJson.getString(part, "text")));
             } else if ("input_image".equals(partType)) {
                 if (builder.length() > 0) {
                     builder.append(' ');
@@ -527,7 +527,7 @@ public class CodingSessionCompactor {
                 if (builder.length() > 0) {
                     builder.append(' ');
                 }
-                builder.append(part.toJSONString());
+                builder.append(CodingJson.toJson(part));
             }
         }
         return builder.toString().trim();
@@ -617,10 +617,10 @@ public class CodingSessionCompactor {
         if (checkpoint == null || item == null) {
             return;
         }
-        JSONObject object = toJSONObject(item);
-        String type = object.getString("type");
+        ObjectNode object = toObjectNode(item);
+        String type = CodingJson.getString(object, "type");
         if ("function_call_output".equals(type)) {
-            String output = singleLine(object.getString("output"));
+            String output = singleLine(CodingJson.getString(object, "output"));
             if (isBlank(output)) {
                 return;
             }
@@ -637,8 +637,8 @@ public class CodingSessionCompactor {
         if (!"message".equals(type)) {
             return;
         }
-        String role = object.getString("role");
-        String text = singleLine(extractMessageText(object.getJSONArray("content")));
+        String role = CodingJson.getString(object, "role");
+        String text = singleLine(extractMessageText(CodingJson.getArray(object, "content")));
         if (isBlank(text)) {
             return;
         }
@@ -690,11 +690,12 @@ public class CodingSessionCompactor {
             return null;
         }
         for (int i = items.size() - 1; i >= 0; i--) {
-            JSONObject object = toJSONObject(items.get(i));
-            if (!"message".equals(object.getString("type")) || !"user".equals(object.getString("role"))) {
+            ObjectNode object = toObjectNode(items.get(i));
+            if (!"message".equals(CodingJson.getString(object, "type"))
+                    || !"user".equals(CodingJson.getString(object, "role"))) {
                 continue;
             }
-            String text = singleLine(extractMessageText(object.getJSONArray("content")));
+            String text = singleLine(extractMessageText(CodingJson.getArray(object, "content")));
             if (!isBlank(text)) {
                 return clip(text, 220);
             }
@@ -870,23 +871,8 @@ public class CodingSessionCompactor {
         target.add(normalized);
     }
 
-    private JSONObject toJSONObject(Object item) {
-        if (item == null) {
-            return new JSONObject();
-        }
-        if (item instanceof JSONObject) {
-            return (JSONObject) item;
-        }
-        if (item instanceof Map<?, ?>) {
-            JSONObject object = new JSONObject();
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) item).entrySet()) {
-                if (entry.getKey() != null) {
-                    object.put(String.valueOf(entry.getKey()), entry.getValue());
-                }
-            }
-            return object;
-        }
-        return JSON.parseObject(JSON.toJSONString(item));
+    private ObjectNode toObjectNode(Object item) {
+        return CodingJson.toObjectNode(item);
     }
 
     private List<Object> copySlice(List<Object> rawItems, int from, int to) {

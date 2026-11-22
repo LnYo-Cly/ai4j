@@ -28,7 +28,6 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
-import com.alibaba.fastjson2.JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -614,8 +613,8 @@ public class CodingSessionTest {
                 .payload(Collections.<String, Object>singletonMap("input", "hello"))
                 .build();
 
-        String json = JSON.toJSONString(event);
-        Map<?, ?> parsed = JSON.parseObject(json, Map.class);
+        String json = CodingJson.toJson(event);
+        Map<?, ?> parsed = CodingJson.parseMap(json);
         assertEquals("event-1", parsed.get("eventId"));
         assertEquals("run-1", parsed.get("runId"));
         assertEquals("session-1", parsed.get("sessionId"));

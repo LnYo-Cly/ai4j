@@ -1,7 +1,9 @@
 package io.github.lnyocly.ai4j.cli.render;
 
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,15 +41,15 @@ public final class PatchSummaryFormatter {
         return lines;
     }
 
-    public static List<String> summarizePatchResult(JSONObject output, int maxItems) {
+    public static List<String> summarizePatchResult(ObjectNode output, int maxItems) {
         if (output == null || maxItems <= 0) {
             return Collections.emptyList();
         }
         List<String> lines = new ArrayList<String>();
-        JSONArray fileChanges = output.getJSONArray("fileChanges");
+        ArrayNode fileChanges = CliJson.getArray(output, "fileChanges");
         if (fileChanges != null) {
             for (int i = 0; i < fileChanges.size() && lines.size() < maxItems; i++) {
-                String summary = formatPatchFileChange(fileChanges.getJSONObject(i));
+                String summary = formatPatchFileChange(CliJson.getObject(fileChanges, i));
                 if (!isBlank(summary)) {
                     lines.add(summary);
                 }
@@ -56,29 +58,29 @@ public final class PatchSummaryFormatter {
                 return lines;
             }
         }
-        JSONArray changedFiles = output.getJSONArray("changedFiles");
+        ArrayNode changedFiles = CliJson.getArray(output, "changedFiles");
         if (changedFiles != null) {
             for (int i = 0; i < changedFiles.size() && lines.size() < maxItems; i++) {
-                Object changedFile = changedFiles.get(i);
-                if (changedFile != null) {
-                    lines.add("Edited " + String.valueOf(changedFile));
+                JsonNode changedFile = changedFiles.get(i);
+                if (changedFile != null && !changedFile.isNull()) {
+                    lines.add("Edited " + changedFile.asText());
                 }
             }
         }
         return lines;
     }
 
-    public static String formatPatchFileChange(JSONObject change) {
+    public static String formatPatchFileChange(ObjectNode change) {
         if (change == null) {
             return null;
         }
-        String path = safeTrimToNull(change.getString("path"));
+        String path = safeTrimToNull(CliJson.getString(change, "path"));
         if (isBlank(path)) {
             return null;
         }
-        String operation = firstNonBlank(change.getString("operation"), "update").toLowerCase(Locale.ROOT);
-        int linesAdded = change.getIntValue("linesAdded");
-        int linesRemoved = change.getIntValue("linesRemoved");
+        String operation = firstNonBlank(CliJson.getString(change, "operation"), "update").toLowerCase(Locale.ROOT);
+        int linesAdded = CliJson.getIntValue(change, "linesAdded");
+        int linesRemoved = CliJson.getIntValue(change, "linesRemoved");
         String verb;
         if ("add".equals(operation)) {
             verb = "Created";

@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
@@ -186,7 +185,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
         if (raw == null) {
             return null;
         }
-        return JSON.parseObject(JSON.toJSONString(raw), CodingSessionState.class);
+        return CodingJson.convertValue(raw, CodingSessionState.class);
     }
 
     private HarnessAdapterState withState(HarnessAdapterState source,
@@ -255,8 +254,8 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
             String markerJson = String.valueOf(rawText)
                     .substring(AgentToolCall.CODEACT_PENDING_RESULT_PREFIX.length()).trim();
             try {
-                JSONObject marker = JSON.parseObject(markerJson);
-                if (marker == null || !callId.equals(String.valueOf(marker.get("callId")))) {
+                ObjectNode marker = CodingJson.parseObject(markerJson);
+                if (marker == null || !callId.equals(CodingJson.getString(marker, "callId"))) {
                     continue;
                 }
             } catch (RuntimeException ignored) {
@@ -281,7 +280,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
     }
 
     private String stringify(Object value) {
-        return value instanceof String ? (String) value : JSON.toJSONString(value);
+        return value instanceof String ? (String) value : CodingJson.toJson(value);
     }
 
     private String firstNonBlank(String first, String second) {
@@ -350,7 +349,7 @@ public final class CodingAgentHarnessExecutionAdapter implements HarnessExecutio
         if (input == null || input instanceof String) {
             return (String) input;
         }
-        return JSON.toJSONString(input);
+        return CodingJson.toJson(input);
     }
 
     private String checkpointSummary(AgentExecutionStatus status, CodingAgentResult result) {

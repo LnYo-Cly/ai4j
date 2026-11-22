@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.cli.hook;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEvent;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleEventType;
 import io.github.lnyocly.ai4j.extension.lifecycle.AgentLifecycleHook;
@@ -50,7 +50,7 @@ public class CliLifecycleHookBridge implements AgentLifecycleHook {
         if (hooks == null || hooks.isEmpty()) {
             return;
         }
-        String stdinJson = JSON.toJSONString(event);
+        String stdinJson = CliJson.toJson(event);
         for (CliHookEntry hook : hooks) {
             if (hook == null || hook.getCommand() == null || hook.getCommand().trim().isEmpty()) {
                 continue;

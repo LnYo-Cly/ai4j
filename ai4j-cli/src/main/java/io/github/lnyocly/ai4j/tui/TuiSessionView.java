@@ -1,8 +1,9 @@
 package io.github.lnyocly.ai4j.tui;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.coding.CodingSessionCheckpoint;
 import io.github.lnyocly.ai4j.coding.CodingSessionSnapshot;
 import io.github.lnyocly.ai4j.coding.process.BashProcessInfo;
@@ -519,7 +520,7 @@ public class TuiSessionView implements TuiRenderer {
             return callId;
         }
         String toolName = payloadString(payload, "tool");
-        JSONObject arguments = parseObject(payloadString(payload, "arguments"));
+        ObjectNode arguments = parseObject(payloadString(payload, "arguments"));
         return firstNonBlank(toolName, "tool") + "|"
                 + firstNonBlank(trimToNull(payloadString(payload, "title")), buildToolTitle(toolName, arguments));
     }
@@ -671,7 +672,7 @@ public class TuiSessionView implements TuiRenderer {
         if (isBlank(toolName)) {
             return null;
         }
-        JSONObject arguments = parseObject(payloadString(payload, "arguments"));
+        ObjectNode arguments = parseObject(payloadString(payload, "arguments"));
         String title = firstNonBlank(trimToNull(payloadString(payload, "title")), buildToolTitle(toolName, arguments));
         List<String> previewLines = payloadLines(payload, "previewLines");
         if (event.getType() == SessionEventType.TOOL_CALL) {
@@ -689,7 +690,7 @@ public class TuiSessionView implements TuiRenderer {
         }
 
         String rawOutput = payloadString(payload, "output");
-        JSONObject output = parseObject(rawOutput);
+        ObjectNode output = parseObject(rawOutput);
         if (previewLines.isEmpty()) {
             previewLines = buildToolPreviewLines(toolName, arguments, output, rawOutput);
         }
@@ -886,54 +887,48 @@ public class TuiSessionView implements TuiRenderer {
         return firstNonBlank(tool.getToolName(), "tool");
     }
 
-    private JSONObject parseObject(String rawJson) {
-        if (isBlank(rawJson)) {
-            return null;
-        }
-        try {
-            return JSON.parseObject(rawJson);
-        } catch (Exception ex) {
-            return null;
-        }
+    private ObjectNode parseObject(String rawJson) {
+        return CliJson.parseObjectOrNull(rawJson);
     }
 
-    private boolean isToolError(JSONObject output, String rawOutput) {
+    private boolean isToolError(ObjectNode output, String rawOutput) {
         return !isBlank(extractToolError(output, rawOutput));
     }
 
-    private String extractToolError(JSONObject output, String rawOutput) {
+    private String extractToolError(ObjectNode output, String rawOutput) {
         if (!isBlank(rawOutput) && rawOutput.startsWith("TOOL_ERROR:")) {
-            JSONObject errorPayload = parseObject(rawOutput.substring("TOOL_ERROR:".length()).trim());
-            if (errorPayload != null && !isBlank(errorPayload.getString("error"))) {
-                return errorPayload.getString("error");
+            ObjectNode errorPayload = parseObject(rawOutput.substring("TOOL_ERROR:".length()).trim());
+            String errorMessage = CliJson.getString(errorPayload, "error");
+            if (!isBlank(errorMessage)) {
+                return errorMessage;
             }
             return rawOutput.substring("TOOL_ERROR:".length()).trim();
         }
         if (!isBlank(rawOutput) && rawOutput.startsWith("CODE_ERROR:")) {
             return rawOutput.substring("CODE_ERROR:".length()).trim();
         }
-        return output == null ? null : trimToNull(output.getString("error"));
+        return output == null ? null : trimToNull(CliJson.getString(output, "error"));
     }
 
-    private String buildToolTitle(String toolName, JSONObject arguments) {
+    private String buildToolTitle(String toolName, ObjectNode arguments) {
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) || "start".equals(action)) {
-                String command = firstNonBlank(arguments == null ? null : arguments.getString("command"), null);
+                String command = firstNonBlank(CliJson.getString(arguments, "command"), null);
                 return isBlank(command) ? "bash " + action : "$ " + command;
             }
             if ("write".equals(action)) {
-                return "bash write " + firstNonBlank(arguments == null ? null : arguments.getString("processId"), "(process)");
+                return "bash write " + firstNonBlank(CliJson.getString(arguments, "processId"), "(process)");
             }
             if ("logs".equals(action) || "status".equals(action) || "stop".equals(action)) {
-                return "bash " + action + " " + firstNonBlank(arguments == null ? null : arguments.getString("processId"), "(process)");
+                return "bash " + action + " " + firstNonBlank(CliJson.getString(arguments, "processId"), "(process)");
             }
             return "bash " + action;
         }
         if ("read_file".equals(toolName)) {
-            String path = arguments == null ? null : arguments.getString("path");
-            Integer startLine = arguments == null ? null : arguments.getInteger("startLine");
-            Integer endLine = arguments == null ? null : arguments.getInteger("endLine");
+            String path = CliJson.getString(arguments, "path");
+            Integer startLine = CliJson.getInteger(arguments, "startLine");
+            Integer endLine = CliJson.getInteger(arguments, "endLine");
             String range = startLine == null ? "" : ":" + startLine + (endLine == null ? "" : "-" + endLine);
             return "read " + firstNonBlank(path, "(path)") + range;
         }
@@ -943,9 +938,9 @@ public class TuiSessionView implements TuiRenderer {
         return firstNonBlank(toolName, "tool");
     }
 
-    private String buildPendingToolDetail(String toolName, JSONObject arguments) {
+    private String buildPendingToolDetail(String toolName, ObjectNode arguments) {
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) || "start".equals(action)) {
                 return "Running command...";
             }
@@ -972,33 +967,33 @@ public class TuiSessionView implements TuiRenderer {
         return "Running tool...";
     }
 
-    private List<String> buildPendingToolPreviewLines(String toolName, JSONObject arguments) {
+    private List<String> buildPendingToolPreviewLines(String toolName, ObjectNode arguments) {
         return new ArrayList<String>();
     }
 
     private String buildCompletedToolDetail(String toolName,
-                                            JSONObject arguments,
-                                            JSONObject output,
+                                            ObjectNode arguments,
+                                            ObjectNode output,
                                             String rawOutput) {
         String toolError = extractToolError(output, rawOutput);
         if (!isBlank(toolError)) {
             return clip(toolError, 96);
         }
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) && output != null) {
-                if (output.getBooleanValue("timedOut")) {
+                if (CliJson.getBooleanValue(output, "timedOut")) {
                     return "timed out";
                 }
                 return null;
             }
             if (("start".equals(action) || "status".equals(action) || "stop".equals(action)) && output != null) {
-                String processId = firstNonBlank(output.getString("processId"), "process");
-                String status = trimToNull(output.getString("status"));
+                String processId = firstNonBlank(CliJson.getString(output, "processId"), "process");
+                String status = trimToNull(CliJson.getString(output, "status"));
                 return isBlank(status) ? processId : processId + " | " + status.toLowerCase(Locale.ROOT);
             }
             if ("write".equals(action) && output != null) {
-                return output.getIntValue("bytesWritten") + " bytes written";
+                return CliJson.getIntValue(output, "bytesWritten") + " bytes written";
             }
             if ("logs".equals(action) && output != null) {
                 return null;
@@ -1006,12 +1001,12 @@ public class TuiSessionView implements TuiRenderer {
             return clip(rawOutput, 96);
         }
         if ("read_file".equals(toolName) && output != null) {
-            return firstNonBlank(output.getString("path"), firstNonBlank(arguments == null ? null : arguments.getString("path"), "(path)"))
-                    + ":" + output.getIntValue("startLine") + "-" + output.getIntValue("endLine")
-                    + (output.getBooleanValue("truncated") ? " | truncated" : "");
+            return firstNonBlank(CliJson.getString(output, "path"), firstNonBlank(CliJson.getString(arguments, "path"), "(path)"))
+                    + ":" + CliJson.getIntValue(output, "startLine") + "-" + CliJson.getIntValue(output, "endLine")
+                    + (CliJson.getBooleanValue(output, "truncated") ? " | truncated" : "");
         }
         if ("apply_patch".equals(toolName) && output != null) {
-            int filesChanged = output.getIntValue("filesChanged");
+            int filesChanged = CliJson.getIntValue(output, "filesChanged");
             if (filesChanged <= 0) {
                 return null;
             }
@@ -1021,25 +1016,25 @@ public class TuiSessionView implements TuiRenderer {
     }
 
     private List<String> buildToolPreviewLines(String toolName,
-                                               JSONObject arguments,
-                                               JSONObject output,
+                                               ObjectNode arguments,
+                                               ObjectNode output,
                                                String rawOutput) {
         List<String> previewLines = new ArrayList<String>();
         if (!isBlank(extractToolError(output, rawOutput))) {
             return previewLines;
         }
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) && output != null) {
-                addCommandPreviewLines(previewLines, output.getString("stdout"), output.getString("stderr"));
+                addCommandPreviewLines(previewLines, CliJson.getString(output, "stdout"), CliJson.getString(output, "stderr"));
                 return previewLines;
             }
             if ("logs".equals(action) && output != null) {
-                addPlainPreviewLines(previewLines, output.getString("content"));
+                addPlainPreviewLines(previewLines, CliJson.getString(output, "content"));
                 return previewLines;
             }
             if (("start".equals(action) || "status".equals(action) || "stop".equals(action)) && output != null) {
-                addPreviewLine(previewLines, "command", output.getString("command"));
+                addPreviewLine(previewLines, "command", CliJson.getString(output, "command"));
                 return previewLines;
             }
             if ("write".equals(action) && output != null) {
@@ -1048,17 +1043,18 @@ public class TuiSessionView implements TuiRenderer {
             return previewLines;
         }
         if ("read_file".equals(toolName) && output != null) {
-            addPreviewLines(previewLines, "file", output.getString("content"), 4);
+            addPreviewLines(previewLines, "file", CliJson.getString(output, "content"), 4);
             if (previewLines.isEmpty()) {
                 previewLines.add("file> (empty file)");
             }
             return previewLines;
         }
         if ("apply_patch".equals(toolName) && output != null) {
-            JSONArray changedFiles = output.getJSONArray("changedFiles");
+            ArrayNode changedFiles = CliJson.getArray(output, "changedFiles");
             if (changedFiles != null) {
                 for (int i = 0; i < changedFiles.size() && i < 4; i++) {
-                    previewLines.add("file> " + String.valueOf(changedFiles.get(i)));
+                    JsonNode changedFile = changedFiles.get(i);
+                    previewLines.add("file> " + (changedFile == null || changedFile.isNull() ? "null" : changedFile.asText()));
                 }
             }
             return previewLines;
@@ -1975,11 +1971,18 @@ public class TuiSessionView implements TuiRenderer {
             if (isBlank(raw)) {
                 return new ArrayList<String>();
             }
-            try {
-                return toStringLines(JSON.parseArray(raw));
-            } catch (Exception ignored) {
+            ArrayNode array = CliJson.parseArrayOrNull(raw);
+            if (array == null) {
                 return new ArrayList<String>();
             }
+            List<String> lines = new ArrayList<String>();
+            for (int i = 0; i < array.size(); i++) {
+                String line = CliJson.getString(array, i);
+                if (!isBlank(line)) {
+                    lines.add(line);
+                }
+            }
+            return lines;
         }
         return new ArrayList<String>();
     }

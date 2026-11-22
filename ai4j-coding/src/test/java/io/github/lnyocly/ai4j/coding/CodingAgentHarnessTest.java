@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
@@ -288,7 +287,7 @@ public class CodingAgentHarnessTest {
     private HarnessAdapterState adapterState(CodingAgentHarness harness, String checkpointId) {
         Object raw = harness.getGateway().getCheckpoint(checkpointId).getState()
                 .get("harnessAdapterState");
-        return JSON.parseObject(JSON.toJSONString(raw), HarnessAdapterState.class);
+        return CodingJson.convertValue(raw, HarnessAdapterState.class);
     }
 
     private void awaitWait(CodingAgentHarness harness, String waitId) throws Exception {
