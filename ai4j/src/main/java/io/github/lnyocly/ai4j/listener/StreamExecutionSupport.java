@@ -56,6 +56,16 @@ public final class StreamExecutionSupport {
                 }
                 throw new RuntimeException(failure);
             }
+            if (listener instanceof RetryEligibility
+                    && !((RetryEligibility) listener).allowsRetry(failure)) {
+                if (failure instanceof Exception) {
+                    throw (Exception) failure;
+                }
+                if (failure instanceof Error) {
+                    throw (Error) failure;
+                }
+                throw new RuntimeException(failure);
+            }
 
             int nextAttempt = attempt + 1;
             listener.onRetrying(failure, nextAttempt, maxAttempts);
