@@ -102,6 +102,11 @@
                 <artifactId>ai4j-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
