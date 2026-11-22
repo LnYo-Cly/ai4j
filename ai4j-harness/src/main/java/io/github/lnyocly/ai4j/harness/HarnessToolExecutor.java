@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.control.AgentHostInputException;
 import io.github.lnyocly.ai4j.agent.permission.AgentApprovalRequiredException;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
@@ -235,7 +234,7 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
         WaitRecord wait = context.getGateway().requestApproval(context.getExecutionId(),
                 context.getTaskId(), call.getName(), call.getCallId(), call.getArguments(),
                 invocationId, context.getActor());
-        String output = "HARNESS_APPROVAL_REQUIRED: " + JSON.toJSONString(payload)
+        String output = "HARNESS_APPROVAL_REQUIRED: " + HarnessJson.toJson(payload)
                 + "; waitId=" + wait.getWaitId();
         AgentToolResult result = AgentToolResult.builder()
                 .name(call.getName())
@@ -253,7 +252,7 @@ public final class HarnessToolExecutor implements AsyncToolExecutor {
         WaitRecord wait = ensureToolWait(call, null, WaitType.USER_INPUT);
         context.getGateway().markToolInvocationWaiting(invocationId, null,
                 wait.getWaitId(), context.getActor());
-        String output = "HARNESS_USER_INPUT_REQUIRED: " + JSON.toJSONString(cause.getRequest())
+        String output = "HARNESS_USER_INPUT_REQUIRED: " + HarnessJson.toJson(cause.getRequest())
                 + "; waitId=" + wait.getWaitId();
         AgentToolResult result = AgentToolResult.builder()
                 .name(call.getName())

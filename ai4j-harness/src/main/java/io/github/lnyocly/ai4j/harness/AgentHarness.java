@@ -1,7 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -493,7 +491,7 @@ public final class AgentHarness implements AutoCloseable {
                     Collections.<String, Object>singletonMap("request", inputException.getRequest()), actor);
             executionStatus = ExecutionStatus.WAITING;
             waitId = wait.getWaitId();
-            outputText = "HARNESS_USER_INPUT_REQUIRED: " + JSON.toJSONString(inputException.getRequest());
+            outputText = "HARNESS_USER_INPUT_REQUIRED: " + HarnessJson.toJson(inputException.getRequest());
         } catch (AgentApprovalRequiredException approvalException) {
             String toolName = approvalException.getRequest() == null
                     ? null : approvalException.getRequest().getToolName();
@@ -541,7 +539,7 @@ public final class AgentHarness implements AutoCloseable {
         if (adapterState != null) {
             HarnessAdapterState state = adapterState;
             checkpointState.put("harnessAdapterType", state.getAdapterType());
-            checkpointState.put("harnessAdapterState", JSON.parseObject(JSON.toJSONString(state)));
+            checkpointState.put("harnessAdapterState", HarnessJson.toMap(state));
         }
         AgentSessionSnapshot legacySessionSnapshot = executionAdapter instanceof AgentHarnessExecutionAdapter
                 ? ((AgentHarnessExecutionAdapter) executionAdapter).sessionSnapshot(adapterState) : null;
@@ -649,8 +647,8 @@ public final class AgentHarness implements AutoCloseable {
             return null;
         }
         HarnessAdapterState state = raw instanceof String
-                ? JSON.parseObject((String) raw, HarnessAdapterState.class)
-                : JSON.parseObject(JSON.toJSONString(raw), HarnessAdapterState.class);
+                ? HarnessJson.fromJson((String) raw, HarnessAdapterState.class)
+                : HarnessJson.convert(raw, HarnessAdapterState.class);
         if (state != null && state.getAdapterType() != null
                 && !state.getAdapterType().equals(executionAdapter.getAdapterType())) {
             throw new HarnessConflictException("execution adapter type mismatch: " + state.getAdapterType());
@@ -1134,7 +1132,7 @@ public final class AgentHarness implements AutoCloseable {
             String markerJson = String.valueOf(rawText)
                     .substring(AgentToolCall.CODEACT_PENDING_RESULT_PREFIX.length()).trim();
             try {
-                JSONObject marker = JSON.parseObject(markerJson);
+                Map<String, Object> marker = HarnessJson.parseMap(markerJson);
                 if (marker == null || !callId.equals(String.valueOf(marker.get("callId")))) {
                     continue;
                 }
@@ -1238,7 +1236,7 @@ public final class AgentHarness implements AutoCloseable {
     }
 
     private String stringify(Object value) {
-        return value instanceof String ? (String) value : JSON.toJSONString(value);
+        return value instanceof String ? (String) value : HarnessJson.toJson(value);
     }
 
     private Map<String, Object> mapOf(Object... values) {
