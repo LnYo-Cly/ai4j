@@ -1,10 +1,10 @@
 package io.github.lnyocly.ai4j.testing;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
+import io.github.lnyocly.ai4j.codec.JsonCodecException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,26 +99,26 @@ public final class ModelFixture {
         if (json == null || json.trim().isEmpty()) {
             throw new IllegalArgumentException("model fixture json is empty");
         }
-        JSONObject root;
+        JsonNode root;
         try {
-            root = JSON.parseObject(json);
-        } catch (RuntimeException e) {
+            root = JsonCodec.readTree(json);
+        } catch (JsonCodecException e) {
             throw new IllegalArgumentException("model fixture is not valid JSON: " + e.getMessage(), e);
         }
-        if (root == null) {
+        if (root == null || !root.isObject()) {
             throw new IllegalArgumentException("model fixture is not a JSON object");
         }
-        JSONArray rawExchanges = root.getJSONArray("exchanges");
-        if (rawExchanges == null || rawExchanges.isEmpty()) {
+        JsonNode rawExchanges = root.get("exchanges");
+        if (rawExchanges == null || !rawExchanges.isArray() || rawExchanges.size() == 0) {
             throw new IllegalArgumentException("model fixture requires a non-empty 'exchanges' array");
         }
         List<Exchange> exchanges = new ArrayList<Exchange>(rawExchanges.size());
         for (int i = 0; i < rawExchanges.size(); i++) {
-            exchanges.add(parseExchange(rawExchanges.getJSONObject(i), i));
+            exchanges.add(parseExchange(rawExchanges.get(i), i));
         }
         return new ModelFixture(
-                root.getString("name"),
-                root.getString("recordedFrom"),
+                nullableText(root.get("name")),
+                nullableText(root.get("recordedFrom")),
                 Collections.unmodifiableList(exchanges));
     }
 
@@ -139,15 +139,15 @@ public final class ModelFixture {
         return parse(new String(out.toByteArray(), StandardCharsets.UTF_8));
     }
 
-    private static Exchange parseExchange(JSONObject node, int index) {
-        if (node == null) {
+    private static Exchange parseExchange(JsonNode node, int index) {
+        if (node == null || !node.isObject()) {
             throw new IllegalArgumentException("exchange[" + index + "] is not a JSON object");
         }
-        JSONArray pins = node.getJSONArray("expectedPromptContains");
+        JsonNode pins = node.get("expectedPromptContains");
         List<String> expectedPromptContains = new ArrayList<String>();
-        if (pins != null) {
+        if (pins != null && pins.isArray()) {
             for (int i = 0; i < pins.size(); i++) {
-                String pin = pins.getString(i);
+                String pin = nullableText(pins.get(i));
                 if (pin != null && !pin.isEmpty()) {
                     expectedPromptContains.add(pin);
                 }
@@ -155,38 +155,66 @@ public final class ModelFixture {
         }
         return new Exchange(
                 Collections.unmodifiableList(expectedPromptContains),
-                parseResponse(node.getJSONObject("response"), index));
+                parseResponse(node.get("response"), index));
     }
 
-    private static AgentModelResult parseResponse(JSONObject node, int index) {
-        if (node == null) {
+    private static AgentModelResult parseResponse(JsonNode node, int index) {
+        if (node == null || !node.isObject()) {
             throw new IllegalArgumentException("exchange[" + index + "] requires a 'response' object");
         }
         AgentModelResult.AgentModelResultBuilder builder = AgentModelResult.builder()
-                .outputText(node.getString("outputText"))
-                .reasoningText(node.getString("reasoningText"))
-                .inputTokens(node.getLong("inputTokens"))
-                .outputTokens(node.getLong("outputTokens"))
-                .totalTokens(node.getLong("totalTokens"));
+                .outputText(nullableText(node.get("outputText")))
+                .reasoningText(nullableText(node.get("reasoningText")))
+                .inputTokens(nullableLong(node.get("inputTokens")))
+                .outputTokens(nullableLong(node.get("outputTokens")))
+                .totalTokens(nullableLong(node.get("totalTokens")));
 
-        JSONArray rawCalls = node.getJSONArray("toolCalls");
-        if (rawCalls != null && !rawCalls.isEmpty()) {
+        JsonNode rawCalls = node.get("toolCalls");
+        if (rawCalls != null && rawCalls.isArray() && rawCalls.size() > 0) {
             List<AgentToolCall> calls = new ArrayList<AgentToolCall>(rawCalls.size());
             for (int i = 0; i < rawCalls.size(); i++) {
-                JSONObject callNode = rawCalls.getJSONObject(i);
-                if (callNode == null || callNode.getString("name") == null) {
+                JsonNode callNode = rawCalls.get(i);
+                String name = callNode == null || !callNode.isObject() ? null : nullableText(callNode.get("name"));
+                if (name == null) {
                     throw new IllegalArgumentException(
                             "exchange[" + index + "].toolCalls[" + i + "] requires a 'name'");
                 }
                 calls.add(AgentToolCall.builder()
-                        .name(callNode.getString("name"))
-                        .arguments(callNode.getString("arguments"))
-                        .callId(callNode.getString("callId"))
-                        .type(callNode.getString("type"))
+                        .name(name)
+                        .arguments(nullableText(callNode.get("arguments")))
+                        .callId(nullableText(callNode.get("callId")))
+                        .type(nullableText(callNode.get("type")))
                         .build());
             }
             builder.toolCalls(calls);
         }
         return builder.build();
+    }
+
+    private static String nullableText(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return null;
+        }
+        return node.isValueNode() ? node.asText() : JsonCodec.toJson(node);
+    }
+
+    private static Long nullableLong(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return null;
+        }
+        if (node.isNumber()) {
+            return Long.valueOf(node.longValue());
+        }
+        if (node.isTextual()) {
+            String text = node.asText().trim();
+            if (!text.isEmpty()) {
+                try {
+                    return Long.valueOf(Long.parseLong(text));
+                } catch (NumberFormatException ignored) {
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 }
