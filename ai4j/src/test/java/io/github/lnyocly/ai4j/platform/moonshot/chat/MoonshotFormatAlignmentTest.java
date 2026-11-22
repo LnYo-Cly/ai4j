@@ -1,12 +1,15 @@
 package io.github.lnyocly.ai4j.platform.moonshot.chat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.config.MoonshotConfig;
+import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletion;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotUsage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Content;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.service.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -151,5 +154,37 @@ public class MoonshotFormatAlignmentTest {
 
         Assert.assertEquals("image_url", image.getType());
         Assert.assertNull(image.getVideoUrl());
+    }
+
+    @Test
+    public void nullTemperatureDoesNotThrowAndPreservesMoonshotDefault() {
+        Configuration configuration = new Configuration();
+        configuration.setMoonshotConfig(new MoonshotConfig());
+        MoonshotChatService service = new MoonshotChatService(configuration);
+
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("moonshot-v1-8k")
+                .messages(Collections.singletonList(ChatMessage.withUser("hi")))
+                .temperature(null)
+                .build();
+
+        MoonshotChatCompletion converted = service.convertChatCompletionObject(chatCompletion);
+        Assert.assertEquals(Float.valueOf(0.3f), converted.getTemperature());
+    }
+
+    @Test
+    public void nonNullTemperatureIsHalvedForMoonshot() {
+        Configuration configuration = new Configuration();
+        configuration.setMoonshotConfig(new MoonshotConfig());
+        MoonshotChatService service = new MoonshotChatService(configuration);
+
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("moonshot-v1-8k")
+                .messages(Collections.singletonList(ChatMessage.withUser("hi")))
+                .temperature(0.8f)
+                .build();
+
+        MoonshotChatCompletion converted = service.convertChatCompletionObject(chatCompletion);
+        Assert.assertEquals(Float.valueOf(0.4f), converted.getTemperature());
     }
 }

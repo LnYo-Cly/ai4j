@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.testing;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentModelStreamListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,7 +88,7 @@ public class ReplayModelClient extends ScriptedModelClient {
         if (exchange.getExpectedPromptContains().isEmpty()) {
             return;
         }
-        String rendered = JSON.toJSONString(prompt);
+        String rendered = JsonCodec.toJson(prompt);
         for (String expected : exchange.getExpectedPromptContains()) {
             if (!rendered.contains(expected)) {
                 throw new IllegalStateException("Replay fixture '" + fixture.getName()

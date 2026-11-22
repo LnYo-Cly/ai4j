@@ -84,7 +84,10 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         moonshotChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
         moonshotChatCompletion.setStop(chatCompletion.getStop());
         moonshotChatCompletion.setStream(chatCompletion.getStream());
-        moonshotChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
+        Float temp = chatCompletion.getTemperature();
+        if (temp != null) {
+            moonshotChatCompletion.setTemperature(temp / 2);
+        }
         moonshotChatCompletion.setTopP(chatCompletion.getTopP());
         moonshotChatCompletion.setTools(chatCompletion.getTools());
         moonshotChatCompletion.setFunctions(chatCompletion.getFunctions());

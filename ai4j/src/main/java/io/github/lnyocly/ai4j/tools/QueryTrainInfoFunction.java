@@ -11,7 +11,9 @@ import java.util.function.Function;
  * @Author cly
  * @Description TODO
  * @Date 2024/8/12 14:45
+ * @deprecated Sample function tool retained only for legacy demos.
  */
+@Deprecated
 @FunctionCall(name = "queryTrainInfo", description = "查询火车是否发车信息")
 public class QueryTrainInfoFunction implements Function<QueryTrainInfoFunction.Request, String> {
 
@@ -28,6 +30,9 @@ public class QueryTrainInfoFunction implements Function<QueryTrainInfoFunction.R
 
     @Override
     public String apply(Request request) {
+        if (request == null || request.type == null) {
+            return "天气情况较差，不允许发车";
+        }
         if (request.type > 35) {
             return "天气情况正常，允许发车";
         }
