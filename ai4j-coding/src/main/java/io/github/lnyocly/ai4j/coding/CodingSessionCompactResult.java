@@ -1,10 +1,14 @@
 package io.github.lnyocly.ai4j.coding;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class CodingSessionCompactResult {
 
     private String sessionId;

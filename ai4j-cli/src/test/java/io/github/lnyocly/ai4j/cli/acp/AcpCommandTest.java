@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.cli.acp;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
@@ -15,6 +14,7 @@ import io.github.lnyocly.ai4j.agent.team.AgentTeamPlan;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTask;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.cli.ApprovalMode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptionsParser;
@@ -83,18 +83,18 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
+        List<ObjectNode> messages = parseLines(out);
         Assert.assertTrue(hasResponse(messages, 1));
         Assert.assertTrue(hasResponse(messages, 2));
         Assert.assertTrue(hasResponse(messages, 3));
-        JSONObject newSessionResult = responseResult(messages, 2);
-        Assert.assertEquals("acp-session", newSessionResult.getString("sessionId"));
-        Assert.assertTrue(containsConfigOption(newSessionResult.getJSONArray("configOptions"), "mode"));
-        Assert.assertTrue(containsConfigOption(newSessionResult.getJSONArray("configOptions"), "model"));
-        Assert.assertEquals("safe", newSessionResult.getJSONObject("modes").getString("currentModeId"));
-        JSONObject availableCommands = findSessionUpdate(messages, "available_commands_update");
+        ObjectNode newSessionResult = responseResult(messages, 2);
+        Assert.assertEquals("acp-session", CliJson.getString(newSessionResult, "sessionId"));
+        Assert.assertTrue(containsConfigOption(CliJson.getArray(newSessionResult, "configOptions"), "mode"));
+        Assert.assertTrue(containsConfigOption(CliJson.getArray(newSessionResult, "configOptions"), "model"));
+        Assert.assertEquals("safe", CliJson.getString(CliJson.getObject(newSessionResult, "modes"), "currentModeId"));
+        ObjectNode availableCommands = findSessionUpdate(messages, "available_commands_update");
         Assert.assertNotNull(availableCommands);
-        JSONArray available = availableCommands.getJSONArray("availableCommands");
+        ArrayNode available = CliJson.getArray(availableCommands, "availableCommands");
         Assert.assertNotNull(available);
         Assert.assertFalse(available.isEmpty());
         Assert.assertTrue(containsAvailableCommand(available, "status"));
@@ -102,7 +102,7 @@ public class AcpCommandTest {
         Assert.assertTrue(containsAvailableCommand(available, "mcp"));
         Assert.assertTrue(hasSessionUpdate(messages, "user_message_chunk", "hello from acp"));
         Assert.assertTrue(hasSessionUpdate(messages, "agent_message_chunk", "Echo: hello from acp"));
-        Assert.assertEquals("end_turn", responseResult(messages, 3).getString("stopReason"));
+        Assert.assertEquals("end_turn", CliJson.getString(responseResult(messages, 3), "stopReason"));
 
         ByteArrayOutputStream loadOut = new ByteArrayOutputStream();
         ByteArrayOutputStream loadErr = new ByteArrayOutputStream();
@@ -122,16 +122,16 @@ public class AcpCommandTest {
         ).run();
 
         Assert.assertEquals(0, loadExit);
-        List<JSONObject> loadMessages = parseLines(loadOut);
-        Assert.assertEquals("acp-session", responseResult(loadMessages, 3).getString("sessionId"));
-        Assert.assertTrue(containsConfigOption(responseResult(loadMessages, 3).getJSONArray("configOptions"), "mode"));
-        Assert.assertTrue(containsConfigOption(responseResult(loadMessages, 3).getJSONArray("configOptions"), "model"));
-        JSONArray sessions = responseResult(loadMessages, 2).getJSONArray("sessions");
+        List<ObjectNode> loadMessages = parseLines(loadOut);
+        Assert.assertEquals("acp-session", CliJson.getString(responseResult(loadMessages, 3), "sessionId"));
+        Assert.assertTrue(containsConfigOption(CliJson.getArray(responseResult(loadMessages, 3), "configOptions"), "mode"));
+        Assert.assertTrue(containsConfigOption(CliJson.getArray(responseResult(loadMessages, 3), "configOptions"), "model"));
+        ArrayNode sessions = CliJson.getArray(responseResult(loadMessages, 2), "sessions");
         Assert.assertNotNull(sessions);
         Assert.assertFalse(sessions.isEmpty());
-        JSONObject loadAvailableCommands = findSessionUpdate(loadMessages, "available_commands_update");
+        ObjectNode loadAvailableCommands = findSessionUpdate(loadMessages, "available_commands_update");
         Assert.assertNotNull(loadAvailableCommands);
-        Assert.assertTrue(containsAvailableCommand(loadAvailableCommands.getJSONArray("availableCommands"), "status"));
+        Assert.assertTrue(containsAvailableCommand(CliJson.getArray(loadAvailableCommands, "availableCommands"), "status"));
         Assert.assertTrue(hasSessionUpdate(loadMessages, "user_message_chunk", "hello from acp"));
         Assert.assertTrue(hasSessionUpdate(loadMessages, "agent_message_chunk", "Echo: hello from acp"));
     }
@@ -163,8 +163,8 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        Assert.assertEquals("end_turn", responseResult(messages, 3).getString("stopReason"));
+        List<ObjectNode> messages = parseLines(out);
+        Assert.assertEquals("end_turn", CliJson.getString(responseResult(messages, 3), "stopReason"));
         Assert.assertTrue(hasSessionUpdate(messages, "user_message_chunk", "/status"));
         Assert.assertTrue(containsSessionUpdatePrefix(messages, "agent_message_chunk", "status:"));
         Assert.assertFalse(hasSessionUpdate(messages, "agent_message_chunk", "Echo: /status"));
@@ -200,7 +200,7 @@ public class AcpCommandTest {
             serverThread.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-            List<JSONObject> messages = new ArrayList<JSONObject>();
+            List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
             clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
             clientToServer.write(line(request(2, "session/new", params(
@@ -212,9 +212,9 @@ public class AcpCommandTest {
             readUntilResponse(reader, messages, 2);
             readUntilSessionUpdate(reader, messages, "available_commands_update");
 
-            JSONObject availableCommands = findSessionUpdate(messages, "available_commands_update");
+            ObjectNode availableCommands = findSessionUpdate(messages, "available_commands_update");
             Assert.assertNotNull(availableCommands);
-            JSONArray available = availableCommands.getJSONArray("availableCommands");
+            ArrayNode available = CliJson.getArray(availableCommands, "availableCommands");
             Assert.assertTrue(containsAvailableCommand(available, "providers"));
             Assert.assertTrue(containsAvailableCommand(available, "provider"));
             Assert.assertTrue(containsAvailableCommand(available, "model"));
@@ -232,15 +232,15 @@ public class AcpCommandTest {
             sendPrompt(clientToServer, 6, "provider-model-session", "hello from switched runtime");
             readUntilResponse(reader, messages, 6);
 
-            Assert.assertEquals("end_turn", responseResult(messages, 6).getString("stopReason"));
+            Assert.assertEquals("end_turn", CliJson.getString(responseResult(messages, 6), "stopReason"));
             Assert.assertTrue(hasSessionUpdate(messages, "agent_message_chunk", "Echo[zhipu/glm-4.7-plus]: hello from switched runtime"));
 
-            JSONObject workspaceConfig = JSON.parseObject(Files.readAllBytes(workspace.resolve(".ai4j").resolve("workspace.json")));
-            Assert.assertEquals("zhipu-main", workspaceConfig.getString("activeProfile"));
-            Assert.assertEquals("glm-4.7-plus", workspaceConfig.getString("modelOverride"));
+            ObjectNode workspaceConfig = CliJson.parseObject(Files.readAllBytes(workspace.resolve(".ai4j").resolve("workspace.json")));
+            Assert.assertEquals("zhipu-main", CliJson.getString(workspaceConfig, "activeProfile"));
+            Assert.assertEquals("glm-4.7-plus", CliJson.getString(workspaceConfig, "modelOverride"));
 
-            JSONObject providersConfig = JSON.parseObject(Files.readAllBytes(fakeHome.resolve(".ai4j").resolve("providers.json")));
-            Assert.assertNotNull(providersConfig.getJSONObject("profiles").getJSONObject("zhipu-main"));
+            ObjectNode providersConfig = CliJson.parseObject(Files.readAllBytes(fakeHome.resolve(".ai4j").resolve("providers.json")));
+            Assert.assertNotNull(CliJson.getObject(CliJson.getObject(providersConfig, "profiles"), "zhipu-main"));
 
             clientToServer.close();
             serverThread.join(5000L);
@@ -295,11 +295,11 @@ public class AcpCommandTest {
 
             Assert.assertEquals(0, exitCode);
 
-            List<JSONObject> messages = parseLines(out);
-            Assert.assertTrue(containsConfigOptionValue(responseResult(messages, 3).getJSONArray("configOptions"), "model", "fake-model-2"));
-            JSONObject configUpdate = findSessionUpdate(messages, "config_option_update");
+            List<ObjectNode> messages = parseLines(out);
+            Assert.assertTrue(containsConfigOptionValue(CliJson.getArray(responseResult(messages, 3), "configOptions"), "model", "fake-model-2"));
+            ObjectNode configUpdate = findSessionUpdate(messages, "config_option_update");
             Assert.assertNotNull(configUpdate);
-            Assert.assertTrue(containsConfigOptionValue(configUpdate.getJSONArray("configOptions"), "model", "fake-model-2"));
+            Assert.assertTrue(containsConfigOptionValue(CliJson.getArray(configUpdate, "configOptions"), "model", "fake-model-2"));
             Assert.assertTrue(hasSessionUpdate(messages, "agent_message_chunk", "Echo[openai/fake-model-2]: hello from set_config_option"));
         } finally {
             System.setProperty("user.home", originalUserHome);
@@ -333,7 +333,7 @@ public class AcpCommandTest {
         serverThread.start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-        List<JSONObject> messages = new ArrayList<JSONObject>();
+        List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
         clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
         clientToServer.write(line(request(2, "session/new", params(
@@ -361,11 +361,11 @@ public class AcpCommandTest {
         for (int i = 0; i < 40; i++) {
             String messageLine = reader.readLine();
             Assert.assertNotNull(messageLine);
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if ("session/request_permission".equals(message.getString("method"))) {
+            if ("session/request_permission".equals(CliJson.getString(message, "method"))) {
                 sawPermissionRequest = true;
-                Object requestId = message.get("id");
+                Object requestId = CliJson.toPlainValue(message.get("id"));
                 clientToServer.write(line(response(requestId, params(
                         "outcome", params(
                                 "outcome", "selected",
@@ -375,7 +375,7 @@ public class AcpCommandTest {
                 clientToServer.flush();
                 continue;
             }
-            if (Integer.valueOf(4).equals(message.get("id"))) {
+            if (hasIntId(message, 4)) {
                 sawPromptResponse = true;
                 break;
             }
@@ -415,10 +415,10 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        JSONObject errorResponse = findError(messages, 3);
+        List<ObjectNode> messages = parseLines(out);
+        ObjectNode errorResponse = findError(messages, 3);
         Assert.assertNotNull(errorResponse);
-        Assert.assertTrue(errorResponse.getJSONObject("error").getString("message").contains("Unsupported model"));
+        Assert.assertTrue(CliJson.getString(CliJson.getObject(errorResponse, "error"), "message").contains("Unsupported model"));
     }
 
     @Test
@@ -448,7 +448,7 @@ public class AcpCommandTest {
         serverThread.start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-        List<JSONObject> messages = new ArrayList<JSONObject>();
+        List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
         clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
         clientToServer.write(line(request(2, "session/new", params(
@@ -480,11 +480,11 @@ public class AcpCommandTest {
         for (int i = 0; i < 30; i++) {
             String messageLine = reader.readLine();
             Assert.assertNotNull(messageLine);
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if ("session/request_permission".equals(message.getString("method"))) {
+            if ("session/request_permission".equals(CliJson.getString(message, "method"))) {
                 sawPermissionRequest = true;
-                Object requestId = message.get("id");
+                Object requestId = CliJson.toPlainValue(message.get("id"));
                 clientToServer.write(line(response(requestId, params(
                         "outcome", params(
                                 "outcome", "selected",
@@ -494,7 +494,7 @@ public class AcpCommandTest {
                 clientToServer.flush();
                 continue;
             }
-            if (Integer.valueOf(4).equals(message.get("id"))) {
+            if (hasIntId(message, 4)) {
                 sawPromptResponse = true;
                 break;
             }
@@ -505,12 +505,12 @@ public class AcpCommandTest {
 
         Assert.assertTrue(sawPermissionRequest);
         Assert.assertTrue(sawPromptResponse);
-        JSONObject currentModeUpdate = findSessionUpdate(messages, "current_mode_update");
+        ObjectNode currentModeUpdate = findSessionUpdate(messages, "current_mode_update");
         Assert.assertNotNull(currentModeUpdate);
-        Assert.assertEquals("manual", currentModeUpdate.getString("currentModeId"));
-        JSONObject configUpdate = findSessionUpdate(messages, "config_option_update");
+        Assert.assertEquals("manual", CliJson.getString(currentModeUpdate, "currentModeId"));
+        ObjectNode configUpdate = findSessionUpdate(messages, "config_option_update");
         Assert.assertNotNull(configUpdate);
-        Assert.assertTrue(containsConfigOptionValue(configUpdate.getJSONArray("configOptions"), "mode", "manual"));
+        Assert.assertTrue(containsConfigOptionValue(CliJson.getArray(configUpdate, "configOptions"), "mode", "manual"));
     }
 
     @Test
@@ -542,7 +542,7 @@ public class AcpCommandTest {
         serverThread.start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-        List<JSONObject> messages = new ArrayList<JSONObject>();
+        List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
         clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
         clientToServer.write(line(request(2, "session/new", params(
@@ -575,11 +575,11 @@ public class AcpCommandTest {
         for (int i = 0; i < 40; i++) {
             String messageLine = reader.readLine();
             Assert.assertNotNull(messageLine);
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if ("session/request_permission".equals(message.getString("method"))) {
+            if ("session/request_permission".equals(CliJson.getString(message, "method"))) {
                 sawPermissionRequest = true;
-                Object requestId = message.get("id");
+                Object requestId = CliJson.toPlainValue(message.get("id"));
                 clientToServer.write(line(response(requestId, params(
                         "outcome", params(
                                 "outcome", "selected",
@@ -589,7 +589,7 @@ public class AcpCommandTest {
                 clientToServer.flush();
                 continue;
             }
-            if (Integer.valueOf(5).equals(message.get("id"))) {
+            if (hasIntId(message, 5)) {
                 sawPromptResponse = true;
                 break;
             }
@@ -647,7 +647,7 @@ public class AcpCommandTest {
             serverThread.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-            List<JSONObject> messages = new ArrayList<JSONObject>();
+            List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
             clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
             clientToServer.write(line(request(2, "session/new", params(
@@ -680,7 +680,7 @@ public class AcpCommandTest {
             clientToServer.close();
             serverThread.join(5000L);
 
-            Assert.assertTrue(containsConfigOptionValue(responseResult(messages, 4).getJSONArray("configOptions"), "model", "fake-model-2"));
+            Assert.assertTrue(containsConfigOptionValue(CliJson.getArray(responseResult(messages, 4), "configOptions"), "model", "fake-model-2"));
             Assert.assertTrue(hasSessionUpdate(messages, "agent_message_chunk", "Echo[openai/fake-model]: hold config switch"));
             Assert.assertTrue(hasSessionUpdate(messages, "agent_message_chunk", "Echo[openai/fake-model-2]: after deferred model switch"));
         } finally {
@@ -713,30 +713,31 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        Assert.assertEquals(sessionId, responseResult(messages, 2).getString("sessionId"));
+        List<ObjectNode> messages = parseLines(out);
+        Assert.assertEquals(sessionId, CliJson.getString(responseResult(messages, 2), "sessionId"));
 
-        JSONObject toolCall = findSessionUpdate(messages, "tool_call");
+        ObjectNode toolCall = findSessionUpdate(messages, "tool_call");
         Assert.assertNotNull(toolCall);
-        Assert.assertEquals("task-1", toolCall.getString("toolCallId"));
-        Assert.assertEquals("Delegate plan", toolCall.getString("title"));
-        Assert.assertEquals("other", toolCall.getString("kind"));
-        Assert.assertEquals("pending", toolCall.getString("status"));
-        Assert.assertEquals("task-1", toolCall.getJSONObject("rawInput").getString("taskId"));
-        Assert.assertEquals("plan", toolCall.getJSONObject("rawInput").getString("definition"));
-        Assert.assertEquals("delegate-session-1", toolCall.getJSONObject("rawInput").getString("childSessionId"));
-        Assert.assertEquals("fork", toolCall.getJSONObject("rawInput").getString("sessionMode"));
+        Assert.assertEquals("task-1", CliJson.getString(toolCall, "toolCallId"));
+        Assert.assertEquals("Delegate plan", CliJson.getString(toolCall, "title"));
+        Assert.assertEquals("other", CliJson.getString(toolCall, "kind"));
+        Assert.assertEquals("pending", CliJson.getString(toolCall, "status"));
+        ObjectNode toolCallRawInput = CliJson.getObject(toolCall, "rawInput");
+        Assert.assertEquals("task-1", CliJson.getString(toolCallRawInput, "taskId"));
+        Assert.assertEquals("plan", CliJson.getString(toolCallRawInput, "definition"));
+        Assert.assertEquals("delegate-session-1", CliJson.getString(toolCallRawInput, "childSessionId"));
+        Assert.assertEquals("fork", CliJson.getString(toolCallRawInput, "sessionMode"));
 
-        JSONObject toolCallUpdate = findSessionUpdate(messages, "tool_call_update");
+        ObjectNode toolCallUpdate = findSessionUpdate(messages, "tool_call_update");
         Assert.assertNotNull(toolCallUpdate);
-        Assert.assertEquals("task-1", toolCallUpdate.getString("toolCallId"));
-        Assert.assertEquals("completed", toolCallUpdate.getString("status"));
-        JSONArray content = toolCallUpdate.getJSONArray("content");
+        Assert.assertEquals("task-1", CliJson.getString(toolCallUpdate, "toolCallId"));
+        Assert.assertEquals("completed", CliJson.getString(toolCallUpdate, "status"));
+        ArrayNode content = CliJson.getArray(toolCallUpdate, "content");
         Assert.assertNotNull(content);
         Assert.assertFalse(content.isEmpty());
-        Assert.assertEquals("content", content.getJSONObject(0).getString("type"));
-        Assert.assertEquals("delegate plan ready", content.getJSONObject(0).getJSONObject("content").getString("text"));
-        Assert.assertEquals("delegate plan ready", toolCallUpdate.getJSONObject("rawOutput").getString("text"));
+        Assert.assertEquals("content", CliJson.getString(CliJson.getObject(content, 0), "type"));
+        Assert.assertEquals("delegate plan ready", CliJson.getString(CliJson.getObject(CliJson.getObject(content, 0), "content"), "text"));
+        Assert.assertEquals("delegate plan ready", CliJson.getString(CliJson.getObject(toolCallUpdate, "rawOutput"), "text"));
     }
 
     @Test
@@ -766,19 +767,19 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        Assert.assertEquals("end_turn", responseResult(messages, 3).getString("stopReason"));
+        List<ObjectNode> messages = parseLines(out);
+        Assert.assertEquals("end_turn", CliJson.getString(responseResult(messages, 3), "stopReason"));
 
-        JSONObject handoffCall = findSessionUpdateByToolCallId(messages, "tool_call", "handoff:review-call");
+        ObjectNode handoffCall = findSessionUpdateByToolCallId(messages, "tool_call", "handoff:review-call");
         Assert.assertNotNull(handoffCall);
-        Assert.assertEquals("Subagent reviewer", handoffCall.getString("title"));
-        Assert.assertEquals("pending", handoffCall.getString("status"));
-        Assert.assertEquals("reviewer", handoffCall.getJSONObject("rawInput").getString("subagent"));
+        Assert.assertEquals("Subagent reviewer", CliJson.getString(handoffCall, "title"));
+        Assert.assertEquals("pending", CliJson.getString(handoffCall, "status"));
+        Assert.assertEquals("reviewer", CliJson.getString(CliJson.getObject(handoffCall, "rawInput"), "subagent"));
 
-        JSONObject handoffUpdate = findSessionUpdateByToolCallId(messages, "tool_call_update", "handoff:review-call");
+        ObjectNode handoffUpdate = findSessionUpdateByToolCallId(messages, "tool_call_update", "handoff:review-call");
         Assert.assertNotNull(handoffUpdate);
-        Assert.assertEquals("completed", handoffUpdate.getString("status"));
-        Assert.assertEquals("review-ready", handoffUpdate.getJSONObject("rawOutput").getString("text"));
+        Assert.assertEquals("completed", CliJson.getString(handoffUpdate, "status"));
+        Assert.assertEquals("review-ready", CliJson.getString(CliJson.getObject(handoffUpdate, "rawOutput"), "text"));
     }
 
     @Test
@@ -808,45 +809,49 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        Assert.assertEquals("end_turn", responseResult(messages, 3).getString("stopReason"));
+        List<ObjectNode> messages = parseLines(out);
+        Assert.assertEquals("end_turn", CliJson.getString(responseResult(messages, 3), "stopReason"));
 
-        JSONObject taskCall = findSessionUpdateByToolCallId(messages, "tool_call", "team-task:review");
+        ObjectNode taskCall = findSessionUpdateByToolCallId(messages, "tool_call", "team-task:review");
         Assert.assertNotNull(taskCall);
-        Assert.assertEquals("Team task review", taskCall.getString("title"));
-        Assert.assertEquals("pending", taskCall.getString("status"));
-        Assert.assertEquals("reviewer", taskCall.getJSONObject("rawInput").getString("memberId"));
-        Assert.assertEquals("reviewer", taskCall.getJSONObject("rawInput").getString("memberName"));
-        Assert.assertEquals("Review this patch", taskCall.getJSONObject("rawInput").getString("task"));
-        Assert.assertEquals(Integer.valueOf(0), taskCall.getJSONObject("rawInput").getInteger("percent"));
+        Assert.assertEquals("Team task review", CliJson.getString(taskCall, "title"));
+        Assert.assertEquals("pending", CliJson.getString(taskCall, "status"));
+        ObjectNode taskCallRawInput = CliJson.getObject(taskCall, "rawInput");
+        Assert.assertEquals("reviewer", CliJson.getString(taskCallRawInput, "memberId"));
+        Assert.assertEquals("reviewer", CliJson.getString(taskCallRawInput, "memberName"));
+        Assert.assertEquals("Review this patch", CliJson.getString(taskCallRawInput, "task"));
+        Assert.assertEquals(Integer.valueOf(0), CliJson.getInteger(taskCallRawInput, "percent"));
 
-        JSONObject taskRunningUpdate = findSessionUpdateByToolCallIdAndStatus(messages, "tool_call_update", "team-task:review", "in_progress");
+        ObjectNode taskRunningUpdate = findSessionUpdateByToolCallIdAndStatus(messages, "tool_call_update", "team-task:review", "in_progress");
         Assert.assertNotNull(taskRunningUpdate);
-        Assert.assertEquals("Assigned to Reviewer.", taskRunningUpdate.getJSONObject("rawOutput").getString("text"));
-        Assert.assertEquals("running", taskRunningUpdate.getJSONObject("rawOutput").getString("phase"));
-        Assert.assertEquals(Integer.valueOf(15), taskRunningUpdate.getJSONObject("rawOutput").getInteger("percent"));
-        Assert.assertTrue(taskRunningUpdate.getJSONArray("content").getJSONObject(0).getJSONObject("content").getString("text")
+        ObjectNode taskRunningRawOutput = CliJson.getObject(taskRunningUpdate, "rawOutput");
+        Assert.assertEquals("Assigned to Reviewer.", CliJson.getString(taskRunningRawOutput, "text"));
+        Assert.assertEquals("running", CliJson.getString(taskRunningRawOutput, "phase"));
+        Assert.assertEquals(Integer.valueOf(15), CliJson.getInteger(taskRunningRawOutput, "percent"));
+        Assert.assertTrue(CliJson.getString(CliJson.getObject(CliJson.getObject(CliJson.getArray(taskRunningUpdate, "content"), 0), "content"), "text")
                 .contains("running 15%"));
 
-        JSONObject taskUpdate = findSessionUpdateByToolCallId(messages, "tool_call_update", "team-task:review");
+        ObjectNode taskUpdate = findSessionUpdateByToolCallId(messages, "tool_call_update", "team-task:review");
         Assert.assertNotNull(taskUpdate);
-        Assert.assertEquals("completed", taskUpdate.getString("status"));
-        Assert.assertEquals("team-review-ready", taskUpdate.getJSONObject("rawOutput").getString("text"));
-        Assert.assertEquals("completed", taskUpdate.getJSONObject("rawOutput").getString("phase"));
-        Assert.assertEquals(Integer.valueOf(100), taskUpdate.getJSONObject("rawOutput").getInteger("percent"));
+        Assert.assertEquals("completed", CliJson.getString(taskUpdate, "status"));
+        ObjectNode taskUpdateRawOutput = CliJson.getObject(taskUpdate, "rawOutput");
+        Assert.assertEquals("team-review-ready", CliJson.getString(taskUpdateRawOutput, "text"));
+        Assert.assertEquals("completed", CliJson.getString(taskUpdateRawOutput, "phase"));
+        Assert.assertEquals(Integer.valueOf(100), CliJson.getInteger(taskUpdateRawOutput, "percent"));
 
-        JSONObject teamMessage = findSessionUpdateByToolCallIdAndRawOutputType(messages, "team-task:review", "team_message");
+        ObjectNode teamMessage = findSessionUpdateByToolCallIdAndRawOutputType(messages, "team-task:review", "team_message");
         Assert.assertNotNull(teamMessage);
-        Assert.assertEquals("tool_call_update", teamMessage.getString("sessionUpdate"));
-        Assert.assertEquals("task.assigned", teamMessage.getJSONObject("rawOutput").getString("messageType"));
-        Assert.assertEquals("system", teamMessage.getJSONObject("rawOutput").getString("fromMemberId"));
-        Assert.assertEquals("reviewer", teamMessage.getJSONObject("rawOutput").getString("toMemberId"));
-        Assert.assertEquals("review", teamMessage.getJSONObject("rawOutput").getString("taskId"));
-        Assert.assertEquals("Review this patch", teamMessage.getJSONObject("rawOutput").getString("text"));
-        JSONArray teamMessageContent = teamMessage.getJSONArray("content");
+        Assert.assertEquals("tool_call_update", CliJson.getString(teamMessage, "sessionUpdate"));
+        ObjectNode teamRawOutput = CliJson.getObject(teamMessage, "rawOutput");
+        Assert.assertEquals("task.assigned", CliJson.getString(teamRawOutput, "messageType"));
+        Assert.assertEquals("system", CliJson.getString(teamRawOutput, "fromMemberId"));
+        Assert.assertEquals("reviewer", CliJson.getString(teamRawOutput, "toMemberId"));
+        Assert.assertEquals("review", CliJson.getString(teamRawOutput, "taskId"));
+        Assert.assertEquals("Review this patch", CliJson.getString(teamRawOutput, "text"));
+        ArrayNode teamMessageContent = CliJson.getArray(teamMessage, "content");
         Assert.assertNotNull(teamMessageContent);
         Assert.assertFalse(teamMessageContent.isEmpty());
-        Assert.assertTrue(teamMessageContent.getJSONObject(0).getJSONObject("content").getString("text")
+        Assert.assertTrue(CliJson.getString(CliJson.getObject(CliJson.getObject(teamMessageContent, 0), "content"), "text")
                 .contains("[task.assigned] system -> reviewer"));
         Assert.assertEquals(0, countSessionUpdates(messages, "team_message"));
     }
@@ -893,15 +898,15 @@ public class AcpCommandTest {
         boolean sawPermissionRequest = false;
         boolean sawToolCallUpdate = false;
         boolean sawPromptResponse = false;
-        List<JSONObject> seenMessages = new ArrayList<JSONObject>();
+        List<ObjectNode> seenMessages = new ArrayList<ObjectNode>();
         for (int i = 0; i < 20; i++) {
             String line = reader.readLine();
             Assert.assertNotNull(line);
-            JSONObject message = JSON.parseObject(line);
+            ObjectNode message = CliJson.parseObject(line);
             seenMessages.add(message);
-            if ("session/request_permission".equals(message.getString("method"))) {
+            if ("session/request_permission".equals(CliJson.getString(message, "method"))) {
                 sawPermissionRequest = true;
-                Object requestId = message.get("id");
+                Object requestId = CliJson.toPlainValue(message.get("id"));
                 clientToServer.write(line(response(requestId, params(
                         "outcome", params(
                                 "outcome", "selected",
@@ -911,16 +916,16 @@ public class AcpCommandTest {
                 clientToServer.flush();
                 continue;
             }
-            if ("session/update".equals(message.getString("method"))) {
-                JSONObject update = message.getJSONObject("params").getJSONObject("update");
-                if ("tool_call_update".equals(update.getString("sessionUpdate"))) {
+            if ("session/update".equals(CliJson.getString(message, "method"))) {
+                ObjectNode update = CliJson.getObject(CliJson.getObject(message, "params"), "update");
+                if ("tool_call_update".equals(CliJson.getString(update, "sessionUpdate"))) {
                     sawToolCallUpdate = true;
                 }
                 continue;
             }
-            if (Integer.valueOf(3).equals(message.get("id"))) {
+            if (hasIntId(message, 3)) {
                 sawPromptResponse = true;
-                Assert.assertEquals("end_turn", message.getJSONObject("result").getString("stopReason"));
+                Assert.assertEquals("end_turn", CliJson.getString(CliJson.getObject(message, "result"), "stopReason"));
                 break;
             }
         }
@@ -933,20 +938,20 @@ public class AcpCommandTest {
         Assert.assertTrue(sawPromptResponse);
         Assert.assertEquals(1, countSessionUpdates(seenMessages, "tool_call"));
 
-        JSONObject toolCall = findSessionUpdate(seenMessages, "tool_call");
+        ObjectNode toolCall = findSessionUpdate(seenMessages, "tool_call");
         Assert.assertNotNull(toolCall);
-        Assert.assertEquals("other", toolCall.getString("kind"));
-        Assert.assertEquals("pending", toolCall.getString("status"));
+        Assert.assertEquals("other", CliJson.getString(toolCall, "kind"));
+        Assert.assertEquals("pending", CliJson.getString(toolCall, "status"));
 
-        JSONObject toolCallUpdate = findSessionUpdate(seenMessages, "tool_call_update");
+        ObjectNode toolCallUpdate = findSessionUpdate(seenMessages, "tool_call_update");
         Assert.assertNotNull(toolCallUpdate);
-        Assert.assertEquals("completed", toolCallUpdate.getString("status"));
-        JSONArray content = toolCallUpdate.getJSONArray("content");
+        Assert.assertEquals("completed", CliJson.getString(toolCallUpdate, "status"));
+        ArrayNode content = CliJson.getArray(toolCallUpdate, "content");
         Assert.assertNotNull(content);
         Assert.assertFalse(content.isEmpty());
-        Assert.assertEquals("content", content.getJSONObject(0).getString("type"));
-        Assert.assertNotNull(content.getJSONObject(0).getJSONObject("content"));
-        Assert.assertTrue(content.getJSONObject(0).getJSONObject("content").getString("text").contains("cmd /c echo hi"));
+        Assert.assertEquals("content", CliJson.getString(CliJson.getObject(content, 0), "type"));
+        Assert.assertNotNull(CliJson.getObject(CliJson.getObject(content, 0), "content"));
+        Assert.assertTrue(CliJson.getString(CliJson.getObject(CliJson.getObject(content, 0), "content"), "text").contains("cmd /c echo hi"));
     }
 
     @Test
@@ -977,7 +982,7 @@ public class AcpCommandTest {
         serverThread.start();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(clientInput, StandardCharsets.UTF_8));
-        List<JSONObject> messages = new ArrayList<JSONObject>();
+        List<ObjectNode> messages = new ArrayList<ObjectNode>();
 
         clientToServer.write(line(request(1, "initialize", params("protocolVersion", 1))).getBytes(StandardCharsets.UTF_8));
         clientToServer.write(line(request(2, "session/new", params(
@@ -989,9 +994,9 @@ public class AcpCommandTest {
         readUntilResponse(reader, messages, 2);
         readUntilSessionUpdate(reader, messages, "available_commands_update");
 
-        JSONObject newSessionResult = responseResult(messages, 2);
+        ObjectNode newSessionResult = responseResult(messages, 2);
         Assert.assertNotNull(newSessionResult);
-        String generatedSessionId = newSessionResult.getString("sessionId");
+        String generatedSessionId = CliJson.getString(newSessionResult, "sessionId");
         Assert.assertNotNull(generatedSessionId);
         Assert.assertFalse(generatedSessionId.trim().isEmpty());
 
@@ -1002,14 +1007,14 @@ public class AcpCommandTest {
         for (int i = 0; i < 30; i++) {
             String messageLine = reader.readLine();
             Assert.assertNotNull(messageLine);
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if ("session/request_permission".equals(message.getString("method"))) {
+            if ("session/request_permission".equals(CliJson.getString(message, "method"))) {
                 sawPermissionRequest = true;
-                JSONObject permissionParams = message.getJSONObject("params");
+                ObjectNode permissionParams = CliJson.getObject(message, "params");
                 Assert.assertNotNull(permissionParams);
-                Assert.assertEquals(generatedSessionId, permissionParams.getString("sessionId"));
-                Object requestId = message.get("id");
+                Assert.assertEquals(generatedSessionId, CliJson.getString(permissionParams, "sessionId"));
+                Object requestId = CliJson.toPlainValue(message.get("id"));
                 clientToServer.write(line(response(requestId, params(
                         "outcome", params(
                                 "outcome", "selected",
@@ -1019,9 +1024,9 @@ public class AcpCommandTest {
                 clientToServer.flush();
                 continue;
             }
-            if (Integer.valueOf(3).equals(message.get("id"))) {
+            if (hasIntId(message, 3)) {
                 sawPromptResponse = true;
-                Assert.assertEquals("end_turn", message.getJSONObject("result").getString("stopReason"));
+                Assert.assertEquals("end_turn", CliJson.getString(CliJson.getObject(message, "result"), "stopReason"));
                 break;
             }
         }
@@ -1062,10 +1067,10 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
-        JSONObject update = findSessionUpdate(messages, "agent_message_chunk");
+        List<ObjectNode> messages = parseLines(out);
+        ObjectNode update = findSessionUpdate(messages, "agent_message_chunk");
         Assert.assertNotNull(update);
-        Assert.assertEquals("# Title\n\n- item", update.getJSONObject("content").getString("text"));
+        Assert.assertEquals("# Title\n\n- item", CliJson.getString(CliJson.getObject(update, "content"), "text"));
     }
 
     @Test
@@ -1095,7 +1100,7 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
+        List<ObjectNode> messages = parseLines(out);
         List<String> chunks = sessionUpdateTexts(messages, "agent_message_chunk");
         Assert.assertFalse(chunks.isEmpty());
         Assert.assertEquals(Arrays.asList("##", " Heading\n\n", "1", ". item\n\n", "Done", "."), chunks);
@@ -1129,7 +1134,7 @@ public class AcpCommandTest {
 
         Assert.assertEquals(0, exitCode);
 
-        List<JSONObject> messages = parseLines(out);
+        List<ObjectNode> messages = parseLines(out);
         List<String> chunks = sessionUpdateTexts(messages, "agent_message_chunk");
         Assert.assertEquals(Arrays.asList("# Heading", "\n\n", "- item"), chunks);
         Assert.assertEquals("# Heading\n\n- item", join(chunks));
@@ -1413,42 +1418,42 @@ public class AcpCommandTest {
         return parser.parse(values, Collections.<String, String>emptyMap(), new Properties(), workspace);
     }
 
-    private JSONObject request(Object id, String method, Map<String, Object> params) {
-        JSONObject object = new JSONObject();
+    private ObjectNode request(Object id, String method, Object params) {
+        ObjectNode object = CliJson.newObject();
         object.put("jsonrpc", "2.0");
-        object.put("id", id);
+        object.set("id", CliJson.valueToTree(id));
         object.put("method", method);
-        object.put("params", params);
+        object.set("params", CliJson.valueToTree(params));
         return object;
     }
 
-    private JSONObject response(Object id, Map<String, Object> result) {
-        JSONObject object = new JSONObject();
+    private ObjectNode response(Object id, Object result) {
+        ObjectNode object = CliJson.newObject();
         object.put("jsonrpc", "2.0");
-        object.put("id", id);
-        object.put("result", result);
+        object.set("id", CliJson.valueToTree(id));
+        object.set("result", CliJson.valueToTree(result));
         return object;
     }
 
-    private JSONArray textPrompt(String text) {
-        JSONArray prompt = new JSONArray();
-        JSONObject block = new JSONObject();
+    private ArrayNode textPrompt(String text) {
+        ArrayNode prompt = CliJson.newArray();
+        ObjectNode block = CliJson.newObject();
         block.put("type", "text");
         block.put("text", text);
         prompt.add(block);
         return prompt;
     }
 
-    private Map<String, Object> params(Object... values) {
-        JSONObject object = new JSONObject();
+    private ObjectNode params(Object... values) {
+        ObjectNode object = CliJson.newObject();
         for (int i = 0; i + 1 < values.length; i += 2) {
-            object.put(String.valueOf(values[i]), values[i + 1]);
+            object.set(String.valueOf(values[i]), CliJson.valueToTree(values[i + 1]));
         }
         return object;
     }
 
-    private String line(JSONObject object) {
-        return object.toJSONString() + "\n";
+    private String line(ObjectNode object) {
+        return CliJson.toJson(object) + "\n";
     }
 
     private void sendPrompt(PipedOutputStream clientToServer,
@@ -1463,7 +1468,7 @@ public class AcpCommandTest {
     }
 
     private void readUntilResponse(BufferedReader reader,
-                                   List<JSONObject> messages,
+                                   List<ObjectNode> messages,
                                    int responseId) throws Exception {
         for (int i = 0; i < 100; i++) {
             String messageLine = reader.readLine();
@@ -1471,9 +1476,9 @@ public class AcpCommandTest {
             if (messageLine.trim().isEmpty()) {
                 continue;
             }
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if (Integer.valueOf(responseId).equals(message.get("id"))) {
+            if (hasIntId(message, responseId)) {
                 return;
             }
         }
@@ -1481,7 +1486,7 @@ public class AcpCommandTest {
     }
 
     private void readUntilSessionUpdate(BufferedReader reader,
-                                        List<JSONObject> messages,
+                                        List<ObjectNode> messages,
                                         String sessionUpdateType) throws Exception {
         if (findSessionUpdate(messages, sessionUpdateType) != null) {
             return;
@@ -1492,12 +1497,12 @@ public class AcpCommandTest {
             if (messageLine.trim().isEmpty()) {
                 continue;
             }
-            JSONObject message = JSON.parseObject(messageLine);
+            ObjectNode message = CliJson.parseObject(messageLine);
             messages.add(message);
-            if ("session/update".equals(message.getString("method"))) {
-                JSONObject params = message.getJSONObject("params");
-                JSONObject update = params == null ? null : params.getJSONObject("update");
-                if (update != null && sessionUpdateType.equals(update.getString("sessionUpdate"))) {
+            if ("session/update".equals(CliJson.getString(message, "method"))) {
+                ObjectNode params = CliJson.getObject(message, "params");
+                ObjectNode update = CliJson.getObject(params, "update");
+                if (update != null && sessionUpdateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                     return;
                 }
             }
@@ -1505,129 +1510,133 @@ public class AcpCommandTest {
         Assert.fail("Timed out waiting for ACP session update type=" + sessionUpdateType);
     }
 
-    private List<JSONObject> parseLines(ByteArrayOutputStream output) throws Exception {
+    private List<ObjectNode> parseLines(ByteArrayOutputStream output) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new ByteArrayInputStream(output.toByteArray()),
                 StandardCharsets.UTF_8
         ));
-        List<JSONObject> messages = new ArrayList<JSONObject>();
+        List<ObjectNode> messages = new ArrayList<ObjectNode>();
         String line;
         while ((line = reader.readLine()) != null) {
             if (!line.trim().isEmpty()) {
-                messages.add(JSON.parseObject(line));
+                messages.add(CliJson.parseObject(line));
             }
         }
         return messages;
     }
 
-    private boolean hasResponse(List<JSONObject> messages, int id) {
-        for (JSONObject message : messages) {
-            if (Integer.valueOf(id).equals(message.get("id")) && message.containsKey("result")) {
+    private boolean hasIntId(ObjectNode message, int id) {
+        return message != null && Integer.valueOf(id).equals(CliJson.toPlainValue(message.get("id")));
+    }
+
+    private boolean hasResponse(List<ObjectNode> messages, int id) {
+        for (ObjectNode message : messages) {
+            if (hasIntId(message, id) && message.has("result")) {
                 return true;
             }
         }
         return false;
     }
 
-    private JSONObject responseResult(List<JSONObject> messages, int id) {
-        for (JSONObject message : messages) {
-            if (Integer.valueOf(id).equals(message.get("id")) && message.containsKey("result")) {
-                return message.getJSONObject("result");
+    private ObjectNode responseResult(List<ObjectNode> messages, int id) {
+        for (ObjectNode message : messages) {
+            if (hasIntId(message, id) && message.has("result")) {
+                return CliJson.getObject(message, "result");
             }
         }
         return null;
     }
 
-    private JSONObject findError(List<JSONObject> messages, int id) {
-        for (JSONObject message : messages) {
-            if (Integer.valueOf(id).equals(message.get("id")) && message.containsKey("error")) {
+    private ObjectNode findError(List<ObjectNode> messages, int id) {
+        for (ObjectNode message : messages) {
+            if (hasIntId(message, id) && message.has("error")) {
                 return message;
             }
         }
         return null;
     }
 
-    private boolean hasSessionUpdate(List<JSONObject> messages, String updateType, String expectedText) {
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+    private boolean hasSessionUpdate(List<ObjectNode> messages, String updateType, String expectedText) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update == null || !updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update == null || !updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 continue;
             }
-            JSONObject content = update.getJSONObject("content");
-            if (content != null && expectedText.equals(content.getString("text"))) {
+            ObjectNode content = CliJson.getObject(update, "content");
+            if (content != null && expectedText.equals(CliJson.getString(content, "text"))) {
                 return true;
             }
         }
         return false;
     }
 
-    private int countSessionUpdates(List<JSONObject> messages, String updateType) {
+    private int countSessionUpdates(List<ObjectNode> messages, String updateType) {
         int count = 0;
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update != null && updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update != null && updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 count++;
             }
         }
         return count;
     }
 
-    private boolean containsAvailableCommand(JSONArray commands, String name) {
+    private boolean containsAvailableCommand(ArrayNode commands, String name) {
         if (commands == null || name == null) {
             return false;
         }
         for (int i = 0; i < commands.size(); i++) {
-            JSONObject command = commands.getJSONObject(i);
-            if (command != null && name.equals(command.getString("name"))) {
+            ObjectNode command = CliJson.getObject(commands, i);
+            if (command != null && name.equals(CliJson.getString(command, "name"))) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean containsConfigOption(JSONArray configOptions, String id) {
+    private boolean containsConfigOption(ArrayNode configOptions, String id) {
         if (configOptions == null || id == null) {
             return false;
         }
         for (int i = 0; i < configOptions.size(); i++) {
-            JSONObject option = configOptions.getJSONObject(i);
-            if (option != null && id.equals(option.getString("id"))) {
+            ObjectNode option = CliJson.getObject(configOptions, i);
+            if (option != null && id.equals(CliJson.getString(option, "id"))) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean containsConfigOptionValue(JSONArray configOptions, String id, String expectedValue) {
+    private boolean containsConfigOptionValue(ArrayNode configOptions, String id, String expectedValue) {
         if (configOptions == null || id == null || expectedValue == null) {
             return false;
         }
         for (int i = 0; i < configOptions.size(); i++) {
-            JSONObject option = configOptions.getJSONObject(i);
+            ObjectNode option = CliJson.getObject(configOptions, i);
             if (option != null
-                    && id.equals(option.getString("id"))
-                    && expectedValue.equals(option.getString("currentValue"))) {
+                    && id.equals(CliJson.getString(option, "id"))
+                    && expectedValue.equals(CliJson.getString(option, "currentValue"))) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean containsSessionUpdatePrefix(List<JSONObject> messages, String updateType, String prefix) {
+    private boolean containsSessionUpdatePrefix(List<ObjectNode> messages, String updateType, String prefix) {
         if (prefix == null) {
             return false;
         }
@@ -1640,109 +1649,109 @@ public class AcpCommandTest {
         return false;
     }
 
-    private JSONObject findSessionUpdate(List<JSONObject> messages, String updateType) {
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+    private ObjectNode findSessionUpdate(List<ObjectNode> messages, String updateType) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update != null && updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update != null && updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 return update;
             }
         }
         return null;
     }
 
-    private JSONObject findSessionUpdateByToolCallId(List<JSONObject> messages, String updateType, String toolCallId) {
-        JSONObject matched = null;
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+    private ObjectNode findSessionUpdateByToolCallId(List<ObjectNode> messages, String updateType, String toolCallId) {
+        ObjectNode matched = null;
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update == null || !updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update == null || !updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 continue;
             }
-            if (toolCallId.equals(update.getString("toolCallId"))) {
+            if (toolCallId.equals(CliJson.getString(update, "toolCallId"))) {
                 matched = update;
             }
         }
         return matched;
     }
 
-    private JSONObject findSessionUpdateByToolCallIdAndStatus(List<JSONObject> messages,
+    private ObjectNode findSessionUpdateByToolCallIdAndStatus(List<ObjectNode> messages,
                                                               String updateType,
                                                               String toolCallId,
                                                               String status) {
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update == null || !updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update == null || !updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 continue;
             }
-            if (toolCallId.equals(update.getString("toolCallId")) && status.equals(update.getString("status"))) {
+            if (toolCallId.equals(CliJson.getString(update, "toolCallId")) && status.equals(CliJson.getString(update, "status"))) {
                 return update;
             }
         }
         return null;
     }
 
-    private JSONObject findSessionUpdateByToolCallIdAndRawOutputType(List<JSONObject> messages,
+    private ObjectNode findSessionUpdateByToolCallIdAndRawOutputType(List<ObjectNode> messages,
                                                                      String toolCallId,
                                                                      String rawOutputType) {
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update == null || !"tool_call_update".equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update == null || !"tool_call_update".equals(CliJson.getString(update, "sessionUpdate"))) {
                 continue;
             }
-            JSONObject rawOutput = update.getJSONObject("rawOutput");
-            if (toolCallId.equals(update.getString("toolCallId"))
+            ObjectNode rawOutput = CliJson.getObject(update, "rawOutput");
+            if (toolCallId.equals(CliJson.getString(update, "toolCallId"))
                     && rawOutput != null
-                    && rawOutputType.equals(rawOutput.getString("type"))) {
+                    && rawOutputType.equals(CliJson.getString(rawOutput, "type"))) {
                 return update;
             }
         }
         return null;
     }
 
-    private List<String> sessionUpdateTexts(List<JSONObject> messages, String updateType) {
+    private List<String> sessionUpdateTexts(List<ObjectNode> messages, String updateType) {
         List<String> texts = new ArrayList<String>();
-        for (JSONObject message : messages) {
-            if (!"session/update".equals(message.getString("method"))) {
+        for (ObjectNode message : messages) {
+            if (!"session/update".equals(CliJson.getString(message, "method"))) {
                 continue;
             }
-            JSONObject params = message.getJSONObject("params");
+            ObjectNode params = CliJson.getObject(message, "params");
             if (params == null) {
                 continue;
             }
-            JSONObject update = params.getJSONObject("update");
-            if (update == null || !updateType.equals(update.getString("sessionUpdate"))) {
+            ObjectNode update = CliJson.getObject(params, "update");
+            if (update == null || !updateType.equals(CliJson.getString(update, "sessionUpdate"))) {
                 continue;
             }
-            JSONObject content = update.getJSONObject("content");
+            ObjectNode content = CliJson.getObject(update, "content");
             if (content != null) {
-                texts.add(content.getString("text"));
+                texts.add(CliJson.getString(content, "text"));
             }
         }
         return texts;

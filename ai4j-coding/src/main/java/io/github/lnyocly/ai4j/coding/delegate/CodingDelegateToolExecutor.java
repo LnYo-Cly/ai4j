@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.coding.delegate;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.CodingSession;
 import io.github.lnyocly.ai4j.coding.CodingSessionScope;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
@@ -11,7 +11,9 @@ import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinitionRegistry;
 import io.github.lnyocly.ai4j.coding.definition.CodingSessionMode;
 import io.github.lnyocly.ai4j.coding.runtime.CodingRuntime;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class CodingDelegateToolExecutor implements ToolExecutor {
 
@@ -37,18 +39,18 @@ public class CodingDelegateToolExecutor implements ToolExecutor {
         }
 
         CodingAgentDefinition definition = requireDefinition(call.getName());
-        JSONObject arguments = parseArguments(call.getArguments());
+        ObjectNode arguments = parseArguments(call.getArguments());
         CodingDelegateRequest request = CodingDelegateRequest.builder()
                 .definitionName(definition.getName())
-                .input(firstNonBlank(arguments.getString("task"), arguments.getString("input")))
-                .context(arguments.getString("context"))
-                .childSessionId(arguments.getString("childSessionId"))
-                .background(parseBoolean(arguments, "background"))
-                .sessionMode(parseSessionMode(arguments.getString("sessionMode")))
+                .input(firstNonBlank(CodingJson.getString(arguments, "task"), CodingJson.getString(arguments, "input")))
+                .context(CodingJson.getString(arguments, "context"))
+                .childSessionId(CodingJson.getString(arguments, "childSessionId"))
+                .background(CodingJson.getBoolean(arguments, "background"))
+                .sessionMode(parseSessionMode(CodingJson.getString(arguments, "sessionMode")))
                 .build();
 
         CodingDelegateResult result = runtime.delegate(session, request);
-        JSONObject payload = new JSONObject();
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
         payload.put("definitionName", result == null ? definition.getName() : result.getDefinitionName());
         payload.put("toolName", definition.getToolName());
         payload.put("taskId", result == null ? null : result.getTaskId());
@@ -58,7 +60,7 @@ public class CodingDelegateToolExecutor implements ToolExecutor {
         payload.put("status", result == null || result.getStatus() == null ? null : result.getStatus().name().toLowerCase(Locale.ROOT));
         payload.put("output", result == null ? null : result.getOutputText());
         payload.put("error", result == null ? null : result.getError());
-        return payload.toJSONString();
+        return CodingJson.toJson(payload);
     }
 
     private CodingAgentDefinition requireDefinition(String toolName) {
@@ -69,25 +71,18 @@ public class CodingDelegateToolExecutor implements ToolExecutor {
         return definition;
     }
 
-    private JSONObject parseArguments(String raw) {
+    private ObjectNode parseArguments(String raw) {
         if (isBlank(raw)) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject object = JSON.parseObject(raw);
-            return object == null ? new JSONObject() : object;
-        } catch (Exception ignored) {
-            JSONObject object = new JSONObject();
+            ObjectNode object = CodingJson.parseObject(raw);
+            return object == null ? CodingJson.newObject() : object;
+        } catch (RuntimeException ignored) {
+            ObjectNode object = CodingJson.newObject();
             object.put("task", raw);
             return object;
         }
-    }
-
-    private Boolean parseBoolean(JSONObject arguments, String key) {
-        if (arguments == null || key == null || !arguments.containsKey(key)) {
-            return null;
-        }
-        return arguments.getBoolean(key);
     }
 
     private CodingSessionMode parseSessionMode(String raw) {

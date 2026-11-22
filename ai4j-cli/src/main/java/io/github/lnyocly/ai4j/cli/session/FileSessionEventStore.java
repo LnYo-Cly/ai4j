@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.cli.session;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.coding.session.SessionEvent;
 
 import java.io.ByteArrayOutputStream;
@@ -31,7 +31,7 @@ public class FileSessionEventStore implements SessionEventStore {
         }
         Files.createDirectories(directory);
         Path file = resolveFile(event.getSessionId());
-        String line = JSON.toJSONString(event) + System.lineSeparator();
+        String line = CliJson.toJson(event) + System.lineSeparator();
         Files.write(file, line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         return event;
     }
@@ -49,7 +49,7 @@ public class FileSessionEventStore implements SessionEventStore {
         List<SessionEvent> events = new ArrayList<SessionEvent>();
         for (String line : lines) {
             if (!isBlank(line)) {
-                SessionEvent event = JSON.parseObject(line, SessionEvent.class);
+                SessionEvent event = CliJson.fromJson(line, SessionEvent.class);
                 if (event != null) {
                     events.add(event);
                 }
@@ -111,7 +111,7 @@ public class FileSessionEventStore implements SessionEventStore {
         for (String line : content.split("\n", -1)) {
             String trimmed = line == null ? "" : line.trim();
             if (!trimmed.isEmpty()) {
-                SessionEvent event = JSON.parseObject(trimmed, SessionEvent.class);
+                SessionEvent event = CliJson.fromJson(trimmed, SessionEvent.class);
                 if (event != null) {
                     events.add(event);
                 }

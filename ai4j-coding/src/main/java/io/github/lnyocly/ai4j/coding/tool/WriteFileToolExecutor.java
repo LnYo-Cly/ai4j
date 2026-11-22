@@ -1,10 +1,11 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.nio.charset.StandardCharsets;
@@ -24,19 +25,20 @@ public class WriteFileToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String path = safeTrim(arguments.getString("path"));
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String path = safeTrim(CodingJson.getString(arguments, "path"));
         if (isBlank(path)) {
             throw invalid("write_file requires a non-empty path", null);
         }
-        if (!arguments.containsKey("content") || arguments.get("content") == null) {
+        JsonNode contentNode = arguments.get("content");
+        if (contentNode == null || contentNode.isNull()) {
             throw invalid("write_file requires content", null);
         }
-        if (!(arguments.get("content") instanceof String)) {
+        if (!contentNode.isTextual()) {
             throw invalid("write_file content must be a string", null);
         }
-        String content = arguments.getString("content");
-        String mode = firstNonBlank(safeTrim(arguments.getString("mode")), "overwrite").toLowerCase(Locale.ROOT);
+        String content = contentNode.asText();
+        String mode = firstNonBlank(safeTrim(CodingJson.getString(arguments, "mode")), "overwrite").toLowerCase(Locale.ROOT);
         if (!"create".equals(mode) && !"overwrite".equals(mode) && !"append".equals(mode)) {
             throw invalid("unsupported write mode: " + mode, null);
         }
@@ -78,22 +80,22 @@ public class WriteFileToolExecutor implements ToolExecutor {
             appended = true;
         }
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = CodingJson.newObject();
         result.put("path", path);
         result.put("resolvedPath", file.toString());
         result.put("mode", mode);
         result.put("created", created);
         result.put("appended", appended);
         result.put("bytesWritten", bytes.length);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
             if (arguments == null) {
                 throw invalid("write_file arguments must be a JSON object", null);
             }

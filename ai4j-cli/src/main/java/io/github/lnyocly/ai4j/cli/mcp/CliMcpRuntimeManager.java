@@ -1,10 +1,10 @@
 package io.github.lnyocly.ai4j.cli.mcp;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.StaticToolRegistry;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.mcp.client.McpClient;
 import io.github.lnyocly.ai4j.mcp.entity.McpToolDefinition;
@@ -333,8 +333,9 @@ public final class CliMcpRuntimeManager implements AutoCloseable {
             return Collections.emptyMap();
         }
         try {
-            return JSON.parseObject(rawArguments, Map.class);
-        } catch (Exception ex) {
+            Map<String, Object> parsed = CliJson.parseMap(rawArguments);
+            return parsed == null ? Collections.emptyMap() : parsed;
+        } catch (RuntimeException ex) {
             throw new IllegalArgumentException("Invalid MCP tool arguments: " + safeMessage(ex), ex);
         }
     }

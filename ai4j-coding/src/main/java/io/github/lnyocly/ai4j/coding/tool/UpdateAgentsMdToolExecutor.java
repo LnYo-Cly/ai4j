@@ -1,13 +1,16 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.AgentsMdStore;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class UpdateAgentsMdToolExecutor implements ToolExecutor {
 
@@ -26,8 +29,8 @@ public class UpdateAgentsMdToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String action = arguments.getString("action");
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String action = CodingJson.getString(arguments, "action");
         if (action == null || action.trim().isEmpty()) {
             action = "read";
         }
@@ -45,38 +48,38 @@ public class UpdateAgentsMdToolExecutor implements ToolExecutor {
 
     private String read() throws Exception {
         String content = store.read();
-        JSONObject result = new JSONObject();
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("action", "read");
         result.put("path", relativized());
         result.put("exists", store.exists());
         result.put("content", content);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
-    private String write(JSONObject arguments) throws Exception {
-        String content = arguments.containsKey("content") && arguments.get("content") != null
-                ? arguments.getString("content")
+    private String write(ObjectNode arguments) throws Exception {
+        String content = arguments.hasNonNull("content")
+                ? CodingJson.getString(arguments, "content")
                 : "";
         Path file = store.write(content);
-        JSONObject result = new JSONObject();
+        ObjectNode result = CodingJson.newObject();
         result.put("action", "write");
         result.put("path", relativized());
         result.put("resolvedPath", file.toString());
         result.put("success", true);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
-    private String append(JSONObject arguments) throws Exception {
-        String text = arguments.containsKey("text") && arguments.get("text") != null
-                ? arguments.getString("text")
+    private String append(ObjectNode arguments) throws Exception {
+        String text = arguments.hasNonNull("text")
+                ? CodingJson.getString(arguments, "text")
                 : "";
         Path file = store.append(text);
-        JSONObject result = new JSONObject();
+        ObjectNode result = CodingJson.newObject();
         result.put("action", "append");
         result.put("path", relativized());
         result.put("resolvedPath", file.toString());
         result.put("success", true);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
     private String relativized() {
@@ -88,10 +91,20 @@ public class UpdateAgentsMdToolExecutor implements ToolExecutor {
         return agentsMd.toString().replace('\\', '/');
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
+            if (arguments == null) {
+                throw new AgentToolInputException("update_agents_md arguments must be a JSON object");
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw new AgentToolInputException("update_agents_md arguments must be valid JSON: " + parseFailure.getMessage(), parseFailure);
+        }
     }
 }

@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,13 +42,13 @@ public class EditToolExecutorTest {
 
     @Test
     public void shouldReplaceUniqueMatch() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "App.java");
         a.put("old_string", "hello");
         a.put("new_string", "world");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(1, result.getIntValue("replacements"));
-        assertTrue(result.getBoolean("success"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(1, CodingJson.getIntValue(result, "replacements"));
+        assertTrue(CodingJson.getBooleanValue(result, "success"));
         String content = new String(Files.readAllBytes(tempDir.resolve("App.java")));
         assertTrue(content.contains("world"));
         assertFalse(content.contains("hello"));
@@ -56,24 +56,24 @@ public class EditToolExecutorTest {
 
     @Test
     public void shouldReplaceMultipleLines() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "App.java");
         a.put("old_string", "        System.out.println(\"hello\");");
         a.put("new_string", "        // removed");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(1, result.getIntValue("replacements"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(1, CodingJson.getIntValue(result, "replacements"));
         String content = new String(Files.readAllBytes(tempDir.resolve("App.java")));
         assertTrue(content.contains("// removed"));
     }
 
     @Test
     public void shouldErrorWhenOldStringNotFound() {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "App.java");
         a.put("old_string", "nonexistent");
         a.put("new_string", "x");
         try {
-            execute(a.toJSONString());
+            execute(CodingJson.toJson(a));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("not found"));
@@ -86,12 +86,12 @@ public class EditToolExecutorTest {
     public void shouldErrorWhenNotUniqueAndReplaceAllFalse() throws IOException {
         Files.write(tempDir.resolve("Dup.java"),
                 "int x = 1;\nint x = 1;\n".getBytes());
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "Dup.java");
         a.put("old_string", "int x = 1;");
         a.put("new_string", "int y = 2;");
         try {
-            execute(a.toJSONString());
+            execute(CodingJson.toJson(a));
             fail("Expected IllegalArgumentException for non-unique match");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("not unique"));
@@ -104,25 +104,25 @@ public class EditToolExecutorTest {
     public void shouldReplaceAllWhenFlagSet() throws Exception {
         Files.write(tempDir.resolve("Dup.java"),
                 "int x = 1;\nint x = 1;\n".getBytes());
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "Dup.java");
         a.put("old_string", "int x = 1;");
         a.put("new_string", "int y = 2;");
         a.put("replaceAll", true);
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(2, result.getIntValue("replacements"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(2, CodingJson.getIntValue(result, "replacements"));
         String content = new String(Files.readAllBytes(tempDir.resolve("Dup.java")));
         assertEquals("int y = 2;\nint y = 2;\n", content);
     }
 
     @Test
     public void shouldErrorWhenOldAndNewAreIdentical() {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "App.java");
         a.put("old_string", "hello");
         a.put("new_string", "hello");
         try {
-            execute(a.toJSONString());
+            execute(CodingJson.toJson(a));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("identical"));
@@ -133,12 +133,12 @@ public class EditToolExecutorTest {
 
     @Test
     public void shouldErrorWhenFileDoesNotExist() {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("path", "nope.java");
         a.put("old_string", "a");
         a.put("new_string", "b");
         try {
-            execute(a.toJSONString());
+            execute(CodingJson.toJson(a));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("does not exist"));
@@ -149,11 +149,11 @@ public class EditToolExecutorTest {
 
     @Test
     public void shouldRequirePath() {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("old_string", "a");
         a.put("new_string", "b");
         try {
-            execute(a.toJSONString());
+            execute(CodingJson.toJson(a));
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("path"));

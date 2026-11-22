@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,18 +35,18 @@ public class UpdateAgentsMdToolExecutorTest {
 
     @Test
     public void shouldReadEmptyWhenMissing() throws Exception {
-        JSONObject result = JSON.parseObject(execute(action("read")));
-        assertFalse(result.getBoolean("exists"));
-        assertEquals("", result.getString("content"));
+        ObjectNode result = CodingJson.parseObject(execute(action("read")));
+        assertFalse(CodingJson.getBooleanValue(result, "exists"));
+        assertEquals("", CodingJson.getString(result, "content"));
     }
 
     @Test
     public void shouldWriteContent() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("action", "write");
         a.put("content", "# My Project\nAlways test before commit.\n");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertTrue(result.getBoolean("success"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertTrue(CodingJson.getBooleanValue(result, "success"));
 
         String file = new String(Files.readAllBytes(tempDir.resolve("AGENTS.md")));
         assertTrue(file.contains("# My Project"));
@@ -55,28 +55,28 @@ public class UpdateAgentsMdToolExecutorTest {
 
     @Test
     public void shouldReadBackWrittenContent() throws Exception {
-        JSONObject write = new JSONObject();
+        ObjectNode write = CodingJson.newObject();
         write.put("action", "write");
         write.put("content", "# Notes\nUse spaces.\n");
-        execute(write.toJSONString());
+        execute(CodingJson.toJson(write));
 
-        JSONObject result = JSON.parseObject(execute(action("read")));
-        assertTrue(result.getBoolean("exists"));
-        assertTrue(result.getString("content").contains("Use spaces"));
+        ObjectNode result = CodingJson.parseObject(execute(action("read")));
+        assertTrue(CodingJson.getBooleanValue(result, "exists"));
+        assertTrue(CodingJson.getString(result, "content").contains("Use spaces"));
     }
 
     @Test
     public void shouldAppendText() throws Exception {
-        JSONObject write = new JSONObject();
+        ObjectNode write = CodingJson.newObject();
         write.put("action", "write");
         write.put("content", "# Header\n");
-        execute(write.toJSONString());
+        execute(CodingJson.toJson(write));
 
-        JSONObject append = new JSONObject();
+        ObjectNode append = CodingJson.newObject();
         append.put("action", "append");
         append.put("text", "## Decision\nUse Java 8.\n");
-        JSONObject result = JSON.parseObject(execute(append.toJSONString()));
-        assertTrue(result.getBoolean("success"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(append)));
+        assertTrue(CodingJson.getBooleanValue(result, "success"));
 
         String file = new String(Files.readAllBytes(tempDir.resolve("AGENTS.md")));
         assertTrue(file.contains("# Header"));
@@ -85,8 +85,8 @@ public class UpdateAgentsMdToolExecutorTest {
 
     @Test
     public void shouldDefaultToReadAction() throws Exception {
-        JSONObject result = JSON.parseObject(execute("{}"));
-        assertFalse(result.getBoolean("exists"));
+        ObjectNode result = CodingJson.parseObject(execute("{}"));
+        assertFalse(CodingJson.getBooleanValue(result, "exists"));
     }
 
     @Test
@@ -102,9 +102,9 @@ public class UpdateAgentsMdToolExecutorTest {
     }
 
     private String action(String action) {
-        JSONObject obj = new JSONObject();
+        ObjectNode obj = CodingJson.newObject();
         obj.put("action", action);
-        return obj.toJSONString();
+        return CodingJson.toJson(obj);
     }
 
     private String execute(String args) throws Exception {

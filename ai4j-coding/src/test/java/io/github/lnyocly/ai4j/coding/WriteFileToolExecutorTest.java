@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.tool.WriteFileToolExecutor;
@@ -31,19 +30,19 @@ public class WriteFileToolExecutorTest {
                 WorkspaceContext.builder().rootPath(workspaceRoot.toString()).build()
         );
 
-        JSONObject created = JSON.parseObject(executor.execute(call("notes/todo.txt", "alpha", "create")));
-        assertTrue(created.getBooleanValue("created"));
-        assertFalse(created.getBooleanValue("appended"));
+        ObjectNode created = CodingJson.parseObject(executor.execute(call("notes/todo.txt", "alpha", "create")));
+        assertTrue(CodingJson.getBooleanValue(created, "created"));
+        assertFalse(CodingJson.getBooleanValue(created, "appended"));
         assertEquals("alpha", new String(Files.readAllBytes(workspaceRoot.resolve("notes/todo.txt")), StandardCharsets.UTF_8));
 
-        JSONObject overwritten = JSON.parseObject(executor.execute(call("notes/todo.txt", "beta", "overwrite")));
-        assertFalse(overwritten.getBooleanValue("created"));
-        assertFalse(overwritten.getBooleanValue("appended"));
+        ObjectNode overwritten = CodingJson.parseObject(executor.execute(call("notes/todo.txt", "beta", "overwrite")));
+        assertFalse(CodingJson.getBooleanValue(overwritten, "created"));
+        assertFalse(CodingJson.getBooleanValue(overwritten, "appended"));
         assertEquals("beta", new String(Files.readAllBytes(workspaceRoot.resolve("notes/todo.txt")), StandardCharsets.UTF_8));
 
-        JSONObject appended = JSON.parseObject(executor.execute(call("notes/todo.txt", "\ngamma", "append")));
-        assertFalse(appended.getBooleanValue("created"));
-        assertTrue(appended.getBooleanValue("appended"));
+        ObjectNode appended = CodingJson.parseObject(executor.execute(call("notes/todo.txt", "\ngamma", "append")));
+        assertFalse(CodingJson.getBooleanValue(appended, "created"));
+        assertTrue(CodingJson.getBooleanValue(appended, "appended"));
         assertEquals("beta\ngamma", new String(Files.readAllBytes(workspaceRoot.resolve("notes/todo.txt")), StandardCharsets.UTF_8));
     }
 
@@ -125,13 +124,13 @@ public class WriteFileToolExecutorTest {
     }
 
     private AgentToolCall call(String path, String content, String mode) {
-        JSONObject arguments = new JSONObject();
+        ObjectNode arguments = CodingJson.newObject();
         arguments.put("path", path);
         arguments.put("content", content);
         arguments.put("mode", mode);
         return AgentToolCall.builder()
                 .name(CodingToolNames.WRITE_FILE)
-                .arguments(arguments.toJSONString())
+                .arguments(CodingJson.toJson(arguments))
                 .build();
     }
 }

@@ -12,8 +12,7 @@ import io.github.lnyocly.ai4j.cli.runtime.CodingCliSessionRunner;
 import io.github.lnyocly.ai4j.cli.runtime.CodingCliTuiSupport;
 import io.github.lnyocly.ai4j.cli.shell.JlineShellContext;
 import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
@@ -2131,7 +2130,7 @@ public class CodeCommandTest {
                 .build();
         Files.write(
                 sessionsDir.resolve(sessionId + ".json"),
-                JSON.toJSONString(storedSession).getBytes(StandardCharsets.UTF_8)
+                CliJson.toJson(storedSession).getBytes(StandardCharsets.UTF_8)
         );
     }
 
@@ -2661,12 +2660,12 @@ public class CodeCommandTest {
             String toolOutput = findLastToolOutput(prompt);
             if (toolOutput != null) {
                 if (toolOutput.startsWith("TOOL_ERROR:")) {
-                    JSONObject error = parseObject(toolOutput.substring("TOOL_ERROR:".length()).trim());
-                    String message = error == null ? toolOutput : firstNonBlank(error.getString("error"), toolOutput);
+                    ObjectNode error = parseObject(toolOutput.substring("TOOL_ERROR:".length()).trim());
+                    String message = error == null ? toolOutput : firstNonBlank(CliJson.getString(error, "error"), toolOutput);
                     return AgentModelResult.builder().outputText("Tool error: " + message).build();
                 }
-                JSONObject json = parseObject(toolOutput);
-                String content = json == null ? "" : firstNonBlank(json.getString("content"), json.getString("stdout"));
+                ObjectNode json = parseObject(toolOutput);
+                String content = json == null ? "" : firstNonBlank(CliJson.getString(json, "content"), CliJson.getString(json, "stdout"));
                 return AgentModelResult.builder().outputText("Read result: " + content).build();
             }
 
@@ -2975,15 +2974,8 @@ public class CodeCommandTest {
             return null;
         }
 
-        private JSONObject parseObject(String raw) {
-            if (raw == null || raw.trim().isEmpty()) {
-                return null;
-            }
-            try {
-                return JSON.parseObject(raw);
-            } catch (Exception ignored) {
-                return null;
-            }
+        private ObjectNode parseObject(String raw) {
+            return CliJson.parseObjectOrNull(raw);
         }
 
         private String firstNonBlank(String... values) {

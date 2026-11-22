@@ -1,10 +1,11 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.io.IOException;
@@ -23,31 +24,26 @@ public class EditToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String path = safeTrim(arguments.getString("path"));
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String path = safeTrim(CodingJson.getString(arguments, "path"));
         if (isBlank(path)) {
             throw invalid("edit requires a non-empty path", null);
         }
-        if (!arguments.containsKey("old_string") || arguments.get("old_string") == null
-                || !(arguments.get("old_string") instanceof String)) {
+        JsonNode oldStringNode = arguments.get("old_string");
+        if (oldStringNode == null || oldStringNode.isNull() || !oldStringNode.isTextual()) {
             throw invalid("edit requires old_string as a string", null);
         }
-        if (!arguments.containsKey("new_string") || arguments.get("new_string") == null
-                || !(arguments.get("new_string") instanceof String)) {
+        JsonNode newStringNode = arguments.get("new_string");
+        if (newStringNode == null || newStringNode.isNull() || !newStringNode.isTextual()) {
             throw invalid("edit requires new_string as a string", null);
         }
-        String oldString = arguments.containsKey("old_string") && arguments.get("old_string") != null
-                ? arguments.getString("old_string")
-                : "";
-        String newString = arguments.containsKey("new_string") && arguments.get("new_string") != null
-                ? arguments.getString("new_string")
-                : "";
-        Boolean replaceAll = arguments.getBoolean("replaceAll");
-        if (arguments.containsKey("replaceAll") && arguments.get("replaceAll") != null
-                && !(arguments.get("replaceAll") instanceof Boolean)) {
+        String oldString = oldStringNode.asText();
+        String newString = newStringNode.asText();
+        JsonNode replaceAllNode = arguments.get("replaceAll");
+        if (replaceAllNode != null && !replaceAllNode.isNull() && !replaceAllNode.isBoolean()) {
             throw invalid("edit replaceAll must be a boolean", null);
         }
-        boolean all = replaceAll != null && replaceAll;
+        boolean all = replaceAllNode != null && replaceAllNode.isBoolean() && replaceAllNode.asBoolean();
 
         if (oldString.isEmpty()) {
             throw invalid("old_string is required and must not be empty", null);
@@ -98,12 +94,12 @@ public class EditToolExecutor implements ToolExecutor {
         Files.write(file, updated.getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = CodingJson.newObject();
         result.put("path", path);
         result.put("resolvedPath", file.toString());
         result.put("replacements", replacements);
         result.put("success", true);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
     static int countOccurrences(String haystack, String needle) {
@@ -119,12 +115,12 @@ public class EditToolExecutor implements ToolExecutor {
         return count;
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
             if (arguments == null) {
                 throw invalid("edit arguments must be a JSON object", null);
             }

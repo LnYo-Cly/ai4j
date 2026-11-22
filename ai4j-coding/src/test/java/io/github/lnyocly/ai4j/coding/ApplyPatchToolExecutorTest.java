@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.coding.tool.ApplyPatchToolExecutor;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
@@ -38,11 +37,11 @@ public class ApplyPatchToolExecutorTest {
                 "+beta",
                 "*** End Patch"
         )));
-        JSONObject add = JSON.parseObject(addResult);
-        assertEquals(1, add.getIntValue("filesChanged"));
-        assertEquals("notes/todo.txt", add.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
-        assertEquals("add", add.getJSONArray("fileChanges").getJSONObject(0).getString("operation"));
-        assertEquals(2, add.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesAdded"));
+        ObjectNode add = CodingJson.parseObject(addResult);
+        assertEquals(1, CodingJson.getIntValue(add, "filesChanged"));
+        assertEquals("notes/todo.txt", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(add, "fileChanges"), 0), "path"));
+        assertEquals("add", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(add, "fileChanges"), 0), "operation"));
+        assertEquals(2, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(add, "fileChanges"), 0), "linesAdded"));
         assertTrue(Files.exists(workspaceRoot.resolve("notes/todo.txt")));
         assertEquals("alpha\nbeta", new String(Files.readAllBytes(workspaceRoot.resolve("notes/todo.txt")), StandardCharsets.UTF_8));
 
@@ -57,12 +56,12 @@ public class ApplyPatchToolExecutorTest {
                 " third",
                 "*** End Patch"
         )));
-        JSONObject update = JSON.parseObject(updateResult);
-        assertEquals(1, update.getIntValue("operationsApplied"));
-        assertEquals("demo.txt", update.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
-        assertEquals("update", update.getJSONArray("fileChanges").getJSONObject(0).getString("operation"));
-        assertEquals(1, update.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesAdded"));
-        assertEquals(1, update.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesRemoved"));
+        ObjectNode update = CodingJson.parseObject(updateResult);
+        assertEquals(1, CodingJson.getIntValue(update, "operationsApplied"));
+        assertEquals("demo.txt", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "path"));
+        assertEquals("update", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "operation"));
+        assertEquals(1, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "linesAdded"));
+        assertEquals(1, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "linesRemoved"));
         assertEquals("first\nupdated-second\nthird",
                 new String(Files.readAllBytes(workspaceRoot.resolve("demo.txt")), StandardCharsets.UTF_8));
 
@@ -71,11 +70,11 @@ public class ApplyPatchToolExecutorTest {
                 "*** Delete File: demo.txt",
                 "*** End Patch"
         )));
-        JSONObject delete = JSON.parseObject(deleteResult);
-        assertEquals(1, delete.getIntValue("filesChanged"));
-        assertEquals("demo.txt", delete.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
-        assertEquals("delete", delete.getJSONArray("fileChanges").getJSONObject(0).getString("operation"));
-        assertEquals(3, delete.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesRemoved"));
+        ObjectNode delete = CodingJson.parseObject(deleteResult);
+        assertEquals(1, CodingJson.getIntValue(delete, "filesChanged"));
+        assertEquals("demo.txt", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(delete, "fileChanges"), 0), "path"));
+        assertEquals("delete", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(delete, "fileChanges"), 0), "operation"));
+        assertEquals(3, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(delete, "fileChanges"), 0), "linesRemoved"));
         assertFalse(Files.exists(workspaceRoot.resolve("demo.txt")));
     }
 
@@ -93,9 +92,9 @@ public class ApplyPatchToolExecutorTest {
                 "+print('ok')",
                 "*** End Patch"
         )));
-        JSONObject add = JSON.parseObject(addResult);
-        assertEquals(1, add.getIntValue("filesChanged"));
-        assertEquals("calculator.py", add.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
+        ObjectNode add = CodingJson.parseObject(addResult);
+        assertEquals(1, CodingJson.getIntValue(add, "filesChanged"));
+        assertEquals("calculator.py", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(add, "fileChanges"), 0), "path"));
         assertTrue(Files.exists(workspaceRoot.resolve("calculator.py")));
         assertEquals("print('ok')", new String(Files.readAllBytes(workspaceRoot.resolve("calculator.py")), StandardCharsets.UTF_8));
     }
@@ -118,9 +117,9 @@ public class ApplyPatchToolExecutorTest {
                 "+value=2",
                 "*** End Patch"
         )));
-        JSONObject update = JSON.parseObject(updateResult);
-        assertEquals(1, update.getIntValue("operationsApplied"));
-        assertEquals("sample.txt", update.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
+        ObjectNode update = CodingJson.parseObject(updateResult);
+        assertEquals(1, CodingJson.getIntValue(update, "operationsApplied"));
+        assertEquals("sample.txt", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "path"));
         assertEquals("value=2", new String(Files.readAllBytes(workspaceRoot.resolve("sample.txt")), StandardCharsets.UTF_8));
     }
 
@@ -144,11 +143,11 @@ public class ApplyPatchToolExecutorTest {
                 "+value=2",
                 "*** End Patch"
         )));
-        JSONObject update = JSON.parseObject(updateResult);
-        assertEquals(1, update.getIntValue("operationsApplied"));
-        assertEquals("sample.txt", update.getJSONArray("fileChanges").getJSONObject(0).getString("path"));
-        assertEquals(1, update.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesAdded"));
-        assertEquals(1, update.getJSONArray("fileChanges").getJSONObject(0).getIntValue("linesRemoved"));
+        ObjectNode update = CodingJson.parseObject(updateResult);
+        assertEquals(1, CodingJson.getIntValue(update, "operationsApplied"));
+        assertEquals("sample.txt", CodingJson.getString(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "path"));
+        assertEquals(1, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "linesAdded"));
+        assertEquals(1, CodingJson.getIntValue(CodingJson.getObject(CodingJson.getArray(update, "fileChanges"), 0), "linesRemoved"));
         assertEquals("value=2", new String(Files.readAllBytes(workspaceRoot.resolve("sample.txt")), StandardCharsets.UTF_8));
     }
 
@@ -199,11 +198,11 @@ public class ApplyPatchToolExecutorTest {
     }
 
     private AgentToolCall call(String patch) {
-        JSONObject arguments = new JSONObject();
+        ObjectNode arguments = CodingJson.newObject();
         arguments.put("patch", patch);
         return AgentToolCall.builder()
                 .name(CodingToolNames.APPLY_PATCH)
-                .arguments(arguments.toJSONString())
+                .arguments(CodingJson.toJson(arguments))
                 .build();
     }
 

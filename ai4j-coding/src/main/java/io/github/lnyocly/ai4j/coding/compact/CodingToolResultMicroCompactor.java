@@ -1,10 +1,10 @@
 package io.github.lnyocly.ai4j.coding.compact;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -74,8 +74,8 @@ public class CodingToolResultMicroCompactor {
     private List<Integer> collectToolResultIndexes(List<Object> rawItems) {
         List<Integer> indexes = new ArrayList<Integer>();
         for (int i = 0; i < rawItems.size(); i++) {
-            JSONObject object = toJSONObject(rawItems.get(i));
-            if ("function_call_output".equals(object.getString("type"))) {
+            ObjectNode object = toObjectNode(rawItems.get(i));
+            if ("function_call_output".equals(CodingJson.getString(object, "type"))) {
                 indexes.add(i);
             }
         }
@@ -89,11 +89,11 @@ public class CodingToolResultMicroCompactor {
         if (protectedIndexes.contains(index)) {
             return false;
         }
-        JSONObject object = toJSONObject(item);
-        if (!"function_call_output".equals(object.getString("type"))) {
+        ObjectNode object = toObjectNode(item);
+        if (!"function_call_output".equals(CodingJson.getString(object, "type"))) {
             return false;
         }
-        String output = safeText(object.getString("output"));
+        String output = safeText(CodingJson.getString(object, "output"));
         if (output.isEmpty() || output.startsWith(COMPACTED_PREFIX)) {
             return false;
         }
@@ -101,9 +101,9 @@ public class CodingToolResultMicroCompactor {
     }
 
     private Object compactToolResult(Object item) {
-        JSONObject object = toJSONObject(copyItem(item));
-        String callId = safeText(object.getString("call_id"));
-        String output = safeText(object.getString("output"));
+        ObjectNode view = toObjectNode(item);
+        String callId = safeText(CodingJson.getString(view, "call_id"));
+        String output = safeText(CodingJson.getString(view, "output"));
         String preview = output.replace('\r', ' ').replace('\n', ' ').trim();
         if (preview.length() > PREVIEW_CHARS) {
             preview = preview.substring(0, PREVIEW_CHARS).trim() + "...";
@@ -115,6 +115,7 @@ public class CodingToolResultMicroCompactor {
         if (!preview.isEmpty()) {
             compacted.append(" Preview: ").append(preview);
         }
+        Map<String, Object> object = CodingJson.toPlainMap(item);
         object.put("output", compacted.toString());
         return object;
     }
@@ -141,34 +142,34 @@ public class CodingToolResultMicroCompactor {
     }
 
     private int estimateItemTokens(Object item) {
-        JSONObject object = toJSONObject(item);
-        String type = object.getString("type");
+        ObjectNode object = toObjectNode(item);
+        String type = CodingJson.getString(object, "type");
         if ("function_call_output".equals(type)) {
-            return estimateTextTokens(object.getString("output"));
+            return estimateTextTokens(CodingJson.getString(object, "output"));
         }
         if ("message".equals(type)) {
-            JSONArray content = object.getJSONArray("content");
+            ArrayNode content = CodingJson.getArray(object, "content");
             if (content == null) {
-                return estimateTextTokens(object.toJSONString());
+                return estimateTextTokens(CodingJson.toJson(object));
             }
             int chars = 0;
             for (int i = 0; i < content.size(); i++) {
-                JSONObject part = content.getJSONObject(i);
+                ObjectNode part = CodingJson.getObject(content, i);
                 if (part == null) {
                     continue;
                 }
-                String partType = part.getString("type");
+                String partType = CodingJson.getString(part, "type");
                 if ("input_text".equals(partType) || "output_text".equals(partType)) {
-                    chars += safeText(part.getString("text")).length();
+                    chars += safeText(CodingJson.getString(part, "text")).length();
                 } else if ("input_image".equals(partType)) {
                     chars += 4800;
                 } else {
-                    chars += part.toJSONString().length();
+                    chars += CodingJson.toJson(part).length();
                 }
             }
             return estimateChars(chars);
         }
-        return estimateTextTokens(object.toJSONString());
+        return estimateTextTokens(CodingJson.toJson(object));
     }
 
     private int estimateTextTokens(String text) {
@@ -180,29 +181,11 @@ public class CodingToolResultMicroCompactor {
     }
 
     private Object copyItem(Object item) {
-        if (item == null) {
-            return null;
-        }
-        return JSON.parse(JSON.toJSONString(item));
+        return CodingJson.copyPlainValue(item);
     }
 
-    private JSONObject toJSONObject(Object item) {
-        if (item == null) {
-            return new JSONObject();
-        }
-        if (item instanceof JSONObject) {
-            return (JSONObject) item;
-        }
-        if (item instanceof Map<?, ?>) {
-            JSONObject object = new JSONObject();
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) item).entrySet()) {
-                if (entry.getKey() != null) {
-                    object.put(String.valueOf(entry.getKey()), entry.getValue());
-                }
-            }
-            return object;
-        }
-        return JSON.parseObject(JSON.toJSONString(item));
+    private ObjectNode toObjectNode(Object item) {
+        return CodingJson.toObjectNode(item);
     }
 
     private boolean isBlank(String value) {

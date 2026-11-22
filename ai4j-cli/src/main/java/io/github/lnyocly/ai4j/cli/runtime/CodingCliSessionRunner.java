@@ -39,9 +39,9 @@ import io.github.lnyocly.ai4j.cli.session.SessionEventTail;
 import io.github.lnyocly.ai4j.cli.session.StoredCodingSession;
 import io.github.lnyocly.ai4j.cli.shell.JlineShellTerminalIO;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
@@ -2916,7 +2916,7 @@ public class CodingCliSessionRunner {
             return callId;
         }
         String toolName = payloadString(payload, "tool");
-        JSONObject arguments = parseObject(payloadString(payload, "arguments"));
+        ObjectNode arguments = parseObject(payloadString(payload, "arguments"));
         return firstNonBlank(toolName, "tool") + "|"
                 + firstNonBlank(safeTrimToNull(payloadString(payload, "title")), buildToolTitle(toolName, arguments));
     }
@@ -3095,8 +3095,8 @@ public class CodingCliSessionRunner {
             return;
         }
         String toolName = payloadString(payload, "tool");
-        JSONObject arguments = parseObject(payloadString(payload, "arguments"));
-        JSONObject output = parseObject(payloadString(payload, "output"));
+        ObjectNode arguments = parseObject(payloadString(payload, "arguments"));
+        ObjectNode output = parseObject(payloadString(payload, "output"));
         String title = firstNonBlank(payloadString(payload, "title"), buildToolTitle(toolName, arguments));
         List<String> previewLines = payloadLines(payload, "previewLines");
 
@@ -4883,15 +4883,15 @@ public class CodingCliSessionRunner {
         if (call == null || result == null || !"bash".equals(call.getName())) {
             return;
         }
-        JSONObject arguments = parseObject(call.getArguments());
-        String action = arguments == null || isBlank(arguments.getString("action")) ? "exec" : arguments.getString("action");
+        ObjectNode arguments = parseObject(call.getArguments());
+        String action = isBlank(CliJson.getString(arguments, "action")) ? "exec" : CliJson.getString(arguments, "action");
         if ("exec".equals(action) || "logs".equals(action) || "list".equals(action)) {
             return;
         }
 
-        JSONObject process = extractProcessObject(action, result.getOutput());
-        String processId = process == null ? null : process.getString("processId");
-        String status = process == null ? null : process.getString("status");
+        ObjectNode process = extractProcessObject(action, result.getOutput());
+        String processId = CliJson.getString(process, "processId");
+        String status = CliJson.getString(process, "status");
         SessionEventType eventType = resolveProcessEventType(action, status);
         if (eventType == null) {
             return;
@@ -4903,29 +4903,26 @@ public class CodingCliSessionRunner {
                         "action", action,
                         "processId", processId,
                         "status", status,
-                        "command", process == null ? arguments.getString("command") : process.getString("command"),
-                        "workingDirectory", process == null ? arguments.getString("cwd") : process.getString("workingDirectory"),
+                        "command", process == null ? CliJson.getString(arguments, "command") : CliJson.getString(process, "command"),
+                        "workingDirectory", process == null ? CliJson.getString(arguments, "cwd") : CliJson.getString(process, "workingDirectory"),
                         "output", clip(result.getOutput(), options.isVerbose() ? 4000 : 1200)
                 ));
     }
 
-    private JSONObject extractProcessObject(String action, String output) {
+    private ObjectNode extractProcessObject(String action, String output) {
         if (isBlank(output)) {
             return null;
         }
-        try {
-            if ("write".equals(action)) {
-                JSONObject root = JSON.parseObject(output);
-                return root == null ? null : root.getJSONObject("process");
-            }
-            if ("start".equals(action) || "status".equals(action) || "stop".equals(action)) {
-                return JSON.parseObject(output);
-            }
-            if ("list".equals(action)) {
-                JSONArray array = JSON.parseArray(output);
-                return array == null || array.isEmpty() ? null : array.getJSONObject(0);
-            }
-        } catch (Exception ignored) {
+        if ("write".equals(action)) {
+            ObjectNode root = CliJson.parseObjectOrNull(output);
+            return CliJson.getObject(root, "process");
+        }
+        if ("start".equals(action) || "status".equals(action) || "stop".equals(action)) {
+            return CliJson.parseObjectOrNull(output);
+        }
+        if ("list".equals(action)) {
+            ArrayNode array = CliJson.parseArrayOrNull(output);
+            return array == null || array.isEmpty() ? null : CliJson.getObject(array, 0);
         }
         return null;
     }
@@ -5039,11 +5036,18 @@ public class CodingCliSessionRunner {
             if (isBlank(raw)) {
                 return new ArrayList<String>();
             }
-            try {
-                return toStringLines(JSON.parseArray(raw));
-            } catch (Exception ignored) {
+            ArrayNode array = CliJson.parseArrayOrNull(raw);
+            if (array == null) {
                 return new ArrayList<String>();
             }
+            List<String> lines = new ArrayList<String>();
+            for (int i = 0; i < array.size(); i++) {
+                String line = CliJson.getString(array, i);
+                if (!isBlank(line)) {
+                    lines.add(line);
+                }
+            }
+            return lines;
         }
         return new ArrayList<String>();
     }
@@ -5178,15 +5182,8 @@ public class CodingCliSessionRunner {
         return payload != null && !isBlank(key) && payload.containsKey(key);
     }
 
-    private JSONObject parseObject(String value) {
-        if (isBlank(value)) {
-            return null;
-        }
-        try {
-            return JSON.parseObject(value);
-        } catch (Exception ignored) {
-            return null;
-        }
+    private ObjectNode parseObject(String value) {
+        return CliJson.parseObjectOrNull(value);
     }
 
     private String[] toPanelLines(String text, int maxChars, int maxLines) {
@@ -5991,7 +5988,7 @@ public class CodingCliSessionRunner {
     }
 
     private TuiAssistantToolView buildPendingToolView(AgentToolCall call) {
-        JSONObject arguments = parseObject(call == null ? null : call.getArguments());
+        ObjectNode arguments = parseObject(call == null ? null : call.getArguments());
         String toolName = call == null ? null : call.getName();
         String title = buildToolTitle(toolName, arguments);
         String detail = buildPendingToolDetail(toolName, arguments);
@@ -6007,8 +6004,8 @@ public class CodingCliSessionRunner {
 
     private TuiAssistantToolView buildCompletedToolView(AgentToolCall call, AgentToolResult result) {
         String toolName = call != null && !isBlank(call.getName()) ? call.getName() : (result == null ? null : result.getName());
-        JSONObject arguments = parseObject(call == null ? null : call.getArguments());
-        JSONObject output = parseObject(result == null ? null : result.getOutput());
+        ObjectNode arguments = parseObject(call == null ? null : call.getArguments());
+        ObjectNode output = parseObject(result == null ? null : result.getOutput());
         return TuiAssistantToolView.builder()
                 .callId(call == null ? null : call.getCallId())
                 .toolName(toolName)
@@ -6019,7 +6016,7 @@ public class CodingCliSessionRunner {
                 .build();
     }
 
-    private boolean isToolError(AgentToolResult result, JSONObject output) {
+    private boolean isToolError(AgentToolResult result, ObjectNode output) {
         return !isBlank(extractToolError(result == null ? null : result.getOutput(), output));
     }
 
@@ -6027,12 +6024,12 @@ public class CodingCliSessionRunner {
         return isApprovalRejectedToolError(result == null ? null : result.getOutput(), null);
     }
 
-    private boolean isApprovalRejectedToolError(String rawOutput, JSONObject output) {
+    private boolean isApprovalRejectedToolError(String rawOutput, ObjectNode output) {
         String error = extractRawToolError(rawOutput, output);
         return !isBlank(error) && error.startsWith(CliToolApprovalDecorator.APPROVAL_REJECTED_PREFIX);
     }
 
-    private String extractToolError(String rawOutput, JSONObject output) {
+    private String extractToolError(String rawOutput, ObjectNode output) {
         String rawError = extractRawToolError(rawOutput, output);
         if (isBlank(rawError)) {
             return null;
@@ -6040,11 +6037,12 @@ public class CodingCliSessionRunner {
         return stripApprovalRejectedPrefix(rawError);
     }
 
-    private String extractRawToolError(String rawOutput, JSONObject output) {
+    private String extractRawToolError(String rawOutput, ObjectNode output) {
         if (!isBlank(rawOutput) && rawOutput.startsWith("TOOL_ERROR:")) {
-            JSONObject errorPayload = parseObject(rawOutput.substring("TOOL_ERROR:".length()).trim());
-            if (errorPayload != null && !isBlank(errorPayload.getString("error"))) {
-                return errorPayload.getString("error");
+            ObjectNode errorPayload = parseObject(rawOutput.substring("TOOL_ERROR:".length()).trim());
+            String errorMessage = CliJson.getString(errorPayload, "error");
+            if (!isBlank(errorMessage)) {
+                return errorMessage;
             }
             return rawOutput.substring("TOOL_ERROR:".length()).trim();
         }
@@ -6054,7 +6052,7 @@ public class CodingCliSessionRunner {
         if (output == null) {
             return null;
         }
-        String error = output.getString("error");
+        String error = CliJson.getString(output, "error");
         return isBlank(error) ? null : error.trim();
     }
 
@@ -6069,30 +6067,30 @@ public class CodingCliSessionRunner {
         return isBlank(stripped) ? "Tool call rejected by user" : stripped;
     }
 
-    private String buildToolTitle(String toolName, JSONObject arguments) {
+    private String buildToolTitle(String toolName, ObjectNode arguments) {
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) || "start".equals(action)) {
-                String command = firstNonBlank(arguments == null ? null : arguments.getString("command"), null);
+                String command = firstNonBlank(CliJson.getString(arguments, "command"), null);
                 return isBlank(command) ? "bash " + action : "$ " + command;
             }
             if ("write".equals(action)) {
-                return "bash write " + firstNonBlank(arguments == null ? null : arguments.getString("processId"), "(process)");
+                return "bash write " + firstNonBlank(CliJson.getString(arguments, "processId"), "(process)");
             }
             if ("logs".equals(action) || "status".equals(action) || "stop".equals(action)) {
-                return "bash " + action + " " + firstNonBlank(arguments == null ? null : arguments.getString("processId"), "(process)");
+                return "bash " + action + " " + firstNonBlank(CliJson.getString(arguments, "processId"), "(process)");
             }
             return "bash " + action;
         }
         if ("read_file".equals(toolName)) {
-            String path = arguments == null ? null : arguments.getString("path");
-            Integer startLine = arguments == null ? null : arguments.getInteger("startLine");
-            Integer endLine = arguments == null ? null : arguments.getInteger("endLine");
+            String path = CliJson.getString(arguments, "path");
+            Integer startLine = CliJson.getInteger(arguments, "startLine");
+            Integer endLine = CliJson.getInteger(arguments, "endLine");
             String range = startLine == null ? "" : ":" + startLine + (endLine == null ? "" : "-" + endLine);
             return "read " + firstNonBlank(path, "(path)") + range;
         }
         if ("write_file".equals(toolName)) {
-            return "write " + firstNonBlank(arguments == null ? null : arguments.getString("path"), "(path)");
+            return "write " + firstNonBlank(CliJson.getString(arguments, "path"), "(path)");
         }
         if ("apply_patch".equals(toolName)) {
             return "apply_patch";
@@ -6105,9 +6103,9 @@ public class CodingCliSessionRunner {
         return qualifiedToolName + "(" + argumentSummary + ")";
     }
 
-    private String buildPendingToolDetail(String toolName, JSONObject arguments) {
+    private String buildPendingToolDetail(String toolName, ObjectNode arguments) {
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) || "start".equals(action)) {
                 return "Running command...";
             }
@@ -6140,14 +6138,14 @@ public class CodingCliSessionRunner {
         return "Running tool...";
     }
 
-    private List<String> buildPendingToolPreviewLines(String toolName, JSONObject arguments) {
+    private List<String> buildPendingToolPreviewLines(String toolName, ObjectNode arguments) {
         List<String> previewLines = new ArrayList<String>();
         if ("bash".equals(toolName)) {
             return previewLines;
         }
         if ("apply_patch".equals(toolName)) {
             previewLines.addAll(PatchSummaryFormatter.summarizePatchRequest(
-                    arguments == null ? null : arguments.getString("patch"),
+                    CliJson.getString(arguments, "patch"),
                     6
             ));
             return previewLines;
@@ -6156,28 +6154,28 @@ public class CodingCliSessionRunner {
     }
 
     private String buildCompletedToolDetail(String toolName,
-                                            JSONObject arguments,
-                                            JSONObject output,
+                                            ObjectNode arguments,
+                                            ObjectNode output,
                                             String rawOutput) {
         String toolError = extractToolError(rawOutput, output);
         if (!isBlank(toolError)) {
             return clip(toolError, 96);
         }
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) && output != null) {
-                if (output.getBooleanValue("timedOut")) {
+                if (CliJson.getBooleanValue(output, "timedOut")) {
                     return "timed out";
                 }
                 return null;
             }
             if (("start".equals(action) || "status".equals(action) || "stop".equals(action)) && output != null) {
-                String processId = firstNonBlank(output.getString("processId"), "process");
-                String status = safeTrimToNull(output.getString("status"));
+                String processId = firstNonBlank(CliJson.getString(output, "processId"), "process");
+                String status = safeTrimToNull(CliJson.getString(output, "status"));
                 return isBlank(status) ? processId : processId + " | " + status.toLowerCase(Locale.ROOT);
             }
             if ("write".equals(action) && output != null) {
-                return output.getIntValue("bytesWritten") + " bytes written";
+                return CliJson.getIntValue(output, "bytesWritten") + " bytes written";
             }
             if ("logs".equals(action) && output != null) {
                 return null;
@@ -6185,19 +6183,19 @@ public class CodingCliSessionRunner {
             return clip(rawOutput, 96);
         }
         if ("read_file".equals(toolName) && output != null) {
-            return firstNonBlank(output.getString("path"), firstNonBlank(arguments == null ? null : arguments.getString("path"), "(path)"))
-                    + ":" + output.getIntValue("startLine") + "-" + output.getIntValue("endLine")
-                    + (output.getBooleanValue("truncated") ? " | truncated" : "");
+            return firstNonBlank(CliJson.getString(output, "path"), firstNonBlank(CliJson.getString(arguments, "path"), "(path)"))
+                    + ":" + CliJson.getIntValue(output, "startLine") + "-" + CliJson.getIntValue(output, "endLine")
+                    + (CliJson.getBooleanValue(output, "truncated") ? " | truncated" : "");
         }
         if ("write_file".equals(toolName) && output != null) {
-            String status = output.getBooleanValue("appended")
+            String status = CliJson.getBooleanValue(output, "appended")
                     ? "appended"
-                    : (output.getBooleanValue("created") ? "created" : "overwritten");
-            return status + " | " + output.getIntValue("bytesWritten") + " bytes";
+                    : (CliJson.getBooleanValue(output, "created") ? "created" : "overwritten");
+            return status + " | " + CliJson.getIntValue(output, "bytesWritten") + " bytes";
         }
         if ("apply_patch".equals(toolName) && output != null) {
-            int filesChanged = output.getIntValue("filesChanged");
-            int operationsApplied = output.getIntValue("operationsApplied");
+            int filesChanged = CliJson.getIntValue(output, "filesChanged");
+            int operationsApplied = CliJson.getIntValue(output, "operationsApplied");
             if (filesChanged <= 0 && operationsApplied <= 0) {
                 return null;
             }
@@ -6228,13 +6226,14 @@ public class CodingCliSessionRunner {
         return serverName + "." + normalizedToolName;
     }
 
-    private String formatToolArgumentSummary(JSONObject arguments) {
+    private String formatToolArgumentSummary(ObjectNode arguments) {
         if (arguments == null || arguments.isEmpty()) {
             return null;
         }
+        Map<String, Object> plainArguments = CliJson.toPlainMap(arguments);
         List<String> parts = new ArrayList<String>();
         int count = 0;
-        for (Map.Entry<String, Object> entry : arguments.entrySet()) {
+        for (Map.Entry<String, Object> entry : plainArguments.entrySet()) {
             if (entry == null || isBlank(entry.getKey())) {
                 continue;
             }
@@ -6247,7 +6246,7 @@ public class CodingCliSessionRunner {
         if (parts.isEmpty()) {
             return null;
         }
-        if (arguments.size() > count) {
+        if (plainArguments.size() > count) {
             parts.add("...");
         }
         StringBuilder builder = new StringBuilder();
@@ -6270,29 +6269,29 @@ public class CodingCliSessionRunner {
         if (value instanceof Number || value instanceof Boolean) {
             return String.valueOf(value);
         }
-        return clip(JSON.toJSONString(value), 48);
+        return clip(CliJson.toJson(value), 48);
     }
 
     private List<String> buildToolPreviewLines(String toolName,
-                                               JSONObject arguments,
-                                               JSONObject output,
+                                               ObjectNode arguments,
+                                               ObjectNode output,
                                                String rawOutput) {
         List<String> previewLines = new ArrayList<String>();
         if (!isBlank(extractToolError(rawOutput, output))) {
             return previewLines;
         }
         if ("bash".equals(toolName)) {
-            String action = firstNonBlank(arguments == null ? null : arguments.getString("action"), "exec");
+            String action = firstNonBlank(CliJson.getString(arguments, "action"), "exec");
             if ("exec".equals(action) && output != null) {
-                addCommandPreviewLines(previewLines, output.getString("stdout"), output.getString("stderr"));
+                addCommandPreviewLines(previewLines, CliJson.getString(output, "stdout"), CliJson.getString(output, "stderr"));
                 return previewLines;
             }
             if ("logs".equals(action) && output != null) {
-                addPlainPreviewLines(previewLines, output.getString("content"));
+                addPlainPreviewLines(previewLines, CliJson.getString(output, "content"));
                 return previewLines;
             }
             if (("start".equals(action) || "status".equals(action) || "stop".equals(action)) && output != null) {
-                addPreviewLine(previewLines, "command", output.getString("command"));
+                addPreviewLine(previewLines, "command", CliJson.getString(output, "command"));
                 return previewLines;
             }
             if ("write".equals(action) && output != null) {
@@ -6301,14 +6300,14 @@ public class CodingCliSessionRunner {
             return previewLines;
         }
         if ("read_file".equals(toolName) && output != null) {
-            addPreviewLines(previewLines, "file", output.getString("content"), 4);
+            addPreviewLines(previewLines, "file", CliJson.getString(output, "content"), 4);
             if (previewLines.isEmpty()) {
                 previewLines.add("file> (empty file)");
             }
             return previewLines;
         }
         if ("write_file".equals(toolName) && output != null) {
-            addPreviewLine(previewLines, "path", output.getString("resolvedPath"));
+            addPreviewLine(previewLines, "path", CliJson.getString(output, "resolvedPath"));
             return previewLines;
         }
         if ("apply_patch".equals(toolName) && output != null) {
