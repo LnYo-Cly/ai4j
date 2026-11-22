@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.node;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutor;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramJsonSupport;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -158,14 +158,14 @@ public class FlowGramHttpNodeExecutor implements FlowGramNodeExecutor {
             if (jsonValue == null) {
                 return null;
             }
-            return jsonValue instanceof String ? String.valueOf(jsonValue) : JSON.toJSONString(jsonValue);
+            return jsonValue instanceof String ? String.valueOf(jsonValue) : FlowGramJsonSupport.toJson(jsonValue);
         }
         if ("raw-text".equalsIgnoreCase(bodyType)) {
             Object rawText = valueResolver.resolve(body.get("rawText"), context);
             return rawText == null ? null : String.valueOf(rawText);
         }
         Object resolved = valueResolver.resolve(body, context);
-        return resolved == null ? null : JSON.toJSONString(resolved);
+        return resolved == null ? null : FlowGramJsonSupport.toJson(resolved);
     }
 
     private String readBody(HttpURLConnection connection, int statusCode) throws Exception {

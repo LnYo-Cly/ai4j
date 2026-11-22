@@ -1,8 +1,5 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.support;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.TypeReference;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -142,7 +139,7 @@ public class JdbcFlowGramTaskStore implements FlowGramTaskStore {
                     Map<String, Object> snapshot = task.getResultSnapshot() == null
                             ? Collections.<String, Object>emptyMap()
                             : task.getResultSnapshot();
-                    insertStatement.setString(9, JSON.toJSONString(snapshot));
+                    insertStatement.setString(9, FlowGramJsonSupport.toJson(snapshot));
                     insertStatement.setLong(10, System.currentTimeMillis());
                     insertStatement.executeUpdate();
                 }
@@ -177,8 +174,8 @@ public class JdbcFlowGramTaskStore implements FlowGramTaskStore {
         if (isBlank(json)) {
             return new LinkedHashMap<String, Object>();
         }
-        return JSON.parseObject(json, new TypeReference<LinkedHashMap<String, Object>>() {
-        });
+        Map<String, Object> parsed = FlowGramJsonSupport.readMapOrNull(json);
+        return parsed == null ? new LinkedHashMap<String, Object>() : parsed;
     }
 
     private Long longValue(ResultSet resultSet, String column) throws Exception {
