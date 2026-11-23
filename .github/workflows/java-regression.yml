@@ -51,7 +51,7 @@ jobs:
           CHANGED_FILES="$(git diff --name-only "$BASE" "$HEAD")"
           printf '%s\n' "$CHANGED_FILES"
 
-          if printf '%s\n' "$CHANGED_FILES" | grep -Eq '^(pom\.xml|ai4j-extension-api/|ai4j-plugin-ask-user/|ai4j/|ai4j-agent/|ai4j-harness/|ai4j-coding/|ai4j-cli/|ai4j-spring-boot-starter/|ai4j-flowgram-spring-boot-starter/|ai4j-flowgram-demo/|ai4j-bom/|\.github/workflows/java-regression\.yml$)'; then
+          if printf '%s\n' "$CHANGED_FILES" | grep -Eq '^(pom\.xml|ai4j-extension-api/|ai4j-plugin-ask-user/|ai4j/|ai4j-mcp/|ai4j-rag/|ai4j-document-tika/|ai4j-sandbox/|ai4j-agent/|ai4j-a2a/|ai4j-plugin-colab/|ai4j-plugin-codeact/|ai4j-plugin-sandbox-docker/|ai4j-plugin-redis/|ai4j-testing/|ai4j-harness/|ai4j-ambient/|ai4j-coding/|ai4j-cli/|ai4j-web/|ai4j-spring-boot-starter/|ai4j-flowgram-spring-boot-starter/|ai4j-flowgram-demo/|ai4j-bom/|\.github/workflows/java-regression\.yml$)'; then
             echo "java=true" >> "$GITHUB_OUTPUT"
           else
             echo "java=false" >> "$GITHUB_OUTPUT"
@@ -98,7 +98,7 @@ jobs:
           cache: maven
 
       - name: Run quality gates (animal-sniffer + jacoco + spotbugs + japicmp)
-        run: mvn -B -ntp verify
+        run: mvn -B -ntp "-Dai4j.cli.assembly.skip=true" verify
 
       - name: Upload JaCoCo reports
         if: always()
@@ -124,17 +124,28 @@ jobs:
           - ai4j-extension-api
           - ai4j-plugin-ask-user
           - ai4j
+          - ai4j-mcp
+          - ai4j-rag
+          - ai4j-sandbox
           - ai4j-agent
+          - ai4j-a2a
+          - ai4j-plugin-colab
+          - ai4j-plugin-codeact
+          - ai4j-plugin-sandbox-docker
+          - ai4j-plugin-redis
+          - ai4j-testing
           - ai4j-harness
+          - ai4j-ambient
           - ai4j-coding
           - ai4j-cli
+          - ai4j-web
           - ai4j-spring-boot-starter
           - ai4j-flowgram-spring-boot-starter
           - ai4j-flowgram-demo
         jdk: ['8', '17', '21']
         os: [ubuntu-latest, windows-latest]
         exclude:
-          # Starter modules: JDK [8, 17] x ubuntu only (Boot 2.x 不支持 JDK 21)
+          # Starter modules & demo: JDK [8, 17] x ubuntu only (Boot 2.x 不支持 JDK 21)
           - module: ai4j-spring-boot-starter
             jdk: '21'
           - module: ai4j-spring-boot-starter
@@ -143,19 +154,36 @@ jobs:
             jdk: '21'
           - module: ai4j-flowgram-spring-boot-starter
             os: windows-latest
-          # Light modules: JDK [8, 17] x ubuntu only
-          - module: ai4j-extension-api
-            jdk: '21'
-          - module: ai4j-extension-api
-            os: windows-latest
-          - module: ai4j-plugin-ask-user
-            jdk: '21'
-          - module: ai4j-plugin-ask-user
-            os: windows-latest
-          # Demo: ubuntu only, JDK [8, 17]
           - module: ai4j-flowgram-demo
             jdk: '21'
           - module: ai4j-flowgram-demo
+            os: windows-latest
+          # Extension / Cordis / plugin / testing / ambient / web modules: JDK [8, 17, 21] x ubuntu only
+          - module: ai4j-extension-api
+            os: windows-latest
+          - module: ai4j-plugin-ask-user
+            os: windows-latest
+          - module: ai4j-mcp
+            os: windows-latest
+          - module: ai4j-rag
+            os: windows-latest
+          - module: ai4j-sandbox
+            os: windows-latest
+          - module: ai4j-a2a
+            os: windows-latest
+          - module: ai4j-plugin-colab
+            os: windows-latest
+          - module: ai4j-plugin-codeact
+            os: windows-latest
+          - module: ai4j-plugin-sandbox-docker
+            os: windows-latest
+          - module: ai4j-plugin-redis
+            os: windows-latest
+          - module: ai4j-testing
+            os: windows-latest
+          - module: ai4j-ambient
+            os: windows-latest
+          - module: ai4j-web
             os: windows-latest
 
     # JDK 17/21 are best-effort: P0 baseline is JDK 8 (the supported Java 8 promise).
@@ -175,7 +203,7 @@ jobs:
           cache: maven
 
       - name: Run module test gate
-        run: mvn -B -ntp -pl ${{ matrix.module }} -am -DskipTests=false test
+        run: mvn -B -ntp -pl ${{ matrix.module }} -am -DskipTests=false "-Dai4j.cli.assembly.skip=true" test
 
       - name: Upload surefire reports
         if: always()
@@ -230,15 +258,15 @@ jobs:
               echo "  ${mb} MB  $name"
             done
 
-          # Assert under limit (25 MB baseline; goal is 15 MB, see task plan E2)
-          LIMIT_BYTES=$((25 * 1048576))
+          # Assert under limit (18 MB post-Wave 3 baseline after dashscope-sdk-java + rxjava removal; goal is 15 MB, see task plan E2)
+          LIMIT_BYTES=$((18 * 1048576))
           if [[ "$TOTAL_BYTES" -gt "$LIMIT_BYTES" ]]; then
             echo ""
-            echo "FAIL: ai4j runtime dependencies ${TOTAL_MB} MB exceeds 25 MB limit"
+            echo "FAIL: ai4j runtime dependencies ${TOTAL_MB} MB exceeds 18 MB limit"
             exit 1
           fi
           echo ""
-          echo "PASS: ai4j runtime dependencies ${TOTAL_MB} MB within 25 MB limit"
+          echo "PASS: ai4j runtime dependencies ${TOTAL_MB} MB within 18 MB limit"
 
   java-regression:
     name: java-regression
