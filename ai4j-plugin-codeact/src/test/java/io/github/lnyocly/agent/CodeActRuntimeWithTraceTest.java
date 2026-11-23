@@ -12,10 +12,10 @@ import io.github.lnyocly.ai4j.agent.trace.ConsoleTraceExporter;
 import io.github.lnyocly.ai4j.agent.trace.TraceConfig;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import io.github.lnyocly.ai4j.service.Configuration;
 import io.github.lnyocly.ai4j.service.PlatformType;
 import io.github.lnyocly.ai4j.service.factory.AiService;
-import io.github.lnyocly.ai4j.network.OkHttpUtil;
 import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -25,9 +25,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.script.ScriptEngineManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import javax.script.ScriptEngineManager;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +38,7 @@ public class CodeActRuntimeWithTraceTest {
 
     @Before
     public void init() throws NoSuchAlgorithmException, KeyManagementException {
-        String apiKey = LiveProviderTestSupport.requireEnv(
+        String apiKey = requireEnv(
                 "Skip because Doubao API key is not configured",
                 "ARK_API_KEY",
                 "DOUBAO_API_KEY");
@@ -75,7 +75,7 @@ public class CodeActRuntimeWithTraceTest {
                 .systemPrompt("You are a weather assistant. Use JavaScript only. Always call queryWeather with args {location, type, days}. Use type \"daily\" and days 1. Return a final answer string. If you do not return, set __codeact_result.")
                 .toolRegistry(Arrays.asList("queryWeather"), null)
                 .options(AgentOptions.builder().maxSteps(4).build())
-            .codeExecutor(new NashornCodeExecutor())
+                .codeExecutor(new NashornCodeExecutor())
                 .codeActOptions(CodeActOptions.builder().reAct(true).build())
                 .traceConfig(TraceConfig.builder().build())
                 .traceExporter(new ConsoleTraceExporter())
@@ -85,7 +85,6 @@ public class CodeActRuntimeWithTraceTest {
                 .input("Use JavaScript to query weather for Beijing, Shanghai, and Shenzhen. Call queryWeather with type \"daily\" and days 1 for each city, then return a single summary string.")
                 .build());
 
-        System.out.println("CODEACT OUTPUT: " + result.getOutputText());
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getOutputText());
         Assert.assertTrue(result.getOutputText().length() > 0);
@@ -96,6 +95,15 @@ public class CodeActRuntimeWithTraceTest {
     private boolean isNashornAvailable() {
         return new ScriptEngineManager().getEngineByName("nashorn") != null;
     }
+
+    private static String requireEnv(String skipMessage, String... envKeys) {
+        for (String envKey : envKeys) {
+            String value = System.getenv(envKey);
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+        Assume.assumeTrue(skipMessage, false);
+        return null;
+    }
 }
-
-

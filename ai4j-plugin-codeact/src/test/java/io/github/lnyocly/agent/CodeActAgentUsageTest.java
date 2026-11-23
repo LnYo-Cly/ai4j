@@ -1,7 +1,5 @@
 package io.github.lnyocly.agent;
 
-import io.github.lnyocly.agent.support.ZhipuAgentTestSupport;
-import io.github.lnyocly.ai4j.test.LiveProviderTest;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -9,26 +7,79 @@ import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
+import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
+import io.github.lnyocly.ai4j.config.ZhipuConfig;
+import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
+import io.github.lnyocly.ai4j.network.OkHttpUtil;
+import io.github.lnyocly.ai4j.service.Configuration;
+import io.github.lnyocly.ai4j.service.PlatformType;
+import io.github.lnyocly.ai4j.service.factory.AiService;
+import io.github.lnyocly.ai4j.test.LiveProviderTest;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.net.SocketTimeoutException;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import java.net.SocketTimeoutException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.TimeUnit;
 
 @Category(LiveProviderTest.class)
-public class CodeActAgentUsageTest extends ZhipuAgentTestSupport {
+public class CodeActAgentUsageTest {
+
+    private static final String DEFAULT_MODEL = "GLM-4.5-Flash";
+    private AiService aiService;
+    private String model;
+
+    @Before
+    public void setupZhipuAiService() throws NoSuchAlgorithmException, KeyManagementException {
+        String apiKey = System.getenv("ZHIPU_API_KEY");
+        Assume.assumeTrue("Skip because Zhipu API key is not configured. Expected env var: ZHIPU_API_KEY",
+                apiKey != null && !apiKey.trim().isEmpty());
+
+        model = System.getenv("ZHIPU_MODEL");
+        if (model == null || model.isEmpty()) {
+            model = System.getProperty("zhipu.model");
+        }
+        if (model == null || model.isEmpty()) {
+            model = DEFAULT_MODEL;
+        }
+
+        ZhipuConfig zhipuConfig = new ZhipuConfig();
+        zhipuConfig.setApiKey(apiKey);
+
+        Configuration configuration = new Configuration();
+        configuration.setZhipuConfig(zhipuConfig);
+
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
+
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .addInterceptor(new ErrorInterceptor())
+                .connectTimeout(300, TimeUnit.SECONDS)
+                .writeTimeout(300, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
+                .sslSocketFactory(OkHttpUtil.getIgnoreInitedSslContext().getSocketFactory(), OkHttpUtil.IGNORE_SSL_TRUST_MANAGER_X509)
+                .hostnameVerifier(OkHttpUtil.getIgnoreSslHostnameVerifier())
+                .build();
+
+        configuration.setOkHttpClient(okHttpClient);
+        aiService = new AiService(configuration);
+    }
 
     @Test
     public void test_codeact_basic_js_execution() throws Exception {
-        // CodeAct 在 JDK8 场景优先使用 Nashorn，保证 JavaScript 执行链路可用
         Assume.assumeTrue(isNashornAvailable());
 
         Agent agent = Agents.codeAct()
-                .modelClient(chatModelClient())
+                .modelClient(new ChatModelClient(aiService.getChatService(PlatformType.ZHIPU)))
                 .model(model)
                 .temperature(0.7)
                 .maxOutputTokens(512)
@@ -48,11 +99,10 @@ public class CodeActAgentUsageTest extends ZhipuAgentTestSupport {
 
     @Test
     public void test_codeact_react_finalize_flow_without_external_tool() throws Exception {
-        // CodeAct ReAct 模式：先输出代码块，再进入 final 输出
         Assume.assumeTrue(isNashornAvailable());
 
         Agent agent = Agents.codeAct()
-                .modelClient(chatModelClient())
+                .modelClient(new ChatModelClient(aiService.getChatService(PlatformType.ZHIPU)))
                 .model(model)
                 .temperature(0.7)
                 .maxOutputTokens(512)
@@ -80,7 +130,7 @@ public class CodeActAgentUsageTest extends ZhipuAgentTestSupport {
         Exception last = null;
         for (int i = 0; i < maxAttempts; i++) {
             try {
-                return callWithProviderGuard(() -> agent.run(request));
+                return agent.run(request);
             } catch (Exception ex) {
                 last = ex;
                 if (i + 1 >= maxAttempts || !isRetryable(ex)) {

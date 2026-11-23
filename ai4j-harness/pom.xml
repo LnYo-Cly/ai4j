@@ -23,6 +23,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-plugin-codeact</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.16.0</version>

@@ -16,8 +16,9 @@ import javax.script.ScriptEngineManager;
 import javax.script.SimpleScriptContext;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +34,11 @@ public class NashornCodeExecutor implements CodeExecutor {
     private static final Logger log = LoggerFactory.getLogger(NashornCodeExecutor.class);
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*");
     private static final long DEFAULT_TIMEOUT_MS = 8000L;
+
+    @Override
+    public String getLanguage() {
+        return "javascript";
+    }
 
     @Override
     public CodeExecutionResult execute(CodeExecutionRequest request) {
@@ -54,7 +60,7 @@ public class NashornCodeExecutor implements CodeExecutor {
         if (language == null || language.trim().isEmpty()) {
             return "javascript";
         }
-        String value = language.trim().toLowerCase();
+        String value = language.trim().toLowerCase(Locale.ROOT);
         if ("js".equals(value) || "ecmascript".equals(value)) {
             return "javascript";
         }

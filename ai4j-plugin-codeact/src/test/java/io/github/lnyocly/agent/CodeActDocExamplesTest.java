@@ -24,8 +24,8 @@ import java.util.Deque;
  * {@code docs/agent/codeact-runtime.md}.
  *
  * <p>Inline scripted client emits a code message then a final message,
- * exercising the code→execute→finalize loop with zero network.
- * Skips when Nashorn is unavailable (JDK 16+).
+ * exercising the code->execute->finalize loop with zero network.
+ * Skips when Nashorn is unavailable (JDK 16+ without nashorn-core).</p>
  */
 public class CodeActDocExamplesTest {
 
@@ -33,9 +33,8 @@ public class CodeActDocExamplesTest {
     public void codeActDirectOutputFromExecutedCode() throws Exception {
         org.junit.Assume.assumeTrue("Nashorn required", isNashornAvailable());
 
-        // reAct=false：模型发一段代码，执行结果直接作为输出（无需二次收尾）
         ScriptedClient client = new ScriptedClient();
-        client.enqueue(codeMessage("javascript", "return 17*3+5")); // 执行得 56
+        client.enqueue(codeMessage("javascript", "return 17*3+5"));
 
         Agent agent = Agents.codeAct()
                 .modelClient(client)
@@ -57,9 +56,8 @@ public class CodeActDocExamplesTest {
     public void codeActReActModeFinalizesWithSecondCall() throws Exception {
         org.junit.Assume.assumeTrue("Nashorn required", isNashornAvailable());
 
-        // reAct=true：第一轮发代码 → 执行 → 第二轮模型用 type=final 收尾
         ScriptedClient client = new ScriptedClient();
-        client.enqueue(codeMessage("javascript", "return 88/11"));   // 执行得 8
+        client.enqueue(codeMessage("javascript", "return 88/11"));
         client.enqueue(finalMessage("88 除以 11 等于 8"));
 
         Agent agent = Agents.codeAct()
@@ -87,7 +85,6 @@ public class CodeActDocExamplesTest {
     }
 
     private static AgentModelResult codeMessage(String language, String code) {
-        // CodeAct 协议：模型输出 JSON，type=code 触发执行器
         String json = "{\"type\":\"code\",\"language\":\"" + language + "\",\"code\":\"" + code + "\"}";
         return AgentModelResult.builder()
                 .outputText(json)
