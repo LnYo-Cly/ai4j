@@ -223,6 +223,37 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
                     string(arguments, "summary"), objectMap(arguments.get("state")), actor());
             return completed(call, checkpoint);
         }
+        if ("escalate".equals(operation)) {
+            EscalationRecord esc = gateway.escalate(HarnessEscalateSpec.builder()
+                    .scopeKey(scopeKey(arguments))
+                    .taskId(defaultTask(string(arguments, "taskId")))
+                    .executionId(context.getExecutionId())
+                    .targetActorId(string(arguments, "targetActorId"))
+                    .question(requiredString(arguments, "question"))
+                    .options(stringList(arguments.get("options")))
+                    .recommend(string(arguments, "recommend"))
+                    .reason(string(arguments, "reason"))
+                    .build(), actor());
+            String output = "HARNESS_ESCALATED: " + HarnessJson.toJson(esc);
+            if (esc.getWaitId() != null) {
+                return AgentToolExecution.of(AgentToolResult.builder()
+                        .name(call.getName())
+                        .callId(call.getCallId())
+                        .output(output)
+                        .status(AgentToolExecutionStatus.WAITING)
+                        .waitId(esc.getWaitId())
+                        .build(), null);
+            }
+            return completed(call, esc);
+        }
+        if ("explain".equals(operation)) {
+            String entityRef = string(arguments, "entityRef");
+            if (entityRef == null || entityRef.trim().isEmpty()) {
+                entityRef = context.getTaskId() != null ? "TASK:" + context.getTaskId()
+                        : "EXECUTION:" + context.getExecutionId();
+            }
+            return completed(call, gateway.explain(entityRef));
+        }
         if ("wait".equals(operation) || "approval".equals(operation)) {
             WaitType type = "approval".equals(operation)
                     ? WaitType.APPROVAL

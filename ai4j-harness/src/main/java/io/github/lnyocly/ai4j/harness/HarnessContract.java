@@ -44,6 +44,29 @@ public interface HarnessContract {
     }
 
     /**
+     * When true, completion requires an explicit human/owner {@link ContentPinnedConsentRecord}
+     * matching {@code submissionDigest} and covering every review finding disposition.
+     * Even when false, any submission with an {@link ExecutionReviewRecord} enforces consent separation.
+     */
+    default boolean requiresContentPinnedConsent(TaskRecord task, SubmissionRecord submission) {
+        return false;
+    }
+
+    /**
+     * Witness gate names that must have a passing {@link GateRunRecord} before completion.
+     */
+    default Set<String> requiredWitnessGates(TaskRecord task, SubmissionRecord submission) {
+        return Collections.emptySet();
+    }
+
+    /**
+     * When true, decisions must declare chosen, rejected alternatives, and falsifiable claims.
+     */
+    default boolean requiresFalsifiableDecisions() {
+        return false;
+    }
+
+    /**
      * Declares the acceptance checks that must pass for a governed
      * submission. An empty set preserves the legacy single-PASS acceptance
      * contract; once checks are declared, missing checks fail closed.
@@ -126,7 +149,7 @@ public interface HarnessContract {
      * widens this to system actors for explicitly automated governance.
      */
     default boolean mayPromoteLesson(HarnessActor actor) {
-        return actor != null && actor.isHuman();
+        return actor != null && actor.isHumanOrOwner();
     }
 
     static Builder builder() {
@@ -139,8 +162,11 @@ public interface HarnessContract {
         private final Set<String> approvalRequiredTools = new LinkedHashSet<String>();
         private final List<HarnessGate> completionGates = new ArrayList<HarnessGate>();
         private final Set<String> requiredAcceptanceChecks = new LinkedHashSet<String>();
+        private final Set<String> requiredWitnessGates = new LinkedHashSet<String>();
         private boolean approvedReviewRequired = true;
         private boolean completionEvidenceRequired = true;
+        private boolean contentPinnedConsentRequired = false;
+        private boolean falsifiableDecisionsRequired = false;
         private boolean allowSystemApproval = true;
         private boolean allowSystemCompletion = true;
         private boolean allowSystemReconciliation = true;
@@ -184,6 +210,23 @@ public interface HarnessContract {
             return this;
         }
 
+        public Builder requiresContentPinnedConsent(boolean value) {
+            contentPinnedConsentRequired = value;
+            return this;
+        }
+
+        public Builder requiredWitnessGate(String gateName) {
+            if (gateName != null && !gateName.trim().isEmpty()) {
+                requiredWitnessGates.add(gateName.trim());
+            }
+            return this;
+        }
+
+        public Builder requiresFalsifiableDecisions(boolean value) {
+            falsifiableDecisionsRequired = value;
+            return this;
+        }
+
         public Builder allowSystemApproval(boolean value) {
             allowSystemApproval = value;
             return this;
@@ -215,8 +258,11 @@ public interface HarnessContract {
             final Set<String> approvalTools = new LinkedHashSet<String>(approvalRequiredTools);
             final List<HarnessGate> gates = new ArrayList<HarnessGate>(completionGates);
             final Set<String> requiredChecks = new LinkedHashSet<String>(requiredAcceptanceChecks);
+            final Set<String> requiredWitnesses = new LinkedHashSet<String>(requiredWitnessGates);
             final boolean reviewRequired = approvedReviewRequired;
             final boolean evidenceRequired = completionEvidenceRequired;
+            final boolean consentRequired = contentPinnedConsentRequired;
+            final boolean falsifiableRequired = falsifiableDecisionsRequired;
             final boolean systemApproval = allowSystemApproval;
             final boolean systemCompletion = allowSystemCompletion;
             final boolean systemReconciliation = allowSystemReconciliation;
@@ -256,6 +302,23 @@ public interface HarnessContract {
                 }
 
                 @Override
+                public boolean requiresContentPinnedConsent(TaskRecord task,
+                                                            SubmissionRecord submission) {
+                    return consentRequired;
+                }
+
+                @Override
+                public Set<String> requiredWitnessGates(TaskRecord task,
+                                                        SubmissionRecord submission) {
+                    return new LinkedHashSet<String>(requiredWitnesses);
+                }
+
+                @Override
+                public boolean requiresFalsifiableDecisions() {
+                    return falsifiableRequired;
+                }
+
+                @Override
                 public boolean mayApprove(HarnessActor actor, SubmissionRecord submission) {
                     return actor != null && (!actor.isAgent())
                             && (systemApproval || !actor.isSystem());
@@ -285,7 +348,7 @@ public interface HarnessContract {
 
                 @Override
                 public boolean mayPromoteLesson(HarnessActor actor) {
-                    return actor != null && (actor.isHuman()
+                    return actor != null && (actor.isHumanOrOwner()
                             || (systemPromotion && actor.isSystem()));
                 }
             };

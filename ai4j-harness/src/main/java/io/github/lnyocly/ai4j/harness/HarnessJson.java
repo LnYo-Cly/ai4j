@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Shared thread-safe Jackson JSON facade for ai4j-harness.
  */
-final class HarnessJson {
+public final class HarnessJson {
 
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
             new TypeReference<LinkedHashMap<String, Object>>() {
@@ -58,7 +58,7 @@ final class HarnessJson {
         return mapper;
     }
 
-    static String toJson(Object value) {
+    public static String toJson(Object value) {
         try {
             return MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException error) {
@@ -66,7 +66,7 @@ final class HarnessJson {
         }
     }
 
-    static <T> T fromJson(String json, Class<T> type) {
+    public static <T> T fromJson(String json, Class<T> type) {
         if (json == null || json.trim().isEmpty()) {
             return null;
         }
@@ -77,7 +77,7 @@ final class HarnessJson {
         }
     }
 
-    static Map<String, Object> parseMap(String json) {
+    public static Map<String, Object> parseMap(String json) {
         if (json == null || json.trim().isEmpty()) {
             return null;
         }
@@ -88,7 +88,7 @@ final class HarnessJson {
         }
     }
 
-    static List<Object> parseList(String json) {
+    public static List<Object> parseList(String json) {
         if (json == null || json.trim().isEmpty()) {
             return null;
         }
@@ -99,7 +99,7 @@ final class HarnessJson {
         }
     }
 
-    static Object parseAny(String json) {
+    public static Object parseAny(String json) {
         if (json == null || json.trim().isEmpty()) {
             return null;
         }
@@ -110,21 +110,21 @@ final class HarnessJson {
         }
     }
 
-    static Map<String, Object> toMap(Object value) {
+    public static Map<String, Object> toMap(Object value) {
         if (value == null) {
             return null;
         }
         return MAPPER.convertValue(value, MAP_TYPE);
     }
 
-    static <T> T convert(Object value, Class<T> type) {
+    public static <T> T convert(Object value, Class<T> type) {
         if (value == null) {
             return null;
         }
         return MAPPER.convertValue(value, type);
     }
 
-    static <T> T copy(T value, Class<T> type) {
+    public static <T> T copy(T value, Class<T> type) {
         if (value == null) {
             return null;
         }

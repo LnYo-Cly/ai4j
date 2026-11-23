@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Package-private shared validation, normalization, scope, and idempotency helpers
- * used across the Harness gateway, stores, and coordinators.
+ * Shared validation, normalization, scope, and idempotency helpers
+ * used across the Harness gateway, stores, coordinators, and fleet package.
  */
-final class HarnessSupport {
+public final class HarnessSupport {
 
     static final String IDEMPOTENCY_TASK = "task";
     static final String IDEMPOTENCY_EXECUTION = "execution";
@@ -18,12 +18,12 @@ final class HarnessSupport {
     private HarnessSupport() {
     }
 
-    static String valueOrGenerated(String value, String prefix) {
+    public static String valueOrGenerated(String value, String prefix) {
         String normalized = trimToNull(value);
         return normalized == null ? prefix + UUID.randomUUID().toString().replace("-", "") : normalized;
     }
 
-    static String requireText(String value, String label) {
+    public static String requireText(String value, String label) {
         String normalized = trimToNull(value);
         if (normalized == null) {
             throw new HarnessValidationException(label + " is required");
@@ -31,7 +31,7 @@ final class HarnessSupport {
         return normalized;
     }
 
-    static String trimToNull(String value) {
+    public static String trimToNull(String value) {
         if (value == null) {
             return null;
         }
@@ -63,13 +63,13 @@ final class HarnessSupport {
         }
     }
 
-    static boolean visibleScope(String entityScope, String requestedScope) {
+    public static boolean visibleScope(String entityScope, String requestedScope) {
         String scope = normalizeScope(requestedScope);
         return scope == null || (normalizeScope(entityScope) != null
                 && scope.equals(normalizeScope(entityScope)));
     }
 
-    static long now() {
+    public static long now() {
         return System.currentTimeMillis();
     }
 
@@ -78,7 +78,7 @@ final class HarnessSupport {
         return effective.getKind() + ":" + effective.getId();
     }
 
-    static HarnessActor normalizeActor(HarnessActor actor, HarnessActor fallback) {
+    public static HarnessActor normalizeActor(HarnessActor actor, HarnessActor fallback) {
         HarnessActor source = actor == null ? fallback : actor;
         if (source == null || trimToNull(source.getKind()) == null || trimToNull(source.getId()) == null) {
             throw new HarnessValidationException("actor kind and id are required");
@@ -98,11 +98,11 @@ final class HarnessSupport {
         return source == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(source);
     }
 
-    static List<String> copyList(List<String> source) {
+    public static List<String> copyList(List<String> source) {
         return source == null ? new ArrayList<String>() : new ArrayList<String>(source);
     }
 
-    static Map<String, Object> mapOf(Object... values) {
+    public static Map<String, Object> mapOf(Object... values) {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         if (values == null) {
             return map;
@@ -158,7 +158,7 @@ final class HarnessSupport {
         return task;
     }
 
-    static ExecutionRecord requireExecution(HarnessState state, String executionId) {
+    public static ExecutionRecord requireExecution(HarnessState state, String executionId) {
         ExecutionRecord execution = state.getExecutions().get(executionId);
         if (execution == null) {
             throw new HarnessValidationException("execution not found: " + executionId);
@@ -166,7 +166,7 @@ final class HarnessSupport {
         return execution;
     }
 
-    static <T> T write(HarnessStore store, final StateCommand<T> command) {
+    public static <T> T write(HarnessStore store, final StateCommand<T> command) {
         if (command == null) {
             throw new IllegalArgumentException("Harness command is required");
         }
@@ -190,7 +190,7 @@ final class HarnessSupport {
         String message;
     }
 
-    interface StateCommand<T> {
+    public interface StateCommand<T> {
         T apply(HarnessState state);
     }
 }

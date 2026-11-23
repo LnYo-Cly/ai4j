@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Builder(toBuilder = true)
 @NoArgsConstructor
@@ -29,6 +32,12 @@ public class ExecutionRecord {
     private String outputText;
     private String error;
     private String inputSummary;
+    private String targetNodeId;
+    @Builder.Default
+    private List<String> requiredTags = new ArrayList<String>();
+    private String assignedNodeId;
+    private String handoffId;
+    private String targetModel;
     private long createdAtEpochMs;
     private long startedAtEpochMs;
     private long finishedAtEpochMs;
@@ -57,7 +66,38 @@ public class ExecutionRecord {
             long finishedAtEpochMs,
             long updatedAtEpochMs,
             long version) {
-        this(executionId, null, taskId, scopeKey, sessionId, runId, status, attempt, workerId, leaseId, fencingToken, waitId, operationId, checkpointId, outputText, error, inputSummary, createdAtEpochMs, startedAtEpochMs, finishedAtEpochMs, updatedAtEpochMs, version);
+        this(executionId, null, taskId, scopeKey, sessionId, runId, status, attempt, workerId, leaseId, fencingToken,
+                waitId, operationId, checkpointId, outputText, error, inputSummary, null, new ArrayList<String>(),
+                null, null, null, createdAtEpochMs, startedAtEpochMs, finishedAtEpochMs, updatedAtEpochMs, version);
+    }
+
+    /** Preserves the 22-arg constructor signature from before fleet/affinity fields. */
+    public ExecutionRecord(String executionId,
+            String parentExecutionId,
+            String taskId,
+            String scopeKey,
+            String sessionId,
+            String runId,
+            ExecutionStatus status,
+            int attempt,
+            String workerId,
+            String leaseId,
+            long fencingToken,
+            String waitId,
+            String operationId,
+            String checkpointId,
+            String outputText,
+            String error,
+            String inputSummary,
+            long createdAtEpochMs,
+            long startedAtEpochMs,
+            long finishedAtEpochMs,
+            long updatedAtEpochMs,
+            long version) {
+        this(executionId, parentExecutionId, taskId, scopeKey, sessionId, runId, status, attempt, workerId, leaseId,
+                fencingToken, waitId, operationId, checkpointId, outputText, error, inputSummary, null,
+                new ArrayList<String>(), null, null, null, createdAtEpochMs, startedAtEpochMs,
+                finishedAtEpochMs, updatedAtEpochMs, version);
     }
 
     public ExecutionRecord copy() {

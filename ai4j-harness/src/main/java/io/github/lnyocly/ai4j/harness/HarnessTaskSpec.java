@@ -23,6 +23,12 @@ public class HarnessTaskSpec {
     private String goal;
     private String plan;
     private String parentTaskId;
+    private String workId;
+    private String verticalKind;
+    private String targetNodeId;
+    @Builder.Default
+    private List<String> requiredTags = new ArrayList<String>();
+    private String assignedAgentId;
     private String idempotencyKey;
 
     @Builder.Default

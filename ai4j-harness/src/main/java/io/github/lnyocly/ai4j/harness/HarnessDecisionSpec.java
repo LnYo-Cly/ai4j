@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.harness;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,16 @@ public class HarnessDecisionSpec {
     private String scopeKey;
     private String taskId;
     private String question;
+
+    @JsonAlias("chosen")
     private String chosenOption;
+
+    @Builder.Default
+    private List<String> rejected = new ArrayList<String>();
+
+    @Builder.Default
+    private List<DecisionClaim> claims = new ArrayList<DecisionClaim>();
+
     private String rationale;
 
     @Builder.Default
@@ -26,4 +36,19 @@ public class HarnessDecisionSpec {
 
     @Builder.Default
     private List<String> evidenceIds = new ArrayList<String>();
+
+    public String getChosen() {
+        return chosenOption;
+    }
+
+    public void setChosen(String chosen) {
+        this.chosenOption = chosen;
+    }
+
+    public static class HarnessDecisionSpecBuilder {
+        public HarnessDecisionSpecBuilder chosen(String chosen) {
+            this.chosenOption = chosen;
+            return this;
+        }
+    }
 }

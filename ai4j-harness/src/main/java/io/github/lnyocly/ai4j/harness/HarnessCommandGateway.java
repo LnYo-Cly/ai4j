@@ -30,6 +30,10 @@ public final class HarnessCommandGateway implements AutoCloseable {
     private final HarnessEventJournal eventJournal;
     private final HarnessProjectionEngine projectionEngine;
     private final HarnessLeaseCoordinator leaseCoordinator;
+    private final KnowledgeLedgerService knowledgeLedgerService;
+    private final GovernanceReviewService governanceReviewService;
+    private final AgendaQueryService agendaQueryService;
+    private final ExecutionCoordinationService executionCoordinationService;
 
     public HarnessCommandGateway(HarnessStore store) {
         this(store, HarnessContract.builder().build(), HarnessActor.agent("harness-agent"));
@@ -48,6 +52,15 @@ public final class HarnessCommandGateway implements AutoCloseable {
         this.projectionEngine = new HarnessProjectionEngine(this.store, this.contract);
         this.leaseCoordinator = new HarnessLeaseCoordinator(
                 this.store, this.contract, this.eventJournal, this.defaultActor);
+        this.knowledgeLedgerService = new KnowledgeLedgerService(
+                this.store, this.contract, this.eventJournal, this.defaultActor);
+        this.governanceReviewService = new GovernanceReviewService(
+                this.store, this.contract, this.eventJournal, this.projectionEngine, this.defaultActor);
+        this.agendaQueryService = new AgendaQueryService(
+                this.store, this.contract, this.eventJournal, this.projectionEngine,
+                this.leaseCoordinator, this.defaultActor);
+        this.executionCoordinationService = new ExecutionCoordinationService(
+                this.store, this.eventJournal, this.leaseCoordinator, this.defaultActor);
     }
 
     public HarnessStore getStore() {
@@ -72,6 +85,22 @@ public final class HarnessCommandGateway implements AutoCloseable {
 
     public HarnessLeaseCoordinator getLeaseCoordinator() {
         return leaseCoordinator;
+    }
+
+    public KnowledgeLedgerService getKnowledgeLedgerService() {
+        return knowledgeLedgerService;
+    }
+
+    public GovernanceReviewService getGovernanceReviewService() {
+        return governanceReviewService;
+    }
+
+    public AgendaQueryService getAgendaQueryService() {
+        return agendaQueryService;
+    }
+
+    public ExecutionCoordinationService getExecutionCoordinationService() {
+        return executionCoordinationService;
     }
 
     public HarnessState getState() {
@@ -294,6 +323,29 @@ public final class HarnessCommandGateway implements AutoCloseable {
 
     public int rebuildEntitiesFromEvents() {
         return eventJournal.rebuildEntitiesFromEvents();
+    }
+
+    public List<HarnessEntityRecord> snapshotProjectedEntities() {
+        return projectionEngine.snapshotProjectedEntities();
+    }
+
+    public boolean applySyncedEntity(final HarnessEntityRecord entity, final HarnessActor actor) {
+        if (entity == null) {
+            return false;
+        }
+        final HarnessActor effectiveActor = HarnessSupport.normalizeActor(actor, defaultActor);
+        return write(new HarnessSupport.StateCommand<Boolean>() {
+            @Override
+            public Boolean apply(HarnessState state) {
+                boolean applied = HarnessProjectionEngine.applyProjectedEntity(state, entity);
+                if (applied) {
+                    eventJournal.addEvent(state, "fleet.entity_synced", entity.getEntityId(),
+                            effectiveActor, HarnessSupport.mapOf("entityType", entity.getEntityType(),
+                                    "entityVersion", entity.getEntityVersion(), "status", entity.getStatus()));
+                }
+                return Boolean.valueOf(applied);
+            }
+        }).booleanValue();
     }
 
     // ---- Tool Invocations & Approvals ----
@@ -855,6 +907,10 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         .source(spec.getSource())
                         .confidence(spec.getConfidence())
                         .valid(true)
+                        .version(1L)
+                        .factTypeId(spec.getFactTypeId())
+                        .factTypeVersion(spec.getFactTypeVersion())
+                        .typedPayloadJson(spec.getTypedPayloadJson())
                         .createdAtEpochMs(HarnessSupport.now())
                         .provenance(HarnessSupport.provenance(effectiveActor, defaultActor, null, null, "fact", factId))
                         .evidenceIds(HarnessSupport.copyList(spec.getEvidenceIds()))
@@ -886,6 +942,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 fact.setInvalidatedBy(HarnessSupport.actorKey(effectiveActor, defaultActor)
                         + (reason == null ? "" : ": " + reason));
                 fact.setInvalidatedAtEpochMs(HarnessSupport.now());
+                fact.setVersion(Math.max(1L, fact.getVersion()) + 1L);
                 eventJournal.addEvent(state, "fact.invalidated", id, effectiveActor,
                         HarnessSupport.mapOf("reason", reason));
                 return fact.copy();
@@ -900,6 +957,15 @@ public final class HarnessCommandGateway implements AutoCloseable {
     public DecisionRecord proposeDecision(HarnessDecisionSpec spec, HarnessActor actor) {
         if (spec == null) {
             throw new HarnessValidationException("decision specification is required");
+        }
+        if (contract.requiresFalsifiableDecisions()) {
+            HarnessSupport.requireText(spec.getChosenOption(), "falsifiable decision chosen option");
+            if (spec.getRejected() == null || spec.getRejected().isEmpty()) {
+                throw new HarnessValidationException("falsifiable decision requires rejected alternatives");
+            }
+            if (spec.getClaims() == null || spec.getClaims().isEmpty()) {
+                throw new HarnessValidationException("falsifiable decision requires verifiable claims");
+            }
         }
         final HarnessActor effectiveActor = HarnessSupport.normalizeActor(actor, defaultActor);
         final String decisionId = HarnessSupport.valueOrGenerated(spec.getDecisionId(), "decision_");
@@ -925,10 +991,14 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         .taskId(decisionTaskId)
                         .question(HarnessSupport.requireText(spec.getQuestion(), "decision question"))
                         .chosenOption(spec.getChosenOption())
+                        .rejected(HarnessSupport.copyList(spec.getRejected()))
+                        .claims(KnowledgeLedgerService.normalizeClaims(spec.getClaims()))
                         .rationale(spec.getRationale())
                         .status(DecisionStatus.PROPOSED)
+                        .reckonStatus(ReckonStatus.UNRECKONED)
                         .proposer(HarnessSupport.copyActor(effectiveActor))
                         .createdAtEpochMs(HarnessSupport.now())
+                        .version(1L)
                         .factIds(HarnessSupport.copyList(spec.getFactIds()))
                         .evidenceIds(HarnessSupport.copyList(spec.getEvidenceIds()))
                         .build();
@@ -963,6 +1033,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 decision.setRationale(rationale == null ? decision.getRationale() : rationale);
                 decision.setArbiter(HarnessSupport.copyActor(effectiveActor));
                 decision.setResolvedAtEpochMs(HarnessSupport.now());
+                decision.setVersion(Math.max(1L, decision.getVersion()) + 1L);
                 eventJournal.addEvent(state, "decision.resolved", id, effectiveActor,
                         HarnessSupport.mapOf("status", status));
                 return decision.copy();
@@ -1284,6 +1355,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                     assertCurrentTaskExecution(task, executionKey);
                     HarnessSupport.assertSameScope(task.getScopeKey(), execution.getScopeKey(),
                             "submission and execution scopes must match");
+                    KnowledgeLedgerService.assertReadSetFresh(state, executionKey);
                 }
                 resolveEvidenceReferenceScope(state, requested.getEvidenceIds(),
                         task.getScopeKey(), true,
@@ -1302,6 +1374,7 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         .residualRisks(HarnessSupport.copyList(requested.getResidualRisks()))
                         .createdAtEpochMs(HarnessSupport.now())
                         .build();
+                submission.setSubmissionDigest(HarnessDigests.computeSubmissionDigest(submission));
                 state.getSubmissions().put(submissionId, submission);
                 task.setSubmissionId(submissionId);
                 task.setStatus(TaskStatus.IN_REVIEW);
@@ -1516,6 +1589,9 @@ public final class HarnessCommandGateway implements AutoCloseable {
                         .status(ExecutionStatus.READY)
                         .attempt(attempt)
                         .inputSummary(spec.getInputSummary())
+                        .targetNodeId(HarnessSupport.trimToNull(spec.getTargetNodeId()))
+                        .requiredTags(HarnessSupport.copyList(spec.getRequiredTags()))
+                        .targetModel(HarnessSupport.trimToNull(spec.getTargetModel()))
                         .createdAtEpochMs(HarnessSupport.now())
                         .updatedAtEpochMs(HarnessSupport.now())
                         .version(1L)
@@ -1960,6 +2036,360 @@ public final class HarnessCommandGateway implements AutoCloseable {
         return deliverWaitInternal(waitId, input, sessionSnapshot, adapterState, actor);
     }
 
+    // ---- 2.0 Governance: ExecutionReview vs ContentPinnedConsent & Witness ----
+
+    public ExecutionReviewRecord submitExecutionReview(ExecutionReviewSpec spec) {
+        return governanceReviewService.submitExecutionReview(spec, defaultActor);
+    }
+
+    public ExecutionReviewRecord submitExecutionReview(ExecutionReviewSpec spec, HarnessActor actor) {
+        return governanceReviewService.submitExecutionReview(spec, actor);
+    }
+
+    public ContentPinnedConsentRecord reviewConsent(ContentPinnedConsentSpec spec, HarnessActor actor) {
+        return governanceReviewService.reviewConsent(spec, actor);
+    }
+
+    public List<ExecutionReviewRecord> listExecutionReviews(String submissionId) {
+        return governanceReviewService.listExecutionReviews(submissionId);
+    }
+
+    public List<ContentPinnedConsentRecord> listConsents(String submissionId) {
+        return governanceReviewService.listConsents(submissionId);
+    }
+
+    public GateRunRecord witnessRerun(WitnessRunSpec spec, WitnessRunner runner) {
+        return governanceReviewService.witnessRerun(spec, runner, defaultActor);
+    }
+
+    public GateRunRecord witnessRerun(WitnessRunSpec spec, WitnessRunner runner, HarnessActor actor) {
+        return governanceReviewService.witnessRerun(spec, runner, actor);
+    }
+
+    public List<GateRunRecord> listGateRuns(String taskId) {
+        return governanceReviewService.listGateRuns(taskId);
+    }
+
+    public List<GateRunRecord> listGateRunsForExecution(String executionId) {
+        return governanceReviewService.listGateRunsForExecution(executionId);
+    }
+
+    // ---- 2.0 Escalate, SupervisoryAgenda & Explain ----
+
+    public EscalationRecord escalate(HarnessEscalateSpec spec) {
+        return agendaQueryService.escalate(spec, defaultActor);
+    }
+
+    public EscalationRecord escalate(HarnessEscalateSpec spec, HarnessActor actor) {
+        return agendaQueryService.escalate(spec, actor);
+    }
+
+    public EscalationRecord escalate(String taskId,
+                                     String question,
+                                     List<String> options,
+                                     String recommend,
+                                     String reason) {
+        return escalate(taskId, null, question, options, recommend, reason, null, defaultActor);
+    }
+
+    public EscalationRecord escalate(String taskId,
+                                     String executionId,
+                                     String question,
+                                     List<String> options,
+                                     String recommend,
+                                     String reason,
+                                     String targetActorId,
+                                     HarnessActor actor) {
+        return agendaQueryService.escalate(HarnessEscalateSpec.builder()
+                .taskId(taskId)
+                .executionId(executionId)
+                .question(question)
+                .options(HarnessSupport.copyList(options))
+                .recommend(recommend)
+                .reason(reason)
+                .targetActorId(targetActorId)
+                .build(), actor);
+    }
+
+    public EscalationRecord answerEscalation(String escalationId,
+                                             String answer,
+                                             String selectedOption,
+                                             String rationale,
+                                             HarnessActor actor) {
+        return agendaQueryService.answerEscalation(escalationId, answer, selectedOption, rationale, actor);
+    }
+
+    public EscalationRecord followUpEscalation(String escalationId, String followUpNotes) {
+        return agendaQueryService.followUpEscalation(escalationId, followUpNotes, defaultActor);
+    }
+
+    public EscalationRecord followUpEscalation(String escalationId,
+                                               String followUpNotes,
+                                               HarnessActor actor) {
+        return agendaQueryService.followUpEscalation(escalationId, followUpNotes, actor);
+    }
+
+    public EscalationRecord getEscalation(String escalationId) {
+        return agendaQueryService.getEscalation(escalationId);
+    }
+
+    public List<EscalationRecord> listEscalations(String scopeKey) {
+        return agendaQueryService.listEscalations(scopeKey);
+    }
+
+    public SupervisoryAgenda projectAgenda(String actorId) {
+        return agendaQueryService.projectAgenda(actorId, null);
+    }
+
+    public SupervisoryAgenda projectAgenda(String actorId, String scopeKey) {
+        return agendaQueryService.projectAgenda(actorId, scopeKey);
+    }
+
+    public BlockerExplanation explain(String entityRef) {
+        return agendaQueryService.explain(entityRef);
+    }
+
+    // ---- 2.0 ReadSet, Supersession, Falsifiable Decisions, Blueprints & Vertical/Fact Types ----
+
+    public ReadSetEntry recordFactRead(String executionId, String factId) {
+        return knowledgeLedgerService.recordFactRead(executionId, factId, defaultActor);
+    }
+
+    public ReadSetEntry recordFactRead(String executionId, String factId, HarnessActor actor) {
+        return knowledgeLedgerService.recordFactRead(executionId, factId, actor);
+    }
+
+    public ReadSetEntry recordDecisionRead(String executionId, String decisionId) {
+        return knowledgeLedgerService.recordDecisionRead(executionId, decisionId, defaultActor);
+    }
+
+    public ReadSetEntry recordDecisionRead(String executionId, String decisionId, HarnessActor actor) {
+        return knowledgeLedgerService.recordDecisionRead(executionId, decisionId, actor);
+    }
+
+    public List<ReadSetEntry> reconfirmReadSet(String executionId, String note, HarnessActor actor) {
+        return knowledgeLedgerService.reconfirmReadSet(executionId, null, note, actor);
+    }
+
+    public List<ReadSetEntry> reconfirmReadSet(String executionId,
+                                               List<String> entityIds,
+                                               String note,
+                                               HarnessActor actor) {
+        return knowledgeLedgerService.reconfirmReadSet(executionId, entityIds, note, actor);
+    }
+
+    public List<ReadSetEntry> listReadSet(String executionId) {
+        return knowledgeLedgerService.listReadSet(executionId);
+    }
+
+    public FactRecord supersedeFact(String oldFactId, HarnessFactSpec newSpec, String reason) {
+        return knowledgeLedgerService.supersedeFact(oldFactId, newSpec, reason, defaultActor);
+    }
+
+    public FactRecord supersedeFact(String oldFactId,
+                                    HarnessFactSpec newSpec,
+                                    String reason,
+                                    HarnessActor actor) {
+        return knowledgeLedgerService.supersedeFact(oldFactId, newSpec, reason, actor);
+    }
+
+    public DecisionRecord amendDecision(String decisionId,
+                                        HarnessDecisionSpec amendment,
+                                        String reason,
+                                        HarnessActor actor) {
+        return knowledgeLedgerService.amendDecision(decisionId, amendment, reason, actor);
+    }
+
+    public DecisionReckonResult reckonDecision(String decisionId,
+                                               List<DecisionFulfillment> fulfillments,
+                                               boolean autoRevokeRules,
+                                               String summary,
+                                               HarnessActor actor) {
+        return knowledgeLedgerService.reckonDecision(decisionId, fulfillments, autoRevokeRules, summary, actor);
+    }
+
+    public AgentBlueprintRecord registerAgentBlueprint(AgentBlueprintSpec spec) {
+        return knowledgeLedgerService.registerAgentBlueprint(spec, defaultActor);
+    }
+
+    public AgentBlueprintRecord registerAgentBlueprint(AgentBlueprintSpec spec, HarnessActor actor) {
+        return knowledgeLedgerService.registerAgentBlueprint(spec, actor);
+    }
+
+    public List<AgentBlueprintRecord> listAgentBlueprintVersions(String name) {
+        return knowledgeLedgerService.listAgentBlueprintVersions(name);
+    }
+
+    public AgentBlueprintRecord getActiveAgentBlueprint(String name) {
+        return knowledgeLedgerService.getActiveAgentBlueprint(name);
+    }
+
+    public AgentBlueprintDiff diffAgentBlueprints(String name, long fromVersion, long toVersion) {
+        return knowledgeLedgerService.diffAgentBlueprints(name, fromVersion, toVersion);
+    }
+
+    public AgentBlueprintRecord rollbackAgentBlueprint(String name,
+                                                     long targetVersion,
+                                                     String reason,
+                                                     HarnessActor actor) {
+        return knowledgeLedgerService.rollbackAgentBlueprint(name, targetVersion, reason, actor);
+    }
+
+    public <T> VerticalKind<T> registerVerticalKind(VerticalKind<T> kind) {
+        return knowledgeLedgerService.getVerticalKinds().register(kind);
+    }
+
+    public <T> TypedArtifactRecord recordTypedArtifact(VerticalKind<T> kind,
+                                                       String taskId,
+                                                       String executionId,
+                                                       String scopeKey,
+                                                       T payload,
+                                                       HarnessActor actor) {
+        return knowledgeLedgerService.recordTypedArtifact(kind, taskId, executionId, scopeKey, payload, actor);
+    }
+
+    public <T> T readTypedArtifact(VerticalKind<T> kind, String artifactId) {
+        return knowledgeLedgerService.readTypedArtifact(kind, artifactId);
+    }
+
+    public <T> FactType<T> registerFactType(FactType<T> factType) {
+        return knowledgeLedgerService.getFactTypes().register(factType);
+    }
+
+    public <T> FactRecord recordTypedFact(FactType<T> factType,
+                                          String taskId,
+                                          String scopeKey,
+                                          String statement,
+                                          T payload,
+                                          String source,
+                                          List<String> evidenceIds,
+                                          HarnessActor actor) {
+        return knowledgeLedgerService.recordTypedFact(factType, taskId, scopeKey, statement,
+                payload, source, evidenceIds, actor);
+    }
+
+    public <T> T readTypedFactPayload(FactType<T> factType, String factId) {
+        return knowledgeLedgerService.readTypedFactPayload(factType, factId);
+    }
+
+    // ---- 2.0 Steer, Handoff, SquadRun, Todo/Work & Schedule ----
+
+    public SteerRecord steer(String executionId,
+                             String expectedTaskId,
+                             long expectedVersion,
+                             String instructions,
+                             HarnessActor actor) {
+        return executionCoordinationService.steer(executionId, expectedTaskId, expectedVersion, instructions, actor);
+    }
+
+    public List<SteerRecord> listSteers(String executionId) {
+        return executionCoordinationService.listSteers(executionId);
+    }
+
+    public List<SteerRecord> consumePendingSteers(String executionId, int step) {
+        return executionCoordinationService.consumePendingSteers(executionId, step);
+    }
+
+    public HandoffRecord exportHandoff(String executionId,
+                                       String targetNodeId,
+                                       String targetModel,
+                                       String reason,
+                                       long ttlMillis,
+                                       HarnessActor actor) {
+        return executionCoordinationService.exportHandoff(executionId, targetNodeId, targetModel,
+                reason, ttlMillis, actor);
+    }
+
+    public HandoffRecord claimHandoff(String handoffId,
+                                      String claimingNodeId,
+                                      String claimingWorkerId,
+                                      long leaseDurationMillis,
+                                      HarnessActor actor) {
+        return executionCoordinationService.claimHandoff(handoffId, claimingNodeId, claimingWorkerId,
+                leaseDurationMillis, actor);
+    }
+
+    public HandoffRecord revokeHandoff(String handoffId, String reason, HarnessActor actor) {
+        return executionCoordinationService.revokeHandoff(handoffId, reason, actor);
+    }
+
+    public HandoffRecord getHandoff(String handoffId) {
+        return executionCoordinationService.getHandoff(handoffId);
+    }
+
+    public List<HandoffRecord> listHandoffs(String scopeKey) {
+        return executionCoordinationService.listHandoffs(scopeKey);
+    }
+
+    public SquadRunRecord startSquadRun(SquadRunSpec spec) {
+        return executionCoordinationService.startSquadRun(spec, defaultActor);
+    }
+
+    public SquadRunRecord startSquadRun(SquadRunSpec spec, HarnessActor actor) {
+        return executionCoordinationService.startSquadRun(spec, actor);
+    }
+
+    public SquadRunRecord recordSquadLeaderTurn(String squadRunId,
+                                                String action,
+                                                String targetMemberId,
+                                                String summary,
+                                                String memberResponse,
+                                                HarnessActor actor) {
+        return executionCoordinationService.recordSquadLeaderTurn(squadRunId, action, targetMemberId,
+                summary, memberResponse, actor);
+    }
+
+    public SquadRunRecord convergeSquadRun(String squadRunId, String synthesisReport, HarnessActor actor) {
+        return executionCoordinationService.convergeSquadRun(squadRunId, synthesisReport, actor);
+    }
+
+    public SquadRunRecord getSquadRun(String squadRunId) {
+        return executionCoordinationService.getSquadRun(squadRunId);
+    }
+
+    public TodoRecord createTodo(String todoId,
+                                 String scopeKey,
+                                 String title,
+                                 String notes,
+                                 Map<String, Object> metadata,
+                                 HarnessActor actor) {
+        return executionCoordinationService.createTodo(todoId, scopeKey, title, notes, metadata, actor);
+    }
+
+    public TaskRecord promoteTodoToTask(String todoId, HarnessTaskSpec taskSpec, HarnessActor actor) {
+        return executionCoordinationService.promoteTodoToTask(todoId, taskSpec, this, actor);
+    }
+
+    public WorkRecord createWork(String workId,
+                                 String scopeKey,
+                                 String title,
+                                 String goal,
+                                 Map<String, Object> metadata,
+                                 HarnessActor actor) {
+        return executionCoordinationService.createWork(workId, scopeKey, title, goal, metadata, actor);
+    }
+
+    public WorkRecord attachTaskToWork(String workId, String taskId, HarnessActor actor) {
+        return executionCoordinationService.attachTaskToWork(workId, taskId, actor);
+    }
+
+    public WorkProgress getWorkProgress(String workId) {
+        return executionCoordinationService.getWorkProgress(workId);
+    }
+
+    public ScheduleRecord createSchedule(ScheduleSpec spec, HarnessActor actor) {
+        return executionCoordinationService.createSchedule(spec, actor);
+    }
+
+    public ScheduleRunRecord triggerSchedule(String scheduleId,
+                                             String tickKey,
+                                             String claimingNodeId,
+                                             ScheduleHandler handler,
+                                             HarnessActor actor) {
+        return executionCoordinationService.triggerSchedule(scheduleId, tickKey, claimingNodeId,
+                handler, this, actor);
+    }
+
     @Override
     public void close() {
         store.close();
@@ -2161,10 +2591,8 @@ public final class HarnessCommandGateway implements AutoCloseable {
         if (!contract.mayComplete(effectiveActor, submission)) {
             throw new HarnessValidationException("actor is not allowed to complete this task");
         }
-        if (contract.requiresApprovedReview(task, submission)
-                && !hasApprovedReview(state, submission.getSubmissionId())) {
-            throw new HarnessValidationException("an approved review is required before completion");
-        }
+        KnowledgeLedgerService.assertReadSetFresh(state, executionId);
+        governanceReviewService.validateCompletionGovernance(state, task, submission);
         if (contract.requiresCompletionEvidence(task, submission)) {
             if (submission.getEvidenceIds() == null || submission.getEvidenceIds().isEmpty()) {
                 throw new HarnessValidationException("completion evidence is required for governed task");
@@ -2250,6 +2678,11 @@ public final class HarnessCommandGateway implements AutoCloseable {
                 .goal(spec.getGoal())
                 .plan(spec.getPlan())
                 .status(TaskStatus.PLANNED)
+                .workId(HarnessSupport.trimToNull(spec.getWorkId()))
+                .verticalKind(HarnessSupport.trimToNull(spec.getVerticalKind()))
+                .targetNodeId(HarnessSupport.trimToNull(spec.getTargetNodeId()))
+                .requiredTags(HarnessSupport.copyList(spec.getRequiredTags()))
+                .assignedAgentId(HarnessSupport.trimToNull(spec.getAssignedAgentId()))
                 .createdBy(HarnessSupport.actorKey(actor, defaultActor))
                 .createdAtEpochMs(currentTime)
                 .updatedAtEpochMs(currentTime)
@@ -2733,19 +3166,6 @@ public final class HarnessCommandGateway implements AutoCloseable {
             return requestedRunId;
         }
         return sessionRunId == null ? HarnessSupport.valueOrGenerated(null, "run_") : sessionRunId;
-    }
-
-    private boolean hasApprovedReview(HarnessState state, String submissionId) {
-        ReviewRecord latest = null;
-        for (ReviewRecord review : state.getReviews().values()) {
-            if (review == null || !HarnessSupport.safeEquals(submissionId, review.getSubmissionId())) {
-                continue;
-            }
-            if (latest == null || review.getCreatedAtEpochMs() >= latest.getCreatedAtEpochMs()) {
-                latest = review;
-            }
-        }
-        return latest != null && ReviewVerdict.APPROVED.equals(latest.getVerdict());
     }
 
     private void assertCurrentTaskExecution(TaskRecord task, String executionId) {

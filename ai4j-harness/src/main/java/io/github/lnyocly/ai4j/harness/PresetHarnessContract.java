@@ -87,6 +87,21 @@ public final class PresetHarnessContract implements HarnessContract {
     }
 
     @Override
+    public boolean requiresContentPinnedConsent(TaskRecord task, SubmissionRecord submission) {
+        return resolve(task).requiresContentPinnedConsent(task, submission);
+    }
+
+    @Override
+    public Set<String> requiredWitnessGates(TaskRecord task, SubmissionRecord submission) {
+        return resolve(task).requiredWitnessGates(task, submission);
+    }
+
+    @Override
+    public boolean requiresFalsifiableDecisions() {
+        return base.requiresFalsifiableDecisions();
+    }
+
+    @Override
     public Set<String> requiredAcceptanceChecks(TaskRecord task, SubmissionRecord submission) {
         return resolve(task).requiredAcceptanceChecks(task, submission);
     }
