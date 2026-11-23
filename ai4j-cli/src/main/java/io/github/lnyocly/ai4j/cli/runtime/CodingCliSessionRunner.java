@@ -1649,7 +1649,7 @@ public class CodingCliSessionRunner {
     private void addProviderProfile(String rawArguments) throws IOException {
         ProviderProfileMutation mutation = parseProviderProfileMutation(
                 rawArguments,
-                "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]"
+                "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses|messages|gemini>] [--model <name>] [--base-url <url>] [--api-key <key>]"
         );
         if (mutation == null) {
             return;
@@ -1660,7 +1660,7 @@ public class CodingCliSessionRunner {
             return;
         }
         if (isBlank(mutation.provider)) {
-            emitError("Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]");
+            emitError("Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses|messages|gemini>] [--model <name>] [--base-url <url>] [--api-key <key>]");
             return;
         }
         PlatformType provider = parseProviderType(mutation.provider);
@@ -1695,13 +1695,13 @@ public class CodingCliSessionRunner {
     private ManagedCodingSession editProviderProfile(ManagedCodingSession session, String rawArguments) throws Exception {
         ProviderProfileMutation mutation = parseProviderProfileMutation(
                 rawArguments,
-                "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]"
+                "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses|messages|gemini>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]"
         );
         if (mutation == null) {
             return session;
         }
         if (!mutation.hasAnyFieldChanges()) {
-            emitError("Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]");
+            emitError("Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses|messages|gemini>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]");
             return session;
         }
         CliProvidersConfig providersConfig = providerConfigManager.loadProvidersConfig();
@@ -1919,14 +1919,11 @@ public class CodingCliSessionRunner {
     }
 
     private boolean isSupportedProviderProtocol(PlatformType provider, CliProtocol protocol) {
-        if (provider == null || protocol == null || protocol == CliProtocol.CHAT) {
+        if (provider == null || protocol == null || protocol.isSupportedBy(provider)) {
             return true;
         }
-        if (provider != PlatformType.OPENAI && provider != PlatformType.DOUBAO && provider != PlatformType.DASHSCOPE) {
-            emitError("Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet");
-            return false;
-        }
-        return true;
+        emitError("Provider " + provider.getPlatform() + " does not support " + protocol.getValue() + " protocol in ai4j-cli yet");
+        return false;
     }
 
     private String normalizeStoredProtocol(String raw, PlatformType provider, String baseUrl) {

@@ -231,7 +231,7 @@ public class AgentBlueprintRunCommand {
         terminal.println("Options:");
         terminal.println("  --input <text> / --prompt <text>      User input for one run");
         terminal.println("  --provider <name>                    Override YAML model.provider");
-        terminal.println("  --protocol <chat|responses>          Override protocol");
+        terminal.println("  --protocol <chat|responses|messages|gemini>  Override protocol");
         terminal.println("  --model <name>                       Override YAML model.model");
         terminal.println("  --profile <name>                     Host provider profile metadata");
         terminal.println("  --api-key <key>                      Host runtime key; prefer env/config");

@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.cli.provider;
 
 import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.cli.CliProtocol;
+import io.github.lnyocly.ai4j.cli.config.CliFleetEdgeDescriptor;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.service.PlatformType;
 
@@ -310,6 +311,17 @@ public class CliProviderConfigManager {
         config.setEnabledMcpServers(normalizeNames(config.getEnabledMcpServers()));
         config.setSkillDirectories(normalizeNames(config.getSkillDirectories()));
         config.setAgentDirectories(normalizeNames(config.getAgentDirectories()));
+        if (config.getFleetEdge() != null) {
+            config.setFleetEdge(config.getFleetEdge().normalized());
+        }
+    }
+
+    public CliFleetEdgeDescriptor resolveFleetEdgeDescriptor() {
+        CliWorkspaceConfig config = loadWorkspaceConfig();
+        if (config == null || config.getFleetEdge() == null) {
+            return null;
+        }
+        return config.getFleetEdge().normalized();
     }
 
     private boolean normalize(CliProviderProfile profile) {

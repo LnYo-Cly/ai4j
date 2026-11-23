@@ -117,7 +117,7 @@ public class CodeCommandOptionsParser {
         CliUiMode uiMode = resolveUiMode(values, env, properties, CliUiMode.CLI);
         String cliProtocolOverride = values.get("protocol");
         if ("auto".equalsIgnoreCase(trimToNull(cliProtocolOverride))) {
-            throw new IllegalArgumentException("Unsupported protocol: auto. Expected: chat, responses");
+            throw new IllegalArgumentException("Unsupported protocol: auto. Expected: chat, responses, messages, gemini");
         }
         String workspace = firstNonBlank(
                 values.get("workspace"),
