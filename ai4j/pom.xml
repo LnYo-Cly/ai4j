@@ -355,6 +355,7 @@
                     <parameter>
                         <breakBuildOnModifications>false</breakBuildOnModifications>
                         <breakBuildOnBinaryIncompatibleModifications>false</breakBuildOnBinaryIncompatibleModifications>
+                        <ignoreMissingClasses>true</ignoreMissingClasses>
                         <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
                         <ignoreMissingNewVersion>true</ignoreMissingNewVersion>
                     </parameter>

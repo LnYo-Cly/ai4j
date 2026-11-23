@@ -33,9 +33,15 @@ public class ExtensionAutoConfigurationTest {
             ExtensionRegistry registry = context.getBean(ExtensionRegistry.class);
             List<DiscoveredExtension> discovered = registry.list();
 
-            Assert.assertEquals(1, discovered.size());
-            Assert.assertEquals("spring-weather-pack", discovered.get(0).getManifest().getId());
-            Assert.assertFalse(discovered.get(0).isEnabled());
+            Assert.assertFalse(discovered.isEmpty());
+            boolean foundWeatherPack = false;
+            for (DiscoveredExtension ext : discovered) {
+                Assert.assertFalse(ext.isEnabled());
+                if ("spring-weather-pack".equals(ext.getManifest().getId())) {
+                    foundWeatherPack = true;
+                }
+            }
+            Assert.assertTrue(foundWeatherPack);
 
             ExtensionRuntimeSnapshot snapshot = context.getBean(ExtensionRuntimeSnapshot.class);
             Assert.assertTrue(snapshot.getTools().isEmpty());

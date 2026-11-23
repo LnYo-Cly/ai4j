@@ -107,6 +107,36 @@
                 <artifactId>ai4j-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-mcp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-rag</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-sandbox</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-a2a</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-ambient</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-plugin-colab</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

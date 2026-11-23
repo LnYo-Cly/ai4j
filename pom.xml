@@ -91,10 +91,16 @@
         <module>ai4j-extension-api</module>
         <module>ai4j-plugin-ask-user</module>
         <module>ai4j</module>
+        <module>ai4j-mcp</module>
+        <module>ai4j-rag</module>
         <module>ai4j-document-tika</module>
+        <module>ai4j-sandbox</module>
         <module>ai4j-agent</module>
+        <module>ai4j-a2a</module>
+        <module>ai4j-plugin-colab</module>
         <module>ai4j-testing</module>
         <module>ai4j-harness</module>
+        <module>ai4j-ambient</module>
         <module>ai4j-coding</module>
         <module>ai4j-cli</module>
         <module>ai4j-web</module>
@@ -180,6 +186,7 @@
                         <parameter>
                             <breakBuildOnModifications>false</breakBuildOnModifications>
                             <breakBuildOnBinaryIncompatibleModifications>false</breakBuildOnBinaryIncompatibleModifications>
+                            <ignoreMissingClasses>true</ignoreMissingClasses>
                             <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
                             <ignoreMissingNewVersion>true</ignoreMissingNewVersion>
                         </parameter>
@@ -251,11 +258,15 @@
                             <rules>
                                 <dependencyConvergence />
                                 <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
                                     <excludes>
                                         <!-- 日志实现不得出现在非 test scope（避免污染下游日志栈） -->
                                         <exclude>org.slf4j:slf4j-simple:*:*:!:test</exclude>
                                         <exclude>org.slf4j:slf4j-log4j12:*:*:!:test</exclude>
                                         <exclude>ch.qos.logback:logback-classic:*:*:!:test</exclude>
+                                        <!-- 永久清退 fastjson/fastjson2（全仓含 test 统一收敛至 JsonCodec / Jackson） -->
+                                        <exclude>com.alibaba.fastjson2:*</exclude>
+                                        <exclude>com.alibaba:fastjson</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>
