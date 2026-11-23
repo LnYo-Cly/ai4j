@@ -12,7 +12,7 @@ import java.util.Locale;
  */
 @AllArgsConstructor
 @Getter
-public enum PlatformType {
+public enum PlatformType implements Platform {
     OPENAI("openai"),
     ANTHROPIC("anthropic"),
     ZHIPU("zhipu"),
@@ -33,6 +33,11 @@ public enum PlatformType {
     GEMINI("gemini"),
     ;
     private final String platform;
+
+    @Override
+    public String id() {
+        return platform;
+    }
 
     /**
      * Strictly resolves a platform identifier after trimming and lowercasing.

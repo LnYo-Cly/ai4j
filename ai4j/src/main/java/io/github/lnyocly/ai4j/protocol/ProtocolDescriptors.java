@@ -2,11 +2,12 @@ package io.github.lnyocly.ai4j.protocol;
 
 import io.github.lnyocly.ai4j.model.Protocol;
 import io.github.lnyocly.ai4j.protocol.chat.ChatCompletionsCodec;
+import io.github.lnyocly.ai4j.protocol.gemini.GeminiCodec;
 import io.github.lnyocly.ai4j.protocol.messages.MessagesCodec;
 import io.github.lnyocly.ai4j.protocol.responses.ResponsesCodec;
 
 /**
- * The three protocol descriptors known to the kernel.
+ * The four protocol descriptors known to the kernel.
  *
  * <p>Descriptors are stateless singletons built once from the
  * {@link CapabilityMatrix} baseline. Onboarding a standard-shape vendor is an
@@ -38,6 +39,15 @@ public final class ProtocolDescriptors {
             .anthropicVersionHeader(true)
             .build();
 
+    private static final ProtocolDescriptor GEMINI = ProtocolDescriptor
+            .builder(Protocol.GEMINI, new GeminiCodec(), "/v1beta/models/{model}:generateContent")
+            .capabilities(CapabilityMatrix.forGemini())
+            .unsupported(Capability.TOOL_SEARCH_DEFERRED)
+            .unsupported(Capability.PARALLEL_TOOL_CALLS)
+            .unsupported(Capability.STRICT_SCHEMA)
+            .unsupported(Capability.RESPONSE_CHAINING)
+            .build();
+
     private ProtocolDescriptors() {
     }
 
@@ -50,6 +60,8 @@ public final class ProtocolDescriptors {
                 return RESPONSES;
             case MESSAGES:
                 return MESSAGES;
+            case GEMINI:
+                return GEMINI;
             default:
                 throw new IllegalArgumentException("no descriptor for protocol " + protocol);
         }

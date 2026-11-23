@@ -20,10 +20,11 @@ public final class ModelCallExceptionMarker {
     private final String message;
     private final String rawSnippet;
     private final ModelCallStatus status;
+    private final Long retryAfterMillis;
 
     private ModelCallExceptionMarker(Protocol protocol, int httpStatus, String providerErrorType,
                                      String providerRequestId, boolean retryable, String message,
-                                     String rawSnippet, ModelCallStatus status) {
+                                     String rawSnippet, ModelCallStatus status, Long retryAfterMillis) {
         this.protocol = Objects.requireNonNull(protocol, "protocol is required");
         this.httpStatus = httpStatus;
         this.providerErrorType = providerErrorType;
@@ -32,6 +33,7 @@ public final class ModelCallExceptionMarker {
         this.message = message;
         this.rawSnippet = rawSnippet;
         this.status = status == null ? ModelCallStatus.FAILED : status;
+        this.retryAfterMillis = retryAfterMillis;
     }
 
     public static Builder builder(Protocol protocol) {
@@ -72,6 +74,11 @@ public final class ModelCallExceptionMarker {
         return status;
     }
 
+    /** Optional server-supplied {@code Retry-After} delay in milliseconds, or {@code null}. */
+    public Long getRetryAfterMillis() {
+        return retryAfterMillis;
+    }
+
     @Override
     public String toString() {
         return "ModelCallExceptionMarker{status=" + httpStatus + ", retryable=" + retryable
@@ -89,6 +96,7 @@ public final class ModelCallExceptionMarker {
         private String message;
         private String rawSnippet;
         private ModelCallStatus status = ModelCallStatus.FAILED;
+        private Long retryAfterMillis;
 
         private Builder(Protocol protocol) {
             this.protocol = protocol;
@@ -129,9 +137,14 @@ public final class ModelCallExceptionMarker {
             return this;
         }
 
+        public Builder retryAfterMillis(Long retryAfterMillis) {
+            this.retryAfterMillis = retryAfterMillis;
+            return this;
+        }
+
         public ModelCallExceptionMarker build() {
             return new ModelCallExceptionMarker(protocol, httpStatus, providerErrorType,
-                    providerRequestId, retryable, message, rawSnippet, status);
+                    providerRequestId, retryable, message, rawSnippet, status, retryAfterMillis);
         }
     }
 }

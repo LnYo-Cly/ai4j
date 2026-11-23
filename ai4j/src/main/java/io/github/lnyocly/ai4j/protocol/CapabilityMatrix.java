@@ -69,6 +69,20 @@ public final class CapabilityMatrix {
         return set;
     }
 
+    /** Capabilities defined by the GEMINI wire protocol. */
+    public static Set<Capability> forGemini() {
+        EnumSet<Capability> set = EnumSet.noneOf(Capability.class);
+        set.add(Capability.FUNCTION_TOOLS);
+        set.add(Capability.HOSTED_TOOLS);
+        set.add(Capability.TOOL_CHOICE_FORCED);
+        set.add(Capability.SYSTEM_INSTRUCTIONS);
+        set.add(Capability.IMAGE_INPUT);
+        set.add(Capability.DOCUMENT_INPUT);
+        set.add(Capability.REASONING_SIGNATURE);
+        set.add(Capability.SSE_RAW_EVENT);
+        return set;
+    }
+
     /** Baseline set for a protocol. */
     public static Set<Capability> forProtocol(Protocol protocol) {
         switch (protocol) {
@@ -78,6 +92,8 @@ public final class CapabilityMatrix {
                 return forResponses();
             case MESSAGES:
                 return forMessages();
+            case GEMINI:
+                return forGemini();
             default:
                 return EnumSet.noneOf(Capability.class);
         }

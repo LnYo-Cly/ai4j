@@ -12,8 +12,9 @@ public final class ReasoningBlock extends AbstractBlock {
 
     private final String text;
     private final String signature;
+    private final Protocol sourceProtocol;
 
-    private ReasoningBlock(String text, String signature, String blockId,
+    private ReasoningBlock(String text, String signature, Protocol sourceProtocol, String blockId,
                            Map<String, Object> applicationMetadata, Map<String, Object> protocolData) {
         super(BlockType.REASONING, blockId, applicationMetadata, protocolData);
         if (text == null) {
@@ -21,20 +22,31 @@ public final class ReasoningBlock extends AbstractBlock {
         }
         this.text = text;
         this.signature = signature;
+        this.sourceProtocol = sourceProtocol;
     }
 
     public static ReasoningBlock of(String text) {
-        return new ReasoningBlock(text, null, null, null, null);
+        return new ReasoningBlock(text, null, null, null, null, null);
     }
 
     public static ReasoningBlock of(String text, String signature) {
-        return new ReasoningBlock(text, signature, null, null, null);
+        return new ReasoningBlock(text, signature, null, null, null, null);
+    }
+
+    public static ReasoningBlock of(String text, String signature, Protocol sourceProtocol) {
+        return new ReasoningBlock(text, signature, sourceProtocol, null, null, null);
     }
 
     public static ReasoningBlock of(String text, String signature, String blockId,
                                     Map<String, Object> applicationMetadata,
                                     Map<String, Object> protocolData) {
-        return new ReasoningBlock(text, signature, blockId, applicationMetadata, protocolData);
+        return new ReasoningBlock(text, signature, null, blockId, applicationMetadata, protocolData);
+    }
+
+    public static ReasoningBlock of(String text, String signature, Protocol sourceProtocol, String blockId,
+                                    Map<String, Object> applicationMetadata,
+                                    Map<String, Object> protocolData) {
+        return new ReasoningBlock(text, signature, sourceProtocol, blockId, applicationMetadata, protocolData);
     }
 
     public String getText() {
@@ -43,5 +55,10 @@ public final class ReasoningBlock extends AbstractBlock {
 
     public String getSignature() {
         return signature;
+    }
+
+    /** Originating wire protocol for signature replay compatibility, or {@code null} when unspecified. */
+    public Protocol getSourceProtocol() {
+        return sourceProtocol;
     }
 }
