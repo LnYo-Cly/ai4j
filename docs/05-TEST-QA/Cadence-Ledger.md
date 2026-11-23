@@ -171,3 +171,6 @@ HarnessBench bridge budget changes require `bash benchmarks/harnessbench-ai4j/te
 
 2026-09-25 VectorStore primary resolution: starter now provides a `@Primary` `vectorStore` bean so unqualified `VectorStore` injection always resolves. One enabled store auto-selects; multiple enabled stores require `ai.vector.primary` (backend name or custom bean name) and fail fast with the candidate list otherwise; user-defined `VectorStore` beans join the candidate set. `VectorStoreProperties` binds `ai.vector.primary`. RG-005 `mvn -pl ai4j-spring-boot-starter -DskipTests=false test` passed 28 starter tests (`VectorStoreAutoConfigurationTest` 8 tests: opt-in, single auto-select, primary selection, missing-primary fail-fast, unmatched-primary fail-fast). No external service or provider credential was used.
 
+## MiniMax speech synthesis verification
+
+Changes to the MiniMax audio adapter trigger `MinimaxAudioServiceTest`, RG-001 (`mvn -pl ai4j -am -DskipTests=false test`), and RG-007 (`mvn -DskipTests package`). The deterministic speech contract tests use local HTTP fixtures and require no provider credentials.
