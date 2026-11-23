@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BuiltInToolExecutorTest {
 
@@ -26,20 +28,20 @@ public class BuiltInToolExecutorTest {
                 .workspaceRoot(workspaceRoot.toString())
                 .build();
 
-        JSONObject readResult = JSON.parseObject(ToolUtil.invoke(
+        JsonNode readResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.READ_FILE,
                 "{\"path\":\"notes.txt\"}",
                 context
         ));
-        Assert.assertEquals("notes.txt", readResult.getString("path"));
-        Assert.assertTrue(readResult.getString("content").contains("hello"));
+        Assert.assertEquals("notes.txt", readResult.path("path").asText());
+        Assert.assertTrue(readResult.path("content").asText().contains("hello"));
 
-        JSONObject writeResult = JSON.parseObject(ToolUtil.invoke(
+        JsonNode writeResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.WRITE_FILE,
                 "{\"path\":\"nested/output.txt\",\"content\":\"abc\",\"mode\":\"create\"}",
                 context
         ));
-        Assert.assertTrue(writeResult.getBooleanValue("created"));
+        Assert.assertTrue(writeResult.path("created").asBoolean());
         Assert.assertEquals("abc", new String(Files.readAllBytes(workspaceRoot.resolve("nested").resolve("output.txt")), StandardCharsets.UTF_8));
 
         String patch = "*** Begin Patch\n"
@@ -48,14 +50,14 @@ public class BuiltInToolExecutorTest {
                 + "-abc\n"
                 + "+updated\n"
                 + "*** End Patch\n";
-        JSONObject patchResult = JSON.parseObject(ToolUtil.invoke(
+        Map<String, Object> patchArgs = new HashMap<String, Object>();
+        patchArgs.put("patch", patch);
+        JsonNode patchResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.APPLY_PATCH,
-                JSON.toJSONString(new JSONObject() {{
-                    put("patch", patch);
-                }}),
+                JsonCodec.toJson(patchArgs),
                 context
         ));
-        Assert.assertEquals(1, patchResult.getIntValue("filesChanged"));
+        Assert.assertEquals(1, patchResult.path("filesChanged").asInt());
         Assert.assertEquals("updated", new String(Files.readAllBytes(workspaceRoot.resolve("nested").resolve("output.txt")), StandardCharsets.UTF_8));
         Assert.assertEquals(1, BuiltInTools.tools(BuiltInTools.READ_FILE).size());
     }
@@ -67,45 +69,45 @@ public class BuiltInToolExecutorTest {
                 .workspaceRoot(workspaceRoot.toString())
                 .build();
 
-        JSONObject execResult = JSON.parseObject(ToolUtil.invoke(
+        JsonNode execResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.BASH,
                 "{\"action\":\"exec\",\"command\":\"echo hello\"}",
                 context
         ));
-        Assert.assertEquals(0, execResult.getIntValue("exitCode"));
-        Assert.assertTrue(execResult.getString("stdout").toLowerCase().contains("hello"));
+        Assert.assertEquals(0, execResult.path("exitCode").asInt());
+        Assert.assertTrue(execResult.path("stdout").asText().toLowerCase().contains("hello"));
 
         String command = isWindows()
                 ? "ping 127.0.0.1 -n 6 >nul"
                 : "sleep 5";
-        JSONObject startResult = JSON.parseObject(ToolUtil.invoke(
+        Map<String, Object> startArgs = new HashMap<String, Object>();
+        startArgs.put("action", "start");
+        startArgs.put("command", command);
+        JsonNode startResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.BASH,
-                JSON.toJSONString(new JSONObject() {{
-                    put("action", "start");
-                    put("command", command);
-                }}),
+                JsonCodec.toJson(startArgs),
                 context
         ));
-        String processId = startResult.getString("processId");
-        Assert.assertNotNull(processId);
+        String processId = startResult.path("processId").asText();
+        Assert.assertFalse(processId.isEmpty());
 
-        JSONObject listResult = JSON.parseObject(ToolUtil.invoke(
+        JsonNode listResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.BASH,
                 "{\"action\":\"list\"}",
                 context
         ));
-        Assert.assertFalse(listResult.getJSONArray("processes").isEmpty());
+        Assert.assertTrue(listResult.path("processes").size() > 0);
 
-        JSONObject stopResult = JSON.parseObject(ToolUtil.invoke(
+        Map<String, Object> stopArgs = new HashMap<String, Object>();
+        stopArgs.put("action", "stop");
+        stopArgs.put("processId", processId);
+        JsonNode stopResult = JsonCodec.readTree(ToolUtil.invoke(
                 BuiltInTools.BASH,
-                JSON.toJSONString(new JSONObject() {{
-                    put("action", "stop");
-                    put("processId", processId);
-                }}),
+                JsonCodec.toJson(stopArgs),
                 context
         ));
-        Assert.assertEquals(processId, stopResult.getString("processId"));
-        Assert.assertEquals("STOPPED", stopResult.getString("status"));
+        Assert.assertEquals(processId, stopResult.path("processId").asText());
+        Assert.assertEquals("STOPPED", stopResult.path("status").asText());
     }
 
     @Test

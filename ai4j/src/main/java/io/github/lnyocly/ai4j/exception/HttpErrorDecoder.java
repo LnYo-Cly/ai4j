@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.exception;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import okhttp3.Response;
 
 /**
@@ -10,8 +10,6 @@ import okhttp3.Response;
  * non-2xx HTTP responses instead of returning null.
  */
 public final class HttpErrorDecoder {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /** Upper bound on raw-body text kept in an exception message. */
     private static final int MAX_RAW_BODY_CHARS = 500;
@@ -82,7 +80,7 @@ public final class HttpErrorDecoder {
             return null;
         }
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(body);
+            JsonNode root = JsonCodec.readTree(body);
             JsonNode errorNode = root.path("error");
             if (!errorNode.isMissingNode() && !errorNode.isNull()) {
                 String msg = errorNode.path("message").asText(null);

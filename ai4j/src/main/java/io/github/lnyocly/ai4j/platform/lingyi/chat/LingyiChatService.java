@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.lingyi.chat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.LingyiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -55,14 +56,14 @@ public class LingyiChatService implements IChatService, ParameterConvert<LingyiC
         this.lingyiConfig = configuration.getLingyiConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     public LingyiChatService(Configuration configuration, LingyiConfig lingyiConfig) {
         this.lingyiConfig = lingyiConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override

@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.platform.grok.video;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.video.OpenAiVideoServiceTest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
@@ -47,17 +46,17 @@ public class GrokVideoServiceTest {
             Assert.assertEquals("/v1/videos/generations", request.getPath());
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
 
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("grok-imagine-video", body.getString("model"));
-            Assert.assertEquals("城市屋顶的星空", body.getString("prompt"));
-            Assert.assertEquals(Integer.valueOf(6), body.getInteger("duration"));
-            Assert.assertEquals("16:9", body.getString("aspect_ratio"));
-            Assert.assertEquals("720p", body.getString("resolution"));
-            Assert.assertEquals("https://cdn.example/first.png", body.getString("image"));
-            JSONArray refs = body.getJSONArray("reference_images");
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("grok-imagine-video", body.path("model").asText());
+            Assert.assertEquals("城市屋顶的星空", body.path("prompt").asText());
+            Assert.assertEquals(6, body.path("duration").asInt());
+            Assert.assertEquals("16:9", body.path("aspect_ratio").asText());
+            Assert.assertEquals("720p", body.path("resolution").asText());
+            Assert.assertEquals("https://cdn.example/first.png", body.path("image").asText());
+            JsonNode refs = body.path("reference_images");
             Assert.assertEquals(1, refs.size());
-            Assert.assertEquals("https://cdn.example/ref-1.png", refs.getString(0));
-            Assert.assertNull(body.getString("seconds"));
+            Assert.assertEquals("https://cdn.example/ref-1.png", refs.get(0).asText());
+            Assert.assertTrue(body.path("seconds").isMissingNode() || body.path("seconds").isNull());
         } finally {
             server.shutdown();
         }

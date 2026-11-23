@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.chat;
 
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -81,7 +81,7 @@ public class OpenAiChatService implements IChatService {
                 finishReason = null;
 
                 // 构造请求
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonCodec.mapper();
                 String requestString = mapper.writeValueAsString(chatCompletion);
 
                 Request request = new Request.Builder()
@@ -184,7 +184,7 @@ public class OpenAiChatService implements IChatService {
             while("first".equals(finishReason) || "tool_calls".equals(finishReason)){
 
                 finishReason = null;
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonCodec.mapper();
                 String jsonString = mapper.writeValueAsString(chatCompletion);
 
                 Request request = new Request.Builder()

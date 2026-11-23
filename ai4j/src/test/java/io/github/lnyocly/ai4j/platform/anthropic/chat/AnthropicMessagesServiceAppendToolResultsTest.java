@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.platform.anthropic.chat;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicContentBlock;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicMessage;
@@ -59,7 +58,7 @@ public class AnthropicMessagesServiceAppendToolResultsTest {
         use.setType("tool_use");
         use.setId("toolu_1");
         use.setName("echo_text");
-        use.setInput(JSON.parseObject("{\"text\":\"hi\"}"));
+        use.setInput(Collections.singletonMap("text", "hi"));
         response.setContent(Collections.singletonList(use));
 
         List<AnthropicMessage> result = AnthropicMessagesService.appendToolResults(messages, response);

@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.typesafe.systemone;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.TypeSafeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -33,7 +34,7 @@ public class TypeSafeSystemOneService implements ISystemOneService {
     private final String systemOneUrl;
     private final String modelsUrl;
     private final String defaultModel;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonCodec.mapper();
 
     public TypeSafeSystemOneService(Configuration configuration) {
         this(configuration, configuration == null ? null : configuration.getTypeSafeConfig());

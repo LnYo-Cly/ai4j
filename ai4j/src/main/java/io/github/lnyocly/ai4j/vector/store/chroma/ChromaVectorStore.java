@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j.vector.store.chroma;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.ChromaConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +47,9 @@ public class ChromaVectorStore implements VectorStore {
 
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
     private static final String DATASET_KEY = "dataset";
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
+            new TypeReference<LinkedHashMap<String, Object>>() {
+            };
 
     private final ChromaConfig config;
     private final OkHttpClient okHttpClient;
@@ -74,10 +80,10 @@ public class ChromaVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONArray ids = new JSONArray();
-        JSONArray embeddings = new JSONArray();
-        JSONArray documents = new JSONArray();
-        JSONArray metadatas = new JSONArray();
+        ArrayNode ids = JsonCodec.createArrayNode();
+        ArrayNode embeddings = JsonCodec.createArrayNode();
+        ArrayNode documents = JsonCodec.createArrayNode();
+        ArrayNode metadatas = JsonCodec.createArrayNode();
         int index = 0;
         for (VectorRecord record : records) {
             if (record == null || record.getVector() == null || record.getVector().isEmpty()) {
@@ -85,13 +91,13 @@ public class ChromaVectorStore implements VectorStore {
                 continue;
             }
             ids.add(resolveId(record.getId(), index));
-            embeddings.add(record.getVector());
+            embeddings.add(JsonCodec.valueToTree(record.getVector()));
             documents.add(record.getContent() == null ? "" : record.getContent());
-            JSONObject metadata = new JSONObject();
+            ObjectNode metadata = JsonCodec.createObjectNode();
             if (record.getMetadata() != null) {
                 for (Map.Entry<String, Object> entry : record.getMetadata().entrySet()) {
                     if (entry != null && entry.getKey() != null && entry.getValue() != null) {
-                        metadata.put(entry.getKey(), entry.getValue());
+                        metadata.set(entry.getKey(), JsonCodec.valueToTree(entry.getValue()));
                     }
                 }
             }
@@ -103,11 +109,11 @@ public class ChromaVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONObject body = new JSONObject();
-        body.put("ids", ids);
-        body.put("embeddings", embeddings);
-        body.put("documents", documents);
-        body.put("metadatas", metadatas);
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("ids", ids);
+        body.set("embeddings", embeddings);
+        body.set("documents", documents);
+        body.set("metadatas", metadatas);
         executePost(collectionUrl("/upsert"), body);
         return ids.size();
     }
@@ -119,48 +125,51 @@ public class ChromaVectorStore implements VectorStore {
             return Collections.emptyList();
         }
 
-        JSONObject body = new JSONObject();
-        JSONArray queryEmbeddings = new JSONArray();
-        queryEmbeddings.add(request.getVector());
-        body.put("query_embeddings", queryEmbeddings);
+        ObjectNode body = JsonCodec.createObjectNode();
+        ArrayNode queryEmbeddings = JsonCodec.createArrayNode();
+        queryEmbeddings.add(JsonCodec.valueToTree(request.getVector()));
+        body.set("query_embeddings", queryEmbeddings);
         Integer topK = request.getTopK();
         body.put("n_results", topK == null || topK <= 0 ? 10 : topK.intValue());
-        body.put("where", where(dataset, request.getFilter()));
-        JSONArray include = new JSONArray();
+        body.set("where", where(dataset, request.getFilter()));
+        ArrayNode include = JsonCodec.createArrayNode();
         include.add("documents");
         include.add("metadatas");
         include.add("distances");
         if (Boolean.TRUE.equals(request.getIncludeVector())) {
             include.add("embeddings");
         }
-        body.put("include", include);
+        body.set("include", include);
 
-        JSONObject response = executePost(collectionUrl("/query"), body);
-        JSONArray ids = response == null ? null : response.getJSONArray("ids");
-        if (ids == null || ids.isEmpty() || ids.getJSONArray(0) == null) {
+        ObjectNode response = executePost(collectionUrl("/query"), body);
+        JsonNode idsNode = response == null ? null : response.get("ids");
+        if (idsNode == null || !idsNode.isArray() || idsNode.isEmpty() || !idsNode.get(0).isArray()) {
             return Collections.emptyList();
         }
-        JSONArray hitIds = ids.getJSONArray(0);
-        JSONArray hitDocs = arrayAt(response, "documents");
-        JSONArray hitMeta = arrayAt(response, "metadatas");
-        JSONArray hitDist = arrayAt(response, "distances");
-        JSONArray hitEmb = arrayAt(response, "embeddings");
+        JsonNode hitIds = idsNode.get(0);
+        JsonNode hitDocs = arrayAt(response, "documents");
+        JsonNode hitMeta = arrayAt(response, "metadatas");
+        JsonNode hitDist = arrayAt(response, "distances");
+        JsonNode hitEmb = arrayAt(response, "embeddings");
 
         List<VectorSearchResult> results = new ArrayList<VectorSearchResult>();
         for (int i = 0; i < hitIds.size(); i++) {
-            JSONObject metadata = hitMeta == null ? null : hitMeta.getJSONObject(i);
+            Map<String, Object> metadata = toMetadataMap(hitMeta == null ? null : hitMeta.get(i));
             if (metadata != null) {
                 metadata.remove(DATASET_KEY);
             }
-            Float distance = hitDist == null ? null : hitDist.getFloat(i);
+            JsonNode distNode = hitDist == null ? null : hitDist.get(i);
+            Float distance = distNode == null || distNode.isNull() ? null : Float.valueOf(distNode.floatValue());
+            JsonNode idNode = hitIds.get(i);
+            JsonNode docNode = hitDocs == null ? null : hitDocs.get(i);
             results.add(VectorSearchResult.builder()
-                    .id(hitIds.getString(i))
+                    .id(idNode == null || idNode.isNull() ? null : idNode.asText())
                     .score(distance == null ? null : 1.0f - distance)
-                    .content(hitDocs == null ? null : hitDocs.getString(i))
+                    .content(docNode == null || docNode.isNull() ? null : docNode.asText())
                     .metadata(Boolean.FALSE.equals(request.getIncludeMetadata()) || metadata == null
                             ? null
                             : metadata)
-                    .vector(hitEmb == null ? null : vectorValue(hitEmb.getJSONArray(i)))
+                    .vector(hitEmb == null ? null : vectorValue(hitEmb.get(i)))
                     .build());
         }
         return results;
@@ -178,11 +187,11 @@ public class ChromaVectorStore implements VectorStore {
             return false;
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         if (hasIds) {
-            body.put("ids", new JSONArray(request.getIds()));
+            body.set("ids", JsonCodec.valueToTree(request.getIds()));
         }
-        body.put("where", where(dataset, request.getFilter()));
+        body.set("where", where(dataset, request.getFilter()));
         executePost(collectionUrl("/delete"), body);
         return true;
     }
@@ -199,17 +208,17 @@ public class ChromaVectorStore implements VectorStore {
             return false;
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         if (hasIds) {
-            body.put("ids", new JSONArray(request.getIds()));
+            body.set("ids", JsonCodec.valueToTree(request.getIds()));
         }
-        body.put("where", where(dataset, request.getFilter()));
+        body.set("where", where(dataset, request.getFilter()));
         body.put("limit", 1);
-        body.put("include", new JSONArray());
+        body.set("include", JsonCodec.createArrayNode());
 
-        JSONObject response = executePost(collectionUrl("/get"), body);
-        JSONArray ids = response == null ? null : response.getJSONArray("ids");
-        return ids != null && !ids.isEmpty();
+        ObjectNode response = executePost(collectionUrl("/get"), body);
+        JsonNode ids = response == null ? null : response.get("ids");
+        return ids != null && ids.isArray() && !ids.isEmpty();
     }
 
     @Override
@@ -224,44 +233,48 @@ public class ChromaVectorStore implements VectorStore {
                 .build();
     }
 
-    private JSONObject where(String dataset, Map<String, Object> filter) {
-        List<JSONObject> conditions = new ArrayList<JSONObject>();
-        JSONObject datasetCond = new JSONObject();
-        JSONObject eq = new JSONObject();
+    private ObjectNode where(String dataset, Map<String, Object> filter) {
+        List<ObjectNode> conditions = new ArrayList<ObjectNode>();
+        ObjectNode datasetCond = JsonCodec.createObjectNode();
+        ObjectNode eq = JsonCodec.createObjectNode();
         eq.put("$eq", dataset);
-        datasetCond.put(DATASET_KEY, eq);
+        datasetCond.set(DATASET_KEY, eq);
         conditions.add(datasetCond);
         if (filter != null) {
             for (Map.Entry<String, Object> entry : filter.entrySet()) {
                 if (entry == null || trimToNull(entry.getKey()) == null || entry.getValue() == null) {
                     continue;
                 }
-                JSONObject condition = new JSONObject();
-                JSONObject op = new JSONObject();
+                ObjectNode condition = JsonCodec.createObjectNode();
+                ObjectNode op = JsonCodec.createObjectNode();
                 Object value = entry.getValue();
                 if (value instanceof Collection) {
-                    JSONArray in = new JSONArray();
+                    ArrayNode in = JsonCodec.createArrayNode();
                     for (Object item : (Collection<?>) value) {
                         if (item != null) {
-                            in.add(item);
+                            in.add(JsonCodec.valueToTree(item));
                         }
                     }
                     if (in.isEmpty()) {
                         continue;
                     }
-                    op.put("$in", in);
+                    op.set("$in", in);
                 } else {
-                    op.put("$eq", value);
+                    op.set("$eq", JsonCodec.valueToTree(value));
                 }
-                condition.put(entry.getKey().trim(), op);
+                condition.set(entry.getKey().trim(), op);
                 conditions.add(condition);
             }
         }
         if (conditions.size() == 1) {
             return conditions.get(0);
         }
-        JSONObject where = new JSONObject();
-        where.put("$and", new JSONArray(conditions));
+        ObjectNode where = JsonCodec.createObjectNode();
+        ArrayNode andArray = JsonCodec.createArrayNode();
+        for (ObjectNode cond : conditions) {
+            andArray.add(cond);
+        }
+        where.set("$and", andArray);
         return where;
     }
 
@@ -269,14 +282,15 @@ public class ChromaVectorStore implements VectorStore {
         if (collectionId != null) {
             return collectionId;
         }
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("name", config.getCollection());
         body.put("get_or_create", Boolean.TRUE);
-        JSONObject metadata = new JSONObject();
+        ObjectNode metadata = JsonCodec.createObjectNode();
         metadata.put("hnsw:space", "cosine");
-        body.put("metadata", metadata);
-        JSONObject response = executePost(baseUrl() + "/collections", body);
-        String id = response == null ? null : response.getString("id");
+        body.set("metadata", metadata);
+        ObjectNode response = executePost(baseUrl() + "/collections", body);
+        JsonNode idNode = response == null ? null : response.get("id");
+        String id = idNode == null || idNode.isNull() ? null : idNode.asText();
         if (id == null || id.isEmpty()) {
             throw new IOException("Chroma collection lookup returned no id");
         }
@@ -293,10 +307,10 @@ public class ChromaVectorStore implements VectorStore {
         return UrlUtils.concatUrl(baseUrl(), "collections", collectionId() + suffix);
     }
 
-    private JSONObject executePost(String url, JSONObject body) throws Exception {
+    private ObjectNode executePost(String url, ObjectNode body) throws Exception {
         Request.Builder builder = new Request.Builder()
                 .url(url)
-                .post(RequestBody.create(body == null ? "{}" : body.toJSONString(), JSON_MEDIA_TYPE))
+                .post(RequestBody.create(body == null ? "{}" : JsonCodec.toJson(body), JSON_MEDIA_TYPE))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON);
         if (trimToNull(config.getToken()) != null) {
@@ -310,22 +324,37 @@ public class ChromaVectorStore implements VectorStore {
                 throw new IOException("Chroma request failed: " + response.message()
                         + " " + abbreviate(text));
             }
-            return text.isEmpty() ? new JSONObject() : JSON.parseObject(text);
+            if (text.trim().isEmpty()) {
+                return JsonCodec.createObjectNode();
+            }
+            JsonNode node = JsonCodec.readTree(text);
+            return node != null && node.isObject() ? (ObjectNode) node : JsonCodec.createObjectNode();
         }
     }
 
-    private JSONArray arrayAt(JSONObject object, String key) {
-        JSONArray outer = object == null ? null : object.getJSONArray(key);
-        return outer == null || outer.isEmpty() ? null : outer.getJSONArray(0);
+    private JsonNode arrayAt(ObjectNode object, String key) {
+        JsonNode outer = object == null ? null : object.get(key);
+        if (outer == null || !outer.isArray() || outer.isEmpty()) {
+            return null;
+        }
+        JsonNode inner = outer.get(0);
+        return inner != null && inner.isArray() ? inner : null;
     }
 
-    private List<Float> vectorValue(JSONArray values) {
-        if (values == null) {
+    private Map<String, Object> toMetadataMap(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        return JsonCodec.mapper().convertValue(node, MAP_TYPE);
+    }
+
+    private List<Float> vectorValue(JsonNode values) {
+        if (values == null || !values.isArray()) {
             return null;
         }
         List<Float> vector = new ArrayList<Float>(values.size());
         for (int i = 0; i < values.size(); i++) {
-            vector.add(values.getFloat(i));
+            vector.add(values.get(i).floatValue());
         }
         return vector;
     }

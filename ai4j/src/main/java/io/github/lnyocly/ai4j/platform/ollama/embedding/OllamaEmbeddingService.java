@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.platform.ollama.embedding;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.embedding.EmbeddingParameterConvert;
@@ -45,7 +45,7 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
     public EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq) throws Exception {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = ollamaConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = ollamaConfig.getApiKey();
-        String jsonString = JSON.toJSONString(convertEmbeddingRequest(embeddingReq));
+        String jsonString = JsonCodec.toJson(convertEmbeddingRequest(embeddingReq));
 
         Request.Builder builder = new Request.Builder()
                 .url(UrlUtils.concatUrl(baseUrl, ollamaConfig.getEmbeddingUrl()))
@@ -57,7 +57,7 @@ public class OllamaEmbeddingService implements IEmbeddingService, EmbeddingParam
 
         Response execute = okHttpClient.newCall(request).execute();
         if (execute.isSuccessful() && execute.body() != null) {
-            OllamaEmbeddingResponse ollamaEmbeddingResponse = JSON.parseObject(execute.body().string(), OllamaEmbeddingResponse.class);
+            OllamaEmbeddingResponse ollamaEmbeddingResponse = JsonCodec.fromJson(execute.body().string(), OllamaEmbeddingResponse.class);
             return convertEmbeddingResponse(ollamaEmbeddingResponse);
         }
         return null;

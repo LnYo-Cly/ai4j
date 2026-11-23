@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.exception.chain.impl;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.chain.AbstractErrorHandler;
 import io.github.lnyocly.ai4j.exception.error.Error;
@@ -21,7 +21,7 @@ public class OpenAiErrorHandler extends AbstractErrorHandler {
     public Error parseError(String errorInfo) {
         // 解析json字符串
         try{
-            OpenAiError openAiError = JSON.parseObject(errorInfo, OpenAiError.class);
+            OpenAiError openAiError = JsonCodec.fromJson(errorInfo, OpenAiError.class);
 
             Error error = openAiError.getError();
             if(ObjectUtils.isEmpty(error)){

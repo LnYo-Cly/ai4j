@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agentflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatEvent;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatListener;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatRequest;
@@ -46,9 +46,9 @@ public class DifyAgentFlowServiceTest {
             RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertNotNull(recordedRequest);
             Assert.assertEquals("/v1/chat-messages", recordedRequest.getPath());
-            JSONObject body = JSON.parseObject(recordedRequest.getBody().readUtf8());
-            Assert.assertEquals("hello", body.getString("query"));
-            Assert.assertEquals("blocking", body.getString("response_mode"));
+            JsonNode body = JsonCodec.readTree(recordedRequest.getBody().readUtf8());
+            Assert.assertEquals("hello", body.path("query").asText());
+            Assert.assertEquals("blocking", body.path("response_mode").asText());
         } finally {
             server.shutdown();
         }
@@ -89,8 +89,8 @@ public class DifyAgentFlowServiceTest {
             Assert.assertEquals(Integer.valueOf(3), completion.get().getUsage().getTotalTokens());
 
             RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
-            JSONObject body = JSON.parseObject(recordedRequest.getBody().readUtf8());
-            Assert.assertEquals("streaming", body.getString("response_mode"));
+            JsonNode body = JsonCodec.readTree(recordedRequest.getBody().readUtf8());
+            Assert.assertEquals("streaming", body.path("response_mode").asText());
         } finally {
             server.shutdown();
         }
@@ -112,8 +112,8 @@ public class DifyAgentFlowServiceTest {
 
             RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/v1/workflows/run", recordedRequest.getPath());
-            JSONObject body = JSON.parseObject(recordedRequest.getBody().readUtf8());
-            Assert.assertEquals("blocking", body.getString("response_mode"));
+            JsonNode body = JsonCodec.readTree(recordedRequest.getBody().readUtf8());
+            Assert.assertEquals("blocking", body.path("response_mode").asText());
         } finally {
             server.shutdown();
         }
@@ -152,8 +152,8 @@ public class DifyAgentFlowServiceTest {
             Assert.assertEquals("Paris", completion.get().getOutputs().get("city"));
 
             RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
-            JSONObject body = JSON.parseObject(recordedRequest.getBody().readUtf8());
-            Assert.assertEquals("streaming", body.getString("response_mode"));
+            JsonNode body = JsonCodec.readTree(recordedRequest.getBody().readUtf8());
+            Assert.assertEquals("streaming", body.path("response_mode").asText());
         } finally {
             server.shutdown();
         }

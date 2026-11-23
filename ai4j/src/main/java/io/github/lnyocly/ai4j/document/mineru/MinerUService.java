@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.document.mineru;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUApiResponse;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUBatchRequest;
@@ -62,7 +63,7 @@ public class MinerUService {
 
     private final MinerUConfig config;
     private final OkHttpClient okHttpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonCodec.mapper();
 
     /**
      * 基于全局 {@link Configuration} 构造。共享 OkHttpClient 上的

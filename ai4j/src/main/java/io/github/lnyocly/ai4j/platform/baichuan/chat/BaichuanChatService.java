@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.baichuan.chat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.BaichuanConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -55,14 +56,14 @@ public class BaichuanChatService implements IChatService, ParameterConvert<Baich
         this.baichuanConfig = configuration.getBaichuanConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     public BaichuanChatService(Configuration configuration, BaichuanConfig baichuanConfig) {
         this.baichuanConfig = baichuanConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override

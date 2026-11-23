@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.audio;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.Ai4jException;
@@ -54,7 +54,7 @@ public class OpenAiAudioService implements IAudioService {
 
     @Override
     public InputStream textToSpeech(String baseUrl, String apiKey, TextToSpeech textToSpeech) {
-        String requestString = JSON.toJSONString(textToSpeech);
+        String requestString = JsonCodec.toJson(textToSpeech);
         Request request = buildAuthorizedRequest(
                 baseUrl,
                 apiKey,
@@ -99,7 +99,7 @@ public class OpenAiAudioService implements IAudioService {
                 baseUrl,
                 apiKey,
                 openAiConfig.getSpeechUrl(),
-                RequestBody.create(JSON.toJSONString(textToSpeech), JSON_MEDIA_TYPE)
+                RequestBody.create(JsonCodec.toJson(textToSpeech), JSON_MEDIA_TYPE)
         );
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
@@ -107,12 +107,13 @@ public class OpenAiAudioService implements IAudioService {
             }
             ResponseBody responseBody = response.body();
             String payload = responseBody == null ? "" : responseBody.string();
-            JSONObject root = JSON.parseObject(payload);
+            JsonNode root = payload.trim().isEmpty() ? null : JsonCodec.readTree(payload);
+            JsonNode dataNode = root == null ? null : root.get("data");
             String url = firstNonBlank(
-                    root == null ? null : root.getString("url"),
-                    root == null ? null : root.getString("audio_url"),
-                    root == null || root.getJSONObject("data") == null ? null : root.getJSONObject("data").getString("url"),
-                    root == null || root.getJSONObject("data") == null ? null : root.getJSONObject("data").getString("audio_url")
+                    textOrNull(root, "url"),
+                    textOrNull(root, "audio_url"),
+                    textOrNull(dataNode, "url"),
+                    textOrNull(dataNode, "audio_url")
             );
             if (url == null || url.isEmpty()) {
                 throw new AiClientException(response.code(),
@@ -201,7 +202,7 @@ public class OpenAiAudioService implements IAudioService {
     private <T> T executeJsonRequest(Request request, Class<T> responseType) {
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
-                return JSON.parseObject(response.body().string(), responseType);
+                return JsonCodec.fromJson(response.body().string(), responseType);
             }
             throw HttpErrorDecoder.decode(response);
         } catch (IOException e) {
@@ -221,6 +222,17 @@ public class OpenAiAudioService implements IAudioService {
         if (response != null) {
             response.close();
         }
+    }
+
+    private static String textOrNull(JsonNode node, String field) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        return value.isValueNode() ? value.asText() : value.toString();
     }
 
     private static String firstNonBlank(String... values) {

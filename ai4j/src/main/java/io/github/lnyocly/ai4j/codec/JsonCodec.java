@@ -60,6 +60,13 @@ public final class JsonCodec {
     /**
      * Returns the shared thread-safe mapper for strict protocol serialization and deserialization.
      */
+    public static ObjectMapper mapper() {
+        return MAPPERS.protocolMapper;
+    }
+
+    /**
+     * Returns the shared thread-safe mapper for strict protocol serialization and deserialization.
+     */
     public static ObjectMapper protocolMapper() {
         return MAPPERS.protocolMapper;
     }

@@ -1,9 +1,7 @@
 package io.github.lnyocly.ai4j.platform.suno.music;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.SunoConfig;
 import io.github.lnyocly.ai4j.platform.suno.music.entity.SunoFetchResponse;
 import io.github.lnyocly.ai4j.platform.suno.music.entity.SunoLyricsRequest;
@@ -48,13 +46,13 @@ public class SunoMusicServiceTest {
             Assert.assertEquals("/suno/submit/music", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("[Verse] city lights", body.getString("prompt"));
-            Assert.assertEquals("emotional punk", body.getString("tags"));
-            Assert.assertEquals("chirp-v4", body.getString("mv"));
-            Assert.assertEquals("City Lights", body.getString("title"));
-            Assert.assertEquals(Boolean.FALSE, body.getBoolean("make_instrumental"));
-            Assert.assertEquals("write a song", body.getString("gpt_description_prompt"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("[Verse] city lights", body.path("prompt").asText());
+            Assert.assertEquals("emotional punk", body.path("tags").asText());
+            Assert.assertEquals("chirp-v4", body.path("mv").asText());
+            Assert.assertEquals("City Lights", body.path("title").asText());
+            Assert.assertFalse(body.path("make_instrumental").asBoolean());
+            Assert.assertEquals("write a song", body.path("gpt_description_prompt").asText());
         } finally {
             server.shutdown();
         }
@@ -77,9 +75,9 @@ public class SunoMusicServiceTest {
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/suno/submit/lyrics", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("chat fire", body.getString("prompt"));
-            Assert.assertEquals("zh", body.getString("language"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("chat fire", body.path("prompt").asText());
+            Assert.assertEquals("zh", body.path("language").asText());
         } finally {
             server.shutdown();
         }
@@ -99,7 +97,7 @@ public class SunoMusicServiceTest {
             Assert.assertEquals("MUSIC", response.getData().getAction());
             JsonNode data = response.getData().getData();
             Assert.assertTrue(data.isArray());
-            SunoSong song = new ObjectMapper().treeToValue(data.get(0), SunoSong.class);
+            SunoSong song = JsonCodec.treeToValue(data.get(0), SunoSong.class);
             Assert.assertEquals("City Lights", song.getTitle());
             Assert.assertEquals("https://cdn.example/song.mp3", song.getAudioUrl());
 

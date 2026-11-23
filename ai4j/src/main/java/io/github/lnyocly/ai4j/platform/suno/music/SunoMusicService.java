@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.suno.music;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.SunoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -31,7 +32,7 @@ public class SunoMusicService implements IMusicService {
 
     private final SunoConfig sunoConfig;
     private final OkHttpClient okHttpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonCodec.mapper();
 
     public SunoMusicService(Configuration configuration) {
         this.sunoConfig = configuration.getSunoConfig() == null ? new SunoConfig() : configuration.getSunoConfig();

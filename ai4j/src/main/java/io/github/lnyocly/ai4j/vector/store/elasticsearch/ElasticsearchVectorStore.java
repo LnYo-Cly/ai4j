@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j.vector.store.elasticsearch;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.ElasticsearchConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -56,6 +58,9 @@ public class ElasticsearchVectorStore implements VectorStore {
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
     private static final MediaType NDJSON_MEDIA_TYPE = MediaType.get("application/x-ndjson");
     private static final int NUM_CANDIDATES = 100;
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
+            new TypeReference<LinkedHashMap<String, Object>>() {
+            };
 
     private final ElasticsearchConfig config;
     private final OkHttpClient okHttpClient;
@@ -95,12 +100,12 @@ public class ElasticsearchVectorStore implements VectorStore {
                 index++;
                 continue;
             }
-            JSONObject action = new JSONObject();
-            JSONObject meta = new JSONObject();
+            ObjectNode action = JsonCodec.createObjectNode();
+            ObjectNode meta = JsonCodec.createObjectNode();
             meta.put("_id", resolveId(record.getId(), index));
-            action.put("index", meta);
-            ndjson.append(action.toJSONString()).append('\n');
-            ndjson.append(document(dataset, record).toJSONString()).append('\n');
+            action.set("index", meta);
+            ndjson.append(JsonCodec.toJson(action)).append('\n');
+            ndjson.append(JsonCodec.toJson(document(dataset, record))).append('\n');
             count++;
             index++;
         }
@@ -119,46 +124,52 @@ public class ElasticsearchVectorStore implements VectorStore {
         }
 
         int topK = request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK();
-        JSONObject knn = new JSONObject();
+        ObjectNode knn = JsonCodec.createObjectNode();
         knn.put("field", "vector");
-        knn.put("query_vector", request.getVector());
+        knn.set("query_vector", JsonCodec.valueToTree(request.getVector()));
         knn.put("k", topK);
         knn.put("num_candidates", Math.max(topK * 4, NUM_CANDIDATES));
-        JSONArray filters = filters(dataset, request.getFilter());
+        ArrayNode filters = filters(dataset, request.getFilter());
         if (!filters.isEmpty()) {
-            knn.put("filter", filters);
+            knn.set("filter", filters);
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("size", topK);
-        body.put("knn", knn);
-        JSONArray source = new JSONArray();
+        body.set("knn", knn);
+        ArrayNode source = JsonCodec.createArrayNode();
         source.add("content");
         source.add("metadata");
         if (Boolean.TRUE.equals(request.getIncludeVector())) {
             source.add("vector");
         }
-        body.put("_source", source);
+        body.set("_source", source);
 
-        JSONObject response = executePost(url("/_search"), body);
-        JSONObject hits = response == null ? null : response.getJSONObject("hits");
-        JSONArray hitList = hits == null ? null : hits.getJSONArray("hits");
-        if (hitList == null || hitList.isEmpty()) {
+        ObjectNode response = executePost(url("/_search"), body);
+        JsonNode hits = response == null ? null : response.get("hits");
+        JsonNode hitList = hits == null ? null : hits.get("hits");
+        if (hitList == null || !hitList.isArray() || hitList.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<VectorSearchResult> results = new ArrayList<VectorSearchResult>();
         for (int i = 0; i < hitList.size(); i++) {
-            JSONObject hit = hitList.getJSONObject(i);
-            if (hit == null) {
+            JsonNode hit = hitList.get(i);
+            if (hit == null || !hit.isObject()) {
                 continue;
             }
-            JSONObject src = hit.getJSONObject("_source");
-            Map<String, Object> metadata = src == null ? null : src.getJSONObject("metadata");
+            JsonNode src = hit.get("_source");
+            JsonNode metaNode = src == null ? null : src.get("metadata");
+            Map<String, Object> metadata = metaNode != null && metaNode.isObject()
+                    ? JsonCodec.mapper().convertValue(metaNode, MAP_TYPE)
+                    : null;
+            JsonNode idNode = hit.get("_id");
+            JsonNode scoreNode = hit.get("_score");
+            JsonNode contentNode = src == null ? null : src.get("content");
             results.add(VectorSearchResult.builder()
-                    .id(hit.getString("_id"))
-                    .score(hit.getFloat("_score"))
-                    .content(src == null ? null : src.getString("content"))
+                    .id(idNode == null || idNode.isNull() ? null : idNode.asText())
+                    .score(scoreNode == null || scoreNode.isNull() ? null : Float.valueOf(scoreNode.floatValue()))
+                    .content(contentNode == null || contentNode.isNull() ? null : contentNode.asText())
                     .metadata(Boolean.FALSE.equals(request.getIncludeMetadata())
                             ? null
                             : (metadata == null ? Collections.<String, Object>emptyMap() : metadata))
@@ -182,22 +193,22 @@ public class ElasticsearchVectorStore implements VectorStore {
             return false;
         }
 
-        JSONArray filter = filters(dataset, request.getFilter());
+        ArrayNode filter = filters(dataset, request.getFilter());
         if (hasIds) {
-            JSONObject ids = new JSONObject();
-            ids.put("_id", new JSONArray(request.getIds()));
-            JSONObject terms = new JSONObject();
-            terms.put("terms", ids);
+            ObjectNode ids = JsonCodec.createObjectNode();
+            ids.set("_id", JsonCodec.valueToTree(request.getIds()));
+            ObjectNode terms = JsonCodec.createObjectNode();
+            terms.set("terms", ids);
             filter.add(terms);
         }
 
-        JSONObject bool = new JSONObject();
-        bool.put("filter", filter);
-        JSONObject boolQuery = new JSONObject();
-        boolQuery.put("bool", bool);
-        JSONObject body = new JSONObject();
-        body.put("query", boolQuery);
-        execute(url("/_delete_by_query?refresh=true&conflicts=proceed"), body.toJSONString(), JSON_MEDIA_TYPE);
+        ObjectNode bool = JsonCodec.createObjectNode();
+        bool.set("filter", filter);
+        ObjectNode boolQuery = JsonCodec.createObjectNode();
+        boolQuery.set("bool", bool);
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("query", boolQuery);
+        execute(url("/_delete_by_query?refresh=true&conflicts=proceed"), JsonCodec.toJson(body), JSON_MEDIA_TYPE);
         return true;
     }
 
@@ -213,29 +224,29 @@ public class ElasticsearchVectorStore implements VectorStore {
             return false;
         }
 
-        JSONArray filter = filters(dataset, request.getFilter());
+        ArrayNode filter = filters(dataset, request.getFilter());
         if (hasIds) {
-            JSONObject ids = new JSONObject();
-            ids.put("_id", new JSONArray(request.getIds()));
-            JSONObject terms = new JSONObject();
-            terms.put("terms", ids);
+            ObjectNode ids = JsonCodec.createObjectNode();
+            ids.set("_id", JsonCodec.valueToTree(request.getIds()));
+            ObjectNode terms = JsonCodec.createObjectNode();
+            terms.set("terms", ids);
             filter.add(terms);
         }
 
-        JSONObject bool = new JSONObject();
-        bool.put("filter", filter);
-        JSONObject boolQuery = new JSONObject();
-        boolQuery.put("bool", bool);
-        JSONObject body = new JSONObject();
+        ObjectNode bool = JsonCodec.createObjectNode();
+        bool.set("filter", filter);
+        ObjectNode boolQuery = JsonCodec.createObjectNode();
+        boolQuery.set("bool", bool);
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("size", 0);
         body.put("terminate_after", 1);
         body.put("track_total_hits", Boolean.TRUE);
-        body.put("query", boolQuery);
+        body.set("query", boolQuery);
 
-        JSONObject response = executePost(url("/_search"), body);
-        JSONObject hits = response == null ? null : response.getJSONObject("hits");
-        JSONObject total = hits == null ? null : hits.getJSONObject("total");
-        return total != null && total.getLongValue("value") > 0;
+        ObjectNode response = executePost(url("/_search"), body);
+        JsonNode hits = response == null ? null : response.get("hits");
+        JsonNode total = hits == null ? null : hits.get("total");
+        return total != null && total.isObject() && total.path("value").asLong() > 0L;
     }
 
     @Override
@@ -266,36 +277,36 @@ public class ElasticsearchVectorStore implements VectorStore {
             }
         }
 
-        JSONObject vector = new JSONObject();
+        ObjectNode vector = JsonCodec.createObjectNode();
         vector.put("type", "dense_vector");
         vector.put("dims", config.getVectorDim());
         vector.put("index", Boolean.TRUE);
         vector.put("similarity", "cosine");
 
-        JSONObject content = new JSONObject();
+        ObjectNode content = JsonCodec.createObjectNode();
         content.put("type", "text");
         content.put("index", Boolean.FALSE);
 
-        JSONObject dataset = new JSONObject();
+        ObjectNode dataset = JsonCodec.createObjectNode();
         dataset.put("type", "keyword");
 
-        JSONObject metadata = new JSONObject();
+        ObjectNode metadata = JsonCodec.createObjectNode();
         metadata.put("type", "flattened");
 
-        JSONObject properties = new JSONObject();
-        properties.put("vector", vector);
-        properties.put("content", content);
-        properties.put("dataset", dataset);
-        properties.put("metadata", metadata);
+        ObjectNode properties = JsonCodec.createObjectNode();
+        properties.set("vector", vector);
+        properties.set("content", content);
+        properties.set("dataset", dataset);
+        properties.set("metadata", metadata);
 
-        JSONObject mappings = new JSONObject();
-        mappings.put("properties", properties);
-        JSONObject body = new JSONObject();
-        body.put("mappings", mappings);
+        ObjectNode mappings = JsonCodec.createObjectNode();
+        mappings.set("properties", properties);
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("mappings", mappings);
 
         Request.Builder put = new Request.Builder()
                 .url(indexUrl())
-                .put(RequestBody.create(body.toJSONString(), JSON_MEDIA_TYPE));
+                .put(RequestBody.create(JsonCodec.toJson(body), JSON_MEDIA_TYPE));
         applyAuth(put);
         try (Response response = okHttpClient.newCall(put.build()).execute()) {
             if (!response.isSuccessful() && response.code() != 400) {
@@ -305,23 +316,23 @@ public class ElasticsearchVectorStore implements VectorStore {
         indexEnsured = true;
     }
 
-    private JSONObject document(String dataset, VectorRecord record) {
-        JSONObject doc = new JSONObject();
-        doc.put("vector", record.getVector());
+    private ObjectNode document(String dataset, VectorRecord record) {
+        ObjectNode doc = JsonCodec.createObjectNode();
+        doc.set("vector", JsonCodec.valueToTree(record.getVector()));
         doc.put("dataset", dataset);
         doc.put("content", record.getContent());
         if (record.getMetadata() != null && !record.getMetadata().isEmpty()) {
-            doc.put("metadata", record.getMetadata());
+            doc.set("metadata", JsonCodec.valueToTree(record.getMetadata()));
         }
         return doc;
     }
 
-    private JSONArray filters(String dataset, Map<String, Object> filter) {
-        JSONArray clauses = new JSONArray();
-        JSONObject datasetTerm = new JSONObject();
-        JSONObject term = new JSONObject();
+    private ArrayNode filters(String dataset, Map<String, Object> filter) {
+        ArrayNode clauses = JsonCodec.createArrayNode();
+        ObjectNode datasetTerm = JsonCodec.createObjectNode();
+        ObjectNode term = JsonCodec.createObjectNode();
         term.put("dataset", dataset);
-        datasetTerm.put("term", term);
+        datasetTerm.set("term", term);
         clauses.add(datasetTerm);
         if (filter != null) {
             for (Map.Entry<String, Object> entry : filter.entrySet()) {
@@ -330,23 +341,23 @@ public class ElasticsearchVectorStore implements VectorStore {
                 }
                 String field = "metadata." + entry.getKey().trim();
                 Object value = entry.getValue();
-                JSONObject clause = new JSONObject();
-                JSONObject body = new JSONObject();
+                ObjectNode clause = JsonCodec.createObjectNode();
+                ObjectNode body = JsonCodec.createObjectNode();
                 if (value instanceof Collection) {
-                    JSONArray values = new JSONArray();
+                    ArrayNode values = JsonCodec.createArrayNode();
                     for (Object item : (Collection<?>) value) {
                         if (item != null) {
-                            values.add(item);
+                            values.add(JsonCodec.valueToTree(item));
                         }
                     }
                     if (values.isEmpty()) {
                         continue;
                     }
-                    body.put(field, values);
-                    clause.put("terms", body);
+                    body.set(field, values);
+                    clause.set("terms", body);
                 } else {
-                    body.put(field, value);
-                    clause.put("term", body);
+                    body.set(field, JsonCodec.valueToTree(value));
+                    clause.set("term", body);
                 }
                 clauses.add(clause);
             }
@@ -373,9 +384,13 @@ public class ElasticsearchVectorStore implements VectorStore {
         }
     }
 
-    private JSONObject executePost(String url, JSONObject body) throws Exception {
-        String text = execute(url, body == null ? "{}" : body.toJSONString(), JSON_MEDIA_TYPE);
-        return text == null || text.isEmpty() ? new JSONObject() : JSON.parseObject(text);
+    private ObjectNode executePost(String url, ObjectNode body) throws Exception {
+        String text = execute(url, body == null ? "{}" : JsonCodec.toJson(body), JSON_MEDIA_TYPE);
+        if (text == null || text.trim().isEmpty()) {
+            return JsonCodec.createObjectNode();
+        }
+        JsonNode node = JsonCodec.readTree(text);
+        return node != null && node.isObject() ? (ObjectNode) node : JsonCodec.createObjectNode();
     }
 
     private String execute(String url, String payload, MediaType mediaType) throws Exception {
@@ -396,14 +411,13 @@ public class ElasticsearchVectorStore implements VectorStore {
         }
     }
 
-    private List<Float> vectorValue(Object rawVector) {
-        if (!(rawVector instanceof JSONArray)) {
+    private List<Float> vectorValue(JsonNode rawVector) {
+        if (rawVector == null || !rawVector.isArray()) {
             return null;
         }
-        JSONArray values = (JSONArray) rawVector;
-        List<Float> vector = new ArrayList<Float>(values.size());
-        for (int i = 0; i < values.size(); i++) {
-            vector.add(values.getFloat(i));
+        List<Float> vector = new ArrayList<Float>(rawVector.size());
+        for (int i = 0; i < rawVector.size(); i++) {
+            vector.add(rawVector.get(i).floatValue());
         }
         return vector;
     }

@@ -1,6 +1,9 @@
 package io.github.lnyocly.ai4j.structured;
 
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
@@ -11,6 +14,7 @@ import io.github.lnyocly.ai4j.service.IChatService;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -20,7 +24,6 @@ import static org.junit.Assert.fail;
 
 public class StructuredOutputsTest {
 
-    /** Bean-style POJO; fastjson2 binds via getters/setters. */
     public static class CityWeather {
         private String city;
         private Integer temp;
@@ -29,6 +32,16 @@ public class StructuredOutputsTest {
         public void setCity(String city) { this.city = city; }
         public Integer getTemp() { return temp; }
         public void setTemp(Integer temp) { this.temp = temp; }
+    }
+
+    public static class Envelope<T> {
+        private T data;
+        private List<String> notes;
+
+        public T getData() { return data; }
+        public void setData(T data) { this.data = data; }
+        public List<String> getNotes() { return notes; }
+        public void setNotes(List<String> notes) { this.notes = notes; }
     }
 
     /** Captures the outgoing request and returns a canned response. */
@@ -103,19 +116,19 @@ public class StructuredOutputsTest {
 
         Object format = service.captured.getResponseFormat();
         assertNotNull("facade must attach response_format", format);
-        JSONObject fmt = (JSONObject) format;
-        assertEquals("json_schema", fmt.getString("type"));
-        JSONObject jsonSchema = fmt.getJSONObject("json_schema");
-        assertTrue(jsonSchema.getBooleanValue("strict"));
-        JSONObject properties = jsonSchema.getJSONObject("schema").getJSONObject("properties");
-        assertTrue("schema must describe POJO fields", properties.containsKey("city"));
-        assertTrue(properties.containsKey("temp"));
+        JsonNode fmt = (JsonNode) format;
+        assertEquals("json_schema", fmt.path("type").asText());
+        JsonNode jsonSchema = fmt.path("json_schema");
+        assertTrue(jsonSchema.path("strict").asBoolean());
+        JsonNode properties = jsonSchema.path("schema").path("properties");
+        assertTrue("schema must describe POJO fields", properties.has("city"));
+        assertTrue(properties.has("temp"));
     }
 
     @Test
     public void keepsCallerProvidedResponseFormat() throws Exception {
         FakeChatService service = new FakeChatService(responding("{\"city\":\"sh\",\"temp\":1}"));
-        JSONObject custom = new JSONObject().fluentPut("type", "json_object");
+        ObjectNode custom = JsonCodec.createObjectNode().put("type", "json_object");
         ChatCompletion req = request().toBuilder().responseFormat(custom).build();
 
         StructuredOutputs.chat(service, req, CityWeather.class);
@@ -132,6 +145,38 @@ public class StructuredOutputsTest {
 
         assertEquals("sh", weather.getCity());
         assertEquals(Integer.valueOf(9), weather.getTemp());
+    }
+
+    @Test
+    public void parsesLenientJsonWithCommentsTrailingCommasAndSingleQuotes() throws Exception {
+        FakeChatService service = new FakeChatService(
+                responding("Here is the JSON:\n```json\n{\n  // city name\n  'city': 'hangzhou',\n  temp: 22,\n}\n```"));
+
+        CityWeather weather = StructuredOutputs.chat(service, request(), CityWeather.class);
+
+        assertEquals("hangzhou", weather.getCity());
+        assertEquals(Integer.valueOf(22), weather.getTemp());
+    }
+
+    @Test
+    public void supportsTypeReferenceOverloads() throws Exception {
+        FakeChatService service = new FakeChatService(
+                responding("{\"data\":{\"city\":\"nanjing\",\"temp\":18},\"notes\":[\"sunny\"]}"));
+
+        StructuredResult<Envelope<CityWeather>> result = StructuredOutputs.chatDetailed(
+                service,
+                request(),
+                new TypeReference<Envelope<CityWeather>>() {},
+                "weather_envelope");
+
+        assertNotNull(result.getValue());
+        assertEquals("nanjing", result.getValue().getData().getCity());
+        assertEquals(Integer.valueOf(18), result.getValue().getData().getTemp());
+        assertEquals(Collections.singletonList("sunny"), result.getValue().getNotes());
+
+        JsonNode fmt = (JsonNode) service.captured.getResponseFormat();
+        assertEquals("weather_envelope", fmt.path("json_schema").path("name").asText());
+        assertTrue(fmt.path("json_schema").path("schema").path("properties").path("data").path("properties").has("city"));
     }
 
     @Test

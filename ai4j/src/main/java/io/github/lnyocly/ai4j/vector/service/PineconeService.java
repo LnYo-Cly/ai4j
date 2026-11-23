@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.vector.service;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.PineconeConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
@@ -61,7 +61,7 @@ public class PineconeService {
             }
 
             // {"upsertedCount":3}
-            PineconeInsertResponse insertResponse = JSON.parseObject(bodyString(response), PineconeInsertResponse.class);
+            PineconeInsertResponse insertResponse = JsonCodec.fromJson(bodyString(response), PineconeInsertResponse.class);
             if (insertResponse == null || insertResponse.getUpsertedCount() == null) {
                 throw new CommonException("Invalid insert response from Pinecone.");
             }
@@ -103,7 +103,7 @@ public class PineconeService {
                 throw new CommonException("Error querying Pinecone: " + response.message());
             }
 
-            return JSON.parseObject(bodyString(response), PineconeQueryResponse.class);
+            return JsonCodec.fromJson(bodyString(response), PineconeQueryResponse.class);
         } catch (IOException e) {
             log.error("OkHttpClient exception! {}", e.getMessage(), e);
             throw new CommonException("Failed to query Pinecone due to network error." + e.getMessage());
@@ -154,7 +154,7 @@ public class PineconeService {
                 log.error("Error fetching from Pinecone vector store: {}", response.message());
                 throw new CommonException("Error fetching from Pinecone: " + response.message());
             }
-            return JSON.parseObject(bodyString(response), PineconeFetchResponse.class);
+            return JsonCodec.fromJson(bodyString(response), PineconeFetchResponse.class);
         } catch (IOException e) {
             log.error("OkHttpClient exception! {}", e.getMessage(), e);
             throw new CommonException("Failed to fetch from Pinecone due to network error." + e.getMessage());
@@ -214,7 +214,7 @@ public class PineconeService {
     }
 
     private RequestBody jsonBody(Object payload) {
-        return RequestBody.create(JSON.toJSONString(payload), JSON_MEDIA_TYPE);
+        return RequestBody.create(JsonCodec.toJson(payload), JSON_MEDIA_TYPE);
     }
 
     private String urlEncode(String value) {
