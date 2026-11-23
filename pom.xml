@@ -98,8 +98,11 @@
         <module>ai4j-agent</module>
         <module>ai4j-a2a</module>
         <module>ai4j-plugin-colab</module>
+        <module>ai4j-plugin-codeact</module>
+        <module>ai4j-plugin-sandbox-docker</module>
         <module>ai4j-testing</module>
         <module>ai4j-harness</module>
+        <module>ai4j-plugin-redis</module>
         <module>ai4j-ambient</module>
         <module>ai4j-coding</module>
         <module>ai4j-cli</module>

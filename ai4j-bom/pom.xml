@@ -137,6 +137,21 @@
                 <artifactId>ai4j-plugin-colab</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-plugin-codeact</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-plugin-sandbox-docker</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lnyo-cly</groupId>
+                <artifactId>ai4j-plugin-redis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
