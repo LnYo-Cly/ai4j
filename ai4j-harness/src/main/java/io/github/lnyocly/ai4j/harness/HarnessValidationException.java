@@ -6,4 +6,8 @@ public class HarnessValidationException extends HarnessStoreException {
     public HarnessValidationException(String message) {
         super(message);
     }
+
+    public HarnessValidationException(String errorCode, String message) {
+        super(errorCode, message, null);
+    }
 }

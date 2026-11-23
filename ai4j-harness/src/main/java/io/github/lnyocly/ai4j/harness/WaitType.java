@@ -6,5 +6,6 @@ public enum WaitType {
     ASYNC_OPERATION,
     APPROVAL,
     USER_INPUT,
-    RETRY
+    RETRY,
+    ESCALATION
 }

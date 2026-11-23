@@ -9,5 +9,21 @@ public enum EntityKind {
     CHECKPOINT,
     WAIT,
     REVIEW,
-    SUBMISSION
+    SUBMISSION,
+    EXECUTION_REVIEW,
+    CONSENT,
+    ESCALATION,
+    READ_SET,
+    GATE_RUN,
+    STEER,
+    HANDOFF,
+    AGENT_BLUEPRINT,
+    SQUAD_RUN,
+    TYPED_ARTIFACT,
+    TODO,
+    WORK,
+    SCHEDULE,
+    SCHEDULE_RUN,
+    FLEET_NODE,
+    ORPHAN_EXPORT
 }

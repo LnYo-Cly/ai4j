@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j.harness;
 
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
+import io.github.lnyocly.ai4j.harness.fleet.FleetNodeRecord;
+import io.github.lnyocly.ai4j.harness.fleet.OrphanHandoffExport;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -61,6 +63,17 @@ public final class HarnessProjectionEngine {
             }
         }
         return result;
+    }
+
+    public List<HarnessEntityRecord> snapshotProjectedEntities() {
+        HarnessState state = getState();
+        String harnessId = HarnessSupport.trimToNull(state.getHarnessId()) == null
+                ? "default" : state.getHarnessId().trim();
+        return new ArrayList<HarnessEntityRecord>(extractEntitiesFromState(harnessId, state).values());
+    }
+
+    public static boolean applyProjectedEntity(HarnessState state, HarnessEntityRecord entity) {
+        return applyEntityToState(state, entity);
     }
 
     public CursorPage<HarnessEntityRecord> listEntitiesPage(String entityType,
@@ -482,6 +495,22 @@ public final class HarnessProjectionEngine {
             case WAIT: return state.getWaits().containsKey(id);
             case REVIEW: return state.getReviews().containsKey(id);
             case SUBMISSION: return state.getSubmissions().containsKey(id);
+            case EXECUTION_REVIEW: return state.getExecutionReviews().containsKey(id);
+            case CONSENT: return state.getConsents().containsKey(id);
+            case ESCALATION: return state.getEscalations().containsKey(id);
+            case READ_SET: return state.getReadSets().containsKey(id);
+            case GATE_RUN: return state.getGateRuns().containsKey(id);
+            case STEER: return state.getSteers().containsKey(id);
+            case HANDOFF: return state.getHandoffs().containsKey(id);
+            case AGENT_BLUEPRINT: return state.getAgentBlueprints().containsKey(id);
+            case SQUAD_RUN: return state.getSquadRuns().containsKey(id);
+            case TYPED_ARTIFACT: return state.getTypedArtifacts().containsKey(id);
+            case TODO: return state.getTodos().containsKey(id);
+            case WORK: return state.getWorks().containsKey(id);
+            case SCHEDULE: return state.getSchedules().containsKey(id);
+            case SCHEDULE_RUN: return state.getScheduleRuns().containsKey(id);
+            case FLEET_NODE: return state.getFleetNodes().containsKey(id);
+            case ORPHAN_EXPORT: return state.getOrphanExports().containsKey(id);
             default: return false;
         }
     }
@@ -506,6 +535,15 @@ public final class HarnessProjectionEngine {
             case EVIDENCE:
                 EvidenceRecord evidence = state.getEvidence().get(id);
                 return evidence == null ? null : HarnessSupport.normalizeScope(evidence.getScopeKey());
+            case ESCALATION:
+                EscalationRecord esc = state.getEscalations().get(id);
+                return esc == null ? null : HarnessSupport.normalizeScope(esc.getScopeKey());
+            case WORK:
+                WorkRecord work = state.getWorks().get(id);
+                return work == null ? null : HarnessSupport.normalizeScope(work.getScopeKey());
+            case TODO:
+                TodoRecord todo = state.getTodos().get(id);
+                return todo == null ? null : HarnessSupport.normalizeScope(todo.getScopeKey());
             default:
                 return null;
         }
@@ -698,16 +736,16 @@ public final class HarnessProjectionEngine {
         }
         for (FactRecord r : state.getFacts().values()) {
             if (r != null && r.getFactId() != null) {
-                putEntity(result, toEntityRecord(hid, "FACT", r.getFactId(), 1L,
+                putEntity(result, toEntityRecord(hid, "FACT", r.getFactId(), Math.max(1L, r.getVersion()),
                         r.isValid() ? "VALID" : "INVALIDATED",
                         Math.max(r.getCreatedAtEpochMs(), r.getInvalidatedAtEpochMs()), r));
             }
         }
         for (DecisionRecord r : state.getDecisions().values()) {
             if (r != null && r.getDecisionId() != null) {
-                putEntity(result, toEntityRecord(hid, "DECISION", r.getDecisionId(), 1L,
+                putEntity(result, toEntityRecord(hid, "DECISION", r.getDecisionId(), Math.max(1L, r.getVersion()),
                         enumName(r.getStatus()),
-                        Math.max(r.getCreatedAtEpochMs(), r.getResolvedAtEpochMs()), r));
+                        Math.max(r.getCreatedAtEpochMs(), Math.max(r.getResolvedAtEpochMs(), r.getAmendedAtEpochMs())), r));
             }
         }
         for (EvidenceRecord r : state.getEvidence().values()) {
@@ -777,6 +815,105 @@ public final class HarnessProjectionEngine {
             if (r != null && r.getReviewId() != null) {
                 putEntity(result, toEntityRecord(hid, "REVIEW", r.getReviewId(), 1L,
                         enumName(r.getVerdict()), r.getCreatedAtEpochMs(), r));
+            }
+        }
+        for (ExecutionReviewRecord r : state.getExecutionReviews().values()) {
+            if (r != null && r.getReviewId() != null) {
+                putEntity(result, toEntityRecord(hid, "EXECUTION_REVIEW", r.getReviewId(), 1L,
+                        enumName(r.getVerdict()), r.getCreatedAtEpochMs(), r));
+            }
+        }
+        for (ContentPinnedConsentRecord r : state.getConsents().values()) {
+            if (r != null && r.getConsentId() != null) {
+                putEntity(result, toEntityRecord(hid, "CONSENT", r.getConsentId(), Math.max(1L, r.getVersion()),
+                        r.isApproved() ? "APPROVED" : "REJECTED", r.getConsentedAtEpochMs(), r));
+            }
+        }
+        for (EscalationRecord r : state.getEscalations().values()) {
+            if (r != null && r.getEscalationId() != null) {
+                putEntity(result, toEntityRecord(hid, "ESCALATION", r.getEscalationId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()),
+                        Math.max(r.getCreatedAtEpochMs(), Math.max(r.getAnsweredAtEpochMs(), r.getFollowedUpAtEpochMs())), r));
+            }
+        }
+        for (ReadSetEntry r : state.getReadSets().values()) {
+            if (r != null && r.getReadId() != null) {
+                putEntity(result, toEntityRecord(hid, "READ_SET", r.getReadId(), 1L,
+                        r.getObservedStatus(), Math.max(r.getReadAtEpochMs(), r.getReconfirmedAtEpochMs()), r));
+            }
+        }
+        for (GateRunRecord r : state.getGateRuns().values()) {
+            if (r != null && r.getGateRunId() != null) {
+                putEntity(result, toEntityRecord(hid, "GATE_RUN", r.getGateRunId(), 1L,
+                        r.isPassed() ? "PASS" : "FAIL", r.getCreatedAtEpochMs(), r));
+            }
+        }
+        for (SteerRecord r : state.getSteers().values()) {
+            if (r != null && r.getSteerId() != null) {
+                putEntity(result, toEntityRecord(hid, "STEER", r.getSteerId(), 1L,
+                        enumName(r.getStatus()), Math.max(r.getCreatedAtEpochMs(), r.getAppliedAtEpochMs()), r));
+            }
+        }
+        for (HandoffRecord r : state.getHandoffs().values()) {
+            if (r != null && r.getHandoffId() != null) {
+                putEntity(result, toEntityRecord(hid, "HANDOFF", r.getHandoffId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()),
+                        Math.max(r.getExportedAtEpochMs(), Math.max(r.getClaimedAtEpochMs(), r.getRevokedAtEpochMs())), r));
+            }
+        }
+        for (AgentBlueprintRecord r : state.getAgentBlueprints().values()) {
+            if (r != null && r.getBlueprintId() != null) {
+                putEntity(result, toEntityRecord(hid, "AGENT_BLUEPRINT", r.getBlueprintId(), Math.max(1L, r.getVersion()),
+                        r.isActive() ? "ACTIVE" : "INACTIVE", r.getCreatedAtEpochMs(), r));
+            }
+        }
+        for (SquadRunRecord r : state.getSquadRuns().values()) {
+            if (r != null && r.getSquadRunId() != null) {
+                putEntity(result, toEntityRecord(hid, "SQUAD_RUN", r.getSquadRunId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()), Math.max(r.getCreatedAtEpochMs(), r.getFinishedAtEpochMs()), r));
+            }
+        }
+        for (TypedArtifactRecord r : state.getTypedArtifacts().values()) {
+            if (r != null && r.getArtifactId() != null) {
+                putEntity(result, toEntityRecord(hid, "TYPED_ARTIFACT", r.getArtifactId(), 1L,
+                        r.getKindId(), r.getCreatedAtEpochMs(), r));
+            }
+        }
+        for (TodoRecord r : state.getTodos().values()) {
+            if (r != null && r.getTodoId() != null) {
+                putEntity(result, toEntityRecord(hid, "TODO", r.getTodoId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()), Math.max(r.getCreatedAtEpochMs(), r.getUpdatedAtEpochMs()), r));
+            }
+        }
+        for (WorkRecord r : state.getWorks().values()) {
+            if (r != null && r.getWorkId() != null) {
+                putEntity(result, toEntityRecord(hid, "WORK", r.getWorkId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()), Math.max(r.getCreatedAtEpochMs(), r.getUpdatedAtEpochMs()), r));
+            }
+        }
+        for (ScheduleRecord r : state.getSchedules().values()) {
+            if (r != null && r.getScheduleId() != null) {
+                putEntity(result, toEntityRecord(hid, "SCHEDULE", r.getScheduleId(), Math.max(1L, r.getVersion()),
+                        r.isEnabled() ? "ENABLED" : "DISABLED",
+                        Math.max(r.getCreatedAtEpochMs(), r.getLastTriggeredAtEpochMs()), r));
+            }
+        }
+        for (ScheduleRunRecord r : state.getScheduleRuns().values()) {
+            if (r != null && r.getScheduleRunId() != null) {
+                putEntity(result, toEntityRecord(hid, "SCHEDULE_RUN", r.getScheduleRunId(), 1L,
+                        enumName(r.getStatus()), Math.max(r.getCreatedAtEpochMs(), r.getFinishedAtEpochMs()), r));
+            }
+        }
+        for (FleetNodeRecord r : state.getFleetNodes().values()) {
+            if (r != null && r.getNodeId() != null) {
+                putEntity(result, toEntityRecord(hid, "FLEET_NODE", r.getNodeId(), Math.max(1L, r.getVersion()),
+                        enumName(r.getStatus()), Math.max(r.getJoinedAtEpochMs(), r.getLastHeartbeatEpochMs()), r));
+            }
+        }
+        for (OrphanHandoffExport r : state.getOrphanExports().values()) {
+            if (r != null && r.getExportId() != null) {
+                putEntity(result, toEntityRecord(hid, "ORPHAN_EXPORT", r.getExportId(), 1L,
+                        enumName(r.getStatus()), Math.max(r.getExportedAtEpochMs(), r.getTakenOverAtEpochMs()), r));
             }
         }
         for (ToolInvocationRecord r : state.getToolInvocations().values()) {
@@ -922,6 +1059,127 @@ public final class HarnessProjectionEngine {
                     state.getReviews().put(id, r);
                     return true;
                 }
+            } else if ("EXECUTION_REVIEW".equals(type)) {
+                ExecutionReviewRecord r = HarnessJson.fromJson(json, ExecutionReviewRecord.class);
+                if (r != null) {
+                    if (r.getReviewId() == null) r.setReviewId(id);
+                    state.getExecutionReviews().put(id, r);
+                    return true;
+                }
+            } else if ("CONSENT".equals(type)) {
+                ContentPinnedConsentRecord r = HarnessJson.fromJson(json, ContentPinnedConsentRecord.class);
+                if (r != null) {
+                    if (r.getConsentId() == null) r.setConsentId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getConsents().put(id, r);
+                    return true;
+                }
+            } else if ("ESCALATION".equals(type)) {
+                EscalationRecord r = HarnessJson.fromJson(json, EscalationRecord.class);
+                if (r != null) {
+                    if (r.getEscalationId() == null) r.setEscalationId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getEscalations().put(id, r);
+                    return true;
+                }
+            } else if ("READ_SET".equals(type)) {
+                ReadSetEntry r = HarnessJson.fromJson(json, ReadSetEntry.class);
+                if (r != null) {
+                    if (r.getReadId() == null) r.setReadId(id);
+                    state.getReadSets().put(id, r);
+                    return true;
+                }
+            } else if ("GATE_RUN".equals(type)) {
+                GateRunRecord r = HarnessJson.fromJson(json, GateRunRecord.class);
+                if (r != null) {
+                    if (r.getGateRunId() == null) r.setGateRunId(id);
+                    state.getGateRuns().put(id, r);
+                    return true;
+                }
+            } else if ("STEER".equals(type)) {
+                SteerRecord r = HarnessJson.fromJson(json, SteerRecord.class);
+                if (r != null) {
+                    if (r.getSteerId() == null) r.setSteerId(id);
+                    state.getSteers().put(id, r);
+                    return true;
+                }
+            } else if ("HANDOFF".equals(type)) {
+                HandoffRecord r = HarnessJson.fromJson(json, HandoffRecord.class);
+                if (r != null) {
+                    if (r.getHandoffId() == null) r.setHandoffId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getHandoffs().put(id, r);
+                    return true;
+                }
+            } else if ("AGENT_BLUEPRINT".equals(type)) {
+                AgentBlueprintRecord r = HarnessJson.fromJson(json, AgentBlueprintRecord.class);
+                if (r != null) {
+                    if (r.getBlueprintId() == null) r.setBlueprintId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getAgentBlueprints().put(id, r);
+                    return true;
+                }
+            } else if ("SQUAD_RUN".equals(type)) {
+                SquadRunRecord r = HarnessJson.fromJson(json, SquadRunRecord.class);
+                if (r != null) {
+                    if (r.getSquadRunId() == null) r.setSquadRunId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getSquadRuns().put(id, r);
+                    return true;
+                }
+            } else if ("TYPED_ARTIFACT".equals(type)) {
+                TypedArtifactRecord r = HarnessJson.fromJson(json, TypedArtifactRecord.class);
+                if (r != null) {
+                    if (r.getArtifactId() == null) r.setArtifactId(id);
+                    state.getTypedArtifacts().put(id, r);
+                    return true;
+                }
+            } else if ("TODO".equals(type)) {
+                TodoRecord r = HarnessJson.fromJson(json, TodoRecord.class);
+                if (r != null) {
+                    if (r.getTodoId() == null) r.setTodoId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getTodos().put(id, r);
+                    return true;
+                }
+            } else if ("WORK".equals(type)) {
+                WorkRecord r = HarnessJson.fromJson(json, WorkRecord.class);
+                if (r != null) {
+                    if (r.getWorkId() == null) r.setWorkId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getWorks().put(id, r);
+                    return true;
+                }
+            } else if ("SCHEDULE".equals(type)) {
+                ScheduleRecord r = HarnessJson.fromJson(json, ScheduleRecord.class);
+                if (r != null) {
+                    if (r.getScheduleId() == null) r.setScheduleId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getSchedules().put(id, r);
+                    return true;
+                }
+            } else if ("SCHEDULE_RUN".equals(type)) {
+                ScheduleRunRecord r = HarnessJson.fromJson(json, ScheduleRunRecord.class);
+                if (r != null) {
+                    if (r.getScheduleRunId() == null) r.setScheduleRunId(id);
+                    state.getScheduleRuns().put(id, r);
+                    return true;
+                }
+            } else if ("FLEET_NODE".equals(type)) {
+                FleetNodeRecord r = HarnessJson.fromJson(json, FleetNodeRecord.class);
+                if (r != null) {
+                    if (r.getNodeId() == null) r.setNodeId(id);
+                    r.setVersion(entity.getEntityVersion());
+                    state.getFleetNodes().put(id, r);
+                    return true;
+                }
+            } else if ("ORPHAN_EXPORT".equals(type)) {
+                OrphanHandoffExport r = HarnessJson.fromJson(json, OrphanHandoffExport.class);
+                if (r != null) {
+                    if (r.getExportId() == null) r.setExportId(id);
+                    state.getOrphanExports().put(id, r);
+                    return true;
+                }
             } else if ("TOOL_INVOCATION".equals(type)) {
                 ToolInvocationRecord r = HarnessJson.fromJson(json, ToolInvocationRecord.class);
                 if (r != null) {
@@ -1019,6 +1277,22 @@ public final class HarnessProjectionEngine {
         if (lower.startsWith("checkpoint.")) return "CHECKPOINT";
         if (lower.startsWith("submission.")) return "SUBMISSION";
         if (lower.startsWith("review.")) return "REVIEW";
+        if (lower.startsWith("execution_review.")) return "EXECUTION_REVIEW";
+        if (lower.startsWith("consent.")) return "CONSENT";
+        if (lower.startsWith("escalation.")) return "ESCALATION";
+        if (lower.startsWith("readset.")) return "READ_SET";
+        if (lower.startsWith("witness.")) return "GATE_RUN";
+        if (lower.startsWith("steer.")) return "STEER";
+        if (lower.startsWith("handoff.")) return "HANDOFF";
+        if (lower.startsWith("blueprint.")) return "AGENT_BLUEPRINT";
+        if (lower.startsWith("squad.")) return "SQUAD_RUN";
+        if (lower.startsWith("artifact.")) return "TYPED_ARTIFACT";
+        if (lower.startsWith("todo.")) return "TODO";
+        if (lower.startsWith("work.")) return "WORK";
+        if (lower.startsWith("schedule.run")) return "SCHEDULE_RUN";
+        if (lower.startsWith("schedule.")) return "SCHEDULE";
+        if (lower.startsWith("fleet.node")) return "FLEET_NODE";
+        if (lower.startsWith("fleet.orphan")) return "ORPHAN_EXPORT";
         if (lower.startsWith("acceptance.")) return "ACCEPTANCE";
         if (lower.startsWith("gate.")) return "GATE";
         if (lower.startsWith("tool.invocation")) return "TOOL_INVOCATION";

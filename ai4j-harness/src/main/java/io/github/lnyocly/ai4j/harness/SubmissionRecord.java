@@ -20,6 +20,7 @@ public class SubmissionRecord {
     private HarnessActor submitter;
     private String completionClaim;
     private String verificationNotes;
+    private String submissionDigest;
     private long createdAtEpochMs;
 
     @Builder.Default

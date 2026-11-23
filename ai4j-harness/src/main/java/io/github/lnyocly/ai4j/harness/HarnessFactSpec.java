@@ -22,6 +22,9 @@ public class HarnessFactSpec {
     private String statement;
     private String source;
     private String confidence;
+    private String factTypeId;
+    private int factTypeVersion;
+    private String typedPayloadJson;
 
     @Builder.Default
     private List<String> evidenceIds = new ArrayList<String>();
