@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.team;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +89,7 @@ public class FileAgentTeamMessageBus implements AgentTeamMessageBus {
                 if (line == null || line.trim().isEmpty()) {
                     continue;
                 }
-                AgentTeamMessage message = JSON.parseObject(line, AgentTeamMessage.class);
+                AgentTeamMessage message = AgentJson.fromJson(line, AgentTeamMessage.class);
                 if (message != null) {
                     messages.add(message);
                 }
@@ -103,7 +103,7 @@ public class FileAgentTeamMessageBus implements AgentTeamMessageBus {
         try {
             ensureParent();
             Files.write(file,
-                    Collections.singletonList(JSON.toJSONString(message)),
+                    Collections.singletonList(AgentJson.toJson(message)),
                     StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND);
@@ -117,7 +117,7 @@ public class FileAgentTeamMessageBus implements AgentTeamMessageBus {
             ensureParent();
             List<String> lines = new ArrayList<String>();
             for (AgentTeamMessage message : messages) {
-                lines.add(JSON.toJSONString(message));
+                lines.add(AgentJson.toJson(message));
             }
             Files.write(file,
                     lines,

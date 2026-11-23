@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.agent.skill;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.tool.BuiltInToolContext;
 import io.github.lnyocly.ai4j.tool.BuiltInTools;
 import io.github.lnyocly.ai4j.tool.ToolUtil;
@@ -38,11 +38,11 @@ final class SkillReadFileToolExecutor implements ToolExecutor {
         if (call == null || !BuiltInTools.READ_FILE.equals(call.getName())) {
             throw new IllegalArgumentException("Unsupported Skill tool: " + (call == null ? null : call.getName()));
         }
-        JSONObject arguments = JSON.parseObject(call.getArguments());
-        String path = arguments == null ? null : arguments.getString("path");
+        ObjectNode arguments = AgentJson.parseObjectStrictOrNull(call.getArguments());
+        String path = AgentJson.text(arguments, "path");
         String providedContent = providedContents.get(path);
         if (providedContent != null) {
-            return JSON.toJSONString(readProvidedSkill(path, providedContent, arguments));
+            return AgentJson.toJson(readProvidedSkill(path, providedContent, arguments));
         }
         ToolUtil.pushBuiltInToolContext(context);
         try {
@@ -52,13 +52,15 @@ final class SkillReadFileToolExecutor implements ToolExecutor {
         }
     }
 
-    private Map<String, Object> readProvidedSkill(String path, String content, JSONObject arguments) {
+    private Map<String, Object> readProvidedSkill(String path, String content, ObjectNode arguments) {
         List<String> lines = new ArrayList<String>();
         Collections.addAll(lines, content.split("\\r?\\n", -1));
-        int startLine = arguments.getInteger("startLine") == null || arguments.getInteger("startLine").intValue() < 1
-                ? 1 : arguments.getInteger("startLine").intValue();
-        int endLine = arguments.getInteger("endLine") == null || arguments.getInteger("endLine").intValue() > lines.size()
-                ? lines.size() : arguments.getInteger("endLine").intValue();
+        Integer startArg = AgentJson.integer(arguments, "startLine");
+        int startLine = startArg == null || startArg.intValue() < 1
+                ? 1 : startArg.intValue();
+        Integer endArg = AgentJson.integer(arguments, "endLine");
+        int endLine = endArg == null || endArg.intValue() > lines.size()
+                ? lines.size() : endArg.intValue();
         if (endLine < startLine) {
             endLine = startLine - 1;
         }
@@ -70,8 +72,9 @@ final class SkillReadFileToolExecutor implements ToolExecutor {
             }
             selected.append(lines.get(index - 1));
         }
-        int maxChars = arguments.getInteger("maxChars") == null || arguments.getInteger("maxChars").intValue() <= 0
-                ? context.getDefaultReadMaxChars() : arguments.getInteger("maxChars").intValue();
+        Integer maxCharsArg = AgentJson.integer(arguments, "maxChars");
+        int maxChars = maxCharsArg == null || maxCharsArg.intValue() <= 0
+                ? context.getDefaultReadMaxChars() : maxCharsArg.intValue();
         String selectedContent = selected.toString();
         boolean truncated = selectedContent.length() > maxChars;
         if (truncated) {

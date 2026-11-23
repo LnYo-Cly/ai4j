@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.agent.subagent;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 
 import java.util.ArrayList;
@@ -71,12 +71,18 @@ public class StaticSubAgentRegistry implements SubAgentRegistry {
         }
         String input = resolveInput(call.getArguments());
         AgentResult result = subAgent.invoke(input);
-        JSONObject payload = new JSONObject();
+        ObjectNode payload = AgentJson.createObjectNode();
         payload.put("subagent", subAgent.name);
         payload.put("toolName", subAgent.toolName);
-        payload.put("output", result == null ? null : result.getOutputText());
-        payload.put("steps", result == null ? 0 : result.getSteps());
-        return payload.toJSONString();
+        if (result != null && result.getOutputText() != null) {
+            payload.put("output", result.getOutputText());
+        }
+        if (result == null) {
+            payload.put("steps", 0);
+        } else if (result.getSteps() != null) {
+            payload.put("steps", result.getSteps());
+        }
+        return AgentJson.toJson(payload);
     }
 
     private String resolveInput(String arguments) {
@@ -84,12 +90,15 @@ public class StaticSubAgentRegistry implements SubAgentRegistry {
             return "";
         }
         try {
-            JSONObject obj = JSON.parseObject(arguments);
-            String task = trimToNull(obj.getString("task"));
-            if (task == null) {
-                task = trimToNull(obj.getString("input"));
+            ObjectNode obj = AgentJson.parseObjectStrictOrNull(arguments);
+            if (obj == null) {
+                return arguments;
             }
-            String context = trimToNull(obj.getString("context"));
+            String task = trimToNull(AgentJson.text(obj, "task"));
+            if (task == null) {
+                task = trimToNull(AgentJson.text(obj, "input"));
+            }
+            String context = trimToNull(AgentJson.text(obj, "context"));
             if (task == null) {
                 return arguments;
             }

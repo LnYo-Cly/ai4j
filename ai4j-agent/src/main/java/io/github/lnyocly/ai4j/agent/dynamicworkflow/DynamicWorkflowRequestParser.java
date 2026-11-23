@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.dynamicworkflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 public final class DynamicWorkflowRequestParser {
 
@@ -13,10 +13,10 @@ public final class DynamicWorkflowRequestParser {
             return false;
         }
         try {
-            JSONObject envelope = JSON.parseObject(raw);
+            ObjectNode envelope = AgentJson.parseObjectStrictOrNull(raw);
             return envelope != null
-                    && DynamicWorkflowConstants.ENVELOPE_TYPE.equals(envelope.getString("type"))
-                    && DynamicWorkflowConstants.EXECUTE_HOST_ACTION.equals(envelope.getString("hostAction"));
+                    && DynamicWorkflowConstants.ENVELOPE_TYPE.equals(AgentJson.text(envelope, "type"))
+                    && DynamicWorkflowConstants.EXECUTE_HOST_ACTION.equals(AgentJson.text(envelope, "hostAction"));
         } catch (Exception ignored) {
             return false;
         }
@@ -26,63 +26,66 @@ public final class DynamicWorkflowRequestParser {
         if (raw == null || raw.trim().isEmpty()) {
             throw new IllegalArgumentException("dynamic workflow envelope is required");
         }
-        JSONObject envelope = JSON.parseObject(raw);
+        ObjectNode envelope = AgentJson.parseObjectStrictOrNull(raw);
         if (envelope == null) {
             throw new IllegalArgumentException("dynamic workflow envelope must be a JSON object");
         }
-        String type = envelope.getString("type");
+        String type = AgentJson.text(envelope, "type");
         if (!DynamicWorkflowConstants.ENVELOPE_TYPE.equals(type)) {
             throw new IllegalArgumentException("unsupported dynamic workflow envelope type: " + type);
         }
-        String hostAction = envelope.getString("hostAction");
+        String hostAction = AgentJson.text(envelope, "hostAction");
         if (!DynamicWorkflowConstants.EXECUTE_HOST_ACTION.equals(hostAction)) {
             throw new IllegalArgumentException("unsupported dynamic workflow hostAction: " + hostAction);
         }
 
-        String argumentsRaw = envelope.getString("argumentsRaw");
-        JSONObject arguments = parseArguments(argumentsRaw, envelope);
-        String script = arguments.getString("script");
+        String argumentsRaw = AgentJson.text(envelope, "argumentsRaw");
+        ObjectNode arguments = parseArguments(argumentsRaw, envelope);
+        String script = AgentJson.text(arguments, "script");
         if (script == null || script.trim().isEmpty()) {
             throw new IllegalArgumentException("dynamic workflow script is required");
         }
 
         return DynamicWorkflowRequest.builder()
                 .type(type)
-                .source(envelope.getString("source"))
-                .tool(envelope.getString("tool"))
-                .status(envelope.getString("status"))
+                .source(AgentJson.text(envelope, "source"))
+                .tool(AgentJson.text(envelope, "tool"))
+                .status(AgentJson.text(envelope, "status"))
                 .hostAction(hostAction)
-                .scriptRuntime(envelope.getString("scriptRuntime"))
-                .workflowSpecVersion(firstNonBlank(arguments.getString("workflowSpecVersion"), envelope.getString("workflowSpecVersion")))
+                .scriptRuntime(AgentJson.text(envelope, "scriptRuntime"))
+                .workflowSpecVersion(firstNonBlank(
+                        AgentJson.text(arguments, "workflowSpecVersion"),
+                        AgentJson.text(envelope, "workflowSpecVersion")))
                 .script(script)
-                .args(arguments.get("args"))
-                .background(arguments.getBoolean("background"))
-                .maxAgents(arguments.getInteger("maxAgents"))
-                .tokenBudget(arguments.getInteger("tokenBudget"))
+                .args(AgentJson.extractValue(arguments.get("args")))
+                .background(AgentJson.booleanObject(arguments, "background"))
+                .maxAgents(AgentJson.integer(arguments, "maxAgents"))
+                .tokenBudget(AgentJson.integer(arguments, "tokenBudget"))
                 .argumentsRaw(argumentsRaw)
                 .envelopeRaw(raw)
                 .build();
     }
 
-    private static JSONObject parseArguments(String argumentsRaw, JSONObject envelope) {
+    private static ObjectNode parseArguments(String argumentsRaw, ObjectNode envelope) {
         if (argumentsRaw != null && !argumentsRaw.trim().isEmpty()) {
-            return JSON.parseObject(argumentsRaw);
+            ObjectNode parsed = AgentJson.parseObjectStrictOrNull(argumentsRaw);
+            return parsed == null ? AgentJson.createObjectNode() : parsed;
         }
-        JSONObject arguments = new JSONObject();
-        if (envelope.containsKey("script")) {
-            arguments.put("script", envelope.get("script"));
+        ObjectNode arguments = AgentJson.createObjectNode();
+        if (envelope.has("script")) {
+            arguments.set("script", envelope.get("script"));
         }
-        if (envelope.containsKey("args")) {
-            arguments.put("args", envelope.get("args"));
+        if (envelope.has("args")) {
+            arguments.set("args", envelope.get("args"));
         }
-        if (envelope.containsKey("background")) {
-            arguments.put("background", envelope.get("background"));
+        if (envelope.has("background")) {
+            arguments.set("background", envelope.get("background"));
         }
-        if (envelope.containsKey("maxAgents")) {
-            arguments.put("maxAgents", envelope.get("maxAgents"));
+        if (envelope.has("maxAgents")) {
+            arguments.set("maxAgents", envelope.get("maxAgents"));
         }
-        if (envelope.containsKey("tokenBudget")) {
-            arguments.put("tokenBudget", envelope.get("tokenBudget"));
+        if (envelope.has("tokenBudget")) {
+            arguments.set("tokenBudget", envelope.get("tokenBudget"));
         }
         return arguments;
     }

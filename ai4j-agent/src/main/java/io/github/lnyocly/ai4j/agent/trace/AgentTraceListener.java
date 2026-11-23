@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
@@ -9,6 +8,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.model.ModelUsage;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.platform.openai.response.entity.Response;
@@ -743,7 +743,7 @@ public class AgentTraceListener implements AgentListener {
         if (value instanceof String) {
             text = (String) value;
         } else {
-            text = JSON.toJSONString(value);
+            text = AgentJson.toJson(value);
         }
         if (config.getMasker() != null) {
             text = config.getMasker().mask(text);

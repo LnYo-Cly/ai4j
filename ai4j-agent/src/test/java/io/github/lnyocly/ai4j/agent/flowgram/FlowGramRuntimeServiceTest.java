@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.flowgram;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramEdgeSchema;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramNodeSchema;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskReportOutput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskResultOutput;
@@ -40,7 +40,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskValidateOutput result = service.validateTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("prompt", "hello"))
                     .build());
 
@@ -69,7 +69,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("prompt", "hello-flowgram"))
                     .build());
 
@@ -106,7 +106,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("score", 88))
                     .build());
 
@@ -139,7 +139,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("cities", Arrays.asList("beijing", "shanghai")))
                     .build());
 
@@ -169,7 +169,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("prompt", "cancel-me"))
                     .build());
 
@@ -200,7 +200,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("prompt", "boom"))
                     .build());
 
@@ -243,7 +243,7 @@ public class FlowGramRuntimeServiceTest {
                     .build();
 
             FlowGramTaskRunOutput runOutput = service.runTask(FlowGramTaskRunInput.builder()
-                    .schema(JSON.toJSONString(schema))
+                    .schema(AgentJson.toJson(schema))
                     .inputs(mapOf("prompt", "listener-test"))
                     .build());
 

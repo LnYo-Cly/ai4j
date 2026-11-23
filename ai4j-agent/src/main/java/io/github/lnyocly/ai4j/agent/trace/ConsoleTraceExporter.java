@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 public class ConsoleTraceExporter implements TraceExporter {
 
@@ -9,6 +9,6 @@ public class ConsoleTraceExporter implements TraceExporter {
         if (span == null) {
             return;
         }
-        System.out.println("TRACE " + JSON.toJSONString(span));
+        System.out.println("TRACE " + AgentJson.toJson(span));
     }
 }

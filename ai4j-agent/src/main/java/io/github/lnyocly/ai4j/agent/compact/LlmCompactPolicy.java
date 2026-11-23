@@ -1,12 +1,13 @@
 package io.github.lnyocly.ai4j.agent.compact;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,7 +140,7 @@ public class LlmCompactPolicy implements CompactPolicy {
             userContent.append("Files read: ").append(readFiles).append("\n");
             userContent.append("Files modified: ").append(modifiedFiles).append("\n\n");
         }
-        userContent.append("Conversation to summarize:\n").append(JSON.toJSONString(itemsToSummarize));
+        userContent.append("Conversation to summarize:\n").append(AgentJson.toJson(itemsToSummarize));
 
         AgentPrompt prompt = AgentPrompt.builder()
                 .model(modelName)
@@ -186,7 +187,7 @@ public class LlmCompactPolicy implements CompactPolicy {
 
         static StructuredSummary parse(String output) {
             Map<String, List<String>> fields = new LinkedHashMap<String, List<String>>();
-            JSONObject json = parseJsonObject(output);
+            ObjectNode json = parseJsonObject(output);
             for (String key : STRUCTURED_KEYS) {
                 fields.put(key, json == null ? new ArrayList<String>() : stringList(json.get(key)));
             }
@@ -207,34 +208,35 @@ public class LlmCompactPolicy implements CompactPolicy {
          * Tolerates the two things summarizers do to JSON: wrapping it in ``` fences, and padding it
          * with a sentence before or after. Returns null when there is no JSON object to be found.
          */
-        private static JSONObject parseJsonObject(String output) {
+        private static ObjectNode parseJsonObject(String output) {
             int start = output.indexOf('{');
             int end = output.lastIndexOf('}');
             if (start < 0 || end <= start) {
                 return null;
             }
-            try {
-                return JSON.parseObject(output.substring(start, end + 1));
-            } catch (Exception e) {
-                return null;
-            }
+            return AgentJson.parseObjectOrNull(output.substring(start, end + 1));
         }
 
-        private static List<String> stringList(Object value) {
+        private static List<String> stringList(JsonNode value) {
             List<String> result = new ArrayList<String>();
-            if (value instanceof List) {
-                for (Object entry : (List<?>) value) {
-                    if (entry == null) {
+            if (value == null || value.isNull() || value.isMissingNode()) {
+                return result;
+            }
+            if (value.isArray()) {
+                for (JsonNode entry : value) {
+                    if (entry == null || entry.isNull() || entry.isMissingNode()) {
                         continue;
                     }
-                    String text = String.valueOf(entry).trim();
+                    String raw = entry.isValueNode() ? entry.asText() : AgentJson.toJson(entry);
+                    String text = raw == null ? "" : raw.trim();
                     if (!text.isEmpty()) {
                         result.add(text);
                     }
                 }
-            } else if (value != null) {
+            } else {
                 // a single string where an array was asked for
-                String text = String.valueOf(value).trim();
+                String raw = value.isValueNode() ? value.asText() : AgentJson.toJson(value);
+                String text = raw == null ? "" : raw.trim();
                 if (!text.isEmpty()) {
                     result.add(text);
                 }
@@ -242,11 +244,11 @@ public class LlmCompactPolicy implements CompactPolicy {
             return result;
         }
 
-        private static String render(JSONObject json, Map<String, List<String>> fields) {
+        private static String render(ObjectNode json, Map<String, List<String>> fields) {
             StringBuilder sb = new StringBuilder();
-            Object goal = json.get("goal");
-            if (goal != null && !String.valueOf(goal).trim().isEmpty()) {
-                sb.append("## Goal\n").append(String.valueOf(goal).trim()).append('\n');
+            String goal = AgentJson.text(json, "goal");
+            if (goal != null && !goal.trim().isEmpty()) {
+                sb.append("## Goal\n").append(goal.trim()).append('\n');
             }
             for (String key : STRUCTURED_KEYS) {
                 List<String> values = fields.get(key);
@@ -258,7 +260,7 @@ public class LlmCompactPolicy implements CompactPolicy {
                     sb.append("- ").append(value).append('\n');
                 }
             }
-            return sb.length() == 0 ? json.toString() : sb.toString().trim();
+            return sb.length() == 0 ? AgentJson.toJson(json) : sb.toString().trim();
         }
     }
 
@@ -356,8 +358,10 @@ public class LlmCompactPolicy implements CompactPolicy {
         }
         if (argsObj instanceof String) {
             try {
-                com.alibaba.fastjson2.JSONObject args = JSON.parseObject((String) argsObj);
-                extractPathsFromArgs(args, result);
+                Map<String, Object> args = AgentJson.parseMap((String) argsObj);
+                if (args != null) {
+                    extractPathsFromArgs(args, result);
+                }
             } catch (Exception ignored) {
                 // not JSON; skip
             }

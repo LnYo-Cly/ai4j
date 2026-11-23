@@ -1,5 +1,6 @@
 package io.github.lnyocly.ai4j.agent;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
@@ -83,6 +84,51 @@ public class Agent {
 
     public AgentResult runStreamResult(AgentRequest request, AgentListener listener) throws Exception {
         return runtime.runStreamResult(baseContext, request, listener);
+    }
+
+    public <T> T call(String input, Class<T> targetType) throws Exception {
+        return call(AgentRequest.builder().input(input).build(), targetType);
+    }
+
+    public <T> T call(AgentRequest request, Class<T> targetType) throws Exception {
+        return new StructuredOutputSelfHealer(resolveMaxHealAttempts()).call(this, request, targetType);
+    }
+
+    public <T> T call(AgentRequest request, Class<T> targetType, int maxHealAttempts) throws Exception {
+        return new StructuredOutputSelfHealer(maxHealAttempts).call(this, request, targetType, maxHealAttempts);
+    }
+
+    public <T> T call(AgentRequest request,
+                      Class<T> targetType,
+                      int maxHealAttempts,
+                      StructuredOutputSelfHealer.Validator<T> validator) throws Exception {
+        return new StructuredOutputSelfHealer(maxHealAttempts).call(this, request, targetType, maxHealAttempts, validator);
+    }
+
+    public <T> T call(String input, TypeReference<T> typeReference) throws Exception {
+        return call(AgentRequest.builder().input(input).build(), typeReference);
+    }
+
+    public <T> T call(AgentRequest request, TypeReference<T> typeReference) throws Exception {
+        return new StructuredOutputSelfHealer(resolveMaxHealAttempts()).call(this, request, typeReference);
+    }
+
+    public <T> T call(AgentRequest request, TypeReference<T> typeReference, int maxHealAttempts) throws Exception {
+        return new StructuredOutputSelfHealer(maxHealAttempts).call(this, request, typeReference, maxHealAttempts);
+    }
+
+    public <T> T call(AgentRequest request,
+                      TypeReference<T> typeReference,
+                      int maxHealAttempts,
+                      StructuredOutputSelfHealer.Validator<T> validator) throws Exception {
+        return new StructuredOutputSelfHealer(maxHealAttempts).call(this, request, typeReference, maxHealAttempts, validator);
+    }
+
+    private int resolveMaxHealAttempts() {
+        if (baseContext != null && baseContext.getOptions() != null) {
+            return Math.max(0, baseContext.getOptions().getMaxHealAttempts());
+        }
+        return AgentOptions.DEFAULT_MAX_HEAL_ATTEMPTS;
     }
 
     public AgentSession newSession() {

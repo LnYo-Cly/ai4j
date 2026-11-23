@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.dynamicworkflow;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,6 +44,6 @@ public class DynamicWorkflowExecutionResult {
     private Long durationMillis;
 
     public String toJson() {
-        return JSON.toJSONString(this);
+        return AgentJson.toJson(this);
     }
 }
