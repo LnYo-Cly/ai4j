@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.doubao.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -49,7 +50,7 @@ public class DoubaoResponsesService implements IResponsesService {
         request.setStreamOptions(null);
         request = ResponseRequestToolResolver.resolve(request);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String body = mapper.writeValueAsString(request);
 
         Request httpRequest = new Request.Builder()
@@ -81,7 +82,7 @@ public class DoubaoResponsesService implements IResponsesService {
         request.setStreamOptions(null);
         request = ResponseRequestToolResolver.resolve(request);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String body = mapper.writeValueAsString(request);
 
         Request httpRequest = new Request.Builder()
@@ -106,7 +107,7 @@ public class DoubaoResponsesService implements IResponsesService {
     public Response retrieve(String baseUrl, String apiKey, String responseId) throws Exception {
         String url = resolveUrl(baseUrl, doubaoConfig.getResponsesUrl() + "/" + responseId);
         String key = resolveApiKey(apiKey);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
 
         Request httpRequest = new Request.Builder()
                 .header("Authorization", "Bearer " + key)
@@ -131,7 +132,7 @@ public class DoubaoResponsesService implements IResponsesService {
     public ResponseDeleteResponse delete(String baseUrl, String apiKey, String responseId) throws Exception {
         String url = resolveUrl(baseUrl, doubaoConfig.getResponsesUrl() + "/" + responseId);
         String key = resolveApiKey(apiKey);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
 
         Request httpRequest = new Request.Builder()
                 .header("Authorization", "Bearer " + key)

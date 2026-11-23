@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agentflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatEvent;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatListener;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatRequest;
@@ -111,8 +111,8 @@ public class CozeAgentFlowServiceTest {
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/v1/workflow/run", request.getPath());
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("wf-1", body.getString("workflow_id"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("wf-1", body.path("workflow_id").asText());
         } finally {
             server.shutdown();
         }

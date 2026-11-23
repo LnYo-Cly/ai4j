@@ -1,6 +1,4 @@
 package io.github.lnyocly;
-
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.config.*;
 import io.github.lnyocly.ai4j.exception.chain.ErrorHandler;
 import io.github.lnyocly.ai4j.exception.error.Error;
@@ -35,7 +33,6 @@ import org.apache.tika.exception.TikaException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 import org.xml.sax.SAXException;
 
 import java.io.File;

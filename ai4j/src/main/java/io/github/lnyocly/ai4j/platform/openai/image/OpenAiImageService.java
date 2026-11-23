@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.image;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -54,7 +55,7 @@ public class OpenAiImageService implements IImageService {
             apiKey = openAiConfig.getApiKey();
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String requestString = mapper.writeValueAsString(imageGeneration);
 
         Request request = new Request.Builder()
@@ -84,7 +85,7 @@ public class OpenAiImageService implements IImageService {
             apiKey = openAiConfig.getApiKey();
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String requestString = mapper.writeValueAsString(imageGeneration);
 
         Request request = new Request.Builder()
@@ -139,7 +140,7 @@ public class OpenAiImageService implements IImageService {
                 .post(body.build())
                 .build();
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 return mapper.readValue(response.body().string(), ImageGenerationResponse.class);
@@ -165,7 +166,7 @@ public class OpenAiImageService implements IImageService {
             imageGeneration.setStream(true);
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String requestString = mapper.writeValueAsString(imageGeneration);
 
         Request request = new Request.Builder()

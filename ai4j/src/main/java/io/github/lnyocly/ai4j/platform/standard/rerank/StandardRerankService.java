@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.standard.rerank;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -29,7 +30,7 @@ public class StandardRerankService implements IRerankService {
     private final String apiHost;
     private final String apiKey;
     private final String rerankUrl;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonCodec.mapper();
 
     public StandardRerankService(OkHttpClient okHttpClient, String apiHost, String apiKey, String rerankUrl) {
         this.okHttpClient = okHttpClient;

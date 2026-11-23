@@ -1,7 +1,8 @@
 package io.github.lnyocly.ai4j.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,24 +49,24 @@ public final class BuiltInToolExecutor {
                 ? BuiltInToolContext.builder().build()
                 : context;
 
-        JSONObject arguments = parseArguments(argument);
+        ObjectNode arguments = parseArguments(argument);
         if (BuiltInTools.READ_FILE.equals(functionName)) {
-            return JSON.toJSONString(readFile(effectiveContext, arguments));
+            return JsonCodec.toJson(readFile(effectiveContext, arguments));
         }
         if (BuiltInTools.WRITE_FILE.equals(functionName)) {
-            return JSON.toJSONString(writeFile(effectiveContext, arguments));
+            return JsonCodec.toJson(writeFile(effectiveContext, arguments));
         }
         if (BuiltInTools.APPLY_PATCH.equals(functionName)) {
-            return JSON.toJSONString(applyPatch(effectiveContext, arguments));
+            return JsonCodec.toJson(applyPatch(effectiveContext, arguments));
         }
         if (BuiltInTools.BASH.equals(functionName)) {
-            return JSON.toJSONString(runBash(effectiveContext, arguments));
+            return JsonCodec.toJson(runBash(effectiveContext, arguments));
         }
         throw new IllegalArgumentException("Unsupported built-in tool: " + functionName);
     }
 
-    private static Map<String, Object> readFile(BuiltInToolContext context, JSONObject arguments) throws IOException {
-        String path = arguments.getString("path");
+    private static Map<String, Object> readFile(BuiltInToolContext context, ObjectNode arguments) throws IOException {
+        String path = getString(arguments, "path");
         if (isBlank(path)) {
             throw new IllegalArgumentException("path is required");
         }
@@ -78,12 +79,14 @@ public final class BuiltInToolExecutor {
         }
 
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-        int startLine = arguments.getInteger("startLine") == null || arguments.getInteger("startLine").intValue() < 1
+        Integer startLineObj = getInteger(arguments, "startLine");
+        Integer endLineObj = getInteger(arguments, "endLine");
+        int startLine = startLineObj == null || startLineObj.intValue() < 1
                 ? 1
-                : arguments.getInteger("startLine").intValue();
-        int endLine = arguments.getInteger("endLine") == null || arguments.getInteger("endLine").intValue() > lines.size()
+                : startLineObj.intValue();
+        int endLine = endLineObj == null || endLineObj.intValue() > lines.size()
                 ? lines.size()
-                : arguments.getInteger("endLine").intValue();
+                : endLineObj.intValue();
         if (endLine < startLine) {
             endLine = startLine - 1;
         }
@@ -99,9 +102,10 @@ public final class BuiltInToolExecutor {
             contentBuilder.append(lines.get(i - 1));
         }
 
-        int maxChars = arguments.getInteger("maxChars") == null || arguments.getInteger("maxChars").intValue() <= 0
+        Integer maxCharsObj = getInteger(arguments, "maxChars");
+        int maxChars = maxCharsObj == null || maxCharsObj.intValue() <= 0
                 ? context.getDefaultReadMaxChars()
-                : arguments.getInteger("maxChars").intValue();
+                : maxCharsObj.intValue();
         String content = contentBuilder.toString();
         boolean truncated = false;
         if (content.length() > maxChars) {
@@ -118,15 +122,14 @@ public final class BuiltInToolExecutor {
         return result;
     }
 
-    private static Map<String, Object> writeFile(BuiltInToolContext context, JSONObject arguments) throws IOException {
-        String path = safeTrim(arguments.getString("path"));
+    private static Map<String, Object> writeFile(BuiltInToolContext context, ObjectNode arguments) throws IOException {
+        String path = safeTrim(getString(arguments, "path"));
         if (isBlank(path)) {
             throw new IllegalArgumentException("path is required");
         }
-        String content = arguments.containsKey("content") && arguments.get("content") != null
-                ? arguments.getString("content")
-                : "";
-        String mode = firstNonBlank(safeTrim(arguments.getString("mode")), "overwrite").toLowerCase(Locale.ROOT);
+        String rawContent = getString(arguments, "content");
+        String content = rawContent != null ? rawContent : "";
+        String mode = firstNonBlank(safeTrim(getString(arguments, "mode")), "overwrite").toLowerCase(Locale.ROOT);
         Path file = context.resolveWorkspacePath(path);
         if (Files.exists(file) && Files.isDirectory(file)) {
             throw new IllegalArgumentException("Target is a directory: " + path);
@@ -169,35 +172,35 @@ public final class BuiltInToolExecutor {
         return result;
     }
 
-    private static Map<String, Object> runBash(BuiltInToolContext context, JSONObject arguments) throws Exception {
-        String action = firstNonBlank(arguments.getString("action"), "exec");
+    private static Map<String, Object> runBash(BuiltInToolContext context, ObjectNode arguments) throws Exception {
+        String action = firstNonBlank(getString(arguments, "action"), "exec");
         if ("exec".equals(action)) {
             return exec(context, arguments);
         }
         BuiltInProcessRegistry processRegistry = context.getOrCreateProcessRegistry();
         if ("start".equals(action)) {
-            return processRegistry.start(arguments.getString("command"), arguments.getString("cwd"));
+            return processRegistry.start(getString(arguments, "command"), getString(arguments, "cwd"));
         }
         if ("status".equals(action)) {
-            return processRegistry.status(arguments.getString("processId"));
+            return processRegistry.status(getString(arguments, "processId"));
         }
         if ("logs".equals(action)) {
             return processRegistry.logs(
-                    arguments.getString("processId"),
-                    arguments.getLong("offset"),
-                    arguments.getInteger("limit")
+                    getString(arguments, "processId"),
+                    getLong(arguments, "offset"),
+                    getInteger(arguments, "limit")
             );
         }
         if ("write".equals(action)) {
-            String processId = arguments.getString("processId");
-            int bytesWritten = processRegistry.write(processId, arguments.getString("input"));
+            String processId = getString(arguments, "processId");
+            int bytesWritten = processRegistry.write(processId, getString(arguments, "input"));
             Map<String, Object> result = new LinkedHashMap<String, Object>();
             result.put("process", processRegistry.status(processId));
             result.put("bytesWritten", bytesWritten);
             return result;
         }
         if ("stop".equals(action)) {
-            return processRegistry.stop(arguments.getString("processId"));
+            return processRegistry.stop(getString(arguments, "processId"));
         }
         if ("list".equals(action)) {
             Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -207,15 +210,16 @@ public final class BuiltInToolExecutor {
         throw new IllegalArgumentException("Unsupported bash action: " + action);
     }
 
-    private static Map<String, Object> exec(BuiltInToolContext context, JSONObject arguments) throws Exception {
-        String command = arguments.getString("command");
+    private static Map<String, Object> exec(BuiltInToolContext context, ObjectNode arguments) throws Exception {
+        String command = getString(arguments, "command");
         if (isBlank(command)) {
             throw new IllegalArgumentException("command is required");
         }
-        Path workingDirectory = context.resolveWorkspacePath(arguments.getString("cwd"));
-        long timeoutMs = arguments.getLong("timeoutMs") == null || arguments.getLong("timeoutMs").longValue() <= 0L
+        Path workingDirectory = context.resolveWorkspacePath(getString(arguments, "cwd"));
+        Long timeoutMsObj = getLong(arguments, "timeoutMs");
+        long timeoutMs = timeoutMsObj == null || timeoutMsObj.longValue() <= 0L
                 ? context.getDefaultCommandTimeoutMs()
-                : arguments.getLong("timeoutMs").longValue();
+                : timeoutMsObj.longValue();
 
         ProcessBuilder processBuilder;
         if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win")) {
@@ -297,8 +301,8 @@ public final class BuiltInToolExecutor {
         return Charset.defaultCharset();
     }
 
-    private static Map<String, Object> applyPatch(BuiltInToolContext context, JSONObject arguments) throws IOException {
-        String patch = arguments.getString("patch");
+    private static Map<String, Object> applyPatch(BuiltInToolContext context, ObjectNode arguments) throws IOException {
+        String patch = getString(arguments, "patch");
         if (isBlank(patch)) {
             throw new IllegalArgumentException("patch is required");
         }
@@ -651,11 +655,62 @@ public final class BuiltInToolExecutor {
         return null;
     }
 
-    private static JSONObject parseArguments(String rawArguments) {
+    private static ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return JsonCodec.createObjectNode();
         }
-        return JSON.parseObject(rawArguments);
+        JsonNode node = JsonCodec.readTree(rawArguments);
+        if (node != null && node.isObject()) {
+            return (ObjectNode) node;
+        }
+        return JsonCodec.createObjectNode();
+    }
+
+    private static String getString(ObjectNode node, String key) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode child = node.get(key);
+        if (child == null || child.isNull()) {
+            return null;
+        }
+        return child.isValueNode() ? child.asText() : child.toString();
+    }
+
+    private static Integer getInteger(ObjectNode node, String key) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode child = node.get(key);
+        if (child == null || child.isNull() || !child.canConvertToInt() && !child.isTextual()) {
+            return null;
+        }
+        if (child.isNumber()) {
+            return Integer.valueOf(child.asInt());
+        }
+        if (child.isTextual()) {
+            String trimmed = child.asText().trim();
+            return trimmed.isEmpty() ? null : Integer.valueOf(trimmed);
+        }
+        return null;
+    }
+
+    private static Long getLong(ObjectNode node, String key) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode child = node.get(key);
+        if (child == null || child.isNull() || !child.canConvertToLong() && !child.isTextual()) {
+            return null;
+        }
+        if (child.isNumber()) {
+            return Long.valueOf(child.asLong());
+        }
+        if (child.isTextual()) {
+            String trimmed = child.asText().trim();
+            return trimmed.isEmpty() ? null : Long.valueOf(trimmed);
+        }
+        return null;
     }
 
     private static Map<String, Object> buildFileChange(String path, String operation, int linesAdded, int linesRemoved) {

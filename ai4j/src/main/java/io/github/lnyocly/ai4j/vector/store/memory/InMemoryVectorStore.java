@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j.vector.store.memory;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.vector.store.VectorDeleteRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorExistsRequest;
 import io.github.lnyocly.ai4j.vector.store.VectorSearchRequest;
@@ -48,6 +50,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * dedicated vector database.</p>
  */
 public class InMemoryVectorStore implements VectorStore {
+
+    private static final TypeReference<java.util.LinkedHashMap<String, Object>> METADATA_MAP_TYPE =
+            new TypeReference<java.util.LinkedHashMap<String, Object>>() {
+            };
 
     private final Map<String, List<VectorRecord>> datasets = new ConcurrentHashMap<String, List<VectorRecord>>();
 
@@ -195,29 +201,29 @@ public class InMemoryVectorStore implements VectorStore {
      * cannot leave a truncated JSON at {@code path}.
      */
     public void persistToFile(Path path) throws IOException {
-        JSONObject root = new JSONObject();
-        JSONObject datasetsJson = new JSONObject();
+        ObjectNode root = JsonCodec.createObjectNode();
+        ObjectNode datasetsJson = JsonCodec.createObjectNode();
         for (Map.Entry<String, List<VectorRecord>> entry : datasets.entrySet()) {
-            JSONArray recordsJson = new JSONArray();
+            ArrayNode recordsJson = JsonCodec.createArrayNode();
             for (VectorRecord record : entry.getValue()) {
                 if (record == null) {
                     continue;
                 }
-                JSONObject recordJson = new JSONObject();
+                ObjectNode recordJson = JsonCodec.createObjectNode();
                 recordJson.put("id", record.getId());
                 recordJson.put("content", record.getContent());
-                recordJson.put("vector", record.getVector());
-                recordJson.put("metadata", record.getMetadata());
+                recordJson.set("vector", JsonCodec.valueToTree(record.getVector()));
+                recordJson.set("metadata", JsonCodec.valueToTree(record.getMetadata()));
                 recordsJson.add(recordJson);
             }
-            datasetsJson.put(entry.getKey(), recordsJson);
+            datasetsJson.set(entry.getKey(), recordsJson);
         }
-        root.put("datasets", datasetsJson);
+        root.set("datasets", datasetsJson);
         Path parent = path.getParent();
         if (parent != null) {
             Files.createDirectories(parent);
         }
-        byte[] payload = root.toJSONString().getBytes(StandardCharsets.UTF_8);
+        byte[] payload = JsonCodec.toJson(root).getBytes(StandardCharsets.UTF_8);
         Path temp = path.resolveSibling(path.getFileName() + ".tmp");
         Files.write(temp, payload);
         try {
@@ -233,34 +239,47 @@ public class InMemoryVectorStore implements VectorStore {
     public static InMemoryVectorStore loadFromFile(Path path) throws IOException {
         InMemoryVectorStore store = new InMemoryVectorStore();
         byte[] bytes = Files.readAllBytes(path);
-        JSONObject root = JSON.parseObject(new String(bytes, StandardCharsets.UTF_8));
-        JSONObject datasetsJson = root == null ? null : root.getJSONObject("datasets");
-        if (datasetsJson == null) {
+        String jsonText = new String(bytes, StandardCharsets.UTF_8);
+        if (jsonText.trim().isEmpty()) {
             return store;
         }
-        for (String dataset : datasetsJson.keySet()) {
-            JSONArray recordsJson = datasetsJson.getJSONArray(dataset);
-            if (recordsJson == null) {
+        JsonNode root = JsonCodec.readTree(jsonText);
+        JsonNode datasetsJson = root == null ? null : root.get("datasets");
+        if (datasetsJson == null || !datasetsJson.isObject()) {
+            return store;
+        }
+        java.util.Iterator<Map.Entry<String, JsonNode>> fields = datasetsJson.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            String dataset = entry.getKey();
+            JsonNode recordsJson = entry.getValue();
+            if (recordsJson == null || !recordsJson.isArray()) {
                 continue;
             }
             for (int i = 0; i < recordsJson.size(); i++) {
-                JSONObject recordJson = recordsJson.getJSONObject(i);
-                if (recordJson == null) {
+                JsonNode recordJson = recordsJson.get(i);
+                if (recordJson == null || !recordJson.isObject()) {
                     continue;
                 }
                 List<Float> vector = null;
-                JSONArray vectorJson = recordJson.getJSONArray("vector");
-                if (vectorJson != null) {
+                JsonNode vectorJson = recordJson.get("vector");
+                if (vectorJson != null && vectorJson.isArray()) {
                     vector = new ArrayList<Float>(vectorJson.size());
                     for (int j = 0; j < vectorJson.size(); j++) {
-                        vector.add(vectorJson.getFloat(j));
+                        vector.add(vectorJson.get(j).floatValue());
                     }
                 }
+                JsonNode idNode = recordJson.get("id");
+                JsonNode contentNode = recordJson.get("content");
+                JsonNode metadataNode = recordJson.get("metadata");
+                Map<String, Object> metadata = metadataNode != null && metadataNode.isObject()
+                        ? JsonCodec.mapper().convertValue(metadataNode, METADATA_MAP_TYPE)
+                        : null;
                 store.dataset(dataset).add(VectorRecord.builder()
-                        .id(recordJson.getString("id"))
-                        .content(recordJson.getString("content"))
+                        .id(idNode == null || idNode.isNull() ? null : idNode.asText())
+                        .content(contentNode == null || contentNode.isNull() ? null : contentNode.asText())
                         .vector(vector)
-                        .metadata(recordJson.getJSONObject("metadata"))
+                        .metadata(metadata)
                         .build());
             }
         }

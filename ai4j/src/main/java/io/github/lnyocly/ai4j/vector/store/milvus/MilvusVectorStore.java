@@ -1,8 +1,9 @@
 package io.github.lnyocly.ai4j.vector.store.milvus;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.MilvusConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,16 +64,16 @@ public class MilvusVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONArray rows = new JSONArray();
+        ArrayNode rows = JsonCodec.createArrayNode();
         int index = 0;
         for (VectorRecord record : records) {
             if (record == null || record.getVector() == null || record.getVector().isEmpty()) {
                 index++;
                 continue;
             }
-            JSONObject row = new JSONObject();
+            ObjectNode row = JsonCodec.createObjectNode();
             row.put(config.getIdField(), resolveId(record.getId(), index));
-            row.put(config.getVectorField(), record.getVector());
+            row.set(config.getVectorField(), JsonCodec.valueToTree(record.getVector()));
             String content = trimToNull(record.getContent());
             if (content != null) {
                 row.put(config.getContentField(), content);
@@ -80,7 +82,7 @@ public class MilvusVectorStore implements VectorStore {
             if (record.getMetadata() != null) {
                 for (Map.Entry<String, Object> entry : record.getMetadata().entrySet()) {
                     if (entry != null && entry.getKey() != null && entry.getValue() != null) {
-                        row.put(entry.getKey(), entry.getValue());
+                        row.set(entry.getKey(), JsonCodec.valueToTree(entry.getValue()));
                     }
                 }
             }
@@ -91,9 +93,9 @@ public class MilvusVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         applyCollectionScope(body, dataset);
-        body.put("data", rows);
+        body.set("data", rows);
         executePost(config.getUpsert(), body);
         return rows.size();
     }
@@ -105,26 +107,26 @@ public class MilvusVectorStore implements VectorStore {
             return Collections.emptyList();
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         applyCollectionScope(body, dataset);
-        body.put("data", Collections.singletonList(request.getVector()));
+        body.set("data", JsonCodec.valueToTree(Collections.singletonList(request.getVector())));
         body.put("annsField", config.getVectorField());
-        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK());
-        body.put("outputFields", config.getOutputFields());
+        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK().intValue());
+        body.set("outputFields", JsonCodec.valueToTree(config.getOutputFields()));
         String filter = toFilterExpression(request.getFilter());
         if (filter != null) {
             body.put("filter", filter);
         }
 
-        JSONObject response = executePost(config.getSearch(), body);
-        JSONArray results = response == null ? null : response.getJSONArray("data");
-        if (results == null || results.isEmpty()) {
+        ObjectNode response = executePost(config.getSearch(), body);
+        JsonNode results = response == null ? null : response.get("data");
+        if (results == null || !results.isArray() || results.isEmpty()) {
             return Collections.emptyList();
         }
         List<VectorSearchResult> vectorResults = new ArrayList<VectorSearchResult>();
         for (int i = 0; i < results.size(); i++) {
-            JSONObject item = results.getJSONObject(i);
-            if (item == null) {
+            JsonNode item = results.get(i);
+            if (item == null || !item.isObject()) {
                 continue;
             }
             Map<String, Object> metadata = metadataFromResult(item);
@@ -149,15 +151,15 @@ public class MilvusVectorStore implements VectorStore {
             return false;
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         applyCollectionScope(body, dataset);
         body.put("filter", filter);
         body.put("limit", 1);
-        body.put("outputFields", Collections.singletonList(config.getIdField()));
+        body.set("outputFields", JsonCodec.valueToTree(Collections.singletonList(config.getIdField())));
 
-        JSONObject response = executePost(config.getQuery(), body);
-        JSONArray results = response == null ? null : response.getJSONArray("data");
-        return results != null && !results.isEmpty();
+        ObjectNode response = executePost(config.getQuery(), body);
+        JsonNode results = response == null ? null : response.get("data");
+        return results != null && results.isArray() && !results.isEmpty();
     }
 
     @Override
@@ -166,10 +168,10 @@ public class MilvusVectorStore implements VectorStore {
         if (request == null) {
             return false;
         }
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         applyCollectionScope(body, dataset);
         if (request.getIds() != null && !request.getIds().isEmpty()) {
-            body.put("ids", request.getIds());
+            body.set("ids", JsonCodec.valueToTree(request.getIds()));
         } else {
             String filter = toFilterExpression(request.getFilter());
             if (filter == null && request.isDeleteAll()) {
@@ -194,7 +196,7 @@ public class MilvusVectorStore implements VectorStore {
                 .build();
     }
 
-    private void applyCollectionScope(JSONObject body, String dataset) {
+    private void applyCollectionScope(ObjectNode body, String dataset) {
         body.put("collectionName", dataset);
         if (trimToNull(config.getPartitionName()) != null) {
             body.put("partitionName", config.getPartitionName().trim());
@@ -204,10 +206,10 @@ public class MilvusVectorStore implements VectorStore {
         }
     }
 
-    private JSONObject executePost(String path, JSONObject payload) throws Exception {
+    private ObjectNode executePost(String path, ObjectNode payload) throws Exception {
         Request.Builder builder = new Request.Builder()
                 .url(UrlUtils.concatUrl(config.getHost(), path))
-                .post(RequestBody.create(JSON.toJSONString(payload), JSON_MEDIA_TYPE))
+                .post(RequestBody.create(JsonCodec.toJson(payload), JSON_MEDIA_TYPE))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON);
         if (trimToNull(config.getToken()) != null) {
@@ -220,37 +222,52 @@ public class MilvusVectorStore implements VectorStore {
             }
             ResponseBody responseBody = response.body();
             String body = responseBody == null ? "{}" : responseBody.string();
-            return JSON.parseObject(body);
+            if (body.trim().isEmpty()) {
+                return JsonCodec.createObjectNode();
+            }
+            JsonNode node = JsonCodec.readTree(body);
+            return node != null && node.isObject() ? (ObjectNode) node : JsonCodec.createObjectNode();
         }
     }
 
-    private Map<String, Object> metadataFromResult(JSONObject item) {
+    private Map<String, Object> metadataFromResult(JsonNode item) {
         Map<String, Object> metadata = new LinkedHashMap<String, Object>();
-        JSONObject entity = item.getJSONObject("entity");
-        if (entity != null) {
-            for (String key : entity.keySet()) {
-                metadata.put(key, entity.get(key));
+        JsonNode entity = item.get("entity");
+        if (entity != null && entity.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = entity.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                metadata.put(entry.getKey(), toPlainValue(entry.getValue()));
             }
         }
-        for (String key : item.keySet()) {
+        Iterator<Map.Entry<String, JsonNode>> fields = item.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            String key = entry.getKey();
             if ("distance".equals(key) || "score".equals(key) || "id".equals(key) || "entity".equals(key)) {
                 continue;
             }
-            metadata.put(key, item.get(key));
+            metadata.put(key, toPlainValue(entry.getValue()));
         }
-        if (!metadata.containsKey(config.getIdField()) && item.containsKey("id")) {
-            metadata.put(config.getIdField(), item.get("id"));
+        if (!metadata.containsKey(config.getIdField()) && item.has("id")) {
+            metadata.put(config.getIdField(), toPlainValue(item.get("id")));
         }
         return metadata;
     }
 
-    private Float scoreValue(JSONObject item) {
-        if (item.containsKey("score")) {
-            return item.getFloat("score");
+    private Object toPlainValue(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
         }
-        if (item.containsKey("distance")) {
-            Float distance = item.getFloat("distance");
-            return distance == null ? null : 1.0f - distance;
+        return JsonCodec.mapper().convertValue(node, Object.class);
+    }
+
+    private Float scoreValue(JsonNode item) {
+        if (item.hasNonNull("score")) {
+            return Float.valueOf(item.get("score").floatValue());
+        }
+        if (item.hasNonNull("distance")) {
+            return Float.valueOf(1.0f - item.get("distance").floatValue());
         }
         return null;
     }

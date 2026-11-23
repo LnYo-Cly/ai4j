@@ -1,12 +1,15 @@
 package io.github.lnyocly.ai4j.agentflow.support;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceListener;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -21,6 +24,7 @@ import okhttp3.sse.EventSource;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +33,9 @@ import java.util.UUID;
 public abstract class AgentFlowSupport {
 
     protected static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
+            new TypeReference<LinkedHashMap<String, Object>>() {
+            };
 
     protected final Configuration configuration;
     protected final AgentFlowConfig agentFlowConfig;
@@ -127,7 +134,7 @@ public abstract class AgentFlowSupport {
     }
 
     protected RequestBody jsonBody(Object body) {
-        return RequestBody.create(JSON.toJSONString(body), JSON_MEDIA_TYPE);
+        return RequestBody.create(JsonCodec.toJson(body), JSON_MEDIA_TYPE);
     }
 
     protected Request.Builder jsonRequestBuilder(String url) {
@@ -152,14 +159,18 @@ public abstract class AgentFlowSupport {
         }
     }
 
-    protected JSONObject executeObject(Request request) throws IOException {
+    protected ObjectNode executeObject(Request request) throws IOException {
         String body = execute(request);
         if (isBlank(body)) {
-            return new JSONObject();
+            return JsonCodec.createObjectNode();
         }
-        Object parsed = JSON.parse(body);
-        if (parsed instanceof JSONObject) {
-            return (JSONObject) parsed;
+        try {
+            JsonNode parsed = JsonCodec.readTree(body);
+            if (parsed != null && parsed.isObject()) {
+                return (ObjectNode) parsed;
+            }
+        } catch (RuntimeException ignored) {
+            // Fall through to unified error message below.
         }
         throw new AgentFlowException("Expected JSON object response but got: " + body);
     }
@@ -169,9 +180,78 @@ public abstract class AgentFlowSupport {
             return null;
         }
         try {
-            return JSON.parse(body);
+            JsonNode node = JsonCodec.readTree(body);
+            return JsonCodec.mapper().convertValue(node, Object.class);
         } catch (Exception ex) {
             return body;
+        }
+    }
+
+    protected ObjectNode parseObjectOrNull(String data) {
+        if (isBlank(data)) {
+            return null;
+        }
+        try {
+            JsonNode parsed = JsonCodec.readTree(data);
+            return parsed != null && parsed.isObject() ? (ObjectNode) parsed : null;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    protected ObjectNode objectField(JsonNode node, String fieldName) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        JsonNode child = node.get(fieldName);
+        return child != null && child.isObject() ? (ObjectNode) child : null;
+    }
+
+    protected ArrayNode arrayField(JsonNode node, String fieldName) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        JsonNode child = node.get(fieldName);
+        return child != null && child.isArray() ? (ArrayNode) child : null;
+    }
+
+    protected String textValue(JsonNode node, String fieldName) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        JsonNode child = node.get(fieldName);
+        if (child == null || child.isNull()) {
+            return null;
+        }
+        return child.isValueNode() ? child.asText() : child.toString();
+    }
+
+    protected Integer intValue(JsonNode node, String fieldName) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        JsonNode child = node.get(fieldName);
+        if (child == null || child.isNull() || !child.isNumber()) {
+            return null;
+        }
+        return Integer.valueOf(child.asInt());
+    }
+
+    protected Map<String, Object> toObjectMap(JsonNode node) {
+        if (node == null || !node.isObject() || node.size() == 0) {
+            return Collections.emptyMap();
+        }
+        return JsonCodec.mapper().convertValue(node, MAP_TYPE);
+    }
+
+    protected void putExtraBody(ObjectNode body, Map<String, Object> extraBody) {
+        if (body == null || extraBody == null || extraBody.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : extraBody.entrySet()) {
+            if (entry.getKey() != null) {
+                body.set(entry.getKey(), JsonCodec.valueToTree(entry.getValue()));
+            }
         }
     }
 
@@ -184,10 +264,10 @@ public abstract class AgentFlowSupport {
         return content;
     }
 
-    protected void assertCozeSuccess(JSONObject response) {
-        Integer code = response == null ? null : response.getInteger("code");
+    protected void assertCozeSuccess(ObjectNode response) {
+        Integer code = intValue(response, "code");
         if (code != null && code.intValue() != 0) {
-            throw new AgentFlowException("Coze request failed: code=" + code + ", msg=" + response.getString("msg"));
+            throw new AgentFlowException("Coze request failed: code=" + code + ", msg=" + textValue(response, "msg"));
         }
     }
 
@@ -218,49 +298,84 @@ public abstract class AgentFlowSupport {
         if (value instanceof String) {
             return (String) value;
         }
-        if (value instanceof JSONObject) {
-            JSONObject jsonObject = (JSONObject) value;
+        if (value instanceof JsonNode) {
+            JsonNode node = (JsonNode) value;
+            if (node.isNull()) {
+                return null;
+            }
+            if (node.isValueNode()) {
+                return node.asText();
+            }
+            if (node.isObject()) {
+                String direct = firstNonBlank(
+                        textValue(node, "answer"),
+                        textValue(node, "output"),
+                        textValue(node, "text"),
+                        textValue(node, "content"),
+                        textValue(node, "result"),
+                        textValue(node, "message")
+                );
+                if (!isBlank(direct)) {
+                    return direct;
+                }
+                if (node.size() == 1) {
+                    Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+                    if (fields.hasNext()) {
+                        return extractText(fields.next().getValue());
+                    }
+                }
+                return node.toString();
+            }
+            return node.toString();
+        }
+        if (value instanceof Map<?, ?>) {
+            Map<?, ?> map = (Map<?, ?>) value;
             String direct = firstNonBlank(
-                    jsonObject.getString("answer"),
-                    jsonObject.getString("output"),
-                    jsonObject.getString("text"),
-                    jsonObject.getString("content"),
-                    jsonObject.getString("result"),
-                    jsonObject.getString("message")
+                    stringEntry(map, "answer"),
+                    stringEntry(map, "output"),
+                    stringEntry(map, "text"),
+                    stringEntry(map, "content"),
+                    stringEntry(map, "result"),
+                    stringEntry(map, "message")
             );
             if (!isBlank(direct)) {
                 return direct;
             }
-            if (jsonObject.size() == 1) {
-                Map.Entry<String, Object> entry = jsonObject.entrySet().iterator().next();
-                return extractText(entry.getValue());
+            if (map.size() == 1) {
+                Object onlyValue = map.values().iterator().next();
+                return extractText(onlyValue);
             }
-            return JSON.toJSONString(jsonObject);
+            return JsonCodec.toJson(map);
         }
         return String.valueOf(value);
     }
 
-    protected AgentFlowUsage usageFromDify(JSONObject usage) {
-        if (usage == null || usage.isEmpty()) {
+    private String stringEntry(Map<?, ?> map, String key) {
+        Object val = map.get(key);
+        return val == null ? null : String.valueOf(val);
+    }
+
+    protected AgentFlowUsage usageFromDify(JsonNode usage) {
+        if (usage == null || !usage.isObject() || usage.size() == 0) {
             return null;
         }
         return AgentFlowUsage.builder()
-                .inputTokens(usage.getInteger("prompt_tokens"))
-                .outputTokens(usage.getInteger("completion_tokens"))
-                .totalTokens(usage.getInteger("total_tokens"))
-                .raw(usage)
+                .inputTokens(intValue(usage, "prompt_tokens"))
+                .outputTokens(intValue(usage, "completion_tokens"))
+                .totalTokens(intValue(usage, "total_tokens"))
+                .raw(toObjectMap(usage))
                 .build();
     }
 
-    protected AgentFlowUsage usageFromCoze(JSONObject usage) {
-        if (usage == null || usage.isEmpty()) {
+    protected AgentFlowUsage usageFromCoze(JsonNode usage) {
+        if (usage == null || !usage.isObject() || usage.size() == 0) {
             return null;
         }
         return AgentFlowUsage.builder()
-                .inputTokens(firstNonNullInteger(usage.getInteger("input_tokens"), usage.getInteger("input_count")))
-                .outputTokens(firstNonNullInteger(usage.getInteger("output_tokens"), usage.getInteger("output_count")))
-                .totalTokens(usage.getInteger("token_count"))
-                .raw(usage)
+                .inputTokens(firstNonNullInteger(intValue(usage, "input_tokens"), intValue(usage, "input_count")))
+                .outputTokens(firstNonNullInteger(intValue(usage, "output_tokens"), intValue(usage, "output_count")))
+                .totalTokens(intValue(usage, "token_count"))
+                .raw(toObjectMap(usage))
                 .build();
     }
 

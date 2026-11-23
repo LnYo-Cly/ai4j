@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.doubao.rerank;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -30,7 +31,7 @@ public class DoubaoRerankService implements IRerankService {
 
     private final DoubaoConfig doubaoConfig;
     private final OkHttpClient okHttpClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonCodec.mapper();
 
     public DoubaoRerankService(Configuration configuration) {
         this(configuration, configuration == null ? null : configuration.getDoubaoConfig());

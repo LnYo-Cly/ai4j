@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.tools;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.annotation.FunctionCall;
 import io.github.lnyocly.ai4j.annotation.FunctionParameter;
 import io.github.lnyocly.ai4j.annotation.FunctionRequest;
@@ -16,7 +16,7 @@ public class ApplyPatchFunction implements Function<ApplyPatchFunction.Request, 
     @Override
     public String apply(Request request) {
         try {
-            return BuiltInToolExecutor.invoke(BuiltInTools.APPLY_PATCH, JSON.toJSONString(request), null);
+            return BuiltInToolExecutor.invoke(BuiltInTools.APPLY_PATCH, JsonCodec.toJson(request), null);
         } catch (Exception ex) {
             throw new RuntimeException("apply_patch failed", ex);
         }

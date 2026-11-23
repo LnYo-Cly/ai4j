@@ -4,78 +4,37 @@ package io.github.lnyocly.ai4j.tool;
  * @Author cly
  * @Description 统一工具管理器，支持 built-in tool、传统Function工具、本地MCP工具和远程MCP服务
  */
-import com.alibaba.fastjson2.JSON;
-import io.github.lnyocly.ai4j.annotation.FunctionParameter;
 import io.github.lnyocly.ai4j.annotation.FunctionCall;
+import io.github.lnyocly.ai4j.annotation.FunctionParameter;
 import io.github.lnyocly.ai4j.annotation.FunctionRequest;
-import io.github.lnyocly.ai4j.mcp.annotation.McpService;
-import io.github.lnyocly.ai4j.mcp.annotation.McpTool;
-import io.github.lnyocly.ai4j.mcp.annotation.McpParameter;
-import io.github.lnyocly.ai4j.mcp.gateway.McpGateway;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
-import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ToolUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ToolUtil.class);
-
-    // 反射扫描器，支持注解和方法扫描（延迟初始化，限定扫描范围以加速冷启动）
-    private static volatile Reflections reflections;
-
-    private static Reflections getReflections() {
-        if (reflections == null) {
-            synchronized (ToolUtil.class) {
-                if (reflections == null) {
-                    reflections = new Reflections(new ConfigurationBuilder()
-                            .setUrls(ClasspathHelper.forPackage("io.github.lnyocly.ai4j"))
-                            .setScanners(Scanners.TypesAnnotated, Scanners.MethodsAnnotated));
-                }
-            }
-        }
-        return reflections;
-    }
+    private static final String SCAN_BASE_PACKAGE = "io.github.lnyocly.ai4j";
 
     // === 传统Function工具缓存 ===
     public static final Map<String, Tool> toolEntityMap = new ConcurrentHashMap<>();
     public static final Map<String, Class<?>> toolClassMap = new ConcurrentHashMap<>();
     public static final Map<String, Class<?>> toolRequestMap = new ConcurrentHashMap<>();
 
-    // === 本地MCP工具缓存 ===
-    private static final Map<String, McpToolInfo> mcpToolCache = new ConcurrentHashMap<>();
+    // === 可选 MCP 桥接 ===
+    private static volatile McpToolBridge mcpToolBridge;
 
     // === 初始化状态 ===
     private static volatile boolean initialized = false;
 
     private static final ThreadLocal<Deque<BuiltInToolContext>> builtInToolContextStack =
             new ThreadLocal<Deque<BuiltInToolContext>>();
-
-    /**
-     * 本地MCP工具信息类
-     */
-    private static class McpToolInfo {
-        final String toolId;  // 工具唯一标识符（符合OpenAI API命名规范）
-        final String description;
-        final Class<?> serviceClass;
-        final Method method;
-
-        McpToolInfo(String toolId, String description, Class<?> serviceClass, Method method) {
-            this.toolId = toolId;
-            this.description = description;
-            this.serviceClass = serviceClass;
-            this.method = method;
-        }
-    }
 
     /**
      * 统一工具调用入口（支持自动识别用户上下文）
@@ -95,21 +54,21 @@ public class ToolUtil {
 
             // 1. 检查是否为用户工具调用
             String userId = extractUserIdFromFunctionName(functionName);
-            
+
             if (userId != null) {
                 // 用户工具调用：user_123_tool_create_issue -> userId=123, toolName=create_issue
                 String actualToolName = extractActualToolName(functionName);
                 return callUserMcpTool(userId, actualToolName, argument);
             }
-            
+
             // 2. 全局工具调用流程
             return callGlobalTool(functionName, argument);
-            
+
         } catch (Exception e) {
             throw new RuntimeException("工具调用失败: " + functionName + " - " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * 显式指定用户ID的调用方式
      */
@@ -152,7 +111,44 @@ public class ToolUtil {
         }
         return stack.peek();
     }
-    
+
+    private static McpToolBridge findMcpToolBridge() {
+        McpToolBridge cached = mcpToolBridge;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (ToolUtil.class) {
+            if (mcpToolBridge != null) {
+                return mcpToolBridge;
+            }
+            McpToolBridge loaded = loadMcpToolBridge(Thread.currentThread().getContextClassLoader());
+            if (loaded == null) {
+                loaded = loadMcpToolBridge(ToolUtil.class.getClassLoader());
+            }
+            if (loaded != null) {
+                mcpToolBridge = loaded;
+            }
+            return mcpToolBridge;
+        }
+    }
+
+    private static McpToolBridge loadMcpToolBridge(ClassLoader classLoader) {
+        ServiceLoader<McpToolBridge> loader = classLoader != null
+                ? ServiceLoader.load(McpToolBridge.class, classLoader)
+                : ServiceLoader.load(McpToolBridge.class);
+        Iterator<McpToolBridge> iterator = loader.iterator();
+        while (iterator.hasNext()) {
+            try {
+                McpToolBridge candidate = iterator.next();
+                if (candidate != null) {
+                    return candidate;
+                }
+            } catch (ServiceConfigurationError e) {
+                log.debug("Failed to load McpToolBridge provider", e);
+            }
+        }
+        return null;
+    }
 
     /**
      * 从函数名中提取用户ID
@@ -177,27 +173,22 @@ public class ToolUtil {
      * 调用用户MCP工具
      */
     private static String callUserMcpTool(String userId, String toolName, String argument) {
-        McpGateway gateway = McpGateway.getInstance();
-        
-        if (gateway == null || !gateway.isInitialized()) {
+        McpToolBridge bridge = findMcpToolBridge();
+        if (bridge == null || !bridge.isGatewayInitialized()) {
             throw new RuntimeException("MCP网关未初始化");
         }
-        
-        try {
-            Object argumentObject = JSON.parseObject(argument);
-            return gateway.callUserTool(userId, toolName, argumentObject).join();
-        } catch (Exception e) {
-            throw new RuntimeException("用户MCP工具调用失败: " + toolName, e);
-        }
+        return bridge.invokeUserMcpTool(userId, toolName, argument);
     }
 
     /**
      * 调用全局工具
      */
     private static String callGlobalTool(String functionName, String argument) {
+        McpToolBridge bridge = findMcpToolBridge();
+
         // 1. 优先检查本地MCP工具
-        if (mcpToolCache.containsKey(functionName)) {
-            return invokeMcpTool(functionName, argument);
+        if (bridge != null && bridge.hasLocalMcpTool(functionName)) {
+            return bridge.invokeLocalMcpTool(functionName, argument);
         }
 
         // 2. 检查传统Function工具
@@ -206,20 +197,13 @@ public class ToolUtil {
         }
 
         // 3. 尝试调用全局MCP服务
-        McpGateway gateway = McpGateway.getInstance();
-        if (gateway != null && gateway.isInitialized()) {
-            try {
-                Object argumentObject = JSON.parseObject(argument);
-                return gateway.callTool(functionName, argumentObject).join();
-            } catch (Exception e) {
-                // MCP调用失败，继续其他逻辑
-                log.debug("全局MCP工具调用失败: {}", functionName, e);
-                throw new RuntimeException(e.getMessage());
-            }
+        if (bridge != null && bridge.isGatewayInitialized()) {
+            return bridge.invokeGlobalMcpTool(functionName, argument);
         }
 
         throw new RuntimeException("工具未找到: " + functionName);
     }
+
     /**
      * 从用户工具名中提取实际工具名
      * @param functionName 如 "user_123_tool_create_issue"
@@ -234,7 +218,6 @@ public class ToolUtil {
         }
         return functionName;
     }
-
 
     /**
      * 确保工具已初始化
@@ -259,58 +242,11 @@ public class ToolUtil {
         // 扫描传统Function工具
         scanFunctionTools();
 
-        // 扫描本地MCP工具
-        scanMcpTools();
+        McpToolBridge bridge = findMcpToolBridge();
+        int localMcpToolCount = bridge != null ? bridge.getLocalMcpTools().size() : 0;
 
         log.info("工具扫描完成 - Function工具: {}, 本地MCP工具: {}",
-                toolClassMap.size(), mcpToolCache.size());
-    }
-
-    /**
-     * 调用本地MCP工具
-     */
-    private static String invokeMcpTool(String functionName, String argument) {
-        McpToolInfo toolInfo = mcpToolCache.get(functionName);
-        if (toolInfo == null) {
-            throw new RuntimeException("本地MCP工具未找到: " + functionName);
-        }
-
-        try {
-            log.info("调用本地MCP工具: {}, 参数: {}", toolInfo.toolId, argument);
-
-            // 创建服务实例
-            Object serviceInstance = toolInfo.serviceClass.getDeclaredConstructor().newInstance();
-
-            // 解析参数
-            Map<String, Object> argumentMap = JSON.parseObject(argument);
-            if (argumentMap == null) {
-                argumentMap = new HashMap<>();
-            }
-
-            // 准备方法参数
-            Parameter[] parameters = toolInfo.method.getParameters();
-            Object[] methodArgs = new Object[parameters.length];
-
-            for (int i = 0; i < parameters.length; i++) {
-                Parameter param = parameters[i];
-                String paramName = getParameterName(param);
-                Object value = argumentMap.get(paramName);
-
-                // 类型转换
-                methodArgs[i] = convertParameterValue(value, param.getType());
-            }
-
-            // 调用方法
-            Object result = toolInfo.method.invoke(serviceInstance, methodArgs);
-            String response = JSON.toJSONString(result);
-
-            log.info("本地MCP工具调用成功: {} -> {}", toolInfo.toolId, response);
-            return response;
-
-        } catch (Exception e) {
-            log.error("本地MCP工具调用失败: {}", toolInfo.toolId, e);
-            throw new RuntimeException("本地MCP工具调用失败: " + toolInfo.toolId, e);
-        }
+                toolClassMap.size(), localMcpToolCount);
     }
 
     /**
@@ -327,13 +263,15 @@ public class ToolUtil {
             Method apply = functionClass.getMethod("apply", functionRequestClass);
 
             // 解析参数
-            Object arg = JSON.parseObject(argument, functionRequestClass);
+            Object arg = (argument == null || argument.trim().isEmpty())
+                    ? null
+                    : JsonCodec.fromJsonLenient(argument, functionRequestClass);
 
             // 调用函数
             Object functionInstance = functionClass.getDeclaredConstructor().newInstance();
             Object result = apply.invoke(functionInstance, arg);
 
-            String response = JSON.toJSONString(result);
+            String response = JsonCodec.toJson(result);
             log.info("Call Function Success: {} -> {}", functionName, response);
             return response;
 
@@ -342,48 +280,6 @@ public class ToolUtil {
             throw new RuntimeException("Call Function Error: " + functionName, e);
         }
     }
-
-    /**
-     * 调用远程MCP服务
-     */
-    private static String callRemoteMcpService(String functionName, String argument) {
-        try {
-            // 使用反射调用McpGateway，避免直接依赖
-            Class<?> mcpGatewayClass = Class.forName("io.github.lnyocly.ai4j.mcp.gateway.McpGateway");
-            Method getInstanceMethod = mcpGatewayClass.getMethod("getInstance");
-            Object mcpGateway = getInstanceMethod.invoke(null);
-
-            if (mcpGateway != null) {
-                Method isInitializedMethod = mcpGatewayClass.getMethod("isInitialized");
-                Boolean isInitialized = (Boolean) isInitializedMethod.invoke(mcpGateway);
-
-                if (isInitialized) {
-                    Method callToolMethod = mcpGatewayClass.getMethod("callTool", String.class, Object.class);
-
-                    // 解析参数为对象
-                    Object argumentObject;
-                    try {
-                        argumentObject = JSON.parseObject(argument);
-                    } catch (Exception e) {
-                        argumentObject = argument;
-                    }
-
-                    Object futureResult = callToolMethod.invoke(mcpGateway, functionName, argumentObject);
-
-                    if (futureResult instanceof java.util.concurrent.CompletableFuture) {
-                        return (String) ((java.util.concurrent.CompletableFuture<?>) futureResult)
-                                .get(30, java.util.concurrent.TimeUnit.SECONDS);
-                    }
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            log.debug("未找到McpGateway类");
-        } catch (Exception e) {
-            log.debug("远程MCP服务调用异常: {}", e.getMessage());
-        }
-        return null;
-    }
-
 
     /**
      * 获取传统Function工具列表（保持向后兼容）
@@ -435,53 +331,17 @@ public class ToolUtil {
      * @return 工具列表
      */
     public static List<Tool> getAllMcpTools(List<String> mcpServerIds) {
-        List<Tool> tools = new ArrayList<>();
-
         if (mcpServerIds == null || mcpServerIds.isEmpty()) {
-            return tools;
+            return new ArrayList<>();
         }
-
-        log.debug("获取{}个MCP服务的工具", mcpServerIds.size());
-
-        try {
-            // 使用反射调用McpGateway获取工具
-            Class<?> mcpGatewayClass = Class.forName("io.github.lnyocly.ai4j.mcp.gateway.McpGateway");
-            Method getInstanceMethod = mcpGatewayClass.getMethod("getInstance");
-            Object mcpGateway = getInstanceMethod.invoke(null);
-
-            if (mcpGateway != null) {
-                Method isInitializedMethod = mcpGatewayClass.getMethod("isInitialized");
-                Boolean isInitialized = (Boolean) isInitializedMethod.invoke(mcpGateway);
-
-                if (isInitialized) {
-                    Method getAvailableToolsMethod = mcpGatewayClass.getMethod("getAvailableTools");
-                    Object futureResult = getAvailableToolsMethod.invoke(mcpGateway);
-
-                    if (futureResult instanceof java.util.concurrent.CompletableFuture) {
-                        List<Tool.Function> mcpTools = castToolFunctions(
-                                ((java.util.concurrent.CompletableFuture<?>) futureResult)
-                                        .get(10, java.util.concurrent.TimeUnit.SECONDS)
-                        );
-
-                        // 转换为Tool对象
-                        for (Tool.Function function : mcpTools) {
-                            Tool tool = new Tool();
-                            tool.setType("function");
-                            tool.setFunction(function);
-                            tools.add(tool);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("获取MCP工具失败", e);
+        McpToolBridge bridge = findMcpToolBridge();
+        if (bridge == null) {
+            return new ArrayList<>();
         }
-
-        log.info("获取MCP工具完成: 请求{}个服务，获得{}个工具", mcpServerIds.size(), tools.size());
-        return tools;
+        return bridge.getAllMcpTools(mcpServerIds);
     }
 
-   /**
+    /**
      * 获取所有工具（自动识别用户上下文）
      */
     public static List<Tool> getAllTools(List<String> functionList, List<String> mcpServerIds) {
@@ -534,44 +394,24 @@ public class ToolUtil {
      */
     public static List<Tool> getLocalMcpTools() {
         ensureInitialized();
-        List<Tool> tools = new ArrayList<>();
-        for (McpToolInfo mcpTool : mcpToolCache.values()) {
-            Tool tool = createMcpToolEntity(mcpTool);
-            if (tool != null) {
-                tools.add(tool);
-            }
+        McpToolBridge bridge = findMcpToolBridge();
+        if (bridge == null) {
+            return new ArrayList<>();
         }
-        return tools;
+        return bridge.getLocalMcpTools();
     }
 
     /**
      * 获取全局MCP工具
      */
     private static List<Tool> getGlobalMcpTools(List<String> serviceIds) {
-        List<Tool> tools = new ArrayList<>();
-        
-        McpGateway gateway = McpGateway.getInstance();
-        if (gateway == null || !gateway.isInitialized()) {
-            log.warn("MCP网关未初始化，无法获取全局MCP工具");
-            return tools;
+        McpToolBridge bridge = findMcpToolBridge();
+        if (bridge == null) {
+            return new ArrayList<>();
         }
-        
-        try {
-            List<Tool.Function> mcpTools = gateway.getAvailableTools(serviceIds).join();
-            
-            // 转换为Tool对象
-            for (Tool.Function function : mcpTools) {
-                Tool tool = new Tool();
-                tool.setType("function");
-                tool.setFunction(function);
-                tools.add(tool);
-            }
-        } catch (Exception e) {
-            log.error("获取全局MCP工具失败", e);
-        }
-
-        return tools;
+        return bridge.getGlobalMcpTools(serviceIds);
     }
+
     /**
      * 从服务ID列表中提取用户ID
      * @param serviceIds 如 ["user_123_service_github", "user_123_service_slack"]
@@ -612,41 +452,24 @@ public class ToolUtil {
         return actualIds;
     }
 
-   /**
+    /**
      * 获取用户MCP工具
      */
     private static List<Tool> getUserMcpTools(List<String> serviceIds, String userId) {
-        List<Tool> tools = new ArrayList<>();
-        
-        McpGateway gateway = McpGateway.getInstance();
-        if (gateway == null || !gateway.isInitialized()) {
-            log.warn("MCP网关未初始化，无法获取用户MCP工具");
-            return tools;
+        McpToolBridge bridge = findMcpToolBridge();
+        if (bridge == null) {
+            return new ArrayList<>();
         }
-        
-        try {
-            List<Tool.Function> mcpTools = gateway.getUserAvailableTools(serviceIds, userId).join();
-            
-            // 转换为Tool对象
-            for (Tool.Function function : mcpTools) {
-                Tool tool = new Tool();
-                tool.setType("function");
-                tool.setFunction(function);
-                tools.add(tool);
-            }
-        } catch (Exception e) {
-            log.error("获取用户MCP工具失败: userId={}", userId, e);
-        }
-
-        return tools;
+        return bridge.getUserMcpTools(serviceIds, userId);
     }
-    
+
     /**
      * 扫描传统Function工具
      */
     private static void scanFunctionTools() {
         try {
-            Set<Class<?>> functionSet = getReflections().getTypesAnnotatedWith(FunctionCall.class);
+            Set<Class<?>> functionSet = ClassPathAnnotationScanner.findTypesAnnotatedWith(
+                    SCAN_BASE_PACKAGE, FunctionCall.class);
 
             for (Class<?> functionClass : functionSet) {
                 try {
@@ -678,48 +501,6 @@ public class ToolUtil {
     }
 
     /**
-     * 扫描本地MCP工具
-     */
-    private static void scanMcpTools() {
-        try {
-            Set<Class<?>> mcpServiceClasses = getReflections().getTypesAnnotatedWith(McpService.class);
-
-            for (Class<?> serviceClass : mcpServiceClasses) {
-                try {
-                    McpService mcpService = serviceClass.getAnnotation(McpService.class);
-                    String serviceName = mcpService.name().isEmpty() ?
-                            serviceClass.getSimpleName() : mcpService.name();
-
-                    // 扫描方法
-                    Method[] methods = serviceClass.getDeclaredMethods();
-                    for (Method method : methods) {
-                        McpTool mcpTool = method.getAnnotation(McpTool.class);
-                        if (mcpTool != null) {
-                            String toolName = mcpTool.name().isEmpty() ?
-                                    method.getName() : mcpTool.name();
-
-                            // 统一使用API友好的命名方式（下划线分隔）
-                            String toolId = generateApiFunctionName(serviceName, toolName);
-
-                            McpToolInfo toolInfo = new McpToolInfo(
-                                    toolId, mcpTool.description(), serviceClass, method);
-                            mcpToolCache.put(toolId, toolInfo);
-
-                            log.debug("注册本地MCP工具: {}", toolId);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error("处理MCP服务类失败: {}", serviceClass.getName(), e);
-                }
-            }
-
-            log.info("扫描本地MCP工具完成: {}个", mcpToolCache.size());
-        } catch (Exception e) {
-            log.error("扫描本地MCP工具失败", e);
-        }
-    }
-
-    /**
      * 获取工具实体对象
      */
     public static Tool getToolEntity(String functionName) {
@@ -741,48 +522,6 @@ public class ToolUtil {
         return null;
     }
 
-
-    /**
-     * 创建本地MCP工具实体
-     */
-    private static Tool createMcpToolEntity(McpToolInfo mcpTool) {
-        try {
-            Tool.Function function = new Tool.Function();
-            function.setName(mcpTool.toolId);  // 使用工具ID作为函数名
-            function.setDescription(mcpTool.description);
-
-            // 生成参数定义
-            Map<String, Tool.Function.Property> parameters = new HashMap<>();
-            List<String> requiredParameters = new ArrayList<>();
-
-            Parameter[] methodParams = mcpTool.method.getParameters();
-            for (Parameter param : methodParams) {
-                McpParameter mcpParam = param.getAnnotation(McpParameter.class);
-                String paramName = getParameterName(param);
-
-                Tool.Function.Property property = createPropertyFromType(param.getType(),
-                        mcpParam != null ? mcpParam.description() : "");
-                parameters.put(paramName, property);
-
-                if (mcpParam == null || mcpParam.required()) {
-                    requiredParameters.add(paramName);
-                }
-            }
-
-            Tool.Function.Parameter parameter = new Tool.Function.Parameter("object", parameters, requiredParameters);
-            function.setParameters(parameter);
-
-            Tool tool = new Tool();
-            tool.setType("function");
-            tool.setFunction(function);
-            return tool;
-
-        } catch (Exception e) {
-            log.error("创建MCP工具实体失败: {}", mcpTool.toolId, e);
-            return null;
-        }
-    }
-
     /**
      * 获取Function实体定义
      */
@@ -792,7 +531,8 @@ public class ToolUtil {
         }
 
         try {
-            Set<Class<?>> functionSet = getReflections().getTypesAnnotatedWith(FunctionCall.class);
+            Set<Class<?>> functionSet = ClassPathAnnotationScanner.findTypesAnnotatedWith(
+                    SCAN_BASE_PACKAGE, FunctionCall.class);
 
             for (Class<?> functionClass : functionSet) {
                 try {
@@ -817,77 +557,6 @@ public class ToolUtil {
             log.error("获取Function实体失败: {}", functionName, e);
         }
         return null;
-    }
-
-
-
-    /**
-     * 生成符合OpenAI API规范的函数名
-     * 规则：只能包含字母、数字、下划线和连字符，长度不超过64个字符
-     */
-    private static String generateApiFunctionName(String serviceName, String toolName) {
-        // 将服务名和工具名组合，使用下划线连接
-        String combined = serviceName + "_" + toolName;
-
-        // 替换不符合规范的字符
-        String normalized = combined
-                .replaceAll("[^a-zA-Z0-9_-]", "_")  // 替换非法字符为下划线
-                .replaceAll("_{2,}", "_")           // 多个连续下划线替换为单个
-                .replaceAll("^_+|_+$", "");         // 移除开头和结尾的下划线
-
-        // 确保长度不超过64个字符
-        if (normalized.length() > 64) {
-            normalized = normalized.substring(0, 64);
-        }
-
-        // 确保不为空且以字母开头
-        if (normalized.isEmpty() || !Character.isLetter(normalized.charAt(0))) {
-            normalized = "tool_" + normalized;
-        }
-
-        return normalized;
-    }
-
-    /**
-     * 获取参数名称
-     */
-    private static String getParameterName(Parameter param) {
-        McpParameter mcpParam = param.getAnnotation(McpParameter.class);
-        if (mcpParam != null && !mcpParam.name().isEmpty()) {
-            return mcpParam.name();
-        }
-        return param.getName();
-    }
-
-    /**
-     * 参数值类型转换
-     */
-    private static Object convertParameterValue(Object value, Class<?> targetType) {
-        if (value == null) {
-            return null;
-        }
-
-        if (targetType.isAssignableFrom(value.getClass())) {
-            return value;
-        }
-
-        String strValue = value.toString();
-
-        if (targetType == String.class) {
-            return strValue;
-        } else if (targetType == Integer.class || targetType == int.class) {
-            return Integer.valueOf(strValue);
-        } else if (targetType == Long.class || targetType == long.class) {
-            return Long.valueOf(strValue);
-        } else if (targetType == Boolean.class || targetType == boolean.class) {
-            return Boolean.valueOf(strValue);
-        } else if (targetType == Double.class || targetType == double.class) {
-            return Double.valueOf(strValue);
-        } else if (targetType == Float.class || targetType == float.class) {
-            return Float.valueOf(strValue);
-        }
-
-        return value;
     }
 
     /**
@@ -948,7 +617,7 @@ public class ToolUtil {
     /**
      * 从类型创建属性对象
      */
-    private static Tool.Function.Property createPropertyFromType(Class<?> fieldType, String description) {
+    public static Tool.Function.Property createPropertyFromType(Class<?> fieldType, String description) {
         Tool.Function.Property property = new Tool.Function.Property();
 
         if (fieldType.isEnum()) {
@@ -1028,18 +697,5 @@ public class ToolUtil {
     @Deprecated
     public static String invokeUnified(String functionName, String argument) {
         return invoke(functionName, argument);
-    }
-
-    private static List<Tool.Function> castToolFunctions(Object value) {
-        List<Tool.Function> functions = new ArrayList<>();
-        if (!(value instanceof List<?>)) {
-            return functions;
-        }
-        for (Object item : (List<?>) value) {
-            if (item instanceof Tool.Function) {
-                functions.add((Tool.Function) item);
-            }
-        }
-        return functions;
     }
 }

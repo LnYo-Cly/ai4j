@@ -1,10 +1,11 @@
 package io.github.lnyocly.ai4j.platform.hunyuan.chat;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.HunyuanConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -95,11 +96,11 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     return;
                 }
 
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonCodec.mapper();
                 HunyuanChatCompletionResponse hunyuanChatCompletionResponse = null;
                 try {
                     hunyuanChatCompletionResponse = mapper.readValue(HunyuanJsonUtil.toSnakeCaseJson(data), HunyuanChatCompletionResponse.class);
-                } catch (JsonProcessingException e) {
+                } catch (Exception e) {
                     throw new CommonException("解析混元Hunyuan Chat Completion Response失败");
                 }
 
@@ -124,7 +125,7 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
                     //this.onClosed(eventSource);
                 }
 
-                eventSourceListener.onEvent(eventSource, id, type, JSON.toJSONString(response));
+                eventSourceListener.onEvent(eventSource, id, type, JsonCodec.toJson(response));
             }
 
             @Override
@@ -190,61 +191,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             finishReason = null;
 
             // 构造请求
-            ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(hunyuanChatCompletion);
-
-            // 整理tools
-            JSONObject jsonObject = JSON.parseObject(requestString);
-            // 获取 Tools 数组
-            JSONArray toolsArray = jsonObject.getJSONArray("tools");
-            if(toolsArray!= null && !toolsArray.isEmpty()){
-                // 遍历并修改 Tools 中的每个对象
-                for (int i = 0; i < toolsArray.size(); i++) {
-                    JSONObject tool = toolsArray.getJSONObject(i);
-
-                    // 重新构建 Function 对象
-                    JSONObject function = tool.getJSONObject("function");
-                    JSONObject newFunction = new JSONObject();
-
-                    newFunction.put("name", function.getString("name"));
-                    newFunction.put("description", function.getString("description"));
-                    newFunction.put("parameters", function.getJSONObject("parameters").toJSONString());
-
-                    // 替换旧的 Function 对象
-                    tool.put("function", newFunction);
-                    tool.put("type", "function");
-                }
-            }
-
-            /**
-             * Messages 中 Contents 字段仅 hunyuan-vision 模型支持
-             * hunyuan模型，识图多模态类只能放在Contents字段
-             */
-            if("hunyuan-vision".equals(chatCompletion.getModel())){
-                // 获取所有的content字段
-                JSONArray messagesArray = jsonObject.getJSONArray("messages");
-                if(messagesArray!= null && !messagesArray.isEmpty()){
-                    for (int i = 0; i < messagesArray.size(); i++) {
-                        JSONObject message = messagesArray.getJSONObject(i);
-                        // 获取当前message的content字段
-                        String content = message.getString("content");
-                        // 将content内容，判断是否可以转换为ChatMessage.MultiModal类型
-                        if(content!=null && content.startsWith("[") && content.endsWith("]")) {
-                            List<Content.MultiModal> multiModals = JSON.parseArray(content, Content.MultiModal.class);
-                            if(multiModals!=null && !multiModals.isEmpty()){
-                                // 将当前的content转换为contents
-                                message.put("contents", multiModals);
-                                // 删除原来的content key
-                                message.remove("content");
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 将修改后的 JSON 对象转为字符串
-            requestString = jsonObject.toJSONString();
-            requestString = HunyuanJsonUtil.toCamelCaseWithUppercaseJson(requestString);
+            ObjectMapper mapper = JsonCodec.mapper();
+            String requestString = buildHunyuanRequestBody(hunyuanChatCompletion, chatCompletion.getModel(), mapper);
             String authorization = BearerTokenUtils.getAuthorization(apiKey,HunyuanConstant.ChatCompletions,requestString);
 
             Request request = new Request.Builder()
@@ -260,7 +208,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             if (execute.isSuccessful() && execute.body() != null){
                 String responseString = execute.body().string();
                 responseString = HunyuanJsonUtil.toSnakeCaseJson(responseString);
-                responseString = JSON.parseObject(responseString).get("response").toString();
+                JsonNode responseNode = JsonCodec.readTree(responseString).get("response");
+                responseString = responseNode == null ? "{}" : responseNode.toString();
 
                 HunyuanChatCompletionResponse hunyuanChatCompletionResponse = mapper.readValue(responseString, HunyuanChatCompletionResponse.class);
 
@@ -370,61 +319,8 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
             finishReason = null;
 
             // 构造请求
-            ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(hunyuanChatCompletion);
-
-            // 整理tools
-            JSONObject jsonObject = JSON.parseObject(requestString);
-            // 获取 Tools 数组
-            JSONArray toolsArray = jsonObject.getJSONArray("tools");
-            if(toolsArray!= null && !toolsArray.isEmpty()){
-                // 遍历并修改 Tools 中的每个对象
-                for (int i = 0; i < toolsArray.size(); i++) {
-                    JSONObject tool = toolsArray.getJSONObject(i);
-
-                    // 重新构建 Function 对象
-                    JSONObject function = tool.getJSONObject("function");
-                    JSONObject newFunction = new JSONObject();
-
-                    newFunction.put("name", function.getString("name"));
-                    newFunction.put("description", function.getString("description"));
-                    newFunction.put("parameters", function.getJSONObject("parameters").toJSONString());
-
-                    // 替换旧的 Function 对象
-                    tool.put("function", newFunction);
-                    tool.put("type", "function");
-                }
-            }
-
-            /**
-             * Messages 中 Contents 字段仅 hunyuan-vision 模型支持
-             * hunyuan模型，识图多模态类只能放在Contents字段
-             */
-            if("hunyuan-vision".equals(chatCompletion.getModel())){
-                // 获取所有的content字段
-                JSONArray messagesArray = jsonObject.getJSONArray("messages");
-                if(messagesArray!= null && !messagesArray.isEmpty()){
-                    for (int i = 0; i < messagesArray.size(); i++) {
-                        JSONObject message = messagesArray.getJSONObject(i);
-                        // 获取当前message的content字段
-                        String content = message.getString("content");
-                        // 将content内容，判断是否可以转换为ChatMessage.MultiModal类型
-                        if(content!=null && content.startsWith("[") && content.endsWith("]")) {
-                            List<Content.MultiModal> multiModals = JSON.parseArray(content, Content.MultiModal.class);
-                            if(multiModals!=null && !multiModals.isEmpty()){
-                                // 将当前的content转换为contents
-                                message.put("contents", multiModals);
-                                // 删除原来的content key
-                                message.remove("content");
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 将修改后的 JSON 对象转为字符串
-            requestString = jsonObject.toJSONString();
-            requestString = HunyuanJsonUtil.toCamelCaseWithUppercaseJson(requestString);
+            ObjectMapper mapper = JsonCodec.mapper();
+            String requestString = buildHunyuanRequestBody(hunyuanChatCompletion, chatCompletion.getModel(), mapper);
             String authorization = BearerTokenUtils.getAuthorization(apiKey,HunyuanConstant.ChatCompletions,requestString);
 
             Request request = new Request.Builder()
@@ -484,6 +380,77 @@ public class HunyuanChatService implements IChatService, ParameterConvert<Hunyua
     @Override
     public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         this.chatCompletionStream(null, null, chatCompletion, eventSourceListener);
+    }
+
+    private String buildHunyuanRequestBody(HunyuanChatCompletion hunyuanChatCompletion,
+                                          String model,
+                                          ObjectMapper mapper) throws Exception {
+        String requestString = mapper.writeValueAsString(hunyuanChatCompletion);
+        JsonNode rootNode = JsonCodec.readTree(requestString);
+        if (!(rootNode instanceof ObjectNode)) {
+            return HunyuanJsonUtil.toCamelCaseWithUppercaseJson(requestString);
+        }
+        ObjectNode jsonObject = (ObjectNode) rootNode;
+
+        JsonNode toolsNode = jsonObject.get("tools");
+        if (toolsNode != null && toolsNode.isArray() && !toolsNode.isEmpty()) {
+            for (JsonNode toolNode : toolsNode) {
+                if (!(toolNode instanceof ObjectNode)) {
+                    continue;
+                }
+                ObjectNode tool = (ObjectNode) toolNode;
+                JsonNode functionNode = tool.get("function");
+                if (functionNode != null && functionNode.isObject()) {
+                    ObjectNode newFunction = JsonCodec.createObjectNode();
+                    if (functionNode.has("name")) {
+                        newFunction.set("name", functionNode.get("name"));
+                    }
+                    if (functionNode.has("description")) {
+                        newFunction.set("description", functionNode.get("description"));
+                    }
+                    JsonNode params = functionNode.get("parameters");
+                    newFunction.put("parameters", params == null || params.isNull() ? null : params.toString());
+                    tool.set("function", newFunction);
+                }
+                tool.put("type", "function");
+            }
+        }
+
+        if ("hunyuan-vision".equals(model)) {
+            JsonNode messagesNode = jsonObject.get("messages");
+            if (messagesNode != null && messagesNode.isArray() && !messagesNode.isEmpty()) {
+                for (JsonNode msgNode : messagesNode) {
+                    if (!(msgNode instanceof ObjectNode)) {
+                        continue;
+                    }
+                    ObjectNode message = (ObjectNode) msgNode;
+                    JsonNode contentNode = message.get("content");
+                    List<Content.MultiModal> multiModals = null;
+                    if (contentNode != null && contentNode.isArray()) {
+                        multiModals = JsonCodec.mapper().convertValue(
+                                contentNode,
+                                new TypeReference<List<Content.MultiModal>>() {
+                                }
+                        );
+                    } else if (contentNode != null && contentNode.isTextual()) {
+                        String content = contentNode.asText();
+                        if (content.startsWith("[") && content.endsWith("]")) {
+                            multiModals = JsonCodec.fromJson(
+                                    content,
+                                    new TypeReference<List<Content.MultiModal>>() {
+                                    }
+                            );
+                        }
+                    }
+                    if (multiModals != null && !multiModals.isEmpty()) {
+                        message.set("contents", JsonCodec.valueToTree(multiModals));
+                        message.remove("content");
+                    }
+                }
+            }
+        }
+
+        return HunyuanJsonUtil.toCamelCaseWithUppercaseJson(jsonObject.toString());
     }
 }
 

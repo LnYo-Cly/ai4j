@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -69,7 +70,7 @@ public class OpenAiResponsesService implements IResponsesService {
         this.openAiConfig = configuration.getOpenAiConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.tools;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.annotation.FunctionCall;
 import io.github.lnyocly.ai4j.annotation.FunctionParameter;
 import io.github.lnyocly.ai4j.annotation.FunctionRequest;
@@ -16,7 +16,7 @@ public class WriteFileFunction implements Function<WriteFileFunction.Request, St
     @Override
     public String apply(Request request) {
         try {
-            return BuiltInToolExecutor.invoke(BuiltInTools.WRITE_FILE, JSON.toJSONString(request), null);
+            return BuiltInToolExecutor.invoke(BuiltInTools.WRITE_FILE, JsonCodec.toJson(request), null);
         } catch (Exception ex) {
             throw new RuntimeException("write_file failed", ex);
         }

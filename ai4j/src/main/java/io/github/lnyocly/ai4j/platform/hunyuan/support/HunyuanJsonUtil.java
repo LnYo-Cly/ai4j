@@ -1,11 +1,13 @@
 package io.github.lnyocly.ai4j.platform.hunyuan.support;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @Author cly
@@ -26,39 +28,39 @@ public final class HunyuanJsonUtil {
 
     // 根据参数 isCamelCase 决定转换为驼峰命名还是下划线命名
     private static String convertJsonString(String json, boolean isCamelCase) {
-        JSONObject jsonObject = JSON.parseObject(json);
-        JSONObject newJsonObject = processJsonObject(jsonObject, isCamelCase);
-        return newJsonObject.toJSONString();
+        JsonNode root = JsonCodec.readTree(json);
+        JsonNode converted = processJsonNode(root, isCamelCase);
+        return converted.toString();
     }
 
-    private static JSONObject processJsonObject(JSONObject jsonObject, boolean isCamelCase) {
-        JSONObject newJsonObject = new JSONObject();
-        Set<Map.Entry<String, Object>> entries = jsonObject.entrySet();
-        for (Map.Entry<String, Object> entry : entries) {
+    private static JsonNode processJsonNode(JsonNode node, boolean isCamelCase) {
+        if (node == null || node.isNull()) {
+            return node;
+        }
+        if (node.isObject()) {
+            return processJsonObject((ObjectNode) node, isCamelCase);
+        }
+        if (node.isArray()) {
+            return processJsonArray((ArrayNode) node, isCamelCase);
+        }
+        return node;
+    }
+
+    private static ObjectNode processJsonObject(ObjectNode jsonObject, boolean isCamelCase) {
+        ObjectNode newJsonObject = JsonCodec.createObjectNode();
+        Iterator<Map.Entry<String, JsonNode>> entries = jsonObject.fields();
+        while (entries.hasNext()) {
+            Map.Entry<String, JsonNode> entry = entries.next();
             String newKey = isCamelCase ? toCamelCaseWithUppercase(entry.getKey()) : toSnakeCase(entry.getKey());
-            Object value = entry.getValue();
-
-            if (value instanceof JSONObject) {
-                value = processJsonObject((JSONObject) value, isCamelCase);
-            } else if (value instanceof JSONArray) {
-                value = processJsonArray((JSONArray) value, isCamelCase);
-            }
-
-            newJsonObject.put(newKey, value);
+            newJsonObject.set(newKey, processJsonNode(entry.getValue(), isCamelCase));
         }
         return newJsonObject;
     }
 
-    private static JSONArray processJsonArray(JSONArray jsonArray, boolean isCamelCase) {
-        JSONArray newArray = new JSONArray();
-        for (Object element : jsonArray) {
-            if (element instanceof JSONObject) {
-                newArray.add(processJsonObject((JSONObject) element, isCamelCase));
-            } else if (element instanceof JSONArray) {
-                newArray.add(processJsonArray((JSONArray) element, isCamelCase));
-            } else {
-                newArray.add(element);
-            }
+    private static ArrayNode processJsonArray(ArrayNode jsonArray, boolean isCamelCase) {
+        ArrayNode newArray = JsonCodec.createArrayNode();
+        for (int i = 0; i < jsonArray.size(); i++) {
+            newArray.add(processJsonNode(jsonArray.get(i), isCamelCase));
         }
         return newArray;
     }
@@ -68,8 +70,8 @@ public final class HunyuanJsonUtil {
         StringBuilder camelCaseKey = new StringBuilder();
         for (String part : parts) {
             if (part.length() > 0) {
-                camelCaseKey.append(part.substring(0, 1).toUpperCase())
-                        .append(part.substring(1).toLowerCase());
+                camelCaseKey.append(part.substring(0, 1).toUpperCase(Locale.ROOT))
+                        .append(part.substring(1).toLowerCase(Locale.ROOT));
             }
         }
         return camelCaseKey.toString();

@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agentflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.agentflow.workflow.AgentFlowWorkflowRequest;
 import io.github.lnyocly.ai4j.agentflow.workflow.AgentFlowWorkflowResponse;
 import io.github.lnyocly.ai4j.agentflow.workflow.N8nAgentFlowWorkflowService;
@@ -41,8 +41,8 @@ public class N8nAgentFlowWorkflowServiceTest {
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/travel-hook", request.getPath());
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("Paris", body.getString("city"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("Paris", body.path("city").asText());
         } finally {
             server.shutdown();
         }

@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.platform.openai.video;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
@@ -48,12 +48,12 @@ public class OpenAiVideoServiceTest {
             Assert.assertEquals("/v1/videos", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("veo3.1", body.getString("model"));
-            Assert.assertEquals("飞上天", body.getString("prompt"));
-            Assert.assertEquals(Integer.valueOf(8), body.getInteger("seconds"));
-            Assert.assertEquals("1280x720", body.getString("size"));
-            Assert.assertEquals(Boolean.TRUE, body.getBoolean("enable_upsample"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("veo3.1", body.path("model").asText());
+            Assert.assertEquals("飞上天", body.path("prompt").asText());
+            Assert.assertEquals(8, body.path("seconds").asInt());
+            Assert.assertEquals("1280x720", body.path("size").asText());
+            Assert.assertTrue(body.path("enable_upsample").asBoolean());
         } finally {
             server.shutdown();
         }
@@ -78,8 +78,8 @@ public class OpenAiVideoServiceTest {
             Assert.assertNotNull(request);
             Assert.assertEquals("/v1/videos", request.getPath());
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("https://cdn.example/first.png", body.getString("first_frame_image"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("https://cdn.example/first.png", body.path("first_frame_image").asText());
         } finally {
             server.shutdown();
         }
@@ -159,8 +159,8 @@ public class OpenAiVideoServiceTest {
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/v1/videos/video-1/remix", request.getPath());
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("让背景变成蓝天", body.getString("prompt"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("让背景变成蓝天", body.path("prompt").asText());
         } finally {
             server.shutdown();
         }

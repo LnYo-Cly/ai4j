@@ -1,8 +1,10 @@
 package io.github.lnyocly.ai4j.vector.store.qdrant;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.QdrantConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -33,6 +35,9 @@ import java.util.Map;
 public class QdrantVectorStore implements VectorStore {
 
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get(Constants.APPLICATION_JSON);
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
+            new TypeReference<LinkedHashMap<String, Object>>() {
+            };
 
     private final QdrantConfig config;
     private final OkHttpClient okHttpClient;
@@ -62,17 +67,17 @@ public class QdrantVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONArray points = new JSONArray();
+        ArrayNode points = JsonCodec.createArrayNode();
         int index = 0;
         for (VectorRecord record : records) {
             if (record == null || record.getVector() == null || record.getVector().isEmpty()) {
                 index++;
                 continue;
             }
-            JSONObject point = new JSONObject();
+            ObjectNode point = JsonCodec.createObjectNode();
             point.put("id", resolveId(record.getId(), index));
-            point.put("vector", namedVector(record.getVector()));
-            point.put("payload", payload(record));
+            point.set("vector", namedVector(record.getVector()));
+            point.set("payload", payload(record));
             points.add(point);
             index++;
         }
@@ -80,8 +85,8 @@ public class QdrantVectorStore implements VectorStore {
             return 0;
         }
 
-        JSONObject body = new JSONObject();
-        body.put("points", points);
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("points", points);
         executePost(url(config.getUpsert(), dataset), body);
         return points.size();
     }
@@ -93,38 +98,40 @@ public class QdrantVectorStore implements VectorStore {
             return Collections.emptyList();
         }
 
-        JSONObject body = new JSONObject();
-        body.put("query", request.getVector());
-        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? Integer.valueOf(10) : request.getTopK());
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("query", JsonCodec.valueToTree(request.getVector()));
+        body.put("limit", request.getTopK() == null || request.getTopK() <= 0 ? 10 : request.getTopK().intValue());
         body.put("with_payload", request.getIncludeMetadata() == null ? Boolean.TRUE : request.getIncludeMetadata());
         body.put("with_vector", request.getIncludeVector() == null ? Boolean.FALSE : request.getIncludeVector());
         if (trimToNull(config.getVectorName()) != null) {
             body.put("using", trimToNull(config.getVectorName()));
         }
-        JSONObject filter = toFilter(request.getFilter());
+        ObjectNode filter = toFilter(request.getFilter());
         if (filter != null) {
-            body.put("filter", filter);
+            body.set("filter", filter);
         }
 
-        JSONObject response = executePost(url(config.getQuery(), dataset), body);
-        JSONObject result = response == null ? null : response.getJSONObject("result");
-        JSONArray points = result == null ? null : result.getJSONArray("points");
-        if (points == null || points.isEmpty()) {
+        ObjectNode response = executePost(url(config.getQuery(), dataset), body);
+        JsonNode result = response == null ? null : response.get("result");
+        JsonNode points = result == null ? null : result.get("points");
+        if (points == null || !points.isArray() || points.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<VectorSearchResult> results = new ArrayList<VectorSearchResult>();
         for (int i = 0; i < points.size(); i++) {
-            JSONObject point = points.getJSONObject(i);
-            if (point == null) {
+            JsonNode point = points.get(i);
+            if (point == null || !point.isObject()) {
                 continue;
             }
-            Map<String, Object> metadata = payloadMap(point.getJSONObject("payload"));
+            Map<String, Object> metadata = payloadMap(point.get("payload"));
+            JsonNode idNode = point.get("id");
+            JsonNode scoreNode = point.get("score");
             results.add(VectorSearchResult.builder()
-                    .id(stringValue(point.get("id")))
-                    .score(point.getFloat("score"))
+                    .id(idNode == null || idNode.isNull() ? null : stringValue(idNode.isValueNode() ? idNode.asText() : idNode.toString()))
+                    .score(scoreNode == null || scoreNode.isNull() ? null : Float.valueOf(scoreNode.floatValue()))
                     .content(stringValue(metadata.get(Constants.METADATA_KEY)))
-                    .vector(request.getIncludeVector() != null && request.getIncludeVector() ? vectorValue(point.get("vector")) : null)
+                    .vector(Boolean.TRUE.equals(request.getIncludeVector()) ? vectorValue(point.get("vector")) : null)
                     .metadata(metadata)
                     .build());
         }
@@ -134,21 +141,21 @@ public class QdrantVectorStore implements VectorStore {
     @Override
     public boolean exists(VectorExistsRequest request) throws Exception {
         String dataset = requiredDataset(request == null ? null : request.getDataset());
-        JSONObject filter = toFilter(request == null ? null : request.getFilter());
+        ObjectNode filter = toFilter(request == null ? null : request.getFilter());
         if (filter == null) {
             return false;
         }
 
-        JSONObject body = new JSONObject();
-        body.put("filter", filter);
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("filter", filter);
         body.put("limit", 1);
         body.put("with_payload", false);
         body.put("with_vector", false);
 
-        JSONObject response = executePost(url(config.getScroll(), dataset), body);
-        JSONObject result = response == null ? null : response.getJSONObject("result");
-        JSONArray points = result == null ? null : result.getJSONArray("points");
-        return points != null && !points.isEmpty();
+        ObjectNode response = executePost(url(config.getScroll(), dataset), body);
+        JsonNode result = response == null ? null : response.get("result");
+        JsonNode points = result == null ? null : result.get("points");
+        return points != null && points.isArray() && !points.isEmpty();
     }
 
     @Override
@@ -158,17 +165,17 @@ public class QdrantVectorStore implements VectorStore {
             return false;
         }
 
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         if (request.getIds() != null && !request.getIds().isEmpty()) {
-            body.put("points", request.getIds());
+            body.set("points", JsonCodec.valueToTree(request.getIds()));
         } else {
-            JSONObject filter = toFilter(request.getFilter());
+            ObjectNode filter = toFilter(request.getFilter());
             if (filter == null && request.isDeleteAll()) {
-                filter = new JSONObject();
-                filter.put("must", new JSONArray());
+                filter = JsonCodec.createObjectNode();
+                filter.set("must", JsonCodec.createArrayNode());
             }
             if (filter != null) {
-                body.put("filter", filter);
+                body.set("filter", filter);
             }
         }
         executePost(url(config.getDelete(), dataset), body);
@@ -186,68 +193,68 @@ public class QdrantVectorStore implements VectorStore {
                 .build();
     }
 
-    private JSONObject payload(VectorRecord record) {
-        JSONObject payload = new JSONObject();
+    private ObjectNode payload(VectorRecord record) {
+        ObjectNode payload = JsonCodec.createObjectNode();
         if (record.getMetadata() != null) {
             for (Map.Entry<String, Object> entry : record.getMetadata().entrySet()) {
                 if (entry != null && entry.getKey() != null && entry.getValue() != null) {
-                    payload.put(entry.getKey(), entry.getValue());
+                    payload.set(entry.getKey(), JsonCodec.valueToTree(entry.getValue()));
                 }
             }
         }
         String content = trimToNull(record.getContent());
-        if (content != null && !payload.containsKey(Constants.METADATA_KEY)) {
+        if (content != null && !payload.has(Constants.METADATA_KEY)) {
             payload.put(Constants.METADATA_KEY, content);
         }
         return payload;
     }
 
-    private Object namedVector(List<Float> vector) {
+    private JsonNode namedVector(List<Float> vector) {
         if (trimToNull(config.getVectorName()) == null) {
-            return vector;
+            return JsonCodec.valueToTree(vector);
         }
-        JSONObject named = new JSONObject();
-        named.put(config.getVectorName().trim(), vector);
+        ObjectNode named = JsonCodec.createObjectNode();
+        named.set(config.getVectorName().trim(), JsonCodec.valueToTree(vector));
         return named;
     }
 
-    private JSONObject toFilter(Map<String, Object> filter) {
+    private ObjectNode toFilter(Map<String, Object> filter) {
         if (filter == null || filter.isEmpty()) {
             return null;
         }
-        JSONArray must = new JSONArray();
+        ArrayNode must = JsonCodec.createArrayNode();
         for (Map.Entry<String, Object> entry : filter.entrySet()) {
             if (entry == null || trimToNull(entry.getKey()) == null || entry.getValue() == null) {
                 continue;
             }
-            JSONObject condition = new JSONObject();
+            ObjectNode condition = JsonCodec.createObjectNode();
             condition.put("key", entry.getKey());
-            JSONObject match = new JSONObject();
+            ObjectNode match = JsonCodec.createObjectNode();
             Object value = entry.getValue();
             if (value instanceof Collection) {
-                JSONArray any = new JSONArray();
+                ArrayNode any = JsonCodec.createArrayNode();
                 for (Object item : (Collection<?>) value) {
-                    any.add(item);
+                    any.add(JsonCodec.valueToTree(item));
                 }
-                match.put("any", any);
+                match.set("any", any);
             } else {
-                match.put("value", value);
+                match.set("value", JsonCodec.valueToTree(value));
             }
-            condition.put("match", match);
+            condition.set("match", match);
             must.add(condition);
         }
         if (must.isEmpty()) {
             return null;
         }
-        JSONObject result = new JSONObject();
-        result.put("must", must);
+        ObjectNode result = JsonCodec.createObjectNode();
+        result.set("must", must);
         return result;
     }
 
-    private JSONObject executePost(String url, JSONObject payload) throws Exception {
+    private ObjectNode executePost(String url, ObjectNode payload) throws Exception {
         Request.Builder builder = new Request.Builder()
                 .url(url)
-                .post(RequestBody.create(JSON.toJSONString(payload), JSON_MEDIA_TYPE))
+                .post(RequestBody.create(JsonCodec.toJson(payload), JSON_MEDIA_TYPE))
                 .header("accept", Constants.APPLICATION_JSON)
                 .header("content-type", Constants.APPLICATION_JSON);
         if (trimToNull(config.getApiKey()) != null) {
@@ -260,39 +267,39 @@ public class QdrantVectorStore implements VectorStore {
             }
             ResponseBody responseBody = response.body();
             String body = responseBody == null ? "{}" : responseBody.string();
-            return JSON.parseObject(body);
+            if (body.trim().isEmpty()) {
+                return JsonCodec.createObjectNode();
+            }
+            JsonNode node = JsonCodec.readTree(body);
+            return node != null && node.isObject() ? (ObjectNode) node : JsonCodec.createObjectNode();
         }
     }
 
-    private List<Float> vectorValue(Object rawVector) {
-        if (rawVector == null) {
+    private List<Float> vectorValue(JsonNode rawVector) {
+        if (rawVector == null || rawVector.isNull()) {
             return null;
         }
-        JSONArray values = null;
-        if (rawVector instanceof JSONArray) {
-            values = (JSONArray) rawVector;
-        } else if (rawVector instanceof JSONObject && trimToNull(config.getVectorName()) != null) {
-            values = ((JSONObject) rawVector).getJSONArray(config.getVectorName().trim());
+        JsonNode values = null;
+        if (rawVector.isArray()) {
+            values = rawVector;
+        } else if (rawVector.isObject() && trimToNull(config.getVectorName()) != null) {
+            values = rawVector.get(config.getVectorName().trim());
         }
-        if (values == null) {
+        if (values == null || !values.isArray()) {
             return null;
         }
-        List<Float> vector = new ArrayList<Float>();
+        List<Float> vector = new ArrayList<Float>(values.size());
         for (int i = 0; i < values.size(); i++) {
-            vector.add(values.getFloat(i));
+            vector.add(values.get(i).floatValue());
         }
         return vector;
     }
 
-    private Map<String, Object> payloadMap(JSONObject payload) {
-        if (payload == null || payload.isEmpty()) {
+    private Map<String, Object> payloadMap(JsonNode payload) {
+        if (payload == null || !payload.isObject() || payload.size() == 0) {
             return Collections.emptyMap();
         }
-        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
-        for (String key : payload.keySet()) {
-            metadata.put(key, payload.get(key));
-        }
-        return metadata;
+        return JsonCodec.mapper().convertValue(payload, MAP_TYPE);
     }
 
     private String url(String template, String dataset) {

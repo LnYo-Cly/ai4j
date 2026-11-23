@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.exception.error;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,19 +18,27 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class HunyuanError {
+    @JsonProperty("Response")
+    @JsonAlias("response")
     private Response Response;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public class Response{
+    public static class Response {
+        @JsonProperty("Error")
+        @JsonAlias("error")
         private Error Error;
 
         @Data
         @AllArgsConstructor
         @NoArgsConstructor
-        public class Error{
+        public static class Error {
+            @JsonProperty("Code")
+            @JsonAlias("code")
             private String Code;
+            @JsonProperty("Message")
+            @JsonAlias("message")
             private String Message;
         }
     }

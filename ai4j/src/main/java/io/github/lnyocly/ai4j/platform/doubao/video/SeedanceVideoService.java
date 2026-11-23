@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.doubao.video;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
@@ -51,7 +52,7 @@ public class SeedanceVideoService implements IVideoService {
 
     private final DoubaoConfig doubaoConfig;
     private final OkHttpClient okHttpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonCodec.mapper();
 
     public SeedanceVideoService(Configuration configuration) {
         this.doubaoConfig = configuration.getDoubaoConfig();

@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.document.mineru;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUBatchRequest;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUBatchStatus;
 import io.github.lnyocly.ai4j.document.mineru.entity.MinerUFileSpec;
@@ -49,11 +49,11 @@ public class MinerUServiceTest {
             Assert.assertNotNull(request);
             Assert.assertEquals("/api/v4/extract/task", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("https://example.com/a.pdf", body.getString("url"));
-            Assert.assertEquals("vlm", body.getString("model_version"));
-            Assert.assertEquals(Boolean.TRUE, body.getBoolean("enable_table"));
-            Assert.assertEquals("ch", body.getString("language"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("https://example.com/a.pdf", body.path("url").asText());
+            Assert.assertEquals("vlm", body.path("model_version").asText());
+            Assert.assertTrue(body.path("enable_table").asBoolean());
+            Assert.assertEquals("ch", body.path("language").asText());
         } finally {
             server.shutdown();
         }
@@ -347,11 +347,11 @@ public class MinerUServiceTest {
             service.applyUploadUrls(MinerUBatchRequest.builder()
                     .file(MinerUFileSpec.ofName("a.pdf")).build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
-            JSONObject file = body.getJSONArray("files").getJSONObject(0);
-            Assert.assertEquals("a.pdf", file.getString("name"));
-            Assert.assertEquals(Boolean.TRUE, file.getBoolean("is_ocr"));
-            Assert.assertEquals("vlm", body.getString("model_version"));
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            JsonNode file = body.path("files").get(0);
+            Assert.assertEquals("a.pdf", file.path("name").asText());
+            Assert.assertTrue(file.path("is_ocr").asBoolean());
+            Assert.assertEquals("vlm", body.path("model_version").asText());
         } finally {
             server.shutdown();
         }
@@ -389,8 +389,8 @@ public class MinerUServiceTest {
             RecordedRequest submit = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/api/v1/agent/parse/url", submit.getPath());
             Assert.assertNull(submit.getHeader("Authorization"));
-            JSONObject body = JSON.parseObject(submit.getBody().readUtf8());
-            Assert.assertEquals("https://example.com/a.pdf", body.getString("url"));
+            JsonNode body = JsonCodec.readTree(submit.getBody().readUtf8());
+            Assert.assertEquals("https://example.com/a.pdf", body.path("url").asText());
             Assert.assertEquals("/api/v1/agent/parse/lt-9", server.takeRequest(1, TimeUnit.SECONDS).getPath());
             Assert.assertEquals("/md/full.md", server.takeRequest(1, TimeUnit.SECONDS).getPath());
         } finally {
@@ -420,8 +420,8 @@ public class MinerUServiceTest {
             RecordedRequest submit = server.takeRequest(1, TimeUnit.SECONDS);
             Assert.assertEquals("/api/v1/agent/parse/file", submit.getPath());
             Assert.assertNull(submit.getHeader("Authorization"));
-            JSONObject body = JSON.parseObject(submit.getBody().readUtf8());
-            Assert.assertEquals("a.pdf", body.getString("file_name"));
+            JsonNode body = JsonCodec.readTree(submit.getBody().readUtf8());
+            Assert.assertEquals("a.pdf", body.path("file_name").asText());
             Assert.assertEquals("PUT", server.takeRequest(1, TimeUnit.SECONDS).getMethod());
             Assert.assertEquals("/api/v1/agent/parse/lt-1", server.takeRequest(1, TimeUnit.SECONDS).getPath());
             Assert.assertEquals("/api/v1/agent/parse/lt-1", server.takeRequest(1, TimeUnit.SECONDS).getPath());

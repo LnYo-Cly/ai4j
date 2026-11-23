@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.deepseek.chat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DeepSeekConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -55,14 +56,14 @@ public class DeepSeekChatService implements IChatService, ParameterConvert<DeepS
         this.deepSeekConfig = configuration.getDeepSeekConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     public DeepSeekChatService(Configuration configuration, DeepSeekConfig deepSeekConfig) {
         this.deepSeekConfig = deepSeekConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override

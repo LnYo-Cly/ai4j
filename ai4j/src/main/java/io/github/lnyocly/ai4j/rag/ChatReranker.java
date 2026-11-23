@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.rag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
@@ -32,7 +33,7 @@ public class ChatReranker implements Reranker {
     private final String instruction;
     private final boolean appendRemainingHits;
     private final int maxCandidates;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonCodec.mapper();
 
     public ChatReranker(IChatService chatService, String model) {
         this(chatService, model, null, null, true, DEFAULT_MAX_CANDIDATES);

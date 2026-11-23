@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.memory;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.tool.ToolCall;
 
@@ -205,7 +205,7 @@ public class JdbcChatMemory implements ChatMemory {
             try (ResultSet resultSet = statement.executeQuery()) {
                 List<ChatMemoryItem> items = new ArrayList<ChatMemoryItem>();
                 while (resultSet.next()) {
-                    ChatMemoryItem item = JSON.parseObject(resultSet.getString("item_json"), ChatMemoryItem.class);
+                    ChatMemoryItem item = JsonCodec.fromJson(resultSet.getString("item_json"), ChatMemoryItem.class);
                     if (item != null && !item.isEmpty()) {
                         items.add(item);
                     }
@@ -234,7 +234,7 @@ public class JdbcChatMemory implements ChatMemory {
                         for (int i = 0; i < items.size(); i++) {
                             insertStatement.setString(1, sessionId);
                             insertStatement.setInt(2, i);
-                            insertStatement.setString(3, JSON.toJSONString(items.get(i)));
+                            insertStatement.setString(3, JsonCodec.toJson(items.get(i)));
                             insertStatement.setLong(4, now);
                             insertStatement.addBatch();
                         }
