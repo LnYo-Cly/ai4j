@@ -21,10 +21,18 @@ public class ModelCallException extends Ai4jException {
     private final boolean retryable;
     private final String rawSnippet;
     private final ModelCallStatus status;
+    private final Long retryAfterMillis;
 
     public ModelCallException(Protocol protocol, int httpStatus, String providerErrorType,
                               String providerRequestId, boolean retryable, String message,
                               String rawSnippet, ModelCallStatus status) {
+        this(protocol, httpStatus, providerErrorType, providerRequestId, retryable,
+                message, rawSnippet, status, null);
+    }
+
+    public ModelCallException(Protocol protocol, int httpStatus, String providerErrorType,
+                              String providerRequestId, boolean retryable, String message,
+                              String rawSnippet, ModelCallStatus status, Long retryAfterMillis) {
         super(message);
         this.protocol = protocol;
         this.httpStatus = httpStatus;
@@ -33,18 +41,20 @@ public class ModelCallException extends Ai4jException {
         this.retryable = retryable;
         this.rawSnippet = rawSnippet;
         this.status = status == null ? ModelCallStatus.FAILED : status;
+        this.retryAfterMillis = retryAfterMillis;
     }
 
     public ModelCallException(Protocol protocol, int httpStatus, String message,
                               String rawSnippet, ModelCallStatus status) {
-        this(protocol, httpStatus, null, null, false, message, rawSnippet, status);
+        this(protocol, httpStatus, null, null, false, message, rawSnippet, status, null);
     }
 
     /** Build a client exception from a wire-free event marker. */
     public static ModelCallException fromMarker(ModelCallExceptionMarker marker) {
         return new ModelCallException(marker.getProtocol(), marker.getHttpStatus(),
                 marker.getProviderErrorType(), marker.getProviderRequestId(), marker.isRetryable(),
-                marker.getMessage(), marker.getRawSnippet(), marker.getStatus());
+                marker.getMessage(), marker.getRawSnippet(), marker.getStatus(),
+                marker.getRetryAfterMillis());
     }
 
     public Protocol getProtocol() {
@@ -75,5 +85,10 @@ public class ModelCallException extends Ai4jException {
 
     public ModelCallStatus getStatus() {
         return status;
+    }
+
+    /** Parsed {@code Retry-After} delay in milliseconds when supplied by the server, else {@code null}. */
+    public Long getRetryAfterMillis() {
+        return retryAfterMillis;
     }
 }

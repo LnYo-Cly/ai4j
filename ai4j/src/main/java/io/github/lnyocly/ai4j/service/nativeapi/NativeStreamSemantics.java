@@ -36,6 +36,8 @@ final class NativeStreamSemantics {
                 return NativeMessagesStreamEvent.decode(id, type, data);
             case RESPONSES:
                 return NativeResponsesStreamEvent.decode(id, type, data);
+            case GEMINI:
+                return NativeGeminiStreamEvent.decode(id, type, data);
             default:
                 return NativeChatStreamEvent.decode(id, type, data);
         }

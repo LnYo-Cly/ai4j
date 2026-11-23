@@ -80,6 +80,24 @@ public final class ModelRequest {
         return new Builder();
     }
 
+    public Builder toBuilder() {
+        return new Builder()
+                .protocol(protocol)
+                .model(model)
+                .items(items)
+                .tools(tools)
+                .toolChoice(toolChoice)
+                .parallelToolCalls(parallelToolCalls)
+                .maxOutputTokens(maxOutputTokens)
+                .temperature(temperature)
+                .topP(topP)
+                .stream(stream)
+                .applicationMetadata(applicationMetadata)
+                .providerOptions(providerOptions)
+                .execution(execution)
+                .replayable(replayable);
+    }
+
     /** Optional per-request protocol override; the endpoint protocol is authoritative otherwise. */
     public Protocol getProtocol() {
         return protocol;

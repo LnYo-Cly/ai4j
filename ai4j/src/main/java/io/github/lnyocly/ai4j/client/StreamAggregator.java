@@ -31,6 +31,7 @@ final class StreamAggregator {
 
     private final Map<Integer, StreamSlot> slots = new LinkedHashMap<Integer, StreamSlot>();
     private final List<DroppedField> warnings = new ArrayList<DroppedField>();
+    private int multiItemSlotCursor = 1000;
     private ModelUsage usage;
     private String stopReason;
     private String responseId;
@@ -66,17 +67,46 @@ final class StreamAggregator {
                 if (event.getStopReason() != null) {
                     stopReason = event.getStopReason();
                 }
+                if (event.getUsage() != null) {
+                    usage = event.getUsage();
+                }
+                if (responseId == null && event.getProtocol() == Protocol.GEMINI
+                        && event.getItemId() != null) {
+                    responseId = event.getItemId();
+                }
                 handleDelta(event);
                 break;
             case ITEM_DONE:
                 if (event.getStopReason() != null) {
                     stopReason = event.getStopReason();
                 }
-                slotFor(indexOf(event)).finish(event);
+                if (event.getUsage() != null) {
+                    usage = event.getUsage();
+                }
+                if (!event.getItems().isEmpty()) {
+                    for (ModelItem each : event.getItems()) {
+                        StreamSlot slot = slotFor(multiItemSlotCursor++);
+                        slot.finishItem(each);
+                    }
+                } else {
+                    if (responseId == null && event.getProtocol() == Protocol.GEMINI
+                            && event.getItem() == null && event.getItemId() != null) {
+                        responseId = event.getItemId();
+                    }
+                    StreamSlot target = slotFor(indexOf(event));
+                    if (target.hasExplicitItem && event.getItem() != null) {
+                        target = slotFor(multiItemSlotCursor++);
+                    }
+                    target.finish(event);
+                }
                 break;
             case USAGE:
                 if (event.getUsage() != null) {
                     usage = event.getUsage();
+                }
+                if (responseId == null && event.getProtocol() == Protocol.GEMINI
+                        && event.getItemId() != null) {
+                    responseId = event.getItemId();
                 }
                 break;
             case DONE:
@@ -154,12 +184,15 @@ final class StreamAggregator {
         private final StringBuilder reasoning = new StringBuilder();
         private final StringBuilder toolArgs = new StringBuilder();
         private StringBuilder signature;
+        private Protocol sourceProtocol;
         private ModelItem doneItem;
+        private boolean hasExplicitItem;
         private String itemType;
         private String toolName;
         private String itemId;
 
         void start(ModelEvent event) {
+            sourceProtocol = event.getProtocol();
             itemType = event.getItemType();
             toolName = event.getToolName();
             itemId = event.getItemId();
@@ -167,6 +200,9 @@ final class StreamAggregator {
 
         /** Record identity carried by deltas when no explicit ITEM_START arrived. */
         void observe(ModelEvent event) {
+            if (sourceProtocol == null) {
+                sourceProtocol = event.getProtocol();
+            }
             if (itemId == null && event.getItemId() != null) {
                 itemId = event.getItemId();
             }
@@ -175,6 +211,9 @@ final class StreamAggregator {
             }
             if (toolName == null && event.getToolName() != null) {
                 toolName = event.getToolName();
+            }
+            if (event.getSignature() != null && !event.getSignature().isEmpty()) {
+                signature(event.getSignature());
             }
         }
 
@@ -195,10 +234,16 @@ final class StreamAggregator {
             signature.append(delta);
         }
 
+        void finishItem(ModelItem item) {
+            this.doneItem = item;
+            this.hasExplicitItem = item != null;
+        }
+
         void finish(ModelEvent event) {
             if (event.getItem() != null) {
                 doneItem = event.getItem();
-            } else if (doneItem == null) {
+                hasExplicitItem = true;
+            } else if (doneItem == null && event.getItemId() != null && event.getProtocol() != Protocol.GEMINI) {
                 doneItem = toItem();
             }
         }
@@ -207,18 +252,27 @@ final class StreamAggregator {
             if (doneItem != null) {
                 return doneItem;
             }
-            if (reasoning.length() > 0 || signature != null) {
-                return ReasoningItem.of(reasoning.toString(),
-                        signature == null ? null : signature.toString());
+            if (reasoning.length() > 0 || (signature != null && text.length() == 0 && toolArgs.length() == 0)) {
+                return ReasoningItem.of(reasoning.toString(), null,
+                        signature == null ? null : signature.toString(),
+                        sourceProtocol, null, null, null);
             }
             if (text.length() > 0) {
+                Map<String, Object> protocolData = null;
+                if (signature != null && sourceProtocol == Protocol.GEMINI) {
+                    protocolData = new LinkedHashMap<String, Object>();
+                    protocolData.put("_protocol", "GEMINI");
+                    protocolData.put("thoughtSignature", signature.toString());
+                }
                 return io.github.lnyocly.ai4j.model.Message.assistant()
-                        .block(TextBlock.of(text.toString()))
+                        .block(TextBlock.of(text.toString(), null, null, protocolData))
                         .build();
             }
             if (toolArgs.length() > 0 && itemId != null) {
                 return ToolCallItem.of(ToolCallValue.of(itemId,
-                        toolName == null ? "" : toolName, toolArgs.toString()));
+                        toolName == null ? "" : toolName, toolArgs.toString(),
+                        signature == null ? null : signature.toString(),
+                        sourceProtocol));
             }
             return null;
         }

@@ -25,6 +25,8 @@ public final class ModelEvent {
     private final Integer contentIndex;
     private final Long sequenceNumber;
     private final ModelItem item;
+    private final java.util.List<ModelItem> items;
+    private final String signature;
     private final ModelUsage usage;
     private final ModelCallExceptionMarker failure;
     private final int attempt;
@@ -44,6 +46,10 @@ public final class ModelEvent {
         this.contentIndex = builder.contentIndex;
         this.sequenceNumber = builder.sequenceNumber;
         this.item = builder.item;
+        this.items = builder.items.isEmpty()
+                ? java.util.Collections.<ModelItem>emptyList()
+                : java.util.Collections.unmodifiableList(new java.util.ArrayList<ModelItem>(builder.items));
+        this.signature = builder.signature;
         this.usage = builder.usage;
         this.failure = builder.failure;
         this.attempt = builder.attempt;
@@ -109,6 +115,16 @@ public final class ModelEvent {
         return item;
     }
 
+    /** Optional ordered items decoded from a multi-part stream chunk. */
+    public java.util.List<ModelItem> getItems() {
+        return items;
+    }
+
+    /** Optional protocol signature carried by a stream chunk (e.g. thoughtSignature). */
+    public String getSignature() {
+        return signature;
+    }
+
     /** Usage snapshot for {@link ModelEventType#USAGE}; {@code null} otherwise. */
     public ModelUsage getUsage() {
         return usage;
@@ -148,6 +164,8 @@ public final class ModelEvent {
         private Integer contentIndex;
         private Long sequenceNumber;
         private ModelItem item;
+        private final java.util.List<ModelItem> items = new java.util.ArrayList<ModelItem>();
+        private String signature;
         private ModelUsage usage;
         private ModelCallExceptionMarker failure;
         private int attempt;
@@ -206,6 +224,22 @@ public final class ModelEvent {
 
         public Builder item(ModelItem item) {
             this.item = item;
+            return this;
+        }
+
+        public Builder items(java.util.List<ModelItem> items) {
+            if (items != null) {
+                for (ModelItem each : items) {
+                    if (each != null) {
+                        this.items.add(each);
+                    }
+                }
+            }
+            return this;
+        }
+
+        public Builder signature(String signature) {
+            this.signature = signature;
             return this;
         }
 

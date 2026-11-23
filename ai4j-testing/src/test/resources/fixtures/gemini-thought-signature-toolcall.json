@@ -1,0 +1,79 @@
+{
+  "name": "gemini-thought-signature-toolcall",
+  "recordedFrom": "gemini",
+  "protocol": "GEMINI",
+  "exchanges": [
+    {
+      "expectedPromptContains": [
+        "\"systemInstruction\"",
+        "\"functionDeclarations\"",
+        "get_weather",
+        "hangzhou"
+      ],
+      "wireResponse": {
+        "responseId": "gem_resp_1",
+        "candidates": [
+          {
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "thought": true,
+                  "text": "Checking Hangzhou forecast",
+                  "thoughtSignature": "gem_thought_sig_abc"
+                },
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "hangzhou"
+                    }
+                  },
+                  "thoughtSignature": "gem_call_sig_xyz"
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 35,
+          "candidatesTokenCount": 16,
+          "thoughtsTokenCount": 9,
+          "totalTokenCount": 60
+        }
+      }
+    },
+    {
+      "expectedPromptContains": [
+        "\"thoughtSignature\":\"gem_thought_sig_abc\"",
+        "\"thoughtSignature\":\"gem_call_sig_xyz\"",
+        "\"functionResponse\"",
+        "\"name\":\"get_weather\"",
+        "23C"
+      ],
+      "wireResponse": {
+        "responseId": "gem_resp_2",
+        "candidates": [
+          {
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "text": "Hangzhou is 23C and sunny."
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 70,
+          "candidatesTokenCount": 8,
+          "cachedContentTokenCount": 12,
+          "totalTokenCount": 78
+        }
+      }
+    }
+  ]
+}

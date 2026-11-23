@@ -119,6 +119,8 @@ final class DefaultModelClient implements ModelClient {
                 new java.util.concurrent.atomic.AtomicBoolean();
         private final java.util.concurrent.atomic.AtomicBoolean doneDispatched =
                 new java.util.concurrent.atomic.AtomicBoolean();
+        private final java.util.concurrent.atomic.AtomicBoolean geminiFinishSeen =
+                new java.util.concurrent.atomic.AtomicBoolean();
 
         DefaultModelCall(ModelRequest request, ModelEventListener listener) {
             this.request = request;
@@ -128,9 +130,12 @@ final class DefaultModelClient implements ModelClient {
         }
 
         private void start() {
-            WireRequest wire = codec.encode(request, policy);
+            ModelRequest effectiveRequest = Boolean.TRUE.equals(request.getStream())
+                    ? request
+                    : request.toBuilder().stream(Boolean.TRUE).build();
+            WireRequest wire = codec.encode(effectiveRequest, policy);
             aggregator.addWarnings(wire.getWarnings());
-            CallExecutionOptions execution = effectiveExecution(request);
+            CallExecutionOptions execution = effectiveExecution(effectiveRequest);
             TransportRequest transportRequest = TransportRequest.of(endpoint, wire, execution);
             io.github.lnyocly.ai4j.transport.SseChannel channel =
                     new io.github.lnyocly.ai4j.transport.SseChannel() {
@@ -155,6 +160,9 @@ final class DefaultModelClient implements ModelClient {
                                 return;
                             }
                             aggregator.accept(modelEvent);
+                            if (protocol == Protocol.GEMINI && modelEvent.getStopReason() != null) {
+                                geminiFinishSeen.set(true);
+                            }
                             if (modelEvent.getType() == ModelEventType.ERROR) {
                                 io.github.lnyocly.ai4j.model.ModelCallExceptionMarker marker =
                                         modelEvent.getFailure();
@@ -177,6 +185,12 @@ final class DefaultModelClient implements ModelClient {
                         @Override
                         public void onClosed() {
                             if (cancelled.get() || status.get() != ModelCallStatus.RUNNING) {
+                                return;
+                            }
+                            if (protocol == Protocol.GEMINI && geminiFinishSeen.get()) {
+                                if (settle(ModelCallStatus.COMPLETED, null)) {
+                                    dispatchDone();
+                                }
                                 return;
                             }
                             ModelCallException incomplete = new ModelCallException(protocol, 0,
@@ -221,6 +235,7 @@ final class DefaultModelClient implements ModelClient {
                                                 .retryable(mapped.isRetryable())
                                                 .rawSnippet(mapped.getRawSnippet())
                                                 .status(mapped.getStatus())
+                                                .retryAfterMillis(mapped.getRetryAfterMillis())
                                                 .build())
                                         .build());
                             }

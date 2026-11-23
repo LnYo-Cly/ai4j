@@ -13,7 +13,7 @@ import java.util.Map;
  * <p>Jackson {@link JsonNode} is confined to this class and the codec internals
  * (design F2): nothing on the public semantic surface exposes it. Values
  * crossing the boundary are {@code Map<String,Object>} with standard JSON
- * scalars, so both Jackson and fastjson2 consumers stay library-neutral.</p>
+ * scalars, so all consumers stay library-neutral.</p>
  */
 public final class JsonWire {
 

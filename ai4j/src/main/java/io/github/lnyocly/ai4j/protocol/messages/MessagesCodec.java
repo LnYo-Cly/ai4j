@@ -176,6 +176,12 @@ public final class MessagesCodec implements ProtocolCodec {
         }
         if (block instanceof ReasoningBlock) {
             ReasoningBlock reasoning = (ReasoningBlock) block;
+            if (reasoning.getSourceProtocol() != null && reasoning.getSourceProtocol() != Protocol.MESSAGES) {
+                warnings.add(DroppedField.of("message.block.reasoning",
+                        "foreign reasoning signature from " + reasoning.getSourceProtocol()
+                                + " is not replay-valid for MESSAGES"));
+                return null;
+            }
             Map<String, Object> wire = new LinkedHashMap<String, Object>();
             if (reasoning.getSignature() == null) {
                 warnings.add(DroppedField.of("message.block.reasoning",
@@ -276,6 +282,12 @@ public final class MessagesCodec implements ProtocolCodec {
 
     private Map<String, Object> assistantReasoningToWire(ReasoningItem item,
                                                          List<DroppedField> warnings) {
+        if (item.getSourceProtocol() != null && item.getSourceProtocol() != Protocol.MESSAGES) {
+            warnings.add(DroppedField.of("items[reasoning]",
+                    "foreign reasoning signature from " + item.getSourceProtocol()
+                            + " is not replay-valid for MESSAGES"));
+            return null;
+        }
         if (item.getSignature() == null) {
             warnings.add(DroppedField.of("items[reasoning]",
                     "unsigned reasoning cannot be replayed to MESSAGES (design F4)"));
@@ -403,7 +415,7 @@ public final class MessagesCodec implements ProtocolCodec {
         }
         if ("thinking".equals(type)) {
             return ReasoningItem.of(JsonWire.textAt(block, "thinking"),
-                    JsonWire.textAt(block, "signature"));
+                    JsonWire.textAt(block, "signature"), Protocol.MESSAGES);
         }
         if ("tool_use".equals(type)) {
             ToolCallValue value = ToolCallValue.of(

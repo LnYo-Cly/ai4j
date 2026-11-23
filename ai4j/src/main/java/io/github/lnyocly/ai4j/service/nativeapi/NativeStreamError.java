@@ -61,6 +61,14 @@ public final class NativeStreamError {
         return new NativeStreamError(Protocol.RESPONSES, 200, type, code, message, null, rawData);
     }
 
+    /** Google Gemini in-band {@code {"error":{"code":..,"message":..,"status":..}}} event. */
+    static NativeStreamError fromGeminiNode(JsonNode errorNode, String rawData) {
+        String status = text(errorNode, "status");
+        String code = text(errorNode, "code");
+        String message = text(errorNode, "message");
+        return new NativeStreamError(Protocol.GEMINI, 200, status, code, message, null, rawData);
+    }
+
     public Protocol getProtocol() {
         return protocol;
     }

@@ -74,8 +74,17 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
         for (ModelItem item : request.getItems()) {
             if (item instanceof Message) {
                 wireMessages.add(messageToWire((Message) item, request, warnings));
+            } else if (item instanceof ToolCallItem) {
+                appendToolCallItem(wireMessages, (ToolCallItem) item, warnings);
             } else if (item instanceof ToolResultItem) {
                 wireMessages.add(toolResultToWire((ToolResultItem) item));
+            } else if (item instanceof io.github.lnyocly.ai4j.model.ReasoningItem) {
+                io.github.lnyocly.ai4j.model.ReasoningItem reasoningItem =
+                        (io.github.lnyocly.ai4j.model.ReasoningItem) item;
+                if (reasoningItem.getSignature() != null) {
+                    warnings.add(DroppedField.of("items[reasoning].signature",
+                            "signature stripped on CHAT_COMPLETIONS handoff"));
+                }
             } else {
                 warnings.add(DroppedField.of("items[" + item.getType() + "]",
                         "CHAT_COMPLETIONS cannot express this top-level item kind"));
@@ -194,6 +203,10 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
         if (!toolCalls.isEmpty()) {
             List<Object> calls = new ArrayList<Object>();
             for (ToolCallBlock block : toolCalls) {
+                if (block.getValue().getThoughtSignature() != null) {
+                    warnings.add(DroppedField.of("toolCall.thoughtSignature",
+                            "foreign thoughtSignature stripped on CHAT_COMPLETIONS handoff"));
+                }
                 Map<String, Object> call = new LinkedHashMap<String, Object>();
                 call.put("id", block.getValue().getCallId());
                 call.put("type", "function");
@@ -208,6 +221,12 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
 
         ReasoningBlock reasoning = firstReasoning(blocks);
         if (reasoning != null) {
+            if (reasoning.getSignature() != null
+                    && reasoning.getSourceProtocol() != null
+                    && reasoning.getSourceProtocol() != Protocol.CHAT_COMPLETIONS) {
+                warnings.add(DroppedField.of("message.block.reasoning.signature",
+                        "foreign reasoning signature stripped on CHAT_COMPLETIONS handoff"));
+            }
             wire.put("reasoning_content", reasoning.getText());
         }
 
@@ -221,6 +240,47 @@ public final class ChatCompletionsCodec implements ProtocolCodec {
                     "CHAT_COMPLETIONS cannot express one or more block types in this message"));
         }
         return wire;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void appendToolCallItem(List<Object> wireMessages, ToolCallItem item,
+                                           List<DroppedField> warnings) {
+        if (item.getValue().getThoughtSignature() != null) {
+            warnings.add(DroppedField.of("toolCall.thoughtSignature",
+                    "foreign thoughtSignature stripped on CHAT_COMPLETIONS handoff"));
+        }
+        Map<String, Object> call = new LinkedHashMap<String, Object>();
+        call.put("id", item.getCallId());
+        call.put("type", "function");
+        Map<String, Object> function = new LinkedHashMap<String, Object>();
+        function.put("name", item.getName());
+        function.put("arguments", item.getArgumentsJson());
+        call.put("function", function);
+
+        if (!wireMessages.isEmpty()) {
+            Object lastObj = wireMessages.get(wireMessages.size() - 1);
+            if (lastObj instanceof Map) {
+                Map<String, Object> lastMsg = (Map<String, Object>) lastObj;
+                if ("assistant".equals(lastMsg.get("role"))) {
+                    Object existingCalls = lastMsg.get("tool_calls");
+                    if (existingCalls instanceof List) {
+                        ((List<Object>) existingCalls).add(call);
+                    } else {
+                        List<Object> calls = new ArrayList<Object>();
+                        calls.add(call);
+                        lastMsg.put("tool_calls", calls);
+                    }
+                    return;
+                }
+            }
+        }
+        Map<String, Object> assistant = new LinkedHashMap<String, Object>();
+        assistant.put("role", "assistant");
+        assistant.put("content", "");
+        List<Object> calls = new ArrayList<Object>();
+        calls.add(call);
+        assistant.put("tool_calls", calls);
+        wireMessages.add(assistant);
     }
 
     private Map<String, Object> toolResultToWire(ToolResultItem item) {

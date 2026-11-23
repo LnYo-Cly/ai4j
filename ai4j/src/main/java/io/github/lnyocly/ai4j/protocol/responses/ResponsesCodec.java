@@ -215,6 +215,12 @@ public final class ResponsesCodec implements ProtocolCodec {
     }
 
     private Map<String, Object> reasoningToWire(ReasoningItem item, List<DroppedField> warnings) {
+        if (item.getSourceProtocol() != null && item.getSourceProtocol() != Protocol.RESPONSES) {
+            warnings.add(DroppedField.of("items[reasoning]",
+                    "foreign reasoning signature from " + item.getSourceProtocol()
+                            + " is not replay-valid for RESPONSES"));
+            return null;
+        }
         Map<String, Object> protocolData = item.getProtocolData();
         String encryptedContent = JsonWire.textAt(protocolData, "encrypted_content");
         if (encryptedContent == null && item.getItemId() != null) {
@@ -383,6 +389,7 @@ public final class ResponsesCodec implements ProtocolCodec {
             }
             return ReasoningItem.of(null, summaryText.toString(),
                     JsonWire.textAt(itemMap, "encrypted_content"),
+                    Protocol.RESPONSES,
                     JsonWire.textAt(itemMap, "id"),
                     null, Collections.singletonMap("responses", itemMap));
         }
