@@ -22,7 +22,7 @@ public class DynamicWorkflowRuntimeOptions {
 
     /**
      * Keep disabled for untrusted model-generated workflows. The default
-     * Nashorn runtime creates the engine with Java package access disabled and
+     * JavaScript workflow runtime creates the engine with Java package access disabled and
      * only exposes the narrow workflow primitives.
      */
     @Builder.Default

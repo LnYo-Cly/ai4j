@@ -5,9 +5,9 @@ package io.github.lnyocly.ai4j.agent.codeact;
  * asynchronous tool call. The owning CodeExecutor converts it to a
  * {@link CodeExecutionResult}; it must never escape to an application caller.
  */
-final class CodeActPendingToolException extends RuntimeException {
+public class CodeActPendingToolException extends RuntimeException {
 
-    CodeActPendingToolException(String callId) {
+    public CodeActPendingToolException(String callId) {
         super("CodeAct tool execution is waiting: " + callId);
     }
 }

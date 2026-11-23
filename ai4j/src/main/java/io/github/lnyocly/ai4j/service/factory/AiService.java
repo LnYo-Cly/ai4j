@@ -201,6 +201,8 @@ public class AiService {
 
     private IAudioService createAudioService(PlatformType platform) {
         switch (platform) {
+            case MINIMAX:
+                return new io.github.lnyocly.ai4j.platform.minimax.audio.MinimaxAudioService(configuration);
             case OPENAI:
                 return new OpenAiAudioService(configuration);
             default:

@@ -168,13 +168,6 @@
             <version>5.8.38</version>
         </dependency>
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>dashscope-sdk-java</artifactId>
-            <scope>compile</scope>
-            <version>2.19.0</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>13.0</version>

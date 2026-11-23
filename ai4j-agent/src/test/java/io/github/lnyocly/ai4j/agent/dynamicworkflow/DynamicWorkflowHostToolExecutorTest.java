@@ -18,15 +18,25 @@ public class DynamicWorkflowHostToolExecutorTest {
                 return envelope;
             }
         };
-        DynamicWorkflowAgentBridge bridge = new DynamicWorkflowAgentBridge() {
+        DynamicWorkflowExecutor stubWorkflowExecutor = new DynamicWorkflowExecutor() {
             @Override
-            public String runAgent(DynamicWorkflowAgentCallRequest request) {
-                return request.getLabel() + ":" + request.getPrompt();
+            public DynamicWorkflowExecutionResult execute(DynamicWorkflowRequest request) {
+                return DynamicWorkflowExecutionResult.builder()
+                        .status(DynamicWorkflowConstants.STATUS_COMPLETED)
+                        .output("worker:hello")
+                        .agentCalls(java.util.Collections.singletonList(
+                                DynamicWorkflowAgentCallRecord.builder()
+                                        .label("worker")
+                                        .prompt("hello")
+                                        .status(DynamicWorkflowConstants.STATUS_COMPLETED)
+                                        .output("worker:hello")
+                                        .build()))
+                        .build();
             }
         };
         DynamicWorkflowHostToolExecutor executor = new DynamicWorkflowHostToolExecutor(
                 delegate,
-                new NashornDynamicWorkflowExecutor(bridge)
+                stubWorkflowExecutor
         );
 
         String output = executor.execute(AgentToolCall.builder().name("workflow").arguments("{}").build());
@@ -47,7 +57,12 @@ public class DynamicWorkflowHostToolExecutorTest {
         };
         DynamicWorkflowHostToolExecutor executor = new DynamicWorkflowHostToolExecutor(
                 delegate,
-                new NashornDynamicWorkflowExecutor(new EchoBridge())
+                new DynamicWorkflowExecutor() {
+                    @Override
+                    public DynamicWorkflowExecutionResult execute(DynamicWorkflowRequest request) {
+                        throw new AssertionError("should not be invoked for non-workflow output");
+                    }
+                }
         );
 
         Assert.assertEquals("plain output", executor.execute(AgentToolCall.builder().name("other").build()));
@@ -61,12 +76,5 @@ public class DynamicWorkflowHostToolExecutorTest {
         envelope.put("hostAction", DynamicWorkflowConstants.EXECUTE_HOST_ACTION);
         envelope.put("argumentsRaw", AgentJson.toJson(arguments));
         return AgentJson.toJson(envelope);
-    }
-
-    private static class EchoBridge implements DynamicWorkflowAgentBridge {
-        @Override
-        public String runAgent(DynamicWorkflowAgentCallRequest request) {
-            return request.getPrompt();
-        }
     }
 }
