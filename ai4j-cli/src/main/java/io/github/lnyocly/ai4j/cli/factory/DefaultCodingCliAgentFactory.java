@@ -21,6 +21,7 @@ import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
+import io.github.lnyocly.ai4j.agent.model.MessagesModelClient;
 import io.github.lnyocly.ai4j.agent.model.ResponsesModelClient;
 import io.github.lnyocly.ai4j.agent.subagent.SubAgentDefinition;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMember;
@@ -51,6 +52,7 @@ import io.github.lnyocly.ai4j.config.LingyiConfig;
 import io.github.lnyocly.ai4j.config.MinimaxConfig;
 import io.github.lnyocly.ai4j.config.MoonshotConfig;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
+import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.config.ZhipuConfig;
 import io.github.lnyocly.ai4j.interceptor.ErrorInterceptor;
@@ -136,12 +138,41 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
     }
 
     protected AgentModelClient createModelClient(CodeCommandOptions options, CliProtocol protocol) {
+        if (options == null) {
+            throw new IllegalArgumentException("options must not be null");
+        }
+        if (protocol != null) {
+            assertSupportedProtocol(options.getProvider(), protocol);
+        }
         Configuration configuration = createConfiguration(options);
         AiService aiService = new AiService(configuration);
         String runtimeBaseUrl = normalizeRuntimeBaseUrl(options);
         if (protocol == CliProtocol.RESPONSES) {
             return new ResponsesModelClient(
                     aiService.getResponsesService(options.getProvider()),
+                    runtimeBaseUrl,
+                    options.getApiKey()
+            );
+        }
+        if (protocol == CliProtocol.MESSAGES) {
+            ensureAnthropicConfig(configuration, runtimeBaseUrl, options.getApiKey());
+            return new MessagesModelClient(
+                    aiService.getMessagesService(PlatformType.ANTHROPIC),
+                    runtimeBaseUrl,
+                    options.getApiKey()
+            );
+        }
+        if (protocol == CliProtocol.GEMINI) {
+            return new GeminiCliModelClient(
+                    configuration,
+                    runtimeBaseUrl,
+                    options.getApiKey()
+            );
+        }
+        if (options.getProvider() == PlatformType.GEMINI) {
+            ensureOpenAiConfig(configuration, runtimeBaseUrl, options.getApiKey());
+            return new ChatModelClient(
+                    aiService.getChatService(PlatformType.OPENAI),
                     runtimeBaseUrl,
                     options.getApiKey()
             );
@@ -688,18 +719,51 @@ public class DefaultCodingCliAgentFactory implements CodingCliAgentFactory {
                 doubaoConfig.setApiKey(defaultIfBlank(apiKey, doubaoConfig.getApiKey()));
                 configuration.setDoubaoConfig(doubaoConfig);
                 return;
+            case ANTHROPIC:
+                configuration.setAnthropicConfig(buildAnthropicConfig(baseUrl, apiKey));
+                break;
+            case GEMINI:
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported provider: " + provider);
         }
     }
 
-    private void assertSupportedProtocol(PlatformType provider, CliProtocol protocol) {
-        if (protocol == CliProtocol.RESPONSES) {
-            if (provider != PlatformType.OPENAI && provider != PlatformType.DOUBAO && provider != PlatformType.DASHSCOPE) {
-                throw new IllegalArgumentException(
-                        "Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet"
-                );
+    private AnthropicConfig buildAnthropicConfig(String baseUrl, String apiKey) {
+        AnthropicConfig config = new AnthropicConfig();
+        if (!isBlank(baseUrl)) {
+            config.setApiHost(baseUrl.trim());
+        }
+        if (!isBlank(apiKey)) {
+            config.setApiKey(apiKey.trim());
+        }
+        return config;
+    }
+
+    private void ensureAnthropicConfig(Configuration configuration, String baseUrl, String apiKey) {
+        if (configuration.getAnthropicConfig() == null) {
+            configuration.setAnthropicConfig(buildAnthropicConfig(baseUrl, apiKey));
+        }
+    }
+
+    private void ensureOpenAiConfig(Configuration configuration, String baseUrl, String apiKey) {
+        if (configuration.getOpenAiConfig() == null) {
+            OpenAiConfig config = new OpenAiConfig();
+            if (!isBlank(baseUrl)) {
+                config.setApiHost(baseUrl.trim());
             }
+            if (!isBlank(apiKey)) {
+                config.setApiKey(apiKey.trim());
+            }
+            configuration.setOpenAiConfig(config);
+        }
+    }
+
+    private void assertSupportedProtocol(PlatformType provider, CliProtocol protocol) {
+        if (provider != null && protocol != null && !protocol.isSupportedBy(provider)) {
+            throw new IllegalArgumentException(
+                    "Provider " + provider.getPlatform() + " does not support " + protocol.getValue() + " protocol in ai4j-cli yet"
+            );
         }
     }
 

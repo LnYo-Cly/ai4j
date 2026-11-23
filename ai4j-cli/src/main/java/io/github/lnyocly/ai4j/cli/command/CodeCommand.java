@@ -155,7 +155,7 @@ public class CodeCommand {
         terminal.println("Core options:");
         terminal.println("  --ui <cli|tui>                     Interaction mode, default: cli");
         terminal.println("  --provider <name>                  Provider name, default: openai");
-        terminal.println("  --protocol <chat|responses>       Protocol family; provider default is used when omitted");
+        terminal.println("  --protocol <chat|responses|messages|gemini>  Protocol family; provider default is used when omitted");
         terminal.println("  --model <name>                     Model name, required unless config provides one");
         terminal.println("  --api-key <key>                    API key, or use env/config provider profiles");
         terminal.println("  --base-url <url>                   Custom baseUrl for OpenAI-compatible providers");

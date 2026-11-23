@@ -1510,7 +1510,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private synchronized String addProviderProfile(String rawArguments) throws IOException {
-            String usage = "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]";
+            String usage = "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses|messages|gemini>] [--model <name>] [--base-url <url>] [--api-key <key>]";
             ProviderProfileMutation mutation = parseProviderProfileMutation(rawArguments);
             if (mutation == null) {
                 return usage;
@@ -1535,7 +1535,7 @@ public class AcpJsonRpcServer implements Closeable {
                 return "Unsupported protocol: " + mutation.protocol;
             }
             if (!isSupportedProviderProtocol(provider, protocolValue)) {
-                return "Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet";
+                return "Provider " + provider.getPlatform() + " does not support " + protocolValue.getValue() + " protocol in ai4j-cli yet";
             }
             providersConfig.getProfiles().put(mutation.profileName, CliProviderProfile.builder()
                     .provider(provider.getPlatform())
@@ -1552,7 +1552,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private synchronized String editProviderProfile(String rawArguments) throws Exception {
-            String usage = "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]";
+            String usage = "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses|messages|gemini>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]";
             ProviderProfileMutation mutation = parseProviderProfileMutation(rawArguments);
             if (mutation == null || !mutation.hasAnyFieldChanges()) {
                 return usage;
@@ -1580,7 +1580,7 @@ public class AcpJsonRpcServer implements Closeable {
                 return "Unsupported protocol: " + protocolRaw;
             }
             if (!isSupportedProviderProtocol(provider, protocolValue)) {
-                return "Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet";
+                return "Provider " + provider.getPlatform() + " does not support " + protocolValue.getValue() + " protocol in ai4j-cli yet";
             }
             existing.setProvider(provider.getPlatform());
             existing.setProtocol(protocolValue.getValue());
@@ -2255,10 +2255,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private boolean isSupportedProviderProtocol(PlatformType provider, CliProtocol protocol) {
-            if (provider == null || protocol == null || protocol == CliProtocol.CHAT) {
-                return true;
-            }
-            return provider == PlatformType.OPENAI || provider == PlatformType.DOUBAO || provider == PlatformType.DASHSCOPE;
+            return provider == null || protocol == null || protocol.isSupportedBy(provider);
         }
 
         private String normalizeStoredProtocol(String raw, PlatformType provider, String baseUrl) {

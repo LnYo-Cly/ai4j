@@ -1866,7 +1866,7 @@ public final class SlashCommandController implements Completer {
             return "Set provider name";
         }
         if ("--protocol".equalsIgnoreCase(option)) {
-            return "Set protocol: chat, responses";
+            return "Set protocol: chat, responses, messages, gemini";
         }
         if ("--model".equalsIgnoreCase(option)) {
             return "Set default model";
@@ -1932,8 +1932,9 @@ public final class SlashCommandController implements Completer {
 
     private List<Candidate> providerProtocolCandidates(String partial) {
         List<Candidate> candidates = new ArrayList<Candidate>();
-        addProviderProtocolCandidate(candidates, CliProtocol.CHAT, partial);
-        addProviderProtocolCandidate(candidates, CliProtocol.RESPONSES, partial);
+        for (CliProtocol protocol : CliProtocol.values()) {
+            addProviderProtocolCandidate(candidates, protocol, partial);
+        }
         return candidates;
     }
 
