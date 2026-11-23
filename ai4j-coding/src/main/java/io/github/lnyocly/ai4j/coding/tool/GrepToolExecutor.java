@@ -1,9 +1,10 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.io.IOException;
@@ -35,18 +36,18 @@ public class GrepToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String patternStr = safeTrim(arguments.getString("pattern"));
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String patternStr = safeTrim(CodingJson.getString(arguments, "pattern"));
         if (isBlank(patternStr)) {
             throw new IllegalArgumentException("pattern is required");
         }
-        String basePath = safeTrim(arguments.getString("path"));
+        String basePath = safeTrim(CodingJson.getString(arguments, "path"));
         if (isBlank(basePath)) {
             basePath = ".";
         }
-        String include = safeTrim(arguments.getString("include"));
-        Boolean caseInsensitive = arguments.getBoolean("caseInsensitive");
-        Integer maxResultsRaw = arguments.getInteger("maxResults");
+        String include = safeTrim(CodingJson.getString(arguments, "include"));
+        Boolean caseInsensitive = CodingJson.getBoolean(arguments, "caseInsensitive");
+        Integer maxResultsRaw = CodingJson.getInteger(arguments, "maxResults");
         int maxResults = maxResultsRaw == null || maxResultsRaw <= 0 ? DEFAULT_MAX_RESULTS : maxResultsRaw;
 
         int flags = 0;
@@ -65,15 +66,15 @@ public class GrepToolExecutor implements ToolExecutor {
 
         SearchResult result = search(searchBase, regex, includeMatcher, maxResults);
 
-        JSONObject json = new JSONObject();
+        ObjectNode json = CodingJson.newObject();
         json.put("pattern", patternStr);
         json.put("path", basePath);
-        json.put("matches", result.matches);
+        json.set("matches", CodingJson.valueToTree(result.matches));
         json.put("filesSearched", result.filesSearched);
         json.put("filesMatched", result.filesMatched);
         json.put("totalMatches", result.totalMatches);
         json.put("truncated", result.totalMatches >= maxResults);
-        return JSON.toJSONString(json);
+        return CodingJson.toJson(json);
     }
 
     SearchResult search(Path searchBase, Pattern regex, PathMatcher includeMatcher, int maxResults) throws IOException {
@@ -171,11 +172,21 @@ public class GrepToolExecutor implements ToolExecutor {
         return path.toString().replace('\\', '/');
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
+            if (arguments == null) {
+                throw new AgentToolInputException("grep arguments must be a JSON object");
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw new AgentToolInputException("grep arguments must be valid JSON: " + parseFailure.getMessage(), parseFailure);
+        }
     }
 
     private static String safeTrim(String value) {

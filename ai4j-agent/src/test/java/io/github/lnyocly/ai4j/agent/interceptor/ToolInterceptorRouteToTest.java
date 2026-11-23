@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
@@ -100,7 +100,7 @@ public class ToolInterceptorRouteToTest {
         assertEquals("local executor must be bypassed when routed to sandbox", 0, localExec.executed.size());
         assertEquals("a sandbox session must be created", 1, provider.created.size());
         assertTrue("model must be invoked again after the sandbox result", model.prompts.size() >= 2);
-        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        String fedBack = AgentJson.toJson(model.prompts.get(1));
         assertTrue("sandbox output must be fed back to the model: " + fedBack,
                 fedBack.contains("SANDBOX_RESULT") && fedBack.contains("sandboxed-output"));
     }
@@ -125,7 +125,7 @@ public class ToolInterceptorRouteToTest {
         agent.newSession().run("delete something");
 
         assertEquals(0, localExec.executed.size());
-        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        String fedBack = AgentJson.toJson(model.prompts.get(1));
         assertTrue("routeTo without provider must feed back a blocked reason: " + fedBack,
                 fedBack.contains("TOOL_BLOCKED") && fedBack.contains("no sandbox provider"));
     }

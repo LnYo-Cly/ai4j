@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.minimax.video;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.MinimaxConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.CommonException;
@@ -43,7 +44,7 @@ public class MinimaxVideoService implements IVideoService {
 
     private final MinimaxConfig minimaxConfig;
     private final OkHttpClient okHttpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonCodec.mapper();
 
     public MinimaxVideoService(Configuration configuration) {
         this.minimaxConfig = configuration.getMinimaxConfig();

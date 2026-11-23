@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.cli.acp;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.cli.ApprovalMode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.cli.runtime.CliToolApprovalDecorator;
 import io.github.lnyocly.ai4j.coding.tool.CodingToolNames;
 import io.github.lnyocly.ai4j.coding.tool.ToolExecutorDecorator;
@@ -92,8 +92,8 @@ public class AcpToolApprovalDecorator implements ToolExecutorDecorator {
         if (!CodingToolNames.BASH.equals(toolName)) {
             return false;
         }
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String action = arguments.getString("action");
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String action = CliJson.getString(arguments, "action");
         if (isBlank(action)) {
             action = "exec";
         }
@@ -114,7 +114,7 @@ public class AcpToolApprovalDecorator implements ToolExecutorDecorator {
         Map<String, Object> rawInput = new LinkedHashMap<String, Object>();
         rawInput.put("tool", firstNonBlank(toolName, call == null ? null : call.getName()));
         rawInput.put("callId", call == null ? null : call.getCallId());
-        rawInput.put("arguments", parseArguments(call == null ? null : call.getArguments()));
+        rawInput.put("arguments", CliJson.toPlainMap(parseArguments(call == null ? null : call.getArguments())));
         return rawInput;
     }
 
@@ -123,16 +123,12 @@ public class AcpToolApprovalDecorator implements ToolExecutorDecorator {
                 + firstNonBlank(optionId, toolName, call == null ? null : call.getName(), "tool");
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (isBlank(rawArguments)) {
-            return new JSONObject();
+            return CliJson.newObject();
         }
-        try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
-            return arguments == null ? new JSONObject() : arguments;
-        } catch (Exception ex) {
-            return new JSONObject();
-        }
+        ObjectNode arguments = CliJson.parseObjectOrNull(rawArguments);
+        return arguments == null ? CliJson.newObject() : arguments;
     }
 
     private String firstNonBlank(String... values) {

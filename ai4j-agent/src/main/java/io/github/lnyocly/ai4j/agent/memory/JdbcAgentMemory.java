@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.memory;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -209,7 +209,7 @@ public class JdbcAgentMemory implements AgentMemory {
                 summaryStatement.setString(2, ENTRY_TYPE_SUMMARY);
                 try (ResultSet resultSet = summaryStatement.executeQuery()) {
                     if (resultSet.next()) {
-                        Object value = JSON.parse(resultSet.getString("entry_json"));
+                        Object value = AgentJson.parsePlain(resultSet.getString("entry_json"));
                         summary = value == null ? null : String.valueOf(value);
                     }
                 }
@@ -221,7 +221,7 @@ public class JdbcAgentMemory implements AgentMemory {
                 itemsStatement.setString(2, ENTRY_TYPE_ITEM);
                 try (ResultSet resultSet = itemsStatement.executeQuery()) {
                     while (resultSet.next()) {
-                        items.add(JSON.parse(resultSet.getString("entry_json")));
+                        items.add(AgentJson.parsePlain(resultSet.getString("entry_json")));
                     }
                 }
             }
@@ -249,7 +249,7 @@ public class JdbcAgentMemory implements AgentMemory {
                         insertStatement.setString(1, sessionId);
                         insertStatement.setString(2, ENTRY_TYPE_SUMMARY);
                         insertStatement.setInt(3, 0);
-                        insertStatement.setString(4, JSON.toJSONString(snapshot.getSummary()));
+                        insertStatement.setString(4, AgentJson.toJson(snapshot.getSummary()));
                         insertStatement.setLong(5, now);
                         insertStatement.executeUpdate();
                     }
@@ -260,7 +260,7 @@ public class JdbcAgentMemory implements AgentMemory {
                             insertStatement.setString(1, sessionId);
                             insertStatement.setString(2, ENTRY_TYPE_ITEM);
                             insertStatement.setInt(3, i);
-                            insertStatement.setString(4, JSON.toJSONString(snapshot.getItems().get(i)));
+                            insertStatement.setString(4, AgentJson.toJson(snapshot.getItems().get(i)));
                             insertStatement.setLong(5, now);
                             insertStatement.addBatch();
                         }

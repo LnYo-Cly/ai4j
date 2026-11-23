@@ -1,11 +1,10 @@
 package io.github.lnyocly.ai4j.exception.chain.impl;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.chain.AbstractErrorHandler;
 import io.github.lnyocly.ai4j.exception.error.Error;
 import io.github.lnyocly.ai4j.exception.error.HunyuanError;
-import io.github.lnyocly.ai4j.exception.error.OpenAiError;
 import org.apache.commons.lang3.ObjectUtils;
 
 /**
@@ -18,7 +17,7 @@ public class HunyuanErrorHandler extends AbstractErrorHandler {
     public Error parseError(String errorInfo) {
         // 解析json字符串
         try{
-            HunyuanError hunyuanError = JSON.parseObject(errorInfo, HunyuanError.class);
+            HunyuanError hunyuanError = JsonCodec.fromJson(errorInfo, HunyuanError.class);
 
             HunyuanError.Response response = hunyuanError.getResponse();
 

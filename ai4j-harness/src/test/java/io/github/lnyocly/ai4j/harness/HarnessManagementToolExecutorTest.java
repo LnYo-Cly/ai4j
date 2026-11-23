@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
@@ -50,14 +49,14 @@ public class HarnessManagementToolExecutorTest {
                 execution.getScopeKey(), execution.getRunId(), HarnessActor.agent("support-agent"), null);
         HarnessManagementToolExecutor tools = new HarnessManagementToolExecutor(context);
 
-        TaskRecord first = JSON.parseObject(result(tools, "task-create-shop-a-1",
+        TaskRecord first = HarnessJson.fromJson(result(tools, "task-create-shop-a-1",
                 HarnessToolNames.TASK_MANAGE,
                 "{\"operation\":\"create\",\"taskId\":\"task-shop-a-1\"," 
                         + "\"title\":\"Investigate refund\"}"), TaskRecord.class);
         Assert.assertEquals("shop-a", first.getScopeKey());
         Assert.assertEquals(first.getTaskId(), context.getTaskId());
 
-        TaskRecord second = JSON.parseObject(result(tools, "task-create-shop-a-2",
+        TaskRecord second = HarnessJson.fromJson(result(tools, "task-create-shop-a-2",
                 HarnessToolNames.TASK_MANAGE,
                 "{\"operation\":\"create\",\"taskId\":\"task-shop-a-2\"," 
                         + "\"title\":\"Check replacement\"}"), TaskRecord.class);
@@ -116,7 +115,7 @@ public class HarnessManagementToolExecutorTest {
                 .title("Target")
                 .build());
 
-        RelationRecord relation = JSON.parseObject(result(tools, HarnessToolNames.RELATION_MANAGE,
+        RelationRecord relation = HarnessJson.fromJson(result(tools, HarnessToolNames.RELATION_MANAGE,
                 "{\"operation\":\"create\",\"type\":\"SUPPORTS\","
                         + "\"fromKind\":\"TASK\",\"fromId\":\"task-from\","
                         + "\"toKind\":\"TASK\",\"toId\":\"task-to\"}"), RelationRecord.class);
@@ -172,8 +171,8 @@ public class HarnessManagementToolExecutorTest {
                 .type("function_call")
                 .build();
 
-        TaskRecord first = JSON.parseObject(result(tools, call), TaskRecord.class);
-        TaskRecord repeated = JSON.parseObject(result(tools, call), TaskRecord.class);
+        TaskRecord first = HarnessJson.fromJson(result(tools, call), TaskRecord.class);
+        TaskRecord repeated = HarnessJson.fromJson(result(tools, call), TaskRecord.class);
 
         Assert.assertEquals(first.getTaskId(), repeated.getTaskId());
         Assert.assertEquals(1, gateway.listTasks("project-a").size());

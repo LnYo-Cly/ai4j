@@ -38,6 +38,7 @@ import io.github.lnyocly.ai4j.websearch.searxng.SearXNGConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -48,7 +49,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.KeyManagementException;
@@ -94,7 +94,7 @@ import java.util.Map;
         MinerUConfigProperties.class
 })
 
-public class AiConfigAutoConfiguration {
+public class AiConfigAutoConfiguration implements InitializingBean {
 
     // okhttp閰嶇疆
     private final OkHttpConfigProperties okHttpConfigProperties;
@@ -376,8 +376,12 @@ public class AiConfigAutoConfiguration {
         return new NoopReranker();
     }
 
-    @PostConstruct
-    private void init() {
+    @Override
+    public void afterPropertiesSet() {
+        init();
+    }
+
+    public void init() {
         initOkHttp();
 
         initPineconeConfig();

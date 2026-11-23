@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.session;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,7 +48,7 @@ public class FileAgentSessionStore implements AgentSessionStore {
         }
         Path file = pathFor(snapshot.getSessionId());
         try {
-            Files.write(file, JSON.toJSONString(snapshot).getBytes(StandardCharsets.UTF_8));
+            Files.write(file, AgentJson.toJsonBytes(snapshot));
         } catch (IOException e) {
             throw new RuntimeException("failed to save session snapshot " + snapshot.getSessionId(), e);
         }
@@ -68,7 +68,7 @@ public class FileAgentSessionStore implements AgentSessionStore {
             if (json.trim().isEmpty()) {
                 return null;
             }
-            return JSON.parseObject(json, AgentSessionSnapshot.class);
+            return AgentJson.fromJson(json, AgentSessionSnapshot.class);
         } catch (IOException e) {
             throw new RuntimeException("failed to load session snapshot " + sessionId, e);
         }

@@ -1,7 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
@@ -225,6 +223,37 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
                     string(arguments, "summary"), objectMap(arguments.get("state")), actor());
             return completed(call, checkpoint);
         }
+        if ("escalate".equals(operation)) {
+            EscalationRecord esc = gateway.escalate(HarnessEscalateSpec.builder()
+                    .scopeKey(scopeKey(arguments))
+                    .taskId(defaultTask(string(arguments, "taskId")))
+                    .executionId(context.getExecutionId())
+                    .targetActorId(string(arguments, "targetActorId"))
+                    .question(requiredString(arguments, "question"))
+                    .options(stringList(arguments.get("options")))
+                    .recommend(string(arguments, "recommend"))
+                    .reason(string(arguments, "reason"))
+                    .build(), actor());
+            String output = "HARNESS_ESCALATED: " + HarnessJson.toJson(esc);
+            if (esc.getWaitId() != null) {
+                return AgentToolExecution.of(AgentToolResult.builder()
+                        .name(call.getName())
+                        .callId(call.getCallId())
+                        .output(output)
+                        .status(AgentToolExecutionStatus.WAITING)
+                        .waitId(esc.getWaitId())
+                        .build(), null);
+            }
+            return completed(call, esc);
+        }
+        if ("explain".equals(operation)) {
+            String entityRef = string(arguments, "entityRef");
+            if (entityRef == null || entityRef.trim().isEmpty()) {
+                entityRef = context.getTaskId() != null ? "TASK:" + context.getTaskId()
+                        : "EXECUTION:" + context.getExecutionId();
+            }
+            return completed(call, gateway.explain(entityRef));
+        }
         if ("wait".equals(operation) || "approval".equals(operation)) {
             WaitType type = "approval".equals(operation)
                     ? WaitType.APPROVAL
@@ -242,7 +271,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
             WaitRecord wait = gateway.ensureWait(context.getExecutionId(), context.getTaskId(),
                     string(arguments, "waitId"), type, string(arguments, "operationId"),
                     string(arguments, "externalKey"), payload, actor());
-            String output = "HARNESS_WAITING: " + JSON.toJSONString(wait);
+            String output = "HARNESS_WAITING: " + HarnessJson.toJson(wait);
             return AgentToolExecution.of(AgentToolResult.builder()
                     .name(call.getName())
                     .callId(call.getCallId())
@@ -323,7 +352,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
         AgentToolResult result = AgentToolResult.builder()
                 .name(call == null ? null : call.getName())
                 .callId(call == null ? null : call.getCallId())
-                .output(JSON.toJSONString(value))
+                .output(HarnessJson.toJson(value))
                 .status(AgentToolExecutionStatus.COMPLETED)
                 .build();
         return AgentToolExecution.completed(result);
@@ -378,7 +407,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
             return new LinkedHashMap<String, Object>();
         }
         try {
-            JSONObject object = JSON.parseObject(arguments);
+            Map<String, Object> object = HarnessJson.parseMap(arguments);
             return object == null ? new LinkedHashMap<String, Object>()
                     : new LinkedHashMap<String, Object>(object);
         } catch (RuntimeException error) {
@@ -410,7 +439,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
                 return new ArrayList<String>();
             }
             try {
-                raw = JSON.parseArray(value);
+                raw = HarnessJson.parseList(value);
             } catch (RuntimeException ignored) {
                 return Collections.singletonList(value);
             }
@@ -437,7 +466,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
             if (value.isEmpty()) {
                 return new LinkedHashMap<String, Object>();
             }
-            raw = JSON.parseObject(value);
+            raw = HarnessJson.parseMap(value);
         }
         if (!(raw instanceof Map)) {
             throw new HarnessValidationException("Harness tool argument must be an object");
@@ -456,7 +485,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
             return new ArrayList<HarnessTaskSpec>();
         }
         if (raw instanceof String) {
-            raw = JSON.parseArray((String) raw);
+            raw = HarnessJson.parseList((String) raw);
         }
         if (!(raw instanceof List)) {
             throw new HarnessValidationException("children must be an array");
@@ -466,7 +495,7 @@ public final class HarnessManagementToolExecutor implements AsyncToolExecutor {
             if (value == null) {
                 continue;
             }
-            HarnessTaskSpec child = JSON.parseObject(JSON.toJSONString(value), HarnessTaskSpec.class);
+            HarnessTaskSpec child = HarnessJson.convert(value, HarnessTaskSpec.class);
             String requestedScope = child == null ? null : child.getScopeKey();
             String currentScope = context.getScopeKey();
             if (requestedScope != null && currentScope != null

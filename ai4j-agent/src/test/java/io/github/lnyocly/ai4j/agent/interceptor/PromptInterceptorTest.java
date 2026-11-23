@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
@@ -48,7 +48,7 @@ public class PromptInterceptorTest {
         agent.newSession().run("hello world");
 
         assertEquals("model must be called once", 1, model.prompts.size());
-        String seenByModel = JSON.toJSONString(model.prompts.get(0));
+        String seenByModel = AgentJson.toJson(model.prompts.get(0));
         assertTrue("model must see the MODIFIED (uppercased) input: " + seenByModel,
                 seenByModel.contains("HELLO WORLD"));
     }
@@ -63,7 +63,7 @@ public class PromptInterceptorTest {
         agent.newSession().run("hello world");
 
         assertEquals(1, model.prompts.size());
-        assertTrue(JSON.toJSONString(model.prompts.get(0)).contains("hello world"));
+        assertTrue(AgentJson.toJson(model.prompts.get(0)).contains("hello world"));
     }
 
     @Test

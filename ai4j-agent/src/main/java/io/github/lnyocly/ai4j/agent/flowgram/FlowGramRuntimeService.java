@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.flowgram;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramEdgeSchema;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramNodeSchema;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskCancelOutput;
@@ -10,6 +9,7 @@ import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskRunInput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskRunOutput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskValidateOutput;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramWorkflowSchema;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -771,7 +771,7 @@ public class FlowGramRuntimeService implements AutoCloseable {
             return null;
         }
         try {
-            FlowGramWorkflowSchema schema = JSON.parseObject(input.getSchema(), FlowGramWorkflowSchema.class);
+            FlowGramWorkflowSchema schema = AgentJson.fromJson(input.getSchema(), FlowGramWorkflowSchema.class);
             if (schema == null || schema.getNodes() == null || schema.getNodes().isEmpty()) {
                 errors.add("FlowGram schema must contain at least one node");
                 return null;

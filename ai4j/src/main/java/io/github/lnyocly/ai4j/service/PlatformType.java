@@ -3,6 +3,8 @@ package io.github.lnyocly.ai4j.service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.Locale;
+
 /**
  * @Author cly
  * @Description TODO
@@ -10,7 +12,7 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
-public enum PlatformType {
+public enum PlatformType implements Platform {
     OPENAI("openai"),
     ANTHROPIC("anthropic"),
     ZHIPU("zhipu"),
@@ -28,16 +30,35 @@ public enum PlatformType {
     GROK("grok"),
     AGNES("agnes"),
     TYPESAFE("typesafe"),
+    GEMINI("gemini"),
     ;
     private final String platform;
 
-    public static PlatformType getPlatform(String value) {
-        String target = value.toLowerCase();
+    @Override
+    public String id() {
+        return platform;
+    }
+
+    /**
+     * Strictly resolves a platform identifier after trimming and lowercasing.
+     */
+    public static PlatformType fromPlatform(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Platform must not be null");
+        }
+        String target = value.trim().toLowerCase(Locale.ROOT);
+        if (target.isEmpty()) {
+            throw new IllegalArgumentException("Platform must not be blank");
+        }
         for (PlatformType platformType : PlatformType.values()) {
             if (platformType.getPlatform().equals(target)) {
                 return platformType;
             }
         }
-        return PlatformType.OPENAI;
+        throw new IllegalArgumentException("Unsupported platform: " + value);
+    }
+
+    public static PlatformType getPlatform(String value) {
+        return fromPlatform(value);
     }
 }

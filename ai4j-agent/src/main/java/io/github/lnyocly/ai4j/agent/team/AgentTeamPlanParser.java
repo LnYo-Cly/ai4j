@@ -1,8 +1,9 @@
 package io.github.lnyocly.ai4j.agent.team;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,11 +42,11 @@ final class AgentTeamPlanParser {
 
         try {
             if (trimmed.startsWith("[")) {
-                return parseArray(JSON.parseArray(trimmed));
+                return parseArray(AgentJson.parseArrayStrictOrNull(trimmed));
             }
             if (trimmed.startsWith("{")) {
-                JSONObject obj = JSON.parseObject(trimmed);
-                JSONArray tasksArray = firstArray(obj, "tasks", "plan", "delegations", "assignments");
+                ObjectNode obj = AgentJson.parseObjectStrictOrNull(trimmed);
+                ArrayNode tasksArray = firstArray(obj, "tasks", "plan", "delegations", "assignments");
                 if (tasksArray != null) {
                     return parseArray(tasksArray);
                 }
@@ -63,29 +64,29 @@ final class AgentTeamPlanParser {
         }
     }
 
-    private static JSONArray firstArray(JSONObject obj, String... keys) {
+    private static ArrayNode firstArray(ObjectNode obj, String... keys) {
         if (obj == null || keys == null) {
             return null;
         }
         for (String key : keys) {
-            Object value = obj.get(key);
-            if (value instanceof JSONArray) {
-                return (JSONArray) value;
+            JsonNode value = obj.get(key);
+            if (value != null && value.isArray()) {
+                return (ArrayNode) value;
             }
         }
         return null;
     }
 
-    private static List<AgentTeamTask> parseArray(JSONArray array) {
+    private static List<AgentTeamTask> parseArray(ArrayNode array) {
         if (array == null || array.isEmpty()) {
             return Collections.emptyList();
         }
         List<AgentTeamTask> tasks = new ArrayList<>();
-        for (Object item : array) {
-            if (!(item instanceof JSONObject)) {
+        for (JsonNode item : array) {
+            if (item == null || !item.isObject()) {
                 continue;
             }
-            AgentTeamTask task = parseTask((JSONObject) item);
+            AgentTeamTask task = parseTask((ObjectNode) item);
             if (task != null) {
                 tasks.add(task);
             }
@@ -93,7 +94,7 @@ final class AgentTeamPlanParser {
         return tasks;
     }
 
-    private static AgentTeamTask parseTask(JSONObject obj) {
+    private static AgentTeamTask parseTask(ObjectNode obj) {
         if (obj == null) {
             return null;
         }
@@ -114,16 +115,15 @@ final class AgentTeamPlanParser {
                 .build();
     }
 
-    private static List<String> parseDependencies(Object raw) {
-        if (raw == null) {
+    private static List<String> parseDependencies(JsonNode raw) {
+        if (raw == null || raw.isNull() || raw.isMissingNode()) {
             return Collections.emptyList();
         }
         List<String> dependencies = new ArrayList<>();
-        if (raw instanceof JSONArray) {
-            JSONArray array = (JSONArray) raw;
-            for (Object item : array) {
-                if (item instanceof String) {
-                    String value = ((String) item).trim();
+        if (raw.isArray()) {
+            for (JsonNode item : raw) {
+                if (item != null && item.isTextual()) {
+                    String value = item.asText().trim();
                     if (!value.isEmpty()) {
                         dependencies.add(value);
                     }
@@ -131,8 +131,8 @@ final class AgentTeamPlanParser {
             }
             return dependencies;
         }
-        if (raw instanceof String) {
-            String[] parts = ((String) raw).split(",");
+        if (raw.isTextual()) {
+            String[] parts = raw.asText().split(",");
             for (String part : parts) {
                 String value = part.trim();
                 if (!value.isEmpty()) {
@@ -144,22 +144,22 @@ final class AgentTeamPlanParser {
         return Collections.emptyList();
     }
 
-    private static Object firstValue(JSONObject obj, String... keys) {
+    private static JsonNode firstValue(ObjectNode obj, String... keys) {
         if (obj == null || keys == null) {
             return null;
         }
         for (String key : keys) {
-            if (obj.containsKey(key)) {
+            if (obj.has(key)) {
                 return obj.get(key);
             }
         }
         return null;
     }
 
-    private static String firstString(JSONObject obj, String... keys) {
-        Object value = firstValue(obj, keys);
-        if (value instanceof String) {
-            String text = ((String) value).trim();
+    private static String firstString(ObjectNode obj, String... keys) {
+        JsonNode value = firstValue(obj, keys);
+        if (value != null && value.isTextual()) {
+            String text = value.asText().trim();
             if (!text.isEmpty()) {
                 return text;
             }

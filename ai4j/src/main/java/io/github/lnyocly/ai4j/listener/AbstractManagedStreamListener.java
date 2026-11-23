@@ -12,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-abstract class AbstractManagedStreamListener extends EventSourceListener implements ManagedStreamListener {
+public abstract class AbstractManagedStreamListener extends EventSourceListener implements ManagedStreamListener {
 
     @Getter
     private volatile CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -30,7 +30,10 @@ abstract class AbstractManagedStreamListener extends EventSourceListener impleme
     @Override
     public void onOpen(@NotNull EventSource eventSource, @NotNull Response response) {
         attachEventSource(eventSource);
-        cancelRequested = false;
+        if (cancelRequested) {
+            cancelActiveEventSource();
+            return;
+        }
         openedAtEpochMs = System.currentTimeMillis();
         lastActivityAtEpochMs = openedAtEpochMs;
         receivedEvent = false;
@@ -105,6 +108,11 @@ abstract class AbstractManagedStreamListener extends EventSourceListener impleme
         return failure;
     }
 
+    /** Read-only view of the response recorded with the last failure, or {@code null}. */
+    public Response getFailureResponse() {
+        return failureResponse;
+    }
+
     @Override
     public void recordFailure(Throwable failure) {
         recordFailure(failure, null);
@@ -130,7 +138,6 @@ abstract class AbstractManagedStreamListener extends EventSourceListener impleme
     public void prepareForRetry() {
         clearFailure();
         eventSource = null;
-        cancelRequested = false;
         openedAtEpochMs = 0L;
         lastActivityAtEpochMs = 0L;
         receivedEvent = false;

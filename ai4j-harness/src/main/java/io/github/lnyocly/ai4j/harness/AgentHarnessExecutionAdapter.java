@@ -1,7 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
@@ -9,7 +7,9 @@ import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.AgentSession;
+import io.github.lnyocly.ai4j.agent.interceptor.ModelRequestHook;
 import io.github.lnyocly.ai4j.agent.memory.MemorySnapshot;
+import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolVisibility;
@@ -18,6 +18,7 @@ import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Default adapter that runs the existing {@link Agent} runtime inside the
@@ -149,11 +150,51 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
         if (resumed) {
             harnessPrompt = appendPrompt(harnessPrompt, HarnessPrompts.resumedInstructions());
         }
+        final ModelRequestHook baseModelHook = base.getModelRequestHook();
+        final AtomicInteger stepCounter = new AtomicInteger(0);
+        ModelRequestHook steerAwareHook = new ModelRequestHook() {
+            @Override
+            public AgentPrompt beforeModelRequest(AgentPrompt prompt, AgentContext context) {
+                AgentPrompt current = baseModelHook == null
+                        ? prompt : baseModelHook.beforeModelRequest(prompt, context);
+                if (current == null) {
+                    current = prompt;
+                }
+                if (executionContext.getExecutionId() != null) {
+                    List<SteerRecord> steers = executionContext.getGateway().consumePendingSteers(
+                            executionContext.getExecutionId(), stepCounter.getAndIncrement());
+                    if (steers != null && !steers.isEmpty()) {
+                        StringBuilder steerText = new StringBuilder();
+                        for (SteerRecord steer : steers) {
+                            if (steer != null && steer.getInstructions() != null) {
+                                if (steerText.length() > 0) {
+                                    steerText.append("\n");
+                                }
+                                steerText.append("[HARNESS_STEER]: ").append(steer.getInstructions());
+                            }
+                        }
+                        if (steerText.length() > 0) {
+                            current = current.toBuilder()
+                                    .instructions(appendPrompt(current.getInstructions(), steerText.toString()))
+                                    .build();
+                        }
+                    }
+                }
+                return current;
+            }
+        };
+        ExecutionRecord currentExec = executionContext.getExecutionId() == null
+                ? null : executionContext.getGateway().getExecution(executionContext.getExecutionId());
+        String effectiveModel = currentExec != null && currentExec.getTargetModel() != null
+                && !currentExec.getTargetModel().trim().isEmpty()
+                ? currentExec.getTargetModel().trim() : base.getModel();
         return base.toBuilder()
+                .model(effectiveModel)
                 .toolRegistry(new HarnessToolRegistry(base.getToolRegistry()))
                 .toolVisibility(toolVisibility == null ? base.getToolVisibility() : toolVisibility)
                 .toolExecutor(new HarnessToolExecutor(executionContext, businessExecutor))
                 .toolInterceptor(new HarnessToolInterceptor(base.getToolInterceptor()))
+                .modelRequestHook(steerAwareHook)
                 .options(optionsBuilder.build())
                 .sessionId(executionContext.getSessionId())
                 .systemPrompt(appendPrompt(base.getSystemPrompt(), harnessPrompt))
@@ -171,7 +212,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
         if (raw instanceof AgentSessionSnapshot) {
             return HarnessJson.copy((AgentSessionSnapshot) raw, AgentSessionSnapshot.class);
         }
-        return JSON.parseObject(JSON.toJSONString(raw), AgentSessionSnapshot.class);
+        return HarnessJson.convert(raw, AgentSessionSnapshot.class);
     }
 
     private HarnessAdapterState withSessionSnapshot(HarnessAdapterState state,
@@ -239,7 +280,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
             String markerJson = String.valueOf(rawText)
                     .substring(AgentToolCall.CODEACT_PENDING_RESULT_PREFIX.length()).trim();
             try {
-                JSONObject marker = JSON.parseObject(markerJson);
+                Map<String, Object> marker = HarnessJson.parseMap(markerJson);
                 if (marker == null || !callId.equals(String.valueOf(marker.get("callId")))) {
                     continue;
                 }
@@ -265,7 +306,7 @@ public final class AgentHarnessExecutionAdapter implements HarnessExecutionAdapt
     }
 
     private String stringify(Object value) {
-        return value instanceof String ? (String) value : JSON.toJSONString(value);
+        return value instanceof String ? (String) value : HarnessJson.toJson(value);
     }
 
     private String approvalDeliveryOutput(Object input) {

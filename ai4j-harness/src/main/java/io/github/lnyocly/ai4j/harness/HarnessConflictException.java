@@ -6,4 +6,8 @@ public class HarnessConflictException extends HarnessStoreException {
     public HarnessConflictException(String message) {
         super(message);
     }
+
+    public HarnessConflictException(String errorCode, String message) {
+        super(errorCode, message, null);
+    }
 }

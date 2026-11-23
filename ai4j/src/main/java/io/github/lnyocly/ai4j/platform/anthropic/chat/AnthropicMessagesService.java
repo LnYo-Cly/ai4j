@@ -3,6 +3,7 @@ package io.github.lnyocly.ai4j.platform.anthropic.chat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.network.UrlUtils;
@@ -65,7 +66,7 @@ public class AnthropicMessagesService implements IMessagesService {
         this.anthropicConfig = configuration.getAnthropicConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override
@@ -366,8 +367,8 @@ public class AnthropicMessagesService implements IMessagesService {
             return (String) value;
         }
         try {
-            return new ObjectMapper().writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+            return JsonCodec.toJson(value);
+        } catch (RuntimeException e) {
             return String.valueOf(value);
         }
     }

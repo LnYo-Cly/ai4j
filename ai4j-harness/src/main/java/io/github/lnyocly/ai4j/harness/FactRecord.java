@@ -26,6 +26,13 @@ public class FactRecord {
     private String invalidatedBy;
     private long createdAtEpochMs;
     private long invalidatedAtEpochMs;
+    @Builder.Default
+    private long version = 1L;
+    private String supersedesFactId;
+    private String supersededByFactId;
+    private String factTypeId;
+    private int factTypeVersion;
+    private String typedPayloadJson;
     private HarnessProvenance provenance;
 
     @Builder.Default

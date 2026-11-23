@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.platform.moonshot.chat;
 
-import com.alibaba.fastjson2.JSONObject;
-import com.alibaba.fastjson2.JSONPath;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.MoonshotConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -58,14 +58,14 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         this.moonshotConfig = configuration.getMoonshotConfig();
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     public MoonshotChatService(Configuration configuration, MoonshotConfig moonshotConfig) {
         this.moonshotConfig = moonshotConfig;
         this.okHttpClient = configuration.getOkHttpClient();
         this.factory = configuration.createRequestFactory();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override
@@ -84,7 +84,10 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
         moonshotChatCompletion.setResponseFormat(chatCompletion.getResponseFormat());
         moonshotChatCompletion.setStop(chatCompletion.getStop());
         moonshotChatCompletion.setStream(chatCompletion.getStream());
-        moonshotChatCompletion.setTemperature(chatCompletion.getTemperature() / 2);
+        Float temp = chatCompletion.getTemperature();
+        if (temp != null) {
+            moonshotChatCompletion.setTemperature(temp / 2);
+        }
         moonshotChatCompletion.setTopP(chatCompletion.getTopP());
         moonshotChatCompletion.setTools(chatCompletion.getTools());
         moonshotChatCompletion.setFunctions(chatCompletion.getFunctions());
@@ -255,11 +258,23 @@ public class MoonshotChatService implements IChatService, ParameterConvert<Moons
     }
 
     private MoonshotUsage extractStreamUsage(String data) {
-        JSONObject object = (JSONObject) JSONPath.eval(data, "$.choices[0].usage");
-        if (object == null) {
+        if (data == null || data.trim().isEmpty()) {
             return null;
         }
-        return object.toJavaObject(MoonshotUsage.class);
+        try {
+            JsonNode root = objectMapper.readTree(data);
+            JsonNode choices = root.path("choices");
+            if (!choices.isArray() || choices.isEmpty()) {
+                return null;
+            }
+            JsonNode usageNode = choices.get(0).get("usage");
+            if (usageNode == null || usageNode.isNull() || usageNode.isMissingNode()) {
+                return null;
+            }
+            return objectMapper.treeToValue(usageNode, MoonshotUsage.class);
+        } catch (JsonProcessingException e) {
+            throw new CommonException("Moonshot Chat 对象JSON序列化出错");
+        }
     }
 
     private void prepareChatCompletion(ChatCompletion chatCompletion, boolean stream) {

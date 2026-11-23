@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -83,7 +83,7 @@ final class OpenTelemetryTraceSupport {
             span.setAttribute(AttributeKey.doubleKey(key), ((Float) value).doubleValue());
             return;
         }
-        span.setAttribute(AttributeKey.stringKey(key), value instanceof String ? (String) value : JSON.toJSONString(value));
+        span.setAttribute(AttributeKey.stringKey(key), value instanceof String ? (String) value : AgentJson.toJson(value));
     }
 
     static String safeSegment(String value) {

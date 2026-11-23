@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.flowgram.springboot;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lnyocly.ai4j.AiConfigAutoConfiguration;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramLlmNodeRunner;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
@@ -73,6 +72,8 @@ public class FlowGramTaskControllerIntegrationTest {
     @Qualifier("testRuntimeEventCollector")
     private TestRuntimeEventCollector runtimeEventCollector;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Before
     public void setUp() {
         runtimeEventCollector.clear();
@@ -85,31 +86,28 @@ public class FlowGramTaskControllerIntegrationTest {
                 .inputs(mapOf("prompt", "hello-flowgram"))
                 .build();
 
-        JSONObject runResponse = postForJson("/flowgram/tasks/run", request);
-        String taskId = runResponse.getString("taskId");
+        JsonNode runResponse = postForJson("/flowgram/tasks/run", request);
+        String taskId = text(runResponse, "taskId");
         assertNotNull(taskId);
 
-        JSONObject result = awaitResult(taskId);
-        assertEquals("success", result.getString("status"));
-        assertTrue(result.getBooleanValue("terminated"));
-        assertEquals("custom:HELLO-FLOWGRAM", result.getJSONObject("result").getString("result"));
+        JsonNode result = awaitResult(taskId);
+        assertEquals("success", text(result, "status"));
+        assertTrue(bool(result, "terminated"));
+        assertEquals("custom:HELLO-FLOWGRAM", text(result.path("result"), "result"));
 
-        JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
-        assertEquals("hello-flowgram", report.getJSONObject("inputs").getString("prompt"));
-        assertEquals("custom:HELLO-FLOWGRAM", report.getJSONObject("outputs").getString("result"));
-        assertEquals("success", report.getJSONObject("workflow").getString("status"));
-        assertEquals("success", report.getJSONObject("nodes").getJSONObject("transform_0").getString("status"));
-        assertEquals("hello-flowgram", report.getJSONObject("nodes").getJSONObject("start_0")
-                .getJSONObject("inputs").getString("prompt"));
-        assertEquals("custom:HELLO-FLOWGRAM", report.getJSONObject("nodes").getJSONObject("transform_0")
-                .getJSONObject("outputs").getString("result"));
-        assertEquals("success", report.getJSONObject("trace").getString("status"));
-        assertEquals(taskId, report.getJSONObject("trace").getString("taskId"));
-        assertTrue(report.getJSONObject("trace").getJSONArray("events").size() >= 4);
-        assertEquals(8, report.getJSONObject("trace").getJSONObject("summary").getIntValue("eventCount"));
-        assertEquals(3, report.getJSONObject("trace").getJSONObject("summary").getIntValue("nodeCount"));
-        assertEquals("success", report.getJSONObject("trace").getJSONObject("nodes")
-                .getJSONObject("transform_0").getString("status"));
+        JsonNode report = getForJson("/flowgram/tasks/" + taskId + "/report");
+        assertEquals("hello-flowgram", text(report.path("inputs"), "prompt"));
+        assertEquals("custom:HELLO-FLOWGRAM", text(report.path("outputs"), "result"));
+        assertEquals("success", text(report.path("workflow"), "status"));
+        assertEquals("success", text(report.path("nodes").path("transform_0"), "status"));
+        assertEquals("hello-flowgram", text(report.path("nodes").path("start_0").path("inputs"), "prompt"));
+        assertEquals("custom:HELLO-FLOWGRAM", text(report.path("nodes").path("transform_0").path("outputs"), "result"));
+        assertEquals("success", text(report.path("trace"), "status"));
+        assertEquals(taskId, text(report.path("trace"), "taskId"));
+        assertTrue(report.path("trace").path("events").size() >= 4);
+        assertEquals(8, intVal(report.path("trace").path("summary"), "eventCount"));
+        assertEquals(3, intVal(report.path("trace").path("summary"), "nodeCount"));
+        assertEquals("success", text(report.path("trace").path("nodes").path("transform_0"), "status"));
 
         FlowGramStoredTask storedTask = taskStore.find(taskId);
         assertNotNull(storedTask);
@@ -117,9 +115,9 @@ public class FlowGramTaskControllerIntegrationTest {
         assertTrue(Boolean.TRUE.equals(storedTask.getTerminated()));
         assertEquals("custom:HELLO-FLOWGRAM", storedTask.getResultSnapshot().get("result"));
 
-        assertEquals(taskId, result.getJSONObject("trace").getString("taskId"));
-        assertEquals("success", result.getJSONObject("trace").getString("status"));
-        assertEquals(3, result.getJSONObject("trace").getJSONObject("summary").getIntValue("nodeCount"));
+        assertEquals(taskId, text(result.path("trace"), "taskId"));
+        assertEquals("success", text(result.path("trace"), "status"));
+        assertEquals(3, intVal(result.path("trace").path("summary"), "nodeCount"));
 
         assertTrue(runtimeEventCollector.hasEventType(FlowGramRuntimeEvent.Type.TASK_FINISHED));
         assertTrue(runtimeEventCollector.hasNodeEvent("transform_0", FlowGramRuntimeEvent.Type.NODE_FINISHED));
@@ -132,12 +130,13 @@ public class FlowGramTaskControllerIntegrationTest {
                 .inputs(Collections.<String, Object>emptyMap())
                 .build();
 
-        JSONObject response = postForJson("/flowgram/tasks/validate", request);
-        assertFalse(response.getBooleanValue("valid"));
+        JsonNode response = postForJson("/flowgram/tasks/validate", request);
+        assertFalse(bool(response, "valid"));
 
-        JSONArray errors = response.getJSONArray("errors");
-        assertTrue(errors.toJSONString().contains("FlowGram workflow must contain exactly one Start node"));
-        assertTrue(errors.toJSONString().contains("FlowGram workflow must contain at least one End node"));
+        JsonNode errors = response.path("errors");
+        assertTrue(errors.isArray());
+        assertTrue(errors.toString().contains("FlowGram workflow must contain exactly one Start node"));
+        assertTrue(errors.toString().contains("FlowGram workflow must contain at least one End node"));
     }
 
     @Test
@@ -147,30 +146,29 @@ public class FlowGramTaskControllerIntegrationTest {
                 .inputs(mapOf("prompt", "token-check"))
                 .build();
 
-        JSONObject runResponse = postForJson("/flowgram/tasks/run", request);
-        String taskId = runResponse.getString("taskId");
+        JsonNode runResponse = postForJson("/flowgram/tasks/run", request);
+        String taskId = text(runResponse, "taskId");
         assertNotNull(taskId);
 
         // Wait for the task to complete before reading the report — otherwise the LLM node
         // may not have run yet and metrics will be null (race condition).
-        JSONObject result = awaitResult(taskId);
+        JsonNode result = awaitResult(taskId);
 
-        JSONObject report = getForJson("/flowgram/tasks/" + taskId + "/report");
-        JSONObject llmOutputs = report.getJSONObject("nodes").getJSONObject("llm_0").getJSONObject("outputs");
-        JSONObject outputMetrics = llmOutputs.getJSONObject("metrics");
-        assertEquals(159L, outputMetrics.getLongValue("promptTokens"));
-        assertEquals(280L, outputMetrics.getLongValue("completionTokens"));
-        assertEquals(439L, outputMetrics.getLongValue("totalTokens"));
+        JsonNode report = getForJson("/flowgram/tasks/" + taskId + "/report");
+        JsonNode llmOutputs = report.path("nodes").path("llm_0").path("outputs");
+        JsonNode outputMetrics = llmOutputs.path("metrics");
+        assertEquals(159L, longVal(outputMetrics, "promptTokens"));
+        assertEquals(280L, longVal(outputMetrics, "completionTokens"));
+        assertEquals(439L, longVal(outputMetrics, "totalTokens"));
 
-        JSONObject traceMetrics = report.getJSONObject("trace").getJSONObject("summary").getJSONObject("metrics");
-        assertEquals(159L, traceMetrics.getLongValue("promptTokens"));
-        assertEquals(280L, traceMetrics.getLongValue("completionTokens"));
-        assertEquals(439L, traceMetrics.getLongValue("totalTokens"));
-        assertEquals(439L, report.getJSONObject("trace").getJSONObject("nodes")
-                .getJSONObject("llm_0").getJSONObject("metrics").getLongValue("totalTokens"));
+        JsonNode traceMetrics = report.path("trace").path("summary").path("metrics");
+        assertEquals(159L, longVal(traceMetrics, "promptTokens"));
+        assertEquals(280L, longVal(traceMetrics, "completionTokens"));
+        assertEquals(439L, longVal(traceMetrics, "totalTokens"));
+        assertEquals(439L, longVal(report.path("trace").path("nodes").path("llm_0").path("metrics"), "totalTokens"));
 
-        JSONObject resultTraceMetrics = result.getJSONObject("trace").getJSONObject("summary").getJSONObject("metrics");
-        assertEquals(439L, resultTraceMetrics.getLongValue("totalTokens"));
+        JsonNode resultTraceMetrics = result.path("trace").path("summary").path("metrics");
+        assertEquals(439L, longVal(resultTraceMetrics, "totalTokens"));
     }
 
     @Test
@@ -179,16 +177,16 @@ public class FlowGramTaskControllerIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        JSONObject response = JSON.parseObject(mvcResult.getResponse().getContentAsString());
-        assertEquals("FLOWGRAM_TASK_NOT_FOUND", response.getString("code"));
-        assertTrue(response.getString("message").contains("missing-task"));
+        JsonNode response = objectMapper.readTree(mvcResult.getResponse().getContentAsString());
+        assertEquals("FLOWGRAM_TASK_NOT_FOUND", text(response, "code"));
+        assertTrue(text(response, "message").contains("missing-task"));
     }
 
-    private JSONObject awaitResult(String taskId) throws Exception {
+    private JsonNode awaitResult(String taskId) throws Exception {
         long deadline = System.currentTimeMillis() + 5000L;
         while (System.currentTimeMillis() < deadline) {
-            JSONObject response = getForJson("/flowgram/tasks/" + taskId + "/result");
-            if (response.getBooleanValue("terminated")) {
+            JsonNode response = getForJson("/flowgram/tasks/" + taskId + "/result");
+            if (bool(response, "terminated")) {
                 return response;
             }
             Thread.sleep(20L);
@@ -196,20 +194,36 @@ public class FlowGramTaskControllerIntegrationTest {
         throw new AssertionError("Timed out waiting for FlowGram task result");
     }
 
-    private JSONObject postForJson(String path, Object body) throws Exception {
+    private JsonNode postForJson(String path, Object body) throws Exception {
         MvcResult mvcResult = mockMvc.perform(post(path)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JSON.toJSONString(body)))
+                        .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andReturn();
-        return JSON.parseObject(mvcResult.getResponse().getContentAsString());
+        return objectMapper.readTree(mvcResult.getResponse().getContentAsString());
     }
 
-    private JSONObject getForJson(String path) throws Exception {
+    private JsonNode getForJson(String path) throws Exception {
         MvcResult mvcResult = mockMvc.perform(get(path))
                 .andExpect(status().isOk())
                 .andReturn();
-        return JSON.parseObject(mvcResult.getResponse().getContentAsString());
+        return objectMapper.readTree(mvcResult.getResponse().getContentAsString());
+    }
+
+    private static String text(JsonNode node, String field) {
+        return node != null && node.hasNonNull(field) ? node.get(field).asText() : null;
+    }
+
+    private static boolean bool(JsonNode node, String field) {
+        return node != null && node.hasNonNull(field) && node.get(field).asBoolean();
+    }
+
+    private static int intVal(JsonNode node, String field) {
+        return node != null && node.hasNonNull(field) ? node.get(field).asInt() : 0;
+    }
+
+    private static long longVal(JsonNode node, String field) {
+        return node != null && node.hasNonNull(field) ? node.get(field).asLong() : 0L;
     }
 
     private static FlowGramWorkflowSchema customExecutorWorkflow() {

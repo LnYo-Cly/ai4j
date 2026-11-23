@@ -1,11 +1,11 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.process.BashProcessInfo;
 import io.github.lnyocly.ai4j.coding.process.BashProcessLogChunk;
 import io.github.lnyocly.ai4j.coding.process.SessionProcessRegistry;
@@ -56,9 +56,9 @@ public class BashToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
         boolean processTool = call != null && CodingToolNames.BASH_PROCESS.equals(call.getName());
-        String action = arguments.getString("action");
+        String action = CodingJson.getString(arguments, "action");
         if (action == null || action.trim().isEmpty()) {
             if (processTool) {
                 throw invalid("bash_process requires an action", null);
@@ -87,15 +87,15 @@ public class BashToolExecutor implements ToolExecutor {
         }
     }
 
-    private String exec(JSONObject arguments) throws Exception {
+    private String exec(ObjectNode arguments) throws Exception {
         ShellCommandResult result = shellCommandExecutor.execute(ShellCommandRequest.builder()
-                .command(arguments.getString("command"))
-                .workingDirectory(arguments.getString("cwd"))
-                .timeoutMs(arguments.getLong("timeoutMs"))
+                .command(CodingJson.getString(arguments, "command"))
+                .workingDirectory(CodingJson.getString(arguments, "cwd"))
+                .timeoutMs(CodingJson.getLong(arguments, "timeoutMs"))
                 .build());
         result.setStdout(capOutput(result.getStdout()));
         result.setStderr(capOutput(result.getStderr()));
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
     /**
@@ -137,47 +137,47 @@ public class BashToolExecutor implements ToolExecutor {
         return 10L * 1024L * 1024L;
     }
 
-    private String start(JSONObject arguments) throws Exception {
-        BashProcessInfo result = processRegistry.start(arguments.getString("command"), arguments.getString("cwd"));
-        return JSON.toJSONString(result);
+    private String start(ObjectNode arguments) throws Exception {
+        BashProcessInfo result = processRegistry.start(CodingJson.getString(arguments, "command"), CodingJson.getString(arguments, "cwd"));
+        return CodingJson.toJson(result);
     }
 
-    private String status(JSONObject arguments) {
-        return JSON.toJSONString(processRegistry.status(arguments.getString("processId")));
+    private String status(ObjectNode arguments) {
+        return CodingJson.toJson(processRegistry.status(CodingJson.getString(arguments, "processId")));
     }
 
-    private String logs(JSONObject arguments) {
+    private String logs(ObjectNode arguments) {
         BashProcessLogChunk result = processRegistry.logs(
-                arguments.getString("processId"),
-                arguments.getLong("offset"),
-                arguments.getInteger("limit")
+                CodingJson.getString(arguments, "processId"),
+                CodingJson.getLong(arguments, "offset"),
+                CodingJson.getInteger(arguments, "limit")
         );
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
-    private String write(JSONObject arguments) throws Exception {
-        String processId = arguments.getString("processId");
-        int bytesWritten = processRegistry.write(processId, arguments.getString("input"));
+    private String write(ObjectNode arguments) throws Exception {
+        String processId = CodingJson.getString(arguments, "processId");
+        int bytesWritten = processRegistry.write(processId, CodingJson.getString(arguments, "input"));
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("process", processRegistry.status(processId));
         result.put("bytesWritten", bytesWritten);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
-    private String stop(JSONObject arguments) {
-        return JSON.toJSONString(processRegistry.stop(arguments.getString("processId")));
+    private String stop(ObjectNode arguments) {
+        return CodingJson.toJson(processRegistry.stop(CodingJson.getString(arguments, "processId")));
     }
 
     private String list() {
-        return JSON.toJSONString(processRegistry.list());
+        return CodingJson.toJson(processRegistry.list());
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
             if (arguments == null) {
                 throw invalid("bash arguments must be a JSON object", null);
             }
@@ -189,14 +189,14 @@ public class BashToolExecutor implements ToolExecutor {
         }
     }
 
-    private void validateAction(JSONObject arguments, String action, boolean processTool) {
+    private void validateAction(ObjectNode arguments, String action, boolean processTool) {
         if (("exec".equals(action) || "start".equals(action))
-                && isBlank(arguments.getString("command"))) {
+                && isBlank(CodingJson.getString(arguments, "command"))) {
             throw invalid("bash " + action + " requires a non-empty command", null);
         }
         if (("status".equals(action) || "logs".equals(action)
                 || "stop".equals(action) || "write".equals(action))
-                && isBlank(arguments.getString("processId"))) {
+                && isBlank(CodingJson.getString(arguments, "processId"))) {
             throw invalid("bash " + action + " requires a processId", null);
         }
         if (!"exec".equals(action) && !"start".equals(action)

@@ -15,6 +15,7 @@ public class CliWorkspaceConfig {
     private List<String> skillDirectories;
     private List<String> agentDirectories;
     private CliHooksConfig hooks;
+    private CliFleetEdgeDescriptor fleetEdge;
 
     public CliWorkspaceConfig() {
     }
@@ -96,6 +97,14 @@ public class CliWorkspaceConfig {
 
     public void setHooks(CliHooksConfig hooks) {
         this.hooks = hooks;
+    }
+
+    public CliFleetEdgeDescriptor getFleetEdge() {
+        return fleetEdge;
+    }
+
+    public void setFleetEdge(CliFleetEdgeDescriptor fleetEdge) {
+        this.fleetEdge = fleetEdge;
     }
 
     public List<String> getSkillDirectories() {

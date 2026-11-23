@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.team.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamControl;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamMessage;
 import io.github.lnyocly.ai4j.agent.team.AgentTeamTaskState;
@@ -12,6 +12,7 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
             return delegate.execute(call);
         }
 
-        JSONObject args = parseArguments(call.getArguments());
+        ObjectNode args = parseArguments(call.getArguments());
         if (AgentTeamToolRegistry.TOOL_SEND_MESSAGE.equals(toolName)) {
             return handleSendMessage(args);
         }
@@ -103,7 +104,7 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
         return AsyncToolExecutors.start(delegate, call);
     }
 
-    private String handleSendMessage(JSONObject args) {
+    private String handleSendMessage(ObjectNode args) {
         String toMemberId = firstString(args, "toMemberId", "to", "memberId");
         String content = firstString(args, "content", "message", "text");
         String type = firstString(args, "type");
@@ -120,13 +121,15 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
         }
 
         control.sendMessage(memberId, toMemberId, type, taskId, content);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_SEND_MESSAGE, true);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_SEND_MESSAGE, true);
         result.put("toMemberId", toMemberId);
-        result.put("taskId", taskId);
-        return result.toJSONString();
+        if (taskId != null) {
+            result.put("taskId", taskId);
+        }
+        return AgentJson.toJson(result);
     }
 
-    private String handleBroadcast(JSONObject args) {
+    private String handleBroadcast(ObjectNode args) {
         String content = firstString(args, "content", "message", "text");
         String type = firstString(args, "type");
         String taskId = resolveTaskId(args, false);
@@ -139,97 +142,119 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
         }
 
         control.broadcastMessage(memberId, type, taskId, content);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_BROADCAST, true);
-        result.put("taskId", taskId);
-        return result.toJSONString();
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_BROADCAST, true);
+        if (taskId != null) {
+            result.put("taskId", taskId);
+        }
+        return AgentJson.toJson(result);
     }
 
     private String handleListTasks() {
         List<AgentTeamTaskState> tasks = control.listTaskStates();
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_LIST_TASKS, true);
-        result.put("tasks", tasks == null ? new ArrayList<AgentTeamTaskState>() : tasks);
-        return result.toJSONString();
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_LIST_TASKS, true);
+        result.set("tasks", AgentJson.valueToTree(tasks == null ? new ArrayList<AgentTeamTaskState>() : tasks));
+        return AgentJson.toJson(result);
     }
 
     private String handleReadMessages() {
         List<AgentTeamMessage> unread = control.readUnreadMessages(memberId);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_READ_MESSAGES, true);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_READ_MESSAGES, true);
         int count = unread == null ? 0 : unread.size();
         result.put("count", count);
         result.put("hasNewMessages", count > 0);
         if (count > 0) {
-            List<JSONObject> summaries = new ArrayList<JSONObject>();
+            ArrayNode summaries = AgentJson.createArrayNode();
             for (AgentTeamMessage message : unread) {
-                JSONObject summary = new JSONObject();
-                summary.put("from", message.getFromMemberId());
-                summary.put("to", message.getToMemberId());
-                summary.put("type", message.getType());
+                ObjectNode summary = AgentJson.createObjectNode();
+                if (message.getFromMemberId() != null) {
+                    summary.put("from", message.getFromMemberId());
+                }
+                if (message.getToMemberId() != null) {
+                    summary.put("to", message.getToMemberId());
+                }
+                if (message.getType() != null) {
+                    summary.put("type", message.getType());
+                }
                 if (message.getTaskId() != null) {
                     summary.put("taskId", message.getTaskId());
                 }
-                summary.put("content", message.getContent());
+                if (message.getContent() != null) {
+                    summary.put("content", message.getContent());
+                }
                 summaries.add(summary);
             }
-            result.put("messages", summaries);
+            result.set("messages", summaries);
         }
-        return result.toJSONString();
+        return AgentJson.toJson(result);
     }
 
-    private String handleClaimTask(JSONObject args) {
+    private String handleClaimTask(ObjectNode args) {
         String taskId = resolveTaskId(args, true);
         boolean ok = control.claimTask(taskId, memberId);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_CLAIM_TASK, ok);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_CLAIM_TASK, ok);
         result.put("taskId", taskId);
-        result.put("taskState", findTaskState(taskId));
-        return result.toJSONString();
+        AgentTeamTaskState taskState = findTaskState(taskId);
+        if (taskState != null) {
+            result.set("taskState", AgentJson.valueToTree(taskState));
+        }
+        return AgentJson.toJson(result);
     }
 
-    private String handleReleaseTask(JSONObject args) {
+    private String handleReleaseTask(ObjectNode args) {
         String taskId = resolveTaskId(args, true);
         String reason = firstString(args, "reason", "message");
         boolean ok = control.releaseTask(taskId, memberId, reason);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_RELEASE_TASK, ok);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_RELEASE_TASK, ok);
         result.put("taskId", taskId);
-        result.put("taskState", findTaskState(taskId));
-        return result.toJSONString();
+        AgentTeamTaskState taskState = findTaskState(taskId);
+        if (taskState != null) {
+            result.set("taskState", AgentJson.valueToTree(taskState));
+        }
+        return AgentJson.toJson(result);
     }
 
-    private String handleReassignTask(JSONObject args) {
+    private String handleReassignTask(ObjectNode args) {
         String taskId = resolveTaskId(args, true);
         String toMemberId = firstString(args, "toMemberId", "to", "memberId");
         if (toMemberId == null) {
             throw new IllegalArgumentException("toMemberId is required");
         }
         boolean ok = control.reassignTask(taskId, memberId, toMemberId);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_REASSIGN_TASK, ok);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_REASSIGN_TASK, ok);
         result.put("taskId", taskId);
         result.put("toMemberId", toMemberId);
-        result.put("taskState", findTaskState(taskId));
-        return result.toJSONString();
+        AgentTeamTaskState taskState = findTaskState(taskId);
+        if (taskState != null) {
+            result.set("taskState", AgentJson.valueToTree(taskState));
+        }
+        return AgentJson.toJson(result);
     }
 
-    private String handleHeartbeatTask(JSONObject args) {
+    private String handleHeartbeatTask(ObjectNode args) {
         String taskId = resolveTaskId(args, true);
         boolean ok = control.heartbeatTask(taskId, memberId);
-        JSONObject result = baseResult(AgentTeamToolRegistry.TOOL_HEARTBEAT_TASK, ok);
+        ObjectNode result = baseResult(AgentTeamToolRegistry.TOOL_HEARTBEAT_TASK, ok);
         result.put("taskId", taskId);
-        result.put("taskState", findTaskState(taskId));
-        return result.toJSONString();
+        AgentTeamTaskState taskState = findTaskState(taskId);
+        if (taskState != null) {
+            result.set("taskState", AgentJson.valueToTree(taskState));
+        }
+        return AgentJson.toJson(result);
     }
 
-    private JSONObject parseArguments(String raw) {
+    private ObjectNode parseArguments(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
-            return new JSONObject();
+            return AgentJson.createObjectNode();
         }
         try {
-            JSONObject object = JSON.parseObject(raw);
-            return object == null ? new JSONObject() : object;
+            ObjectNode object = AgentJson.parseObjectStrictOrNull(raw);
+            return object == null ? AgentJson.createObjectNode() : object;
         } catch (Exception e) {
             throw new IllegalArgumentException("invalid team tool arguments: " + raw);
         }
     }
 
-    private String resolveTaskId(JSONObject args, boolean required) {
+    private String resolveTaskId(ObjectNode args, boolean required) {
         String taskId = firstString(args, "taskId", "id");
         if (taskId == null || taskId.trim().isEmpty()) {
             taskId = defaultTaskId;
@@ -259,12 +284,12 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
         return null;
     }
 
-    private String firstString(JSONObject args, String... keys) {
+    private String firstString(ObjectNode args, String... keys) {
         if (args == null || keys == null) {
             return null;
         }
         for (String key : keys) {
-            String value = args.getString(key);
+            String value = AgentJson.text(args, key);
             if (value != null) {
                 String trimmed = value.trim();
                 if (!trimmed.isEmpty()) {
@@ -275,8 +300,8 @@ public class AgentTeamToolExecutor implements AsyncToolExecutor {
         return null;
     }
 
-    private JSONObject baseResult(String action, boolean ok) {
-        JSONObject object = new JSONObject();
+    private ObjectNode baseResult(String action, boolean ok) {
+        ObjectNode object = AgentJson.createObjectNode();
         object.put("action", action);
         object.put("ok", ok);
         object.put("memberId", memberId);

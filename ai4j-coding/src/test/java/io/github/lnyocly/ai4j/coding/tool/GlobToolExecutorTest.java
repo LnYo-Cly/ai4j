@@ -1,9 +1,11 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,45 +46,48 @@ public class GlobToolExecutorTest {
 
     @Test
     public void shouldMatchJavaFilesWithDoubleStar() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "**/*.java")));
-        assertTrue(result.getJSONArray("matches").contains("src/main/java/com/example/Foo.java"));
-        assertTrue(result.getJSONArray("matches").contains("src/main/java/com/example/Bar.java"));
-        assertTrue(result.getJSONArray("matches").contains("src/test/java/com/example/FooTest.java"));
-        assertFalse(result.getJSONArray("matches").contains("README.md"));
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "**/*.java")));
+        ArrayNode matches = CodingJson.getArray(result, "matches");
+        assertTrue(containsText(matches, "src/main/java/com/example/Foo.java"));
+        assertTrue(containsText(matches, "src/main/java/com/example/Bar.java"));
+        assertTrue(containsText(matches, "src/test/java/com/example/FooTest.java"));
+        assertFalse(containsText(matches, "README.md"));
     }
 
     @Test
     public void shouldExcludeTargetDirectory() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "**/*.java")));
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "**/*.java")));
         assertFalse("target/ should be excluded",
-                result.getJSONArray("matches").contains("target/ShouldNotMatch.java"));
+                containsText(CodingJson.getArray(result, "matches"), "target/ShouldNotMatch.java"));
     }
 
     @Test
     public void shouldMatchBySpecificSubPath() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("pattern", "**/*.java");
         a.put("path", "src/test");
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertTrue(result.getJSONArray("matches").contains("src/test/java/com/example/FooTest.java"));
-        assertEquals(1, result.getJSONArray("matches").size());
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        ArrayNode matches = CodingJson.getArray(result, "matches");
+        assertTrue(containsText(matches, "src/test/java/com/example/FooTest.java"));
+        assertEquals(1, matches.size());
     }
 
     @Test
     public void shouldMatchMarkdownFiles() throws Exception {
-        JSONObject result = JSON.parseObject(execute(args("pattern", "*.md")));
-        assertTrue(result.getJSONArray("matches").contains("README.md"));
-        assertEquals(1, result.getJSONArray("matches").size());
+        ObjectNode result = CodingJson.parseObject(execute(args("pattern", "*.md")));
+        ArrayNode matches = CodingJson.getArray(result, "matches");
+        assertTrue(containsText(matches, "README.md"));
+        assertEquals(1, matches.size());
     }
 
     @Test
     public void shouldRespectMaxResults() throws Exception {
-        JSONObject a = new JSONObject();
+        ObjectNode a = CodingJson.newObject();
         a.put("pattern", "**/*.java");
         a.put("maxResults", 1);
-        JSONObject result = JSON.parseObject(execute(a.toJSONString()));
-        assertEquals(1, result.getJSONArray("matches").size());
-        assertTrue(result.getBoolean("truncated"));
+        ObjectNode result = CodingJson.parseObject(execute(CodingJson.toJson(a)));
+        assertEquals(1, CodingJson.getArray(result, "matches").size());
+        assertTrue(CodingJson.getBooleanValue(result, "truncated"));
     }
 
     @Test
@@ -98,9 +103,21 @@ public class GlobToolExecutorTest {
     }
 
     private String args(String key, String value) {
-        JSONObject obj = new JSONObject();
+        ObjectNode obj = CodingJson.newObject();
         obj.put(key, value);
-        return obj.toJSONString();
+        return CodingJson.toJson(obj);
+    }
+
+    private boolean containsText(ArrayNode array, String expected) {
+        if (array == null) {
+            return false;
+        }
+        for (JsonNode item : array) {
+            if (item != null && !item.isNull() && expected.equals(item.asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String execute(String args) throws Exception {

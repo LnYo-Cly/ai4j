@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.agent.dynamicworkflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,10 +125,10 @@ public class NashornDynamicWorkflowExecutor implements DynamicWorkflowExecutor {
     }
 
     private String buildPrelude(DynamicWorkflowRequest request) {
-        String argsJson = request.getArgs() == null ? "{}" : JSON.toJSONString(request.getArgs());
+        String argsJson = request.getArgs() == null ? "{}" : AgentJson.toJson(request.getArgs());
         StringBuilder builder = new StringBuilder();
         builder.append("var __dynamic_workflow_result = null;\n");
-        builder.append("var args = JSON.parse(").append(JSON.toJSONString(argsJson)).append(");\n");
+        builder.append("var args = JSON.parse(").append(AgentJson.toJson(argsJson)).append(");\n");
         builder.append("try {\n");
         builder.append("  this.Java = undefined; this.Packages = undefined; this.java = undefined; this.javax = undefined;\n");
         builder.append("  this.org = undefined; this.com = undefined; this.load = undefined; this.loadWithNewGlobal = undefined;\n");
@@ -494,7 +493,7 @@ public class NashornDynamicWorkflowExecutor implements DynamicWorkflowExecutor {
             if (isBlank(optionsJson)) {
                 return new LinkedHashMap<String, Object>();
             }
-            JSONObject object = JSON.parseObject(optionsJson);
+            Map<String, Object> object = AgentJson.parseMap(optionsJson);
             return object == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(object);
         }
 

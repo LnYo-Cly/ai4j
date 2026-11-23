@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.agent.team;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +42,7 @@ public class LlmAgentTeamSynthesizer implements AgentTeamSynthesizer {
         sb.append("Objective:\n").append(objective == null ? "" : objective).append("\n\n");
         if (plan != null) {
             sb.append("Plan JSON:\n");
-            sb.append(JSON.toJSONString(plan.getTasks())).append("\n\n");
+            sb.append(AgentJson.toJson(plan.getTasks())).append("\n\n");
         }
         sb.append("Member outputs:\n");
         for (AgentTeamMemberResult result : safeResults) {

@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.node;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutor;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramJsonSupport;
 import io.github.lnyocly.ai4j.rag.DefaultRagService;
 import io.github.lnyocly.ai4j.rag.DenseRetriever;
 import io.github.lnyocly.ai4j.rag.RagCitation;
@@ -153,8 +153,8 @@ public class FlowGramKnowledgeRetrieveNodeExecutor implements FlowGramNodeExecut
             return null;
         }
         try {
-            return JSON.parseObject(text, LinkedHashMap.class);
-        } catch (Exception ignore) {
+            return FlowGramJsonSupport.readMapOrNull(text);
+        } catch (RuntimeException ignore) {
             return null;
         }
     }

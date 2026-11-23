@@ -1,13 +1,14 @@
 package io.github.lnyocly.ai4j.agentflow.chat;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -34,48 +35,48 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
     public AgentFlowChatResponse chat(AgentFlowChatRequest request) throws Exception {
         AgentFlowTraceContext traceContext = startTrace("chat", false, request);
         try {
-            JSONObject createResponse = executeObject(buildCreateRequest(request, false));
+            ObjectNode createResponse = executeObject(buildCreateRequest(request, false));
             assertCozeSuccess(createResponse);
 
-            JSONObject createData = createResponse.getJSONObject("data");
-            String chatId = createData == null ? null : createData.getString("id");
+            ObjectNode createData = objectField(createResponse, "data");
+            String chatId = textValue(createData, "id");
             String conversationId = firstNonBlank(
-                    createData == null ? null : createData.getString("conversation_id"),
+                    textValue(createData, "conversation_id"),
                     defaultConversationId(request.getConversationId())
             );
             if (isBlank(chatId)) {
                 throw new AgentFlowException("Coze chat id is missing");
             }
 
-            JSONObject chatData = pollChat(conversationId, chatId);
-            String status = chatData.getString("status");
+            ObjectNode chatData = pollChat(conversationId, chatId);
+            String status = textValue(chatData, "status");
             if (!"completed".equals(status)) {
                 throw new AgentFlowException("Coze chat finished with status: " + status);
             }
 
-            JSONObject messageResponse = executeObject(buildMessageListRequest(conversationId, chatId));
+            ObjectNode messageResponse = executeObject(buildMessageListRequest(conversationId, chatId));
             assertCozeSuccess(messageResponse);
 
-            JSONArray messages = messageResponse.getJSONArray("data");
+            ArrayNode messages = arrayField(messageResponse, "data");
             StringBuilder content = new StringBuilder();
             String messageId = null;
             if (messages != null) {
                 for (int i = messages.size() - 1; i >= 0; i--) {
-                    JSONObject message = messages.getJSONObject(i);
-                    if (message == null) {
+                    JsonNode message = messages.get(i);
+                    if (message == null || !message.isObject()) {
                         continue;
                     }
-                    if (!"assistant".equals(message.getString("role"))) {
+                    if (!"assistant".equals(textValue(message, "role"))) {
                         continue;
                     }
-                    String messageContent = message.getString("content");
+                    String messageContent = textValue(message, "content");
                     if (!isBlank(messageContent)) {
                         if (content.length() > 0) {
                             content.insert(0, "\n");
                         }
                         content.insert(0, messageContent);
                         if (messageId == null) {
-                            messageId = message.getString("id");
+                            messageId = textValue(message, "id");
                         }
                     }
                 }
@@ -90,7 +91,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                     .conversationId(conversationId)
                     .messageId(messageId)
                     .taskId(chatId)
-                    .usage(usageFromCoze(chatData.getJSONObject("usage")))
+                    .usage(usageFromCoze(objectField(chatData, "usage")))
                     .raw(raw)
                     .build();
             traceComplete(traceContext, chatResponse);
@@ -133,7 +134,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 @NotNull String data) {
                 try {
                     String eventType = type;
-                    JSONObject payload = parseObjectOrNull(data);
+                    ObjectNode payload = parseObjectOrNull(data);
 
                     if ("done".equals(eventType)) {
                         AgentFlowChatEvent event = AgentFlowChatEvent.builder()
@@ -172,14 +173,14 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                     String delta = null;
                     if (eventType != null && eventType.startsWith("conversation.chat.")) {
                         conversationIdRef.set(firstNonBlank(
-                                payload == null ? null : payload.getString("conversation_id"),
+                                textValue(payload, "conversation_id"),
                                 conversationIdRef.get()
                         ));
                         chatIdRef.set(firstNonBlank(
-                                payload == null ? null : payload.getString("id"),
+                                textValue(payload, "id"),
                                 chatIdRef.get()
                         ));
-                        AgentFlowUsage usage = payload == null ? null : usageFromCoze(payload.getJSONObject("usage"));
+                        AgentFlowUsage usage = usageFromCoze(objectField(payload, "usage"));
                         if (usage != null) {
                             usageRef.set(usage);
                         }
@@ -188,18 +189,18 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                         }
                     } else if (eventType != null && eventType.startsWith("conversation.message.")) {
                         conversationIdRef.set(firstNonBlank(
-                                payload == null ? null : payload.getString("conversation_id"),
+                                textValue(payload, "conversation_id"),
                                 conversationIdRef.get()
                         ));
                         chatIdRef.set(firstNonBlank(
-                                payload == null ? null : payload.getString("chat_id"),
+                                textValue(payload, "chat_id"),
                                 chatIdRef.get()
                         ));
                         messageIdRef.set(firstNonBlank(
-                                payload == null ? null : payload.getString("id"),
+                                textValue(payload, "id"),
                                 messageIdRef.get()
                         ));
-                        String contentValue = payload == null ? null : payload.getString("content");
+                        String contentValue = textValue(payload, "content");
                         if ("conversation.message.delta".equals(eventType)) {
                             delta = contentValue;
                             if (!isBlank(delta)) {
@@ -282,19 +283,19 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
         }
     }
 
-    private JSONObject pollChat(String conversationId, String chatId) throws Exception {
+    private ObjectNode pollChat(String conversationId, String chatId) throws Exception {
         long deadline = System.currentTimeMillis() + pollTimeoutMillis();
         while (true) {
             String url = appendQuery(
                     joinedUrl(requireBaseUrl(), "v3/chat/retrieve"),
                     query(conversationId, chatId)
             );
-            JSONObject retrieveResponse = executeObject(jsonRequestBuilder(url).get().build());
+            ObjectNode retrieveResponse = executeObject(jsonRequestBuilder(url).get().build());
             assertCozeSuccess(retrieveResponse);
-            JSONObject chatData = retrieveResponse.getJSONObject("data");
-            String status = chatData == null ? null : chatData.getString("status");
+            ObjectNode chatData = objectField(retrieveResponse, "data");
+            String status = textValue(chatData, "status");
             if ("completed".equals(status) || "failed".equals(status) || "canceled".equals(status) || "requires_action".equals(status)) {
-                return chatData == null ? new JSONObject() : chatData;
+                return chatData == null ? JsonCodec.createObjectNode() : chatData;
             }
             if (System.currentTimeMillis() >= deadline) {
                 throw new AgentFlowException("Coze chat poll timed out");
@@ -312,24 +313,22 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
         return jsonRequestBuilder(url).post(jsonBody(buildCreateBody(request, stream))).build();
     }
 
-    private JSONObject buildCreateBody(AgentFlowChatRequest request, boolean stream) {
-        JSONObject body = new JSONObject();
+    private ObjectNode buildCreateBody(AgentFlowChatRequest request, boolean stream) {
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("bot_id", requireBotId());
         body.put("user_id", defaultUserId(request.getUserId()));
         body.put("stream", stream);
-        body.put("additional_messages", Collections.singletonList(userMessage(request.getPrompt())));
+        body.set("additional_messages", JsonCodec.valueToTree(Collections.singletonList(userMessage(request.getPrompt()))));
         if (request.getInputs() != null && !request.getInputs().isEmpty()) {
-            body.put("parameters", request.getInputs());
+            body.set("parameters", JsonCodec.valueToTree(request.getInputs()));
         }
         if (request.getMetadata() != null && !request.getMetadata().isEmpty()) {
-            body.put("meta_data", toStringMap(request.getMetadata()));
+            body.set("meta_data", JsonCodec.valueToTree(toStringMap(request.getMetadata())));
         }
-        if (!stream && !body.containsKey("auto_save_history")) {
+        if (!stream && !body.has("auto_save_history")) {
             body.put("auto_save_history", true);
         }
-        if (request.getExtraBody() != null && !request.getExtraBody().isEmpty()) {
-            body.putAll(request.getExtraBody());
-        }
+        putExtraBody(body, request.getExtraBody());
         return body;
     }
 
@@ -338,7 +337,7 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
                 joinedUrl(requireBaseUrl(), "v1/conversation/message/list"),
                 queryConversation(conversationId)
         );
-        JSONObject body = new JSONObject();
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("conversation_id", conversationId);
         body.put("chat_id", chatId);
         body.put("order", "asc");
@@ -349,25 +348,13 @@ public class CozeAgentFlowChatService extends AgentFlowSupport implements AgentF
         return jsonRequestBuilder(url).post(jsonBody(body)).build();
     }
 
-    private JSONObject userMessage(String prompt) {
-        JSONObject message = new JSONObject();
+    private ObjectNode userMessage(String prompt) {
+        ObjectNode message = JsonCodec.createObjectNode();
         message.put("role", "user");
         message.put("type", "question");
         message.put("content", prompt);
         message.put("content_type", "text");
         return message;
-    }
-
-    private JSONObject parseObjectOrNull(String data) {
-        if (isBlank(data)) {
-            return null;
-        }
-        try {
-            Object parsed = JSON.parse(data);
-            return parsed instanceof JSONObject ? (JSONObject) parsed : null;
-        } catch (Exception ex) {
-            return null;
-        }
     }
 
     private Map<String, String> queryConversation(String conversationId) {

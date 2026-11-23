@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.agent.codeact;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Value;
@@ -353,7 +353,7 @@ public class GraalVmCodeExecutor implements CodeExecutor {
             } else if (args instanceof String) {
                 arguments = (String) args;
             } else {
-                arguments = JSON.toJSONString(args);
+                arguments = AgentJson.toJson(args);
             }
             AgentToolCall call = AgentToolCall.builder()
                     .name(resolveName(name))

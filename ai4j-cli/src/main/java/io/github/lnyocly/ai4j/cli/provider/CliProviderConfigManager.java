@@ -1,13 +1,12 @@
 package io.github.lnyocly.ai4j.cli.provider;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONWriter;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.cli.CliProtocol;
+import io.github.lnyocly.ai4j.cli.config.CliFleetEdgeDescriptor;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.service.PlatformType;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +49,7 @@ public class CliProviderConfigManager {
             throw new IOException("user home directory is unavailable");
         }
         Files.createDirectories(path.getParent());
-        Files.write(path, JSON.toJSONString(normalized, JSONWriter.Feature.PrettyFormat).getBytes(StandardCharsets.UTF_8));
+        Files.write(path, CliJson.toPrettyJsonBytes(normalized));
         return normalized;
     }
 
@@ -68,7 +67,7 @@ public class CliProviderConfigManager {
         normalize(normalized);
         Path path = workspaceConfigPath();
         Files.createDirectories(path.getParent());
-        Files.write(path, JSON.toJSONString(normalized, JSONWriter.Feature.PrettyFormat).getBytes(StandardCharsets.UTF_8));
+        Files.write(path, CliJson.toPrettyJsonBytes(normalized));
         return normalized;
     }
 
@@ -203,7 +202,7 @@ public class CliProviderConfigManager {
             return null;
         }
         try {
-            return JSON.parseObject(Files.readAllBytes(path), type);
+            return CliJson.fromJson(Files.readAllBytes(path), type);
         } catch (IOException ex) {
             return null;
         }
@@ -262,7 +261,7 @@ public class CliProviderConfigManager {
         }
         try {
             Files.createDirectories(path.getParent());
-            Files.write(path, JSON.toJSONString(config, JSONWriter.Feature.PrettyFormat).getBytes(StandardCharsets.UTF_8));
+            Files.write(path, CliJson.toPrettyJsonBytes(config));
         } catch (IOException ignored) {
         }
     }
@@ -312,6 +311,17 @@ public class CliProviderConfigManager {
         config.setEnabledMcpServers(normalizeNames(config.getEnabledMcpServers()));
         config.setSkillDirectories(normalizeNames(config.getSkillDirectories()));
         config.setAgentDirectories(normalizeNames(config.getAgentDirectories()));
+        if (config.getFleetEdge() != null) {
+            config.setFleetEdge(config.getFleetEdge().normalized());
+        }
+    }
+
+    public CliFleetEdgeDescriptor resolveFleetEdgeDescriptor() {
+        CliWorkspaceConfig config = loadWorkspaceConfig();
+        if (config == null || config.getFleetEdge() == null) {
+            return null;
+        }
+        return config.getFleetEdge().normalized();
     }
 
     private boolean normalize(CliProviderProfile profile) {

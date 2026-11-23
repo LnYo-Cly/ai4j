@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.openai.video;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -37,7 +38,7 @@ public abstract class AbstractVideoService implements IVideoService {
 
     protected final OpenAiConfig openAiConfig;
     protected final OkHttpClient okHttpClient;
-    protected final ObjectMapper mapper = new ObjectMapper();
+    protected final ObjectMapper mapper = JsonCodec.mapper();
 
     protected AbstractVideoService(Configuration configuration) {
         this.openAiConfig = configuration.getOpenAiConfig();

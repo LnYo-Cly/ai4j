@@ -1,0 +1,72 @@
+{
+  "name": "openai-responses-weather",
+  "recordedFrom": "openai-responses",
+  "protocol": "RESPONSES",
+  "exchanges": [
+    {
+      "expectedPromptContains": [
+        "\"instructions\":\"Be helpful\"",
+        "\"input\"",
+        "tokyo",
+        "\"get_weather\""
+      ],
+      "wireResponse": {
+        "id": "resp_weather_1",
+        "output": [
+          {
+            "type": "reasoning",
+            "id": "rs_tokyo_1",
+            "encrypted_content": "enc_resp_sig_1",
+            "summary": [
+              {
+                "type": "summary_text",
+                "text": "Need Tokyo weather lookup"
+              }
+            ]
+          },
+          {
+            "type": "function_call",
+            "id": "fc_item_1",
+            "call_id": "fc_1",
+            "name": "get_weather",
+            "arguments": "{\"city\":\"tokyo\"}"
+          }
+        ],
+        "usage": {
+          "input_tokens": 30,
+          "output_tokens": 18,
+          "total_tokens": 48
+        }
+      }
+    },
+    {
+      "expectedPromptContains": [
+        "\"function_call\"",
+        "\"function_call_output\"",
+        "\"call_id\":\"fc_1\"",
+        "19C"
+      ],
+      "wireResponse": {
+        "id": "resp_weather_2",
+        "output": [
+          {
+            "type": "message",
+            "id": "msg_tokyo_2",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "Tokyo is 19C and clear."
+              }
+            ]
+          }
+        ],
+        "usage": {
+          "input_tokens": 55,
+          "output_tokens": 9,
+          "total_tokens": 64
+        }
+      }
+    }
+  ]
+}

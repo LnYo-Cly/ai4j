@@ -1,5 +1,7 @@
 package io.github.lnyocly.ai4j.agent.session;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSession;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxSpec;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxStatus;
@@ -47,6 +49,33 @@ public final class AgentSessionSandboxBinding {
         this.updatedAtEpochMs = builder.updatedAtEpochMs == null || builder.updatedAtEpochMs.longValue() <= 0
                 ? this.boundAtEpochMs
                 : builder.updatedAtEpochMs.longValue();
+    }
+
+    @JsonCreator
+    private AgentSessionSandboxBinding(
+            @JsonProperty("providerId") String providerId,
+            @JsonProperty("sandboxSessionId") String sandboxSessionId,
+            @JsonProperty("status") SandboxStatus status,
+            @JsonProperty("profile") String profile,
+            @JsonProperty("image") String image,
+            @JsonProperty("workspaceId") String workspaceId,
+            @JsonProperty("labels") Map<String, String> labels,
+            @JsonProperty("boundAtEpochMs") Long boundAtEpochMs,
+            @JsonProperty("updatedAtEpochMs") Long updatedAtEpochMs) {
+        long now = System.currentTimeMillis();
+        this.providerId = trimToNull(providerId);
+        this.sandboxSessionId = trimToNull(sandboxSessionId);
+        this.status = status;
+        this.profile = trimToNull(profile);
+        this.image = trimToNull(image);
+        this.workspaceId = trimToNull(workspaceId);
+        this.labels = sanitizeLabels(labels);
+        this.boundAtEpochMs = boundAtEpochMs == null || boundAtEpochMs.longValue() <= 0
+                ? now
+                : boundAtEpochMs.longValue();
+        this.updatedAtEpochMs = updatedAtEpochMs == null || updatedAtEpochMs.longValue() <= 0
+                ? this.boundAtEpochMs
+                : updatedAtEpochMs.longValue();
     }
 
     public static Builder builder() {

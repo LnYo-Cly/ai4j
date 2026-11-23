@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.agentflow.workflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -16,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,9 +32,9 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
     public AgentFlowWorkflowResponse run(AgentFlowWorkflowRequest request) throws Exception {
         AgentFlowTraceContext traceContext = startTrace("workflow", false, request);
         try {
-            JSONObject body = buildRequestBody(request, "blocking");
+            ObjectNode body = buildRequestBody(request, "blocking");
             String url = joinedUrl(requireBaseUrl(), "v1/workflows/run");
-            JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
+            ObjectNode response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
             AgentFlowWorkflowResponse workflowResponse = mapWorkflowResponse(response);
             traceComplete(traceContext, workflowResponse);
             return workflowResponse;
@@ -52,7 +51,7 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
         }
         final AgentFlowTraceContext traceContext = startTrace("workflow", true, request);
 
-        JSONObject body = buildRequestBody(request, "streaming");
+        ObjectNode body = buildRequestBody(request, "streaming");
         String url = joinedUrl(requireBaseUrl(), "v1/workflows/run");
         Request httpRequest = jsonRequestBuilder(url).post(jsonBody(body)).build();
 
@@ -78,15 +77,15 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 @Nullable String type,
                                 @NotNull String data) {
                 try {
-                    JSONObject payload = parseObjectOrNull(data);
-                    String eventType = firstNonBlank(type, payload == null ? null : payload.getString("event"));
+                    ObjectNode payload = parseObjectOrNull(data);
+                    String eventType = firstNonBlank(type, textValue(payload, "event"));
                     if (isBlank(eventType) || "ping".equals(eventType)) {
                         return;
                     }
 
                     if (payload != null) {
-                        taskIdRef.set(firstNonBlank(payload.getString("task_id"), taskIdRef.get()));
-                        workflowRunIdRef.set(firstNonBlank(payload.getString("workflow_run_id"), workflowRunIdRef.get()));
+                        taskIdRef.set(firstNonBlank(textValue(payload, "task_id"), taskIdRef.get()));
+                        workflowRunIdRef.set(firstNonBlank(textValue(payload, "workflow_run_id"), workflowRunIdRef.get()));
                     }
 
                     String outputText = null;
@@ -96,29 +95,27 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
 
                     if ("workflow_finished".equals(eventType)) {
                         done = true;
-                        JSONObject dataObject = payload == null ? null : payload.getJSONObject("data");
-                        status = dataObject == null ? null : dataObject.getString("status");
-                        JSONObject outputObject = dataObject == null ? null : dataObject.getJSONObject("outputs");
-                        outputs = outputObject == null
-                                ? Collections.<String, Object>emptyMap()
-                                : new LinkedHashMap<String, Object>(outputObject);
+                        ObjectNode dataObject = objectField(payload, "data");
+                        status = textValue(dataObject, "status");
+                        ObjectNode outputObject = objectField(dataObject, "outputs");
+                        outputs = toObjectMap(outputObject);
                         outputsRef.set(outputs);
                         outputText = extractText(outputObject);
                         if (!isBlank(outputText)) {
                             content.setLength(0);
                             content.append(outputText);
                         }
-                        AgentFlowUsage usage = usageFromDify(dataObject == null ? null : dataObject.getJSONObject("usage"));
+                        AgentFlowUsage usage = usageFromDify(objectField(dataObject, "usage"));
                         if (usage != null) {
                             usageRef.set(usage);
                         }
                     } else if ("message".equals(eventType) || "text_chunk".equals(eventType)) {
-                        outputText = payload == null ? null : firstNonBlank(payload.getString("answer"), payload.getString("text"));
+                        outputText = firstNonBlank(textValue(payload, "answer"), textValue(payload, "text"));
                         if (!isBlank(outputText)) {
                             content.append(outputText);
                         }
                     } else if ("error".equals(eventType)) {
-                        throw new AgentFlowException("Dify workflow stream error: " + (payload == null ? data : payload.toJSONString()));
+                        throw new AgentFlowException("Dify workflow stream error: " + (payload == null ? data : payload.toString()));
                     }
 
                     AgentFlowWorkflowEvent event = AgentFlowWorkflowEvent.builder()
@@ -210,43 +207,27 @@ public class DifyAgentFlowWorkflowService extends AgentFlowSupport implements Ag
         }
     }
 
-    private JSONObject buildRequestBody(AgentFlowWorkflowRequest request, String responseMode) {
-        JSONObject body = new JSONObject();
-        body.put("inputs", request.getInputs() == null ? Collections.emptyMap() : request.getInputs());
+    private ObjectNode buildRequestBody(AgentFlowWorkflowRequest request, String responseMode) {
+        ObjectNode body = JsonCodec.createObjectNode();
+        body.set("inputs", JsonCodec.valueToTree(request.getInputs() == null ? Collections.emptyMap() : request.getInputs()));
         body.put("user", defaultUserId(request.getUserId()));
         body.put("response_mode", responseMode);
-        if (request.getExtraBody() != null && !request.getExtraBody().isEmpty()) {
-            body.putAll(request.getExtraBody());
-        }
+        putExtraBody(body, request.getExtraBody());
         return body;
     }
 
-    private AgentFlowWorkflowResponse mapWorkflowResponse(JSONObject response) {
-        JSONObject data = response.getJSONObject("data");
-        JSONObject outputs = data == null ? null : data.getJSONObject("outputs");
-        Map<String, Object> outputMap = outputs == null
-                ? Collections.<String, Object>emptyMap()
-                : new LinkedHashMap<String, Object>(outputs);
+    private AgentFlowWorkflowResponse mapWorkflowResponse(ObjectNode response) {
+        ObjectNode data = objectField(response, "data");
+        ObjectNode outputs = objectField(data, "outputs");
+        Map<String, Object> outputMap = toObjectMap(outputs);
         return AgentFlowWorkflowResponse.builder()
-                .status(data == null ? null : data.getString("status"))
+                .status(textValue(data, "status"))
                 .outputText(extractText(outputs))
                 .outputs(outputMap)
-                .taskId(response.getString("task_id"))
-                .workflowRunId(firstNonBlank(response.getString("workflow_run_id"), data == null ? null : data.getString("id")))
-                .usage(usageFromDify(data == null ? null : data.getJSONObject("usage")))
+                .taskId(textValue(response, "task_id"))
+                .workflowRunId(firstNonBlank(textValue(response, "workflow_run_id"), textValue(data, "id")))
+                .usage(usageFromDify(objectField(data, "usage")))
                 .raw(response)
                 .build();
-    }
-
-    private JSONObject parseObjectOrNull(String data) {
-        if (isBlank(data)) {
-            return null;
-        }
-        try {
-            Object parsed = JSON.parse(data);
-            return parsed instanceof JSONObject ? (JSONObject) parsed : null;
-        } catch (Exception ex) {
-            return null;
-        }
     }
 }

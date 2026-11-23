@@ -1,16 +1,23 @@
 package io.github.lnyocly.ai4j.platform.moonshot.chat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.config.MoonshotConfig;
+import io.github.lnyocly.ai4j.listener.SseListener;
+import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletion;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.moonshot.chat.entity.MoonshotUsage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Content;
 import io.github.lnyocly.ai4j.platform.openai.usage.Usage;
+import io.github.lnyocly.ai4j.service.Configuration;
+import okhttp3.sse.EventSourceListener;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Kimi/Moonshot 与 OpenAI 标准格式的对齐测试（无需密钥）。
@@ -151,5 +158,70 @@ public class MoonshotFormatAlignmentTest {
 
         Assert.assertEquals("image_url", image.getType());
         Assert.assertNull(image.getVideoUrl());
+    }
+
+    @Test
+    public void nullTemperatureDoesNotThrowAndPreservesMoonshotDefault() {
+        Configuration configuration = new Configuration();
+        configuration.setMoonshotConfig(new MoonshotConfig());
+        MoonshotChatService service = new MoonshotChatService(configuration);
+
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("moonshot-v1-8k")
+                .messages(Collections.singletonList(ChatMessage.withUser("hi")))
+                .temperature(null)
+                .build();
+
+        MoonshotChatCompletion converted = service.convertChatCompletionObject(chatCompletion);
+        Assert.assertEquals(Float.valueOf(0.3f), converted.getTemperature());
+    }
+
+    @Test
+    public void nonNullTemperatureIsHalvedForMoonshot() {
+        Configuration configuration = new Configuration();
+        configuration.setMoonshotConfig(new MoonshotConfig());
+        MoonshotChatService service = new MoonshotChatService(configuration);
+
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model("moonshot-v1-8k")
+                .messages(Collections.singletonList(ChatMessage.withUser("hi")))
+                .temperature(0.8f)
+                .build();
+
+        MoonshotChatCompletion converted = service.convertChatCompletionObject(chatCompletion);
+        Assert.assertEquals(Float.valueOf(0.4f), converted.getTemperature());
+    }
+
+    @Test
+    public void streamTranslatorExtractsChoiceLevelUsageWithJackson() throws Exception {
+        Configuration configuration = new Configuration();
+        configuration.setMoonshotConfig(new MoonshotConfig());
+        MoonshotChatService service = new MoonshotChatService(configuration);
+
+        final List<String> forwarded = new ArrayList<String>();
+        SseListener capture = new SseListener() {
+            @Override
+            protected void send() {
+            }
+
+            @Override
+            public void onEvent(okhttp3.sse.EventSource eventSource, String id, String type, String data) {
+                forwarded.add(data);
+            }
+        };
+
+        EventSourceListener translator = service.convertEventSource(capture);
+        String chunk = "{\"id\":\"cmpl-s\",\"object\":\"chat.completion.chunk\",\"created\":1698999496,"
+                + "\"model\":\"kimi-k2\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"hi\"},"
+                + "\"finish_reason\":\"stop\",\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,"
+                + "\"total_tokens\":15,\"cached_tokens\":4}}]}";
+        translator.onEvent(null, null, null, chunk);
+        translator.onEvent(null, null, null, "[DONE]");
+
+        Assert.assertEquals(2, forwarded.size());
+        Assert.assertEquals("[DONE]", forwarded.get(1));
+        com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(forwarded.get(0));
+        Assert.assertEquals(15L, root.path("usage").path("total_tokens").asLong());
+        Assert.assertEquals(4L, root.path("usage").path("cached_tokens").asLong());
     }
 }

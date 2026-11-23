@@ -1,8 +1,8 @@
 package io.github.lnyocly.ai4j.agent.runtime;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -924,7 +924,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected String buildBlockedOutput(AgentToolCall call, String reason) {
-        JSONObject payload = new JSONObject();
+        ObjectNode payload = AgentJson.createObjectNode();
         payload.put("blocked", true);
         payload.put("reason", reason == null ? "blocked by tool interceptor" : reason);
         if (call != null) {
@@ -933,7 +933,7 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 payload.put("callId", call.getCallId());
             }
         }
-        return "TOOL_BLOCKED: " + JSON.toJSONString(payload);
+        return "TOOL_BLOCKED: " + AgentJson.toJson(payload);
     }
 
     /**
@@ -965,10 +965,12 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
     }
 
     protected String buildSandboxOutput(AgentToolCall call, SandboxResult result) {
-        JSONObject payload = new JSONObject();
+        ObjectNode payload = AgentJson.createObjectNode();
         payload.put("routed", true);
         if (result != null) {
-            payload.put("exitCode", result.getExitCode());
+            if (result.getExitCode() != null) {
+                payload.put("exitCode", result.getExitCode());
+            }
             if (result.getStdout() != null) {
                 payload.put("stdout", result.getStdout());
             }
@@ -976,25 +978,27 @@ public abstract class BaseAgentRuntime implements io.github.lnyocly.ai4j.agent.A
                 payload.put("stderr", result.getStderr());
             }
         }
-        if (call != null) {
+        if (call != null && call.getName() != null) {
             payload.put("tool", call.getName());
         }
-        return "SANDBOX_RESULT: " + JSON.toJSONString(payload);
+        return "SANDBOX_RESULT: " + AgentJson.toJson(payload);
     }
 
     protected String buildToolErrorOutput(AgentToolCall call, Exception error) {
-        JSONObject payload = new JSONObject();
+        ObjectNode payload = AgentJson.createObjectNode();
         if (error != null) {
             payload.put("errorType", error.getClass().getName());
         }
         payload.put("error", safeToolErrorMessage(error));
         if (call != null) {
-            payload.put("tool", call.getName());
+            if (call.getName() != null) {
+                payload.put("tool", call.getName());
+            }
             if (call.getCallId() != null) {
                 payload.put("callId", call.getCallId());
             }
         }
-        return "TOOL_ERROR: " + JSON.toJSONString(payload);
+        return "TOOL_ERROR: " + AgentJson.toJson(payload);
     }
 
     protected String buildToolValidationErrorOutput(AgentToolCall call, String validationError) {

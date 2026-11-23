@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.support;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramRuntimeEvent;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramRuntimeListener;
 import io.github.lnyocly.ai4j.agent.flowgram.model.FlowGramTaskReportOutput;
@@ -475,11 +474,7 @@ public class FlowGramRuntimeTraceCollector implements FlowGramRuntimeListener {
                 || source instanceof String || source instanceof Number || source instanceof Boolean) {
             return source;
         }
-        try {
-            return JSON.parseObject(JSON.toJSONString(source));
-        } catch (RuntimeException ignored) {
-            return source;
-        }
+        return FlowGramJsonSupport.tryRoundTrip(source);
     }
 
     @SuppressWarnings("unchecked")

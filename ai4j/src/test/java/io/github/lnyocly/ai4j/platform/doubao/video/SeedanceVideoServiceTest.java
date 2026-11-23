@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.platform.doubao.video;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
@@ -48,20 +47,20 @@ public class SeedanceVideoServiceTest {
             Assert.assertEquals("/api/v3/contents/generations/tasks", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("seedance-2.0-mini", body.getString("model"));
-            Assert.assertEquals(Integer.valueOf(4), body.getInteger("duration"));
-            Assert.assertEquals("480p", body.getString("resolution"));
-            Assert.assertEquals("16:9", body.getString("ratio"));
-            JSONArray content = body.getJSONArray("content");
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("seedance-2.0-mini", body.path("model").asText());
+            Assert.assertEquals(4, body.path("duration").asInt());
+            Assert.assertEquals("480p", body.path("resolution").asText());
+            Assert.assertEquals("16:9", body.path("ratio").asText());
+            JsonNode content = body.path("content");
             Assert.assertEquals(2, content.size());
-            JSONObject text = content.getJSONObject(0);
-            Assert.assertEquals("text", text.getString("type"));
-            Assert.assertEquals("一只猫在月光下奔跑", text.getString("text"));
-            JSONObject firstFrame = content.getJSONObject(1);
-            Assert.assertEquals("image_url", firstFrame.getString("type"));
-            Assert.assertEquals("https://cdn.example/first.png", firstFrame.getJSONObject("image_url").getString("url"));
-            Assert.assertEquals("first_frame", firstFrame.getString("role"));
+            JsonNode text = content.get(0);
+            Assert.assertEquals("text", text.path("type").asText());
+            Assert.assertEquals("一只猫在月光下奔跑", text.path("text").asText());
+            JsonNode firstFrame = content.get(1);
+            Assert.assertEquals("image_url", firstFrame.path("type").asText());
+            Assert.assertEquals("https://cdn.example/first.png", firstFrame.path("image_url").path("url").asText());
+            Assert.assertEquals("first_frame", firstFrame.path("role").asText());
         } finally {
             server.shutdown();
         }
@@ -84,17 +83,17 @@ public class SeedanceVideoServiceTest {
                     .extraFields(extra)
                     .build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
             // last_frame_url 是图片角色而非顶层参数
-            Assert.assertFalse(body.containsKey("last_frame_url"));
-            JSONArray content = body.getJSONArray("content");
+            Assert.assertFalse(body.has("last_frame_url"));
+            JsonNode content = body.path("content");
             Assert.assertEquals(5, content.size());
-            Assert.assertEquals("first_frame", content.getJSONObject(1).getString("role"));
-            Assert.assertEquals("reference_image", content.getJSONObject(2).getString("role"));
-            Assert.assertEquals("https://cdn.example/ref1.png", content.getJSONObject(2).getJSONObject("image_url").getString("url"));
-            Assert.assertEquals("reference_image", content.getJSONObject(3).getString("role"));
-            Assert.assertEquals("last_frame", content.getJSONObject(4).getString("role"));
-            Assert.assertEquals("https://cdn.example/last.png", content.getJSONObject(4).getJSONObject("image_url").getString("url"));
+            Assert.assertEquals("first_frame", content.get(1).path("role").asText());
+            Assert.assertEquals("reference_image", content.get(2).path("role").asText());
+            Assert.assertEquals("https://cdn.example/ref1.png", content.get(2).path("image_url").path("url").asText());
+            Assert.assertEquals("reference_image", content.get(3).path("role").asText());
+            Assert.assertEquals("last_frame", content.get(4).path("role").asText());
+            Assert.assertEquals("https://cdn.example/last.png", content.get(4).path("image_url").path("url").asText());
         } finally {
             server.shutdown();
         }
@@ -117,10 +116,10 @@ public class SeedanceVideoServiceTest {
                     .extraFields(extra)
                     .build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
-            Assert.assertEquals(Boolean.TRUE, body.getBoolean("generate_audio"));
-            Assert.assertEquals(Boolean.FALSE, body.getBoolean("watermark"));
-            Assert.assertEquals(Integer.valueOf(42), body.getInteger("seed"));
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            Assert.assertTrue(body.path("generate_audio").asBoolean());
+            Assert.assertFalse(body.path("watermark").asBoolean());
+            Assert.assertEquals(42, body.path("seed").asInt());
         } finally {
             server.shutdown();
         }
@@ -142,20 +141,20 @@ public class SeedanceVideoServiceTest {
                     .extraFields(extra)
                     .build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
-            Assert.assertFalse(body.containsKey("reference_video_urls"));
-            Assert.assertFalse(body.containsKey("reference_audio_urls"));
-            JSONArray content = body.getJSONArray("content");
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            Assert.assertFalse(body.has("reference_video_urls"));
+            Assert.assertFalse(body.has("reference_audio_urls"));
+            JsonNode content = body.path("content");
             Assert.assertEquals(4, content.size());
-            JSONObject video = content.getJSONObject(1);
-            Assert.assertEquals("video_url", video.getString("type"));
-            Assert.assertEquals("https://cdn.example/ref.mp4", video.getJSONObject("video_url").getString("url"));
-            Assert.assertEquals("reference_video", video.getString("role"));
-            Assert.assertEquals("asset://v-1", content.getJSONObject(2).getJSONObject("video_url").getString("url"));
-            JSONObject audio = content.getJSONObject(3);
-            Assert.assertEquals("audio_url", audio.getString("type"));
-            Assert.assertEquals("https://cdn.example/voice.mp3", audio.getJSONObject("audio_url").getString("url"));
-            Assert.assertEquals("reference_audio", audio.getString("role"));
+            JsonNode video = content.get(1);
+            Assert.assertEquals("video_url", video.path("type").asText());
+            Assert.assertEquals("https://cdn.example/ref.mp4", video.path("video_url").path("url").asText());
+            Assert.assertEquals("reference_video", video.path("role").asText());
+            Assert.assertEquals("asset://v-1", content.get(2).path("video_url").path("url").asText());
+            JsonNode audio = content.get(3);
+            Assert.assertEquals("audio_url", audio.path("type").asText());
+            Assert.assertEquals("https://cdn.example/voice.mp3", audio.path("audio_url").path("url").asText());
+            Assert.assertEquals("reference_audio", audio.path("role").asText());
         } finally {
             server.shutdown();
         }
@@ -174,9 +173,9 @@ public class SeedanceVideoServiceTest {
                     .seconds(8)
                     .build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
-            Assert.assertEquals(Integer.valueOf(8), body.getInteger("duration"));
-            Assert.assertFalse(body.containsKey("seconds"));
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            Assert.assertEquals(8, body.path("duration").asInt());
+            Assert.assertFalse(body.has("seconds"));
         } finally {
             server.shutdown();
         }

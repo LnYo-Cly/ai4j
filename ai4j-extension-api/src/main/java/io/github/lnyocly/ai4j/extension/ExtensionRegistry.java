@@ -16,32 +16,45 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public final class ExtensionRegistry {
 
+    private final ExtensionRegistry parent;
     private final Map<String, Ai4jExtension> discovered;
     private final Map<String, ExtensionManifest> manifests;
     private final Set<String> enabledIds = new LinkedHashSet<String>();
+    private final Set<String> appliedIds = new LinkedHashSet<String>();
     private final Set<String> exposedToolIds = new LinkedHashSet<String>();
     private final Set<String> allowedCommandIds = new LinkedHashSet<String>();
     private final Set<String> allowedSkillIds = new LinkedHashSet<String>();
     private final Set<String> allowedPromptIds = new LinkedHashSet<String>();
     private final Set<String> allowedGuardrailIds = new LinkedHashSet<String>();
-    private ExtensionRuntimeState runtimeState = new ExtensionRuntimeState();
+    private final ExtensionRuntimeState runtimeState;
     private final ExtensionLoader loader;
     private boolean applied;
     private boolean explicitResourceActivation;
 
     private ExtensionRegistry(ExtensionLoader loader, Collection<Ai4jExtension> extensions) {
+        this.parent = null;
         this.loader = loader;
         this.discovered = new LinkedHashMap<String, Ai4jExtension>();
         this.manifests = new LinkedHashMap<String, ExtensionManifest>();
+        this.runtimeState = new ExtensionRuntimeState();
         if (extensions != null) {
             for (Ai4jExtension extension : extensions) {
                 registerDiscovered(extension);
             }
         }
+    }
+
+    private ExtensionRegistry(ExtensionRegistry parent) {
+        this.parent = parent;
+        this.loader = null;
+        this.discovered = Collections.unmodifiableMap(new LinkedHashMap<String, Ai4jExtension>(parent.discovered));
+        this.manifests = Collections.unmodifiableMap(new LinkedHashMap<String, ExtensionManifest>(parent.manifests));
+        this.runtimeState = new ExtensionRuntimeState(parent.runtimeState);
     }
 
     public static ExtensionRegistry discover() {
@@ -63,50 +76,95 @@ public final class ExtensionRegistry {
         return new ExtensionRegistry(null, list);
     }
 
+    /**
+     * Creates an isolated child registry sharing read-only parent discovered extensions and active
+     * parent services while isolating child mutations and cleanup.
+     */
+    public ExtensionRegistry fork() {
+        return new ExtensionRegistry(this);
+    }
+
     public ExtensionRegistry enable(String extensionId) {
         String normalized = requireKnownExtension(extensionId);
-        enabledIds.add(normalized);
-        applied = false;
+        if (enabledIds.add(normalized)) {
+            applied = false;
+        }
         return this;
     }
 
     /**
-     * Disables an extension: removes it from the enabled set, invokes its
+     * Disables an extension: removes it from the enabled set, disposes its runtime effects,
+     * service provisions, and injection bindings in LIFO order, invokes its
      * {@link Ai4jExtension#onStop()} release hook, and closes its dedicated
      * classloader when it was loaded through {@link IsolatedExtensionLoader}.
-     * The next {@link #snapshot()} rebuilds runtime state without it.
      */
     public ExtensionRegistry disable(String extensionId) {
         String normalized = requireKnownExtension(extensionId);
         if (!enabledIds.remove(normalized)) {
             return this;
         }
+        boolean wasApplied = appliedIds.remove(normalized);
         applied = false;
         Ai4jExtension extension = discovered.get(normalized);
-        try {
-            if (extension != null) {
-                extension.onStop();
-            }
-        } finally {
-            if (loader instanceof IsolatedExtensionLoader && extension != null) {
-                ((IsolatedExtensionLoader) loader).release(extension);
-            }
+        List<Disposable> steps = new ArrayList<Disposable>(3);
+        if (loader instanceof IsolatedExtensionLoader && extension != null) {
+            steps.add(new Disposable() {
+                @Override
+                public void dispose() {
+                    ((IsolatedExtensionLoader) loader).release(extension);
+                }
+            });
         }
+        if (extension != null) {
+            steps.add(new Disposable() {
+                @Override
+                public void dispose() {
+                    extension.onStop();
+                }
+            });
+        }
+        if (wasApplied) {
+            steps.add(new Disposable() {
+                @Override
+                public void dispose() {
+                    runtimeState.disposeExtension(normalized);
+                }
+            });
+        }
+        Disposable.composite(steps).dispose();
         return this;
     }
 
     /**
-     * Disables every enabled extension in reverse enable order, invoking each
-     * extension's release hook and closing isolated classloaders. Idempotent.
+     * Disables every enabled extension in reverse enable order, disposing runtime effects/services,
+     * invoking each extension's release hook, and closing isolated classloaders. Idempotent.
      */
     public ExtensionRegistry close() {
-        List<String> order = new ArrayList<String>(enabledIds);
-        for (int i = order.size() - 1; i >= 0; i--) {
-            disable(order.get(i));
-        }
+        runtimeState.beginClosing();
+        List<Disposable> steps = new ArrayList<Disposable>(enabledIds.size() + 2);
         if (loader instanceof IsolatedExtensionLoader) {
-            ((IsolatedExtensionLoader) loader).close();
+            steps.add(new Disposable() {
+                @Override
+                public void dispose() {
+                    ((IsolatedExtensionLoader) loader).close();
+                }
+            });
         }
+        steps.add(new Disposable() {
+            @Override
+            public void dispose() {
+                runtimeState.close();
+            }
+        });
+        for (final String extensionId : new ArrayList<String>(enabledIds)) {
+            steps.add(new Disposable() {
+                @Override
+                public void dispose() {
+                    disable(extensionId);
+                }
+            });
+        }
+        Disposable.composite(steps).dispose();
         return this;
     }
 
@@ -211,6 +269,22 @@ public final class ExtensionRegistry {
         return manifests.get(normalized);
     }
 
+    public <T> Optional<T> findService(ServiceKey<T> key) {
+        if (key == null) {
+            throw new IllegalArgumentException("service key must not be null");
+        }
+        applyEnabledExtensions();
+        return runtimeState.findService(key);
+    }
+
+    public <T> T service(ServiceKey<T> key) {
+        if (key == null) {
+            throw new IllegalArgumentException("service key must not be null");
+        }
+        applyEnabledExtensions();
+        return runtimeState.requireService(key);
+    }
+
     public ExtensionRuntimeSnapshot snapshot() {
         applyEnabledExtensions();
         return runtimeState.snapshot(
@@ -225,11 +299,15 @@ public final class ExtensionRegistry {
 
     public ExtensionInspectionSnapshot inspectRuntime(String extensionId) {
         String normalized = requireKnownExtension(extensionId);
-        ExtensionRuntimeState state = new ExtensionRuntimeState();
+        ExtensionRuntimeState state = new ExtensionRuntimeState(parent == null ? null : parent.runtimeState);
         Ai4jExtension extension = discovered.get(normalized);
         ExtensionManifest manifest = manifests.get(normalized);
-        extension.apply(new DefaultExtensionContext(manifest, state));
-        return state.inspectionSnapshot();
+        try {
+            extension.apply(new DefaultExtensionContext(manifest, state));
+            return state.inspectionSnapshot();
+        } finally {
+            state.close();
+        }
     }
 
     public ExtensionActivationPlan activationPlan(String extensionId) {
@@ -309,19 +387,29 @@ public final class ExtensionRegistry {
     }
 
     private void applyEnabledExtensions() {
+        if (parent != null) {
+            parent.applyEnabledExtensions();
+        }
         if (applied) {
             return;
         }
-        ExtensionRuntimeState nextState = new ExtensionRuntimeState();
         for (String extensionId : enabledIds) {
+            if (appliedIds.contains(extensionId)) {
+                continue;
+            }
             Ai4jExtension extension = discovered.get(extensionId);
             ExtensionManifest manifest = manifests.get(extensionId);
             try {
-                extension.apply(new DefaultExtensionContext(manifest, nextState));
-            } catch (RuntimeException e) {
-                // Registration rollback is implicit: nextState is discarded. The
-                // extension still gets its release hook and its dedicated
-                // classloader is closed so a failed apply cannot leak resources.
+                extension.apply(new DefaultExtensionContext(manifest, runtimeState));
+                appliedIds.add(extensionId);
+            } catch (RuntimeException | Error e) {
+                // Roll back partial registrations/effects of the failing extension while
+                // keeping previously applied extensions intact, and release its classloader.
+                try {
+                    runtimeState.disposeExtension(extensionId);
+                } catch (Throwable disposeFailure) {
+                    e.addSuppressed(disposeFailure);
+                }
                 try {
                     extension.onStop();
                 } catch (RuntimeException ignored) {
@@ -334,7 +422,6 @@ public final class ExtensionRegistry {
                 throw e;
             }
         }
-        this.runtimeState = nextState;
         this.applied = true;
     }
 

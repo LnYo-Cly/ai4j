@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.coding.process.StoredProcessSnapshot;
 
 import java.util.ArrayList;
@@ -125,7 +124,7 @@ public final class CodingSessionCheckpointFormatter {
     }
 
     public static String renderStructuredJson(CodingSessionCheckpoint checkpoint) {
-        return toStructuredObject(checkpoint).toJSONString();
+        return CodingJson.toJson(toStructuredObject(checkpoint));
     }
 
     public static CodingSessionCheckpoint create(String summary,
@@ -180,30 +179,30 @@ public final class CodingSessionCheckpointFormatter {
             return null;
         }
         try {
-            JSONObject object = JSON.parseObject(json);
+            ObjectNode object = CodingJson.parseObject(json);
             if (object == null || object.isEmpty()) {
                 return null;
             }
             return fromStructuredObject(object);
-        } catch (Exception ignore) {
+        } catch (RuntimeException ignore) {
             return null;
         }
     }
 
-    private static CodingSessionCheckpoint fromStructuredObject(JSONObject object) {
+    private static CodingSessionCheckpoint fromStructuredObject(ObjectNode object) {
         if (object == null) {
             return null;
         }
-        JSONObject progress = object.getJSONObject("progress");
+        ObjectNode progress = CodingJson.getObject(object, "progress");
         CodingSessionCheckpoint checkpoint = CodingSessionCheckpoint.builder()
-                .goal(safeTrim(object.getString("goal")))
-                .constraints(readStringList(object.getJSONArray("constraints")))
-                .doneItems(readStringList(progress == null ? object.getJSONArray("doneItems") : progress.getJSONArray("done")))
-                .inProgressItems(readStringList(progress == null ? object.getJSONArray("inProgressItems") : progress.getJSONArray("inProgress")))
-                .blockedItems(readStringList(progress == null ? object.getJSONArray("blockedItems") : progress.getJSONArray("blocked")))
-                .keyDecisions(readStringList(object.getJSONArray("keyDecisions")))
-                .nextSteps(readStringList(object.getJSONArray("nextSteps")))
-                .criticalContext(readStringList(object.getJSONArray("criticalContext")))
+                .goal(safeTrim(CodingJson.getString(object, "goal")))
+                .constraints(readStringList(CodingJson.getArray(object, "constraints")))
+                .doneItems(readStringList(progress == null ? CodingJson.getArray(object, "doneItems") : CodingJson.getArray(progress, "done")))
+                .inProgressItems(readStringList(progress == null ? CodingJson.getArray(object, "inProgressItems") : CodingJson.getArray(progress, "inProgress")))
+                .blockedItems(readStringList(progress == null ? CodingJson.getArray(object, "blockedItems") : CodingJson.getArray(progress, "blocked")))
+                .keyDecisions(readStringList(CodingJson.getArray(object, "keyDecisions")))
+                .nextSteps(readStringList(CodingJson.getArray(object, "nextSteps")))
+                .criticalContext(readStringList(CodingJson.getArray(object, "criticalContext")))
                 .build();
         if (checkpoint.getGoal() == null
                 && checkpoint.getConstraints().isEmpty()
@@ -218,19 +217,19 @@ public final class CodingSessionCheckpointFormatter {
         return checkpoint;
     }
 
-    private static JSONObject toStructuredObject(CodingSessionCheckpoint checkpoint) {
-        JSONObject object = new JSONObject();
+    private static ObjectNode toStructuredObject(CodingSessionCheckpoint checkpoint) {
+        ObjectNode object = CodingJson.newObject();
         CodingSessionCheckpoint effective = checkpoint == null ? CodingSessionCheckpoint.builder().build() : checkpoint;
         object.put("goal", defaultText(effective.getGoal(), "Continue the current coding session."));
-        object.put("constraints", new JSONArray(normalize(effective.getConstraints())));
-        JSONObject progress = new JSONObject();
-        progress.put("done", new JSONArray(normalize(effective.getDoneItems())));
-        progress.put("inProgress", new JSONArray(normalize(effective.getInProgressItems())));
-        progress.put("blocked", new JSONArray(normalize(effective.getBlockedItems())));
-        object.put("progress", progress);
-        object.put("keyDecisions", new JSONArray(normalize(effective.getKeyDecisions())));
-        object.put("nextSteps", new JSONArray(normalize(effective.getNextSteps())));
-        object.put("criticalContext", new JSONArray(normalize(effective.getCriticalContext())));
+        object.set("constraints", CodingJson.valueToTree(normalize(effective.getConstraints())));
+        ObjectNode progress = CodingJson.newObject();
+        progress.set("done", CodingJson.valueToTree(normalize(effective.getDoneItems())));
+        progress.set("inProgress", CodingJson.valueToTree(normalize(effective.getInProgressItems())));
+        progress.set("blocked", CodingJson.valueToTree(normalize(effective.getBlockedItems())));
+        object.set("progress", progress);
+        object.set("keyDecisions", CodingJson.valueToTree(normalize(effective.getKeyDecisions())));
+        object.set("nextSteps", CodingJson.valueToTree(normalize(effective.getNextSteps())));
+        object.set("criticalContext", CodingJson.valueToTree(normalize(effective.getCriticalContext())));
         return object;
     }
 
@@ -379,13 +378,13 @@ public final class CodingSessionCheckpointFormatter {
         return value.trim();
     }
 
-    private static List<String> readStringList(JSONArray values) {
+    private static List<String> readStringList(ArrayNode values) {
         if (values == null || values.isEmpty()) {
             return new ArrayList<String>();
         }
         List<String> result = new ArrayList<String>();
         for (int i = 0; i < values.size(); i++) {
-            String value = safeTrim(values.getString(i));
+            String value = safeTrim(CodingJson.getString(values, i));
             if (!isBlank(value) && !"(none)".equalsIgnoreCase(value)) {
                 result.add(value);
             }

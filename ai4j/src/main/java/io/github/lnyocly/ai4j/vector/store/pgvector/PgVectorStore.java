@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.vector.store.pgvector;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.PgVectorConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.service.Configuration;
@@ -273,14 +273,14 @@ public class PgVectorStore implements VectorStore {
         if (trimToNull(record.getContent()) != null && !metadata.containsKey(Constants.METADATA_KEY)) {
             metadata.put(Constants.METADATA_KEY, record.getContent().trim());
         }
-        return metadata.isEmpty() ? null : JSON.toJSONString(metadata);
+        return metadata.isEmpty() ? null : JsonCodec.toJson(metadata);
     }
 
     private Map<String, Object> parseMetadata(String metadataJson) {
         if (metadataJson == null || metadataJson.trim().isEmpty()) {
             return Collections.emptyMap();
         }
-        return JSON.parseObject(metadataJson, new TypeReference<LinkedHashMap<String, Object>>() {
+        return JsonCodec.fromJson(metadataJson, new TypeReference<LinkedHashMap<String, Object>>() {
         });
     }
 

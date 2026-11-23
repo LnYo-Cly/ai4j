@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,7 +41,7 @@ public class JsonlTraceExporter implements TraceExporter, AutoCloseable {
             return;
         }
         try {
-            writer.write(JSON.toJSONString(span));
+            writer.write(AgentJson.toJson(span));
             writer.write(System.lineSeparator());
             writer.flush();
         } catch (IOException ex) {

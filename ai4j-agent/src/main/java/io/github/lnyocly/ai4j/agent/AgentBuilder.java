@@ -103,6 +103,7 @@ public class AgentBuilder {
     private CodeExecutor codeExecutor;
     private Supplier<AgentMemory> memorySupplier;
     private AgentOptions options;
+    private Integer maxHealAttempts;
     private CodeActOptions codeActOptions;
     private ContextProjector contextProjector;
     private ContextBudget contextBudget;
@@ -399,6 +400,11 @@ public class AgentBuilder {
         return this;
     }
 
+    public AgentBuilder maxHealAttempts(int maxHealAttempts) {
+        this.maxHealAttempts = Math.max(0, maxHealAttempts);
+        return this;
+    }
+
     public AgentBuilder codeActOptions(CodeActOptions codeActOptions) {
         this.codeActOptions = codeActOptions;
         return this;
@@ -613,6 +619,11 @@ public class AgentBuilder {
 
         CodeExecutor resolvedCodeExecutor = codeExecutor == null ? createDefaultCodeExecutor() : codeExecutor;
         AgentOptions resolvedOptions = options == null ? AgentOptions.builder().build() : options;
+        if (maxHealAttempts != null) {
+            resolvedOptions = resolvedOptions.toBuilder()
+                    .maxHealAttempts(maxHealAttempts.intValue())
+                    .build();
+        }
         CodeActOptions resolvedCodeActOptions = codeActOptions == null ? CodeActOptions.builder().build() : codeActOptions;
         AgentEventPublisher resolvedEventPublisher = eventPublisher == null ? new AgentEventPublisher() : eventPublisher;
         if (traceExporter != null) {

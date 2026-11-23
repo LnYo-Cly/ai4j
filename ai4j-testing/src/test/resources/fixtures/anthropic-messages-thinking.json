@@ -1,0 +1,68 @@
+{
+  "name": "anthropic-messages-thinking",
+  "recordedFrom": "anthropic",
+  "protocol": "ANTHROPIC_MESSAGES",
+  "exchanges": [
+    {
+      "expectedPromptContains": [
+        "\"system\":[",
+        "\"Be concise\"",
+        "\"tools\"",
+        "\"get_weather\"",
+        "beijing"
+      ],
+      "wireResponse": {
+        "id": "msg_anth_1",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "Checking Beijing forecast",
+            "signature": "anth_sig_123"
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "name": "get_weather",
+            "input": {
+              "city": "beijing"
+            }
+          }
+        ],
+        "stop_reason": "tool_use",
+        "usage": {
+          "input_tokens": 42,
+          "output_tokens": 24,
+          "cache_read_input_tokens": 10
+        }
+      }
+    },
+    {
+      "expectedPromptContains": [
+        "\"type\":\"thinking\"",
+        "\"signature\":\"anth_sig_123\"",
+        "\"type\":\"tool_use\"",
+        "\"type\":\"tool_result\"",
+        "\"tool_use_id\":\"toolu_1\"",
+        "21C"
+      ],
+      "wireResponse": {
+        "id": "msg_anth_2",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "Beijing is 21C."
+          }
+        ],
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 78,
+          "output_tokens": 7
+        }
+      }
+    }
+  ]
+}

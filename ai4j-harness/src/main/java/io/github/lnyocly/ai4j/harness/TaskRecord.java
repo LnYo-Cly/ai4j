@@ -25,6 +25,12 @@ public class TaskRecord {
     private String blockedReason;
     private String lastExecutionId;
     private String submissionId;
+    private String workId;
+    private String verticalKind;
+    private String targetNodeId;
+    @Builder.Default
+    private List<String> requiredTags = new ArrayList<String>();
+    private String assignedAgentId;
     private String createdBy;
     private long createdAtEpochMs;
     private long updatedAtEpochMs;

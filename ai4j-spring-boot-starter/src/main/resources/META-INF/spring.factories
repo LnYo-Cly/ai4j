@@ -1,3 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 io.github.lnyocly.ai4j.AiConfigAutoConfiguration,\
-io.github.lnyocly.ai4j.AgentBlueprintAutoConfiguration
+io.github.lnyocly.ai4j.AgentBlueprintAutoConfiguration,\
+io.github.lnyocly.ai4j.AiWebAutoConfiguration,\
+io.github.lnyocly.ai4j.Ai4jActuatorAutoConfiguration

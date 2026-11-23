@@ -42,7 +42,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -75,7 +74,6 @@ public class OpenAiTest {
     private IAudioService audioService;
     private IRealtimeService realtimeService;
     private String searXngSearchUrl;
-    Reflections reflections = new Reflections();
 
     @Before
     public void test_init() throws NoSuchAlgorithmException, KeyManagementException {

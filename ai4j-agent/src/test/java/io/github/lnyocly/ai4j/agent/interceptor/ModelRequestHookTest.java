@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;

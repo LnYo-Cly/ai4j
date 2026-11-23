@@ -1,10 +1,9 @@
 package io.github.lnyocly.ai4j.interceptor;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
+import io.github.lnyocly.ai4j.codec.JsonCodecException;
 import io.github.lnyocly.ai4j.exception.CommonException;
-import io.github.lnyocly.ai4j.exception.chain.ErrorHandler;
-import io.github.lnyocly.ai4j.exception.error.Error;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -16,6 +15,7 @@ import okio.Buffer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * Intercepts API responses and raises provider-specific exceptions only when
@@ -36,89 +36,131 @@ public class ErrorInterceptor implements Interceptor {
 
         ResponseBody responseBody = response.body();
         byte[] contentBytes = getResponseBodyBytes(responseBody);
-        String content = new String(contentBytes, StandardCharsets.UTF_8);
-        boolean streamingRequest = isStreamingRequest(original);
-
-        if (!response.isSuccessful() && response.code() != 100 && response.code() != 101) {
-            if (streamingRequest) {
-                return rebuildResponse(response, responseBody, contentBytes);
-            }
-            throw buildCommonException(response.code(), response.message(), content);
+        if (isStreamingRequest(original)) {
+            return rebuildResponse(response, responseBody, contentBytes);
         }
 
-        if (containsStructuredError(content)) {
-            if (streamingRequest) {
-                return rebuildResponse(response, responseBody, contentBytes);
-            }
-            ErrorHandler errorHandler = ErrorHandler.getInstance();
-            Error error = errorHandler.process(content);
-            log.error("AI request failed: {}", error.getMessage());
-            throw new CommonException(error.getMessage());
+        String content = new String(contentBytes, StandardCharsets.UTF_8);
+        String trimmed = content.trim();
+
+        if (!response.isSuccessful() && response.code() != 100 && response.code() != 101) {
+            throw buildCommonException(response.code(), response.message(), content, trimmed);
+        }
+
+        // Fast-skip JSON parsing on 2xx responses that do not look like a JSON object.
+        if (trimmed.isEmpty() || trimmed.charAt(0) != '{') {
+            return rebuildResponse(response, responseBody, contentBytes);
+        }
+
+        JsonNode root = tryParseJsonObject(trimmed);
+        if (root != null && containsStructuredError(root)) {
+            String errorMessage = extractStructuredErrorMessage(root, content);
+            log.error("AI request failed: {}", errorMessage);
+            throw new CommonException(errorMessage);
         }
 
         return rebuildResponse(response, responseBody, contentBytes);
     }
 
-    private CommonException buildCommonException(int code, String message, String payload) {
-        String errorMsg = payload == null ? "" : payload;
-        if (errorMsg.trim().isEmpty()) {
-            errorMsg = code + " " + message;
+    /**
+     * Parses a trimmed JSON object payload at most once per response.
+     */
+    protected JsonNode parseErrorPayload(String trimmedJson) {
+        return JsonCodec.readTree(trimmedJson);
+    }
+
+    private CommonException buildCommonException(int code, String message, String payload, String trimmedPayload) {
+        if (trimmedPayload.isEmpty()) {
+            String errorMsg = code + " " + message;
             log.error("AI request failed: {}", errorMsg);
             return new CommonException(errorMsg);
         }
 
-        try {
-            JSONObject object = JSON.parseObject(errorMsg);
-            if (object != null) {
-                ErrorHandler errorHandler = ErrorHandler.getInstance();
-                Error error = errorHandler.process(errorMsg);
-                log.error("AI request failed: {}", error.getMessage());
-                return new CommonException(error.getMessage());
+        if (trimmedPayload.charAt(0) == '{') {
+            JsonNode root = tryParseJsonObject(trimmedPayload);
+            if (root != null) {
+                String errorMsg = extractStructuredErrorMessage(root, payload);
+                log.error("AI request failed: {}", errorMsg);
+                return new CommonException(errorMsg);
             }
-        } catch (Exception ignored) {
-            // Keep raw payload for unknown providers or non-JSON responses.
         }
 
-        log.error("AI request failed: {}", errorMsg);
-        return new CommonException(errorMsg);
+        log.error("AI request failed: {}", payload);
+        return new CommonException(payload);
     }
 
-    private boolean containsStructuredError(String content) {
-        if (content == null || content.trim().isEmpty()) {
-            return false;
-        }
-
-        JSONObject object;
+    private JsonNode tryParseJsonObject(String trimmed) {
         try {
-            object = JSON.parseObject(content);
-        } catch (Exception e) {
-            return false;
+            JsonNode root = parseErrorPayload(trimmed);
+            return root != null && root.isObject() ? root : null;
+        } catch (JsonCodecException ignored) {
+            return null;
+        } catch (RuntimeException ignored) {
+            return null;
         }
-        if (object == null) {
-            return false;
-        }
+    }
 
-        Object openAiError = object.get("error");
-        if (openAiError instanceof JSONObject) {
+    private boolean containsStructuredError(JsonNode root) {
+        JsonNode openAiError = root.get("error");
+        if (isStructuredErrorNode(openAiError)) {
             return true;
         }
-        if (openAiError instanceof String && !((String) openAiError).trim().isEmpty()) {
-            return true;
-        }
 
-        JSONObject hunyuanResponse = object.getJSONObject("Response");
-        if (hunyuanResponse != null) {
-            Object hunyuanError = hunyuanResponse.get("Error");
-            if (hunyuanError instanceof JSONObject) {
-                return true;
-            }
-            if (hunyuanError instanceof String && !((String) hunyuanError).trim().isEmpty()) {
+        JsonNode hunyuanResponse = root.get("Response");
+        if (hunyuanResponse != null && hunyuanResponse.isObject()) {
+            JsonNode hunyuanError = hunyuanResponse.get("Error");
+            if (isStructuredErrorNode(hunyuanError)) {
                 return true;
             }
         }
 
-        String status = object.getString("status");
-        return "failed".equalsIgnoreCase(status);
+        JsonNode statusNode = root.get("status");
+        return statusNode != null && statusNode.isTextual() && "failed".equalsIgnoreCase(statusNode.asText());
+    }
+
+    private boolean isStructuredErrorNode(JsonNode errorNode) {
+        if (errorNode == null || errorNode.isNull()) {
+            return false;
+        }
+        if (errorNode.isObject()) {
+            return true;
+        }
+        return errorNode.isTextual() && !errorNode.asText().trim().isEmpty();
+    }
+
+    private String extractStructuredErrorMessage(JsonNode root, String rawPayload) {
+        JsonNode openAiError = root.get("error");
+        if (openAiError != null && !openAiError.isNull()) {
+            if (openAiError.isObject()) {
+                JsonNode messageNode = openAiError.get("message");
+                if (messageNode != null && !messageNode.isNull()) {
+                    return messageNode.isTextual() ? messageNode.asText() : messageNode.toString();
+                }
+                return null;
+            }
+            if (openAiError.isTextual() && !openAiError.asText().trim().isEmpty()) {
+                return rawPayload;
+            }
+        }
+
+        JsonNode hunyuanResponse = root.get("Response");
+        if (hunyuanResponse != null && hunyuanResponse.isObject()) {
+            JsonNode hunyuanError = hunyuanResponse.get("Error");
+            if (hunyuanError != null && !hunyuanError.isNull()) {
+                if (hunyuanError.isObject()) {
+                    JsonNode messageNode = hunyuanError.get("Message");
+                    if (messageNode != null && !messageNode.isNull()) {
+                        return messageNode.isTextual() ? messageNode.asText() : messageNode.toString();
+                    }
+                    return null;
+                }
+                if (hunyuanError.isTextual() && !hunyuanError.asText().trim().isEmpty()) {
+                    return rawPayload;
+                }
+            }
+        }
+
+        return rawPayload;
     }
 
     private boolean isStreamingResponse(Response response) {
@@ -140,19 +182,20 @@ public class ErrorInterceptor implements Interceptor {
         }
         String accept = request.header("Accept");
         if (accept != null) {
-            String normalizedAccept = accept.toLowerCase();
+            String normalizedAccept = accept.toLowerCase(Locale.ROOT);
             if (normalizedAccept.contains("text/event-stream") || normalizedAccept.contains("application/x-ndjson")) {
                 return true;
             }
         }
-        if (request.body() == null) {
+        okhttp3.RequestBody requestBody = request.body();
+        if (requestBody == null) {
             return false;
         }
         try {
             Buffer buffer = new Buffer();
-            request.body().writeTo(buffer);
+            requestBody.writeTo(buffer);
             String body = buffer.readString(StandardCharsets.UTF_8);
-            String normalizedBody = body == null ? "" : body.toLowerCase();
+            String normalizedBody = body == null ? "" : body.toLowerCase(Locale.ROOT);
             return normalizedBody.contains("\"stream\":true") || normalizedBody.contains("\"stream\": true");
         } catch (Exception ignored) {
             return false;

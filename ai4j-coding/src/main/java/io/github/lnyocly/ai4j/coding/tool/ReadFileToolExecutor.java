@@ -1,11 +1,11 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceFileReadResult;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceFileService;
 
@@ -21,22 +21,22 @@ public class ReadFileToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String path = arguments.getString("path");
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String path = CodingJson.getString(arguments, "path");
         if (path == null || path.trim().isEmpty()) {
             throw invalid("read_file requires a non-empty path", null);
         }
         try {
-            Integer startLine = arguments.getInteger("startLine");
-            Integer endLine = arguments.getInteger("endLine");
-            Integer maxChars = arguments.getInteger("maxChars");
+            Integer startLine = CodingJson.getInteger(arguments, "startLine");
+            Integer endLine = CodingJson.getInteger(arguments, "endLine");
+            Integer maxChars = CodingJson.getInteger(arguments, "maxChars");
             WorkspaceFileReadResult result = workspaceFileService.readFile(
                     path.trim(),
                     startLine,
                     endLine,
-                    maxChars == null ? options.getDefaultReadMaxChars() : maxChars
+                    maxChars == null ? Integer.valueOf(options.getDefaultReadMaxChars()) : maxChars
             );
-            return JSON.toJSONString(result);
+            return CodingJson.toJson(result);
         } catch (AgentToolInputException input) {
             throw input;
         } catch (IllegalArgumentException input) {
@@ -44,12 +44,12 @@ public class ReadFileToolExecutor implements ToolExecutor {
         }
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
             if (arguments == null) {
                 throw invalid("read_file arguments must be a JSON object", null);
             }

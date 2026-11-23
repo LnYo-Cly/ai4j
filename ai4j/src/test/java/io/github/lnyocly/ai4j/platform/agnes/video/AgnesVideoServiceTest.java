@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.platform.agnes.video;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.exception.AiClientException;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
@@ -41,15 +41,15 @@ public class AgnesVideoServiceTest {
             Assert.assertNotNull(request);
             Assert.assertEquals("/v1/videos", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("agnes-video-2.5-flash", body.getString("model"));
-            Assert.assertEquals("text", body.getString("mode"));
-            Assert.assertEquals("4", body.getString("seconds"));
-            Assert.assertEquals("720P", body.getString("size"));
-            Assert.assertEquals("16:9", body.getString("aspect_ratio"));
-            Assert.assertEquals(Integer.valueOf(1), body.getInteger("n"));
-            Assert.assertFalse(body.containsKey("first_frame"));
-            Assert.assertFalse(body.containsKey("images"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("agnes-video-2.5-flash", body.path("model").asText());
+            Assert.assertEquals("text", body.path("mode").asText());
+            Assert.assertEquals("4", body.path("seconds").asText());
+            Assert.assertEquals("720P", body.path("size").asText());
+            Assert.assertEquals("16:9", body.path("aspect_ratio").asText());
+            Assert.assertEquals(1, body.path("n").asInt());
+            Assert.assertFalse(body.has("first_frame"));
+            Assert.assertFalse(body.has("images"));
         } finally {
             server.shutdown();
         }
@@ -70,11 +70,11 @@ public class AgnesVideoServiceTest {
                     .build());
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("keyframe", body.getString("mode"));
-            Assert.assertEquals("https://cdn.example/first.png", body.getString("first_frame"));
-            Assert.assertEquals("https://cdn.example/last.png", body.getString("last_frame"));
-            Assert.assertFalse(body.containsKey("images"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("keyframe", body.path("mode").asText());
+            Assert.assertEquals("https://cdn.example/first.png", body.path("first_frame").asText());
+            Assert.assertEquals("https://cdn.example/last.png", body.path("last_frame").asText());
+            Assert.assertFalse(body.has("images"));
         } finally {
             server.shutdown();
         }
@@ -95,12 +95,12 @@ public class AgnesVideoServiceTest {
                     .build());
 
             RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("reference", body.getString("mode"));
-            Assert.assertEquals(2, body.getJSONArray("images").size());
-            Assert.assertEquals("https://cdn.example/beat.mp3", body.getJSONArray("audios").getString(0));
-            Assert.assertFalse(body.containsKey("first_frame"));
-            Assert.assertFalse(body.containsKey("videos"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("reference", body.path("mode").asText());
+            Assert.assertEquals(2, body.path("images").size());
+            Assert.assertEquals("https://cdn.example/beat.mp3", body.path("audios").get(0).asText());
+            Assert.assertFalse(body.has("first_frame"));
+            Assert.assertFalse(body.has("videos"));
         } finally {
             server.shutdown();
         }

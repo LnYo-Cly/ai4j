@@ -1,9 +1,5 @@
 package io.github.lnyocly.ai4j.harness;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -204,28 +200,38 @@ public class ArtifactContractGate implements HarnessGate {
     private ParsedArtifact parseJson(String trimmed) {
         Object document;
         try {
-            document = JSON.parse(trimmed);
+            document = HarnessJson.parseAny(trimmed);
         } catch (RuntimeException error) {
             return null;
         }
         ParsedArtifact parsed = new ParsedArtifact();
-        List<JSONObject> rows = new ArrayList<JSONObject>();
-        if (document instanceof JSONObject) {
-            rows.add((JSONObject) document);
-        } else if (document instanceof JSONArray) {
-            for (Object element : (JSONArray) document) {
-                if (element instanceof JSONObject) {
-                    rows.add((JSONObject) element);
+        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        if (document instanceof Map) {
+            rows.add(toStringKeyMap((Map<?, ?>) document));
+        } else if (document instanceof List) {
+            for (Object element : (List<?>) document) {
+                if (element instanceof Map) {
+                    rows.add(toStringKeyMap((Map<?, ?>) element));
                 }
             }
         } else {
             return null;
         }
-        for (JSONObject row : rows) {
+        for (Map<String, Object> row : rows) {
             parsed.fields.addAll(row.keySet());
             parsed.rows.add(row);
         }
         return parsed;
+    }
+
+    private Map<String, Object> toStringKeyMap(Map<?, ?> source) {
+        Map<String, Object> copy = new LinkedHashMap<String, Object>();
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            if (entry.getKey() != null) {
+                copy.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        return copy;
     }
 
     private ParsedArtifact parseCsv(String content) {
@@ -244,7 +250,7 @@ public class ArtifactContractGate implements HarnessGate {
         parsed.fields.addAll(header);
         for (int i = 1; i < records.size(); i++) {
             List<String> values = records.get(i);
-            JSONObject row = new JSONObject(new LinkedHashMap<String, Object>());
+            Map<String, Object> row = new LinkedHashMap<String, Object>();
             for (int c = 0; c < header.size(); c++) {
                 row.put(header.get(c), c < values.size() ? values.get(c) : "");
             }
@@ -285,11 +291,11 @@ public class ArtifactContractGate implements HarnessGate {
 
     private static final class ParsedArtifact {
         private final Set<String> fields = new LinkedHashSet<String>();
-        private final List<JSONObject> rows = new ArrayList<JSONObject>();
+        private final List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
 
         private Set<String> columnValues(String field) {
             Set<String> values = new LinkedHashSet<String>();
-            for (JSONObject row : rows) {
+            for (Map<String, Object> row : rows) {
                 Object value = row.get(field);
                 if (value != null) {
                     values.add(String.valueOf(value).trim());

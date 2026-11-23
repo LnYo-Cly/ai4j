@@ -15,6 +15,7 @@ public class AgentOptions {
     public static final int DEFAULT_MAX_STEPS = 0;
     public static final long DEFAULT_WALL_CLOCK_TIMEOUT_MS = 300_000L;
     public static final long UNLIMITED_TOKEN_BUDGET = -1L;
+    public static final int DEFAULT_MAX_HEAL_ATTEMPTS = 2;
 
     @Builder.Default
     private int maxSteps = DEFAULT_MAX_STEPS;
@@ -30,4 +31,7 @@ public class AgentOptions {
 
     @Builder.Default
     private long maxTokenBudget = UNLIMITED_TOKEN_BUDGET;
+
+    @Builder.Default
+    private int maxHealAttempts = DEFAULT_MAX_HEAL_ATTEMPTS;
 }

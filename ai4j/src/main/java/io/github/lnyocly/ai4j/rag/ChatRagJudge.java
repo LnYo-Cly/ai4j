@@ -1,12 +1,14 @@
 package io.github.lnyocly.ai4j.rag;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletion;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatCompletionResponse;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.ChatMessage;
 import io.github.lnyocly.ai4j.platform.openai.chat.entity.Choice;
 import io.github.lnyocly.ai4j.service.IChatService;
+
+import java.util.Collections;
 
 public class ChatRagJudge implements RagJudge {
 
@@ -34,15 +36,16 @@ public class ChatRagJudge implements RagJudge {
                 .message(ChatMessage.withSystem(SYSTEM_PROMPT))
                 .message(ChatMessage.withUser(userPrompt(request)))
                 .temperature(0.0f)
-                .responseFormat(JSON.parseObject("{\"type\":\"json_object\"}"))
+                .responseFormat(Collections.singletonMap("type", "json_object"))
                 .build());
         String output = firstText(response);
-        JSONObject json = JSON.parseObject(jsonObjectText(output));
+        JsonNode json = JsonCodec.readTree(jsonObjectText(output));
+        JsonNode reasonNode = json == null ? null : json.get("reason");
         return RagJudgeEvaluation.builder()
                 .faithfulnessScore(score(json, "faithfulnessScore"))
                 .contextRelevanceScore(score(json, "contextRelevanceScore"))
                 .answerRelevanceScore(score(json, "answerRelevanceScore"))
-                .reason(json.getString("reason"))
+                .reason(reasonNode == null || reasonNode.isNull() ? null : reasonNode.asText())
                 .rawOutput(output)
                 .build();
     }
@@ -68,11 +71,11 @@ public class ChatRagJudge implements RagJudge {
         return choice.getMessage().getContent().getText();
     }
 
-    private Double score(JSONObject json, String key) {
-        if (json == null || !json.containsKey(key)) {
+    private Double score(JsonNode json, String key) {
+        if (json == null || !json.has(key) || json.get(key).isNull()) {
             return null;
         }
-        double value = json.getDoubleValue(key);
+        double value = json.get(key).asDouble();
         if (value < 0.0d) {
             return 0.0d;
         }

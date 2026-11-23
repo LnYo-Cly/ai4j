@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
@@ -50,7 +50,7 @@ public class AgentHooksTest {
                 .build();
         agent.newSession().run("do it");
         assertEquals("preToolUse block must skip the executor", 0, exec.executed.size());
-        assertTrue(JSON.toJSONString(model.prompts.get(1)).contains("TOOL_BLOCKED"));
+        assertTrue(AgentJson.toJson(model.prompts.get(1)).contains("TOOL_BLOCKED"));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class AgentHooksTest {
                 .build();
         agent.newSession().run("do it");
         assertEquals("tool still runs (post-block is after execution)", 1, exec.executed.size());
-        assertTrue(JSON.toJSONString(model.prompts.get(1)).contains("TOOL_BLOCKED"));
+        assertTrue(AgentJson.toJson(model.prompts.get(1)).contains("TOOL_BLOCKED"));
     }
 
     @Test

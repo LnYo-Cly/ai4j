@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.agentflow.chat;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -31,9 +31,9 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
     public AgentFlowChatResponse chat(AgentFlowChatRequest request) throws Exception {
         AgentFlowTraceContext traceContext = startTrace("chat", false, request);
         try {
-            JSONObject body = buildRequestBody(request, "blocking");
+            ObjectNode body = buildRequestBody(request, "blocking");
             String url = joinedUrl(requireBaseUrl(), "v1/chat-messages");
-            JSONObject response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
+            ObjectNode response = executeObject(jsonRequestBuilder(url).post(jsonBody(body)).build());
             AgentFlowChatResponse chatResponse = mapBlockingResponse(response);
             traceComplete(traceContext, chatResponse);
             return chatResponse;
@@ -49,7 +49,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
             throw new IllegalArgumentException("listener is required");
         }
         final AgentFlowTraceContext traceContext = startTrace("chat", true, request);
-        JSONObject body = buildRequestBody(request, "streaming");
+        ObjectNode body = buildRequestBody(request, "streaming");
         String url = joinedUrl(requireBaseUrl(), "v1/chat-messages");
         Request httpRequest = jsonRequestBuilder(url).post(jsonBody(body)).build();
 
@@ -75,15 +75,15 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                                 @Nullable String type,
                                 @NotNull String data) {
                 try {
-                    JSONObject payload = parseObjectOrNull(data);
-                    String eventType = firstNonBlank(type, payload == null ? null : payload.getString("event"));
+                    ObjectNode payload = parseObjectOrNull(data);
+                    String eventType = firstNonBlank(type, textValue(payload, "event"));
                     if (isBlank(eventType) || "ping".equals(eventType)) {
                         return;
                     }
 
-                    String conversationId = payload == null ? null : payload.getString("conversation_id");
-                    String messageId = payload == null ? null : firstNonBlank(payload.getString("message_id"), payload.getString("id"));
-                    String taskId = payload == null ? null : payload.getString("task_id");
+                    String conversationId = textValue(payload, "conversation_id");
+                    String messageId = firstNonBlank(textValue(payload, "message_id"), textValue(payload, "id"));
+                    String taskId = textValue(payload, "task_id");
                     if (!isBlank(conversationId)) {
                         conversationIdRef.set(conversationId);
                     }
@@ -94,14 +94,14 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                         taskIdRef.set(taskId);
                     }
 
-                    AgentFlowUsage usage = payload == null ? null : usageFromDify(metadataUsage(payload));
+                    AgentFlowUsage usage = usageFromDify(metadataUsage(payload));
                     if (usage != null) {
                         usageRef.set(usage);
                     }
 
                     String delta = null;
                     if ("message".equals(eventType) || "agent_message".equals(eventType)) {
-                        delta = payload == null ? null : payload.getString("answer");
+                        delta = textValue(payload, "answer");
                         if (!isBlank(delta)) {
                             content.append(delta);
                         }
@@ -122,7 +122,7 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
                     traceEvent(traceContext, event);
 
                     if ("error".equals(eventType)) {
-                        throw new AgentFlowException("Dify stream error: " + (payload == null ? data : payload.toJSONString()));
+                        throw new AgentFlowException("Dify stream error: " + (payload == null ? data : payload.toString()));
                     }
                     if (done) {
                         AgentFlowChatResponse responsePayload = AgentFlowChatResponse.builder()
@@ -198,47 +198,33 @@ public class DifyAgentFlowChatService extends AgentFlowSupport implements AgentF
         }
     }
 
-    private JSONObject buildRequestBody(AgentFlowChatRequest request, String responseMode) {
-        JSONObject body = new JSONObject();
+    private ObjectNode buildRequestBody(AgentFlowChatRequest request, String responseMode) {
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("query", request.getPrompt());
-        body.put("inputs", request.getInputs() == null ? Collections.emptyMap() : request.getInputs());
+        body.set("inputs", JsonCodec.valueToTree(request.getInputs() == null ? Collections.emptyMap() : request.getInputs()));
         body.put("user", defaultUserId(request.getUserId()));
         body.put("response_mode", responseMode);
         String conversationId = defaultConversationId(request.getConversationId());
         if (!isBlank(conversationId)) {
             body.put("conversation_id", conversationId);
         }
-        if (request.getExtraBody() != null && !request.getExtraBody().isEmpty()) {
-            body.putAll(request.getExtraBody());
-        }
+        putExtraBody(body, request.getExtraBody());
         return body;
     }
 
-    private AgentFlowChatResponse mapBlockingResponse(JSONObject response) {
+    private AgentFlowChatResponse mapBlockingResponse(ObjectNode response) {
         return AgentFlowChatResponse.builder()
-                .content(firstNonBlank(response.getString("answer"), response.getString("message")))
-                .conversationId(response.getString("conversation_id"))
-                .messageId(firstNonBlank(response.getString("message_id"), response.getString("id")))
-                .taskId(response.getString("task_id"))
+                .content(firstNonBlank(textValue(response, "answer"), textValue(response, "message")))
+                .conversationId(textValue(response, "conversation_id"))
+                .messageId(firstNonBlank(textValue(response, "message_id"), textValue(response, "id")))
+                .taskId(textValue(response, "task_id"))
                 .usage(usageFromDify(metadataUsage(response)))
                 .raw(response)
                 .build();
     }
 
-    private JSONObject metadataUsage(JSONObject payload) {
-        JSONObject metadata = payload == null ? null : payload.getJSONObject("metadata");
-        return metadata == null ? null : metadata.getJSONObject("usage");
-    }
-
-    private JSONObject parseObjectOrNull(String data) {
-        if (isBlank(data)) {
-            return null;
-        }
-        try {
-            Object parsed = JSON.parse(data);
-            return parsed instanceof JSONObject ? (JSONObject) parsed : null;
-        } catch (Exception ex) {
-            return null;
-        }
+    private ObjectNode metadataUsage(ObjectNode payload) {
+        ObjectNode metadata = objectField(payload, "metadata");
+        return objectField(metadata, "usage");
     }
 }

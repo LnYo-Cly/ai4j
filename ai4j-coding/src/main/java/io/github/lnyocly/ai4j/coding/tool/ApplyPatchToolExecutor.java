@@ -1,10 +1,10 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.patch.ApplyPatchFileChange;
 import io.github.lnyocly.ai4j.coding.patch.ApplyPatchResult;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
@@ -37,13 +37,13 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String patch = arguments.getString("patch");
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String patch = CodingJson.getString(arguments, "patch");
         if (patch == null || patch.trim().isEmpty()) {
             throw invalid("patch is required", null);
         }
         ApplyPatchResult result = apply(patch);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
     private ApplyPatchResult apply(String patchText) throws IOException {
@@ -383,12 +383,12 @@ public class ApplyPatchToolExecutor implements ToolExecutor {
         return root.relativize(resolved).toString().replace('\\', '/');
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            JSONObject arguments = JSON.parseObject(rawArguments);
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
             if (arguments == null) {
                 throw invalid("apply_patch arguments must be a JSON object", null);
             }

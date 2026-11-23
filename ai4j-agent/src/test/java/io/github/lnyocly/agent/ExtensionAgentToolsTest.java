@@ -1,8 +1,8 @@
 package io.github.lnyocly.agent;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
 import io.github.lnyocly.ai4j.agent.AgentResult;
@@ -140,13 +140,13 @@ public class ExtensionAgentToolsTest {
         Assert.assertEquals(1, result.getToolResults().size());
         Assert.assertEquals("plugin__weather-pack__weather.search", result.getToolResults().get(0).getName());
         Assert.assertTrue(result.getToolResults().get(0).getOutput().contains("TOOL_ERROR:"));
-        JSONObject payload = toolErrorPayload(result.getToolResults().get(0).getOutput());
-        Assert.assertEquals("io.github.lnyocly.ai4j.extension.ExtensionException", payload.getString("errorType"));
+        ObjectNode payload = toolErrorPayload(result.getToolResults().get(0).getOutput());
+        Assert.assertEquals("io.github.lnyocly.ai4j.extension.ExtensionException", AgentJson.text(payload, "errorType"));
         Assert.assertEquals("Extension guardrail denied tool plugin__weather-pack__weather.search by deny-weather: weather access disabled",
-                payload.getString("error"));
-        Assert.assertEquals("plugin__weather-pack__weather.search", payload.getString("tool"));
-        Assert.assertEquals("call-weather-denied", payload.getString("callId"));
-        Assert.assertFalse(payload.containsKey("stackTrace"));
+                AgentJson.text(payload, "error"));
+        Assert.assertEquals("plugin__weather-pack__weather.search", AgentJson.text(payload, "tool"));
+        Assert.assertEquals("call-weather-denied", AgentJson.text(payload, "callId"));
+        Assert.assertFalse(payload.has("stackTrace"));
         Assert.assertEquals(0, WeatherExtension.getExecuteCount());
     }
 
@@ -247,9 +247,9 @@ public class ExtensionAgentToolsTest {
         }
     }
 
-    private static JSONObject toolErrorPayload(String output) {
+    private static ObjectNode toolErrorPayload(String output) {
         Assert.assertNotNull(output);
         Assert.assertTrue(output.startsWith("TOOL_ERROR: "));
-        return JSON.parseObject(output.substring("TOOL_ERROR: ".length()));
+        return AgentJson.parseObjectStrictOrNull(output.substring("TOOL_ERROR: ".length()));
     }
 }

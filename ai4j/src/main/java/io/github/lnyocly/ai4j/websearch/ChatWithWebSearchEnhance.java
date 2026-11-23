@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.websearch;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.exception.CommonException;
 import io.github.lnyocly.ai4j.exception.Ai4jException;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -90,16 +90,16 @@ public class ChatWithWebSearchEnhance implements IChatService {
         try(Response execute = okHttpClient.newCall(request).execute()) {
             ResponseBody body = execute.body();
             if (execute.isSuccessful() && body != null){
-                SearXNGResponse searXNGResponse = JSON.parseObject(body.string(), SearXNGResponse.class);
+                SearXNGResponse searXNGResponse = JsonCodec.fromJson(body.string(), SearXNGResponse.class);
                 List<SearXNGResponse.Result> results = searXNGResponse == null ? null : searXNGResponse.getResults();
 
                 if (results == null || results.isEmpty()) {
                     return "[]";
                 }
                 if(results.size() > searXNGConfig.getNums()) {
-                    return JSON.toJSONString(results.subList(0, searXNGConfig.getNums()));
+                    return JsonCodec.toJson(results.subList(0, searXNGConfig.getNums()));
                 }
-                return JSON.toJSONString(results);
+                return JsonCodec.toJson(results);
 
 
             }else{

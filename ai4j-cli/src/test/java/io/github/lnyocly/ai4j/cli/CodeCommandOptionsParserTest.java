@@ -321,7 +321,7 @@ public class CodeCommandOptionsParserTest {
             );
             Assert.fail("Expected auto protocol flag to be rejected");
         } catch (IllegalArgumentException ex) {
-            Assert.assertEquals("Unsupported protocol: auto. Expected: chat, responses", ex.getMessage());
+            Assert.assertEquals("Unsupported protocol: auto. Expected: chat, responses, messages, gemini", ex.getMessage());
         }
     }
 

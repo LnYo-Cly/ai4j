@@ -1,12 +1,12 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.node;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionContext;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.flowgram.FlowGramNodeExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.ToolUtilExecutor;
+import io.github.lnyocly.ai4j.flowgram.springboot.support.FlowGramJsonSupport;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -33,12 +33,12 @@ public class FlowGramToolNodeExecutor implements FlowGramNodeExecutor {
         Object argumentsValue = inputs.remove("argumentsJson");
         String argumentsJson;
         if (argumentsValue == null) {
-            argumentsJson = JSON.toJSONString(inputs);
+            argumentsJson = FlowGramJsonSupport.toJson(inputs);
         } else if (argumentsValue instanceof String) {
             String text = ((String) argumentsValue).trim();
             argumentsJson = text.isEmpty() ? "{}" : text;
         } else {
-            argumentsJson = JSON.toJSONString(argumentsValue);
+            argumentsJson = FlowGramJsonSupport.toJson(argumentsValue);
         }
 
         String rawOutput = tryExecuteBuiltinDemoTool(toolName, argumentsJson);
@@ -56,7 +56,7 @@ public class FlowGramToolNodeExecutor implements FlowGramNodeExecutor {
         outputs.put("toolName", toolName);
         outputs.put("rawOutput", rawOutput);
 
-        Object parsed = tryParse(rawOutput);
+        Object parsed = FlowGramJsonSupport.tryParse(rawOutput);
         if (parsed instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> parsedMap = (Map<String, Object>) parsed;
@@ -83,17 +83,6 @@ public class FlowGramToolNodeExecutor implements FlowGramNodeExecutor {
         return null;
     }
 
-    private Object tryParse(String raw) {
-        if (raw == null) {
-            return null;
-        }
-        try {
-            return JSON.parse(raw);
-        } catch (Exception ex) {
-            return raw;
-        }
-    }
-
     private String valueAsString(Object value) {
         return value == null ? null : String.valueOf(value);
     }
@@ -108,7 +97,7 @@ public class FlowGramToolNodeExecutor implements FlowGramNodeExecutor {
 
     private Integer extractIntegerArgument(String argumentsJson, String key) {
         try {
-            Map<String, Object> map = JSON.parseObject(argumentsJson);
+            Map<String, Object> map = FlowGramJsonSupport.readMapOrNull(argumentsJson);
             if (map == null) {
                 return null;
             }
@@ -120,7 +109,7 @@ public class FlowGramToolNodeExecutor implements FlowGramNodeExecutor {
                 return null;
             }
             return Integer.valueOf(String.valueOf(value));
-        } catch (Exception ex) {
+        } catch (RuntimeException ex) {
             return null;
         }
     }

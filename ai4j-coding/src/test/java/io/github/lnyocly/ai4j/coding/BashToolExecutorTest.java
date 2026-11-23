@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.coding;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxArtifact;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxCommand;
 import io.github.lnyocly.ai4j.agent.sandbox.SandboxException;
@@ -22,7 +21,9 @@ import org.junit.rules.TemporaryFolder;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,11 +47,11 @@ public class BashToolExecutorTest {
         );
 
         String raw = executor.execute(call(json("action", "exec", "command", "echo hello-ai4j")));
-        JSONObject result = JSON.parseObject(raw);
+        ObjectNode result = CodingJson.parseObject(raw);
 
-        assertFalse(result.getBooleanValue("timedOut"));
-        assertEquals(0, result.getIntValue("exitCode"));
-        assertTrue(result.getString("stdout").toLowerCase().contains("hello-ai4j"));
+        assertFalse(CodingJson.getBooleanValue(result, "timedOut"));
+        assertEquals(0, CodingJson.getIntValue(result, "exitCode"));
+        assertTrue(CodingJson.getString(result, "stdout").toLowerCase().contains("hello-ai4j"));
     }
 
     @Test
@@ -75,14 +76,14 @@ public class BashToolExecutorTest {
         );
 
         String raw = executor.execute(call(json("action", "exec", "command", "echo from-sandbox")));
-        JSONObject result = JSON.parseObject(raw);
+        ObjectNode result = CodingJson.parseObject(raw);
 
-        assertEquals("sandbox", result.getString("executionEnvironment"));
-        assertEquals("sandbox-1", result.getString("sandboxSessionId"));
-        assertEquals("fake-sandbox", result.getString("sandboxProviderId"));
-        assertEquals("/sandbox/workspace", result.getString("workingDirectory"));
-        assertEquals(0, result.getIntValue("exitCode"));
-        assertTrue(result.getString("stdout").contains("sandbox executed: echo from-sandbox"));
+        assertEquals("sandbox", CodingJson.getString(result, "executionEnvironment"));
+        assertEquals("sandbox-1", CodingJson.getString(result, "sandboxSessionId"));
+        assertEquals("fake-sandbox", CodingJson.getString(result, "sandboxProviderId"));
+        assertEquals("/sandbox/workspace", CodingJson.getString(result, "workingDirectory"));
+        assertEquals(0, CodingJson.getIntValue(result, "exitCode"));
+        assertTrue(CodingJson.getString(result, "stdout").contains("sandbox executed: echo from-sandbox"));
         assertEquals(1, sandboxSession.commands.size());
         assertEquals(Long.valueOf(1234L), sandboxSession.commands.get(0).getTimeoutMillis());
     }
@@ -96,19 +97,19 @@ public class BashToolExecutorTest {
         BashToolExecutor executor = new BashToolExecutor(workspaceContext, options, registry);
 
         String startRaw = executor.execute(call(json("action", "start", "command", backgroundCommand())));
-        JSONObject start = JSON.parseObject(startRaw);
-        String processId = start.getString("processId");
-        assertEquals("RUNNING", start.getString("status"));
+        ObjectNode start = CodingJson.parseObject(startRaw);
+        String processId = CodingJson.getString(start, "processId");
+        assertEquals("RUNNING", CodingJson.getString(start, "status"));
 
-        JSONObject logs = awaitLogs(executor, processId, 3000L);
-        assertTrue(logs.getLongValue("nextOffset") > 0L);
+        ObjectNode logs = awaitLogs(executor, processId, 3000L);
+        assertTrue(CodingJson.getLongValue(logs, "nextOffset") > 0L);
 
         String stopRaw = executor.execute(call(json("action", "stop", "processId", processId)));
-        JSONObject stop = JSON.parseObject(stopRaw);
-        assertTrue("STOPPED".equals(stop.getString("status")) || "EXITED".equals(stop.getString("status")));
+        ObjectNode stop = CodingJson.parseObject(stopRaw);
+        assertTrue("STOPPED".equals(CodingJson.getString(stop, "status")) || "EXITED".equals(CodingJson.getString(stop, "status")));
 
         String listRaw = executor.execute(call(json("action", "list")));
-        JSONArray list = JSON.parseArray(listRaw);
+        ArrayNode list = CodingJson.parseArray(listRaw);
         assertEquals(1, list.size());
     }
 
@@ -121,11 +122,11 @@ public class BashToolExecutorTest {
         BashToolExecutor executor = new BashToolExecutor(workspaceContext, options, registry);
 
         String startRaw = executor.execute(call(json("action", "start", "command", stdinEchoCommand())));
-        String processId = JSON.parseObject(startRaw).getString("processId");
+        String processId = CodingJson.getString(CodingJson.parseObject(startRaw), "processId");
 
         executor.execute(call(json("action", "write", "processId", processId, "input", "hello-stdin\n")));
-        JSONObject logs = awaitLogs(executor, processId, 3000L);
-        assertTrue(logs.getString("content").toLowerCase().contains("hello-stdin"));
+        ObjectNode logs = awaitLogs(executor, processId, 3000L);
+        assertTrue(CodingJson.getString(logs, "content").toLowerCase().contains("hello-stdin"));
 
         executor.execute(call(json("action", "stop", "processId", processId)));
     }
@@ -139,24 +140,24 @@ public class BashToolExecutorTest {
         SessionProcessRegistry liveRegistry = new SessionProcessRegistry(workspaceContext, options);
         BashToolExecutor liveExecutor = new BashToolExecutor(workspaceContext, options, liveRegistry);
         String startRaw = liveExecutor.execute(call(json("action", "start", "command", backgroundCommand())));
-        String processId = JSON.parseObject(startRaw).getString("processId");
+        String processId = CodingJson.getString(CodingJson.parseObject(startRaw), "processId");
         assertTrue(processId != null && !processId.isEmpty());
-        JSONObject liveLogs = awaitLogs(liveExecutor, processId, 3000L);
-        assertTrue(liveLogs.getString("content").toLowerCase().contains("ready"));
+        ObjectNode liveLogs = awaitLogs(liveExecutor, processId, 3000L);
+        assertTrue(CodingJson.getString(liveLogs, "content").toLowerCase().contains("ready"));
         liveRegistry.close();
 
         SessionProcessRegistry restoredRegistry = new SessionProcessRegistry(workspaceContext, options);
         restoredRegistry.restoreSnapshots(liveRegistry.exportSnapshots());
         BashToolExecutor restoredExecutor = new BashToolExecutor(workspaceContext, options, restoredRegistry);
 
-        JSONObject status = JSON.parseObject(restoredExecutor.execute(call(json("action", "status", "processId", processId))));
-        assertTrue(status.getBooleanValue("restored"));
-        assertFalse(status.getBooleanValue("controlAvailable"));
+        ObjectNode status = CodingJson.parseObject(restoredExecutor.execute(call(json("action", "status", "processId", processId))));
+        assertTrue(CodingJson.getBooleanValue(status, "restored"));
+        assertFalse(CodingJson.getBooleanValue(status, "controlAvailable"));
 
-        JSONObject logs = JSON.parseObject(restoredExecutor.execute(call(json("action", "logs", "processId", processId))));
-        assertEquals(processId, logs.getString("processId"));
-        assertTrue(logs.getString("content").toLowerCase().contains("ready"));
-        assertTrue(logs.getLongValue("nextOffset") > 0L);
+        ObjectNode logs = CodingJson.parseObject(restoredExecutor.execute(call(json("action", "logs", "processId", processId))));
+        assertEquals(processId, CodingJson.getString(logs, "processId"));
+        assertTrue(CodingJson.getString(logs, "content").toLowerCase().contains("ready"));
+        assertTrue(CodingJson.getLongValue(logs, "nextOffset") > 0L);
 
         try {
             restoredExecutor.execute(call(json("action", "stop", "processId", processId)));
@@ -174,26 +175,26 @@ public class BashToolExecutorTest {
     }
 
     private String json(Object... pairs) {
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = new LinkedHashMap<String, Object>();
         for (int i = 0; i < pairs.length; i += 2) {
             object.put(String.valueOf(pairs[i]), pairs[i + 1]);
         }
-        return JSON.toJSONString(object);
+        return CodingJson.toJson(object);
     }
 
-    private JSONObject awaitLogs(BashToolExecutor executor, String processId, long timeoutMs) throws Exception {
+    private ObjectNode awaitLogs(BashToolExecutor executor, String processId, long timeoutMs) throws Exception {
         long deadline = System.currentTimeMillis() + timeoutMs;
-        JSONObject last = null;
+        ObjectNode last = null;
         while (System.currentTimeMillis() < deadline) {
             String logsRaw = executor.execute(call(json("action", "logs", "processId", processId, "limit", 8000)));
-            last = JSON.parseObject(logsRaw);
-            String content = last.getString("content");
+            last = CodingJson.parseObject(logsRaw);
+            String content = CodingJson.getString(last, "content");
             if (content != null && !content.trim().isEmpty()) {
                 return last;
             }
             Thread.sleep(150L);
         }
-        return last == null ? new JSONObject() : last;
+        return last == null ? CodingJson.newObject() : last;
     }
 
     private String backgroundCommand() {

@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.platform.openai.embedding;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OpenAiConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.platform.openai.embedding.entity.Embedding;
@@ -35,7 +35,7 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
     public EmbeddingResponse embedding(String baseUrl, String apiKey, Embedding embeddingReq)  throws Exception  {
         if(baseUrl == null || "".equals(baseUrl)) baseUrl = openAiConfig.getApiHost();
         if(apiKey == null || "".equals(apiKey)) apiKey = openAiConfig.getApiKey();
-        String jsonString = JSON.toJSONString(embeddingReq);
+        String jsonString = JsonCodec.toJson(embeddingReq);
 
         Request request = new Request.Builder()
                 .header("Authorization", "Bearer " + apiKey)
@@ -44,7 +44,7 @@ public class OpenAiEmbeddingService implements IEmbeddingService {
                 .build();
         Response execute = okHttpClient.newCall(request).execute();
         if (execute.isSuccessful() && execute.body() != null) {
-            return JSON.parseObject(execute.body().string(), EmbeddingResponse.class);
+            return JsonCodec.fromJson(execute.body().string(), EmbeddingResponse.class);
         }
         return null;
     }

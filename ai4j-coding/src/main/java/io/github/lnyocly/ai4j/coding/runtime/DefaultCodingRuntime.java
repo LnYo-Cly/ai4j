@@ -1,8 +1,7 @@
 package io.github.lnyocly.ai4j.coding.runtime;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentSession;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
@@ -15,6 +14,7 @@ import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.coding.CodingAgentBuilder;
 import io.github.lnyocly.ai4j.coding.CodingAgentOptions;
 import io.github.lnyocly.ai4j.coding.CodingAgentResult;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.CodingSession;
 import io.github.lnyocly.ai4j.coding.CodingSessionState;
 import io.github.lnyocly.ai4j.coding.definition.CodingAgentDefinition;
@@ -35,7 +35,6 @@ import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -470,11 +469,12 @@ public class DefaultCodingRuntime implements CodingRuntime {
         }
         List<Object> items = snapshot.getItems();
         for (int i = items.size() - 1; i >= 0; i--) {
-            JSONObject object = toJSONObject(items.get(i));
-            if (!"message".equals(object.getString("type")) || !"assistant".equals(object.getString("role"))) {
+            ObjectNode object = toObjectNode(items.get(i));
+            if (!"message".equals(CodingJson.getString(object, "type"))
+                    || !"assistant".equals(CodingJson.getString(object, "role"))) {
                 continue;
             }
-            String text = trimToNull(extractMessageText(object.getJSONArray("content")));
+            String text = trimToNull(extractMessageText(CodingJson.getArray(object, "content")));
             if (text != null) {
                 return text;
             }
@@ -482,19 +482,19 @@ public class DefaultCodingRuntime implements CodingRuntime {
         return null;
     }
 
-    private String extractMessageText(JSONArray content) {
+    private String extractMessageText(ArrayNode content) {
         if (content == null || content.isEmpty()) {
             return null;
         }
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < content.size(); i++) {
-            JSONObject part = content.getJSONObject(i);
+            ObjectNode part = CodingJson.getObject(content, i);
             if (part == null) {
                 continue;
             }
-            String partType = part.getString("type");
+            String partType = CodingJson.getString(part, "type");
             if ("input_text".equals(partType) || "output_text".equals(partType)) {
-                String text = trimToNull(part.getString("text"));
+                String text = trimToNull(CodingJson.getString(part, "text"));
                 if (text != null) {
                     if (builder.length() > 0) {
                         builder.append(' ');
@@ -506,20 +506,14 @@ public class DefaultCodingRuntime implements CodingRuntime {
         return builder.toString();
     }
 
-    private JSONObject toJSONObject(Object raw) {
-        if (raw instanceof JSONObject) {
-            return (JSONObject) raw;
-        }
-        if (raw instanceof Map) {
-            return new JSONObject((Map<?, ?>) raw);
-        }
+    private ObjectNode toObjectNode(Object raw) {
         if (raw == null) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
         try {
-            return JSON.parseObject(JSON.toJSONString(raw));
-        } catch (Exception ignored) {
-            return new JSONObject();
+            return CodingJson.toObjectNode(raw);
+        } catch (RuntimeException ignored) {
+            return CodingJson.newObject();
         }
     }
 

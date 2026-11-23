@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.platform.minimax.video;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.MinimaxConfig;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoCreateRequest;
 import io.github.lnyocly.ai4j.platform.openai.video.entity.VideoResponse;
@@ -42,11 +42,11 @@ public class MinimaxVideoServiceTest {
             Assert.assertEquals("/v1/video_generation", request.getPath());
             Assert.assertEquals("Bearer test-key", request.getHeader("Authorization"));
             Assert.assertTrue(request.getHeader("Content-Type").startsWith("application/json"));
-            JSONObject body = JSON.parseObject(request.getBody().readUtf8());
-            Assert.assertEquals("MiniMax-Hailuo-2.3", body.getString("model"));
-            Assert.assertEquals("一只猫在月光下奔跑", body.getString("prompt"));
-            Assert.assertEquals("https://cdn.example/first.png", body.getString("first_frame_image"));
-            Assert.assertEquals(Boolean.FALSE, body.getBoolean("promptenhance"));
+            JsonNode body = JsonCodec.readTree(request.getBody().readUtf8());
+            Assert.assertEquals("MiniMax-Hailuo-2.3", body.path("model").asText());
+            Assert.assertEquals("一只猫在月光下奔跑", body.path("prompt").asText());
+            Assert.assertEquals("https://cdn.example/first.png", body.path("first_frame_image").asText());
+            Assert.assertFalse(body.path("promptenhance").asBoolean());
         } finally {
             server.shutdown();
         }
@@ -68,9 +68,9 @@ public class MinimaxVideoServiceTest {
                     .extraFields(extra)
                     .build());
 
-            JSONObject body = JSON.parseObject(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
-            Assert.assertEquals(Boolean.TRUE, body.getBoolean("promptenhance"));
-            Assert.assertEquals(Integer.valueOf(6), body.getInteger("duration"));
+            JsonNode body = JsonCodec.readTree(server.takeRequest(1, TimeUnit.SECONDS).getBody().readUtf8());
+            Assert.assertTrue(body.path("promptenhance").asBoolean());
+            Assert.assertEquals(6, body.path("duration").asInt());
         } finally {
             server.shutdown();
         }

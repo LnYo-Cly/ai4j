@@ -1,11 +1,9 @@
 package io.github.lnyocly.ai4j.tui;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONWriter;
+import io.github.lnyocly.ai4j.cli.CliJson;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,8 +47,7 @@ public class TuiConfigManager {
         TuiConfig normalized = config == null ? new TuiConfig() : config;
         normalize(normalized);
         Files.createDirectories(workspaceConfigPath().getParent());
-        String json = JSON.toJSONString(normalized, JSONWriter.Feature.PrettyFormat);
-        Files.write(workspaceConfigPath(), json.getBytes(StandardCharsets.UTF_8));
+        Files.write(workspaceConfigPath(), CliJson.toPrettyJsonBytes(normalized));
         return normalized;
     }
 
@@ -107,7 +104,7 @@ public class TuiConfigManager {
             return null;
         }
         try {
-            return JSON.parseObject(Files.readAllBytes(path), TuiConfig.class);
+            return CliJson.fromJson(Files.readAllBytes(path), TuiConfig.class);
         } catch (IOException ex) {
             return null;
         }
@@ -118,7 +115,7 @@ public class TuiConfigManager {
             return null;
         }
         try {
-            return JSON.parseObject(Files.readAllBytes(path), TuiTheme.class);
+            return CliJson.fromJson(Files.readAllBytes(path), TuiTheme.class);
         } catch (IOException ex) {
             return null;
         }
@@ -131,7 +128,7 @@ public class TuiConfigManager {
                 return null;
             }
             byte[] bytes = readAllBytes(inputStream);
-            return JSON.parseObject(bytes, TuiTheme.class);
+            return CliJson.fromJson(bytes, TuiTheme.class);
         } catch (IOException ex) {
             return null;
         }

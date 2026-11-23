@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.agent.dynamicworkflow;
 
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +14,7 @@ public class DynamicWorkflowNashornExecutorTest {
     public void executesPhaseLogAndAgentWithModernSyntaxNormalizer() {
         RecordingBridge bridge = new RecordingBridge();
         NashornDynamicWorkflowExecutor executor = new NashornDynamicWorkflowExecutor(bridge);
-        JSONObject args = new JSONObject();
+        ObjectNode args = AgentJson.createObjectNode();
         args.put("file", "src/App.java");
         DynamicWorkflowRequest request = DynamicWorkflowRequest.builder()
                 .workflowSpecVersion("ai4j.dynamic-workflow/v1")

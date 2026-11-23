@@ -1,12 +1,13 @@
 package io.github.lnyocly.ai4j.agentflow.workflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowConfig;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowException;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.support.AgentFlowSupport;
 import io.github.lnyocly.ai4j.agentflow.trace.AgentFlowTraceContext;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.service.Configuration;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -16,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,21 +33,21 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
     public AgentFlowWorkflowResponse run(AgentFlowWorkflowRequest request) throws Exception {
         AgentFlowTraceContext traceContext = startTrace("workflow", false, request);
         try {
-            JSONObject response = executeObject(buildRunRequest(request, false));
+            ObjectNode response = executeObject(buildRunRequest(request, false));
             assertCozeSuccess(response);
 
-            Object dataValue = response.get("data");
-            Object parsedData = parseWorkflowData(dataValue);
-            Map<String, Object> outputs = parsedData instanceof JSONObject
-                    ? new LinkedHashMap<String, Object>((JSONObject) parsedData)
+            JsonNode dataNode = response.get("data");
+            Object parsedData = parseWorkflowData(dataNode);
+            Map<String, Object> outputs = parsedData instanceof JsonNode
+                    ? toObjectMap((JsonNode) parsedData)
                     : Collections.<String, Object>emptyMap();
 
             AgentFlowWorkflowResponse workflowResponse = AgentFlowWorkflowResponse.builder()
                     .status("completed")
                     .outputText(extractText(parsedData))
                     .outputs(outputs)
-                    .workflowRunId(response.getString("execute_id"))
-                    .usage(usageFromCoze(response.getJSONObject("usage")))
+                    .workflowRunId(textValue(response, "execute_id"))
+                    .usage(usageFromCoze(objectField(response, "usage")))
                     .raw(response)
                     .build();
             traceComplete(traceContext, workflowResponse);
@@ -86,16 +86,16 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
                                 @NotNull String data) {
                 try {
                     String eventType = type;
-                    JSONObject payload = parseObjectOrNull(data);
+                    ObjectNode payload = parseObjectOrNull(data);
                     boolean done = false;
                     String outputText = null;
 
                     if ("Message".equals(eventType)) {
-                        outputText = payload == null ? null : payload.getString("content");
+                        outputText = textValue(payload, "content");
                         if (!isBlank(outputText)) {
                             content.append(outputText);
                         }
-                        AgentFlowUsage usage = payload == null ? null : usageFromCoze(payload.getJSONObject("usage"));
+                        AgentFlowUsage usage = usageFromCoze(objectField(payload, "usage"));
                         if (usage != null) {
                             usageRef.set(usage);
                         }
@@ -194,10 +194,10 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
         return jsonRequestBuilder(url).post(jsonBody(buildRequestBody(request))).build();
     }
 
-    private JSONObject buildRequestBody(AgentFlowWorkflowRequest request) {
-        JSONObject body = new JSONObject();
+    private ObjectNode buildRequestBody(AgentFlowWorkflowRequest request) {
+        ObjectNode body = JsonCodec.createObjectNode();
         body.put("workflow_id", requireWorkflowId(request.getWorkflowId()));
-        body.put("parameters", request.getInputs() == null ? Collections.emptyMap() : request.getInputs());
+        body.set("parameters", JsonCodec.valueToTree(request.getInputs() == null ? Collections.emptyMap() : request.getInputs()));
         if (!isBlank(agentFlowConfig.getBotId())) {
             body.put("bot_id", agentFlowConfig.getBotId());
         }
@@ -205,41 +205,27 @@ public class CozeAgentFlowWorkflowService extends AgentFlowSupport implements Ag
             body.put("app_id", agentFlowConfig.getAppId());
         }
         if (request.getMetadata() != null && !request.getMetadata().isEmpty()) {
-            body.put("ext", toStringMap(request.getMetadata()));
+            body.set("ext", JsonCodec.valueToTree(toStringMap(request.getMetadata())));
         }
-        if (request.getExtraBody() != null && !request.getExtraBody().isEmpty()) {
-            body.putAll(request.getExtraBody());
-        }
+        putExtraBody(body, request.getExtraBody());
         return body;
     }
 
-    private Object parseWorkflowData(Object dataValue) {
-        if (dataValue == null) {
+    private Object parseWorkflowData(JsonNode dataNode) {
+        if (dataNode == null || dataNode.isNull()) {
             return null;
         }
-        if (!(dataValue instanceof String)) {
-            return dataValue;
+        if (!dataNode.isTextual()) {
+            return dataNode;
         }
-        String text = (String) dataValue;
+        String text = dataNode.asText();
         if (isBlank(text)) {
             return null;
         }
         try {
-            return JSON.parse(text);
+            return JsonCodec.readTree(text);
         } catch (Exception ex) {
             return text;
-        }
-    }
-
-    private JSONObject parseObjectOrNull(String data) {
-        if (isBlank(data)) {
-            return null;
-        }
-        try {
-            Object parsed = JSON.parse(data);
-            return parsed instanceof JSONObject ? (JSONObject) parsed : null;
-        } catch (Exception ex) {
-            return null;
         }
     }
 }

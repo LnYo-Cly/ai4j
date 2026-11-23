@@ -1,9 +1,10 @@
 package io.github.lnyocly.ai4j.coding.tool;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.tool.AgentToolInputException;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.coding.CodingJson;
 import io.github.lnyocly.ai4j.coding.workspace.WorkspaceContext;
 
 import java.io.IOException;
@@ -30,16 +31,16 @@ public class GlobToolExecutor implements ToolExecutor {
 
     @Override
     public String execute(AgentToolCall call) throws Exception {
-        JSONObject arguments = parseArguments(call == null ? null : call.getArguments());
-        String pattern = safeTrim(arguments.getString("pattern"));
+        ObjectNode arguments = parseArguments(call == null ? null : call.getArguments());
+        String pattern = safeTrim(CodingJson.getString(arguments, "pattern"));
         if (isBlank(pattern)) {
             throw new IllegalArgumentException("pattern is required");
         }
-        String basePath = safeTrim(arguments.getString("path"));
+        String basePath = safeTrim(CodingJson.getString(arguments, "path"));
         if (isBlank(basePath)) {
             basePath = ".";
         }
-        Integer maxResultsRaw = arguments.getInteger("maxResults");
+        Integer maxResultsRaw = CodingJson.getInteger(arguments, "maxResults");
         int maxResults = maxResultsRaw == null || maxResultsRaw <= 0 ? DEFAULT_MAX_RESULTS : maxResultsRaw;
 
         Path searchBase = workspaceContext.resolveReadablePath(basePath);
@@ -49,13 +50,13 @@ public class GlobToolExecutor implements ToolExecutor {
 
         List<String> matches = glob(searchBase, pattern, maxResults);
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = CodingJson.newObject();
         result.put("pattern", pattern);
         result.put("path", basePath);
-        result.put("matches", matches);
+        result.set("matches", CodingJson.valueToTree(matches));
         result.put("count", matches.size());
         result.put("truncated", matches.size() >= maxResults);
-        return JSON.toJSONString(result);
+        return CodingJson.toJson(result);
     }
 
     List<String> glob(Path searchBase, String pattern, int maxResults) throws IOException {
@@ -125,11 +126,21 @@ public class GlobToolExecutor implements ToolExecutor {
         return path.replace('\\', '/');
     }
 
-    private JSONObject parseArguments(String rawArguments) {
+    private ObjectNode parseArguments(String rawArguments) {
         if (rawArguments == null || rawArguments.trim().isEmpty()) {
-            return new JSONObject();
+            return CodingJson.newObject();
         }
-        return JSON.parseObject(rawArguments);
+        try {
+            ObjectNode arguments = CodingJson.parseObject(rawArguments);
+            if (arguments == null) {
+                throw new AgentToolInputException("glob arguments must be a JSON object");
+            }
+            return arguments;
+        } catch (AgentToolInputException input) {
+            throw input;
+        } catch (RuntimeException parseFailure) {
+            throw new AgentToolInputException("glob arguments must be valid JSON: " + parseFailure.getMessage(), parseFailure);
+        }
     }
 
     private static String safeTrim(String value) {

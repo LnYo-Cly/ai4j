@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.doubao.image;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DoubaoConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.exception.HttpErrorDecoder;
@@ -68,7 +69,7 @@ public class DoubaoImageService implements IImageService {
 
         DoubaoImageGenerationRequest requestBody = convert(imageGeneration);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String requestString = mapper.writeValueAsString(requestBody);
 
         Request request = new Request.Builder()
@@ -103,7 +104,7 @@ public class DoubaoImageService implements IImageService {
         }
 
         DoubaoImageGenerationRequest requestBody = convert(imageGeneration);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         String requestString = mapper.writeValueAsString(requestBody);
 
         Request request = new Request.Builder()

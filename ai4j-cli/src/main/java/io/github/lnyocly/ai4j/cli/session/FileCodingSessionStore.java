@@ -1,10 +1,8 @@
 package io.github.lnyocly.ai4j.cli.session;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONWriter;
+import io.github.lnyocly.ai4j.cli.CliJson;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,8 +45,7 @@ public class FileCodingSessionStore implements CodingSessionStore {
                 .storePath(file.toAbsolutePath().normalize().toString())
                 .build();
 
-        String json = JSON.toJSONString(toPersist, JSONWriter.Feature.PrettyFormat);
-        Files.write(file, json.getBytes(StandardCharsets.UTF_8));
+        Files.write(file, CliJson.toPrettyJsonBytes(toPersist));
         return toPersist;
     }
 
@@ -61,7 +58,7 @@ public class FileCodingSessionStore implements CodingSessionStore {
         if (!Files.exists(file)) {
             return null;
         }
-        StoredCodingSession session = JSON.parseObject(
+        StoredCodingSession session = CliJson.fromJson(
                 Files.readAllBytes(file),
                 StoredCodingSession.class
         );
@@ -79,7 +76,7 @@ public class FileCodingSessionStore implements CodingSessionStore {
         List<StoredCodingSession> sessions = new ArrayList<StoredCodingSession>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.json")) {
             for (Path file : stream) {
-                StoredCodingSession session = JSON.parseObject(
+                StoredCodingSession session = CliJson.fromJson(
                         Files.readAllBytes(file),
                         StoredCodingSession.class
                 );

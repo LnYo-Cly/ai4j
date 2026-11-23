@@ -24,6 +24,10 @@ public class HarnessActor {
         return HarnessActor.builder().kind("human").id(id).displayName(id).build();
     }
 
+    public static HarnessActor owner(String id) {
+        return HarnessActor.builder().kind("owner").id(id).displayName(id).build();
+    }
+
     public static HarnessActor system(String id) {
         return HarnessActor.builder().kind("system").id(id).displayName(id).build();
     }
@@ -38,6 +42,14 @@ public class HarnessActor {
 
     public boolean isHuman() {
         return "human".equalsIgnoreCase(kind);
+    }
+
+    public boolean isOwner() {
+        return "owner".equalsIgnoreCase(kind);
+    }
+
+    public boolean isHumanOrOwner() {
+        return isHuman() || isOwner();
     }
 
     public boolean isSystem() {

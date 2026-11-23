@@ -47,7 +47,9 @@ public class RealAgentDemo {
 
         // 2. tool executor — actually evaluates the expression (sandbox: only digits and operators)
         ToolExecutor executor = call -> {
-            String expr = com.alibaba.fastjson2.JSON.parseObject(call.getArguments()).getString("expression");
+            String expr = io.github.lnyocly.ai4j.agent.util.AgentJson.text(
+                    io.github.lnyocly.ai4j.agent.util.AgentJson.parseObjectStrictOrNull(call.getArguments()),
+                    "expression");
             // simple safe evaluator: only allow digits, +, -, *, /, ., space, parentheses
             String safe = expr.replaceAll("[^0-9+\\-*/. ()]", "");
             if (safe.isEmpty() || !safe.equals(expr.trim())) {

@@ -1,9 +1,10 @@
 package io.github.lnyocly.ai4j.cli.acp;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.cli.ApprovalMode;
+import io.github.lnyocly.ai4j.cli.CliJson;
 import io.github.lnyocly.ai4j.cli.CliProtocol;
 import io.github.lnyocly.ai4j.cli.config.CliWorkspaceConfig;
 import io.github.lnyocly.ai4j.cli.command.CodeCommandOptions;
@@ -49,6 +50,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -98,7 +100,7 @@ public class AcpJsonRpcServer implements Closeable {
     private final ExecutorService requestExecutor = Executors.newSingleThreadExecutor(daemonThreadFactory("acp-request"));
     private final ExecutorService promptExecutor = Executors.newCachedThreadPool(daemonThreadFactory("acp-prompt"));
     private final ConcurrentMap<String, SessionHandle> sessions = new ConcurrentHashMap<String, SessionHandle>();
-    private final ConcurrentMap<String, CompletableFuture<JSONObject>> pendingClientResponses = new ConcurrentHashMap<String, CompletableFuture<JSONObject>>();
+    private final ConcurrentMap<String, CompletableFuture<ObjectNode>> pendingClientResponses = new ConcurrentHashMap<String, CompletableFuture<ObjectNode>>();
 
     public AcpJsonRpcServer(InputStream inputStream,
                             OutputStream outputStream,
@@ -135,10 +137,10 @@ public class AcpJsonRpcServer implements Closeable {
                 if (trimmed == null || trimmed.isEmpty()) {
                     continue;
                 }
-                JSONObject message;
+                ObjectNode message;
                 try {
-                    message = JSON.parseObject(trimmed);
-                } catch (Exception ex) {
+                    message = CliJson.parseObject(trimmed);
+                } catch (RuntimeException ex) {
                     logError("Invalid ACP JSON message: " + safeMessage(ex));
                     continue;
                 }
@@ -156,11 +158,11 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 
-    private void handleMessage(final JSONObject message) {
-        if (message.containsKey("method")) {
-            final String method = message.getString("method");
-            final Object id = message.get("id");
-            final JSONObject params = message.getJSONObject("params");
+    private void handleMessage(final ObjectNode message) {
+        if (message.has("method")) {
+            final String method = CliJson.getString(message, "method");
+            final Object id = CliJson.toPlainValue(message.get("id"));
+            final ObjectNode params = CliJson.getObject(message, "params");
             requestExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -174,15 +176,15 @@ public class AcpJsonRpcServer implements Closeable {
             return;
         }
 
-        if (message.containsKey("id")) {
-            CompletableFuture<JSONObject> future = pendingClientResponses.remove(requestIdKey(message.get("id")));
+        if (message.has("id")) {
+            CompletableFuture<ObjectNode> future = pendingClientResponses.remove(requestIdKey(message.get("id")));
             if (future != null) {
                 future.complete(message);
             }
         }
     }
 
-    private void handleRequest(Object id, String method, JSONObject params) {
+    private void handleRequest(Object id, String method, ObjectNode params) {
         try {
             if (METHOD_INITIALIZE.equals(method)) {
                 sendResponse(id, buildInitializeResponse(params));
@@ -228,7 +230,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 
-    private void handleNotification(String method, JSONObject params) {
+    private void handleNotification(String method, ObjectNode params) {
         try {
             if (METHOD_SESSION_CANCEL.equals(method)) {
                 cancelSession(params);
@@ -240,10 +242,11 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 
-    private Map<String, Object> buildInitializeResponse(JSONObject params) {
+    private Map<String, Object> buildInitializeResponse(ObjectNode params) {
         int protocolVersion = 1;
-        if (params != null && params.getIntValue("protocolVersion") > 0) {
-            protocolVersion = params.getIntValue("protocolVersion");
+        int requestedProtocolVersion = CliJson.getIntValue(params, "protocolVersion");
+        if (params != null && requestedProtocolVersion > 0) {
+            protocolVersion = requestedProtocolVersion;
         }
         return newMap(
                 "protocolVersion", protocolVersion,
@@ -308,7 +311,7 @@ public class AcpJsonRpcServer implements Closeable {
 
     private void writeMessage(Map<String, Object> payload) {
         synchronized (writeLock) {
-            stdout.println(JSON.toJSONString(payload));
+            stdout.println(CliJson.toJson(payload));
             stdout.flush();
         }
     }
@@ -345,11 +348,11 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 
-    private SessionHandle createSession(JSONObject params, boolean loadExisting) throws Exception {
-        String cwd = requireAbsolutePath(params == null ? null : params.getString("cwd"));
-        String requestedSessionId = params == null ? null : trimToNull(params.getString("sessionId"));
+    private SessionHandle createSession(ObjectNode params, boolean loadExisting) throws Exception {
+        String cwd = requireAbsolutePath(CliJson.getString(params, "cwd"));
+        String requestedSessionId = trimToNull(CliJson.getString(params, "sessionId"));
         CodeCommandOptions sessionOptions = resolveSessionOptions(cwd, requestedSessionId, loadExisting ? requestedSessionId : null);
-        CliResolvedMcpConfig resolvedMcpConfig = resolveMcpConfig(params == null ? null : params.getJSONArray("mcpServers"));
+        CliResolvedMcpConfig resolvedMcpConfig = resolveMcpConfig(CliJson.getArray(params, "mcpServers"));
         final AtomicReference<String> permissionSessionIdRef = new AtomicReference<String>(requestedSessionId);
         AcpToolApprovalDecorator.PermissionGateway permissionGateway = new AcpToolApprovalDecorator.PermissionGateway() {
             @Override
@@ -375,7 +378,7 @@ public class AcpJsonRpcServer implements Closeable {
         return handle;
     }
 
-    private void promptSession(final Object requestId, JSONObject params) throws Exception {
+    private void promptSession(final Object requestId, ObjectNode params) throws Exception {
         String sessionId = requiredString(params, "sessionId");
         final SessionHandle handle = requireSession(sessionId);
         final String input = flattenPrompt(requiredArray(params, "prompt"));
@@ -395,7 +398,7 @@ public class AcpJsonRpcServer implements Closeable {
         });
     }
 
-    private Map<String, Object> setSessionMode(JSONObject params) throws Exception {
+    private Map<String, Object> setSessionMode(ObjectNode params) throws Exception {
         String sessionId = requiredString(params, "sessionId");
         String modeId = requiredString(params, "modeId");
         SessionHandle handle = requireSession(sessionId);
@@ -403,10 +406,10 @@ public class AcpJsonRpcServer implements Closeable {
         return Collections.<String, Object>emptyMap();
     }
 
-    private Map<String, Object> setSessionConfigOption(JSONObject params) throws Exception {
+    private Map<String, Object> setSessionConfigOption(ObjectNode params) throws Exception {
         String sessionId = requiredString(params, "sessionId");
         String configId = requiredString(params, "configId");
-        Object valueObject = params == null ? null : params.get("value");
+        Object valueObject = params == null ? null : CliJson.toPlainValue(params.get("value"));
         if (valueObject == null) {
             throw new IllegalArgumentException("Missing required field: value");
         }
@@ -417,11 +420,11 @@ public class AcpJsonRpcServer implements Closeable {
         );
     }
 
-    private void cancelSession(JSONObject params) {
+    private void cancelSession(ObjectNode params) {
         if (params == null) {
             return;
         }
-        String sessionId = trimToNull(params.getString("sessionId"));
+        String sessionId = trimToNull(CliJson.getString(params, "sessionId"));
         if (sessionId == null) {
             return;
         }
@@ -429,13 +432,13 @@ public class AcpJsonRpcServer implements Closeable {
         if (handle != null) {
             handle.cancel();
         }
-        for (CompletableFuture<JSONObject> future : pendingClientResponses.values()) {
+        for (CompletableFuture<ObjectNode> future : pendingClientResponses.values()) {
             future.complete(buildCancelledPermissionResponse());
         }
     }
 
-    private List<Map<String, Object>> listSessions(JSONObject params) throws Exception {
-        String cwd = requireAbsolutePath(params == null ? null : params.getString("cwd"));
+    private List<Map<String, Object>> listSessions(ObjectNode params) throws Exception {
+        String cwd = requireAbsolutePath(CliJson.getString(params, "cwd"));
         CodingSessionManager sessionManager = createSessionManager(resolveSessionOptions(cwd, null, null));
         List<CodingSessionDescriptor> descriptors = sessionManager.list();
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -455,22 +458,22 @@ public class AcpJsonRpcServer implements Closeable {
                                                                           AgentToolCall call,
                                                                           Map<String, Object> rawInput) throws Exception {
         String requestId = String.valueOf(outboundRequestIds.getAndIncrement());
-        CompletableFuture<JSONObject> future = new CompletableFuture<JSONObject>();
+        CompletableFuture<ObjectNode> future = new CompletableFuture<ObjectNode>();
         pendingClientResponses.put(requestIdKey(requestId), future);
         sendRequest(requestId, METHOD_SESSION_REQUEST_PERMISSION, newMap(
                 "sessionId", sessionId,
                 "toolCall", buildPermissionToolCall(toolName, call, rawInput),
                 "options", buildPermissionOptions()
         ));
-        JSONObject response = future.get();
-        JSONObject result = response == null ? null : response.getJSONObject("result");
-        JSONObject outcome = result == null ? null : result.getJSONObject("outcome");
+        ObjectNode response = future.get();
+        ObjectNode result = CliJson.getObject(response, "result");
+        ObjectNode outcome = CliJson.getObject(result, "outcome");
         if (outcome == null) {
             return new AcpToolApprovalDecorator.PermissionDecision(false, null);
         }
-        String kind = outcome.getString("outcome");
+        String kind = CliJson.getString(outcome, "outcome");
         if ("selected".equals(kind)) {
-            String optionId = outcome.getString("optionId");
+            String optionId = CliJson.getString(outcome, "optionId");
             boolean approved = "allow_once".equals(optionId) || "allow_always".equals(optionId);
             return new AcpToolApprovalDecorator.PermissionDecision(approved, optionId);
         }
@@ -497,13 +500,13 @@ public class AcpJsonRpcServer implements Closeable {
         );
     }
 
-    private JSONObject buildCancelledPermissionResponse() {
-        JSONObject response = new JSONObject();
-        JSONObject result = new JSONObject();
-        JSONObject outcome = new JSONObject();
+    private ObjectNode buildCancelledPermissionResponse() {
+        ObjectNode response = CliJson.newObject();
+        ObjectNode result = CliJson.newObject();
+        ObjectNode outcome = CliJson.newObject();
         outcome.put("outcome", "cancelled");
-        result.put("outcome", outcome);
-        response.put("result", result);
+        result.set("outcome", outcome);
+        response.set("result", result);
         return response;
     }
 
@@ -516,26 +519,26 @@ public class AcpJsonRpcServer implements Closeable {
         }
     }
 
-    private CliResolvedMcpConfig resolveMcpConfig(JSONArray mcpServers) {
+    private CliResolvedMcpConfig resolveMcpConfig(ArrayNode mcpServers) {
         if (mcpServers == null || mcpServers.isEmpty()) {
             return null;
         }
         Map<String, CliResolvedMcpServer> servers = new LinkedHashMap<String, CliResolvedMcpServer>();
         List<String> enabled = new ArrayList<String>();
         for (int i = 0; i < mcpServers.size(); i++) {
-            JSONObject server = mcpServers.getJSONObject(i);
+            ObjectNode server = CliJson.getObject(mcpServers, i);
             if (server == null) {
                 continue;
             }
-            String name = firstNonBlank(trimToNull(server.getString("name")), "mcp-" + (i + 1));
+            String name = firstNonBlank(trimToNull(CliJson.getString(server, "name")), "mcp-" + (i + 1));
             CliMcpServerDefinition definition = CliMcpServerDefinition.builder()
-                    .type(normalizeTransportType(server.getString("type"), server.getString("command")))
-                    .url(trimToNull(server.getString("url")))
-                    .command(trimToNull(server.getString("command")))
-                    .args(toStringList(server.getJSONArray("args")))
-                    .env(toStringMap(server.getJSONObject("env")))
-                    .cwd(trimToNull(server.getString("cwd")))
-                    .headers(toStringMap(server.getJSONObject("headers")))
+                    .type(normalizeTransportType(CliJson.getString(server, "type"), CliJson.getString(server, "command")))
+                    .url(trimToNull(CliJson.getString(server, "url")))
+                    .command(trimToNull(CliJson.getString(server, "command")))
+                    .args(toStringList(CliJson.getArray(server, "args")))
+                    .env(toStringMap(CliJson.getObject(server, "env")))
+                    .cwd(trimToNull(CliJson.getString(server, "cwd")))
+                    .headers(toStringMap(CliJson.getObject(server, "headers")))
                     .build();
             String validationError = validateDefinition(definition);
             servers.put(name, new CliResolvedMcpServer(
@@ -584,23 +587,23 @@ public class AcpJsonRpcServer implements Closeable {
         );
     }
 
-    private String flattenPrompt(JSONArray blocks) {
+    private String flattenPrompt(ArrayNode blocks) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < blocks.size(); i++) {
-            JSONObject block = blocks.getJSONObject(i);
+            ObjectNode block = CliJson.getObject(blocks, i);
             if (block == null) {
                 continue;
             }
-            String type = normalizeType(block.getString("type"));
+            String type = normalizeType(CliJson.getString(block, "type"));
             if ("text".equals(type)) {
-                appendBlock(builder, block.getString("text"));
+                appendBlock(builder, CliJson.getString(block, "text"));
                 continue;
             }
             if ("resource_link".equals(type) || "resource".equals(type)) {
-                JSONObject resource = "resource".equals(type) ? block.getJSONObject("resource") : block;
+                ObjectNode resource = "resource".equals(type) ? CliJson.getObject(block, "resource") : block;
                 if (resource != null) {
-                    appendBlock(builder, "[Resource] " + firstNonBlank(resource.getString("name"), resource.getString("title"), resource.getString("uri")));
-                    appendBlock(builder, resource.getString("text"));
+                    appendBlock(builder, "[Resource] " + firstNonBlank(CliJson.getString(resource, "name"), CliJson.getString(resource, "title"), CliJson.getString(resource, "uri")));
+                    appendBlock(builder, CliJson.getString(resource, "text"));
                 }
             }
         }
@@ -658,13 +661,13 @@ public class AcpJsonRpcServer implements Closeable {
         return "http".equals(lowerCase) ? "streamable_http" : lowerCase;
     }
 
-    private List<String> toStringList(JSONArray values) {
+    private List<String> toStringList(ArrayNode values) {
         if (values == null || values.isEmpty()) {
             return null;
         }
         List<String> items = new ArrayList<String>();
         for (int i = 0; i < values.size(); i++) {
-            String value = trimToNull(values.getString(i));
+            String value = trimToNull(CliJson.getString(values, i));
             if (value != null) {
                 items.add(value);
             }
@@ -672,15 +675,18 @@ public class AcpJsonRpcServer implements Closeable {
         return items.isEmpty() ? null : items;
     }
 
-    private Map<String, String> toStringMap(JSONObject object) {
+    private Map<String, String> toStringMap(ObjectNode object) {
         if (object == null || object.isEmpty()) {
             return null;
         }
         Map<String, String> map = new LinkedHashMap<String, String>();
-        for (Map.Entry<String, Object> entry : object.entrySet()) {
+        Iterator<Map.Entry<String, JsonNode>> fields = object.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
             String key = trimToNull(entry.getKey());
             if (key != null) {
-                map.put(key, entry.getValue() == null ? null : String.valueOf(entry.getValue()));
+                JsonNode value = entry.getValue();
+                map.put(key, value == null || value.isNull() ? null : value.asText());
             }
         }
         return map.isEmpty() ? null : map;
@@ -713,19 +719,23 @@ public class AcpJsonRpcServer implements Closeable {
     }
 
     private String requestIdKey(Object id) {
+        if (id instanceof JsonNode) {
+            Object plain = CliJson.toPlainValue((JsonNode) id);
+            return plain == null ? "null" : String.valueOf(plain);
+        }
         return id == null ? "null" : String.valueOf(id);
     }
 
-    private String requiredString(JSONObject params, String key) {
-        String value = params == null ? null : trimToNull(params.getString(key));
+    private String requiredString(ObjectNode params, String key) {
+        String value = trimToNull(CliJson.getString(params, key));
         if (value == null) {
             throw new IllegalArgumentException("Missing required field: " + key);
         }
         return value;
     }
 
-    private JSONArray requiredArray(JSONObject params, String key) {
-        JSONArray value = params == null ? null : params.getJSONArray(key);
+    private ArrayNode requiredArray(ObjectNode params, String key) {
+        ArrayNode value = CliJson.getArray(params, key);
         if (value == null) {
             throw new IllegalArgumentException("Missing required field: " + key);
         }
@@ -823,8 +833,8 @@ public class AcpJsonRpcServer implements Closeable {
             return Collections.emptyMap();
         }
         try {
-            return JSON.parse(value);
-        } catch (Exception ex) {
+            return CliJson.parsePlainValue(value);
+        } catch (RuntimeException ex) {
             return newMap("text", value);
         }
     }
@@ -1086,7 +1096,7 @@ public class AcpJsonRpcServer implements Closeable {
             }
         }
         sessions.clear();
-        for (CompletableFuture<JSONObject> future : pendingClientResponses.values()) {
+        for (CompletableFuture<ObjectNode> future : pendingClientResponses.values()) {
             future.complete(buildCancelledPermissionResponse());
         }
         pendingClientResponses.clear();
@@ -1500,7 +1510,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private synchronized String addProviderProfile(String rawArguments) throws IOException {
-            String usage = "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses>] [--model <name>] [--base-url <url>] [--api-key <key>]";
+            String usage = "Usage: /provider add <profile-name> --provider <name> [--protocol <chat|responses|messages|gemini>] [--model <name>] [--base-url <url>] [--api-key <key>]";
             ProviderProfileMutation mutation = parseProviderProfileMutation(rawArguments);
             if (mutation == null) {
                 return usage;
@@ -1525,7 +1535,7 @@ public class AcpJsonRpcServer implements Closeable {
                 return "Unsupported protocol: " + mutation.protocol;
             }
             if (!isSupportedProviderProtocol(provider, protocolValue)) {
-                return "Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet";
+                return "Provider " + provider.getPlatform() + " does not support " + protocolValue.getValue() + " protocol in ai4j-cli yet";
             }
             providersConfig.getProfiles().put(mutation.profileName, CliProviderProfile.builder()
                     .provider(provider.getPlatform())
@@ -1542,7 +1552,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private synchronized String editProviderProfile(String rawArguments) throws Exception {
-            String usage = "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]";
+            String usage = "Usage: /provider edit <profile-name> [--provider <name>] [--protocol <chat|responses|messages|gemini>] [--model <name>|--clear-model] [--base-url <url>|--clear-base-url] [--api-key <key>|--clear-api-key]";
             ProviderProfileMutation mutation = parseProviderProfileMutation(rawArguments);
             if (mutation == null || !mutation.hasAnyFieldChanges()) {
                 return usage;
@@ -1570,7 +1580,7 @@ public class AcpJsonRpcServer implements Closeable {
                 return "Unsupported protocol: " + protocolRaw;
             }
             if (!isSupportedProviderProtocol(provider, protocolValue)) {
-                return "Provider " + provider.getPlatform() + " does not support responses protocol in ai4j-cli yet";
+                return "Provider " + provider.getPlatform() + " does not support " + protocolValue.getValue() + " protocol in ai4j-cli yet";
             }
             existing.setProvider(provider.getPlatform());
             existing.setProtocol(protocolValue.getValue());
@@ -2245,10 +2255,7 @@ public class AcpJsonRpcServer implements Closeable {
         }
 
         private boolean isSupportedProviderProtocol(PlatformType provider, CliProtocol protocol) {
-            if (provider == null || protocol == null || protocol == CliProtocol.CHAT) {
-                return true;
-            }
-            return provider == PlatformType.OPENAI || provider == PlatformType.DOUBAO || provider == PlatformType.DASHSCOPE;
+            return provider == null || protocol == null || protocol.isSupportedBy(provider);
         }
 
         private String normalizeStoredProtocol(String raw, PlatformType provider, String baseUrl) {

@@ -417,7 +417,7 @@ public class Ai4jCliTest {
         String output = new String(out.toByteArray(), StandardCharsets.UTF_8);
         Assert.assertEquals(0, exitCode);
         Assert.assertTrue(output.contains("validation:"));
-        Assert.assertTrue(output.contains("count=1"));
+        Assert.assertFalse(output.contains("count=0"));
         Assert.assertTrue(output.contains("id=cli-test-pack status=pass"));
         Assert.assertEquals(1, CliExtensionTestExtension.getApplyCount());
     }

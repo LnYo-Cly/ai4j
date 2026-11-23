@@ -1,11 +1,11 @@
 package io.github.lnyocly.ai4j.cli.hook;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolCallDecision;
 import io.github.lnyocly.ai4j.agent.interceptor.ToolInterceptor;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.cli.CliJson;
 
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class CliHookInterceptor implements ToolInterceptor {
     @Override
     public ToolCallDecision beforeToolCall(AgentToolCall call, AgentContext context) {
         String toolName = call == null ? null : call.getName();
-        String stdinJson = call == null ? "{}" : JSON.toJSONString(call);
+        String stdinJson = call == null ? "{}" : CliJson.toJson(call);
         List<CliHookEntry> hooks = config.getPreToolUse();
         for (CliHookEntry hook : hooks) {
             if (hook == null || !hook.matches(toolName)) {
@@ -66,7 +66,7 @@ public class CliHookInterceptor implements ToolInterceptor {
         java.util.Map<String, Object> payload = new java.util.LinkedHashMap<String, Object>();
         payload.put("call", call);
         payload.put("output", output == null ? "" : output);
-        String stdinJson = JSON.toJSONString(payload);
+        String stdinJson = CliJson.toJson(payload);
         List<CliHookEntry> hooks = config.getPostToolUse();
         for (CliHookEntry hook : hooks) {
             if (hook == null || !hook.matches(toolName)) {
@@ -97,15 +97,15 @@ public class CliHookInterceptor implements ToolInterceptor {
             return null;
         }
         // exit 0: inspect stdout JSON for a structured decision
-        JSONObject json = parseJson(result.stdout);
+        ObjectNode json = parseJson(result.stdout);
         if (json != null) {
-            String decision = json.getString("decision");
+            String decision = CliJson.getString(json, "decision");
             if ("block".equalsIgnoreCase(decision)) {
-                return ToolCallDecision.block(json.getString("reason"));
+                return ToolCallDecision.block(CliJson.getString(json, "reason"));
             }
             if ("modify".equalsIgnoreCase(decision)) {
-                String name = json.getString("name");
-                String args = json.getString("arguments");
+                String name = CliJson.getString(json, "name");
+                String args = CliJson.getString(json, "arguments");
                 if (name != null) {
                     return ToolCallDecision.modify(AgentToolCall.builder()
                             .name(name)
@@ -126,15 +126,8 @@ public class CliHookInterceptor implements ToolInterceptor {
         return reason.isEmpty() ? "blocked by hook" : reason;
     }
 
-    private static JSONObject parseJson(String stdout) {
-        if (stdout == null || stdout.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return JSON.parseObject(stdout);
-        } catch (Exception ignored) {
-            return null;
-        }
+    private static ObjectNode parseJson(String stdout) {
+        return CliJson.parseObjectOrNull(stdout);
     }
 
     private static String safeMessage(Throwable e) {

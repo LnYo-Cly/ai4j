@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
@@ -90,7 +90,7 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                     "parallelToolCalls", "temperature", "topP", "maxOutputTokens", "reasoning",
                     "store", "stream", "user", "extraBody");
             if (!input.isEmpty()) {
-                projected.put("langfuse.observation.input", JSON.toJSONString(input));
+                projected.put("langfuse.observation.input", AgentJson.toJson(input));
             }
 
             Object output = attributes == null ? null : firstNonNull(
@@ -104,7 +104,7 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                     "temperature", "topP", "maxOutputTokens", "toolChoice",
                     "parallelToolCalls", "reasoning", "store", "stream");
             if (!modelParameters.isEmpty()) {
-                projected.put("langfuse.observation.model_parameters", JSON.toJSONString(modelParameters));
+                projected.put("langfuse.observation.model_parameters", AgentJson.toJson(modelParameters));
             }
 
             TraceMetrics metrics = traceSpan.getMetrics();
@@ -117,14 +117,14 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                 putIfPresent(usageDetails, "completion_tokens", metrics.getCompletionTokens());
                 putIfPresent(usageDetails, "total_tokens", metrics.getTotalTokens());
                 if (!usageDetails.isEmpty()) {
-                    projected.put("langfuse.observation.usage_details", JSON.toJSONString(usageDetails));
+                    projected.put("langfuse.observation.usage_details", AgentJson.toJson(usageDetails));
                 }
                 Map<String, Object> costDetails = new LinkedHashMap<String, Object>();
                 putIfPresent(costDetails, "input", metrics.getInputCost());
                 putIfPresent(costDetails, "output", metrics.getOutputCost());
                 putIfPresent(costDetails, "total", metrics.getTotalCost());
                 if (!costDetails.isEmpty()) {
-                    projected.put("langfuse.observation.cost_details", JSON.toJSONString(costDetails));
+                    projected.put("langfuse.observation.cost_details", AgentJson.toJson(costDetails));
                 }
             }
 
@@ -133,7 +133,7 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                     "parallelToolCalls", "temperature", "topP", "maxOutputTokens", "reasoning",
                     "store", "stream", "user", "extraBody", "output", "finalOutput", "model", "responseModel");
             if (!metadata.isEmpty()) {
-                projected.put("langfuse.observation.metadata", JSON.toJSONString(metadata));
+                projected.put("langfuse.observation.metadata", AgentJson.toJson(metadata));
             }
         }
 
@@ -154,9 +154,9 @@ public class LangfuseTraceExporter extends AbstractOpenTelemetryTraceExporter {
                 projected.put("langfuse.trace.output", String.valueOf(attributes.get("finalOutput")));
             }
             if (attributes != null && !attributes.isEmpty()) {
-                projected.put("langfuse.observation.metadata", JSON.toJSONString(attributes));
+                projected.put("langfuse.observation.metadata", AgentJson.toJson(attributes));
                 if (traceSpan.getParentSpanId() == null) {
-                    projected.put("langfuse.trace.metadata", JSON.toJSONString(attributes));
+                    projected.put("langfuse.trace.metadata", AgentJson.toJson(attributes));
                 }
             }
         }

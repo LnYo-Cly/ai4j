@@ -2,6 +2,7 @@ package io.github.lnyocly.ai4j.platform.anthropic.chat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
@@ -66,7 +67,7 @@ public class AnthropicChatService implements IChatService,
     public AnthropicChatService(Configuration configuration) {
         this.anthropicConfig = configuration.getAnthropicConfig();
         this.nativeService = new AnthropicMessagesService(configuration);
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonCodec.mapper();
     }
 
     @Override

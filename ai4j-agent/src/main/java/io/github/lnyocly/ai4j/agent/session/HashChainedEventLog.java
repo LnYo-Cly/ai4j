@@ -1,8 +1,8 @@
 package io.github.lnyocly.ai4j.agent.session;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -137,7 +137,7 @@ public class HashChainedEventLog implements AgentSessionEventLog, AgentListener 
 
     /** hash = sha256(prevHash || "|" || canonical(event)) as lowercase hex. */
     static String computeHash(String prevHash, AgentEvent event) {
-        String canonical = JSON.toJSONString(event);
+        String canonical = AgentJson.toJson(event);
         String input = prevHash + "|" + canonical;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

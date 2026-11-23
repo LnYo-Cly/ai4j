@@ -1,8 +1,8 @@
 package io.github.lnyocly.ai4j.flowgram.springboot.security;
 
 import io.github.lnyocly.ai4j.flowgram.springboot.config.FlowGramProperties;
+import org.springframework.web.context.request.WebRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 
 public class DefaultFlowGramCallerResolver implements FlowGramCallerResolver {
@@ -16,7 +16,7 @@ public class DefaultFlowGramCallerResolver implements FlowGramCallerResolver {
     }
 
     @Override
-    public FlowGramCaller resolve(HttpServletRequest request) {
+    public FlowGramCaller resolve(WebRequest request) {
         if (request == null || properties == null || properties.getAuth() == null || !properties.getAuth().isEnabled()) {
             return anonymousCaller();
         }

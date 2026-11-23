@@ -1,11 +1,10 @@
 package io.github.lnyocly.ai4j.platform.ollama.chat;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.OllamaConfig;
 import io.github.lnyocly.ai4j.constant.Constants;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
@@ -173,7 +172,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
                     return;
                 }
 
-                OllamaChatCompletionResponse ollamaChatCompletionResponse = JSON.parseObject(data, OllamaChatCompletionResponse.class);
+                OllamaChatCompletionResponse ollamaChatCompletionResponse = JsonCodec.fromJson(data, OllamaChatCompletionResponse.class);
                 OllamaMessage message = ollamaChatCompletionResponse.getMessage();
                 String content = message != null ? message.getContent() : null;
                 String thinking = message != null ? message.getThinking() : null;
@@ -229,7 +228,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
      * 发送转换后的响应给 SseListener
      */
     private void sendConvertedResponse(SseListener listener, EventSource eventSource, String id, String type, ChatCompletionResponse response) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonCodec.mapper();
         try {
             String s = mapper.writeValueAsString(response);
             listener.onEvent(eventSource, id, type, s);
@@ -310,35 +309,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             finishReason = null;
 
             // 构造请求
-            String requestString = JSON.toJSONString(ollamaChatCompletion);
-
-            JSONObject jsonObject = JSON.parseObject(requestString);
-            // 展开 extraBody 到顶层
-            JSONObject extraBody = jsonObject.getJSONObject("extraBody");
-            if (extraBody != null) {
-                for (String key : extraBody.keySet()) {
-                    jsonObject.put(key, extraBody.get(key));
-                }
-                jsonObject.remove("extraBody");
-            }
-            // 遍历jsonObject的messages
-            JSONArray jsonArrayMessages = jsonObject.getJSONArray("messages");
-            for (Object message : jsonArrayMessages) {
-                JSONObject messageObject = (JSONObject) message;
-                JSONArray toolCalls = messageObject.getJSONArray("tool_calls");
-                if(toolCalls!=null && !toolCalls.isEmpty()){
-                    for (Object toolCall : toolCalls) {
-                        // 遍历toolCall中的function中的arguments，将arguments（JSON String）转为对象(JSON Object)
-                        JSONObject toolCallObject = (JSONObject) toolCall;
-                        JSONObject function = toolCallObject.getJSONObject("function");
-                        String arguments = function.getString("arguments");
-                        JSONObject argumentsObject = JSON.parseObject(arguments);
-                        function.remove("arguments");
-                        function.put("arguments", argumentsObject);
-                    }
-                }
-            }
-            requestString = JSON.toJSONString(jsonObject);
+            String requestString = serializeOllamaRequest(ollamaChatCompletion);
 
 
             Request.Builder builder = new Request.Builder()
@@ -353,7 +324,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
 
             Response execute = okHttpClient.newCall(request).execute();
             if (execute.isSuccessful() && execute.body() != null){
-                OllamaChatCompletionResponse ollamaChatCompletionResponse = JSON.parseObject(execute.body().string(), OllamaChatCompletionResponse.class);
+                OllamaChatCompletionResponse ollamaChatCompletionResponse = JsonCodec.fromJson(execute.body().string(), OllamaChatCompletionResponse.class);
 
 
                 finishReason = ollamaChatCompletionResponse.getDoneReason();
@@ -467,30 +438,7 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
             finishReason = null;
 
             // 构造请求
-            JSON.toJSONString(ollamaChatCompletion);
-            ObjectMapper mapper = new ObjectMapper();
-            String requestString = mapper.writeValueAsString(ollamaChatCompletion);
-
-
-            JSONObject jsonObject = JSON.parseObject(requestString);
-            // 遍历jsonObject的messages
-            JSONArray jsonArrayMessages = jsonObject.getJSONArray("messages");
-            for (Object message : jsonArrayMessages) {
-                JSONObject messageObject = (JSONObject) message;
-                JSONArray toolCalls = messageObject.getJSONArray("tool_calls");
-                if(toolCalls!=null && !toolCalls.isEmpty()){
-                    for (Object toolCall : toolCalls) {
-                        // 遍历toolCall中的function中的arguments，将arguments（JSON String）转为对象(JSON Object)
-                        JSONObject toolCallObject = (JSONObject) toolCall;
-                        JSONObject function = toolCallObject.getJSONObject("function");
-                        String arguments = function.getString("arguments");
-                        JSONObject argumentsObject = JSON.parseObject(arguments);
-                        function.remove("arguments");
-                        function.put("arguments", argumentsObject);
-                    }
-                }
-            }
-            requestString = JSON.toJSONString(jsonObject);
+            String requestString = serializeOllamaRequest(ollamaChatCompletion);
 
             Request.Builder builder = new Request.Builder()
                     .url(UrlUtils.concatUrl(baseUrl, ollamaConfig.getChatCompletionUrl()))
@@ -554,6 +502,52 @@ public class OllamaAiChatService implements IChatService, ParameterConvert<Ollam
     @Override
     public void chatCompletionStream(ChatCompletion chatCompletion, SseListener eventSourceListener) throws Exception {
         this.chatCompletionStream(null, null, chatCompletion, eventSourceListener);
+    }
+
+    private String serializeOllamaRequest(OllamaChatCompletion ollamaChatCompletion) {
+        String requestString = JsonCodec.toJson(ollamaChatCompletion);
+        JsonNode rootNode = JsonCodec.readTree(requestString);
+        if (!(rootNode instanceof ObjectNode)) {
+            return requestString;
+        }
+        ObjectNode jsonObject = (ObjectNode) rootNode;
+        JsonNode extraBody = jsonObject.get("extraBody");
+        if (extraBody != null && extraBody.isObject()) {
+            java.util.Iterator<java.util.Map.Entry<String, JsonNode>> fields = extraBody.fields();
+            while (fields.hasNext()) {
+                java.util.Map.Entry<String, JsonNode> entry = fields.next();
+                jsonObject.set(entry.getKey(), entry.getValue());
+            }
+            jsonObject.remove("extraBody");
+        }
+        JsonNode messagesNode = jsonObject.get("messages");
+        if (messagesNode != null && messagesNode.isArray()) {
+            for (JsonNode messageNode : messagesNode) {
+                if (!(messageNode instanceof ObjectNode)) {
+                    continue;
+                }
+                JsonNode toolCalls = messageNode.get("tool_calls");
+                if (toolCalls != null && toolCalls.isArray() && !toolCalls.isEmpty()) {
+                    for (JsonNode toolCallNode : toolCalls) {
+                        JsonNode functionNode = toolCallNode.get("function");
+                        if (!(functionNode instanceof ObjectNode)) {
+                            continue;
+                        }
+                        ObjectNode function = (ObjectNode) functionNode;
+                        JsonNode argumentsNode = function.get("arguments");
+                        if (argumentsNode != null && argumentsNode.isTextual()) {
+                            String arguments = argumentsNode.asText();
+                            if (!arguments.trim().isEmpty()) {
+                                function.set("arguments", JsonCodec.readTree(arguments));
+                            } else {
+                                function.set("arguments", JsonCodec.createObjectNode());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return jsonObject.toString();
     }
 }
 

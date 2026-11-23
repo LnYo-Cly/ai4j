@@ -70,12 +70,40 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-mcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Optional: enables ai.agent.* blueprint auto-configuration when ai4j-agent is on the classpath -->
         <dependency>
             <groupId>io.github.lnyo-cly</groupId>
             <artifactId>ai4j-agent</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Optional: enables AI Web SSE stream options and codecs when ai4j-web is on the classpath -->
+        <dependency>
+            <groupId>io.github.lnyo-cly</groupId>
+            <artifactId>ai4j-web</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Optional: enables /actuator/ai4j endpoint when Spring Boot Actuator is on the classpath -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator</artifactId>
+            <version>2.7.18</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- B4 连带修复：ai4j lombok 已 optional 不再传递，下游需显式声明 -->
         <dependency>
@@ -95,11 +123,6 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <version>${spring-boot.version}</version>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

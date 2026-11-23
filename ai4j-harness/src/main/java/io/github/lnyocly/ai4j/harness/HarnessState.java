@@ -1,6 +1,8 @@
 package io.github.lnyocly.ai4j.harness;
 
 import io.github.lnyocly.ai4j.agent.session.AgentSessionSnapshot;
+import io.github.lnyocly.ai4j.harness.fleet.FleetNodeRecord;
+import io.github.lnyocly.ai4j.harness.fleet.OrphanHandoffExport;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -58,6 +60,38 @@ public class HarnessState {
     @Builder.Default
     private Map<String, ReviewRecord> reviews = new LinkedHashMap<String, ReviewRecord>();
     @Builder.Default
+    private Map<String, ExecutionReviewRecord> executionReviews = new LinkedHashMap<String, ExecutionReviewRecord>();
+    @Builder.Default
+    private Map<String, ContentPinnedConsentRecord> consents = new LinkedHashMap<String, ContentPinnedConsentRecord>();
+    @Builder.Default
+    private Map<String, EscalationRecord> escalations = new LinkedHashMap<String, EscalationRecord>();
+    @Builder.Default
+    private Map<String, ReadSetEntry> readSets = new LinkedHashMap<String, ReadSetEntry>();
+    @Builder.Default
+    private Map<String, GateRunRecord> gateRuns = new LinkedHashMap<String, GateRunRecord>();
+    @Builder.Default
+    private Map<String, SteerRecord> steers = new LinkedHashMap<String, SteerRecord>();
+    @Builder.Default
+    private Map<String, HandoffRecord> handoffs = new LinkedHashMap<String, HandoffRecord>();
+    @Builder.Default
+    private Map<String, AgentBlueprintRecord> agentBlueprints = new LinkedHashMap<String, AgentBlueprintRecord>();
+    @Builder.Default
+    private Map<String, SquadRunRecord> squadRuns = new LinkedHashMap<String, SquadRunRecord>();
+    @Builder.Default
+    private Map<String, TypedArtifactRecord> typedArtifacts = new LinkedHashMap<String, TypedArtifactRecord>();
+    @Builder.Default
+    private Map<String, TodoRecord> todos = new LinkedHashMap<String, TodoRecord>();
+    @Builder.Default
+    private Map<String, WorkRecord> works = new LinkedHashMap<String, WorkRecord>();
+    @Builder.Default
+    private Map<String, ScheduleRecord> schedules = new LinkedHashMap<String, ScheduleRecord>();
+    @Builder.Default
+    private Map<String, ScheduleRunRecord> scheduleRuns = new LinkedHashMap<String, ScheduleRunRecord>();
+    @Builder.Default
+    private Map<String, FleetNodeRecord> fleetNodes = new LinkedHashMap<String, FleetNodeRecord>();
+    @Builder.Default
+    private Map<String, OrphanHandoffExport> orphanExports = new LinkedHashMap<String, OrphanHandoffExport>();
+    @Builder.Default
     private Map<String, AgentSessionSnapshot> sessions = new LinkedHashMap<String, AgentSessionSnapshot>();
     @Builder.Default
     private Map<String, SessionLeaseRecord> sessionLeases = new LinkedHashMap<String, SessionLeaseRecord>();
@@ -102,6 +136,22 @@ public class HarnessState {
         if (acceptances == null) acceptances = new LinkedHashMap<String, AcceptanceRecord>();
         if (submissions == null) submissions = new LinkedHashMap<String, SubmissionRecord>();
         if (reviews == null) reviews = new LinkedHashMap<String, ReviewRecord>();
+        if (executionReviews == null) executionReviews = new LinkedHashMap<String, ExecutionReviewRecord>();
+        if (consents == null) consents = new LinkedHashMap<String, ContentPinnedConsentRecord>();
+        if (escalations == null) escalations = new LinkedHashMap<String, EscalationRecord>();
+        if (readSets == null) readSets = new LinkedHashMap<String, ReadSetEntry>();
+        if (gateRuns == null) gateRuns = new LinkedHashMap<String, GateRunRecord>();
+        if (steers == null) steers = new LinkedHashMap<String, SteerRecord>();
+        if (handoffs == null) handoffs = new LinkedHashMap<String, HandoffRecord>();
+        if (agentBlueprints == null) agentBlueprints = new LinkedHashMap<String, AgentBlueprintRecord>();
+        if (squadRuns == null) squadRuns = new LinkedHashMap<String, SquadRunRecord>();
+        if (typedArtifacts == null) typedArtifacts = new LinkedHashMap<String, TypedArtifactRecord>();
+        if (todos == null) todos = new LinkedHashMap<String, TodoRecord>();
+        if (works == null) works = new LinkedHashMap<String, WorkRecord>();
+        if (schedules == null) schedules = new LinkedHashMap<String, ScheduleRecord>();
+        if (scheduleRuns == null) scheduleRuns = new LinkedHashMap<String, ScheduleRunRecord>();
+        if (fleetNodes == null) fleetNodes = new LinkedHashMap<String, FleetNodeRecord>();
+        if (orphanExports == null) orphanExports = new LinkedHashMap<String, OrphanHandoffExport>();
         if (sessions == null) sessions = new LinkedHashMap<String, AgentSessionSnapshot>();
         if (sessionLeases == null) sessionLeases = new LinkedHashMap<String, SessionLeaseRecord>();
         if (toolInvocations == null) toolInvocations = new LinkedHashMap<String, ToolInvocationRecord>();

@@ -1,6 +1,7 @@
 package io.github.lnyocly.ai4j.platform.anthropic.chat;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.AnthropicConfig;
 import io.github.lnyocly.ai4j.listener.SseListener;
 import io.github.lnyocly.ai4j.platform.anthropic.chat.entity.AnthropicChatCompletion;
@@ -150,8 +151,7 @@ public class AnthropicChatServiceTest {
         AnthropicChatService service = newService();
         AnthropicChatCompletion request = service.convertChatCompletionObject(baseRequest());
         request.setMaxTokens(64);
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        String json = mapper.writeValueAsString(request);
+        String json = JsonCodec.toJson(request);
 
         Assert.assertTrue("max_tokens must serialize snake_case", json.contains("\"max_tokens\":64"));
         Assert.assertTrue("messages present", json.contains("\"messages\""));
@@ -283,7 +283,10 @@ public class AnthropicChatServiceTest {
                 capture.forwarded.size() >= 4);
         Assert.assertEquals("[DONE]", capture.forwarded.get(capture.forwarded.size() - 1));
 
-        Map<String, Object> firstTextChunk = JSON.parseObject(capture.forwarded.get(0), Map.class);
+        Map<String, Object> firstTextChunk = JsonCodec.fromJson(
+                capture.forwarded.get(0),
+                new TypeReference<Map<String, Object>>() {
+                });
         Assert.assertEquals("chat.completion.chunk", firstTextChunk.get("object"));
         Assert.assertEquals("claude-test", firstTextChunk.get("model"));
         @SuppressWarnings("unchecked")
@@ -292,8 +295,10 @@ public class AnthropicChatServiceTest {
         Map<String, Object> delta = (Map<String, Object>) choices.get(0).get("delta");
         Assert.assertEquals("Hi", delta.get("content"));
 
-        Map<String, Object> finishChunk = JSON.parseObject(
-                capture.forwarded.get(capture.forwarded.size() - 2), Map.class);
+        Map<String, Object> finishChunk = JsonCodec.fromJson(
+                capture.forwarded.get(capture.forwarded.size() - 2),
+                new TypeReference<Map<String, Object>>() {
+                });
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> finishChoices = (List<Map<String, Object>>) finishChunk.get("choices");
         Assert.assertEquals("stop", finishChoices.get(0).get("finish_reason"));
@@ -325,7 +330,10 @@ public class AnthropicChatServiceTest {
         feed(translator, "{\"type\":\"message_stop\"}");
 
         String toolChunkJson = capture.forwarded.get(0);
-        Map<String, Object> toolChunk = JSON.parseObject(toolChunkJson, Map.class);
+        Map<String, Object> toolChunk = JsonCodec.fromJson(
+                toolChunkJson,
+                new TypeReference<Map<String, Object>>() {
+                });
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> choices = (List<Map<String, Object>>) toolChunk.get("choices");
         @SuppressWarnings("unchecked")

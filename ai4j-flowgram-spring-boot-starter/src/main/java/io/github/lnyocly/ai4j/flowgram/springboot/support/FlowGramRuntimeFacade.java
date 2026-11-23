@@ -24,8 +24,8 @@ import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramCaller;
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramCallerResolver;
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramTaskOwnership;
 import io.github.lnyocly.ai4j.flowgram.springboot.security.FlowGramTaskOwnershipStrategy;
+import org.springframework.web.context.request.WebRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 
 public class FlowGramRuntimeFacade {
@@ -58,8 +58,8 @@ public class FlowGramRuntimeFacade {
         this.traceCollector = traceCollector;
     }
 
-    public FlowGramTaskRunResponse run(FlowGramTaskRunRequest request, HttpServletRequest servletRequest) {
-        FlowGramCaller caller = resolveCaller(servletRequest);
+    public FlowGramTaskRunResponse run(FlowGramTaskRunRequest request, WebRequest webRequest) {
+        FlowGramCaller caller = resolveCaller(webRequest);
         ensureAllowed(FlowGramAction.RUN, caller, null);
         FlowGramTaskRunOutput output = runtimeService.runTask(protocolAdapter.toTaskRunInput(request));
         FlowGramTaskOwnership ownership = ownershipStrategy.createOwnership(output.getTaskID(), caller);
@@ -76,20 +76,20 @@ public class FlowGramRuntimeFacade {
         return protocolAdapter.toRunResponse(output);
     }
 
-    public FlowGramTaskValidateResponse validate(FlowGramTaskValidateRequest request, HttpServletRequest servletRequest) {
-        FlowGramCaller caller = resolveCaller(servletRequest);
+    public FlowGramTaskValidateResponse validate(FlowGramTaskValidateRequest request, WebRequest webRequest) {
+        FlowGramCaller caller = resolveCaller(webRequest);
         ensureAllowed(FlowGramAction.VALIDATE, caller, null);
         FlowGramTaskValidateOutput output = runtimeService.validateTask(protocolAdapter.toTaskRunInput(request));
         return protocolAdapter.toValidateResponse(output);
     }
 
-    public FlowGramTaskReportResponse report(String taskId, HttpServletRequest servletRequest) {
+    public FlowGramTaskReportResponse report(String taskId, WebRequest webRequest) {
         FlowGramTaskReportOutput report = runtimeService.getTaskReport(taskId);
         if (report == null) {
             throw new FlowGramTaskNotFoundException(taskId);
         }
         FlowGramStoredTask task = loadTask(taskId);
-        FlowGramCaller caller = resolveCaller(servletRequest);
+        FlowGramCaller caller = resolveCaller(webRequest);
         ensureAllowed(FlowGramAction.REPORT, caller, task);
         if (report.getWorkflow() != null) {
             taskStore.updateState(taskId,
@@ -104,13 +104,13 @@ public class FlowGramRuntimeFacade {
                 resolveTrace(taskId, report)));
     }
 
-    public FlowGramTaskResultResponse result(String taskId, HttpServletRequest servletRequest) {
+    public FlowGramTaskResultResponse result(String taskId, WebRequest webRequest) {
         FlowGramTaskResultOutput result = runtimeService.getTaskResult(taskId);
         if (result == null) {
             throw new FlowGramTaskNotFoundException(taskId);
         }
         FlowGramStoredTask task = loadTask(taskId);
-        FlowGramCaller caller = resolveCaller(servletRequest);
+        FlowGramCaller caller = resolveCaller(webRequest);
         ensureAllowed(FlowGramAction.RESULT, caller, task);
         taskStore.updateState(taskId, result.getStatus(), result.isTerminated(), result.getError(), result.getResult());
         FlowGramTaskReportOutput report = runtimeService.getTaskReport(taskId);
@@ -120,9 +120,9 @@ public class FlowGramRuntimeFacade {
         return protocolAdapter.toResultResponse(taskId, result, reportResponse == null ? trace : reportResponse.getTrace());
     }
 
-    public FlowGramTaskCancelResponse cancel(String taskId, HttpServletRequest servletRequest) {
+    public FlowGramTaskCancelResponse cancel(String taskId, WebRequest webRequest) {
         FlowGramStoredTask task = loadTask(taskId);
-        FlowGramCaller caller = resolveCaller(servletRequest);
+        FlowGramCaller caller = resolveCaller(webRequest);
         ensureAllowed(FlowGramAction.CANCEL, caller, task);
         FlowGramTaskCancelOutput output = runtimeService.cancelTask(taskId);
         if (output == null || !output.isSuccess()) {
@@ -131,8 +131,8 @@ public class FlowGramRuntimeFacade {
         return protocolAdapter.toCancelResponse(true);
     }
 
-    private FlowGramCaller resolveCaller(HttpServletRequest servletRequest) {
-        FlowGramCaller caller = callerResolver.resolve(servletRequest);
+    private FlowGramCaller resolveCaller(WebRequest webRequest) {
+        FlowGramCaller caller = callerResolver.resolve(webRequest);
         return caller == null ? FlowGramCaller.builder().callerId("anonymous").anonymous(true).build() : caller;
     }
 

@@ -8,8 +8,8 @@ import com.alibaba.dashscope.common.ResponseFormat;
 import com.alibaba.dashscope.common.ResultCallback;
 import com.alibaba.dashscope.tools.*;
 import com.alibaba.dashscope.utils.JsonUtils;
-import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lnyocly.ai4j.codec.JsonCodec;
 import io.github.lnyocly.ai4j.config.DashScopeConfig;
 import io.github.lnyocly.ai4j.convert.chat.ParameterConvert;
 import io.github.lnyocly.ai4j.convert.chat.ResultConvert;
@@ -209,13 +209,13 @@ public class DashScopeChatService implements IChatService, ParameterConvert<Gene
                             @SneakyThrows
                             @Override
                             public void onEvent(GenerationResult message) {
-                                log.info("{}", JSON.toJSONString(message));
+                                log.info("{}", JsonCodec.toJson(message));
                                 DashScopeResult dashScopeResult = new DashScopeResult();
                                 dashScopeResult.setGenerationResult(message);
                                 dashScopeResult.setObject("chat.completion.chunk");
                                 dashScopeResult.setCreated(System.currentTimeMillis() / 1000);
                                 dashScopeResult.setModel(chatCompletion.getModel());
-                                ObjectMapper objectMapper = new ObjectMapper();
+                                ObjectMapper objectMapper = JsonCodec.mapper();
                                 eventSourceListener.onEvent(eventSource, message.getRequestId(), null, objectMapper.writeValueAsString(convertChatCompletionResponse(dashScopeResult)));
                             }
 
