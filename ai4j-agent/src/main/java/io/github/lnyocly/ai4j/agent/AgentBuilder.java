@@ -4,15 +4,14 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.model.ChatModelClient;
 import io.github.lnyocly.ai4j.agent.model.MessagesModelClient;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
-import io.github.lnyocly.ai4j.agent.codeact.GraalVmCodeExecutor;
-import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
+import io.github.lnyocly.ai4j.agent.codeact.CodeExecutorProvider;
 import io.github.lnyocly.ai4j.agent.context.ContextBudget;
 import io.github.lnyocly.ai4j.agent.context.ContextProjector;
 import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowAgentBridge;
 import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowExecutor;
+import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowExecutorProvider;
 import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowHostToolExecutor;
 import io.github.lnyocly.ai4j.agent.dynamicworkflow.DynamicWorkflowRuntimeOptions;
-import io.github.lnyocly.ai4j.agent.dynamicworkflow.NashornDynamicWorkflowExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventPublisher;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionAgentTools;
 import io.github.lnyocly.ai4j.agent.extension.ExtensionInterceptors;
@@ -71,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -329,8 +329,8 @@ public class AgentBuilder {
     }
 
     /**
-     * Convenience overload that uses the built-in Nashorn host runtime and
-     * delegates {@code agent(...)} calls to the supplied bridge.
+     * Convenience overload that discovers a {@link DynamicWorkflowExecutorProvider}
+     * via {@link ServiceLoader} and delegates {@code agent(...)} calls to the supplied bridge.
      */
     public AgentBuilder dynamicWorkflow(DynamicWorkflowAgentBridge bridge) {
         return dynamicWorkflow(bridge, null);
@@ -703,24 +703,15 @@ public class AgentBuilder {
 
 
     private CodeExecutor createDefaultCodeExecutor() {
-        String javaSpecVersion = System.getProperty("java.specification.version", "");
-        if ("1.8".equals(javaSpecVersion) || "8".equals(javaSpecVersion)) {
-            return new NashornCodeExecutor();
+        CodeExecutorProvider best = null;
+        for (CodeExecutorProvider provider : loadProviders(CodeExecutorProvider.class)) {
+            if (provider != null && provider.isAvailable()) {
+                if (best == null || provider.priority() > best.priority()) {
+                    best = provider;
+                }
+            }
         }
-        if (isGraalPolyglotAvailable()) {
-            return new GraalVmCodeExecutor();
-        }
-        return new NashornCodeExecutor();
-    }
-
-    /** graal-sdk is an optional dependency of ai4j-agent; fall back to Nashorn when it is absent. */
-    private boolean isGraalPolyglotAvailable() {
-        try {
-            Class.forName("org.graalvm.polyglot.Context");
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
+        return best == null ? null : best.create();
     }
     private SubAgentRegistry resolveSubAgentRegistry() {
         if (subAgentRegistry != null) {
@@ -808,12 +799,46 @@ public class AgentBuilder {
     private ToolExecutor applyDynamicWorkflowRuntime(ToolExecutor executor) {
         DynamicWorkflowExecutor resolved = dynamicWorkflowExecutor;
         if (resolved == null && dynamicWorkflowAgentBridge != null) {
-            resolved = new NashornDynamicWorkflowExecutor(dynamicWorkflowAgentBridge, dynamicWorkflowRuntimeOptions);
+            resolved = createDynamicWorkflowExecutor(dynamicWorkflowAgentBridge, dynamicWorkflowRuntimeOptions);
         }
         if (executor == null || resolved == null) {
             return executor;
         }
         return new DynamicWorkflowHostToolExecutor(executor, resolved);
+    }
+
+    private DynamicWorkflowExecutor createDynamicWorkflowExecutor(DynamicWorkflowAgentBridge bridge,
+                                                                  DynamicWorkflowRuntimeOptions options) {
+        DynamicWorkflowExecutorProvider best = null;
+        for (DynamicWorkflowExecutorProvider provider : loadProviders(DynamicWorkflowExecutorProvider.class)) {
+            if (provider != null && provider.isAvailable()) {
+                if (best == null || provider.priority() > best.priority()) {
+                    best = provider;
+                }
+            }
+        }
+        DynamicWorkflowExecutor created = best == null ? null : best.create(bridge, options);
+        if (created == null) {
+            throw new IllegalStateException("No DynamicWorkflowExecutorProvider found on classpath. "
+                    + "Add ai4j-plugin-codeact or supply a DynamicWorkflowExecutor explicitly.");
+        }
+        return created;
+    }
+
+    private <T> List<T> loadProviders(Class<T> spiType) {
+        List<T> providers = new ArrayList<T>();
+        for (T provider : ServiceLoader.load(spiType)) {
+            providers.add(provider);
+        }
+        if (providers.isEmpty()) {
+            ClassLoader ownLoader = AgentBuilder.class.getClassLoader();
+            if (ownLoader != null && ownLoader != Thread.currentThread().getContextClassLoader()) {
+                for (T provider : ServiceLoader.load(spiType, ownLoader)) {
+                    providers.add(provider);
+                }
+            }
+        }
+        return providers;
     }
 
     private AgentToolRegistry createToolUtilRegistry(List<String> functions, List<String> mcpServices) {

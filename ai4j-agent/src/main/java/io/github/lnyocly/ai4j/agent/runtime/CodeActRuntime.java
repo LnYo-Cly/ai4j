@@ -11,7 +11,6 @@ import io.github.lnyocly.ai4j.agent.codeact.CodeActOptions;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionRequest;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutionResult;
 import io.github.lnyocly.ai4j.agent.codeact.CodeExecutor;
-import io.github.lnyocly.ai4j.agent.codeact.NashornCodeExecutor;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.memory.AgentMemory;
@@ -89,9 +88,6 @@ public class CodeActRuntime extends BaseAgentRuntime {
         }
 
         CodeExecutor codeExecutor = context.getCodeExecutor();
-        if (codeExecutor == null) {
-            throw new IllegalStateException("codeExecutor is required");
-        }
 
         List<AgentToolCall> toolCalls = new ArrayList<>();
         List<AgentToolResult> toolResults = new ArrayList<>();
@@ -174,6 +170,9 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
             CodeExecutionResult execResult;
             try {
+                if (codeExecutor == null) {
+                    throw new IllegalStateException("codeExecutor is required (add ai4j-plugin-codeact or configure AgentBuilder.codeExecutor(...))");
+                }
                 execResult = codeExecutor.execute(CodeExecutionRequest.builder()
                         .language(message.language)
                         .code(message.code)
@@ -306,13 +305,15 @@ public class CodeActRuntime extends BaseAgentRuntime {
 
     private String runtimeInstructions(AgentContext context) {
         StringBuilder builder = new StringBuilder();
-        if (context.getCodeExecutor() instanceof NashornCodeExecutor) {
+        CodeExecutor codeExecutor = context == null ? null : context.getCodeExecutor();
+        boolean es5Js = codeExecutor != null && codeExecutor.isEs5JavaScript();
+        if (es5Js) {
             builder.append("You are a CodeAct agent. Use JavaScript code to call tools when needed. ")
                     .append("Respond with a single JSON object only. ")
                     .append("If you need to run code, respond with {\"type\":\"code\",\"language\":\"js\",\"code\":\"...\"}. ")
                     .append("When you have the final answer, respond with {\"type\":\"final\",\"output\":\"...\"}. ")
                     .append("Do not include any extra text outside the JSON. ")
-                    .append("In code, use JavaScript syntax compatible with Nashorn (ES5). ")
+                    .append("In code, use ES5-compatible JavaScript syntax. ")
                     .append("Do not use Promise, async/await, template literals, let/const, or arrow functions. ")
                     .append("Always return a string or assign the final answer to __codeact_result before code ends. ")
                     .append("If your code returns a value, it will be used as the final answer. ")
@@ -339,7 +340,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
             builder.append("Available tools: ").append(toolGuide);
         }
         if (hasTool(tools, "queryWeather")) {
-            if (context.getCodeExecutor() instanceof NashornCodeExecutor) {
+            if (es5Js) {
                 builder.append(" queryWeather returns Seniverse JSON (already parsed when possible).")
                         .append(" Use results[0].daily[0] fields: text_day, high, low, date.")
                         .append(" Example: var day = data.results[0].daily[0];");

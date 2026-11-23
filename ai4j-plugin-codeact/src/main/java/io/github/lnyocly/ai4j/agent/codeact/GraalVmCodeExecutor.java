@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,11 @@ public class GraalVmCodeExecutor implements CodeExecutor {
 
     // Keep this constructor for compatibility with existing caller code.
     public GraalVmCodeExecutor(String ignored) {
+    }
+
+    @Override
+    public String getLanguage() {
+        return "python";
     }
 
     @Override
@@ -70,7 +76,7 @@ public class GraalVmCodeExecutor implements CodeExecutor {
         if (language == null || language.trim().isEmpty()) {
             return "python";
         }
-        String value = language.trim().toLowerCase();
+        String value = language.trim().toLowerCase(Locale.ROOT);
         if ("py".equals(value) || "python3".equals(value)) {
             return "python";
         }
@@ -187,8 +193,8 @@ public class GraalVmCodeExecutor implements CodeExecutor {
             context = Context.newBuilder("python")
                     .allowHostAccess(hostAccess)
                     .option("engine.WarnInterpreterOnly", "false")
-                    .out(new PrintStream(stdoutBytes, true))
-                    .err(new PrintStream(stderrBytes, true))
+                    .out(new PrintStream(stdoutBytes, true, StandardCharsets.UTF_8.name()))
+                    .err(new PrintStream(stderrBytes, true, StandardCharsets.UTF_8.name()))
                     .build();
             context.getBindings("python").putMember("tools", tools);
 
