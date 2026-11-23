@@ -1,15 +1,17 @@
 package io.github.lnyocly.ai4j.agent.replay;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.model.AgentModelResult;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -90,13 +92,13 @@ public class ResumeCache {
         if (path == null) {
             throw new IllegalArgumentException("path must not be null");
         }
-        JSONObject obj = new JSONObject();
+        Map<String, Object> obj = new LinkedHashMap<String, Object>();
         obj.put("modelResults", modelResults);
         obj.put("toolOutputs", toolOutputs);
         if (path.getParent() != null) {
             Files.createDirectories(path.getParent());
         }
-        Files.write(path, JSON.toJSONString(obj).getBytes(StandardCharsets.UTF_8));
+        Files.write(path, AgentJson.toJsonBytes(obj));
     }
 
     /** Loads a cache previously written by {@link #saveToJson(Path)}; empty cache if the file is absent. */
@@ -105,25 +107,29 @@ public class ResumeCache {
         if (path == null || !Files.isRegularFile(path)) {
             return cache;
         }
-        JSONObject obj = JSON.parseObject(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+        ObjectNode obj = AgentJson.parseObjectStrictOrNull(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
         if (obj == null) {
             return cache;
         }
-        JSONObject models = obj.getJSONObject("modelResults");
+        ObjectNode models = AgentJson.objectField(obj, "modelResults");
         if (models != null) {
-            for (String key : models.keySet()) {
-                AgentModelResult r = models.getObject(key, AgentModelResult.class);
+            Iterator<Map.Entry<String, JsonNode>> fields = models.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                AgentModelResult r = AgentJson.treeToValue(entry.getValue(), AgentModelResult.class);
                 if (r != null) {
-                    cache.modelResults.put(key, r);
+                    cache.modelResults.put(entry.getKey(), r);
                 }
             }
         }
-        JSONObject tools = obj.getJSONObject("toolOutputs");
+        ObjectNode tools = AgentJson.objectField(obj, "toolOutputs");
         if (tools != null) {
-            for (String key : tools.keySet()) {
-                String out = tools.getString(key);
-                if (out != null) {
-                    cache.toolOutputs.put(key, out);
+            Iterator<Map.Entry<String, JsonNode>> fields = tools.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                JsonNode value = entry.getValue();
+                if (value != null && !value.isNull() && !value.isMissingNode()) {
+                    cache.toolOutputs.put(entry.getKey(), value.asText());
                 }
             }
         }
@@ -135,7 +141,7 @@ public class ResumeCache {
         if (prompt == null) {
             return null;
         }
-        return com.alibaba.fastjson2.JSON.toJSONString(prompt);
+        return AgentJson.toJson(prompt);
     }
 
     /** Deterministic key for a TOOL node: {@code name|arguments}. */

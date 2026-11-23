@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.compact;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.util.AgentInputItem;
 import org.junit.Test;
 

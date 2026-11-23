@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.flowgram;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
 import io.github.lnyocly.ai4j.agent.AgentBuilder;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
@@ -12,6 +11,7 @@ import io.github.lnyocly.ai4j.agent.model.AgentModelClient;
 import io.github.lnyocly.ai4j.agent.runtime.ReActRuntime;
 import io.github.lnyocly.ai4j.agent.trace.TracePricing;
 import io.github.lnyocly.ai4j.agent.trace.TracePricingResolver;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import java.util.ArrayList;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -298,7 +298,8 @@ public class Ai4jFlowGramLlmNodeRunner implements FlowGramLlmNodeRunner {
             return source;
         }
         try {
-            return JSON.parseObject(JSON.toJSONString(source));
+            Map<String, Object> mapped = AgentJson.toMap(source);
+            return mapped == null ? source : mapped;
         } catch (RuntimeException ignored) {
             return source;
         }

@@ -1,8 +1,8 @@
 package io.github.lnyocly.ai4j.agent.runtime;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.AgentContext;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentExecutionStatus;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -261,7 +261,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         Map<String, Object> marker = new LinkedHashMap<String, Object>();
         marker.put("callId", call == null ? null : call.getCallId());
         marker.put("output", toolOutput);
-        return AgentToolCall.CODEACT_PENDING_RESULT_PREFIX + " " + JSON.toJSONString(marker);
+        return AgentToolCall.CODEACT_PENDING_RESULT_PREFIX + " " + AgentJson.toJson(marker);
     }
 
     @Override
@@ -413,12 +413,15 @@ public class CodeActRuntime extends BaseAgentRuntime {
             return null;
         }
         try {
-            JSONObject obj = JSON.parseObject(json);
+            ObjectNode obj = AgentJson.parseObjectStrictOrNull(json);
+            if (obj == null) {
+                return null;
+            }
             CodeActMessage message = new CodeActMessage();
-            message.type = valueAsString(obj.get("type"));
-            message.language = valueAsString(obj.get("language"));
-            message.code = valueAsString(obj.get("code"));
-            message.output = valueAsString(obj.get("output"));
+            message.type = AgentJson.text(obj, "type");
+            message.language = AgentJson.text(obj, "language");
+            message.code = AgentJson.text(obj, "code");
+            message.output = AgentJson.text(obj, "output");
             return message;
         } catch (Exception e) {
             return null;
@@ -469,7 +472,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         if (result == null) {
             return "";
         }
-        JSONObject obj = new JSONObject();
+        ObjectNode obj = AgentJson.createObjectNode();
         if (result.getResult() != null) {
             obj.put("result", result.getResult());
         }
@@ -488,7 +491,7 @@ public class CodeActRuntime extends BaseAgentRuntime {
         if (result.getWaitId() != null) {
             obj.put("waitId", result.getWaitId());
         }
-        return obj.toJSONString();
+        return AgentJson.toJson(obj);
     }
 
     private AgentToolResult buildCodeToolResult(AgentToolCall call,

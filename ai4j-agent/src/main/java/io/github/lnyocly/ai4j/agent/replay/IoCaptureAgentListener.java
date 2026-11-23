@@ -4,11 +4,10 @@ import io.github.lnyocly.ai4j.agent.event.AgentEvent;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.event.AgentListener;
 import io.github.lnyocly.ai4j.agent.model.AgentPrompt;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
-
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -150,11 +149,11 @@ public class IoCaptureAgentListener implements AgentListener {
      */
     private static long[] extractUsage(Object payload) {
         try {
-            JSONObject obj = JSON.parseObject(JSON.toJSONString(payload));
+            ObjectNode obj = AgentJson.toObjectNode(payload);
             if (obj == null) {
                 return null;
             }
-            JSONObject usage = obj.getJSONObject("usage");
+            ObjectNode usage = AgentJson.objectField(obj, "usage");
             if (usage == null) {
                 return null;
             }
@@ -166,9 +165,9 @@ public class IoCaptureAgentListener implements AgentListener {
         }
     }
 
-    private static long firstUsageLong(JSONObject usage, String... keys) {
+    private static long firstUsageLong(ObjectNode usage, String... keys) {
         for (String k : keys) {
-            Long v = usage.getLong(k);
+            Long v = AgentJson.longValue(usage, k);
             if (v != null) {
                 return v.longValue();
             }

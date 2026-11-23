@@ -1,9 +1,10 @@
 package io.github.lnyocly.ai4j.agent.rag;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.TraceableToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.platform.openai.tool.Tool;
 import io.github.lnyocly.ai4j.rag.RagQuery;
 import io.github.lnyocly.ai4j.rag.RagResult;
@@ -131,9 +132,10 @@ public class RagTool {
         @Override
         public String execute(AgentToolCall call) throws Exception {
             String arguments = call.getArguments();
-            String query = arguments == null || arguments.trim().isEmpty()
+            ObjectNode argsObj = arguments == null || arguments.trim().isEmpty()
                     ? null
-                    : JSON.parseObject(arguments).getString("query");
+                    : AgentJson.parseObjectStrictOrNull(arguments);
+            String query = AgentJson.text(argsObj, "query");
             if (query == null || query.trim().isEmpty()) {
                 lastResult.remove();
                 return "";

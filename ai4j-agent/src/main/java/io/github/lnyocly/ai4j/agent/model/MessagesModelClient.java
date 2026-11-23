@@ -323,7 +323,7 @@ public class MessagesModelClient implements AgentModelClient {
             return null;
         }
         try {
-            return com.alibaba.fastjson2.JSON.parse(json);
+            return io.github.lnyocly.ai4j.agent.util.AgentJson.parsePlain(json);
         } catch (Exception e) {
             return json;
         }
@@ -557,6 +557,6 @@ public class MessagesModelClient implements AgentModelClient {
         if (value instanceof String) {
             return (String) value;
         }
-        return com.alibaba.fastjson2.JSON.toJSONString(value);
+        return io.github.lnyocly.ai4j.agent.util.AgentJson.toJson(value);
     }
 }

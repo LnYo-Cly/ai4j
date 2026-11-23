@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.trace;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agentflow.AgentFlowUsage;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatEvent;
 import io.github.lnyocly.ai4j.agentflow.chat.AgentFlowChatRequest;
@@ -316,7 +316,7 @@ public class AgentFlowTraceBridge implements AgentFlowTraceListener {
         if (value == null) {
             return null;
         }
-        String text = value instanceof String ? (String) value : JSON.toJSONString(value);
+        String text = value instanceof String ? (String) value : AgentJson.toJson(value);
         if (config.getMasker() != null) {
             text = config.getMasker().mask(text);
         }

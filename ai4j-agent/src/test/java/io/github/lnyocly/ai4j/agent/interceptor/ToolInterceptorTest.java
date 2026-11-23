@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.interceptor;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentContext;
 import io.github.lnyocly.ai4j.agent.AgentResult;
 import io.github.lnyocly.ai4j.agent.Agents;
@@ -90,7 +90,7 @@ public class ToolInterceptorTest {
 
         assertEquals("blocked call must NOT reach the executor", 0, exec.executed.size());
         assertTrue("model must be invoked again after the block", model.prompts.size() >= 2);
-        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        String fedBack = AgentJson.toJson(model.prompts.get(1));
         assertTrue("block reason must be fed back to the model: " + fedBack,
                 fedBack.contains("TOOL_BLOCKED") && fedBack.contains("forbidden by policy"));
         assertTrue(result.getOutputText().contains("ok"));
@@ -189,7 +189,7 @@ public class ToolInterceptorTest {
 
         assertEquals("tool must still run (block is post-execution)", 1, exec.executed.size());
         assertTrue("model must be invoked again after the post-block", model.prompts.size() >= 2);
-        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        String fedBack = AgentJson.toJson(model.prompts.get(1));
         assertTrue("blocked result must be fed back: " + fedBack,
                 fedBack.contains("TOOL_BLOCKED") && fedBack.contains("leaked a secret"));
     }

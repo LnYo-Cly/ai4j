@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.extension;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.Agent;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import io.github.lnyocly.ai4j.agent.AgentBuilder;
 import io.github.lnyocly.ai4j.agent.AgentOptions;
 import io.github.lnyocly.ai4j.agent.AgentRequest;
@@ -284,7 +284,7 @@ public class ExtensionInterceptorsTest {
                 0, exec.executed.size());
         Assert.assertEquals("a sandbox session must be created", 1, provider.created.size());
         Assert.assertEquals("fake", provider.created.get(0).getProviderId());
-        String fedBack = JSON.toJSONString(model.prompts.get(1));
+        String fedBack = AgentJson.toJson(model.prompts.get(1));
         Assert.assertTrue("sandbox output must be fed back to the model: " + fedBack,
                 fedBack.contains("sandboxed-output"));
     }
@@ -313,7 +313,7 @@ public class ExtensionInterceptorsTest {
         agent.run(AgentRequest.builder().input("hello").build());
 
         Assert.assertEquals(1, model.prompts.size());
-        String sent = JSON.toJSONString(model.prompts.get(0));
+        String sent = AgentJson.toJson(model.prompts.get(0));
         Assert.assertTrue("model must see the rewritten input: " + sent,
                 sent.contains("[tenant=acme]"));
     }

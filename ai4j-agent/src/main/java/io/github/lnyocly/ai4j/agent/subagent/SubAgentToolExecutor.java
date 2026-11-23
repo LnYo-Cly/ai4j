@@ -1,7 +1,6 @@
 package io.github.lnyocly.ai4j.agent.subagent;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.event.AgentEventType;
 import io.github.lnyocly.ai4j.agent.runtime.AgentToolExecutionScope;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
@@ -11,6 +10,7 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -497,8 +497,8 @@ public class SubAgentToolExecutor implements AsyncToolExecutor {
             return null;
         }
         try {
-            JSONObject object = JSON.parseObject(value);
-            String output = trimToNull(object == null ? null : object.getString("output"));
+            ObjectNode object = AgentJson.parseObjectStrictOrNull(value);
+            String output = trimToNull(AgentJson.text(object, "output"));
             return output == null ? value : output;
         } catch (Exception ignored) {
             return value;

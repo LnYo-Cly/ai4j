@@ -1,6 +1,5 @@
 package io.github.lnyocly.ai4j.agent.control;
 
-import com.alibaba.fastjson2.JSON;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecution;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolExecutionStatus;
@@ -8,6 +7,7 @@ import io.github.lnyocly.ai4j.agent.tool.AgentToolResult;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutor;
 import io.github.lnyocly.ai4j.agent.tool.AsyncToolExecutors;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.util.Collections;
 import java.util.Map;
@@ -72,7 +72,7 @@ public class HostInputToolExecutor implements AsyncToolExecutor {
     private static Map<String, Object> parseRequest(String arguments) {
         if (arguments == null || arguments.trim().isEmpty()) return Collections.emptyMap();
         try {
-            return JSON.parseObject(arguments);
+            return AgentJson.parseMap(arguments);
         } catch (Exception exception) {
             return Collections.singletonMap("question", arguments);
         }

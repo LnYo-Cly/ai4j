@@ -1,6 +1,6 @@
 package io.github.lnyocly.ai4j.agent.session;
 
-import com.alibaba.fastjson2.JSON;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -53,7 +53,7 @@ public class JdbcAgentSessionStore implements AgentSessionStore {
             return;
         }
         String sessionId = snapshot.getSessionId();
-        String json = JSON.toJSONString(snapshot);
+        String json = AgentJson.toJson(snapshot);
         Connection connection = null;
         try {
             connection = openConnection();
@@ -96,7 +96,7 @@ public class JdbcAgentSessionStore implements AgentSessionStore {
                     if (json == null || json.trim().isEmpty()) {
                         return null;
                     }
-                    return JSON.parseObject(json, AgentSessionSnapshot.class);
+                    return AgentJson.fromJson(json, AgentSessionSnapshot.class);
                 }
             }
         } catch (Exception e) {

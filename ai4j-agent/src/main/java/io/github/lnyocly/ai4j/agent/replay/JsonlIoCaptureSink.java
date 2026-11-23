@@ -1,7 +1,7 @@
 package io.github.lnyocly.ai4j.agent.replay;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
         }
         synchronized (lock) {
             try {
-                writer.write(JSON.toJSONString(record));
+                writer.write(AgentJson.toJson(record));
                 writer.write("\n");
                 writer.flush();
             } catch (IOException e) {
@@ -117,45 +117,45 @@ public class JsonlIoCaptureSink implements IoCaptureSink {
                     continue;
                 }
                 try {
-                    JSONObject obj = JSON.parseObject(line);
+                    ObjectNode obj = AgentJson.parseObjectStrictOrNull(line);
                     if (obj == null) {
                         continue;
                     }
                     // NodeIoRecord has no no-arg ctor, so rebuild via the Builder; inputs/outputs
                     // come back as parsed JSON (original typed objects don't round-trip from JSON).
-                    NodeIoRecord.NodeType type = obj.getObject("nodeType", NodeIoRecord.NodeType.class);
+                    NodeIoRecord.NodeType type = AgentJson.treeToValue(obj.get("nodeType"), NodeIoRecord.NodeType.class);
                     NodeIoRecord.Builder b = NodeIoRecord.builder(type == null ? NodeIoRecord.NodeType.MODEL : type)
-                            .recordId(obj.getString("recordId"))
-                            .runId(obj.getString("runId"))
-                            .sessionId(obj.getString("sessionId"))
-                            .turnId(obj.getString("turnId"))
-                            .step(obj.getInteger("step"))
-                            .nodeId(obj.getString("nodeId"))
-                            .modelId(obj.getString("modelId"))
-                            .inputs(obj.get("inputs"))
-                            .outputText(obj.getString("outputText"))
-                            .outputs(obj.get("outputs"));
-                    Long startedAt = obj.getLong("startedAtEpochMs");
+                            .recordId(AgentJson.text(obj, "recordId"))
+                            .runId(AgentJson.text(obj, "runId"))
+                            .sessionId(AgentJson.text(obj, "sessionId"))
+                            .turnId(AgentJson.text(obj, "turnId"))
+                            .step(AgentJson.integer(obj, "step"))
+                            .nodeId(AgentJson.text(obj, "nodeId"))
+                            .modelId(AgentJson.text(obj, "modelId"))
+                            .inputs(AgentJson.extractValue(obj.get("inputs")))
+                            .outputText(AgentJson.text(obj, "outputText"))
+                            .outputs(AgentJson.extractValue(obj.get("outputs")));
+                    Long startedAt = AgentJson.longValue(obj, "startedAtEpochMs");
                     if (startedAt != null) {
                         b.startedAtEpochMs(startedAt);
                     }
-                    Long capturedAt = obj.getLong("capturedAtEpochMs");
+                    Long capturedAt = AgentJson.longValue(obj, "capturedAtEpochMs");
                     if (capturedAt != null) {
                         b.capturedAtEpochMs(capturedAt);
                     }
-                    String reasoning = obj.getString("reasoningText");
+                    String reasoning = AgentJson.text(obj, "reasoningText");
                     if (reasoning != null) {
                         b.reasoningText(reasoning);
                     }
-                    Integer retries = obj.getInteger("retryCount");
+                    Integer retries = AgentJson.integer(obj, "retryCount");
                     if (retries != null) {
                         b.retryCount(retries);
                     }
-                    Long inTok = obj.getLong("inputTokens");
+                    Long inTok = AgentJson.longValue(obj, "inputTokens");
                     if (inTok != null) {
                         b.inputTokens(inTok);
                     }
-                    Long outTok = obj.getLong("outputTokens");
+                    Long outTok = AgentJson.longValue(obj, "outputTokens");
                     if (outTok != null) {
                         b.outputTokens(outTok);
                     }

@@ -1,9 +1,9 @@
 package io.github.lnyocly.ai4j.agent.dynamicworkflow;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.lnyocly.ai4j.agent.tool.AgentToolCall;
 import io.github.lnyocly.ai4j.agent.tool.ToolExecutor;
+import io.github.lnyocly.ai4j.agent.util.AgentJson;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,11 +30,11 @@ public class DynamicWorkflowHostToolExecutorTest {
         );
 
         String output = executor.execute(AgentToolCall.builder().name("workflow").arguments("{}").build());
-        JSONObject result = JSON.parseObject(output);
+        ObjectNode result = AgentJson.parseObjectStrictOrNull(output);
 
-        Assert.assertEquals(DynamicWorkflowConstants.STATUS_COMPLETED, result.getString("status"));
-        Assert.assertEquals("worker:hello", result.getString("output"));
-        Assert.assertEquals(1, result.getJSONArray("agentCalls").size());
+        Assert.assertEquals(DynamicWorkflowConstants.STATUS_COMPLETED, AgentJson.text(result, "status"));
+        Assert.assertEquals("worker:hello", AgentJson.text(result, "output"));
+        Assert.assertEquals(1, AgentJson.arrayField(result, "agentCalls").size());
     }
 
     @Test
@@ -54,13 +54,13 @@ public class DynamicWorkflowHostToolExecutorTest {
     }
 
     private String envelope(String script) {
-        JSONObject arguments = new JSONObject();
+        ObjectNode arguments = AgentJson.createObjectNode();
         arguments.put("script", script);
-        JSONObject envelope = new JSONObject();
+        ObjectNode envelope = AgentJson.createObjectNode();
         envelope.put("type", DynamicWorkflowConstants.ENVELOPE_TYPE);
         envelope.put("hostAction", DynamicWorkflowConstants.EXECUTE_HOST_ACTION);
-        envelope.put("argumentsRaw", arguments.toJSONString());
-        return envelope.toJSONString();
+        envelope.put("argumentsRaw", AgentJson.toJson(arguments));
+        return AgentJson.toJson(envelope);
     }
 
     private static class EchoBridge implements DynamicWorkflowAgentBridge {
