@@ -40,17 +40,19 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 
 | 当前目标 | 最小取用模块 | 依赖关系 | 适合场景 |
 | --- | --- | --- | --- |
-| 只做模型调用、工具、RAG、MCP | `ai4j` | 无 AI4J 内部依赖 | 普通 Java 项目先把 AI 能力跑起来 |
-| Spring Boot 应用接入 AI | `ai4j-spring-boot-starter` | 依赖 `ai4j` | 需要配置属性、自动装配、Bean 扩展 |
-| 嵌入 Agent runtime | `ai4j-agent` | 依赖 `ai4j` | 需要 memory、state、workflow、trace、team orchestration |
+| 统一模型调用、`AiClient` DX、`@AiService`、流式与中间件 | `ai4j` | 统一 Jackson `JsonCodec`，无重型第三方 SDK 依赖 | 普通 Java 项目快速跑通多协议与业务调用 |
+| 按需接入 MCP、RAG 增强、Tika 解析、沙箱或 A2A | `ai4j-mcp`、`ai4j-rag`、`ai4j-document-tika`、`ai4j-sandbox`、`ai4j-a2a` | 基于 `ai4j` / `ai4j-extension-api` 按需拆包 | 不让未使用的协议与重型依赖进入主包 |
+| Spring Boot 2/3/4 接入 AI、Web SSE 与 Actuator 诊断 | `ai4j-spring-boot-starter`（可选叠加 `ai4j-web`） | 依赖 `ai4j`、`ai4j-mcp`、`ai4j-extension-api` | 需要配置属性、自动装配、AG-UI/OpenAI SSE 与 `/actuator/ai4j` |
+| 嵌入 Agent runtime | `ai4j-agent` | 依赖 `ai4j`、`ai4j-sandbox` | 需要 memory、state、workflow、trace、team orchestration 与结构化自愈 |
 | 做本地 Coding Agent runtime | `ai4j-coding` | 依赖 `ai4j`、`ai4j-agent` | 需要 workspace 工具、会话、outer loop、compaction |
-| 提供 CLI / TUI / ACP 入口 | `ai4j-cli` | 依赖 `ai4j`、`ai4j-coding` | 需要终端产品壳层和本地会话入口 |
-| 运行长时任务 Harness | `ai4j-harness` | 依赖 `ai4j-agent` | 需要任务持久化、暂停/恢复、租约认领和验收审计 |
-| 编写插件/扩展 | `ai4j-extension-api` | 无 AI4J 内部依赖 | 需要向 Agent / Coding Agent 注入 Tool、Command、Skill、Prompt |
+| 提供 CLI / TUI / ACP / Fleet 边缘入口 | `ai4j-cli` | 依赖 `ai4j`、`ai4j-coding` | 需要终端产品壳层和本地会话/边缘节点入口 |
+| 运行长时任务 Harness 2.0 与多节点 Fleet | `ai4j-harness` | 依赖 `ai4j-agent` | 需要 CQRS 账本、Consent/Witness 治理、解释引擎与多节点认领 |
+| 构建常驻心跳、记忆治理与门控自演化 Agent | `ai4j-ambient` | 依赖 `ai4j`、`ai4j-agent`、`ai4j-harness`、`ai4j-testing` | 需要长驻多端通道、低成本唤醒与安全自演化 RSI |
+| 编写扩展或启用官方可插拔插件 | `ai4j-extension-api` + `ai4j-plugin-*` | `ai4j-extension-api` 无 AI4J 内部依赖 | 包含 `ask-user`、`colab`，以及 Wave 3 新增的 `codeact`、`sandbox-docker`、`redis` |
 | Agent 确定性测试 | `ai4j-testing` | 依赖 `ai4j-agent` | 需要脚本化/回放模型客户端做无密钥 golden 回归 |
 | 接 FlowGram 后端 | `ai4j-flowgram-spring-boot-starter` | 依赖 `ai4j-agent`、`ai4j-spring-boot-starter` | 需要可视化工作流、任务 API、trace bridge |
 | 跑 FlowGram demo | `ai4j-flowgram-demo` | 依赖 FlowGram starter | 需要示例后端验证集成 |
-| 统一版本 | `ai4j-bom` | 管理多个 artifact 版本 | 同时引入多个 AI4J 模块时减少版本漂移 |
+| 统一版本 | `ai4j-bom` | 管理多个 `2.x` artifact 版本 | 同时引入多个 AI4J 模块时减少版本漂移 |
 
 判断原则很简单：先引入能解决当前问题的最小模块；只有当需求自然上升时，再叠加下一层。
 
@@ -58,10 +60,14 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
 | --- | --- | --- | --- | --- |
-| Model Access | `stable` | `ai4j` | 统一模型接入主线 | [Overview](/docs/capabilities/models/overview) |
+| Model Access | `stable` | `ai4j` | 统一模型接入主线与多协议矩阵 | [Overview](/docs/capabilities/models/overview) |
+| AiClient DX 与 `@AiService` | `stable` | `ai4j` | `AiClient.fromEnv()`、JDK 8 代理、`@AiTool` + `ToolOut` 双通道与自愈 | [AiClient DX](/docs/getting-started/ai-client-dx) |
 | Chat | `stable` | `ai4j` | 对话式模型调用 | [Chat 主线](/docs/capabilities/models/chat) |
 | Responses | `stable` | `ai4j` | 面向 Responses 风格的统一调用 | [Responses 主线](/docs/capabilities/models/responses) |
+| Gemini 原生协议与 Presets | `stable` | `ai4j` | `Protocol.GEMINI`、`thoughtSignature` 跨协议安全剥离、`ProviderPresets` 与开放 `Platform` | [Gemini 原生协议](/docs/capabilities/models/gemini) |
 | Streaming | `stable` | `ai4j` | 流式输出、增量结果和前端展示 | [流式语义](/docs/capabilities/models/streaming) |
+| AiStream 与模型中间件 | `stable` | `ai4j` | Pi 风格推拉流、虚拟线程自适应、重试 / KeyPool / 预算 / 分级 / 影子评估 | [AiStream 与中间件](/docs/capabilities/models/ai-stream-and-middleware) |
+| JsonCodec 与结构化输出 | `stable` | `ai4j` | Jackson 单栈宽容提取、`TypeReference` 与 `StructuredOutputSelfHealer` | [结构化输出](/docs/capabilities/models/structured-output)、[AiClient DX](/docs/getting-started/ai-client-dx) |
 | Multimodal | `advanced` | `ai4j` | 文本、图像等多模态输入输出 | [多模态](/docs/capabilities/models/multimodal) |
 | Tools / Function Call | `stable` | `ai4j` | 本地函数声明、执行和安全边界 | [Tools](/docs/capabilities/tools/overview) |
 | System One（Jev） | `preview` | `ai4j` | TypeSafe 决策模型：对 state 并行求值 choice/score/noul，返回类型化答案+置信度，用于路由和护栏 | [System One](/docs/capabilities/system-one) |
@@ -71,26 +77,29 @@ AI4J 的模块关系是从底座向上叠加，而不是一个必须全量采用
 
 | 能力 | 状态 | 模块 | 解决什么问题 | 深入阅读 |
 | --- | --- | --- | --- | --- |
-| Search & RAG | `advanced` | `ai4j` | 从外部知识中检索、增强回答和保留引用线索 | [Overview](/docs/capabilities/rag/overview) |
-| Ingestion Pipeline | `advanced` | `ai4j` | 文档入库、切分和索引前处理 | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
+| Search & RAG | `advanced` | `ai4j`、`ai4j-rag` | 从外部知识中检索、查询规划、LLM Judge、增强回答和保留引用线索 | [Overview](/docs/capabilities/rag/overview) |
+| Ingestion Pipeline | `advanced` | `ai4j`、`ai4j-document-tika` | 文档入库、Tika 解析、切分和索引前处理 | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
 | MinerU 文档解析 | `advanced` | `ai4j` | 云端精准/轻量解析 PDF、扫描件、复杂版面为 Markdown，可直接进 RAG | [摄取管线](/docs/capabilities/rag/ingestion-pipeline) |
-| Hybrid Retrieval | `advanced` | `ai4j` | 组合关键词、向量和其他召回策略 | [混合检索](/docs/capabilities/rag/hybrid-retrieval) |
+| Hybrid Retrieval | `advanced` | `ai4j`、`ai4j-rag` | 组合关键词、向量和其他召回策略 | [混合检索](/docs/capabilities/rag/hybrid-retrieval) |
 | Rerank | `advanced` | `ai4j` | 对候选结果重排，提高检索质量 | [重排](/docs/capabilities/rag/rerank) |
-| MCP | `advanced` | `ai4j` | 通过协议接入外部工具、服务和能力网关 | [MCP Overview](/docs/capabilities/mcp/overview) |
-| MCP Client Integration | `advanced` | `ai4j` | 在客户端侧连接和使用 MCP 能力 | [Client Integration](/docs/capabilities/mcp/client-integration) |
+| MCP | `advanced` | `ai4j-mcp` | 通过协议与 `McpToolBridge` SPI 接入外部工具、服务和能力网关 | [MCP Overview](/docs/capabilities/mcp/overview) |
+| MCP Client Integration | `advanced` | `ai4j-mcp` | 在客户端侧连接和使用 MCP 能力 | [Client Integration](/docs/capabilities/mcp/client-integration) |
 
 ## 应用集成和上层运行时
 
 | 能力 | 状态 | 模块 | 适合场景 | 从这里开始 |
 | --- | --- | --- | --- | --- |
-| Spring Boot Starter | `stable` | `ai4j-spring-boot-starter` | Spring 应用配置化接入、自动装配和 Bean 扩展 | [Spring Boot Overview](/docs/integrations/spring-boot/overview) |
+| Spring Boot Starter | `stable` | `ai4j-spring-boot-starter` | Boot 2/3/4 单包双栈配置化接入、自动装配和 Bean 扩展 | [Spring Boot Overview](/docs/integrations/spring-boot/overview) |
+| Web SSE 与 Actuator | `stable` | `ai4j-web`、`ai4j-spring-boot-starter` | `AiWebStreams`（AG-UI / OpenAI SSE）与 `/actuator/ai4j` 无密钥状态诊断 | [Web SSE 与 Actuator](/docs/integrations/spring-boot/web-sse-and-actuator) |
 | Agent Runtime | `preview` | `ai4j-agent` | 需要 memory、state、tool registry、workflow 或 team orchestration | [Agent 总览](/docs/agent/overview) |
 | Agent Quickstart | `preview` | `ai4j-agent` | 想先跑一个最小 Agent | [Agent 快速开始](/docs/agent/quickstart) |
-| Agent Teams | `preview` | `ai4j-agent` | 多 agent 协作和分工编排 | [Agent 团队](/docs/agent/orchestration/agent-teams) |
+| Agent Teams 与 A2A | `preview` | `ai4j-agent`、`ai4j-a2a` | 多 agent 协作、分工编排与跨节点任务交互 | [Agent 团队](/docs/agent/orchestration/agent-teams)、[A2A](/docs/agent/observability/a2a) |
 | 会话治理与回放 | `preview` | `ai4j-agent` | checkpoint 断点续跑、事件溯源会话日志的投影/回放/fork/检索（`SessionLogReader`） | [会话与运行时](/docs/agent/session-runtime) |
 | Agent 回放测试 | `preview` | `ai4j-testing` | `ScriptedModelClient` / `ReplayModelClient` golden 夹具，无密钥确定性回归 | [Agent 测试](/docs/agent/testing) |
 | Harness 长时任务 | `preview` | `ai4j-harness` | 把一次性 Agent 调用变成可暂停、可恢复、可验收的长期任务 | [Harness 运行时](/docs/agent/harness-runtime) |
-| 插件扩展 SPI | `preview` | `ai4j-extension-api` | 三段门禁、独立类加载器隔离、`plugin__` 工具命名空间 | [扩展 SPI 与隔离](/docs/extending/plugins/extension-spi) |
+| Harness 2.0 治理与 Fleet | `preview` | `ai4j-harness` | CQRS 账本、Consent 钉扎、因果 ReadSet、`explain`、Witness 与 5 拓扑 Fleet | [Harness 2.0 治理与 Fleet](/docs/agent/harness-governance-and-fleet) |
+| Ambient 常驻与 RSI | `preview` | `ai4j-ambient` | 身份前缀缓存、记忆防投毒、两段式心跳、多端网关与 5 门控自演化 | [Ambient 与 RSI](/docs/agent/ambient-and-rsi) |
+| Cordis 微内核与插件生态 | `preview` | `ai4j-extension-api`、`ai4j-sandbox`、`ai4j-plugin-*` | `ServiceKey` / 作用域 `Disposable` / `fork()` 沙箱、官方插件包与 Wave 3 扩展 | [Cordis 微内核](/docs/extending/plugins/cordis-microkernel)、[扩展 SPI 与隔离](/docs/extending/plugins/extension-spi) |
 | Coding Agent | `preview` | `ai4j-coding`、`ai4j-cli` | 面向本地代码仓的任务执行、workspace 工具和 CLI/TUI | [Coding Agent Overview](/docs/products/coding-agent/overview) |
 | Coding Agent Quickstart | `preview` | `ai4j-coding`、`ai4j-cli` | 想体验本地 Coding Agent 产品入口 | [Coding Agent Quickstart](/docs/products/coding-agent/quickstart) |
 | FlowGram | `preview` | `ai4j-flowgram-spring-boot-starter` | 可视化工作流平台后端、节点运行和 trace bridge | [FlowGram Overview](/docs/products/flowgram/overview) |
