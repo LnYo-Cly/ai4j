@@ -20,10 +20,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Live: verifies {@code PlatformType.MINIMAX} ({@code MinimaxChatService}) now defaults to the current
- * OpenAI-compatible gateway and works with modern models (MiniMax-M3) + coding-plan key.
- * <p>Before this fix the default pointed at the legacy {@code v1/text/chatcompletion_v2} endpoint which
- * returned plan-not-support / empty choices for new models.
+ * Live: verifies {@code PlatformType.MINIMAX} ({@code MinimaxChatService}) uses the current
+ * OpenAI-compatible gateway by default and works with modern models (MiniMax-M3) + coding-plan key.
+ * <p>Override {@code MINIMAX_BASE_URL} to target another regional base.
  * <p>Env: {@code MINIMAX_API_KEY} (required).
  */
 @Category(LiveProviderTest.class)
@@ -32,10 +31,12 @@ public class MinimaxNewGatewayLiveTest {
     @Test
     public void minimaxChatServiceWorksOnNewGatewayWithM3() throws Exception {
         String key = LiveProviderTestSupport.requireEnv("skip: MINIMAX_API_KEY not set", "MINIMAX_API_KEY");
-
-        // MinimaxConfig() now defaults to https://api.minimaxi.com/ + v1/chat/completions
+        String baseUrl = System.getenv("MINIMAX_BASE_URL");
         MinimaxConfig config = new MinimaxConfig();
         config.setApiKey(key);
+        if (baseUrl != null && !baseUrl.trim().isEmpty()) {
+            config.setApiHost(baseUrl);
+        }
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)

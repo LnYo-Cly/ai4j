@@ -100,6 +100,23 @@ runTest('normalizes loopFor into loop input schema and values without mutating s
   );
 });
 
+runTest('preserves explicit MiniMax models, saved service IDs and history at the backend boundary', () => {
+  for (const model of ['MiniMax-M3.1-Flash', 'MiniMax-M3', 'MiniMax-M2.7', 'MiniMax-M2.1', 'custom/model']) {
+    const data = {
+      inputsValues: {
+        serviceId: { type: 'constant', content: 'minimax-coding' },
+        modelName: { type: 'constant', content: model },
+        history: [{ role: 'user', content: 'Saved message' }],
+      },
+    };
+    const source: WorkflowSchema = { nodes: [makeNode('saved', 'llm', data)], edges: [] };
+    const before = JSON.stringify(source);
+    const serialized = JSON.parse(serializeWorkflowForBackend(source));
+    assert.deepEqual(serialized.nodes[0].data.inputsValues, data.inputsValues);
+    assert.equal(JSON.stringify(source), before);
+  }
+});
+
 runTest('serializes both object and string workflow inputs with backend normalization', () => {
   const source: WorkflowSchema = {
     nodes: [

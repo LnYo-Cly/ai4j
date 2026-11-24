@@ -170,12 +170,12 @@ const travelCopilotTemplate: WorkflowTemplate = {
             {
               operator: 'declare',
               left: 'serviceId',
-              right: constantValue('minimax-coding'),
+              right: constantValue('minimax'),
             },
             {
               operator: 'declare',
               left: 'modelName',
-              right: constantValue('MiniMax-M2.1'),
+              right: constantValue('MiniMax-M3.1-Flash'),
             },
             {
               operator: 'declare',
@@ -358,8 +358,8 @@ const travelCopilotTemplate: WorkflowTemplate = {
           title: '出行建议',
           inputs: objectSchema(
             {
-              serviceId: stringSchema('minimax-coding'),
-              modelName: stringSchema('MiniMax-M2.1'),
+              serviceId: stringSchema('minimax'),
+              modelName: stringSchema('MiniMax-M3.1-Flash'),
               systemPrompt: stringSchema(
                 '你是一个简洁、可靠的中文出行助手，只输出和行程建议相关的内容。'
               ),
@@ -633,8 +633,8 @@ const loopTemplate: WorkflowTemplate = {
               title: 'LLM Inside Loop',
               inputs: objectSchema(
                 {
-                  serviceId: stringSchema('minimax-coding'),
-                  modelName: stringSchema('MiniMax-M2.1'),
+                  serviceId: stringSchema('minimax'),
+                  modelName: stringSchema('MiniMax-M3.1-Flash'),
                   prompt: {
                     ...stringSchema(),
                   },
@@ -648,8 +648,8 @@ const loopTemplate: WorkflowTemplate = {
                 ['result']
               ),
               inputsValues: {
-                serviceId: constantValue('minimax-coding'),
-                modelName: constantValue('MiniMax-M2.1'),
+                serviceId: constantValue('minimax'),
+                modelName: constantValue('MiniMax-M3.1-Flash'),
                 prompt: templateValue('Summarize {{loop_0_locals.item}} in one short phrase.'),
               },
             },
@@ -792,16 +792,16 @@ const knowledgeTemplate: WorkflowTemplate = {
           title: '知识回答',
           inputs: objectSchema(
             {
-              serviceId: stringSchema('minimax-coding'),
-              modelName: stringSchema('MiniMax-M2.1'),
+              serviceId: stringSchema('minimax'),
+              modelName: stringSchema('MiniMax-M3.1-Flash'),
               systemPrompt: stringSchema('请只依据提供的知识上下文回答问题。'),
               prompt: stringSchema(),
             },
             ['modelName', 'prompt']
           ),
           inputsValues: {
-            serviceId: constantValue('minimax-coding'),
-            modelName: constantValue('MiniMax-M2.1'),
+            serviceId: constantValue('minimax'),
+            modelName: constantValue('MiniMax-M3.1-Flash'),
             systemPrompt: templateValue('请只依据提供的知识上下文回答问题。'),
             prompt: templateValue(
               '问题：{{start_0.question}}\n\n知识上下文：{{knowledge_0.context}}\n\n请给出简洁回答。'

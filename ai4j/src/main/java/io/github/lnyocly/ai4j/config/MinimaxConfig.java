@@ -5,24 +5,44 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author : isxuwl
- * @Date: 2024/10/15 16:08
- * @Model Description:
- * @Description:
+ * MiniMax OpenAI-compatible and Anthropic-compatible configuration.
+ * <p>
+ * Defaults to the global endpoints. Override {@code apiHost} and
+ * {@code anthropicApiHost} for the CN endpoints when needed.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class MinimaxConfig {
-    /**
-     * MiniMax 网关。默认指向当前推荐的 OpenAI 兼容网关 {@code https://api.minimaxi.com/}，
-     * 支持最新模型（MiniMax-M3 等）与 coding-plan key。
-     * 旧私有 {@code v1/text/chatcompletion_v2} 端点（{@code api.minimax.chat}）对新模型返回
-     * plan-not-support / 空 choices；如需回退到旧端点，覆盖本字段与 {@link #chatCompletionUrl}。
-     */
-    private String apiHost = "https://api.minimaxi.com/";
+    private String apiHost = "https://api.minimax.io/";
     private String apiKey = "";
     private String chatCompletionUrl = "v1/chat/completions";
+    private String anthropicApiHost = "https://api.minimax.io/anthropic/";
+    private String anthropicMessagesUrl = "v1/messages";
+
+    public MinimaxConfig(String apiHost, String apiKey, String chatCompletionUrl) {
+        this.apiHost = apiHost;
+        this.apiKey = apiKey;
+        this.chatCompletionUrl = chatCompletionUrl;
+    }
+
+    public MinimaxConfig(String apiHost, String apiKey, String chatCompletionUrl,
+                         String anthropicApiHost, String anthropicMessagesUrl) {
+        this(apiHost, apiKey, chatCompletionUrl);
+        this.anthropicApiHost = anthropicApiHost;
+        this.anthropicMessagesUrl = anthropicMessagesUrl;
+    }
+
+    public MinimaxConfig(String apiHost, String apiKey, String chatCompletionUrl,
+                         String videoApiHost, String videoApiKey, String videoCreateUrl,
+                         String videoQueryUrl, String fileRetrieveUrl) {
+        this(apiHost, apiKey, chatCompletionUrl);
+        this.videoApiHost = videoApiHost;
+        this.videoApiKey = videoApiKey;
+        this.videoCreateUrl = videoCreateUrl;
+        this.videoQueryUrl = videoQueryUrl;
+        this.fileRetrieveUrl = fileRetrieveUrl;
+    }
 
     /**
      * Hailuo 视频网关。视频 API 与 chat 网关不同域（私有协议 {@code api.minimax.chat}，

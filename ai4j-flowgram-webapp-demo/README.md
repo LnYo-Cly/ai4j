@@ -2,6 +2,12 @@
 
 Best-practice demo for free layout
 
+## MiniMax text models
+
+New LLM nodes and workflow templates use `MiniMax-M3.1-Flash` with the `minimax` service profile at `https://api.minimax.io/v1/chat/completions`. Set `MINIMAX_API_KEY` for that profile. Enter `MiniMax-M3` in the model field to select M3; the field remains free text for custom deployments and existing model IDs. `MiniMax-M2.7` and earlier explicit selections remain unchanged when loading or submitting saved workflows. The existing `minimax-coding` CN profile is retained for saved workflows; availability of Flash or M3 on a subscription endpoint depends on the account and region.
+
+The SDK also accepts both model IDs explicitly through `ChatCompletion.model`. `reasoningEffort` accepts caller values such as `low`, `medium`, and `high`; omitting it leaves the provider default. An explicit `extraBody` value for `reasoning_effort` takes precedence. The native Anthropic gateway (`https://api.minimax.io/anthropic/v1/messages`, or the CN equivalent) uses the existing native Messages service configuration. This update does not change speech, image/video generation, or stored chat history.
+
 ## Installation
 
 ```shell

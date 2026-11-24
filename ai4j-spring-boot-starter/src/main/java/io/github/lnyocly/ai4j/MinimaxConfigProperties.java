@@ -4,16 +4,18 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * @Author : isxuwl
- * @Date: 2024/10/15 16:27
- * @Model Description:
- * @Description:
+ * MiniMax OpenAI-compatible and Anthropic-compatible configuration properties.
+ * <p>
+ * Defaults to the global endpoints. Override {@code ai.minimax.api-host} and
+ * {@code ai.minimax.anthropic-api-host} for the CN endpoints when needed.
  */
 
 @Data
 @ConfigurationProperties(prefix = "ai.minimax")
 public class MinimaxConfigProperties {
-    private String apiHost = "https://api.minimaxi.com/";
+    private String apiHost = "https://api.minimax.io/";
     private String apiKey = "";
     private String chatCompletionUrl = "v1/chat/completions";
+    private String anthropicApiHost = "https://api.minimax.io/anthropic/";
+    private String anthropicMessagesUrl = "v1/messages";
 }

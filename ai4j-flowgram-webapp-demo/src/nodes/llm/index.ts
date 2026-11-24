@@ -15,7 +15,7 @@ export const LLMNodeRegistry: FlowNodeRegistry = {
   info: {
     icon: iconLLM,
     description:
-      'Call the large language model and use variables and prompt words to generate responses.',
+      'Generate responses with MiniMax-M3.1-Flash by default, or enter MiniMax-M3 or a custom model.',
   },
   meta: {
     size: {
@@ -32,11 +32,11 @@ export const LLMNodeRegistry: FlowNodeRegistry = {
         inputsValues: {
           serviceId: {
             type: 'constant',
-            content: 'minimax-coding',
+            content: 'minimax',
           },
           modelName: {
             type: 'constant',
-            content: 'MiniMax-M2.1',
+            content: 'MiniMax-M3.1-Flash',
           },
           systemPrompt: {
             type: 'template',
