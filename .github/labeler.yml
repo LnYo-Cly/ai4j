@@ -1,0 +1,67 @@
+# Path-based PR labels, applied by .github/workflows/pr-labeler.yml.
+#
+# Every key below must already exist as a repository label: the workflow holds
+# only `pull-requests: write` (no `issues: write`), so the action cannot create
+# labels on its own. Create a new label before adding it here.
+#
+# Labels follow the module boundaries documented in AGENTS.md, so a PR that
+# crosses modules gets one label per module it touches.
+
+"module: core":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j/**'
+
+"module: extension-api":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-extension-api/**'
+
+"module: plugin-ask-user":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-plugin-ask-user/**'
+
+"module: agent":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-agent/**'
+
+"module: coding":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-coding/**'
+
+"module: cli":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-cli/**'
+
+"module: spring-boot-starter":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-spring-boot-starter/**'
+
+"module: flowgram":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'ai4j-flowgram-spring-boot-starter/**'
+          - 'ai4j-flowgram-demo/**'
+
+"module: bom":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-bom/**'
+
+# Root aggregator only: module POMs are already covered by their module label.
+build:
+  - changed-files:
+      - any-glob-to-any-file: 'pom.xml'
+
+# Reuses the repository's built-in `documentation` label rather than minting a
+# second, near-identical `docs` label.
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - 'docs-site/**'
+
+"demo: webapp":
+  - changed-files:
+      - any-glob-to-any-file: 'ai4j-flowgram-webapp-demo/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
