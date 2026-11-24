@@ -4,7 +4,7 @@
 
 Claude Code 开始任何任务前应当：
 
-1. 先读取 `AGENTS.md`，再运行 `ha doctor --json` 和 `ha status --json`。
+1. 先读取 `AGENTS.md`，再运行 `ha doctor --json` 和 `ha daemon status --json`。
 2. 按 `AGENTS.md` 的任务阅读矩阵选择当前任务需要的文件。
 3. 使用 Harness Anything 管理新任务、progress、fact、decision、review 和 complete。
 4. 把本文件视为 Claude Code 兼容入口，而不是第二份项目规范。
